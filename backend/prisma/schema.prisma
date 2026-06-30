@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  name              String
+  avatarUrl         String?
+  createdAt         DateTime       @default(now())
+  isAdmin           Boolean        @default(false)
+  emailNotificationsEnabled Boolean @default(true)
+  pushTokens        PushToken[]
+  groupMemberships  GroupMember[]
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  notifications     Notification[]
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  members     GroupMember[]
+  posts       Post[]
+}
+
+model GroupMember {
+  id       String  @id @default(cuid())
+  groupId  String
+  group    Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model Post {
+  id              String   @id @default(cuid())
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  content         String?
+  type            PostType @default(UPDATE)
+  milestoneTag    String?
+  immichAlbumId   String?
+  immichAssetIds  String[]
+  createdAt       DateTime @default(now())
+  comments        Comment[]
+  likes           Like[]
+  notifications   Notification[]
+}
+
+enum PostType {
+  UPDATE
+  MILESTONE
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String
+  relatedPostId String?
+  post          Post?     @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
+  message       String
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+}

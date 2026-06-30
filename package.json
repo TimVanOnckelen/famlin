@@ -1,0 +1,18 @@
+{
+  "name": "famlin",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w backend",
+    "dev:mobile": "npm start -w mobile",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:seed": "npm run db:seed -w backend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
