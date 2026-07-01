@@ -9,6 +9,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string().min(32),
   GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_IDS: z.string().optional().transform((s) => s ? s.split(',').map((id) => id.trim()) : []),
   ALLOWED_EMAILS: z.string().transform((s) => s.split(',').map((e) => e.trim().toLowerCase())),
   IMMICH_BASE_URL: z.string().optional(),
   IMMICH_API_KEY: z.string().optional(),

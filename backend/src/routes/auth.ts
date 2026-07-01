@@ -56,6 +56,43 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  if (config.NODE_ENV === 'development') {
+    fastify.post('/dev-login', async (request) => {
+      const body = request.body as { email?: string };
+      const email = body.email?.toLowerCase()?.trim() || 'admin@example.com';
+
+      let user = await prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: email.split('@')[0],
+          },
+        });
+      }
+
+      const token = createUserToken({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+      });
+
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          isAdmin: user.isAdmin,
+          emailNotificationsEnabled: user.emailNotificationsEnabled,
+        },
+      };
+    });
+  }
+
   fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const user = await prisma.user.findUnique({
       where: { id: request.user!.id },
@@ -81,7 +118,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request) => {
     const body = request.body as { emailNotificationsEnabled?: boolean };
 
     const user = await prisma.user.update({

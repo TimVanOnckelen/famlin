@@ -1,0 +1,11 @@
+services:
+  famlin-backend:
+    build:
+      target: base
+    environment:
+      NODE_ENV: development
+    command: sh -c "npx prisma migrate deploy && npm run db:seed && npx tsx src/server.ts"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist

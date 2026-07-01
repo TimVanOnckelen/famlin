@@ -20,6 +20,7 @@ export const createPostBodySchema = z.object({
   milestoneTag: z.string().max(50).optional(),
   immichAlbumId: z.string().optional(),
   immichAssetIds: z.array(z.string()).optional(),
+  uploadedAssetUrls: z.array(z.string()).optional(),
 });
 
 export const createCommentBodySchema = z.object({

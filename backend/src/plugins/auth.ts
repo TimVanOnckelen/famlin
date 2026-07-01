@@ -1,11 +1,9 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { config } from '../config.js';
 import { prisma } from '../db.js';
-
-const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user: {
@@ -20,33 +18,49 @@ declare module 'fastify' {
   interface FastifyRequest {
     user?: AuthenticatedRequest['user'];
   }
+  interface FastifyInstance {
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  }
 }
 
+const googleClientIds = [config.GOOGLE_CLIENT_ID, ...(config.GOOGLE_CLIENT_IDS || [])];
+const googleClients = googleClientIds.map((id) => ({ id, client: new OAuth2Client(id) }));
+
 export async function verifyGoogleToken(idToken: string) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken,
-    audience: config.GOOGLE_CLIENT_ID,
-  });
+  let lastError: Error | null = null;
 
-  const payload = ticket.getPayload();
-  if (!payload) {
-    throw new Error('Invalid Google token');
+  for (const { id, client } of googleClients) {
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: id,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error('Invalid Google token');
+      }
+
+      const email = payload.email?.toLowerCase();
+      if (!email) {
+        throw new Error('Google account has no email');
+      }
+
+      if (!config.ALLOWED_EMAILS.includes(email)) {
+        throw new Error('Email not allowed');
+      }
+
+      return {
+        email,
+        name: payload.name || email.split('@')[0],
+        picture: payload.picture,
+      };
+    } catch (err) {
+      lastError = err as Error;
+    }
   }
 
-  const email = payload.email?.toLowerCase();
-  if (!email) {
-    throw new Error('Google account has no email');
-  }
-
-  if (!config.ALLOWED_EMAILS.includes(email)) {
-    throw new Error('Email not allowed');
-  }
-
-  return {
-    email,
-    name: payload.name || email.split('@')[0],
-    picture: payload.picture,
-  };
+  throw lastError || new Error('Invalid Google token');
 }
 
 export function createUserToken(user: { id: string; email: string; name: string; isAdmin: boolean }) {

@@ -54,6 +54,7 @@ model Post {
   milestoneTag    String?
   immichAlbumId   String?
   immichAssetIds  String[]
+  uploadedAssetUrls String[]
   createdAt       DateTime @default(now())
   comments        Comment[]
   likes           Like[]
