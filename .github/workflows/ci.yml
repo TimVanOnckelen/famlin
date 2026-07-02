@@ -19,17 +19,17 @@ jobs:
         env:
           POSTGRES_USER: famlin
           POSTGRES_PASSWORD: famlin
-          POSTGRES_DB: famlin
+          POSTGRES_DB: famlin_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U famlin -d famlin"
+          --health-cmd "pg_isready -U famlin -d famlin_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://famlin:famlin@localhost:5432/famlin?schema=public
-      JWT_SECRET: ci-test-secret
+      DATABASE_URL: postgresql://famlin:famlin@localhost:5432/famlin_test?schema=public
+      JWT_SECRET: ci-test-secret-at-least-32-characters-long
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
