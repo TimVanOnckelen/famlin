@@ -1,8 +1,17 @@
 name: Publish Docker image
 
+# Reusable build/push of the backend image to ghcr.io. Called by
+# release-please.yml when a release is cut (the `on: release` event does NOT
+# fire for release-please's GITHUB_TOKEN-created release, so it's chained via
+# workflow_call instead), and runnable on its own via workflow_dispatch to
+# rebuild an image manually.
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Release tag to derive semver tags from (e.g. v1.2.3). Omit to derive from the git ref.
+        type: string
+        required: false
   workflow_dispatch:
 
 permissions:
@@ -23,13 +32,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # When called with a tag_name, pin the semver tags to it; otherwise
+      # (manual dispatch) derive {{version}}/{{major}}.{{minor}} from the ref.
       - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=${{ inputs.tag_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag_name }}
             type=raw,value=latest
 
       - uses: docker/build-push-action@v6

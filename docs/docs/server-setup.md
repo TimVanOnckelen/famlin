@@ -25,6 +25,53 @@ curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-comp
 
 (Or clone the repository if you'd rather have the whole history, or want to [build the image from source](./maintenance#building-from-source-instead) instead.)
 
+For reference — or to paste directly if your setup wants compose content rather than a URL (e.g. Synology Container Manager's manual-entry mode, see below) — here's the file as of this writing. It pulls `famlin-backend` straight from `ghcr.io/timvanonckelen/famlin`, no build step involved:
+
+```yaml title="docker-compose.yml"
+services:
+  famlin-db:
+    image: postgres:16-alpine
+    container_name: famlin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: famlin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: famlin
+    volumes:
+      - famlin-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U famlin -d famlin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  famlin-backend:
+    # Pre-built, versioned image published on every GitHub release.
+    # Pin FAMLIN_VERSION (e.g. 1.2.0) instead of `latest` for deliberate updates.
+    image: ghcr.io/timvanonckelen/famlin:${FAMLIN_VERSION:-latest}
+    container_name: famlin-backend
+    restart: unless-stopped
+    depends_on:
+      famlin-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    volumes:
+      - famlin-uploads:/app/uploads
+    ports:
+      - "3000:3000"
+
+volumes:
+  famlin-db-data:
+  famlin-uploads:
+```
+
+This always matches the canonical [`docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml) in the repository root — if the two ever disagree, the repo file is the source of truth.
+
 ## 2. Configure environment variables
 
 Runtime configuration in Famlin is split in two:
@@ -82,7 +129,7 @@ Everything above (steps 1–3) can also be done entirely through Synology's **Co
 4. **Create the project.** Open Container Manager → **Project** → **Create**.
    - **Project name**: `famlin`
    - **Path**: browse to the folder from step 2 (e.g. `/docker/famlin`)
-   - **Source**: select **Use existing `docker-compose.yml`** — Container Manager detects the file you already uploaded. (If your version of Container Manager instead prompts you to paste compose content, choose the option to point at a path rather than paste, so it also picks up the `.env` file next to it.)
+   - **Source**: select **Use existing `docker-compose.yml`** — Container Manager detects the file you already uploaded. (If your version of Container Manager instead prompts you to paste compose content, choose the option to point at a path rather than paste, so it also picks up the `.env` file next to it — but if you do need to paste, the [example above](#1-get-the-files-onto-the-server) is the exact content to use.)
 5. **Confirm environment variables.** Container Manager reads a `.env` file sitting next to `docker-compose.yml` automatically, so nothing further is needed if you uploaded one in step 3. Double check `JWT_SECRET` and `DATABASE_URL` look right on the summary screen before continuing.
 6. **Pull and start.** Click through **Next** to the summary, then **Done**. Container Manager pulls the Postgres image and the pre-built `famlin-backend` image from `ghcr.io/timvanonckelen/famlin`, then starts both containers — this can take a minute the first time.
 7. **Verify it's running.** Open **Project → famlin**, switch to the **Container** tab, and confirm both `famlin-db` and `famlin-backend` show as running. Click `famlin-backend` → **Details → Log** and look for the `prisma migrate deploy` output completing without errors, followed by the server starting.

@@ -8,11 +8,38 @@ permissions:
   contents: write
   pull-requests: write
 
+# Serialize runs on main so two rapid pushes can't race the release PR or
+# double-publish an image. Don't cancel in-flight runs — a partial image
+# push is worse than waiting.
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: .github/release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # release-please creates the GitHub Release using the default GITHUB_TOKEN,
+  # which does NOT trigger docker-publish.yml's `on: release` event (GitHub
+  # suppresses workflow-triggered-workflow events to prevent recursion). So
+  # the image build is chained here instead, in the same run, gated on
+  # whether a release actually was created this time. The build itself lives
+  # in docker-publish.yml (reused here so there's one source of truth).
+  publish-docker:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      tag_name: ${{ needs.release-please.outputs.tag_name }}

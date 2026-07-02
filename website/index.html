@@ -157,7 +157,7 @@
     <div style="text-align:center;margin-bottom:44px;">
       <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Get started · self-hosted</div>
       <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Up and running in three steps</h2>
-      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">Famlin ships as a backend container plus Postgres, driven by one Docker Compose file. Deploy it on a home server, a NAS, or any VPS — you stay in full control of your family's data.</p>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">Famlin ships as a pre-built container image on GitHub Container Registry, plus Postgres, driven by one Docker Compose file — no source checkout or build step required. Deploy it on a home server, a NAS, or any VPS — you stay in full control of your family's data.</p>
     </div>
 
     <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:24px;align-items:stretch;">
@@ -170,12 +170,13 @@
           <span class="mono" style="font-size:12px;color:#5f7883;margin-left:8px;">deploy — famlin</span>
         </div>
         <div class="mono" style="font-size:13.5px;line-height:2;color:#c3d2d8;flex:1;overflow-x:auto;">
-          <div><span style="color:#5f7883;"># 1 · get the files</span></div>
-          <div><span style="color:#4be0a0;">$</span> git clone https://github.com/TimVanOnckelen/famlin.git</div>
-          <div><span style="color:#4be0a0;">$</span> cd famlin &amp;&amp; cp .env.example .env</div>
-          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · start Famlin</span></div>
+          <div><span style="color:#5f7883;"># 1 · get the compose file (no source checkout)</span></div>
+          <div><span style="color:#4be0a0;">$</span> mkdir famlin &amp;&amp; cd famlin</div>
+          <div><span style="color:#4be0a0;">$</span> curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.yml</div>
+          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · configure &amp; start — pulls the image from ghcr.io</span></div>
+          <div><span style="color:#4be0a0;">$</span> nano .env <span style="color:#5f7883;"># JWT_SECRET, POSTGRES_PASSWORD</span></div>
           <div><span style="color:#4be0a0;">$</span> docker compose -f docker-compose.yml up -d</div>
-          <div style="margin-top:10px;color:#7fd9c0;">[ok] Famlin running on :3000</div>
+          <div style="margin-top:10px;color:#7fd9c0;">[ok] Pulled ghcr.io/timvanonckelen/famlin</div>
           <div style="color:#7fd9c0;">[ok] Migrations applied</div>
           <div style="color:#7fd9c0;">[ok] Ready to invite your family</div>
         </div>
