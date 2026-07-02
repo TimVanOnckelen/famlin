@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/TimVanOnckelen/famlin/compare/v0.1.1...v0.1.2) (2026-07-02)
+
+
+### Features
+
+* remove eas.json configuration file ([264f437](https://github.com/TimVanOnckelen/famlin/commit/264f43754561e1273303bbc1ab9b03fd50bc6a80))
+* update CI workflows for Docker image publishing and add production build configurations ([824aa05](https://github.com/TimVanOnckelen/famlin/commit/824aa058beb875ae8d0814084491cd98386e4f02))
+
 ## [0.1.1](https://github.com/TimVanOnckelen/famlin/compare/v0.1.0...v0.1.1) (2026-07-02)
 
 
