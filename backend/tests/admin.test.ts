@@ -174,6 +174,11 @@ describe('admin routes', () => {
 
     it('rejects demoting the last remaining admin', async () => {
       const soleAdmin = await createUser({ isAdmin: true });
+      // The "last admin" guard counts every active admin in the database, so
+      // this test needs to be the only one — clear out any other admins left
+      // behind by earlier tests in this file (truncation only runs once per
+      // file, not between every test; see tests/setup/test-setup.ts).
+      await prisma.user.updateMany({ where: { isAdmin: true, id: { not: soleAdmin.id } }, data: { isAdmin: false } });
 
       const res = await app.inject({
         method: 'PATCH',

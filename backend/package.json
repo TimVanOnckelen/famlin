@@ -21,7 +21,8 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:docker": "sh scripts/test-in-docker.sh"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

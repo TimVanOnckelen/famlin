@@ -40,7 +40,16 @@ docker compose exec famlin-backend npx prisma db seed
 
 This creates a group "Familie de Vries" with sample users and posts.
 
-## 4. Test the mobile app
+## 4. Run backend tests
+
+```bash
+cd backend
+npm run test:docker
+```
+
+This execs into the running `famlin-backend` container and runs the Vitest suite against a dedicated `<db>_test` database (created automatically on first run) — never the real one, since Postgres isn't published to the host and the suite refuses to run against any database without "test" in its name. Plain `npm test` only works if you have direct Postgres access (e.g. `DATABASE_URL` pointed at a local Postgres instead of Docker).
+
+## 5. Test the mobile app
 
 ### Option A — Expo web preview in Docker
 
@@ -84,6 +93,9 @@ docker compose exec famlin-backend npx prisma migrate dev --name description
 
 # Open Prisma Studio
 docker compose exec famlin-backend npx prisma studio
+
+# Run the backend test suite
+cd backend && npm run test:docker
 ```
 
 ## Production deployment

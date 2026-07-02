@@ -21,7 +21,7 @@ Run from the repo root unless noted. There is no root install/workspace — inst
 - `npm run build` — `tsc` typecheck/emit **and** builds the admin UI. Use `npx tsc --noEmit` for a quick typecheck.
 - `npm start` — run the compiled server (`node dist/server.js`).
 - `npm run db:migrate` — Prisma migrate (dev) · `db:deploy` (prod) · `db:generate` · `db:seed` · `db:studio`.
-- `npm test` — Vitest, against the real dev database (needs `DATABASE_URL` reachable). Tests in `src/__tests__/` use self-cleaning, uniquely-prefixed fixtures rather than a separate test DB — see `authorization.test.ts`.
+- `npm test` — Vitest against a dedicated `<db>_test` database (never the real one — `tests/setup/assert-test-database.ts` refuses to run unless `DATABASE_URL`'s database name contains "test", and `tests/setup/test-setup.ts` truncates every table once per test file). Since `docker-compose.yml` doesn't publish Postgres to the host, run `npm run test:docker` (execs into the running `famlin-backend` dev container, which reaches `famlin-db` over the compose network, and creates the test database on first run if needed) rather than plain `npm test` unless you have direct Postgres access. Fixtures shared across a file's tests via a top-level `beforeAll` (e.g. `src/__tests__/authorization.test.ts`) are fine — truncation only happens between files, not between tests in the same file.
 
 **Admin UI** (`cd backend/admin`)
 - `npm run dev` — Vite dev server · `npm run build` — production build · `npx tsc --noEmit` — typecheck.

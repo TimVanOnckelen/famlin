@@ -1,6 +1,12 @@
+<p align="center">
+  <img src="docs/static/img/logo.svg" alt="Famlin logo" width="96" height="96">
+</p>
+
 # Famlin
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
 
 Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend and an Expo React Native mobile app.
 

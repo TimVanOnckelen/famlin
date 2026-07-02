@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, createComment, authHeader } from './helpers.js';
+
+// The API only accepts assetUrl/uploadedAssetUrls matching the app's
+// /uploads/<uuid>.<ext> upload path format (see UPLOAD_PATH_REGEX in
+// types.ts) — arbitrary strings like "/uploads/a.jpg" fail schema
+// validation before the route's own business logic ever runs.
+const assetPath = () => `/uploads/${randomUUID()}.jpg`;
 
 describe('comments routes', () => {
   let app: FastifyInstance;
@@ -87,13 +94,13 @@ describe('comments routes', () => {
     it('rejects pinning a comment to an asset that is not on the post', async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
-      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: ['/uploads/a.jpg'] });
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [assetPath()] });
 
       const res = await app.inject({
         method: 'POST',
         url: `/api/posts/${post.id}/comments`,
         headers: authHeader(author),
-        payload: { content: 'nice photo', assetUrl: '/uploads/not-on-post.jpg' },
+        payload: { content: 'nice photo', assetUrl: assetPath() },
       });
 
       expect(res.statusCode).toBe(400);
@@ -102,32 +109,34 @@ describe('comments routes', () => {
     it('a reply inherits the parent comment\'s pinned assetUrl, ignoring any client override', async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
-      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: ['/uploads/a.jpg', '/uploads/b.jpg'] });
+      const [assetA, assetB] = [assetPath(), assetPath()];
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [assetA, assetB] });
 
-      const parent = await createComment({ postId: post.id, authorId: author.id, assetUrl: '/uploads/a.jpg' });
+      const parent = await createComment({ postId: post.id, authorId: author.id, assetUrl: assetA });
 
       const res = await app.inject({
         method: 'POST',
         url: `/api/posts/${post.id}/comments`,
         headers: authHeader(author),
-        payload: { content: 'a reply', parentId: parent.id, assetUrl: '/uploads/b.jpg' },
+        payload: { content: 'a reply', parentId: parent.id, assetUrl: assetB },
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.json().assetUrl).toBe('/uploads/a.jpg');
+      expect(res.json().assetUrl).toBe(assetA);
     });
 
     it('filters comments by assetUrl when provided', async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
-      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: ['/uploads/a.jpg', '/uploads/b.jpg'] });
+      const [assetA, assetB] = [assetPath(), assetPath()];
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [assetA, assetB] });
 
-      await createComment({ postId: post.id, authorId: author.id, assetUrl: '/uploads/a.jpg', content: 'on a' });
+      await createComment({ postId: post.id, authorId: author.id, assetUrl: assetA, content: 'on a' });
       await createComment({ postId: post.id, authorId: author.id, content: 'post-level' });
 
       const res = await app.inject({
         method: 'GET',
-        url: `/api/posts/${post.id}/comments?assetUrl=${encodeURIComponent('/uploads/a.jpg')}`,
+        url: `/api/posts/${post.id}/comments?assetUrl=${encodeURIComponent(assetA)}`,
         headers: authHeader(author),
       });
 
