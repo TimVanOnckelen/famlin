@@ -11,6 +11,7 @@ import {
   loginBodySchema,
   passwordLoginBodySchema,
   registerBodySchema,
+  setupBodySchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -20,6 +21,11 @@ import {
 // pays the cost of a bcrypt.compare, instead of returning immediately, so
 // timing doesn't reveal whether the email exists.
 const DUMMY_PASSWORD_HASH = await bcrypt.hash(crypto.randomUUID(), 12);
+
+// Arbitrary fixed key for a Postgres advisory lock — only used to serialize
+// concurrent POST /setup calls against each other (see below), unrelated to
+// any other lock in the app.
+const SETUP_ADVISORY_LOCK_KEY = 4_827_193n;
 
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
@@ -54,6 +60,65 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return disabled;
     }
   });
+
+  // Public: lets the admin UI know whether this is a fresh install with no
+  // users yet, so it can show the first-run admin setup screen instead of
+  // the login form.
+  fastify.get('/setup-status', async () => {
+    const userCount = await prisma.user.count();
+    return { needsSetup: userCount === 0 };
+  });
+
+  // Public, but only succeeds once: provisions the very first admin account
+  // on a fresh install. Guarded by a Postgres advisory lock so two concurrent
+  // requests can't both pass the "no users yet" check and create two admins
+  // — the lock is held for the transaction, so the second caller's count()
+  // only runs after the first caller has committed its new user.
+  fastify.post(
+    '/setup',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request);
+      const { email, name, password } = setupBodySchema.parse(request.body);
+      const normalizedEmail = email.toLowerCase().trim();
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const user = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`;
+
+        const userCount = await tx.user.count();
+        if (userCount > 0) {
+          return null;
+        }
+
+        return tx.user.create({
+          data: {
+            email: normalizedEmail,
+            name,
+            passwordHash,
+            isAdmin: true,
+          },
+        });
+      });
+
+      if (!user) {
+        return reply.status(409).send({ error: t('errors.setupAlreadyComplete') });
+      }
+
+      const token = createUserToken({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+        tokenVersion: user.tokenVersion,
+      });
+
+      return {
+        token,
+        user: sanitizeUser(user),
+      };
+    }
+  );
 
   // Generic OIDC login — works with any OpenID Connect provider (Google,
   // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin.

@@ -15,7 +15,7 @@ Famlin is a monorepo with three parts:
 
 | File | Prefix | Notes |
 | --- | --- | --- |
-| `auth.ts` | `/api/auth` | Generic OIDC (`/oidc`, `/oidc-config`) + local password login, `/me`, register/reset (admin) |
+| `auth.ts` | `/api/auth` | Generic OIDC (`/oidc`, `/oidc-config`) + local password login, `/me`, register/reset (admin), first-run admin bootstrap (`/setup-status`, `/setup`) |
 | `groups.ts` | `/api/groups` | Read-only, member-facing: your groups, group detail, member list |
 | `admin.ts` | `/api/admin` | All admin mutations: users, groups CRUD, membership, settings, cross-group content moderation (`/content/posts`, `/content/comments`, restore) |
 | `posts.ts` | `/api/posts` | CRUD, always filtered by group membership |
@@ -25,8 +25,11 @@ Famlin is a monorepo with three parts:
 | `uploads.ts` | `/api/uploads` | Direct photo upload to a Docker volume, served at `/uploads/`; `GET /media-token` issues the short-lived token clients use to read it (see [Photos and uploads](#photos-and-uploads)) |
 | `invites.ts` | `/api/invites` | Public invite preview (`GET /:token`), self-service registration (`POST /:token/register`), and join-for-an-already-authenticated-user (`POST /:token/accept`). Invite creation/listing/revocation lives in `admin.ts` (`/api/admin/groups/:id/invites`, `/api/admin/invites/:id`) |
 | `invite-landing.ts` | `/invite/:token` (no `/api` prefix) | Public server-rendered HTML page a shared invite link opens; hands off to the app via `famlin://invite/:token?server=...`. Matches the app's design (logo, teal palette), is translated using the server's `defaultLanguage` setting, and shows App Store/Google Play buttons if `appStoreUrl`/`playStoreUrl` are set |
+| `landing.ts` | `/` (no `/api` prefix) | Public server-rendered HTML landing page confirming the server is running, styled to match the invite landing page. Shares its HTML shell (`utils/html-page.ts`) with `invite-landing.ts` |
 
 Services live in `backend/src/services/` (`settings.ts`, `notifications.ts`, `invites.ts`, `users.ts`, `groups.ts`, `posts.ts`, `pagination.ts`).
+
+**There is no seeded/default admin account.** `GET /api/auth/setup-status` returns `{ needsSetup: boolean }` — `true` iff the `User` table is empty — and the admin UI (`SetupPage.tsx`) shows a one-time account-creation screen instead of the login form while that holds. `POST /api/auth/setup` provisions that first account as an admin and only ever succeeds once: it runs inside a transaction holding a Postgres advisory lock (`pg_advisory_xact_lock`, see `SETUP_ADVISORY_LOCK_KEY` in `routes/auth.ts`) around a `user.count()` check, so two concurrent requests can't both pass the check and create two accounts — the loser gets `409`. `prisma/seed.ts` (`db:seed`) is a separate, dev/test-only fixture script (fake family members, sample posts, and a hardcoded `admin@example.com`/`test123456` account) — it's never invoked by the production Docker image or `prisma migrate deploy`, so don't rely on it for a real deployment's first-run flow.
 
 List endpoints that can grow large (`GET /api/posts`, `GET /api/favorites`, and the admin users/content-moderation endpoints) are cursor-paginated: they accept `?cursor=` and `?take=` (default 30, max 100) and respond with `{ items, nextCursor }` instead of a bare array. `services/pagination.ts` has the shared `paginationArgs`/`paginate` helpers.
 

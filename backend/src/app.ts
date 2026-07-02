@@ -23,6 +23,7 @@ import notificationRoutes from './routes/notifications.js';
 import uploadRoutes from './routes/uploads.js';
 import inviteRoutes from './routes/invites.js';
 import inviteLandingRoutes from './routes/invite-landing.js';
+import landingRoutes from './routes/landing.js';
 
 // Builds and registers everything on a Fastify instance without starting the
 // listener, so tests can exercise routes via `.inject()` against the exact
@@ -126,6 +127,7 @@ export async function buildApp() {
   await fastify.register(uploadRoutes, { prefix: '/api/uploads' });
   await fastify.register(inviteRoutes, { prefix: '/api/invites' });
   await fastify.register(inviteLandingRoutes);
+  await fastify.register(landingRoutes);
 
   // Serve admin web UI static build (if present)
   const adminDir = path.join(process.cwd(), 'dist', 'admin');

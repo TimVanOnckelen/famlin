@@ -8,12 +8,9 @@ Once the containers from [Server setup](./server-setup) are up and reachable, fi
 
 ## First login
 
-Log in at `https://famlin.yourdomain.com/admin` with the seed admin account:
+Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the database yet) it shows a **one-time setup screen** instead of the login form — fill in your name, email, and a password to create the first account, which is automatically made an admin. There is no default or seeded account; if the setup screen doesn't appear, an admin account already exists and you should log in with it instead (an existing admin can reset another admin's password from the Users page; if every admin's password and access is lost, the only recovery path is connecting to the `famlin-db` container directly and clearing the affected row).
 
-- **Email:** `admin@example.com`
-- **Password:** `test123456`
-
-**Change this password immediately** (or replace the account) — it's a well-known default. From `/admin` → Server settings you can then configure:
+From `/admin` → Server settings you can then configure:
 
 - **Default language** — used for server-rendered pages that don't have a signed-in user yet, currently the invite link landing page (`/invite/:token`). Defaults to English.
 - **App Store / Google Play URLs** — optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them.

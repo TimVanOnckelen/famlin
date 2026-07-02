@@ -44,6 +44,14 @@
     "ssoLoginFailed": "SSO-login mislukt.",
     "loginFailed": "Inloggen mislukt."
   },
+  "setup": {
+    "title": "Welkom bij Famlin",
+    "subtitle": "Deze server heeft nog geen beheerdersaccount. Maak er een aan om te beginnen.",
+    "confirmPasswordLabel": "Bevestig wachtwoord",
+    "passwordMismatch": "Wachtwoorden komen niet overeen.",
+    "createAccountButton": "Beheerdersaccount aanmaken",
+    "setupFailed": "Installatie mislukt."
+  },
   "dashboard": {
     "title": "Dashboard",
     "stats": {
