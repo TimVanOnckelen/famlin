@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/TimVanOnckelen/famlin/compare/v0.1.2...v0.1.3) (2026-07-02)
+
+
+### Bug Fixes
+
+* Add Podfile properties for Expo configuration and Hermes engine ([d310168](https://github.com/TimVanOnckelen/famlin/commit/d31016834cca8f12d767a80f9a63a20e6a77c6b4))
+* Add Podfile properties for Expo configuration and Hermes engine ([3a80354](https://github.com/TimVanOnckelen/famlin/commit/3a803548eeff1fa21b3dc54cc502cfd01fcf323f))
+
 ## [0.1.2](https://github.com/TimVanOnckelen/famlin/compare/v0.1.1...v0.1.2) (2026-07-02)
 
 
