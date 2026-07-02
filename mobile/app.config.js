@@ -12,6 +12,9 @@ export default ({ config }) => ({
     supportsTablet: true,
     bundleIdentifier: "be.xeweb.famlin",
     buildNumber: "0.1.0",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     package: "be.xeweb.famlin",
