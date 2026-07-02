@@ -107,18 +107,36 @@ export function verifyToken(token: string) {
 // A narrow-scope, longer-lived token used only to authorize reading files
 // under /uploads — issued separately from the main session token so it can
 // be embedded in image/video URLs (query string) without exposing the full
-// session credential to proxy/CDN logs.
-export function createMediaToken(userId: string) {
-  return jwt.sign({ id: userId, scope: 'media' }, config.JWT_SECRET, { expiresIn: '7d' });
+// session credential to proxy/CDN logs. Carries the user's tokenVersion so a
+// password reset / deactivation can invalidate it the same way it invalidates
+// a session token (see isSessionCurrent).
+export function createMediaToken(userId: string, tokenVersion: number) {
+  return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyMediaToken(token: string): boolean {
+export function verifyMediaToken(token: string): { id: string; tokenVersion?: number } | null {
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET) as { scope?: string };
-    return decoded.scope === 'media';
+    const decoded = jwt.verify(token, config.JWT_SECRET) as { id?: string; scope?: string; tokenVersion?: number };
+    if (decoded.scope !== 'media' || !decoded.id) return null;
+    return { id: decoded.id, tokenVersion: decoded.tokenVersion };
   } catch {
-    return false;
+    return null;
   }
+}
+
+// Confirms a decoded token still corresponds to an active user at its issued
+// tokenVersion — the DB check that `verifyToken`/`verifyMediaToken` (signature
+// + expiry only) can't do on their own. Used by the /uploads auth hook so a
+// deactivated user or a token from before a password reset loses media access
+// immediately, matching the guarantee the main `authenticate` decorator makes.
+export async function isSessionCurrent(decoded: { id: string; tokenVersion?: number }): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.id },
+    select: { tokenVersion: true, deletedAt: true },
+  });
+  if (!user || user.deletedAt) return false;
+  if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false;
+  return true;
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {

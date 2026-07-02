@@ -39,13 +39,13 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     });
 
     if (post.authorId !== request.user!.id) {
-      await notifyUser({
+      void notifyUser({
         type: 'new_like_post',
         userId: post.authorId,
         senderId: request.user!.id,
         postId: post.id,
         params: { author: request.user!.name, group: post.group.name },
-      });
+      }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
     return { liked: true };
@@ -85,13 +85,13 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     });
 
     if (comment.authorId !== request.user!.id) {
-      await notifyUser({
+      void notifyUser({
         type: 'new_like_comment',
         userId: comment.authorId,
         senderId: request.user!.id,
         postId: comment.post.id,
         params: { author: request.user!.name, group: comment.post.group.name },
-      });
+      }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
     return { liked: true };

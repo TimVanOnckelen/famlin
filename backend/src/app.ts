@@ -7,7 +7,7 @@ import staticPlugin from '@fastify/static';
 import path from 'path';
 import fs from 'fs/promises';
 import { ZodError } from 'zod';
-import authPlugin, { verifyToken, verifyMediaToken } from './plugins/auth.js';
+import authPlugin, { verifyToken, verifyMediaToken, isSessionCurrent } from './plugins/auth.js';
 import { config } from './config.js';
 import { getT } from './i18n/index.js';
 
@@ -93,16 +93,20 @@ export async function buildApp() {
     const authHeader = request.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       try {
-        verifyToken(authHeader.slice(7));
-        return;
+        const decoded = verifyToken(authHeader.slice(7));
+        // Signature/expiry alone isn't enough — confirm the token still maps
+        // to an active user at its issued tokenVersion, so a deactivated user
+        // or a pre-password-reset token can't keep reading family media.
+        if (await isSessionCurrent(decoded)) return;
       } catch {
         // fall through to the media-token check below
       }
     }
 
     const queryToken = (request.query as { token?: string } | undefined)?.token;
-    if (queryToken && verifyMediaToken(queryToken)) {
-      return;
+    if (queryToken) {
+      const decoded = verifyMediaToken(queryToken);
+      if (decoded && (await isSessionCurrent(decoded))) return;
     }
 
     return reply.status(401).send({ error: 'Unauthorized' });

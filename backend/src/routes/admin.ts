@@ -53,6 +53,12 @@ async function isLastAdmin(userId: string): Promise<boolean> {
   return adminCount <= 1;
 }
 
+// Prisma raises P2025 when an update/delete targets a row that doesn't exist —
+// map it to a 404 instead of letting it fall through to a generic 500.
+function isRecordNotFound(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2025';
+}
+
 // Returns true (and sends a 403) when the caller is not an admin. Callers MUST
 // `return` when this returns true, otherwise the handler keeps executing after
 // the 403 is sent and the mutation still runs.
@@ -197,13 +203,17 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') });
     }
 
-    const user = await prisma.user.update({
-      where: { id },
-      data: body,
-      select: userSelect,
-    });
-
-    return user;
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: body,
+        select: userSelect,
+      });
+      return user;
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
+      throw err;
+    }
   });
 
   // Soft-deletes (deactivates) the account rather than removing the row, so
@@ -224,25 +234,33 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') });
     }
 
-    await prisma.user.update({
-      where: { id },
-      data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
-    });
-
-    return { success: true };
+    try {
+      await prisma.user.update({
+        where: { id },
+        data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
+      });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
+      throw err;
+    }
   });
 
   fastify.post('/users/:id/restore', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
     const { id } = request.params as { id: string };
-    const user = await prisma.user.update({
-      where: { id },
-      data: { deletedAt: null },
-      select: userSelect,
-    });
-
-    return user;
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: { deletedAt: null },
+        select: userSelect,
+      });
+      return user;
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.userNotFound') });
+      throw err;
+    }
   });
 
   // Groups
@@ -280,15 +298,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = adminUpdateGroupBodySchema.parse(request.body);
 
-    const group = await prisma.group.update({
-      where: { id },
-      data: {
-        name: body.name,
-        description: body.description,
-      },
-    });
-
-    return group;
+    try {
+      const group = await prisma.group.update({
+        where: { id },
+        data: {
+          name: body.name,
+          description: body.description,
+        },
+      });
+      return group;
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Group not found' });
+      throw err;
+    }
   });
 
   fastify.delete('/groups/:id', async (request, reply) => {
@@ -296,9 +318,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const { id } = request.params as { id: string };
 
-    await prisma.group.delete({ where: { id } });
-
-    return { success: true };
+    try {
+      await prisma.group.delete({ where: { id } });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Group not found' });
+      throw err;
+    }
   });
 
   fastify.get('/groups/:id/members', async (request, reply) => {
@@ -348,11 +374,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const { id, userId } = request.params as { id: string; userId: string };
 
-    await prisma.groupMember.delete({
-      where: { groupId_userId: { groupId: id, userId } },
-    });
-
-    return { success: true };
+    try {
+      await prisma.groupMember.delete({
+        where: { groupId_userId: { groupId: id, userId } },
+      });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Member not found' });
+      throw err;
+    }
   });
 
   // Invites: single-use links that let someone join a group without an
@@ -413,9 +443,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return;
 
     const { id } = request.params as { id: string };
-    await prisma.invite.delete({ where: { id } });
-
-    return { success: true };
+    try {
+      await prisma.invite.delete({ where: { id } });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Invite not found' });
+      throw err;
+    }
   });
 
   // Content moderation: cross-group visibility into posts/comments so an

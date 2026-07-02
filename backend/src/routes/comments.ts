@@ -83,7 +83,14 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       select: { authorId: true },
       distinct: ['authorId'],
     });
-    const recipientIds = [...new Set([post.authorId, ...priorParticipants.map((c) => c.authorId)])];
+    const candidateIds = [...new Set([post.authorId, ...priorParticipants.map((c) => c.authorId)])];
+    // Narrow to people who are still members of the group — a removed member
+    // (even the original author) shouldn't keep getting its activity.
+    const members = await prisma.groupMember.findMany({
+      where: { groupId: post.groupId, userId: { in: candidateIds } },
+      select: { userId: true },
+    });
+    const recipientIds = members.map((m) => m.userId);
 
     const comment = await prisma.comment.create({
       data: {
@@ -98,13 +105,15 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       },
     });
 
-    await notifyUsers({
+    // Fire-and-forget: fanning out push/email shouldn't hold the response (a
+    // slow SMTP server would otherwise stall comment creation).
+    void notifyUsers({
       type: 'new_comment',
       userIds: recipientIds,
       senderId: request.user!.id,
       postId: post.id,
       params: { author: comment.author.name, group: post.group.name },
-    });
+    }).catch((err) => request.log.error(err, 'Failed to send comment notifications'));
 
     return { ...comment, likeCount: 0, likedByMe: false };
   });
@@ -114,14 +123,22 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const body = updateCommentBodySchema.parse(request.body);
 
-    const comment = await prisma.comment.findUnique({ where: { id } });
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      include: { post: { select: { groupId: true, deletedAt: true } } },
+    });
 
-    if (!comment || comment.deletedAt) {
+    if (!comment || comment.deletedAt || comment.post.deletedAt) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
     }
 
     if (comment.authorId !== request.user!.id) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
+    }
+
+    // Editing writes into the group, so it requires *current* membership.
+    if (!(await isGroupMember(comment.post.groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
     const updated = await prisma.comment.update({
@@ -145,9 +162,12 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request);
     const { id } = request.params as { id: string };
 
-    const comment = await prisma.comment.findUnique({ where: { id } });
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      include: { post: { select: { deletedAt: true } } },
+    });
 
-    if (!comment || comment.deletedAt) {
+    if (!comment || comment.deletedAt || comment.post.deletedAt) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
     }
 

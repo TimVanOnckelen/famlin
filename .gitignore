@@ -3,6 +3,7 @@ node_modules/
 */node_modules/
 .pnp
 .pnp.js
+graphify-out/
 
 # Production builds
 dist/
@@ -33,6 +34,9 @@ Thumbs.db
 # Expo
 .expo/
 .expo-shared/
+*.ipa
+*.apk
+*.aab
 *.jks
 *.p8
 *.p12

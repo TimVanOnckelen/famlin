@@ -214,18 +214,19 @@ async function sendEmailNotifications(
   const subject = t('notifications.emailSubject');
   const body = t('notifications.emailBody', { message });
 
-  for (const recipient of recipients) {
-    if (!recipient[prefField]) continue;
-
-    try {
-      await transporter.sendMail({
-        from: settings.smtpFrom || 'Famlin <noreply@famlin.app>',
-        to: recipient.email,
-        subject,
-        text: body,
-      });
-    } catch (err) {
-      console.error('Failed to send email', err);
-    }
-  }
+  // Send in parallel so one slow/hanging recipient doesn't serialize the rest.
+  await Promise.all(
+    recipients
+      .filter((recipient) => recipient[prefField])
+      .map((recipient) =>
+        transporter
+          .sendMail({
+            from: settings.smtpFrom || 'Famlin <noreply@famlin.app>',
+            to: recipient.email,
+            subject,
+            text: body,
+          })
+          .catch((err) => console.error('Failed to send email', err))
+      )
+  );
 }

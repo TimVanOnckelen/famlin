@@ -9,7 +9,8 @@ import { getT } from '../i18n/index.js';
 
 const postInclude = (userId: string) => ({
   author: { select: { id: true, name: true, avatarUrl: true } },
-  _count: { select: { comments: true, likes: true } },
+  // Count only live comments so the feed's count matches what actually opens.
+  _count: { select: { comments: { where: { deletedAt: null } }, likes: true } },
   likes: { where: { userId }, select: { id: true } },
   favorites: { where: { userId }, select: { id: true } },
 });
@@ -86,13 +87,15 @@ export default async function postRoutes(fastify: FastifyInstance) {
       },
     });
 
-    await notifyGroup({
+    // Fire-and-forget: fanning out push/email to the group shouldn't hold the
+    // response (a slow SMTP server would otherwise stall post creation).
+    void notifyGroup({
       type: 'new_post',
       groupId: body.groupId,
       senderId: request.user!.id,
       postId: post.id,
       params: { author: post.author.name, group: post.group.name },
-    });
+    }).catch((err) => request.log.error(err, 'Failed to send post notifications'));
 
     return post;
   });
@@ -110,6 +113,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (post.authorId !== request.user!.id) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
+    }
+
+    // Editing writes into the group, so it requires *current* membership — a
+    // removed member's old posts stay visible but they can't keep editing them.
+    if (!(await isGroupMember(post.groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
     const updated = await prisma.post.update({

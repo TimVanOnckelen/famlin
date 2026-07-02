@@ -45,14 +45,20 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
     const favorites = await prisma.favorite.findMany({
       where: {
         userId: request.user!.id,
-        post: { deletedAt: null },
+        // Only surface favorites the user can still see: the post is live and
+        // they're still a member of its group (a removed member must never
+        // keep reading a group's content via their old favorites).
+        post: {
+          deletedAt: null,
+          group: { members: { some: { userId: request.user!.id } } },
+        },
       },
       include: {
         post: {
           include: {
             author: { select: { id: true, name: true, avatarUrl: true } },
             group: { select: { id: true, name: true } },
-            _count: { select: { comments: true, likes: true } },
+            _count: { select: { comments: { where: { deletedAt: null } }, likes: true } },
             likes: { where: { userId: request.user!.id }, select: { id: true } },
           },
         },
