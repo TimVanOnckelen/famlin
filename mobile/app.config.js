@@ -3,14 +3,9 @@ export default ({ config }) => ({
   name: 'Famlin',
   slug: 'famlin',
   version: '0.1.0',
-  orientation: 'portrait',
+  orientation: 'default',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#FDF8F3',
-  },
   scheme: 'famlin',
   assetBundlePatterns: ['**/*'],
   ios: {
@@ -23,7 +18,7 @@ export default ({ config }) => ({
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FDF8F3',
+      backgroundColor: '#006e94',
     },
   },
   web: {
@@ -33,15 +28,34 @@ export default ({ config }) => ({
     eas: {
       projectId: process.env.EAS_PROJECT_ID || 'your-eas-project-id',
     },
-    googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
   },
   plugins: [
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        resizeMode: 'contain',
+        backgroundColor: '#edf7fb',
+      },
+    ],
     [
       'expo-notifications',
       {
         icon: './assets/notification-icon.png',
-        color: '#D96A5E',
+        color: '#006e94',
       },
     ],
+    [
+      'expo-location',
+      {
+        locationWhenInUsePermission: 'Famlin gebruikt je locatie om aan te geven waar een bericht is gemaakt.',
+      },
+    ],
+    'expo-font',
+    'expo-localization',
+    'expo-secure-store',
+    'expo-web-browser',
+    'expo-video',
+    'expo-status-bar',
   ],
 });

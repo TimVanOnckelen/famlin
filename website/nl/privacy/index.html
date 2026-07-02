@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacybeleid — Famlin</title>
+<meta name="description" content="Het privacybeleid van Famlin: wat er met je gegevens gebeurt op een self-hosted Famlin-server, en op deze website.">
+<link rel="icon" href="/favicon.ico">
+<link rel="alternate" hreflang="en" href="https://famlin.app/privacy/">
+<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/privacy/">
+<link rel="alternate" hreflang="x-default" href="https://famlin.app/privacy/">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #edf7fb; font-family: 'Nunito', system-ui, sans-serif; color: #233036; }
+  * { box-sizing: border-box; }
+  a { text-decoration: none; color: #006e94; font-weight: 700; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div style="overflow-x:hidden;">
+
+  <!-- ═══════ NAV ═══════ -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(237,247,251,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #d9e3e7;">
+    <div style="max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="/nl/" style="display:flex;align-items:center;gap:11px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,110,148,0.3);">
+          <svg width="19" height="19" viewBox="0 0 48 48" fill="none">
+            <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+            <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+            <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+          </svg>
+        </div>
+        <span style="font-size:20px;font-weight:900;color:#006e94;letter-spacing:-1px;">Famlin</span>
+      </a>
+      <span style="display:flex;align-items:center;gap:2px;font-size:13px;font-weight:800;color:#597784;">
+        <a href="/privacy/" hreflang="en" style="padding:6px 8px;color:#597784;font-weight:800;">EN</a>
+        <span style="color:#c3d2d8;">·</span>
+        <span style="padding:6px 8px;color:#006e94;" aria-current="true">NL</span>
+      </span>
+    </div>
+  </nav>
+
+  <main style="max-width:760px;margin:0 auto;padding:56px 24px 80px;">
+    <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Juridisch</div>
+    <h1 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 8px;">Privacybeleid</h1>
+    <p style="font-size:15px;color:#597784;margin:0 0 36px;">Laatst bijgewerkt: juli 2026</p>
+
+    <div style="background:#daf3fe;border-radius:16px;padding:22px 24px;margin-bottom:36px;">
+      <p style="font-size:16px;line-height:1.65;margin:0;color:#0f222a;"><strong>Kort samengevat:</strong> Famlin is self-hosted, open-source software. De gegevens van jouw familie staan op de server van je eigen admin — niet op een server die het Famlin-project beheert. Er zit geen analytics of tracking in de app ingebouwd, en er wordt niets teruggestuurd naar de maker van het project.</p>
+    </div>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">1. Een Famlin-app of -server gebruiken</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Een Famlin-server wordt opgezet en beheerd door wie hem voor zijn/haar familie heeft geïnstalleerd — de "admin." Die server van die admin bewaart alles wat Famlin nodig heeft om te werken: accountgegevens (naam, e-mailadres, en een wachtwoordhash of het subject-ID van je identiteitsprovider), posts, foto's, reacties, likes, favorieten, groepslidmaatschap, en push-tokens voor de mobiele app.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">De maker van Famlin (Tim Van Onckelen) beheert of host geen enkele Famlin-server behalve die van zijn eigen familie, en heeft geen toegang tot gegevens van andermans installaties. Er is geen centrale Famlin-dienst waaraan installaties gegevens doorgeven.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Afhankelijk van hoe jouw admin de server heeft geconfigureerd, kunnen de volgende derde partijen betrokken zijn:</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li><strong>Je identiteitsprovider</strong> — als inloggen via OIDC/SSO gaat (Google, Microsoft, Authentik, of een andere provider die je admin heeft ingesteld), verwerkt die provider je login volgens zijn eigen privacybeleid. Famlin ziet of bewaart je wachtwoord in dat geval nooit.</li>
+      <li><strong>Een e-mailprovider</strong> — als je admin SMTP heeft ingesteld, worden uitnodigings- en wachtwoordherstel-e-mails via die provider verstuurd.</li>
+      <li><strong>De pushdienst van Expo</strong> — de mobiele app gebruikt Expo om pushmeldingen te versturen. Bij het versturen van een melding gaan het pushtoken van je toestel en de minimale inhoud van de melding via de servers van Expo naar de pushdiensten van Apple/Google.</li>
+    </ul>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Er zit geen analytics, telemetrie of crash-reporting ingebouwd in de backend, het adminpaneel of de mobiele app van Famlin.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Posts en reacties worden bij verwijdering soft-deleted (bewaard, verborgen en herstelbaar door een admin) in plaats van meteen gewist — vraag dus je admin als je wilt dat iets definitief verdwijnt. Back-ups, bewaartermijnen van logs en eventuele andere koppelingen zijn volledig de keuze van wie jouw installatie beheert; die persoon is de juiste om specifieke vragen over jouw gegevens aan te stellen.</p>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">2. Deze website bezoeken (famlin.app)</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Deze marketingpagina heeft geen accounts, formulieren, cookies of eigen analytics. Twee dingen gebeuren automatisch wanneer je de pagina laadt:</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li>Lettertypes (Nunito, JetBrains Mono) worden geladen via Google Fonts. Je browser doet daarvoor een rechtstreeks verzoek naar <code>fonts.googleapis.com</code>, en Google kan daarbij je IP-adres verwerken — zie het <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacybeleid van Google</a>.</li>
+      <li>De site draait op GitHub Pages, dat technische verzoekgegevens (zoals je IP-adres) kan loggen om de pagina te tonen — zie de <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">privacyverklaring van GitHub</a>.</li>
+    </ul>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">3. Wijzigingen aan dit beleid</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is een groeiend hobbyproject, dus deze pagina kan wijzigen naarmate functies veranderen. Belangrijke updates worden hier weergegeven met een nieuwe datum "laatst bijgewerkt."</p>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">4. Contact</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is een hobbyproject van Tim Van Onckelen, geen bedrijf — er is geen apart privacy-e-mailadres. Vragen over dit beleid of het project stel je best via <a href="https://github.com/TimVanOnckelen/famlin/discussions" target="_blank" rel="noopener">GitHub Discussions</a> of door <a href="https://github.com/TimVanOnckelen/famlin/issues" target="_blank" rel="noopener">een issue te openen</a>. Vragen over een specifieke Famlin-installatie en de gegevens daarin richt je aan de admin van die installatie.</p>
+
+    <p style="margin-top:56px;"><a href="/nl/">← Terug naar famlin.app</a></p>
+  </main>
+
+</div>
+</body>
+</html>

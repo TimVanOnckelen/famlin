@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & self-hosting help
+    url: https://github.com/TimVanOnckelen/famlin/discussions
+    about: Ask questions about running or configuring Famlin
+  - name: Report a security vulnerability
+    url: https://github.com/TimVanOnckelen/famlin/security/policy
+    about: Please report security issues privately, not as a public issue

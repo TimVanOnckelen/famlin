@@ -1,0 +1,191 @@
+import {
+  User,
+  Group,
+  GroupMember,
+  ServerSettings,
+  OidcConfig,
+  DashboardStats,
+  ModerationPost,
+  ModerationComment,
+  Invite,
+} from '../types';
+
+export type {
+  User,
+  Group,
+  GroupMember,
+  ServerSettings,
+  OidcConfig,
+  DashboardStats,
+  ModerationPost,
+  ModerationComment,
+  Invite,
+};
+
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+export interface Page<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
+function getToken() {
+  return localStorage.getItem('famlin_admin_token');
+}
+
+async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
+  const method = options?.method || 'GET';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: options?.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new ApiError(res.status, data.error || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export const api = {
+  getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
+
+  loginWithOidc: (idToken: string) =>
+    request<{ token: string; user: User }>('/api/auth/oidc', {
+      method: 'POST',
+      body: { idToken },
+    }),
+
+  loginWithPassword: (email: string, password: string) =>
+    request<{ token: string; user: User }>('/api/auth/login', {
+      method: 'POST',
+      body: { email, password },
+    }),
+
+  getMe: () => request<User>('/api/auth/me'),
+
+  getStats: () => request<DashboardStats>('/api/admin/stats'),
+
+  getUsers: (params: { cursor?: string; includeDeleted?: boolean } = {}) => {
+    const query = new URLSearchParams();
+    if (params.cursor) query.set('cursor', params.cursor);
+    if (params.includeDeleted) query.set('includeDeleted', 'true');
+    const qs = query.toString();
+    return request<Page<User>>(`/api/admin/users${qs ? `?${qs}` : ''}`);
+  },
+
+  restoreUser: (id: string) => request<User>(`/api/admin/users/${id}/restore`, { method: 'POST' }),
+
+  // Used by pickers (e.g. "add member to group") that need the full roster
+  // rather than a single page — walks every page and concatenates.
+  getAllUsers: async (): Promise<User[]> => {
+    const all: User[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await api.getUsers({ cursor });
+      all.push(...page.items);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    return all;
+  },
+
+  updateUser: (id: string, data: Partial<User>) =>
+    request<User>(`/api/admin/users/${id}`, { method: 'PATCH', body: data }),
+
+  deleteUser: (id: string) =>
+    request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+
+  getGroups: () => request<Group[]>('/api/admin/groups'),
+
+  createGroup: (data: { name: string; description?: string }) =>
+    request<Group>('/api/admin/groups', { method: 'POST', body: data }),
+
+  updateGroup: (id: string, data: { name: string; description?: string }) =>
+    request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
+
+  deleteGroup: (id: string) =>
+    request<void>(`/api/admin/groups/${id}`, { method: 'DELETE' }),
+
+  getGroupMembers: (groupId: string) =>
+    request<GroupMember[]>(`/api/admin/groups/${groupId}/members`),
+
+  addGroupMember: (groupId: string, userId: string) =>
+    request<void>(`/api/admin/groups/${groupId}/members`, {
+      method: 'POST',
+      body: { userId },
+    }),
+
+  removeGroupMember: (groupId: string, userId: string) =>
+    request<void>(`/api/admin/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE',
+    }),
+
+  getGroupInvites: (groupId: string) =>
+    request<Invite[]>(`/api/admin/groups/${groupId}/invites`),
+
+  createGroupInvite: (groupId: string, data: { email?: string; expiresInDays?: number }) =>
+    request<Invite>(`/api/admin/groups/${groupId}/invites`, { method: 'POST', body: data }),
+
+  revokeInvite: (id: string) =>
+    request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
+
+  getContentPosts: (params: { groupId?: string; includeDeleted?: boolean; cursor?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.groupId) query.set('groupId', params.groupId);
+    if (params.includeDeleted) query.set('includeDeleted', 'true');
+    if (params.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`);
+  },
+
+  getContentComments: (params: { groupId?: string; includeDeleted?: boolean; cursor?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.groupId) query.set('groupId', params.groupId);
+    if (params.includeDeleted) query.set('includeDeleted', 'true');
+    if (params.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
+  },
+
+  deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
+
+  restorePost: (id: string) =>
+    request<ModerationPost>(`/api/admin/content/posts/${id}/restore`, { method: 'POST' }),
+
+  deleteComment: (id: string) => request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
+
+  restoreComment: (id: string) =>
+    request<ModerationComment>(`/api/admin/content/comments/${id}/restore`, { method: 'POST' }),
+
+  getSettings: () => request<ServerSettings>('/api/admin/settings'),
+
+  updateSettings: (data: Partial<ServerSettings>) =>
+    request<ServerSettings>('/api/admin/settings', { method: 'PATCH', body: data }),
+
+  register: (data: { email: string; name: string; password: string; isAdmin?: boolean }) =>
+    request<{ user: User }>('/api/auth/register', {
+      method: 'POST',
+      body: data,
+    }),
+
+  resetPassword: (userId: string, newPassword: string) =>
+    request<void>(`/api/auth/reset-password/${userId}`, {
+      method: 'POST',
+      body: { newPassword },
+    }),
+};

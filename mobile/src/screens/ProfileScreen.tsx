@@ -1,108 +1,355 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, SafeAreaView } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, SafeAreaView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 
 import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
+import { Icon } from '@/components/Icon';
+import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { updateMe } from '@/api/auth';
+import { updateMe, fetchNotificationConfig, NotificationPrefs } from '@/api/auth';
+import { uploadMedia } from '@/api/uploads';
+import { setLanguage } from '@/utils/storage';
+import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
 
 export function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { t, i18n: i18nInstance } = useTranslation();
+  const { user, logout, serverUrl, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
-  const { data: me } = useQuery({
-    queryKey: ['me'],
-    queryFn: async () => {
-      const response = await updateMe({});
-      return response;
-    },
-    enabled: false,
+  const { data: notificationConfig } = useQuery({
+    queryKey: ['notification-config'],
+    queryFn: fetchNotificationConfig,
   });
+  const showPush = notificationConfig?.pushEnabled ?? true;
+  const showEmail = notificationConfig?.emailEnabled ?? true;
 
-  const toggleEmailNotifications = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const response = await updateMe({ emailNotificationsEnabled: enabled });
+  const updatePrefs = useMutation({
+    mutationFn: async (prefs: NotificationPrefs) => {
+      const response = await updateMe(prefs);
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
+      updateUser(updatedUser);
       queryClient.invalidateQueries({ queryKey: ['me'] });
     },
   });
+
+  const updateAvatar = useMutation({
+    mutationFn: async (avatarUrl: string) => updateMe({ avatarUrl }),
+    onSuccess: (updatedUser) => {
+      updateUser(updatedUser);
+    },
+    onError: (err: any) => {
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.uploadFailed'));
+    },
+  });
+
+  async function pickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    try {
+      setAvatarUploading(true);
+      const [url] = await uploadMedia([
+        {
+          uri: asset.uri,
+          name: asset.fileName || 'avatar.jpg',
+          type: asset.mimeType || 'image/jpeg',
+        },
+      ]);
+      updateAvatar.mutate(url);
+    } catch (err: any) {
+      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey: keyof NotificationPrefs }[] = [
+    { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
+    { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
+    { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
+  ];
+
+  async function handleLanguageChange(lang: SupportedLanguage) {
+    await i18nInstance.changeLanguage(lang);
+    await setLanguage(lang);
+    setLanguageModalVisible(false);
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profiel</Text>
+          <Text style={styles.headerTitle}>{t('profile.title')}</Text>
         </View>
 
         <View style={styles.profileCard}>
-          <View style={[styles.avatar, { backgroundColor: colors.coral }]}>
-            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={pickAvatar}
+            disabled={avatarUploading}
+            accessibilityLabel={t('profile.changePhoto')}
+          >
+            <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={80} />
+            <View style={styles.avatarEditBadge}>
+              {avatarUploading ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Icon name="camera" size={14} color={colors.white} />
+              )}
+            </View>
+          </TouchableOpacity>
           <Text style={styles.name}>{user?.name}</Text>
           <Text style={styles.email}>{user?.email}</Text>
           {user?.isAdmin && (
             <View style={styles.adminBadge}>
-              <Text style={styles.adminBadgeText}>Admin</Text>
+              <Text style={styles.adminBadgeText}>{t('profile.adminBadge')}</Text>
             </View>
           )}
         </View>
 
+        {(showPush || showEmail) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.notifications')}</Text>
+
+            <View style={styles.notificationHeaderRow}>
+              <View style={{ flex: 1 }} />
+              {showPush && <Text style={styles.notificationColumnLabel}>{t('profile.push')}</Text>}
+              {showEmail && <Text style={styles.notificationColumnLabel}>{t('profile.email')}</Text>}
+            </View>
+
+            {notificationTypes.map(({ labelKey, pushKey, emailKey }) => (
+              <View key={labelKey} style={styles.notificationRow}>
+                <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
+                {showPush && (
+                  <Switch
+                    value={user?.[pushKey]}
+                    onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={colors.white}
+                  />
+                )}
+                {showEmail && (
+                  <Switch
+                    value={user?.[emailKey]}
+                    onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={colors.white}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Instellingen</Text>
+          <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
 
           <View style={styles.settingItem}>
             <View>
-              <Text style={styles.settingLabel}>E-mailmeldingen</Text>
-              <Text style={styles.settingDescription}>Ontvang updates per e-mail</Text>
+              <Text style={styles.settingLabel}>{t('profile.language')}</Text>
+              <Text style={styles.settingDescription}>{t('profile.languageDescription')}</Text>
             </View>
-            <Switch
-              value={user?.emailNotificationsEnabled}
-              onValueChange={(value) => toggleEmailNotifications.mutate(value)}
-              trackColor={{ false: colors.lightGray, true: colors.coral }}
-              thumbColor={colors.white}
-            />
+            <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
+              <Text style={styles.languageValue}>
+                {t(`profile.languages.${i18nInstance.language as SupportedLanguage}`)}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App</Text>
+          <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
+          <View style={styles.serverInfo}>
+            <View style={[styles.serverIcon, { backgroundColor: colors.primaryDark }]}>
+              <Icon name="server" size={18} color={colors.white} />
+            </View>
+            <View style={styles.serverInfoText}>
+              <Text style={styles.serverLabel}>{t('profile.connectedTo')}</Text>
+              <Text style={styles.serverUrl} numberOfLines={1} ellipsizeMode="middle">
+                {serverUrl || t('common.unknown')}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.app')}</Text>
           <View style={styles.appInfo}>
             <Logo size={40} />
             <View style={styles.appInfoText}>
-              <Text style={styles.appName}>Famlin</Text>
-              <Text style={styles.appVersion}>Versie 0.1.0</Text>
+              <Text style={styles.appName}>{t('common.appName')}</Text>
+              <Text style={styles.appVersion}>{t('profile.version', { version: '0.1.0' })}</Text>
             </View>
           </View>
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutButtonText}>Uitloggen</Text>
+          <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
+
+        <LanguagePickerModal
+          visible={languageModalVisible}
+          onClose={() => setLanguageModalVisible(false)}
+          selectedLanguage={(i18nInstance.language as SupportedLanguage) || 'en'}
+          onSelect={handleLanguageChange}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+interface LanguagePickerModalProps {
+  visible: boolean;
+  onClose: () => void;
+  selectedLanguage: SupportedLanguage;
+  onSelect: (lang: SupportedLanguage) => void;
+}
+
+function LanguagePickerModal({ visible, onClose, selectedLanguage, onSelect }: LanguagePickerModalProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={modalStyles.overlay}>
+        <View style={modalStyles.sheet}>
+          <View style={modalStyles.handle} />
+          <Text style={modalStyles.title}>{t('profile.language')}</Text>
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <TouchableOpacity
+              key={lang}
+              style={[
+                modalStyles.option,
+                selectedLanguage === lang && modalStyles.optionSelected,
+              ]}
+              onPress={() => onSelect(lang)}
+            >
+              <Text
+                style={[
+                  modalStyles.optionText,
+                  selectedLanguage === lang && modalStyles.optionTextSelected,
+                ]}
+              >
+                {t(`profile.languages.${lang}`)}
+              </Text>
+              {selectedLanguage === lang && (
+                <View style={modalStyles.checkmark} />
+              )}
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+            <Text style={modalStyles.closeButtonText}>{t('common.cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 18,
+    color: colors.textTitle,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  optionSelected: {
+    backgroundColor: colors.bg,
+  },
+  optionText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+    color: colors.textTitle,
+  },
+  optionTextSelected: {
+    fontFamily: 'Nunito_700Bold',
+    color: colors.primary,
+  },
+  checkmark: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  closeButton: {
+    marginTop: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 16,
+    color: colors.textMuted,
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
   },
   content: {
     padding: 16,
     paddingBottom: 40,
   },
   header: {
-    paddingTop: 50,
+    paddingTop: 4,
     paddingBottom: 16,
   },
   headerTitle: {
     fontFamily: 'Nunito_900Black',
     fontSize: 27,
-    color: colors.coral,
+    color: colors.primary,
   },
   profileCard: {
     backgroundColor: colors.white,
@@ -116,33 +363,36 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 20,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarWrapper: {
     marginBottom: 14,
   },
-  avatarText: {
-    fontFamily: 'Nunito_900Black',
-    fontSize: 32,
-    color: colors.white,
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 22,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   email: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 4,
   },
   adminBadge: {
     marginTop: 12,
-    backgroundColor: colors.amber,
+    backgroundColor: colors.milestone,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 100,
@@ -166,7 +416,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 12,
-    color: colors.warmGray,
+    color: colors.textMuted,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     marginBottom: 14,
@@ -175,17 +425,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  settingItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: 12,
+    paddingTop: 18,
+  },
+  notificationHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  notificationColumnLabel: {
+    width: 56,
+    textAlign: 'center',
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  notificationLabel: {
+    flex: 1,
+  },
+  languageValue: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.primary,
   },
   settingLabel: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 16,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   settingDescription: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 2,
+  },
+  serverInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  serverIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serverInfoText: {
+    gap: 2,
+    flex: 1,
+  },
+  serverLabel: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  serverUrl: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.textTitle,
   },
   appInfo: {
     flexDirection: 'row',
@@ -198,15 +507,15 @@ const styles = StyleSheet.create({
   appName: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 18,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   appVersion: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
-    color: colors.warmGray,
+    color: colors.textMuted,
   },
   logoutButton: {
-    backgroundColor: colors.coral,
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 100,
     alignItems: 'center',

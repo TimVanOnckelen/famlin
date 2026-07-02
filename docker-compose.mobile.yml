@@ -4,7 +4,7 @@
 # Run: docker compose -f docker-compose.mobile.yml up
 # Open: http://localhost:8081
 #
-# Note: native features (push notifications, camera, Google OAuth) will not work
+# Note: native features (push notifications, camera, SSO) will not work
 # in the web preview. Use EAS Build or a local Expo development build for full
 # native testing.
 
@@ -14,8 +14,7 @@ services:
     container_name: famlin-mobile
     working_dir: /app
     environment:
-      EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://host.docker.internal:3000}
-      EXPO_PUBLIC_GOOGLE_CLIENT_ID: ${EXPO_PUBLIC_GOOGLE_CLIENT_ID:-}
+      EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-}
     ports:
       - "8081:8081"
       - "19000:19000"

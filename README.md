@@ -1,109 +1,132 @@
 # Famlin
 
-Private, self-hosted familie-updates-app. Gebouwd met Fastify + Prisma + Postgres backend en een Expo React Native app.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Snelstart (alleen Docker nodig)
+Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend and an Expo React Native mobile app.
 
-Je hoeft niets lokaal te installeren behalve Docker.
+- **Self-hosted** — run it on your own server (e.g. Synology NAS, VPS, or home server).
+- **Private by default** — every post belongs to exactly one group, and only group members can see it.
+- **Mobile first** — iOS and Android app built with Expo.
+- **Admin web UI** — manage users, groups, and server settings from `/admin`.
 
-### 1. Omgevingsvariabelen
+## Table of contents
 
-Kopieer het voorbeeldbestand in de project root en pas de waarden aan:
+- [Quick start](#quick-start)
+- [Project structure](#project-structure)
+- [Useful commands](#useful-commands)
+- [Production deployment](#production-deployment)
+- [App Store / Play Store builds](#app-store--play-store-builds)
+- [OIDC / SSO login](#oidc--sso-login)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
+## Quick start
+
+You only need Docker to run the backend locally.
+
+### 1. Environment variables
+
+Copy the example file in the project root and edit the values:
 
 ```bash
 cp .env.example .env
 ```
 
-Vul in `.env` minstens in:
+Fill in at least the following in `.env`:
 
-- `JWT_SECRET` — willekeurige lange string (≥32 karakters)
-- `GOOGLE_CLIENT_ID` — je Google OAuth iOS/Android client ID
-- `ALLOWED_EMAILS` — comma-gescheiden whitelist van familie-e-mailadressen
+- `JWT_SECRET` — a long random string (≥ 32 characters)
 
-> Voor **lokale backend development zonder Docker** kun je ook `backend/.env` gebruiken. In Docker worden de waarden uit de root `.env` gebruikt.
+> For **local backend development without Docker** you can also use `backend/.env`. In Docker the values from the root `.env` are used.
 
-### 2. Backend starten
+### 2. Start the backend
 
 ```bash
 docker compose up --build
 ```
 
-De API is dan beschikbaar op http://localhost:3000.
+The API is then available at http://localhost:3000.
 
-### 3. Database seeden (voorbeelddata)
+### 3. Seed the database (sample data)
 
-In een tweede terminal:
+In a second terminal:
 
 ```bash
 docker compose exec famlin-backend npx prisma db seed
 ```
 
-Dit maakt een groep "Familie de Vries" met voorbeeldgebruikers en berichten.
+This creates a group "Familie de Vries" with sample users and posts.
 
-### 4. Mobiele app testen
+### 4. Test the mobile app
 
-#### Optie A — Expo web preview in Docker
+#### Option A — Expo web preview in Docker
 
 ```bash
 docker compose -f docker-compose.mobile.yml up
 ```
 
-Open http://localhost:8081 in je browser.
+Open http://localhost:8081 in your browser.
 
-> Let op: native functies zoals pushmeldingen, camera en Google OAuth werken niet in de web preview.
+> Note: native features such as push notifications, camera, and SSO login will not work in the web preview.
 
-#### Optie B — Lokale Expo development build
+#### Option B — Local Expo development build
 
-Als je wel Node lokaal hebt (en de backend al in Docker draait):
+If you have Node installed locally (and the backend is already running in Docker):
 
 ```bash
 cd mobile
 cp .env.example .env
-# Pas .env aan met je EXPO_PUBLIC_GOOGLE_CLIENT_ID
 npm install
-npm run ios      # of npm run android
+npm run ios      # or npm run android
 ```
 
-Scan de QR-code met Expo Go (iOS) of de Expo Go app (Android).
+Scan the QR code with the Camera app (iOS) or the Expo Go app (Android).
 
-> **Belangrijk:** Expo leest `.env` uit de `mobile/` map, niet uit de project root. Zet `EXPO_PUBLIC_GOOGLE_CLIENT_ID` en `EXPO_PUBLIC_API_URL` dus in `mobile/.env`.
+> The backend server address is not hardcoded. At login the user enters the address themselves (for example `https://famlin.yourdomain.com`). For local development `http://localhost:3000` is used automatically if the field is left empty.
 >
-> Zorg dat `EXPO_PUBLIC_API_URL=http://localhost:3000` staat zodat de app tegen je Docker backend praat.
+> SSO login is configured entirely on the server (see [OIDC / SSO login](#oidc--sso-login)) — the mobile app and admin UI discover it automatically, no build-time client IDs needed.
 
-## Projectstructuur
+## Project structure
 
 ```
 famlin/
-  backend/          Fastify API, Prisma schema, Docker image
-  mobile/           Expo React Native app
-  docker-compose.yml        productie/standaard backend stack
-  docker-compose.override.yml   lokale dev met hot reload
-  docker-compose.mobile.yml     Expo web preview in Docker
+  backend/                       Fastify API, Prisma schema, Docker image
+    admin/                       React + Vite admin UI
+  mobile/                        Expo React Native app
+  docker-compose.yml             production/standard backend stack
+  docker-compose.override.yml    local development with hot reload
+  docker-compose.mobile.yml      Expo web preview in Docker
 ```
 
-## Handige commando's
+## Useful commands
 
 ```bash
-# Backend logs volgen
+# Follow backend logs
 docker compose logs -f famlin-backend
 
-# Database resetten
+# Reset the database
 docker compose down -v
 docker compose up --build
 
-# Prisma migrations aanmaken
-docker compose exec famlin-backend npx prisma migrate dev --name beschrijving
+# Create a Prisma migration
+docker compose exec famlin-backend npx prisma migrate dev --name description
 
-# Prisma Studio openen
+# Open Prisma Studio
 docker compose exec famlin-backend npx prisma studio
 ```
 
-## Productie deploy (Synology)
+## Production deployment
 
-1. Zorg dat je reverse proxy (Traefik/Nginx) Famlin doorstuurt naar poort 3000.
-2. Gebruik `docker-compose.yml` zonder `docker-compose.override.yml`.
-3. Zet je `.env` op de NAS.
-4. Zorg dat `famlin-db-data` in je bestaande Docker-data folder staat zodat het meegenomen wordt in je backup.
+`docker-compose.yml` runs the pre-built backend image from [`ghcr.io/timvanonckelen/famlin`](https://github.com/TimVanOnckelen/famlin/pkgs/container/famlin), published on every release — no source checkout needed on the server.
+
+1. Point your reverse proxy (Traefik, Nginx, Caddy, etc.) to Famlin on port 3000.
+2. Use `docker-compose.yml` without `docker-compose.override.yml`.
+3. Place your `.env` on the server.
+4. Make sure `famlin-db-data` is in your existing Docker data folder so it is included in your backups.
+
+See [Server setup](https://famlin.app/docs/server-setup) for the full walkthrough, and [Maintenance](https://famlin.app/docs/maintenance) for pinning a version or building from source instead.
+
+After the containers start, log in to `/admin` with the seed account (`admin@example.com` / `test123456`) and configure OIDC/SSO, allowed emails, and SMTP settings.
 
 ## App Store / Play Store builds
 
@@ -113,46 +136,47 @@ npx eas build --platform ios
 npx eas build --platform android
 ```
 
-Zorg dat je:
-- een EAS project hebt aangemaakt (`eas init`)
-- Apple Developer account + certificaten hebt voor iOS
-- Google Play Console listing hebt voor Android
+Make sure you have:
 
-## Google OAuth client IDs
+- created an EAS project (`eas init`)
+- an Apple Developer account + certificates for iOS
+- a Google Play Console listing for Android
 
-Je hebt **aparte OAuth client IDs** nodig voor de backend, de iOS app en de Android app:
+## OIDC / SSO login
 
-1. Maak in Google Cloud Console een OAuth 2.0 client ID aan van type **Web application** → dit is je backend `GOOGLE_CLIENT_ID`
-2. Maak een OAuth 2.0 client ID aan van type **iOS** met bundle ID `be.xeweb.famlin` → dit is je `EXPO_PUBLIC_GOOGLE_CLIENT_ID` voor iOS tests
-3. Maak een OAuth 2.0 client ID aan van type **Android** met package name `be.xeweb.famlin` → dit gebruik je later voor de Android build
+Famlin supports login via any standards-compliant OpenID Connect provider (Google, Microsoft Entra ID, Authentik, Keycloak, Auth0, ...) alongside email/password. It's entirely optional and configured from `/admin` — no rebuild or client-side env vars required.
 
-> Let op: gebruik voor de mobiele app de **iOS/Android client ID**, niet de Web client ID.
+1. In your identity provider, register Famlin as a **public/native client** (no client secret) with **PKCE** enabled.
+2. Add these redirect URIs:
+   - Mobile app: `famlin://` (the app's URL scheme, see `mobile/app.config.js`)
+   - Admin UI: `https://your-famlin-domain/admin/`
+3. In `/admin` → Server settings, fill in:
+   - **Issuer URL** — e.g. `https://accounts.google.com` or `https://auth.example.com/application/o/famlin/`
+   - **Client ID**
+   - **Scopes** — defaults to `openid email profile`
+   - **Display name** — shown on the login button (e.g. "Google", "Authentik")
+4. Optionally restrict which emails may sign in via **Allowed email addresses**.
+
+> In Expo Go during local development the redirect URI is `exp://...` instead of `famlin://`. Use a local Expo development build or an EAS build to test the full SSO flow against your provider's redirect URI allowlist.
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Troubleshooting
 
-### `EMFILE: too many open files, watch` (macOS)
+### Port 8081 is occupied by Docker
 
-Expo's file watcher gebruikt te veel bestanden. Twee oplossingen:
-
-1. **Watchman installeren** (aanbevolen):
-   ```bash
-   brew install watchman
-   ```
-
-2. Of tijdelijk het aantal open bestanden verhogen:
-   ```bash
-   ulimit -n 8192
-   npm run ios
-   ```
-
-### Poort 8081 is bezet door Docker
-
-Als je lokaal `npm run ios` draait terwijl de Docker mobile preview ook loopt, kiest Expo automatisch een andere poort. Stop de Docker preview als je lokaal wilt werken:
+If you run `npm run ios` locally while the Docker mobile preview is also running, Expo automatically picks a different port. Stop the Docker preview if you want to work locally:
 
 ```bash
 docker compose -f docker-compose.mobile.yml down
 ```
 
-### `expo-secure-store` werkt niet op web
+### `expo-secure-store` does not work on web
 
-De app gebruikt automatisch `AsyncStorage` op web en `SecureStore` op iOS/Android. Dit is al geconfigureerd in `mobile/src/utils/storage.ts`.
+The app automatically uses `AsyncStorage` on web and `SecureStore` on iOS/Android. This is already configured in `mobile/src/utils/storage.ts`.
+
+## License
+
+Famlin is released under the [MIT License](LICENSE).

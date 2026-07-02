@@ -2,10 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 import { FeedScreen } from '@/screens/FeedScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
-import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { Icon } from '@/components/Icon';
 import { colors } from '@/constants/colors';
 
@@ -19,11 +19,8 @@ function ProfileIcon({ color }: { color: string }) {
   return <Icon name="user" size={22} color={color} />;
 }
 
-function BellIcon({ color }: { color: string }) {
-  return <Icon name="bell" size={22} color={color} />;
-}
-
 export function MainTabs() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
   return (
@@ -32,8 +29,8 @@ export function MainTabs() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: colors.coral,
-        tabBarInactiveTintColor: colors.warmGray,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -42,7 +39,7 @@ export function MainTabs() {
         component={FeedScreen}
         options={{
           tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-          tabBarLabel: 'Feed',
+          tabBarLabel: t('tabs.feed'),
         }}
       />
       <Tab.Screen
@@ -69,19 +66,11 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="NotificationsTab"
-        component={NotificationsScreen}
-        options={{
-          tabBarIcon: ({ color }) => <BellIcon color={color} />,
-          tabBarLabel: 'Meldingen',
-        }}
-      />
-      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color }) => <ProfileIcon color={color} />,
-          tabBarLabel: 'Profiel',
+          tabBarLabel: t('tabs.profile'),
         }}
       />
     </Tab.Navigator>
@@ -96,7 +85,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: colors.lightGray,
+    borderTopColor: colors.border,
     paddingTop: 8,
     paddingBottom: 24,
     height: 84,
@@ -115,10 +104,10 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.coral,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.coral,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 14,

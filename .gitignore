@@ -39,6 +39,7 @@ Thumbs.db
 *.key
 *.mobileprovision
 *.orig.*
+mobile/secrets/
 
 # Prisma
 prisma/migrations/*_init/

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Brussels",
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    {
+      "matchFileNames": ["backend/package.json"],
+      "groupName": "backend dependencies"
+    },
+    {
+      "matchFileNames": ["backend/admin/package.json"],
+      "groupName": "admin dependencies"
+    },
+    {
+      "matchFileNames": ["mobile/package.json"],
+      "groupName": "mobile dependencies"
+    },
+    {
+      "matchFileNames": ["docs/package.json"],
+      "groupName": "docs dependencies"
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  }
+}

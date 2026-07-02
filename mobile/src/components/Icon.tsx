@@ -8,6 +8,6 @@ interface IconProps {
   color?: string;
 }
 
-export function Icon({ name, size = 24, color = colors.warmBlack }: IconProps) {
+export function Icon({ name, size = 24, color = colors.textTitle }: IconProps) {
   return <Feather name={name} size={size} color={color} />;
 }

@@ -1,0 +1,36 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* Famlin brand — Deep Teal palette, see design/styleguide.html */
+:root {
+  --ifm-color-primary: #006e94;
+  --ifm-color-primary-dark: #005775;
+  --ifm-color-primary-darker: #004c66;
+  --ifm-color-primary-darkest: #003548;
+  --ifm-color-primary-light: #0085b3;
+  --ifm-color-primary-lighter: #0090c2;
+  --ifm-color-primary-lightest: #00a7e1;
+  --ifm-code-font-size: 95%;
+  --ifm-font-family-base: 'Nunito', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', ui-monospace, monospace;
+  --ifm-background-color: #edf7fb;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #318ea2;
+  --ifm-color-primary-dark: #2a798b;
+  --ifm-color-primary-darker: #266f7f;
+  --ifm-color-primary-darkest: #1f5b67;
+  --ifm-color-primary-light: #38a3b9;
+  --ifm-color-primary-lighter: #3dacc4;
+  --ifm-color-primary-lightest: #54b6cb;
+  --ifm-background-color: #0f222a;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}

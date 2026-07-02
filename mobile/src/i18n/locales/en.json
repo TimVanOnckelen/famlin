@@ -1,0 +1,197 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "tryAgain": "Try again",
+    "cancel": "Cancel",
+    "back": "Back",
+    "save": "Save",
+    "done": "Done",
+    "or": "or",
+    "unknown": "Unknown",
+    "appName": "Famlin",
+    "error": "Error",
+    "edited": "Edited",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "relativeTime": {
+    "justNow": "just now",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "hoursAgo_one": "{{count}} hour ago",
+    "hoursAgo_other": "{{count}} hours ago",
+    "daysAgo_one": "yesterday",
+    "daysAgo_other": "{{count}} days ago"
+  },
+  "login": {
+    "subtitle": "Your family, closer",
+    "invitationOnly": "Only available for\nfamily members with an invitation",
+    "familyIllustrationLabel": "family illustration",
+    "serverLabel": "Famlin server",
+    "serverPlaceholder": "https://famlin.yourdomain.com",
+    "serverHint": "The address where your Famlin backend runs. For example https://famlin.example.com or http://192.168.1.10:3000.",
+    "continueButton": "Continue",
+    "changeServer": "Change",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Log in",
+    "loginWithSso": "Log in with SSO",
+    "ssoNotConfigured": "SSO login is not configured on this server.",
+    "ssoNoIdToken": "The SSO provider did not return an ID token.",
+    "alerts": {
+      "loginFailedTitle": "Login failed",
+      "serverAddressMissingTitle": "Server address missing",
+      "serverAddressMissingMessage": "Enter the address of your Famlin server, for example https://famlin.yourdomain.com",
+      "serverUnreachableTitle": "Can't reach server",
+      "serverUnreachableMessage": "Could not connect to this address. Check the URL and try again.",
+      "enterEmailAndPassword": "Enter your email address and password."
+    }
+  },
+  "invite": {
+    "invitedTitle": "You're invited to join \"{{group}}\"!",
+    "invitedByTitle": "{{inviter}} invited you to join \"{{group}}\"!",
+    "joinButton": "Join {{group}}",
+    "createAccountButton": "Set up your account",
+    "haveAccountLink": "Already have an account? Log in",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Jane Doe",
+    "newPasswordLabel": "Choose a password",
+    "continueToApp": "Continue to the app",
+    "errors": {
+      "notFound": "This invite link doesn't exist. Ask your family admin to send you a new one.",
+      "expired": "This invite has expired. Ask your family admin to send you a new one.",
+      "used": "This invite was already used. Ask your family admin to send you a new one if this wasn't you.",
+      "noServer": "Couldn't tell which Famlin server this invite is for. Open the link from your family admin again.",
+      "fillRequired": "Please fill in all fields."
+    },
+    "alerts": {
+      "failedTitle": "Something went wrong"
+    }
+  },
+  "feed": {
+    "emptyTitle": "No messages in this group yet.",
+    "emptySubtitle": "Be the first to share something!",
+    "noGroupsTitle": "You're not in any group yet.",
+    "noGroupsSubtitle": "Ask your family admin to add you to a group.",
+    "viewMembers": "View group members",
+    "viewFavorites": "View favorites",
+    "favorite": "Favorite",
+    "milestoneBadge": "🎂 MILESTONE",
+    "comments_one": "{{count}} comment",
+    "comments_other": "{{count}} comments"
+  },
+  "groupMembers": {
+    "count_one": "{{count}} member",
+    "count_other": "{{count}} members",
+    "joined": "Joined {{date}}",
+    "empty": "No members in this group."
+  },
+  "newPost": {
+    "title": "New post",
+    "postButton": "Post",
+    "loading": "Loading...",
+    "groupLabel": "Group",
+    "contentPlaceholder": "Write something for the family...",
+    "addPhotoTitle": "Photos & videos",
+    "addPhotoSubtitle": "Choose from gallery",
+    "milestoneTitle": "🎂 This is a milestone",
+    "milestoneSubtitle": "E.g. birthday, birth, anniversary",
+    "alerts": {
+      "noGroupSelected": "No group selected",
+      "postFailed": "The message could not be posted",
+      "permissionRequiredTitle": "Permission required",
+      "permissionRequiredMessage": "We need access to your photo and video library.",
+      "uploadFailed": "Upload failed"
+    },
+    "milestoneTags": {
+      "birthday": "🎂 Birthday",
+      "birth": "👶 Birth",
+      "anniversary": "💍 Anniversary",
+      "graduation": "🎓 Graduation",
+      "custom": "✏️ Other",
+      "customPlaceholder": "Name this milestone..."
+    },
+    "location": {
+      "addTitle": "Add location",
+      "addSubtitle": "Tag where this happened",
+      "pickerTitle": "Choose location",
+      "nameLabel": "Location name",
+      "namePlaceholder": "E.g. Grandma's house",
+      "tapHint": "Tap the map to place the pin"
+    }
+  },
+  "postDetail": {
+    "title": "Post",
+    "postedInGroup": "in {{group}} · {{time}}",
+    "milestoneBadge": "🎂 MILESTONE",
+    "commentsHeader": "Comments · {{count}}",
+    "commentPlaceholder": "Write a comment...",
+    "replyPlaceholder": "Write a reply...",
+    "comments_one": "{{count}} comment",
+    "comments_other": "{{count}} comments",
+    "reply": "Reply",
+    "replyingTo": "Replying to {{name}}",
+    "cancelReply": "Cancel",
+    "like": "Like",
+    "favorite": "Favorite",
+    "postOptions": "Post options",
+    "editPost": "Edit post",
+    "deletePost": "Delete post",
+    "deletePostConfirmTitle": "Delete post?",
+    "deletePostConfirmMessage": "This can't be undone.",
+    "deleteCommentConfirmTitle": "Delete comment?",
+    "deleteCommentConfirmMessage": "This can't be undone.",
+    "editPlaceholder": "Edit your post...",
+    "alerts": {
+      "editFailed": "Could not save changes",
+      "deleteFailed": "Could not delete"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "emptyTitle": "No favorites yet.",
+    "emptySubtitle": "Tap the bookmark icon on a post to save it here."
+  },
+  "profile": {
+    "title": "Profile",
+    "changePhoto": "Change profile photo",
+    "adminBadge": "Admin",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "push": "Push",
+    "email": "Email",
+    "notifyNewPost": "New posts",
+    "notifyNewComment": "New comments",
+    "notifyNewLike": "Likes",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language",
+    "server": "Server",
+    "connectedTo": "Connected to",
+    "app": "App",
+    "version": "Version {{version}}",
+    "logout": "Log out",
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands"
+    }
+  },
+  "tabs": {
+    "feed": "Feed",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "imageViewer": {
+    "photoAccessibilityLabel": "Photo {{index}} of {{total}}",
+    "videoAccessibilityLabel": "Video {{index}} of {{total}}",
+    "commentsButton": "Comments",
+    "commentsTitle": "Comments",
+    "noComments": "No comments on this photo yet"
+  }
+}

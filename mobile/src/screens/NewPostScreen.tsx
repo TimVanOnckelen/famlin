@@ -15,30 +15,45 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
+import { Avatar } from '@/components/Avatar';
 import { api } from '@/api/client';
 import { Group, Post } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
-import { AlbumPicker } from '@/components/AlbumPicker';
-import { getImmichAssetUrl } from '@/api/immich';
-import { uploadImages, getUploadUrl } from '@/api/uploads';
+import { uploadMedia, getUploadUrl } from '@/api/uploads';
+import { isVideoUrl } from '@/utils/media';
+import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 
-const MILESTONE_TAGS = ['🎂 Verjaardag', '👶 Geboorte', '💍 Jubileum', '🎓 Diploma'];
+const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
+
+function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
+  const player = useVideoPlayer({ uri }, (p) => {
+    p.muted = true;
+  });
+
+  return <VideoView player={player} style={style} contentFit="cover" nativeControls={false} />;
+}
 
 export function NewPostScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [content, setContent] = useState('');
   const [isMilestone, setIsMilestone] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isCustomTag, setIsCustomTag] = useState(false);
+  const [customTagText, setCustomTagText] = useState('');
   const [groupId, setGroupId] = useState<string | null>(null);
-  const [selectedImmichAssets, setSelectedImmichAssets] = useState<string[]>([]);
   const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([]);
-  const [pickerVisible, setPickerVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
+  const [location, setLocation] = useState<PickedLocation | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const { data: groups } = useQuery<Group[], Error>({
     queryKey: ['groups'],
@@ -56,110 +71,110 @@ export function NewPostScreen() {
 
   const createPost = useMutation({
     mutationFn: async () => {
-      if (!groupId) throw new Error('Geen groep geselecteerd');
+      if (!groupId) throw new Error(t('newPost.alerts.noGroupSelected'));
       const response = await api.post<Post>('/posts', {
         groupId,
         content,
         type: isMilestone ? 'MILESTONE' : 'UPDATE',
-        milestoneTag: isMilestone ? selectedTag : undefined,
-        immichAssetIds: selectedImmichAssets,
+        milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag) : undefined,
         uploadedAssetUrls,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+        locationName: location?.locationName,
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData<Post[]>(['posts', data.groupId], (old) =>
+        old ? [data, ...old] : [data]
+      );
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       navigation.goBack();
     },
     onError: (err: any) => {
-      Alert.alert('Fout', err.response?.data?.error || err.message || 'Bericht kon niet worden geplaatst');
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.postFailed'));
     },
   });
 
-  const canSubmit = content.trim().length > 0 || selectedImmichAssets.length > 0 || uploadedAssetUrls.length > 0;
+  const canSubmit = content.trim().length > 0 || uploadedAssetUrls.length > 0;
 
   async function pickImagesFromDevice() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Toegang nodig', 'We hebben toegang nodig tot je foto bibliotheek.');
+      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       selectionLimit: 10,
       quality: 0.8,
+      videoMaxDuration: 120,
     });
 
-    console.log('ImagePicker result:', JSON.stringify(result, null, 2));
     if (result.canceled) return;
 
-    const files = result.assets.map((asset, index) => ({
-      uri: asset.uri,
-      name: asset.fileName || `photo-${index}.jpg`,
-      type: asset.mimeType || 'image/jpeg',
-    }));
-    console.log('Files to upload:', files);
+    const files = result.assets.map((asset, index) => {
+      const isVideo = asset.type === 'video';
+      return {
+        uri: asset.uri,
+        name: asset.fileName || `${isVideo ? 'video' : 'photo'}-${index}.${isVideo ? 'mp4' : 'jpg'}`,
+        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+      };
+    });
+
+    setPendingAssets(files.map((file) => ({ uri: file.uri, isVideo: file.type.startsWith('video') })));
 
     try {
       setUploading(true);
-      const urls = await uploadImages(files);
-      console.log('Uploaded URLs:', urls);
+      const urls = await uploadMedia(files);
       setUploadedAssetUrls((prev) => [...prev, ...urls]);
     } catch (err: any) {
       console.error('Upload error:', err);
-      Alert.alert('Upload mislukt', err.response?.data?.error || err.message || 'Probeer het opnieuw');
+      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
     } finally {
       setUploading(false);
+      setPendingAssets([]);
     }
-  }
-
-  function removeImmichAsset(assetId: string) {
-    setSelectedImmichAssets((prev) => prev.filter((id) => id !== assetId));
   }
 
   function removeUploadedAsset(url: string) {
     setUploadedAssetUrls((prev) => prev.filter((u) => u !== url));
   }
 
-  const allAssets = [
-    ...selectedImmichAssets.map((id) => ({ type: 'immich' as const, id })),
-    ...uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url })),
-  ];
+  const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }));
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButton}>Annuleren</Text>
+          <Text style={styles.cancelButton}>{t('common.cancel')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nieuw bericht</Text>
+        <Text style={styles.headerTitle}>{t('newPost.title')}</Text>
         <TouchableOpacity
           style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
           onPress={() => createPost.mutate()}
           disabled={!canSubmit}
         >
-          <Text style={styles.postButtonText}>Plaatsen</Text>
+          <Text style={styles.postButtonText}>{t('newPost.postButton')}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.form} contentContainerStyle={styles.formContent}>
         <View style={styles.authorRow}>
-          <View style={[styles.avatar, { backgroundColor: colors.coral }]}>
-            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() || '?'}</Text>
-          </View>
+          <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={48} />
           <View>
             <Text style={styles.authorName}>{user?.name}</Text>
             <Text style={styles.groupName}>
-              {groups?.find((g: Group) => g.id === groupId)?.name || 'Laden...'}
+              {groups?.find((g: Group) => g.id === groupId)?.name || t('newPost.loading')}
             </Text>
           </View>
         </View>
 
         {groups && groups.length > 1 && (
           <View style={styles.groupSelector}>
-            <Text style={styles.sectionLabel}>Groep</Text>
+            <Text style={styles.sectionLabel}>{t('newPost.groupLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {groups.map((group: Group) => (
                 <TouchableOpacity
@@ -183,109 +198,162 @@ export function NewPostScreen() {
 
         <TextInput
           style={styles.textInput}
-          placeholder="Schrijf iets voor de familie..."
-          placeholderTextColor={colors.warmGray}
+          placeholder={t('newPost.contentPlaceholder')}
+          placeholderTextColor={colors.textMuted}
           multiline
           value={content}
           onChangeText={setContent}
           autoFocus
         />
 
-        {allAssets.length > 0 && (
+        {(allAssets.length > 0 || pendingAssets.length > 0) && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedAssets}>
-            {allAssets.map((asset) => (
-              <View key={asset.type === 'immich' ? asset.id : asset.url} style={styles.selectedAsset}>
-                <Image
-                  source={{
-                    uri: asset.type === 'immich'
-                      ? getImmichAssetUrl(asset.id, 'thumbnail')
-                      : getUploadUrl(asset.url),
-                  }}
-                  style={styles.selectedAssetImage}
-                />
-                <TouchableOpacity
-                  style={styles.removeAssetButton}
-                  onPress={() =>
-                    asset.type === 'immich'
-                      ? removeImmichAsset(asset.id)
-                      : removeUploadedAsset(asset.url)
-                  }
-                >
-                  <Icon name="x" size={12} color={colors.white} />
-                </TouchableOpacity>
+            {allAssets.map((asset) => {
+              const isVideo = isVideoUrl(asset.url);
+              return (
+                <View key={asset.url} style={styles.selectedAsset}>
+                  {isVideo ? (
+                    <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
+                  ) : (
+                    <Image
+                      source={{ uri: getUploadUrl(asset.url) }}
+                      style={styles.selectedAssetImage}
+                    />
+                  )}
+                  {isVideo && (
+                    <View style={styles.videoBadge} pointerEvents="none">
+                      <Icon name="play" size={14} color={colors.white} />
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    style={styles.removeAssetButton}
+                    onPress={() => removeUploadedAsset(asset.url)}
+                  >
+                    <Icon name="x" size={12} color={colors.white} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+            {pendingAssets.map((asset, index) => (
+              <View key={`pending-${index}`} style={styles.selectedAsset}>
+                {asset.isVideo ? (
+                  <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
+                ) : (
+                  <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
+                )}
+                <View style={styles.uploadingOverlay}>
+                  <ActivityIndicator size="small" color={colors.white} />
+                </View>
               </View>
             ))}
           </ScrollView>
         )}
 
-        {uploading && (
-          <View style={styles.uploadingRow}>
-            <ActivityIndicator size="small" color={colors.coral} />
-            <Text style={styles.uploadingText}>Foto's uploaden...</Text>
+        <TouchableOpacity style={styles.addPhotoButton} onPress={pickImagesFromDevice} disabled={uploading}>
+          <View style={styles.addPhotoIcon}>
+            <Icon name="smartphone" size={18} color={colors.white} />
           </View>
+          <View>
+            <Text style={styles.addPhotoTitle}>{t('newPost.addPhotoTitle')}</Text>
+            <Text style={styles.addPhotoSubtitle}>{t('newPost.addPhotoSubtitle')}</Text>
+          </View>
+        </TouchableOpacity>
+
+        {location ? (
+          <View style={styles.locationChip}>
+            <Icon name="map-pin" size={16} color={colors.primary} />
+            <Text style={styles.locationChipText} numberOfLines={1}>
+              {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+            </Text>
+            <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
+              <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setLocation(null)}>
+              <Icon name="x" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowLocationPicker(true)}>
+            <View style={styles.addPhotoIcon}>
+              <Icon name="map-pin" size={18} color={colors.white} />
+            </View>
+            <View>
+              <Text style={styles.addPhotoTitle}>{t('newPost.location.addTitle')}</Text>
+              <Text style={styles.addPhotoSubtitle}>{t('newPost.location.addSubtitle')}</Text>
+            </View>
+          </TouchableOpacity>
         )}
-
-        <View style={styles.photoButtonsRow}>
-          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setPickerVisible(true)}>
-            <View style={styles.addPhotoIcon}>
-              <Icon name="image" size={18} color={colors.white} />
-            </View>
-            <View>
-              <Text style={styles.addPhotoTitle}>Immich</Text>
-              <Text style={styles.addPhotoSubtitle}>Kies uit album</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.addPhotoButton} onPress={pickImagesFromDevice} disabled={uploading}>
-            <View style={styles.addPhotoIcon}>
-              <Icon name="smartphone" size={18} color={colors.white} />
-            </View>
-            <View>
-              <Text style={styles.addPhotoTitle}>Toestel</Text>
-              <Text style={styles.addPhotoSubtitle}>Kies uit galerij</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.divider} />
 
         <View style={styles.milestoneRow}>
           <View>
-            <Text style={styles.milestoneTitle}>🎂 Dit is een mijlpaal</Text>
-            <Text style={styles.milestoneSubtitle}>Bijv. verjaardag, geboorte, jubileum</Text>
+            <Text style={styles.milestoneTitle}>{t('newPost.milestoneTitle')}</Text>
+            <Text style={styles.milestoneSubtitle}>{t('newPost.milestoneSubtitle')}</Text>
           </View>
           <Switch
             value={isMilestone}
             onValueChange={setIsMilestone}
-            trackColor={{ false: colors.lightGray, true: colors.amber }}
+            trackColor={{ false: colors.border, true: colors.milestone }}
             thumbColor={colors.white}
           />
         </View>
 
         {isMilestone && (
           <View style={styles.tagList}>
-            {MILESTONE_TAGS.map((tag) => (
-              <TouchableOpacity
-                key={tag}
-                style={[styles.tagChip, selectedTag === tag && styles.tagChipActive]}
-                onPress={() => setSelectedTag(tag)}
-              >
-                <Text
-                  style={[styles.tagChipText, selectedTag === tag && styles.tagChipTextActive]}
+            {MILESTONE_TAG_KEYS.map((tagKey) => {
+              const tag = t(`newPost.milestoneTags.${tagKey}`);
+              const active = !isCustomTag && selectedTag === tag;
+              return (
+                <TouchableOpacity
+                  key={tagKey}
+                  style={[styles.tagChip, active && styles.tagChipActive]}
+                  onPress={() => {
+                    setIsCustomTag(false);
+                    setSelectedTag(tag);
+                  }}
                 >
-                  {tag}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
+              onPress={() => {
+                setIsCustomTag(true);
+                setSelectedTag(null);
+              }}
+            >
+              <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
+                {t('newPost.milestoneTags.custom')}
+              </Text>
+            </TouchableOpacity>
           </View>
+        )}
+
+        {isMilestone && isCustomTag && (
+          <TextInput
+            style={styles.customTagInput}
+            placeholder={t('newPost.milestoneTags.customPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            value={customTagText}
+            onChangeText={setCustomTagText}
+            maxLength={50}
+            autoFocus
+          />
         )}
       </ScrollView>
 
-      <AlbumPicker
-        visible={pickerVisible}
-        selectedAssetIds={selectedImmichAssets}
-        onSelect={setSelectedImmichAssets}
-        onClose={() => setPickerVisible(false)}
+      <LocationPickerModal
+        visible={showLocationPicker}
+        initialLocation={location}
+        onCancel={() => setShowLocationPicker(false)}
+        onConfirm={(picked) => {
+          setLocation(picked);
+          setShowLocationPicker(false);
+        }}
       />
     </SafeAreaView>
   );
@@ -297,11 +365,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 13,
     borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -309,23 +377,23 @@ const styles = StyleSheet.create({
   cancelButton: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 17,
-    color: colors.coral,
+    color: colors.primary,
     minHeight: 44,
     textAlignVertical: 'center',
   },
   headerTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 17,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   postButton: {
-    backgroundColor: colors.coral,
+    backgroundColor: colors.primary,
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 100,
   },
   postButtonDisabled: {
-    backgroundColor: colors.lightGray,
+    backgroundColor: colors.border,
   },
   postButtonText: {
     fontFamily: 'Nunito_700Bold',
@@ -345,27 +413,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 20,
-    color: colors.white,
-  },
   authorName: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 17,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   groupName: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 2,
   },
   groupSelector: {
@@ -374,25 +430,25 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 14,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   groupChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 100,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderColor: colors.border,
     marginRight: 8,
   },
   groupChipActive: {
-    backgroundColor: colors.coral,
-    borderColor: colors.coral,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   groupChipText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 14,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   groupChipTextActive: {
     color: colors.white,
@@ -400,27 +456,17 @@ const styles = StyleSheet.create({
   textInput: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 18,
-    color: colors.warmBlack,
+    color: colors.textTitle,
     lineHeight: 28,
     minHeight: 100,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    borderBottomColor: colors.border,
     paddingBottom: 16,
   },
   selectedAssets: {
     gap: 10,
     paddingVertical: 4,
-  },
-  uploadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  uploadingText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.warmGray,
   },
   selectedAsset: {
     width: 110,
@@ -444,19 +490,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
+  videoBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addPhotoButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     borderWidth: 1.5,
-    borderColor: colors.lightGray,
+    borderColor: colors.border,
     borderStyle: 'dashed',
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
     borderRadius: 14,
     padding: 12,
   },
@@ -464,24 +522,24 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.coral,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addPhotoTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   addPhotoSubtitle: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.lightGray,
+    backgroundColor: colors.border,
   },
   milestoneRow: {
     flexDirection: 'row',
@@ -492,12 +550,12 @@ const styles = StyleSheet.create({
   milestoneTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 16,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   milestoneSubtitle: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 2,
   },
   tagList: {
@@ -510,20 +568,53 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 100,
     borderWidth: 1.5,
-    borderColor: colors.lightGray,
-    backgroundColor: colors.cream,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
   },
   tagChipActive: {
-    borderColor: colors.amber,
+    borderColor: colors.milestone,
     backgroundColor: '#FFF5E6',
   },
   tagChipText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 14,
-    color: colors.warmGray,
+    color: colors.textMuted,
   },
   tagChipTextActive: {
-    color: colors.warmBlack,
+    color: colors.textTitle,
     fontFamily: 'Nunito_700Bold',
+  },
+  customTagInput: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    color: colors.textTitle,
+    borderWidth: 1.5,
+    borderColor: colors.milestone,
+    backgroundColor: '#FFF5E6',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  locationChipText: {
+    flex: 1,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.textTitle,
+  },
+  locationChipAction: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
   },
 });

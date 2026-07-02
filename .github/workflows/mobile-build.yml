@@ -1,0 +1,83 @@
+name: Mobile build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        required: true
+        default: all
+        type: choice
+        options: [all, ios, android]
+      profile:
+        description: EAS build profile (see mobile/eas.json)
+        required: true
+        default: preview
+        type: choice
+        options: [production, preview, development]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Release builds go straight to the App Store / Play Store, which needs
+      # store credentials on disk for `eas submit` (referenced via eas.json's
+      # $ASC_API_KEY_PATH / $GOOGLE_SERVICE_ACCOUNT_KEY_PATH env-var fields).
+      - name: Write store submission credentials
+        if: github.event_name == 'release'
+        working-directory: mobile
+        run: |
+          mkdir -p secrets
+          echo "${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}" | base64 -d > secrets/AuthKey.p8
+          echo "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 -d > secrets/google-play.json
+
+      - name: Build (manual run)
+        if: github.event_name != 'release'
+        working-directory: mobile
+        run: |
+          eas build \
+            --platform ${{ inputs.platform }} \
+            --profile ${{ inputs.profile }} \
+            --non-interactive \
+            --no-wait
+
+      - name: Build and submit to stores (release)
+        if: github.event_name == 'release'
+        working-directory: mobile
+        env:
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_PATH: secrets/AuthKey.p8
+          GOOGLE_SERVICE_ACCOUNT_KEY_PATH: secrets/google-play.json
+        run: |
+          eas build \
+            --platform all \
+            --profile production \
+            --non-interactive \
+            --auto-submit
+
+      - name: Clean up store credentials
+        if: always() && github.event_name == 'release'
+        working-directory: mobile
+        run: rm -rf secrets

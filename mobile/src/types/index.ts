@@ -4,7 +4,12 @@ export interface User {
   name: string;
   avatarUrl?: string | null;
   isAdmin: boolean;
-  emailNotificationsEnabled: boolean;
+  emailOnNewPost: boolean;
+  emailOnNewComment: boolean;
+  emailOnNewLike: boolean;
+  pushOnNewPost: boolean;
+  pushOnNewComment: boolean;
+  pushOnNewLike: boolean;
 }
 
 export interface Group {
@@ -24,16 +29,23 @@ export interface Post {
     avatarUrl?: string | null;
   };
   groupId: string;
+  group?: {
+    id: string;
+    name: string;
+  } | null;
   content?: string | null;
   type: 'UPDATE' | 'MILESTONE';
   milestoneTag?: string | null;
-  immichAlbumId?: string | null;
-  immichAssetIds: string[];
   uploadedAssetUrls: string[];
   createdAt: string;
+  editedAt?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
   commentCount: number;
   likeCount: number;
   likedByMe: boolean;
+  favoritedByMe: boolean;
 }
 
 export interface Comment {
@@ -47,6 +59,13 @@ export interface Comment {
   };
   content: string;
   createdAt: string;
+  editedAt?: string | null;
+  parentId?: string | null;
+  // Set when the comment is pinned to one photo/video in the post rather
+  // than the post as a whole — matches an entry in Post.uploadedAssetUrls.
+  assetUrl?: string | null;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 export interface Notification {

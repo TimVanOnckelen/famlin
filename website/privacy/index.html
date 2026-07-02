@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Famlin</title>
+<meta name="description" content="Famlin's privacy policy: what happens to your data on a self-hosted Famlin server, and on this website.">
+<link rel="icon" href="/favicon.ico">
+<link rel="alternate" hreflang="en" href="https://famlin.app/privacy/">
+<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/privacy/">
+<link rel="alternate" hreflang="x-default" href="https://famlin.app/privacy/">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #edf7fb; font-family: 'Nunito', system-ui, sans-serif; color: #233036; }
+  * { box-sizing: border-box; }
+  a { text-decoration: none; color: #006e94; font-weight: 700; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div style="overflow-x:hidden;">
+
+  <!-- ═══════ NAV ═══════ -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(237,247,251,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #d9e3e7;">
+    <div style="max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="/" style="display:flex;align-items:center;gap:11px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,110,148,0.3);">
+          <svg width="19" height="19" viewBox="0 0 48 48" fill="none">
+            <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+            <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+            <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+          </svg>
+        </div>
+        <span style="font-size:20px;font-weight:900;color:#006e94;letter-spacing:-1px;">Famlin</span>
+      </a>
+      <span style="display:flex;align-items:center;gap:2px;font-size:13px;font-weight:800;color:#597784;">
+        <span style="padding:6px 8px;color:#006e94;" aria-current="true">EN</span>
+        <span style="color:#c3d2d8;">·</span>
+        <a href="/nl/privacy/" hreflang="nl" style="padding:6px 8px;color:#597784;font-weight:800;">NL</a>
+      </span>
+    </div>
+  </nav>
+
+  <main style="max-width:760px;margin:0 auto;padding:56px 24px 80px;">
+    <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Legal</div>
+    <h1 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 8px;">Privacy Policy</h1>
+    <p style="font-size:15px;color:#597784;margin:0 0 36px;">Last updated: July 2026</p>
+
+    <div style="background:#daf3fe;border-radius:16px;padding:22px 24px;margin-bottom:36px;">
+      <p style="font-size:16px;line-height:1.65;margin:0;color:#0f222a;"><strong>The short version:</strong> Famlin is self-hosted, open-source software. Your family's data lives on the server your admin runs — not on any server the Famlin project controls. There's no analytics or tracking built into the app, and nothing is sent back to the project's author.</p>
+    </div>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">1. Using a Famlin app or server</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">A Famlin server is deployed and operated by whoever set it up for their family — an "admin." That admin's server stores everything Famlin needs to work: account details (name, email, and either a password hash or your identity provider's subject ID), posts, photos, comments, likes, favorites, group membership, and mobile push notification tokens.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Famlin's author (Tim Van Onckelen) does not run, host, or have access to any Famlin server other than for his own family, and has no way to see data from other people's deployments. There is no central Famlin service that instances report back to.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Depending on how your admin configured the server, the following third parties may be involved:</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li><strong>Your identity provider</strong> — if sign-in uses OIDC/SSO (Google, Microsoft, Authentik, or another provider your admin configured), that provider processes your login per its own privacy policy. Famlin never sees or stores your password in that case.</li>
+      <li><strong>An email provider</strong> — if your admin configured SMTP, invite and password-reset emails are sent through that provider.</li>
+      <li><strong>Expo's push notification service</strong> — the mobile app uses Expo to deliver push notifications. Delivering a notification means your device's push token and the notification's minimal content pass through Expo's servers on the way to Apple/Google's push services.</li>
+    </ul>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">No analytics, telemetry, or crash-reporting SDKs are built into Famlin's backend, admin panel, or mobile app.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Posts and comments are soft-deleted when removed (kept, hidden, and recoverable by an admin) rather than erased instantly — so if you want something permanently gone, ask your admin. Backups, log retention, and any other integrations are entirely up to whoever runs your instance; they're the right person to ask for specifics about your data.</p>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">2. Visiting this website (famlin.app)</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">This marketing page has no accounts, forms, cookies, or analytics of its own. Two things happen automatically when you load it:</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li>Fonts (Nunito, JetBrains Mono) are loaded from Google Fonts. That means your browser makes a direct request to <code>fonts.googleapis.com</code>, and Google may process your IP address to serve them — see <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</li>
+      <li>The site is hosted on GitHub Pages, which may log technical request data (like your IP address) to serve the page — see <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's privacy statement</a>.</li>
+    </ul>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">3. Changes to this policy</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is an evolving hobby project, so this page may change as features change. Meaningful updates will be reflected here with a new "last updated" date.</p>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">4. Contact</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is a hobby project by Tim Van Onckelen, not a company — there's no dedicated privacy email. Questions about this policy or the project are best asked via <a href="https://github.com/TimVanOnckelen/famlin/discussions" target="_blank" rel="noopener">GitHub Discussions</a> or by <a href="https://github.com/TimVanOnckelen/famlin/issues" target="_blank" rel="noopener">opening an issue</a>. Questions about a specific Famlin instance and its data should go to that instance's admin.</p>
+
+    <p style="margin-top:56px;"><a href="/">← Back to famlin.app</a></p>
+  </main>
+
+</div>
+</body>
+</html>

@@ -1,50 +1,39 @@
 import React from 'react';
-import Svg, { Rect, Polygon, Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, G } from 'react-native-svg';
 
 interface LogoProps {
   size?: number;
-  color?: string;
 }
 
-export function Logo({ size = 48, color }: LogoProps) {
-  const fillColor = color || '#D96A5E';
+const HOUSE_PATH =
+  'M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z';
+const DOOR_PATH = 'M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z';
+
+export function Logo({ size = 48 }: LogoProps) {
+  const radius = size * 0.22;
+  const markSize = size * 0.7;
+  const offset = (size - markSize) / 2;
+  const scale = markSize / 48;
+  const gradientId = `famlinLogoGradient-${size}`;
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 44">
-      <Rect x="5" y="22" width="38" height="22" rx="3.5" fill="white" fillOpacity={0.95} />
-      <Polygon points="24,4 46,24 2,24" fill="white" />
-      <Rect x="17" y="29" width="14" height="15" rx="2.5" fill={fillColor} />
-      <Circle cx="28" cy="37" r="1.3" fill="white" fillOpacity={0.7} />
-      <Path
-        d="M24 13 C20 13 17 10 17 6 A3.5 3.5 0 0 1 24 6 A3.5 3.5 0 0 1 31 6 C31 10 28 13 24 13Z"
-        fill="#F2B85C"
-      />
-      <Rect x="8" y="26" width="7" height="6" rx="1.2" fill="white" fillOpacity={0.8} />
-      <Rect x="33" y="26" width="7" height="6" rx="1.2" fill="white" fillOpacity={0.8} />
-    </Svg>
-  );
-}
-
-export function AppIcon({ size = 200 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 48 44">
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
-        <LinearGradient id="iconGradient" x1="0" y1="0" x2="0" y2="44">
-          <Stop offset="0" stopColor="#E07A6B" />
-          <Stop offset="1" stopColor="#C95D4E" />
+        <LinearGradient id={gradientId} x1="0%" y1="0%" x2="85%" y2="100%">
+          <Stop offset="0" stopColor="#318ea2" />
+          <Stop offset="1" stopColor="#005480" />
         </LinearGradient>
       </Defs>
-      <Rect x="0" y="0" width="48" height="44" rx="6" fill="url(#iconGradient)" />
-      <Rect x="5" y="22" width="38" height="22" rx="3.5" fill="white" fillOpacity={0.95} />
-      <Polygon points="24,4 46,24 2,24" fill="white" />
-      <Rect x="17" y="29" width="14" height="15" rx="2.5" fill="#C95D4E" />
-      <Circle cx="28" cy="37" r="1.3" fill="white" fillOpacity={0.7} />
-      <Path
-        d="M24 13 C20 13 17 10 17 6 A3.5 3.5 0 0 1 24 6 A3.5 3.5 0 0 1 31 6 C31 10 28 13 24 13Z"
-        fill="#F2B85C"
-      />
-      <Rect x="8" y="26" width="7" height="6" rx="1.2" fill="white" fillOpacity={0.8} />
-      <Rect x="33" y="26" width="7" height="6" rx="1.2" fill="white" fillOpacity={0.8} />
+      <Rect width={size} height={size} rx={radius} fill={`url(#${gradientId})`} />
+      <G transform={`translate(${offset}, ${offset}) scale(${scale})`}>
+        <Path d={HOUSE_PATH} fill="white" />
+        <Circle cx="24" cy="20.5" r="2.6" fill="#006e94" />
+        <Path d={DOOR_PATH} fill="#006e94" />
+      </G>
     </Svg>
   );
+}
+
+export function AppIcon({ size = 200 }: LogoProps) {
+  return <Logo size={size} />;
 }

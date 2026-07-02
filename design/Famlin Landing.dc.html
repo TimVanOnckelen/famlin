@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #edf7fb; font-family: 'Nunito', system-ui, sans-serif; color: #233036; }
+    * { box-sizing: border-box; }
+    a { text-decoration: none; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  </style>
+</helmet>
+
+<div style="overflow-x:hidden;">
+
+  <!-- ═══════ NAV ═══════ -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(237,247,251,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #d9e3e7;">
+    <div style="max-width:1120px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="#top" style="display:flex;align-items:center;gap:11px;">
+        <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,110,148,0.3);">
+          <svg width="23" height="23" viewBox="0 0 48 48" fill="none">
+            <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+            <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+            <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+          </svg>
+        </div>
+        <span style="font-size:24px;font-weight:900;color:#006e94;letter-spacing:-1px;">Famlin</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a href="#install" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Install</a>
+        <a href="#features" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Features</a>
+        <a href="#docs" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Docs</a>
+        <a href="#install" style="font-size:15px;font-weight:800;color:white;background:#006e94;padding:11px 22px;border-radius:100px;box-shadow:0 4px 12px rgba(0,110,148,0.3);">Get started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════ HERO ═══════ -->
+  <header id="top" style="max-width:1120px;margin:0 auto;padding:72px 24px 56px;display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;">
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#0f222a;padding:7px 15px 7px 12px;border-radius:100px;margin-bottom:24px;box-shadow:0 4px 12px rgba(15,34,42,0.2);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="12" rx="2" style="stroke:#4be0a0;stroke-width:2;"/><path d="M7 20h10M9 16v4M15 16v4" style="stroke:#4be0a0;stroke-width:2;stroke-linecap:round;"/></svg>
+        <span style="font-size:13px;font-weight:800;color:white;">Self-hosted · your server, your family, your data</span>
+      </div>
+      <h1 style="font-size:56px;font-weight:900;color:#0f222a;letter-spacing:-2.5px;line-height:1.02;margin:0 0 20px;text-wrap:balance;">Your family,<br><span style="color:#006e94;">on your own server.</span></h1>
+      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is a private, self-hosted family app — a calm, chronological timeline of photos and updates that lives on <em>your</em> hardware. No cloud lock-in, no algorithm, no ads. Just closer, from the grandkids to grandma and grandpa.</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:22px;">
+        <a href="#install" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:17px;font-weight:800;padding:16px 30px;border-radius:100px;box-shadow:0 6px 18px rgba(0,110,148,0.34);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" style="stroke:white;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          Install your server
+        </a>
+        <a href="https://github.com/famlin/famlin" style="display:inline-flex;align-items:center;gap:9px;background:white;border:1.5px solid #d9e3e7;color:#0f222a;font-size:17px;font-weight:800;padding:16px 26px;border-radius:100px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#0f222a"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 015 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.59.69.49A10.26 10.26 0 0022 12.25C22 6.58 17.52 2 12 2z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+      <div style="font-size:14px;color:#597784;font-weight:600;">Open source · MIT license · Deploy in minutes with Docker</div>
+    </div>
+
+    <!-- Phone mockup -->
+    <div style="display:flex;justify-content:center;position:relative;">
+      <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(49,142,162,0.18),transparent 68%);top:40px;"></div>
+      <div style="position:relative;width:288px;background:#0f222a;border-radius:44px;padding:11px;box-shadow:0 30px 70px rgba(0,80,110,0.28);">
+        <div style="background:#edf7fb;border-radius:34px;overflow:hidden;height:576px;position:relative;">
+          <div style="background:white;padding:22px 16px 12px;border-bottom:1px solid #e3edf1;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:22px;font-weight:900;color:#006e94;letter-spacing:-0.5px;">Famlin</span>
+            <div style="width:36px;height:36px;border-radius:18px;background:#daf3fe;display:flex;align-items:center;justify-content:center;">
+              <svg width="17" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/><path d="M13.73 21a2 2 0 01-3.46 0" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+            </div>
+          </div>
+          <div style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div style="border-radius:16px;padding:13px;background:linear-gradient(145deg,#fff3dd,#ffe6c0);border:1.5px solid #eeb154;">
+              <span style="display:inline-flex;align-items:center;gap:5px;background:#eeb154;padding:3px 11px;border-radius:100px;font-size:10px;font-weight:800;color:#5c3d0a;margin-bottom:9px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#5c3d0a;stroke-width:2;stroke-linejoin:round;"/></svg>
+                MILESTONE
+              </span>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                <div style="width:38px;height:38px;border-radius:19px;background:#ffd89a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#8a5a12;">S</div>
+                <div><div style="font-size:14px;font-weight:700;color:#0f222a;">Sophie</div><div style="font-size:12px;color:#8a6a2f;">Yesterday</div></div>
+              </div>
+              <div style="font-size:18px;font-weight:900;color:#0f222a;letter-spacing:-0.3px;margin-bottom:9px;">Emma turns 5</div>
+              <div style="height:96px;border-radius:10px;background:repeating-linear-gradient(45deg,#f3dcae 0,#f3dcae 4px,#faedd0 4px,#faedd0 11px);"></div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:13px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                <div style="width:38px;height:38px;border-radius:19px;background:#daf3fe;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#006e94;">GJ</div>
+                <div><div style="font-size:14px;font-weight:700;color:#0f222a;">Grandpa John</div><div style="font-size:12px;color:#597784;">2 hours ago</div></div>
+              </div>
+              <div style="font-size:14px;color:#233036;line-height:1.5;">Good day in the garden today.</div>
+            </div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:white;border-top:1px solid #e3edf1;display:flex;justify-content:space-around;align-items:center;padding:10px 0 16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9M5 10v10h5v-6h4v6h5V10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+            <div style="width:42px;height:42px;border-radius:21px;background:#006e94;display:flex;align-items:center;justify-content:center;margin-top:-10px;box-shadow:0 4px 12px rgba(0,110,148,0.4);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" style="stroke:white;stroke-width:2.5;stroke-linecap:round;"/></svg></div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" style="stroke:#597784;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════ TRUST STRIP ═══════ -->
+  <div style="max-width:1120px;margin:0 auto;padding:0 24px 8px;">
+    <div style="display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:center;padding:22px;background:white;border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#006e94;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#006e94;"/><circle cx="7" cy="16.5" r="1" style="fill:#006e94;"/></svg>
+        Runs on your server</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" style="stroke:#006e94;stroke-width:2;"/><path d="M8 11V8a4 4 0 018 0v3" style="stroke:#006e94;stroke-width:2;"/></svg>
+        Private &amp; invite-only</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#006e94;stroke-width:2;"/><path d="M5.6 5.6l12.8 12.8" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+        No algorithm, no ads</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" style="stroke:#006e94;stroke-width:2;"/><circle cx="17" cy="9" r="2.3" style="stroke:#006e94;stroke-width:2;"/><path d="M3 20v-1a4 4 0 014-4h4a4 4 0 014 4v1M15.5 15h1a4 4 0 014 4v1" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+        Built for every generation</div>
+    </div>
+  </div>
+
+  <!-- ═══════ INSTALL (primary, up top) ═══════ -->
+  <section id="install" style="max-width:1120px;margin:0 auto;padding:64px 24px;">
+    <div style="text-align:center;margin-bottom:44px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Get started · self-hosted</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Up and running in three steps</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">Famlin ships as a single Docker container. Deploy it on a home server, a Raspberry Pi, or any VPS — you stay in full control of your family's data.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:24px;align-items:stretch;">
+
+      <div style="background:#0f222a;border-radius:22px;padding:22px;box-shadow:0 20px 50px rgba(0,80,110,0.22);display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:18px;">
+          <span style="width:12px;height:12px;border-radius:6px;background:#ff5f57;"></span>
+          <span style="width:12px;height:12px;border-radius:6px;background:#febc2e;"></span>
+          <span style="width:12px;height:12px;border-radius:6px;background:#28c840;"></span>
+          <span class="mono" style="font-size:12px;color:#5f7883;margin-left:8px;">deploy — famlin</span>
+        </div>
+        <div class="mono" style="font-size:14px;line-height:2;color:#c3d2d8;flex:1;">
+          <div><span style="color:#5f7883;"># 1 · grab the compose file</span></div>
+          <div><span style="color:#4be0a0;">$</span> curl -O famlin.app/compose.yml</div>
+          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · start Famlin</span></div>
+          <div><span style="color:#4be0a0;">$</span> docker compose up -d</div>
+          <div style="margin-top:10px;color:#7fd9c0;">[ok] Famlin running on :8080</div>
+          <div style="color:#7fd9c0;">[ok] Sign in with Google enabled</div>
+          <div style="color:#7fd9c0;">[ok] Ready to invite your family</div>
+        </div>
+        <a href="/docs/self-hosting" style="display:inline-flex;align-items:center;gap:7px;margin-top:20px;color:#7fd0e6;font-size:15px;font-weight:800;">Full self-hosting guide →</a>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Deploy the server</div><div style="font-size:15px;color:#597784;line-height:1.55;">One Docker container on your own hardware or VPS. Point a domain at it and you're live.</div></div>
+        </div>
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Invite your family</div><div style="font-size:15px;color:#597784;line-height:1.55;">Send an invite link. Everyone signs in with Google — no new passwords for grandma to remember.</div></div>
+        </div>
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Get the app</div><div style="font-size:15px;color:#597784;line-height:1.55;">Everyone downloads Famlin for iOS or Android and connects to your server. Share your first memory.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FEATURES ═══════ -->
+  <section id="features" style="max-width:1120px;margin:0 auto;padding:24px 24px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Features</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Everything you need.<br>Nothing that distracts.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Self-hosted &amp; open source</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Your data lives on your server, never ours. MIT-licensed and auditable — no vendor, no lock-in, no surprises.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Chronological feed</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Newest first, ordered by time. No ranking, no missed posts — exactly the way it should be.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Milestones that stand out</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Birthdays, births and anniversaries get a warm accent card — impossible to miss, never intrusive.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Like &amp; comment</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">A heart or a short reply. Warm engagement without like-counters or performance pressure.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#006e94;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Your photos, your storage</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Add photos straight from your camera or gallery. They're stored on your own server — full quality, fully yours.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#8a5a12;stroke-width:2;"/><path d="M12 7v5l3 3" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Calm, not addictive</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">No infinite scroll, no read receipts, no notification spam. Open it when you feel like it.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ SELF-HOSTED SPLIT ═══════ -->
+  <section id="selfhosted" style="max-width:1120px;margin:0 auto;padding:64px 24px;">
+    <div style="background:linear-gradient(150deg,#0a6c90,#004f79);border-radius:28px;padding:56px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;box-shadow:0 20px 50px rgba(0,80,110,0.28);">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#9fd4e6;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">You own it all</div>
+        <h2 style="font-size:38px;font-weight:900;color:white;letter-spacing:-1.5px;line-height:1.08;margin:0 0 18px;">Your family's memories never leave your control.</h2>
+        <p style="font-size:18px;color:#cfe8f0;line-height:1.65;margin:0;">Because Famlin runs on your own server, there's no company sitting between you and your family. No data mining, no algorithm deciding what you see, no counters pulling you back. You host it, you own it, and you close the app when you're done.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:white;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:white;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:white;"/><circle cx="7" cy="16.5" r="1" style="fill:white;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">Runs on your hardware</div><div style="font-size:14px;color:#a9d4e2;">Home server, Pi, or any VPS you like.</div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M4 6h16M4 12h16M4 18h9" style="stroke:white;stroke-width:2;stroke-linecap:round;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">No infinite scroll</div><div style="font-size:14px;color:#a9d4e2;">Your feed has a beginning and an end.</div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="9" style="stroke:white;stroke-width:2;"/><path d="M5.6 5.6l12.8 12.8" style="stroke:white;stroke-width:2;stroke-linecap:round;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">No ads, ever</div><div style="font-size:14px;color:#a9d4e2;">You're the family, not the product.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ DOCS ═══════ -->
+  <section id="docs" style="max-width:1120px;margin:0 auto;padding:24px 24px 64px;">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Documentation</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0;">Everything to run Famlin</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+
+      <a href="/docs/self-hosting" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Self-hosting guide</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Deploy with Docker, TLS and backups.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Read more →</div>
+      </a>
+
+      <a href="/docs/getting-started" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 4h9l5 5v11a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/><path d="M14 4v5h5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Getting started</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">First login and setup walkthrough.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Read more →</div>
+      </a>
+
+      <a href="/docs/family-invites" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Family &amp; invites</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Add members and manage roles.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Read more →</div>
+      </a>
+
+      <a href="/docs/api" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13 6l-2 12" style="stroke:#c85a34;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">API &amp; config</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Environment vars and integrations.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Read more →</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ═══════ APP DOWNLOAD (secondary, after install) ═══════ -->
+  <section id="download" style="max-width:1120px;margin:0 auto;padding:24px 24px 80px;">
+    <div style="background:white;border-radius:28px;padding:56px 40px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e3edf1;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Step three · the app</div>
+      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Once your server is live, get the app</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:480px;">Everyone in the family installs Famlin and connects to your server address. That's it — you're sharing memories.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;">
+        <a href="#download" style="display:flex;align-items:center;gap:12px;background:#0f222a;padding:14px 26px 14px 22px;border-radius:14px;box-shadow:0 4px 14px rgba(15,34,42,0.2);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.05 12.54c-.02-2.4 1.96-3.55 2.05-3.61-1.12-1.64-2.86-1.86-3.48-1.89-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.62.02-3.11.94-3.94 2.39-1.68 2.92-.43 7.24 1.2 9.61.8 1.16 1.75 2.46 3 2.42 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.14.75 1.29-.02 2.11-1.18 2.9-2.35.91-1.35 1.29-2.66 1.31-2.73-.03-.01-2.5-.96-2.52-3.8zM14.63 5.09c.66-.8 1.11-1.92.99-3.03-.95.04-2.11.64-2.8 1.44-.61.71-1.15 1.84-1.01 2.93 1.06.08 2.15-.54 2.82-1.34z"/></svg>
+          <div style="text-align:left;"><div style="font-size:11px;color:#a8b5bb;font-weight:600;line-height:1.1;">Download on the</div><div style="font-size:19px;color:white;font-weight:800;line-height:1.1;">App Store</div></div>
+        </a>
+        <a href="#download" style="display:flex;align-items:center;gap:12px;background:#0f222a;padding:14px 26px 14px 22px;border-radius:14px;box-shadow:0 4px 14px rgba(15,34,42,0.2);">
+          <svg width="24" height="26" viewBox="0 0 24 24"><path d="M3.6 2.4c-.3.3-.5.8-.5 1.4v16.4c0 .6.2 1.1.5 1.4l.1.1 9.2-9.2v-.2L3.6 2.4z" fill="#00d4ff"/><path d="M16.3 15.3l-3.1-3.1v-.2l3.1-3.1.1.1 3.6 2.1c1 .6 1 1.6 0 2.2l-3.7 2z" fill="#ffce00"/><path d="M16.4 15.2l-3.2-3.2-9.2 9.2c.3.4.9.4 1.5.1l10.9-6.1" fill="#ff3a44"/><path d="M16.4 8.8L5.5 2.7c-.6-.3-1.2-.3-1.5.1l9.2 9.2 3.2-3.2z" fill="#00f076"/></svg>
+          <div style="text-align:left;"><div style="font-size:11px;color:#a8b5bb;font-weight:600;line-height:1.1;">Get it on</div><div style="font-size:19px;color:white;font-weight:800;line-height:1.1;">Google Play</div></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FOOTER ═══════ -->
+  <footer style="background:#0f222a;">
+    <div style="max-width:1120px;margin:0 auto;padding:56px 24px 40px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;">
+      <div>
+        <a href="#top" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;">
+            <svg width="21" height="21" viewBox="0 0 48 48" fill="none">
+              <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+              <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+              <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+            </svg>
+          </div>
+          <span style="font-size:22px;font-weight:900;color:white;letter-spacing:-0.5px;">Famlin</span>
+        </a>
+        <p style="font-size:15px;color:#8ba2ac;line-height:1.6;margin:0;max-width:260px;">A private, self-hosted home for your family. Open source, built with care, no algorithm.</p>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Product</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="#install" style="font-size:15px;color:#c3d2d8;font-weight:600;">Install</a>
+          <a href="#features" style="font-size:15px;color:#c3d2d8;font-weight:600;">Features</a>
+          <a href="#download" style="font-size:15px;color:#c3d2d8;font-weight:600;">Get the app</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Docs</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="/docs/self-hosting" style="font-size:15px;color:#c3d2d8;font-weight:600;">Self-hosting</a>
+          <a href="/docs/getting-started" style="font-size:15px;color:#c3d2d8;font-weight:600;">Getting started</a>
+          <a href="https://github.com/famlin/famlin" style="font-size:15px;color:#c3d2d8;font-weight:600;">GitHub</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Legal</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="/docs/privacy" style="font-size:15px;color:#c3d2d8;font-weight:600;">Privacy</a>
+          <a href="/license" style="font-size:15px;color:#c3d2d8;font-weight:600;">MIT License</a>
+          <a href="/contact" style="font-size:15px;color:#c3d2d8;font-weight:600;">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #23343c;">
+      <div style="max-width:1120px;margin:0 auto;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:14px;color:#6b8791;">© 2026 Famlin. For families, by families.</span>
+        <span style="font-size:14px;color:#6b8791;">Open source · self-hosted</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#edf7fb"/>
+    <rect x="30" y="30" width="40" height="40" rx="10" fill="#006e94"/>
+    <path d="M50 38 L62 48 L62 62 L38 62 L38 48 Z" fill="white"/>
+    <rect x="45" y="54" width="10" height="8" rx="2" fill="#006e94"/>
+  </svg>
+</template>
+</x-dc>
+</body>
+</html>

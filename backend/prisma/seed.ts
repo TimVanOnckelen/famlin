@@ -1,8 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const testPasswordHash = await bcrypt.hash('test123456', 12);
   // Example seed data. Replace these emails with actual family emails.
   const users = await Promise.all([
     prisma.user.upsert({
@@ -12,6 +14,7 @@ async function main() {
         email: 'admin@example.com',
         name: 'Admin',
         isAdmin: true,
+        passwordHash: testPasswordHash,
       },
     }),
     prisma.user.upsert({
@@ -46,6 +49,15 @@ async function main() {
         name: 'Mama',
       },
     }),
+    prisma.user.upsert({
+      where: { email: 'test@example.com' },
+      update: {},
+      create: {
+        email: 'test@example.com',
+        name: 'Test Gebruiker',
+        passwordHash: testPasswordHash,
+      },
+    }),
   ]);
 
   const admin = users[0];
@@ -65,7 +77,8 @@ async function main() {
   });
 
   // Ensure memberships exist without conflicts
-  const memberIds = [admin.id, opa.id, oma.id, sophie.id, mama.id];
+  const testUser = users[5];
+  const memberIds = [admin.id, opa.id, oma.id, sophie.id, mama.id, testUser.id];
   for (const userId of memberIds) {
     await prisma.groupMember.upsert({
       where: { groupId_userId: { groupId: familyGroup.id, userId } },
@@ -117,6 +130,9 @@ async function main() {
   console.log('✅ Seed data created');
   console.log(`   Group: ${familyGroup.name}`);
   console.log(`   Members: ${memberIds.length}`);
+  console.log('   Test accounts:');
+  console.log('     - admin@example.com / test123456 (admin)');
+  console.log('     - test@example.com / test123456');
 }
 
 main()

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Famlin — Jouw familie, op je eigen server</title>
+<meta name="description" content="Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's en updates op je eigen server. Open source, geen advertenties, geen algoritme.">
+<link rel="icon" href="/favicon.ico">
+<meta property="og:title" content="Famlin — Jouw familie, op je eigen server">
+<meta property="og:description" content="Een private, self-hosted familie-app. Open source, self-hosted, geen advertenties, geen algoritme.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="alternate" hreflang="en" href="https://famlin.app/">
+<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/">
+<link rel="alternate" hreflang="x-default" href="https://famlin.app/">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #edf7fb; font-family: 'Nunito', system-ui, sans-serif; color: #233036; }
+  * { box-sizing: border-box; }
+  a { text-decoration: none; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  @media (max-width: 860px) {
+    header#top { grid-template-columns: 1fr !important; padding-top: 40px !important; }
+    section#install > div:last-child { grid-template-columns: 1fr !important; }
+    section#features > div:last-child { grid-template-columns: 1fr 1fr !important; }
+    section#selfhosted > div { grid-template-columns: 1fr !important; padding: 32px !important; }
+    section#docs > div:last-child { grid-template-columns: 1fr 1fr !important; }
+    footer > div:first-child { grid-template-columns: 1fr 1fr !important; }
+    nav a[href="#features"], nav a[href="#docs"] { display: none; }
+    h1 { font-size: 40px !important; }
+  }
+  @media (max-width: 520px) {
+    section#features > div:last-child, section#docs > div:last-child, footer > div:first-child { grid-template-columns: 1fr !important; }
+  }
+</style>
+</head>
+<body>
+<div style="overflow-x:hidden;">
+
+  <!-- ═══════ NAV ═══════ -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(237,247,251,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #d9e3e7;">
+    <div style="max-width:1120px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="#top" style="display:flex;align-items:center;gap:11px;">
+        <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,110,148,0.3);">
+          <svg width="23" height="23" viewBox="0 0 48 48" fill="none">
+            <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+            <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+            <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+          </svg>
+        </div>
+        <span style="font-size:24px;font-weight:900;color:#006e94;letter-spacing:-1px;">Famlin</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a href="#install" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Installeren</a>
+        <a href="#features" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Functies</a>
+        <a href="#docs" style="font-size:15px;font-weight:700;color:#233036;padding:10px 14px;border-radius:100px;">Documentatie</a>
+        <span style="display:flex;align-items:center;gap:2px;font-size:13px;font-weight:800;color:#597784;margin:0 4px;" aria-label="Taal">
+          <a href="/" hreflang="en" style="padding:6px 8px;color:#597784;">EN</a>
+          <span style="color:#c3d2d8;">·</span>
+          <span style="padding:6px 8px;color:#006e94;" aria-current="true">NL</span>
+        </span>
+        <a href="#install" style="font-size:15px;font-weight:800;color:white;background:#006e94;padding:11px 22px;border-radius:100px;box-shadow:0 4px 12px rgba(0,110,148,0.3);">Aan de slag</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════ HERO ═══════ -->
+  <header id="top" style="max-width:1120px;margin:0 auto;padding:72px 24px 56px;display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;">
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#0f222a;padding:7px 15px 7px 12px;border-radius:100px;margin-bottom:24px;box-shadow:0 4px 12px rgba(15,34,42,0.2);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="12" rx="2" style="stroke:#4be0a0;stroke-width:2;"/><path d="M7 20h10M9 16v4M15 16v4" style="stroke:#4be0a0;stroke-width:2;stroke-linecap:round;"/></svg>
+        <span style="font-size:13px;font-weight:800;color:white;">Self-hosted · jouw server, jouw familie, jouw data</span>
+      </div>
+      <h1 style="font-size:56px;font-weight:900;color:#0f222a;letter-spacing:-2.5px;line-height:1.02;margin:0 0 20px;text-wrap:balance;">Jouw familie,<br><span style="color:#006e94;">op je eigen server.</span></h1>
+      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's en updates die op <em>jouw</em> hardware draait. Geen cloud lock-in, geen algoritme, geen advertenties. Gewoon dichter bij elkaar, van de kleinkinderen tot oma en opa.</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:22px;">
+        <a href="#install" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:17px;font-weight:800;padding:16px 30px;border-radius:100px;box-shadow:0 6px 18px rgba(0,110,148,0.34);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" style="stroke:white;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          Installeer je server
+        </a>
+        <a href="https://github.com/TimVanOnckelen/famlin" style="display:inline-flex;align-items:center;gap:9px;background:white;border:1.5px solid #d9e3e7;color:#0f222a;font-size:17px;font-weight:800;padding:16px 26px;border-radius:100px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#0f222a"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 015 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.59.69.49A10.26 10.26 0 0022 12.25C22 6.58 17.52 2 12 2z"/></svg>
+          Bekijk op GitHub
+        </a>
+      </div>
+      <div style="font-size:14px;color:#597784;font-weight:600;">Open source · MIT-licentie · Een hobbyproject van Tim Van Onckelen</div>
+    </div>
+
+    <!-- Phone mockup -->
+    <div style="display:flex;justify-content:center;position:relative;">
+      <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(49,142,162,0.18),transparent 68%);top:40px;"></div>
+      <div style="position:relative;width:288px;background:#0f222a;border-radius:44px;padding:11px;box-shadow:0 30px 70px rgba(0,80,110,0.28);">
+        <div style="background:#edf7fb;border-radius:34px;overflow:hidden;height:576px;position:relative;">
+          <div style="background:white;padding:22px 16px 12px;border-bottom:1px solid #e3edf1;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:22px;font-weight:900;color:#006e94;letter-spacing:-0.5px;">Famlin</span>
+            <div style="width:36px;height:36px;border-radius:18px;background:#daf3fe;display:flex;align-items:center;justify-content:center;">
+              <svg width="17" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/><path d="M13.73 21a2 2 0 01-3.46 0" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+            </div>
+          </div>
+          <div style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div style="border-radius:16px;padding:13px;background:linear-gradient(145deg,#fff3dd,#ffe6c0);border:1.5px solid #eeb154;">
+              <span style="display:inline-flex;align-items:center;gap:5px;background:#eeb154;padding:3px 11px;border-radius:100px;font-size:10px;font-weight:800;color:#5c3d0a;margin-bottom:9px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#5c3d0a;stroke-width:2;stroke-linejoin:round;"/></svg>
+                MIJLPAAL
+              </span>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                <div style="width:38px;height:38px;border-radius:19px;background:#ffd89a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#8a5a12;">S</div>
+                <div><div style="font-size:14px;font-weight:700;color:#0f222a;">Sophie</div><div style="font-size:12px;color:#8a6a2f;">Gisteren</div></div>
+              </div>
+              <div style="font-size:18px;font-weight:900;color:#0f222a;letter-spacing:-0.3px;margin-bottom:9px;">Emma wordt 5</div>
+              <div style="height:96px;border-radius:10px;background:repeating-linear-gradient(45deg,#f3dcae 0,#f3dcae 4px,#faedd0 4px,#faedd0 11px);"></div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:13px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                <div style="width:38px;height:38px;border-radius:19px;background:#daf3fe;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#006e94;">GJ</div>
+                <div><div style="font-size:14px;font-weight:700;color:#0f222a;">Opa John</div><div style="font-size:12px;color:#597784;">2 uur geleden</div></div>
+              </div>
+              <div style="font-size:14px;color:#233036;line-height:1.5;">Fijne dag gehad in de tuin vandaag.</div>
+            </div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:white;border-top:1px solid #e3edf1;display:flex;justify-content:space-around;align-items:center;padding:10px 0 16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9M5 10v10h5v-6h4v6h5V10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+            <div style="width:42px;height:42px;border-radius:21px;background:#006e94;display:flex;align-items:center;justify-content:center;margin-top:-10px;box-shadow:0 4px 12px rgba(0,110,148,0.4);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" style="stroke:white;stroke-width:2.5;stroke-linecap:round;"/></svg></div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" style="stroke:#597784;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════ TRUST STRIP ═══════ -->
+  <div style="max-width:1120px;margin:0 auto;padding:0 24px 8px;">
+    <div style="display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:center;padding:22px;background:white;border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#006e94;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#006e94;"/><circle cx="7" cy="16.5" r="1" style="fill:#006e94;"/></svg>
+        Draait op je eigen server</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" style="stroke:#006e94;stroke-width:2;"/><path d="M8 11V8a4 4 0 018 0v3" style="stroke:#006e94;stroke-width:2;"/></svg>
+        Privé &amp; alleen op uitnodiging</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#006e94;stroke-width:2;"/><path d="M5.6 5.6l12.8 12.8" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+        Geen algoritme, geen advertenties</div>
+      <div style="display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:#233036;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" style="stroke:#006e94;stroke-width:2;"/><circle cx="17" cy="9" r="2.3" style="stroke:#006e94;stroke-width:2;"/><path d="M3 20v-1a4 4 0 014-4h4a4 4 0 014 4v1M15.5 15h1a4 4 0 014 4v1" style="stroke:#006e94;stroke-width:2;stroke-linecap:round;"/></svg>
+        Gemaakt voor elke generatie</div>
+    </div>
+  </div>
+
+  <!-- ═══════ INSTALL (primary, up top) ═══════ -->
+  <section id="install" style="max-width:1120px;margin:0 auto;padding:64px 24px;">
+    <div style="text-align:center;margin-bottom:44px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Aan de slag · self-hosted</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">In drie stappen live</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">Famlin bestaat uit één backend-container plus Postgres, aangestuurd door één Docker Compose-bestand. Installeer het op een thuisserver, een NAS of een VPS — jij houdt volledige controle over de data van je familie.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:24px;align-items:stretch;">
+
+      <div style="background:#0f222a;border-radius:22px;padding:22px;box-shadow:0 20px 50px rgba(0,80,110,0.22);display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:18px;">
+          <span style="width:12px;height:12px;border-radius:6px;background:#ff5f57;"></span>
+          <span style="width:12px;height:12px;border-radius:6px;background:#febc2e;"></span>
+          <span style="width:12px;height:12px;border-radius:6px;background:#28c840;"></span>
+          <span class="mono" style="font-size:12px;color:#5f7883;margin-left:8px;">deploy — famlin</span>
+        </div>
+        <div class="mono" style="font-size:13.5px;line-height:2;color:#c3d2d8;flex:1;overflow-x:auto;">
+          <div><span style="color:#5f7883;"># 1 · bestanden ophalen</span></div>
+          <div><span style="color:#4be0a0;">$</span> git clone https://github.com/TimVanOnckelen/famlin.git</div>
+          <div><span style="color:#4be0a0;">$</span> cd famlin &amp;&amp; cp .env.example .env</div>
+          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · start Famlin</span></div>
+          <div><span style="color:#4be0a0;">$</span> docker compose -f docker-compose.yml up -d</div>
+          <div style="margin-top:10px;color:#7fd9c0;">[ok] Famlin actief op :3000</div>
+          <div style="color:#7fd9c0;">[ok] Migraties toegepast</div>
+          <div style="color:#7fd9c0;">[ok] Klaar om je familie uit te nodigen</div>
+        </div>
+        <a href="/docs/server-setup" style="display:inline-flex;align-items:center;gap:7px;margin-top:20px;color:#7fd0e6;font-size:15px;font-weight:800;">Volledige self-hosting gids →</a>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Zet de server op</div><div style="font-size:15px;color:#597784;line-height:1.55;">Eén backend-container plus Postgres, op je eigen hardware of VPS. Zet er een reverse proxy voor met TLS en je bent live.</div></div>
+        </div>
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Nodig je familie uit</div><div style="font-size:15px;color:#597784;line-height:1.55;">Stuur een uitnodigingslink vanuit het adminpaneel. Iedereen logt in met de SSO-provider van jouw keuze (Google, Microsoft, Authentik, ...) of gewoon met e-mail + wachtwoord.</div></div>
+        </div>
+        <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Installeer de app</div><div style="font-size:15px;color:#597784;line-height:1.55;">Iedereen installeert Famlin voor iOS of Android en verbindt met het adres van je server. Deel je eerste herinnering.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FEATURES ═══════ -->
+  <section id="features" style="max-width:1120px;margin:0 auto;padding:24px 24px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Functies</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Alles wat je nodig hebt.<br>Niets dat afleidt.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Self-hosted &amp; open source</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Jouw data staat op jouw server, nooit bij ons. MIT-licentie en volledig te controleren — geen leverancier, geen lock-in, geen verrassingen.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Chronologische tijdlijn</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Nieuwste eerst, gesorteerd op tijd. Geen ranking, geen gemiste posts — precies zoals het hoort.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Mijlpalen die opvallen</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Verjaardagen en andere grote momenten krijgen een warme accentkaart — onmogelijk te missen, nooit opdringerig.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Liken, reageren &amp; favorieten</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Een hartje, een korte reactie, of een bewaarde favoriet voor later. Warme betrokkenheid zonder like-tellers of prestatiedruk.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#006e94;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Jouw foto's, jouw opslag</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Voeg foto's rechtstreeks toe vanuit je camera of galerij. Ze worden opgeslagen op je eigen server — volledige kwaliteit, volledig van jou.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#8a5a12;stroke-width:2;"/><path d="M12 7v5l3 3" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Rustig, niet verslavend</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Geen oneindige scroll, geen leesbevestigingen, geen spam aan meldingen. Open de app wanneer jij daar zin in hebt.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ SELF-HOSTED SPLIT ═══════ -->
+  <section id="selfhosted" style="max-width:1120px;margin:0 auto;padding:64px 24px;">
+    <div style="background:linear-gradient(150deg,#0a6c90,#004f79);border-radius:28px;padding:56px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;box-shadow:0 20px 50px rgba(0,80,110,0.28);">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#9fd4e6;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Jij bepaalt alles</div>
+        <h2 style="font-size:38px;font-weight:900;color:white;letter-spacing:-1.5px;line-height:1.08;margin:0 0 18px;">De herinneringen van je familie blijven altijd onder jouw controle.</h2>
+        <p style="font-size:18px;color:#cfe8f0;line-height:1.65;margin:0;">Omdat Famlin op je eigen server draait, staat er geen bedrijf tussen jou en je familie. Geen datamining, geen algoritme dat bepaalt wat je ziet, geen tellers die je terugtrekken. Jij host het, jij bezit het, en jij sluit de app wanneer je klaar bent.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:white;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:white;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:white;"/><circle cx="7" cy="16.5" r="1" style="fill:white;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">Draait op jouw hardware</div><div style="font-size:14px;color:#a9d4e2;">Thuisserver, NAS, of een VPS naar keuze.</div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M4 6h16M4 12h16M4 18h9" style="stroke:white;stroke-width:2;stroke-linecap:round;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">Geen oneindige scroll</div><div style="font-size:14px;color:#a9d4e2;">Je tijdlijn heeft een begin en een einde.</div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="9" style="stroke:white;stroke-width:2;"/><path d="M5.6 5.6l12.8 12.8" style="stroke:white;stroke-width:2;stroke-linecap:round;"/></svg>
+          <div><div style="font-size:17px;font-weight:800;color:white;">Nooit advertenties</div><div style="font-size:14px;color:#a9d4e2;">Jij bent de familie, niet het product.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ DOCS ═══════ -->
+  <section id="docs" style="max-width:1120px;margin:0 auto;padding:24px 24px 64px;">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Documentatie</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0;">Alles om Famlin te draaien</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+
+      <a href="/docs/server-setup" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Self-hosting gids</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Installeren met Docker, TLS en back-ups.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Meer lezen →</div>
+      </a>
+
+      <a href="/docs/" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 4h9l5 5v11a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/><path d="M14 4v5h5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Aan de slag</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Overzicht en eerste-login stappenplan.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Meer lezen →</div>
+      </a>
+
+      <a href="/docs/inviting-family" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Familie &amp; uitnodigingen</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Leden toevoegen en rollen beheren.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Meer lezen →</div>
+      </a>
+
+      <a href="/docs/security" style="background:white;border-radius:18px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:block;">
+        <div style="width:46px;height:46px;border-radius:12px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2" style="stroke:#c85a34;stroke-width:2;"/><path d="M8 11V8a4 4 0 018 0v3" style="stroke:#c85a34;stroke-width:2;"/></svg>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:#0f222a;margin-bottom:5px;">Beveiliging</div>
+        <div style="font-size:14px;color:#597784;line-height:1.5;">Authenticatiemodel, sessies en het melden van problemen.</div>
+        <div style="font-size:14px;font-weight:800;color:#006e94;margin-top:14px;">Meer lezen →</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ═══════ APP DOWNLOAD (secondary, after install) ═══════ -->
+  <section id="download" style="max-width:1120px;margin:0 auto;padding:24px 24px 80px;">
+    <div style="background:white;border-radius:28px;padding:56px 40px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e3edf1;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Stap drie · de app</div>
+      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Zodra je server live is, installeer je de app</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:560px;">Famlin staat niet als één vaste vermelding in een app store — elke Famlin-server is een eigen installatie, dus wie jouw server heeft opgezet bouwt en deelt de iOS- en Android-app met de familie. Ben jij dat? Dan lees je in de self-hosting gids hoe je de app bouwt met Expo EAS.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;">
+        <a href="/docs/server-setup" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:16px;font-weight:800;padding:15px 28px;border-radius:100px;box-shadow:0 4px 14px rgba(0,110,148,0.3);">
+          Self-hosting gids
+        </a>
+        <a href="/docs/admin-configuration" style="display:inline-flex;align-items:center;gap:10px;background:white;border:1.5px solid #d9e3e7;color:#0f222a;font-size:16px;font-weight:800;padding:15px 26px;border-radius:100px;">
+          Adminconfiguratie
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FOOTER ═══════ -->
+  <footer style="background:#0f222a;">
+    <div style="max-width:1120px;margin:0 auto;padding:56px 24px 40px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;">
+      <div>
+        <a href="#top" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;">
+            <svg width="21" height="21" viewBox="0 0 48 48" fill="none">
+              <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+              <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+              <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+            </svg>
+          </div>
+          <span style="font-size:22px;font-weight:900;color:white;letter-spacing:-0.5px;">Famlin</span>
+        </a>
+        <p style="font-size:15px;color:#8ba2ac;line-height:1.6;margin:0;max-width:260px;">Een hobbyproject van Tim Van Onckelen — een private, self-hosted thuis voor je familie. Open source, met zorg gebouwd, geen algoritme.</p>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Product</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="#install" style="font-size:15px;color:#c3d2d8;font-weight:600;">Installeren</a>
+          <a href="#features" style="font-size:15px;color:#c3d2d8;font-weight:600;">Functies</a>
+          <a href="#download" style="font-size:15px;color:#c3d2d8;font-weight:600;">Download de app</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Documentatie</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="/docs/server-setup" style="font-size:15px;color:#c3d2d8;font-weight:600;">Self-hosting</a>
+          <a href="/docs/" style="font-size:15px;color:#c3d2d8;font-weight:600;">Aan de slag</a>
+          <a href="https://github.com/TimVanOnckelen/famlin" style="font-size:15px;color:#c3d2d8;font-weight:600;">GitHub</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#5f7883;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Juridisch</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <a href="/nl/privacy/" style="font-size:15px;color:#c3d2d8;font-weight:600;">Privacy</a>
+          <a href="/docs/security" style="font-size:15px;color:#c3d2d8;font-weight:600;">Beveiliging</a>
+          <a href="https://github.com/TimVanOnckelen/famlin/blob/main/LICENSE" style="font-size:15px;color:#c3d2d8;font-weight:600;">MIT-licentie</a>
+          <a href="https://github.com/TimVanOnckelen/famlin/discussions" style="font-size:15px;color:#c3d2d8;font-weight:600;">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #23343c;">
+      <div style="max-width:1120px;margin:0 auto;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:14px;color:#6b8791;">© 2026 Tim Van Onckelen. Voor families, door families.</span>
+        <span style="font-size:14px;color:#6b8791;">Open source · self-hosted</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

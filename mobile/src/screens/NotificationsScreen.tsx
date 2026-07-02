@@ -5,27 +5,38 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  RefreshControl,
   SafeAreaView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { api } from '@/api/client';
 import { Notification } from '@/types';
+import { formatDateTime } from '@/i18n/utils';
 
 export function NotificationsScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
 
-  const { data: notifications, refetch } = useQuery({
+  const { data: notifications, isLoading, refetch } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
       const response = await api.get<Notification[]>('/notifications');
       return response.data;
     },
+    refetchInterval: 30000,
   });
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
@@ -33,6 +44,7 @@ export function NotificationsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 
@@ -42,6 +54,7 @@ export function NotificationsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 
@@ -49,12 +62,12 @@ export function NotificationsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={18} color={colors.coral} />
-          <Text style={styles.backButtonText}>Terug</Text>
+          <Icon name="arrow-left" size={18} color={colors.primary} />
+          <Text style={styles.backButtonText}>{t('common.back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Meldingen</Text>
+        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         <TouchableOpacity onPress={() => markAllRead.mutate()}>
-          <Text style={styles.markAllText}>Alles gelezen</Text>
+          <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -62,6 +75,9 @@ export function NotificationsScreen() {
         data={notifications || []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.notificationItem, !item.readAt && styles.unreadItem]}
@@ -77,13 +93,13 @@ export function NotificationsScreen() {
             </View>
             <View style={styles.notificationContent}>
               <Text style={styles.notificationMessage}>{item.message}</Text>
-              <Text style={styles.notificationTime}>{formatDate(item.createdAt)}</Text>
+              <Text style={styles.notificationTime}>{formatDateTime(item.createdAt)}</Text>
             </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Geen meldingen</Text>
+            <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
           </View>
         }
       />
@@ -91,27 +107,17 @@ export function NotificationsScreen() {
   );
 }
 
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('nl-NL', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 13,
     borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -126,17 +132,17 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 17,
-    color: colors.coral,
+    color: colors.primary,
   },
   headerTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 17,
-    color: colors.warmBlack,
+    color: colors.textTitle,
   },
   markAllText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 14,
-    color: colors.coral,
+    color: colors.primary,
   },
   list: {
     padding: 14,
@@ -164,7 +170,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.coral,
+    backgroundColor: colors.primary,
   },
   notificationContent: {
     flex: 1,
@@ -172,13 +178,13 @@ const styles = StyleSheet.create({
   notificationMessage: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,
-    color: colors.warmBlack,
+    color: colors.textTitle,
     lineHeight: 22,
   },
   notificationTime: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 12,
-    color: colors.warmGray,
+    color: colors.textMuted,
     marginTop: 6,
   },
   emptyState: {
@@ -188,6 +194,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,
-    color: colors.warmGray,
+    color: colors.textMuted,
   },
 });

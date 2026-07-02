@@ -1,0 +1,53 @@
+---
+sidebar_position: 1
+slug: /
+---
+
+<p align="center">
+  <img src="/img/logo.svg" alt="Famlin logo" width="120" />
+</p>
+
+# Famlin
+
+Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend and an Expo React Native mobile app.
+
+- **Self-hosted** — run it on your own server (e.g. Synology NAS, VPS, or home server).
+- **Private by default** — every post belongs to exactly one group, and only group members can see it.
+- **Mobile first** — iOS and Android app built with Expo.
+- **Admin web UI** — manage users, groups, and server settings from `/admin`.
+
+## Get started
+
+- **Want to self-host Famlin for your family?** Start with [Server setup](./server-setup) — Docker Compose, reverse proxies, and a Synology Container Manager walkthrough — then [Admin configuration](./admin-configuration) to log in, set a login method, and invite your family.
+- **Want to work on Famlin's code?** Head to the [Developers](/developers/quick-start) tab for a local Docker dev environment, architecture notes, and contribution guidelines.
+
+## Project structure
+
+```
+famlin/
+  backend/                       Fastify API, Prisma schema, Docker image
+    admin/                       React + Vite admin UI
+  mobile/                        Expo React Native app
+  website/                       Docusaurus documentation website
+  docker-compose.yml             production/standard backend stack
+  docker-compose.override.yml    local development with hot reload
+  docker-compose.mobile.yml      Expo web preview in Docker
+```
+
+## Learn more
+
+**Setting up Famlin**
+
+- [Server setup](./server-setup)
+- [Admin configuration](./admin-configuration)
+- [Inviting family members](./inviting-family)
+- [Managing users, groups, and content](./managing-users-and-content)
+- [Maintenance](./maintenance)
+- [Security policy](./security)
+
+**Developers**
+
+- [Quick start (local dev)](/developers/quick-start)
+- [Architecture](/developers/architecture)
+- [Contributing](/developers/contributing)
+- [Original project brief](/developers/project-brief)

@@ -8,16 +8,14 @@ const envSchema = z.object({
   PORT: z.string().default('3000'),
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string().min(32),
-  GOOGLE_CLIENT_ID: z.string(),
-  GOOGLE_CLIENT_IDS: z.string().optional().transform((s) => s ? s.split(',').map((id) => id.trim()) : []),
-  ALLOWED_EMAILS: z.string().transform((s) => s.split(',').map((e) => e.trim().toLowerCase())),
-  IMMICH_BASE_URL: z.string().optional(),
-  IMMICH_API_KEY: z.string().optional(),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().transform(Number).optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().optional(),
+  // Only enable when the server sits behind a reverse proxy that itself sets
+  // (and overwrites, never merely appends) X-Forwarded-*. With this off,
+  // those headers are ignored — otherwise a directly-exposed server would let
+  // any client spoof its own origin/host.
+  TRUST_PROXY: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export const config = envSchema.parse(process.env);

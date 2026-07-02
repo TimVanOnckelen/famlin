@@ -12,15 +12,34 @@ model User {
   email             String         @unique
   name              String
   avatarUrl         String?
+  passwordHash      String?
   createdAt         DateTime       @default(now())
   isAdmin           Boolean        @default(false)
-  emailNotificationsEnabled Boolean @default(true)
+  // Bumped on password change/reset so previously issued JWTs (which embed
+  // the version they were signed with) stop being accepted immediately,
+  // instead of remaining valid for the rest of their 30-day lifetime.
+  tokenVersion      Int            @default(0)
+  // Soft-deleted (deactivated) rather than removed, so their existing posts/
+  // comments/photos stay intact for the rest of the family — mirrors the
+  // Post/Comment soft-delete convention. A deleted user can no longer log in.
+  deletedAt         DateTime?
+  emailOnNewPost    Boolean        @default(true)
+  emailOnNewComment Boolean        @default(true)
+  emailOnNewLike    Boolean        @default(true)
+  pushOnNewPost     Boolean        @default(true)
+  pushOnNewComment  Boolean        @default(true)
+  pushOnNewLike     Boolean        @default(true)
   pushTokens        PushToken[]
   groupMemberships  GroupMember[]
   posts             Post[]
   comments          Comment[]
   likes             Like[]
+  favorites         Favorite[]
   notifications     Notification[]
+  createdInvites    Invite[]       @relation("InviteCreatedBy")
+  usedInvites       Invite[]       @relation("InviteUsedBy")
+  deletedPosts      Post[]         @relation("PostDeletedBy")
+  deletedComments   Comment[]      @relation("CommentDeletedBy")
 }
 
 model Group {
@@ -30,6 +49,7 @@ model Group {
   createdAt   DateTime @default(now())
   members     GroupMember[]
   posts       Post[]
+  invites     Invite[]
 }
 
 model GroupMember {
@@ -41,6 +61,7 @@ model GroupMember {
   joinedAt DateTime @default(now())
 
   @@unique([groupId, userId])
+  @@index([userId])
 }
 
 model Post {
@@ -52,13 +73,21 @@ model Post {
   content         String?
   type            PostType @default(UPDATE)
   milestoneTag    String?
-  immichAlbumId   String?
-  immichAssetIds  String[]
   uploadedAssetUrls String[]
   createdAt       DateTime @default(now())
+  editedAt        DateTime?
+  latitude        Float?
+  longitude       Float?
+  locationName    String?
+  deletedAt       DateTime?
+  deletedById     String?
+  deletedBy       User?     @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
   comments        Comment[]
   likes           Like[]
+  favorites       Favorite[]
   notifications   Notification[]
+
+  @@index([groupId, deletedAt, createdAt])
 }
 
 enum PostType {
@@ -67,23 +96,54 @@ enum PostType {
 }
 
 model Comment {
+  id        String    @id @default(cuid())
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Set when the comment is pinned to one photo/video in the post's
+  // uploadedAssetUrls rather than the post as a whole (null = post-level).
+  assetUrl  String?
+  content   String
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  likes     Like[]
+  deletedAt   DateTime?
+  deletedById String?
+  deletedBy   User?     @relation("CommentDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([postId, deletedAt])
+}
+
+// Likes a post or a comment (exactly one of postId/commentId is set).
+model Like {
+  id        String   @id @default(cuid())
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@unique([commentId, userId])
+}
+
+// A post a user has bookmarked for their personal favorites overview.
+model Favorite {
   id        String   @id @default(cuid())
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
-}
-
-model Like {
-  id       String @id @default(cuid())
-  postId   String
-  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+  @@index([userId])
 }
 
 model PushToken {
@@ -104,4 +164,34 @@ model Notification {
   message       String
   readAt        DateTime?
   createdAt     DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// A single-use link an admin generates to let someone join a group without
+// an existing account or an allowedEmails entry — the invite itself is the
+// authorization.
+model Invite {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  groupId     String
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  email       String?
+  createdById String?
+  createdBy   User?     @relation("InviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime?
+  usedAt      DateTime?
+  usedById    String?
+  usedBy      User?     @relation("InviteUsedBy", fields: [usedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@index([groupId])
 }

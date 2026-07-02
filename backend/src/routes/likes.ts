@@ -1,9 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { notifyGroup } from '../services/notifications.js';
+import { notifyUser } from '../services/notifications.js';
+import { isGroupMember } from '../services/groups.js';
+import { getT } from '../i18n/index.js';
 
 export default async function likeRoutes(fastify: FastifyInstance) {
   fastify.post('/posts/:postId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
     const { postId } = request.params as { postId: string };
 
     const post = await prisma.post.findUnique({
@@ -11,16 +14,12 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       include: { group: { select: { id: true, name: true } } },
     });
 
-    if (!post) {
-      return reply.status(404).send({ error: 'Post not found' });
+    if (!post || post.deletedAt) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    const membership = await prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId: post.groupId, userId: request.user!.id } },
-    });
-
-    if (!membership) {
-      return reply.status(403).send({ error: 'Not a member of this group' });
+    if (!(await isGroupMember(post.groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
     const existing = await prisma.like.findUnique({
@@ -40,12 +39,58 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     });
 
     if (post.authorId !== request.user!.id) {
-      await notifyGroup({
-        type: 'new_like',
-        groupId: post.groupId,
+      await notifyUser({
+        type: 'new_like_post',
+        userId: post.authorId,
         senderId: request.user!.id,
         postId: post.id,
-        message: `Iemand vindt je bericht in ${post.group.name} leuk`,
+        params: { author: request.user!.name, group: post.group.name },
+      });
+    }
+
+    return { liked: true };
+  });
+
+  fastify.post('/comments/:commentId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { commentId } = request.params as { commentId: string };
+
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { include: { group: { select: { id: true, name: true } } } } },
+    });
+
+    if (!comment || comment.deletedAt || comment.post.deletedAt) {
+      return reply.status(404).send({ error: t('errors.commentNotFound') });
+    }
+
+    if (!(await isGroupMember(comment.post.groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const existing = await prisma.like.findUnique({
+      where: { commentId_userId: { commentId, userId: request.user!.id } },
+    });
+
+    if (existing) {
+      await prisma.like.delete({ where: { id: existing.id } });
+      return { liked: false };
+    }
+
+    await prisma.like.create({
+      data: {
+        commentId,
+        userId: request.user!.id,
+      },
+    });
+
+    if (comment.authorId !== request.user!.id) {
+      await notifyUser({
+        type: 'new_like_comment',
+        userId: comment.authorId,
+        senderId: request.user!.id,
+        postId: comment.post.id,
+        params: { author: request.user!.name, group: comment.post.group.name },
       });
     }
 

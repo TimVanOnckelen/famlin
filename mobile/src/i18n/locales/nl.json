@@ -1,0 +1,197 @@
+{
+  "common": {
+    "loading": "Bezig...",
+    "tryAgain": "Probeer het opnieuw",
+    "cancel": "Annuleren",
+    "back": "Terug",
+    "save": "Opslaan",
+    "done": "Klaar",
+    "or": "of",
+    "unknown": "Onbekend",
+    "appName": "Famlin",
+    "error": "Fout",
+    "edited": "Bewerkt",
+    "delete": "Verwijderen",
+    "edit": "Bewerken"
+  },
+  "relativeTime": {
+    "justNow": "zojuist",
+    "minutesAgo_one": "{{count}} minuut geleden",
+    "minutesAgo_other": "{{count}} minuten geleden",
+    "hoursAgo_one": "{{count}} uur geleden",
+    "hoursAgo_other": "{{count}} uur geleden",
+    "daysAgo_one": "gisteren",
+    "daysAgo_other": "{{count}} dagen geleden"
+  },
+  "login": {
+    "subtitle": "Jouw familie, dichterbij",
+    "invitationOnly": "Enkel beschikbaar voor\nfamilieleden met een uitnodiging",
+    "familyIllustrationLabel": "familie illustratie",
+    "serverLabel": "Famlin-server",
+    "serverPlaceholder": "https://famlin.yourdomain.com",
+    "serverHint": "Het adres waar jouw Famlin-backend draait. Bijvoorbeeld https://famlin.example.com of http://192.168.1.10:3000.",
+    "continueButton": "Doorgaan",
+    "changeServer": "Wijzigen",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "jouw@email.com",
+    "passwordLabel": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Inloggen",
+    "loginWithSso": "Inloggen met SSO",
+    "ssoNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
+    "ssoNoIdToken": "De SSO-provider heeft geen ID-token teruggegeven.",
+    "alerts": {
+      "loginFailedTitle": "Inloggen mislukt",
+      "serverAddressMissingTitle": "Serveradres ontbreekt",
+      "serverAddressMissingMessage": "Vul het adres van je Famlin-server in, bijvoorbeeld https://famlin.yourdomain.com",
+      "serverUnreachableTitle": "Kan server niet bereiken",
+      "serverUnreachableMessage": "Kon geen verbinding maken met dit adres. Controleer de URL en probeer opnieuw.",
+      "enterEmailAndPassword": "Vul je e-mailadres en wachtwoord in."
+    }
+  },
+  "invite": {
+    "invitedTitle": "Je bent uitgenodigd voor \"{{group}}\"!",
+    "invitedByTitle": "{{inviter}} heeft je uitgenodigd voor \"{{group}}\"!",
+    "joinButton": "Word lid van {{group}}",
+    "createAccountButton": "Account aanmaken",
+    "haveAccountLink": "Heb je al een account? Log in",
+    "nameLabel": "Jouw naam",
+    "namePlaceholder": "Jan Jansen",
+    "newPasswordLabel": "Kies een wachtwoord",
+    "continueToApp": "Ga verder naar de app",
+    "errors": {
+      "notFound": "Deze uitnodigingslink bestaat niet. Vraag je familiebeheerder om een nieuwe link.",
+      "expired": "Deze uitnodiging is verlopen. Vraag je familiebeheerder om een nieuwe link.",
+      "used": "Deze uitnodiging is al gebruikt. Vraag je familiebeheerder om een nieuwe link als jij dit niet was.",
+      "noServer": "We konden niet bepalen voor welke Famlin-server deze uitnodiging is. Open de link van je familiebeheerder opnieuw.",
+      "fillRequired": "Vul alle velden in."
+    },
+    "alerts": {
+      "failedTitle": "Er ging iets mis"
+    }
+  },
+  "feed": {
+    "emptyTitle": "Nog geen berichten in deze groep.",
+    "emptySubtitle": "Wees de eerste om iets te delen!",
+    "noGroupsTitle": "Je zit nog in geen enkele groep.",
+    "noGroupsSubtitle": "Vraag je familiebeheerder om je aan een groep toe te voegen.",
+    "viewMembers": "Groepsleden bekijken",
+    "viewFavorites": "Favorieten bekijken",
+    "favorite": "Favoriet",
+    "milestoneBadge": "🎂 MIJLPAAL",
+    "comments_one": "{{count}} reactie",
+    "comments_other": "{{count}} reacties"
+  },
+  "groupMembers": {
+    "count_one": "{{count}} lid",
+    "count_other": "{{count}} leden",
+    "joined": "Lid sinds {{date}}",
+    "empty": "Geen leden in deze groep."
+  },
+  "newPost": {
+    "title": "Nieuw bericht",
+    "postButton": "Plaatsen",
+    "loading": "Laden...",
+    "groupLabel": "Groep",
+    "contentPlaceholder": "Schrijf iets voor de familie...",
+    "addPhotoTitle": "Foto's & video's",
+    "addPhotoSubtitle": "Kies uit galerij",
+    "milestoneTitle": "🎂 Dit is een mijlpaal",
+    "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
+    "alerts": {
+      "noGroupSelected": "Geen groep geselecteerd",
+      "postFailed": "Bericht kon niet worden geplaatst",
+      "permissionRequiredTitle": "Toegang nodig",
+      "permissionRequiredMessage": "We hebben toegang nodig tot je foto- en videobibliotheek.",
+      "uploadFailed": "Upload mislukt"
+    },
+    "milestoneTags": {
+      "birthday": "🎂 Verjaardag",
+      "birth": "👶 Geboorte",
+      "anniversary": "💍 Jubileum",
+      "graduation": "🎓 Diploma",
+      "custom": "✏️ Anders",
+      "customPlaceholder": "Geef deze mijlpaal een naam..."
+    },
+    "location": {
+      "addTitle": "Locatie toevoegen",
+      "addSubtitle": "Geef aan waar dit gebeurde",
+      "pickerTitle": "Kies locatie",
+      "nameLabel": "Locatienaam",
+      "namePlaceholder": "Bijv. huis van oma",
+      "tapHint": "Tik op de kaart om de pin te plaatsen"
+    }
+  },
+  "postDetail": {
+    "title": "Bericht",
+    "postedInGroup": "in {{group}} · {{time}}",
+    "milestoneBadge": "🎂 MIJLPAAL",
+    "commentsHeader": "Reacties · {{count}}",
+    "commentPlaceholder": "Schrijf een reactie...",
+    "replyPlaceholder": "Schrijf een antwoord...",
+    "comments_one": "{{count}} reactie",
+    "comments_other": "{{count}} reacties",
+    "reply": "Antwoorden",
+    "replyingTo": "Antwoord aan {{name}}",
+    "cancelReply": "Annuleren",
+    "like": "Vind ik leuk",
+    "favorite": "Favoriet",
+    "postOptions": "Berichtopties",
+    "editPost": "Bericht bewerken",
+    "deletePost": "Bericht verwijderen",
+    "deletePostConfirmTitle": "Bericht verwijderen?",
+    "deletePostConfirmMessage": "Dit kan niet ongedaan worden gemaakt.",
+    "deleteCommentConfirmTitle": "Reactie verwijderen?",
+    "deleteCommentConfirmMessage": "Dit kan niet ongedaan worden gemaakt.",
+    "editPlaceholder": "Bewerk je bericht...",
+    "alerts": {
+      "editFailed": "Wijzigingen konden niet worden opgeslagen",
+      "deleteFailed": "Verwijderen mislukt"
+    }
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "markAllRead": "Alles gelezen",
+    "empty": "Geen meldingen"
+  },
+  "favorites": {
+    "title": "Favorieten",
+    "emptyTitle": "Nog geen favorieten.",
+    "emptySubtitle": "Tik op het bladwijzer-icoon bij een bericht om het hier te bewaren."
+  },
+  "profile": {
+    "title": "Profiel",
+    "changePhoto": "Profielfoto wijzigen",
+    "adminBadge": "Admin",
+    "settings": "Instellingen",
+    "notifications": "Meldingen",
+    "push": "Push",
+    "email": "E-mail",
+    "notifyNewPost": "Nieuwe berichten",
+    "notifyNewComment": "Nieuwe reacties",
+    "notifyNewLike": "Likes",
+    "language": "Taal",
+    "languageDescription": "Kies je voorkeurstaal",
+    "server": "Server",
+    "connectedTo": "Verbonden met",
+    "app": "App",
+    "version": "Versie {{version}}",
+    "logout": "Uitloggen",
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands"
+    }
+  },
+  "tabs": {
+    "feed": "Feed",
+    "notifications": "Meldingen",
+    "profile": "Profiel"
+  },
+  "imageViewer": {
+    "photoAccessibilityLabel": "Foto {{index}} van {{total}}",
+    "videoAccessibilityLabel": "Video {{index}} van {{total}}",
+    "commentsButton": "Reacties",
+    "commentsTitle": "Reacties",
+    "noComments": "Nog geen reacties op deze foto"
+  }
+}

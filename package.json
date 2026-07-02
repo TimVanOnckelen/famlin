@@ -1,10 +1,27 @@
 {
   "name": "famlin",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "description": "Private, self-hosted family updates app",
+  "license": "MIT",
+  "author": "Tim Van Onckelen",
+  "keywords": [
+    "family",
+    "social",
+    "self-hosted",
+    "expo",
+    "react-native",
+    "fastify",
+    "prisma"
+  ],
   "scripts": {
     "dev:backend": "cd backend && npm run dev",
+    "test:backend": "cd backend && npm test",
+    "dev:admin": "cd backend/admin && npm run dev",
     "dev:mobile": "cd mobile && npm start",
+    "dev:docs": "cd docs && npm start",
+    "build:admin": "cd backend/admin && npm run build",
+    "build:docs": "cd docs && npm run build",
     "db:migrate": "cd backend && npm run db:migrate",
     "db:seed": "cd backend && npm run db:seed"
   },

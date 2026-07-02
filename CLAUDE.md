@@ -1,223 +1,105 @@
-# Claude Code — Startinstructies Famlin
+# CLAUDE.md — Famlin
 
-## Project in één zin
+**Famlin** is a private, self-hosted family updates app (posts, photos, comments, likes, milestones). A monorepo with these parts:
 
-**Famlin** is een private, self-hosted familie-updates-app (Facebook-achtig: posts, foto's, comments, likes, mijlpalen) met een Expo/React Native app voor iOS en Android, een Node-backend op Synology, Google OAuth login (gedeeld met bestaande Immich-setup), en read-only integratie met Immich voor foto's.
+- **`backend/`** — Fastify + TypeScript + Prisma (Postgres) API. ESM (`"type": "module"`).
+- **`backend/admin/`** — React + Vite admin UI, built into `backend/dist/admin/` and served by the backend at `/admin`.
+- **`mobile/`** — Expo / React Native app (iOS + Android).
+- **`docs/`** — Docusaurus documentation site (deployed separately, not served by the backend).
+- **`website/`** — static marketing landing page (plain HTML/CSS, no build step), deployed as the root of GitHub Pages at `famlin.app`.
 
-## Naamgeving in code
+`website/` and `docs/` deploy together to GitHub Pages via `.github/workflows/pages.yml`: the landing page is copied to the artifact root and the Docusaurus build (`docs/build`) is nested under `/docs`, so `docs.baseUrl` in `docs/docusaurus.config.ts` must stay `/docs/` (not `/`) for internal doc links to resolve correctly.
 
-Gebruik consequent deze identifiers doorheen het project:
+> The original step-by-step build brief describes how Famlin was meant to be built from scratch (historical intent, not current state) — see [Original project brief](/developers/project-brief) in the Developers tab.
 
-- **App display-naam**: Famlin
-- **Repo-naam**: `famlin` (of `famlin-app`)
-- **Expo `app.json` slug**: `famlin`
-- **iOS bundle identifier**: `be.[jouwdomein].famlin` (pas `[jouwdomein]` aan naar je eigen reverse-domain, bv. `be.xeweb.famlin`)
-- **Android package name**: zelfde patroon, bv. `be.xeweb.famlin`
-- **Docker container/service-namen**: `famlin-backend`, `famlin-db`
-- **Database-naam**: `famlin`
+## Commands
 
-## Architectuur
+Run from the repo root unless noted. There is no root install/workspace — install per package (`cd backend && npm install`, `cd backend/admin && npm install`, `cd mobile && npm install`, `cd docs && npm install`).
 
-- **Backend**: Node.js + Fastify (of Express), Postgres, Prisma ORM. Draait als Docker container(s) op Synology naast de bestaande stack (Immich, etc.).
-- **Auth**: Google OAuth 2.0, eigen client-ID in hetzelfde Google Cloud project als Immich. Backend valideert Google ID-tokens; eigen sessie/JWT voor de app.
-- **Mobile app**: Expo (React Native), zelfde stack als het bestaande Prompt Punk-project (Expo SDK, Zustand voor state). Native iOS + Android build via EAS.
-- **Foto's**: geen eigen opslag — read-only calls naar de Immich API om gedeelde albums/foto's op te halen en te tonen.
-- **Groepen**: posts horen altijd bij precies 1 groep (bv. "Familie A", "Familie B"). Gebruikers kunnen lid zijn van meerdere groepen tegelijk. Alleen de admin (jij) maakt groepen aan en beheert lidmaatschap — geen self-service group-creation voor MVP.
-- **Notificaties**: in-app push via Expo's push-service (vereist een development/production build, werkt niet in Expo Go) + e-mail als fallback/aanvulling.
-- **Geen Next.js, geen webversie, geen Supabase** — bewuste keuze, zie eerdere discussie: te zwaar voor Synology, en de native app is de hoofdinterface.
+**Backend** (`cd backend`)
+- `npm run dev` — dev server with watch (`tsx watch src/server.ts`). Tolerates JSON imports.
+- `npm run build` — `tsc` typecheck/emit **and** builds the admin UI. Use `npx tsc --noEmit` for a quick typecheck.
+- `npm start` — run the compiled server (`node dist/server.js`).
+- `npm run db:migrate` — Prisma migrate (dev) · `db:deploy` (prod) · `db:generate` · `db:seed` · `db:studio`.
+- `npm test` — Vitest, against the real dev database (needs `DATABASE_URL` reachable). Tests in `src/__tests__/` use self-cleaning, uniquely-prefixed fixtures rather than a separate test DB — see `authorization.test.ts`.
 
-## Stap 1 — Repo en projectstructuur
+**Admin UI** (`cd backend/admin`)
+- `npm run dev` — Vite dev server · `npm run build` — production build · `npx tsc --noEmit` — typecheck.
 
-Vraag Claude Code om een monorepo op te zetten met twee mappen:
+**Mobile** (`cd mobile`)
+- `npm start` (Expo) · `npm run ios` · `npm run android` · `npx tsc --noEmit` — typecheck.
+- `npm run build:ios` / `build:android` — EAS builds.
 
-```
-famlin/
-  backend/        (Fastify + Prisma + Postgres)
-  mobile/         (Expo app)
-  docker-compose.yml
-```
+**Docs site** (`cd docs`)
+- `npm start` — Docusaurus dev server · `npm run build` — static build to `docs/build/` · `npm run typecheck`.
 
-Gebruik npm workspaces of gewoon twee losse package.json's — geen overkill met Turborepo/Nx voor een project van deze omvang.
+**Root shortcuts** (`package.json`): `dev:backend`, `dev:admin`, `dev:mobile`, `dev:docs`, `build:admin`, `build:docs`, `db:migrate`, `db:seed`.
 
-## Stap 2 — Backend opzetten
+After any change, verify with `npx tsc --noEmit` in each affected package.
 
-Prompt voor Claude Code:
+## Architecture as-built
 
-> Zet een Fastify-backend op in `backend/` met TypeScript, Prisma als ORM tegen Postgres, en de volgende routes: auth (Google OAuth token-validatie), groups (admin-only CRUD + lidmaatschapsbeheer), posts (CRUD, gefilterd op groepslidmaatschap van de ingelogde user), comments, likes, notificaties (push-token registratie + notificatie-historiek), en een Immich-proxy-endpoint dat albums/foto's ophaalt via de Immich API met een server-side API-key (niet client-side, om de Immich-credentials niet bloot te stellen aan de mobiele app).
->
-> Belangrijk: zorg dat elke posts-query filtert op groepen waar de ingelogde user lid van is — een user mag nooit posts zien uit een groep waar die geen lid van is. Groepen aanmaken/bewerken/leden toevoegen of verwijderen mag alleen door een user met `isAdmin = true`.
+**Backend routes** (`backend/src/routes/`, registered in `src/server.ts`):
 
-Geef daarbij dit Prisma-datamodel als startpunt mee:
+| File | Prefix | Notes |
+| --- | --- | --- |
+| `auth.ts` | `/api/auth` | Generic OIDC (`/oidc`, `/oidc-config`) + local password login, `/me`, register/reset (admin) |
+| `groups.ts` | `/api/groups` | **Read-only, member-facing**: your groups, group detail, member list |
+| `admin.ts` | `/api/admin` | **All admin mutations**: users, groups CRUD, membership, settings, cross-group content moderation (guarded by `requireAdmin`) |
+| `posts.ts` | `/api/posts` | CRUD, always filtered by group membership |
+| `comments.ts`, `likes.ts`, `favorites.ts` | `/api` | `favorites.ts` adds `POST /posts/:postId/favorite` (toggle) and `GET /favorites` (the logged-in user's favorited posts, across all their groups). `GET /posts/:postId/comments` takes an optional `?assetUrl=` filter and `POST` an optional `assetUrl` body field to pin a comment to one photo/video (`Comment.assetUrl`) instead of the post as a whole; replies inherit the parent's `assetUrl` |
+| `push-tokens.ts` | `/api/push-tokens` | `POST` registers, `DELETE` unregisters (called on mobile logout) |
+| `notifications.ts` | `/api/notifications` | in-app notification history |
+| `uploads.ts` | `/api/uploads` | direct photo upload to a Docker volume, served at `/uploads/` (auth-gated, see below); `GET /media-token` issues the token clients use to read it |
+| `invites.ts` | `/api/invites` | **Public**: invite preview (`GET /:token`), self-service registration (`POST /:token/register`), join-for-logged-in-user (`POST /:token/accept`, authenticated). Creation/list/revoke are admin mutations in `admin.ts` instead (`/api/admin/groups/:id/invites`, `/api/admin/invites/:id`) |
+| `invite-landing.ts` | `/invite/:token` (no prefix) | **Public**: server-rendered HTML the invite link opens; hands off to the app via `famlin://invite/:token?server=...`. Matches the app's design (logo, teal palette) and is translated into the server's `defaultLanguage` setting (no per-visitor Accept-Language negotiation, since there's no signed-in user yet) |
 
-```prisma
-model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  name            String
-  avatarUrl       String?
-  createdAt       DateTime @default(now())
-  isAdmin         Boolean  @default(false)
-  pushTokens      PushToken[]
-  groupMemberships GroupMember[]
-  posts           Post[]
-  comments        Comment[]
-  likes           Like[]
-  notifications   Notification[]
-}
+Services live in `backend/src/services/` (`settings.ts`, `notifications.ts`, `invites.ts`, `users.ts`, `groups.ts`, `posts.ts`, `pagination.ts`). The admin SPA is served at `/admin` with `index.html` fallback for client-side routing.
 
-model Group {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  members     GroupMember[]
-  posts       Post[]
-}
+**List endpoints are cursor-paginated.** `GET /api/posts`, `GET /api/favorites`, and the admin `/users`/`/content/posts`/`/content/comments` endpoints take `?cursor=`/`?take=` (default 30, max 100) and return `{ items, nextCursor }` instead of a bare array — use `services/pagination.ts`'s `paginationArgs`/`paginate` for any new list endpoint rather than returning everything unbounded.
 
-model GroupMember {
-  id       String  @id @default(cuid())
-  groupId  String
-  group    Group   @relation(fields: [groupId], references: [id])
-  userId   String
-  user     User    @relation(fields: [userId], references: [id])
-  joinedAt DateTime @default(now())
+**Data model** (`backend/prisma/schema.prisma`): `User`, `Setting`, `Group`, `GroupMember` (M2M join, `@@unique([groupId, userId])`), `Post` (belongs to exactly one `Group`), `Comment`, `Like`, `Favorite` (a user's bookmarked posts, `@@unique([postId, userId])`, mirrors `Like`), `PushToken`, `Notification`, `Invite`. `Post` and `Comment` are soft-deleted (`deletedAt`/`deletedById`, nullable) rather than hard-deleted — every member-facing query filters `deletedAt: null`; admins can browse and restore removed content via the admin UI's Content page (`/api/admin/content/posts`, `/content/comments`). `User` is soft-deleted too (`deletedAt`, nullable, no `deletedById`) — `DELETE /api/admin/users/:id` deactivates rather than deletes, so their posts/comments/photos survive; `POST /api/admin/users/:id/restore` reactivates. `User.tokenVersion` is embedded in every JWT and checked on each request, so bumping it (password change/reset, deactivation) invalidates every previously-issued token immediately.
 
-  @@unique([groupId, userId])
-}
+**Mobile** (`mobile/src/`): screens in `screens/`, navigation in `navigation/` + `App.tsx`, Zustand store in `stores/`, API layer in `api/` (axios; base URL is user-entered at login, not hardcoded), React Query for fetching/caching.
 
-model Post {
-  id              String   @id @default(cuid())
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id])
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id])
-  content         String?
-  type            PostType @default(UPDATE)
-  immichAlbumId   String?
-  immichAssetIds  String[]
-  createdAt       DateTime @default(now())
-  comments        Comment[]
-  likes           Like[]
-}
+## Conventions & gotchas
 
-enum PostType {
-  UPDATE
-  MILESTONE
-}
+- **Group membership is the core authorization rule.** Every posts query must filter on groups the logged-in user belongs to — a user must never see posts from a group they aren't a member of. Group/member mutations require `isAdmin`.
+- **Group mutations live only in `admin.ts`.** `groups.ts` is deliberately read-only — do not re-add create/update/delete or member-management routes there.
+- **`requireAdmin` returns a boolean and sends the 403 itself.** Callers **must** `return` when it returns `true`, otherwise the handler keeps running after the response is sent.
+- **Runtime config is in the DB, not `.env`.** OIDC issuer/client ID/scopes, allowed emails, SMTP, and the server's `defaultLanguage`/`appStoreUrl`/`playStoreUrl` live in the `Setting` table (managed via the admin UI's "General" section), read through `getAllSettings()` (`services/settings.ts`), which caches for 10s and is invalidated on write. `defaultLanguage` is used both for server-rendered pages with no signed-in user (the `/invite/:token` landing page) and for notification push/email text, since recipients don't have a stored per-user language preference — see `getT`/`SUPPORTED_LANGUAGES` in `src/i18n/index.ts`. `appStoreUrl`/`playStoreUrl` are optional and blank by default (Famlin isn't published on a fixed public listing — each deployment distributes the app itself); when set, the invite landing page shows download buttons. Only `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, and `TRUST_PROXY` are startup env vars — `TRUST_PROXY` (default `false`) must be `true` when (and only when) Famlin sits behind a reverse proxy that sets `X-Forwarded-Proto`/`X-Forwarded-Host`, otherwise those headers are ignored so a directly-exposed server can't have its origin spoofed.
+- **OIDC login works with any provider** (Google, Microsoft, Authentik, Keycloak, Auth0, ...) via standard discovery + JWKS verification (`jose`, see `plugins/auth.ts` `verifyOidcToken`/`getDiscovery`). Mobile and admin both do a public-client Authorization Code + PKCE flow directly against the provider (no client secret) and hand the resulting ID token to `POST /api/auth/oidc`; `GET /api/auth/oidc-config` is the public endpoint clients use to discover the issuer's endpoints. It respects `allowedEmails` — new accounts are only provisioned if the email is whitelisted (empty list = allow all); see `services/settings.ts` `isEmailAllowed`.
+- **i18n is mandatory — no hardcoded UI strings.** Use `const { t } = useTranslation()` and keys. Locales: `mobile/src/i18n/locales/{en,nl}.json` and `backend/admin/src/i18n/locales/{en,nl}.json`; `en.json` is the source, `nl.json` the translation. Backend error messages use `getT(request)('errors.…')`. Adding a UI string means adding both `en` and `nl` keys. Weblate component type: **i18next JSON**; `fallbackLng` is `en`.
+- **Backend is ESM + `NodeNext`.** JSON imports need the attribute: `import x from './x.json' with { type: 'json' };`.
+- **Removing a group member keeps their existing posts/comments visible** to the remaining members (deliberate MVP choice).
+- **Posts and comments are soft-deleted, never hard-deleted.** `DELETE /api/posts/:id` and `DELETE /api/comments/:id` set `deletedAt`/`deletedById` instead of removing the row (an admin can restore via `/api/admin/content/*`). Every query that returns posts/comments (or acts on them — liking, commenting) to a member must filter `deletedAt: null`, including on the *parent* (e.g. commenting/liking checks `post.deletedAt` too, not just the comment/like's own row) — don't add a new read/write path that forgets this filter, and don't reintroduce `prisma.post.delete`/`prisma.comment.delete`. `backend/src/__tests__/authorization.test.ts` has regression tests for this.
+- **Users are soft-deleted too, same reasoning.** `DELETE /api/admin/users/:id` deactivates (`deletedAt` + bumps `tokenVersion`) rather than calling `prisma.user.delete` — a hard delete would cascade-remove all their posts/comments, contradicting the point above. Don't reintroduce `prisma.user.delete` in a request path. The last remaining admin can't be deactivated, deleted, or demoted (`isLastAdmin` in `routes/admin.ts`) — keep that check if you touch those routes.
+- **Invite links are their own authorization and deliberately bypass `allowedEmails`.** A valid, unexpired, unused `Invite` (generated per-group from the admin UI) lets `POST /api/auth/oidc` / `POST /api/auth/login` (via an optional `inviteToken` field) and `POST /api/invites/:token/register` provision or join a user even when the email isn't whitelisted — see `verifyOidcToken(idToken, { allowUnlisted })` in `plugins/auth.ts` and `consumeInvite`/`getValidInvite` in `services/invites.ts`. Don't add new email-allowlist checks upstream of these paths without accounting for the invite override. `consumeInvite` runs as a transaction with an atomic conditional update so two concurrent redemptions of the same single-use invite can't both succeed.
+- **`/uploads/*` requires auth — session token or media token.** See [Photos and uploads](docs/developers/architecture.md#photos-and-uploads) in the architecture doc. `uploadedAssetUrls`/`assetUrl` are validated (zod regex in `types.ts`) against the exact path shape the upload route writes — don't loosen that to a bare `z.string()`, it's what stops a post from linking to an arbitrary external URL.
+- **Don't leak `err.message` to the client.** The global error handler (`app.ts`) turns a `ZodError` into a translated `400` and anything else into a generic translated `500`; a route's own `catch` block should only special-case errors it needs to give a specific, translated, non-sensitive message for (see the `OidcError`/`P2025` handling in `routes/auth.ts` as the pattern) — let everything else propagate to the global handler instead of echoing `err.message`.
 
-model Comment {
-  id        String   @id @default(cuid())
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  content   String
-  createdAt DateTime @default(now())
-}
+## Documentation
 
-model Like {
-  id       String @id @default(cuid())
-  postId   String
-  post     Post   @relation(fields: [postId], references: [id])
-  userId   String
-  user     User   @relation(fields: [userId], references: [id])
+`docs/` (Docusaurus) has two tabs — **Docs** (`docs/docs/`, self-hosting/ops) and **Developers** (`docs/developers/`, working on the code). When a change lands, check whether it needs a matching doc update:
 
-  @@unique([postId, userId])
-}
+| Change | Doc to update |
+| --- | --- |
+| New/changed backend route, prefix, or data model field | `docs/developers/architecture.md` (routes table / data model section) — and the table in this file's [Architecture as-built](#architecture-as-built) section above |
+| New/changed startup env var, Docker Compose service, or deploy step | `docs/docs/server-setup.md` |
+| New/changed OIDC/SSO, allowed-emails, or SMTP setup step | `docs/docs/admin-configuration.md` |
+| New/changed invite flow (creation, redemption, expiry/revocation) | `docs/docs/inviting-family.md` |
+| New/changed admin capability for users, groups, or content moderation | `docs/docs/managing-users-and-content.md` |
+| New/changed local dev command, seed behavior, or Docker dev workflow | `docs/developers/quick-start.md` |
+| New contribution requirement or PR process change | `docs/developers/contributing.md` |
+| Security-relevant change (auth, secrets handling, permissions) | `docs/docs/security.md` |
+| New/changed marketing claim, install steps, or doc link on the landing page | `website/index.html` |
 
-model PushToken {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  token     String   @unique
-  createdAt DateTime @default(now())
-}
+Not every change needs a doc update — skip it for internal refactors with no user- or developer-visible behavior change. When in doubt, err toward updating: stale docs are worse than a slightly redundant edit.
 
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  type      String   // bv. "new_post", "new_comment", "new_like"
-  relatedPostId String?
-  message   String
-  readAt    DateTime?
-  createdAt DateTime @default(now())
-}
-```
+## Deploy
 
-**Belangrijke datamodel-keuzes:**
+Docker Compose (`docker-compose.yml`): `famlin-db` (Postgres, persistent volume, **not** published to the host — reached only over the compose network) + `famlin-backend` (Node 20, runs as the non-root `node` user), pulled by default as the pre-built `ghcr.io/timvanonckelen/famlin:${FAMLIN_VERSION:-latest}` image rather than built locally. Requires `JWT_SECRET` and `POSTGRES_PASSWORD` in `.env` (see `.env.example`); `docker compose up` fails fast with a clear error if either is unset. Seed/admin account for first setup: `admin@example.com` / `test123456` at `/admin` — then configure OIDC/SSO, allowed emails, and SMTP there. Keep the Postgres volume in the existing NAS backup scope. `docker-compose.override.yml` (local dev only, auto-merged by plain `docker compose up`) is what actually builds from `backend/Dockerfile` for hot-reload — production deploys use `docker-compose.yml` alone and never build from source unless deliberately switched over (see `docs/docs/maintenance.md#building-from-source-instead`).
 
-- `GroupMember` is een many-to-many koppeltabel: een user kan in meerdere groepen zitten, een groep heeft meerdere leden.
-- `Post.groupId` is verplicht — elke post hoort bij precies 1 groep. Alleen leden van die groep zien de post.
-- `User.isAdmin` bepaalt wie groepen mag aanmaken/beheren (alleen jij, voor MVP).
-- `PushToken` slaat Expo push tokens op, gekoppeld aan user (een user kan meerdere devices/tokens hebben).
-- `Notification` is een interne tabel voor in-app notificatie-geschiedenis (los van de daadwerkelijke push-verzending).
+**`.github/workflows/docker-publish.yml`** builds and pushes `backend/Dockerfile` to `ghcr.io/timvanonckelen/famlin` on every published GitHub release (also `workflow_dispatch`-able), tagged with the release semver plus a rolling `latest`. Releases themselves are cut automatically by `.github/workflows/release-please.yml` from conventional commits on `main` — so the publish step needs no manual trigger once a release lands.
 
-## Stap 3 — Google OAuth configureren
-
-1. Ga naar dezelfde Google Cloud Console waar je Immich's OAuth-client al staat.
-2. Maak een **nieuwe** OAuth 2.0 Client ID aan, type "iOS" en "Android" (Expo genereert hiervoor specifieke bundle/package IDs — gebruik `expo-auth-session` documentatie voor de exacte redirect URI's).
-3. Whitelist alleen de familie-e-mailadressen server-side (zelfde patroon als je Immich-config).
-
-Prompt voor Claude Code:
-
-> Implementeer Google OAuth login in de Expo-app met `expo-auth-session`, en een backend-endpoint die het Google ID-token verifieert en een eigen sessie-JWT teruggeeft.
->
-> Implementeer ook een e-mail-whitelist (zelfde patroon als bij Immich): een environment variable `ALLOWED_EMAILS` (comma-separated lijst) die de backend checkt bij elke Google-login-poging. Iemand die niet op de lijst staat krijgt een duidelijke foutmelding, geen automatische account-aanmaak.
-
-## Stap 4 — Admin: groepen en leden beheren
-
-Voor MVP hoeft dit geen volledig UI-paneel te zijn, maar moet wel praktisch werkbaar zijn vanaf dag 1:
-
-Prompt voor Claude Code:
-
-> Bouw een minimale admin-flow voor groepenbeheer: ofwel een paar simpele admin-only API-routes (`POST /api/admin/groups`, `POST /api/admin/groups/:id/members`) die ik via Postman/Insomnia kan aanroepen, ofwel — als dat sneller is — een Prisma seed-script (`backend/prisma/seed.ts`) waarin ik groepen en hun leden als data kan invullen en met `npx prisma db seed` kan toepassen. Kies de optie die het snelst werkt voor een MVP met een handvol vaste groepen.
-
-**Te beslissen voor je begint**: wat er gebeurt met een groep waar iemand uit verwijderd wordt — blijven hun bestaande posts/comments zichtbaar voor de overige leden (aanrader voor MVP, simpelst om te implementeren) of worden ze verborgen/verwijderd? Leg deze keuze vooraf vast, anders wordt het impliciet bepaald door wat Claude Code toevallig bouwt.
-
-## Stap 5 — Immich-integratie
-
-Prompt voor Claude Code:
-
-> Bouw een backend-endpoint `/api/immich/albums/:albumId` dat foto's uit een Immich-gedeeld-album ophaalt via de Immich API (gebruik de Immich API-docs op api.immich.app), met server-side caching (bijv. 5 minuten) om de Immich-server niet te overbelasten bij elke feed-refresh.
-
-Let op: bewaar de Immich API-key als environment variable in de backend, nooit in de mobile app.
-
-## Stap 6 — Notificaties (in-app push + e-mail)
-
-In-app push via Expo vereist een development of production build — werkt niet in Expo Go op Android sinds SDK 53. Dit valt toch al onder je EAS Build-plan, dus geen extra complicatie.
-
-Prompt voor Claude Code:
-
-> Implementeer notificaties in twee delen:
->
-> 1. **In-app push (Expo)**: in de mobile app, registreer het Expo push token bij het inloggen (via `expo-notifications` en `expo-device`) en stuur dit naar een backend-endpoint `/api/push-tokens` om op te slaan. Bouw in de backend een notificatieservice met de `expo-server-sdk-node` package die, bij een nieuwe post/comment/like binnen een groep, een push-bericht stuurt naar alle groepsleden (behalve de auteur zelf) via hun opgeslagen Expo push tokens.
-> 2. **E-mail notificaties**: bouw een eenvoudige e-mailservice (bijvoorbeeld via Nodemailer met een SMTP-provider) die bij dezelfde events (nieuwe post, comment) een e-mail stuurt naar groepsleden. Maak dit instelbaar per gebruiker (een `emailNotificationsEnabled`-veld op `User`), zodat niet iedereen per se e-mails wil.
->
-> Beide notificatietypes moeten rekening houden met groepslidmaatschap: alleen leden van de groep waarin de post/comment is geplaatst krijgen een notificatie.
-
-## Stap 7 — Expo app
-
-Prompt voor Claude Code:
-
-> Zet een Expo-app op in `mobile/` met als app-naam "Famlin": een feed-scherm (FlatList met posts, gefilterd op de groep die de user momenteel bekijkt, met een groepswisselaar bovenaan als de user in meerdere groepen zit), een post-detail-scherm met comments, een "nieuwe post"-scherm (tekst + optioneel Immich-album-picker + verplichte groepskeuze als de user in meerdere groepen zit), een notificaties-scherm (lijst van recente meldingen), en een instellingen-scherm (incl. toggle voor e-mail-notificaties). Gebruik Zustand voor state, React Query voor data-fetching/caching tegen de backend-API. Implementeer Expo push-token-registratie bij het inloggen.
-
-## Stap 7 — Docker Compose voor Synology
-
-Vraag Claude Code om een `docker-compose.yml` met:
-
-- `famlin-db` service (officiële Postgres image, volume voor persistente data)
-- `famlin-backend` service (gebouwd vanuit `backend/Dockerfile`)
-- Reverse proxy via je bestaande Synology setup (Traefik/Nginx — vraag na wat je al draait voor Immich en hergebruik dat patroon)
-
-**Backup**: zorg dat het Postgres-datavolume in dezelfde shared folder staat als je andere Docker-data, zodat het automatisch wordt meegenomen in je bestaande offsite-backup-routine naar de DS223j bij je ouders. Voeg dit niet toe als losse, makkelijk te vergeten taak — het hoort vanaf het begin in dezelfde backup-scope als de rest van je NAS-stack.
-
-## Stap 8 — EAS builds voor App Store / Play Store
-
-Prompt voor Claude Code:
-
-> Configureer EAS Build (`eas.json`) voor zowel iOS als Android productie-builds, en leg uit welke Apple Developer / Google Play Console stappen ik zelf moet zetten (deze kan Claude Code niet voor je doen — account, certificates, store listings zijn handmatige stappen).
-
-## Volgorde-advies
-
-Werk in deze volgorde om snel iets werkends te hebben: (1) backend met auth + groepen + basic CRUD, (2) Expo-app met login + groepswisselaar + feed (nog zonder Immich/notificaties), (3) Immich-integratie erbij, (4) notificaties (push + e-mail), (5) polish (milestones, EAS build). Test elke stap lokaal voor je naar Synology deployt.
+**Website & docs** deploy separately to GitHub Pages via `.github/workflows/pages.yml`, triggered on pushes to `website/**` or `docs/**`: it builds `docs/` with Docusaurus, assembles `website/` (root) + `docs/build` (under `/docs`) into one artifact, and publishes it to `famlin.app` (custom domain via `website/CNAME`).

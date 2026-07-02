@@ -1,14 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { createGroupBodySchema, groupMemberBodySchema } from '../types.js';
+import { isGroupMember } from '../services/groups.js';
+import { getT } from '../i18n/index.js';
 
-function requireAdmin(request: any, reply: any) {
-  if (!request.user?.isAdmin) {
-    return reply.status(403).send({ error: 'Admin required' });
-  }
-}
-
+// Member-facing, read-only group endpoints. All group mutations (create/update/
+// delete, add/remove members) are admin-only and live in routes/admin.ts under
+// /api/admin/groups — this module intentionally does not duplicate them.
 export default async function groupRoutes(fastify: FastifyInstance) {
+  // Groups the current user belongs to.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request) => {
     const memberships = await prisma.groupMember.findMany({
       where: { userId: request.user!.id },
@@ -22,20 +21,6 @@ export default async function groupRoutes(fastify: FastifyInstance) {
     }));
   });
 
-  fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    requireAdmin(request, reply);
-
-    const body = createGroupBodySchema.parse(request.body);
-    const group = await prisma.group.create({
-      data: {
-        name: body.name,
-        description: body.description,
-      },
-    });
-
-    return group;
-  });
-
   fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
@@ -45,7 +30,7 @@ export default async function groupRoutes(fastify: FastifyInstance) {
     });
 
     if (!membership) {
-      return reply.status(403).send({ error: 'Not a member of this group' });
+      return reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
     }
 
     return {
@@ -54,43 +39,11 @@ export default async function groupRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.post('/:id/members', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    requireAdmin(request, reply);
-
-    const { id } = request.params as { id: string };
-    const body = groupMemberBodySchema.parse(request.body);
-
-    const membership = await prisma.groupMember.create({
-      data: {
-        groupId: id,
-        userId: body.userId,
-      },
-    });
-
-    return membership;
-  });
-
-  fastify.delete('/:id/members/:userId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    requireAdmin(request, reply);
-
-    const { id, userId } = request.params as { id: string; userId: string };
-
-    await prisma.groupMember.delete({
-      where: { groupId_userId: { groupId: id, userId } },
-    });
-
-    return { success: true };
-  });
-
   fastify.get('/:id/members', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const membership = await prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId: id, userId: request.user!.id } },
-    });
-
-    if (!membership) {
-      return reply.status(403).send({ error: 'Not a member of this group' });
+    if (!(await isGroupMember(id, request.user!.id))) {
+      return reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
     }
 
     const members = await prisma.groupMember.findMany({
@@ -99,6 +52,6 @@ export default async function groupRoutes(fastify: FastifyInstance) {
       orderBy: { joinedAt: 'asc' },
     });
 
-    return members.map((m) => m.user);
+    return members.map((m) => ({ ...m.user, joinedAt: m.joinedAt }));
   });
 }

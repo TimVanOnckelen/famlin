@@ -1,12 +1,25 @@
-import { api } from './client';
+import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from './client';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-
+// Uploaded photos/videos require a media token (see backend app.ts's
+// /uploads onRequest hook) — append the cached one as a query param so
+// <Image>/<Video> sources, which can't attach custom headers, can still
+// authenticate the GET.
 export function getUploadUrl(path: string): string {
-  return `${API_BASE_URL}${path}`;
+  const token = getCurrentMediaToken();
+  const query = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${getCurrentServerUrl()}${path}${query}`;
 }
 
-export async function uploadImages(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
+export async function refreshMediaToken(): Promise<void> {
+  try {
+    const response = await api.get<{ token: string }>('/uploads/media-token');
+    setMediaToken(response.data.token);
+  } catch {
+    setMediaToken(null);
+  }
+}
+
+export async function uploadMedia(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
   const formData = new FormData();
 
   files.forEach((file, index) => {
@@ -17,13 +30,11 @@ export async function uploadImages(files: { uri: string; name: string; type: str
     } as any);
   });
 
-  console.log('Uploading images to', api.defaults.baseURL + '/uploads', 'files:', files.length);
   const response = await api.post<{ urls: string[] }>('/uploads', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  console.log('Upload response:', response.data);
 
   return response.data.urls;
 }
