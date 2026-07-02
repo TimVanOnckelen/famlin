@@ -4,4 +4,3 @@ dist
 .env.local
 *.log
 .DS_Store
-prisma/migrations/*_init
