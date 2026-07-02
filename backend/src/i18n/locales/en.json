@@ -32,7 +32,8 @@
     "fileTooLarge": "File is too large",
     "cannotRemoveLastAdmin": "Cannot remove the last remaining admin",
     "parentCommentNotFound": "Parent comment not found",
-    "assetNotFoundOnPost": "Asset not found on this post"
+    "assetNotFoundOnPost": "Asset not found on this post",
+    "setupAlreadyComplete": "Setup has already been completed"
   },
   "notifications": {
     "newPost": "{{author}} posted a new message in {{group}}",
@@ -59,5 +60,11 @@
     "playStore": "Get it on Google Play",
     "hint": "Don't have the app yet? Ask your family admin how to install it, then tap this link again.",
     "hintWithStores": "Don't have the app yet? Download it below, then tap this link again."
+  },
+  "landing": {
+    "pageTitle": "Famlin",
+    "status": "Server is running",
+    "title": "Welcome to Famlin",
+    "body": "This is your family's private Famlin server. Open the Famlin app on your phone to sign in, or head to /admin to manage the server."
   }
 }

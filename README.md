@@ -132,7 +132,7 @@ docker compose exec famlin-backend npx prisma studio
 
 See [Server setup](https://famlin.app/docs/server-setup) for the full walkthrough, and [Maintenance](https://famlin.app/docs/maintenance) for pinning a version or building from source instead.
 
-After the containers start, log in to `/admin` with the seed account (`admin@example.com` / `test123456`) and configure OIDC/SSO, allowed emails, and SMTP settings.
+After the containers start, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then configure OIDC/SSO, allowed emails, and SMTP settings.
 
 ## App Store / Play Store builds
 

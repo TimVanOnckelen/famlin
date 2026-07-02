@@ -63,6 +63,14 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
 }
 
 export const api = {
+  getSetupStatus: () => request<{ needsSetup: boolean }>('/api/auth/setup-status'),
+
+  setup: (data: { email: string; name: string; password: string }) =>
+    request<{ token: string; user: User }>('/api/auth/setup', {
+      method: 'POST',
+      body: data,
+    }),
+
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
 
   loginWithOidc: (idToken: string) =>

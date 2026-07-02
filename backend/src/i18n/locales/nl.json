@@ -32,7 +32,8 @@
     "fileTooLarge": "Bestand is te groot",
     "cannotRemoveLastAdmin": "Kan de laatste beheerder niet verwijderen",
     "parentCommentNotFound": "Bovenliggende reactie niet gevonden",
-    "assetNotFoundOnPost": "Bestand niet gevonden bij dit bericht"
+    "assetNotFoundOnPost": "Bestand niet gevonden bij dit bericht",
+    "setupAlreadyComplete": "Installatie is al voltooid"
   },
   "notifications": {
     "newPost": "{{author}} heeft een nieuw bericht geplaatst in {{group}}",
@@ -59,5 +60,11 @@
     "playStore": "Ophalen via Google Play",
     "hint": "Heb je de app nog niet? Vraag je familiebeheerder hoe je die installeert en tik daarna nogmaals op deze link.",
     "hintWithStores": "Heb je de app nog niet? Download hem hieronder en tik daarna nogmaals op deze link."
+  },
+  "landing": {
+    "pageTitle": "Famlin",
+    "status": "Server draait",
+    "title": "Welkom bij Famlin",
+    "body": "Dit is de privéserver van jouw familie voor Famlin. Open de Famlin-app op je telefoon om in te loggen, of ga naar /admin om de server te beheren."
   }
 }

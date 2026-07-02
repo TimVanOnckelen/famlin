@@ -109,6 +109,12 @@ export const registerBodySchema = z.object({
   isAdmin: z.boolean().optional(),
 });
 
+export const setupBodySchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+  password: z.string().min(8).max(100),
+});
+
 export const changePasswordBodySchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8).max(100),

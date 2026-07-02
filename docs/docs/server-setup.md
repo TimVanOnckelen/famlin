@@ -198,4 +198,4 @@ If you're on a Synology NAS, the built-in **Control Panel → Login Portal → R
 
 ## Next steps
 
-Once the stack is up and reachable over HTTPS, head to [Admin configuration](./admin-configuration) to log in, set a login method, and lock down who can sign up.
+Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up.

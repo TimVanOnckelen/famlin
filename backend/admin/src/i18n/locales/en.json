@@ -44,6 +44,14 @@
     "ssoLoginFailed": "SSO login failed.",
     "loginFailed": "Login failed."
   },
+  "setup": {
+    "title": "Welcome to Famlin",
+    "subtitle": "This server has no admin account yet. Create one to get started.",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordMismatch": "Passwords don't match.",
+    "createAccountButton": "Create admin account",
+    "setupFailed": "Setup failed."
+  },
   "dashboard": {
     "title": "Dashboard",
     "stats": {
