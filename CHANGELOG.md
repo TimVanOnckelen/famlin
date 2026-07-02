@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/TimVanOnckelen/famlin/compare/v0.1.3...v0.1.4) (2026-07-02)
+
+
+### Features
+
+* implement first-run admin setup process ([bdc66bf](https://github.com/TimVanOnckelen/famlin/commit/bdc66bfe196e5f9351d56e6ff85e4bbc61cd56fe))
+* implement first-run admin setup process ([782801a](https://github.com/TimVanOnckelen/famlin/commit/782801accbc124aed19d5814f0b914b46004a980))
+
 ## [0.1.3](https://github.com/TimVanOnckelen/famlin/compare/v0.1.2...v0.1.3) (2026-07-02)
 
 
