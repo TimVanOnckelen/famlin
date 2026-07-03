@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/static/img/logo.svg" alt="Famlin logo" width="96" height="96">
+  <img src="assets/github-banner.png" alt="Famlin banner">
 </p>
 
 # Famlin
