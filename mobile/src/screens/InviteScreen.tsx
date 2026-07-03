@@ -23,7 +23,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithOidc, loginWithPassword } from '@/api/auth';
 import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
-import { setApiBaseUrl } from '@/api/client';
+import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -60,6 +60,14 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
 
   useEffect(() => {
     (async () => {
+      // A bad/expired invite link must never leave the app pointed at a
+      // foreign server — remember what was active before we switch, and put
+      // it back on every path that bails out without a completed invite.
+      const previousServerUrl = getCurrentServerUrl();
+      function restorePreviousServer() {
+        if (previousServerUrl) setApiBaseUrl(previousServerUrl);
+      }
+
       try {
         const targetServer = server ? normalizeServerUrl(server) : (await getServerUrl()) || '';
         if (!targetServer) {
@@ -68,14 +76,36 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
           return;
         }
         setApiBaseUrl(targetServer);
+
+        let result: InvitePreview;
+        try {
+          result = await fetchInvitePreview(token);
+        } catch (err: any) {
+          // No `response` means the request never reached the server (bad
+          // host, TLS failure, connection refused, timeout) — distinguish
+          // that from the server actually saying the invite is invalid, so
+          // the user isn't told to ask for a new invite when the real
+          // problem is the server address baked into this link.
+          if (!err?.response) {
+            restorePreviousServer();
+            setErrorMessage(t('invite.errors.serverUnreachable', { server: targetServer }));
+            setMode('error');
+            return;
+          }
+          throw err;
+        }
+
+        // Only persist the server URL once it's confirmed reachable —
+        // otherwise a broken invite link could silently overwrite a
+        // previously working stored server address.
         if (server) {
           await persistServerUrl(targetServer);
         }
 
-        const result = await fetchInvitePreview(token);
         setPreview(result);
 
         if (result.status !== 'valid') {
+          restorePreviousServer();
           setErrorMessage(
             result.status === 'expired'
               ? t('invite.errors.expired')
@@ -95,6 +125,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
 
         setMode('choose');
       } catch (err) {
+        restorePreviousServer();
         setErrorMessage(t('invite.errors.notFound'));
         setMode('error');
       }

@@ -96,6 +96,9 @@ docker compose exec famlin-backend npx prisma studio
 
 # Run the backend test suite
 cd backend && npm run test:docker
+
+# Run the mobile test suite (Jest, no device/simulator needed)
+cd mobile && npm test
 ```
 
 ## Production deployment

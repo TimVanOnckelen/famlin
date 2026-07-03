@@ -5,6 +5,8 @@ import * as Device from 'expo-device';
 import { api } from '@/api/client';
 import { fetchNotificationConfig } from '@/api/auth';
 import { setPushToken } from '@/utils/storage';
+import { useAuthStore } from '@/stores/authStore';
+import { navigate } from '@/navigation/navigationRef';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -16,11 +18,37 @@ Notifications.setNotificationHandler({
 });
 
 export function usePushNotifications() {
+  // Registration needs an authenticated request (POST /push-tokens) and a
+  // resolved API base URL, neither of which is guaranteed at first mount —
+  // wait for the user to be loaded (bootstrap fetchMe or login) and re-run
+  // whenever the signed-in user changes.
+  const userId = useAuthStore((state) => state.user?.id);
+
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !userId) {
       return;
     }
     registerPushTokenAsync();
+  }, [userId]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    function handleResponse(response: Notifications.NotificationResponse) {
+      const data = response.notification.request.content.data as { relatedPostId?: string } | undefined;
+      if (data?.relatedPostId) {
+        navigate('PostDetail', { postId: data.relatedPostId });
+      }
+    }
+
+    // Cold start: the app was launched by tapping a notification, so there's
+    // no "tap" event to listen for — check whether that's how we got here.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) handleResponse(response);
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => subscription.remove();
   }, []);
 }
 

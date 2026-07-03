@@ -1,3 +1,5 @@
+import { ReactionType } from '@/constants/reactions';
+
 export interface User {
   id: string;
   email: string;
@@ -45,6 +47,8 @@ export interface Post {
   commentCount: number;
   likeCount: number;
   likedByMe: boolean;
+  myReaction: ReactionType | null;
+  reactions: Partial<Record<ReactionType, number>>;
   favoritedByMe: boolean;
 }
 
@@ -66,6 +70,8 @@ export interface Comment {
   assetUrl?: string | null;
   likeCount: number;
   likedByMe: boolean;
+  myReaction: ReactionType | null;
+  reactions: Partial<Record<ReactionType, number>>;
 }
 
 export interface Notification {

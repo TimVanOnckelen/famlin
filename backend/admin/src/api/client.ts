@@ -89,15 +89,12 @@ export const api = {
 
   getStats: () => request<DashboardStats>('/api/admin/stats'),
 
-  getUsers: (params: { cursor?: string; includeDeleted?: boolean } = {}) => {
+  getUsers: (params: { cursor?: string } = {}) => {
     const query = new URLSearchParams();
     if (params.cursor) query.set('cursor', params.cursor);
-    if (params.includeDeleted) query.set('includeDeleted', 'true');
     const qs = query.toString();
     return request<Page<User>>(`/api/admin/users${qs ? `?${qs}` : ''}`);
   },
-
-  restoreUser: (id: string) => request<User>(`/api/admin/users/${id}/restore`, { method: 'POST' }),
 
   // Used by pickers (e.g. "add member to group") that need the full roster
   // rather than a single page — walks every page and concatenates.
@@ -152,19 +149,17 @@ export const api = {
   revokeInvite: (id: string) =>
     request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
 
-  getContentPosts: (params: { groupId?: string; includeDeleted?: boolean; cursor?: string } = {}) => {
+  getContentPosts: (params: { groupId?: string; cursor?: string } = {}) => {
     const query = new URLSearchParams();
     if (params.groupId) query.set('groupId', params.groupId);
-    if (params.includeDeleted) query.set('includeDeleted', 'true');
     if (params.cursor) query.set('cursor', params.cursor);
     const qs = query.toString();
     return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`);
   },
 
-  getContentComments: (params: { groupId?: string; includeDeleted?: boolean; cursor?: string } = {}) => {
+  getContentComments: (params: { groupId?: string; cursor?: string } = {}) => {
     const query = new URLSearchParams();
     if (params.groupId) query.set('groupId', params.groupId);
-    if (params.includeDeleted) query.set('includeDeleted', 'true');
     if (params.cursor) query.set('cursor', params.cursor);
     const qs = query.toString();
     return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
@@ -172,13 +167,7 @@ export const api = {
 
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
 
-  restorePost: (id: string) =>
-    request<ModerationPost>(`/api/admin/content/posts/${id}/restore`, { method: 'POST' }),
-
   deleteComment: (id: string) => request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
-
-  restoreComment: (id: string) =>
-    request<ModerationComment>(`/api/admin/content/comments/${id}/restore`, { method: 'POST' }),
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
 

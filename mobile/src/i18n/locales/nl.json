@@ -64,6 +64,7 @@
       "expired": "Deze uitnodiging is verlopen. Vraag je familiebeheerder om een nieuwe link.",
       "used": "Deze uitnodiging is al gebruikt. Vraag je familiebeheerder om een nieuwe link als jij dit niet was.",
       "noServer": "We konden niet bepalen voor welke Famlin-server deze uitnodiging is. Open de link van je familiebeheerder opnieuw.",
+      "serverUnreachable": "Kon {{server}} niet bereiken. Controleer of de server actief en bereikbaar is, en probeer opnieuw.",
       "fillRequired": "Vul alle velden in."
     },
     "alerts": {
@@ -80,7 +81,16 @@
     "favorite": "Favoriet",
     "milestoneBadge": "🎂 MIJLPAAL",
     "comments_one": "{{count}} reactie",
-    "comments_other": "{{count}} reacties"
+    "comments_other": "{{count}} reacties",
+    "onThisDayTitle": "Op deze dag",
+    "onThisDayCount_one": "{{count}} herinnering van deze dag",
+    "onThisDayCount_other": "{{count}} herinneringen van deze dag"
+  },
+  "search": {
+    "title": "Zoeken in {{group}}",
+    "placeholder": "Zoek berichten...",
+    "emptyTitle": "Geen resultaten",
+    "emptySubtitle": "Probeer een andere zoekterm."
   },
   "groupMembers": {
     "count_one": "{{count}} lid",

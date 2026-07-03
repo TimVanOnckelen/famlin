@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef } from '@/navigation/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import axios from 'axios';
 import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as Linking from 'expo-linking';
@@ -18,13 +20,15 @@ import { NewPostScreen } from '@/screens/NewPostScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
+import { SearchScreen } from '@/screens/SearchScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
 import { colors } from '@/constants/colors';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, AppState } from 'react-native';
 import { initApiBaseUrl, setUnauthorizedHandler } from '@/api/client';
 import { fetchMe } from '@/api/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getServerUrl } from '@/utils/storage';
+import { ensureFreshMediaToken } from '@/api/uploads';
 
 const Stack = createNativeStackNavigator();
 const queryClient = new QueryClient();
@@ -44,7 +48,7 @@ function parseInviteUrl(url: string): { token: string; server?: string } | null 
 }
 
 function AppContent() {
-  const { user, setAuth, logout, clearSession, isLoading, loadToken } = useAuthStore();
+  const { user, setAuth, clearSession, isLoading, loadToken } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
   const [pendingInvite, setPendingInvite] = useState<{ token: string; server?: string } | null>(null);
 
@@ -71,6 +75,19 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
+    // The media token (7d TTL) can go stale or fail to refresh while the app
+    // was backgrounded, and RN <Image>/<Video> requests bypass axios's 401
+    // handling — re-check it whenever the app comes back to the foreground.
+    if (!user) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        ensureFreshMediaToken();
+      }
+    });
+    return () => subscription.remove();
+  }, [user?.id]);
+
+  useEffect(() => {
     function handleUrl(url: string) {
       const invite = parseInviteUrl(url);
       if (invite) setPendingInvite(invite);
@@ -94,7 +111,14 @@ function AppContent() {
           await setAuth(me, token, serverUrl);
         }
       } catch (err) {
-        await logout();
+        // Only an actual auth rejection (expired/revoked token) should end
+        // the session. A network/timeout/5xx error here means we simply
+        // couldn't reach the server on this launch — wipe neither the token
+        // nor the remembered server URL, or the user would be forced to
+        // re-enter the server address once connectivity comes back.
+        if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+          await clearSession();
+        }
       } finally {
         setInitializing(false);
       }
@@ -124,7 +148,7 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <StatusBar style="dark" />
       <Stack.Navigator
         screenOptions={{
@@ -172,6 +196,14 @@ function AppContent() {
             <Stack.Screen
               name="GroupMembers"
               component={GroupMembersScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Search"
+              component={SearchScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',

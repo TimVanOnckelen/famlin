@@ -36,6 +36,22 @@ export async function buildApp() {
     },
   });
 
+  // Rate limiting and client-IP logging key off request.ip, which only
+  // reflects X-Forwarded-For when TRUST_PROXY is on. If a reverse proxy sits
+  // in front of this server but TRUST_PROXY is left off, every request
+  // resolves to the proxy's single IP — silently collapsing per-client rate
+  // limits (login throttling, global cap) into one shared bucket. Warn once
+  // so a misconfigured deployment doesn't fail silently.
+  let loggedProxyHeaderMismatch = false;
+  fastify.addHook('onRequest', async (request) => {
+    if (!config.TRUST_PROXY && !loggedProxyHeaderMismatch && request.headers['x-forwarded-for']) {
+      loggedProxyHeaderMismatch = true;
+      fastify.log.warn(
+        'Received an X-Forwarded-For header but TRUST_PROXY is not enabled. If this server sits behind a reverse proxy, every request will appear to come from the proxy\'s IP, collapsing rate limiting across all clients — set TRUST_PROXY=true (only if that proxy is trusted to set this header).'
+      );
+    }
+  });
+
   fastify.setErrorHandler((error, request, reply) => {
     const t = getT(request);
 
@@ -56,12 +72,30 @@ export async function buildApp() {
   const uploadsDir = path.join(process.cwd(), 'uploads');
   await fs.mkdir(uploadsDir, { recursive: true });
 
-  // The invite landing page and admin SPA render their own inline
-  // styles/scripts, so a strict default CSP would break them; the rest of
-  // helmet's headers (X-Content-Type-Options, frame-ancestors, HSTS, ...)
-  // still apply.
   await fastify.register(helmet, {
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        frameAncestors: ["'self'"],
+        formAction: ["'self'"],
+        // 'unsafe-inline' + https: covers the invite/landing pages' inline
+        // <style> blocks and the admin SPA's React inline style={{}} usage,
+        // plus the Google Fonts stylesheet/font files it loads.
+        styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        // 'self' covers /uploads; https: covers OIDC-provided avatar
+        // pictures, which are external URLs by nature (see routes/auth.ts).
+        imgSrc: ["'self'", 'data:', 'https:'],
+        // The admin SPA's OIDC login (LoginPage.tsx) does its PKCE code
+        // exchange with a direct fetch() to the provider's token endpoint,
+        // and that provider is whatever issuer the admin configures at
+        // runtime — it can't be pinned to a fixed origin here.
+        connectSrc: ["'self'", 'https:'],
+      },
+    },
   });
 
   await fastify.register(rateLimit, {

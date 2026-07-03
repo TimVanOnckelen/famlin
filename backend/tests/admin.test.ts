@@ -36,7 +36,7 @@ describe('admin routes', () => {
       expect(stored.isAdmin).toBe(false);
     });
 
-    it('DELETE /users/:id: non-admin gets 403 and the user is not deactivated', async () => {
+    it('DELETE /users/:id: non-admin gets 403 and the user is not deleted', async () => {
       const nonAdmin = await createUser();
       const target = await createUser();
 
@@ -47,8 +47,8 @@ describe('admin routes', () => {
       });
       expect(res.statusCode).toBe(403);
 
-      const stored = await prisma.user.findUniqueOrThrow({ where: { id: target.id } });
-      expect(stored.deletedAt).toBeNull();
+      const stored = await prisma.user.findUnique({ where: { id: target.id } });
+      expect(stored).not.toBeNull();
     });
 
     it('DELETE /groups/:id: non-admin gets 403 and the group still exists', async () => {
@@ -99,23 +99,6 @@ describe('admin routes', () => {
       const setting = await prisma.setting.findUnique({ where: { key: 'oidcName' } });
       expect(setting).toBeNull();
     });
-
-    it('POST /content/posts/:id/restore: non-admin gets 403 and the post stays deleted', async () => {
-      const nonAdmin = await createUser();
-      const group = await createGroupWithMember(nonAdmin);
-      const post = await createPost({ groupId: group.id, authorId: nonAdmin.id });
-      await prisma.post.update({ where: { id: post.id }, data: { deletedAt: new Date() } });
-
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/admin/content/posts/${post.id}/restore`,
-        headers: authHeader(nonAdmin),
-      });
-      expect(res.statusCode).toBe(403);
-
-      const stored = await prisma.post.findUniqueOrThrow({ where: { id: post.id } });
-      expect(stored.deletedAt).not.toBeNull();
-    });
   });
 
   describe('user management', () => {
@@ -134,7 +117,7 @@ describe('admin routes', () => {
       expect(res.json().isAdmin).toBe(true);
     });
 
-    it('soft-deletes a user on DELETE and bumps tokenVersion instead of removing the row', async () => {
+    it('permanently removes the user row on DELETE', async () => {
       const admin = await createUser({ isAdmin: true });
       const target = await createUser({ tokenVersion: 0 });
 
@@ -145,15 +128,14 @@ describe('admin routes', () => {
       });
       expect(res.statusCode).toBe(200);
 
-      const stored = await prisma.user.findUniqueOrThrow({ where: { id: target.id } });
-      expect(stored.deletedAt).not.toBeNull();
-      expect(stored.tokenVersion).toBe(1);
+      const stored = await prisma.user.findUnique({ where: { id: target.id } });
+      expect(stored).toBeNull();
     });
 
-    it('a deactivated user\'s existing session token is rejected after deletion', async () => {
+    it('a deleted user\'s existing session token is rejected', async () => {
       const admin = await createUser({ isAdmin: true });
       const target = await createUser();
-      const staleHeader = authHeader(target); // signed with tokenVersion 0, before deactivation
+      const staleHeader = authHeader(target); // signed with tokenVersion 0, before deletion
 
       await app.inject({ method: 'DELETE', url: `/api/admin/users/${target.id}`, headers: authHeader(admin) });
 
@@ -192,7 +174,7 @@ describe('admin routes', () => {
       expect(stored.isAdmin).toBe(true);
     });
 
-    it('lets an admin deactivate a fellow admin when a second admin remains', async () => {
+    it('lets an admin delete a fellow admin when a second admin remains', async () => {
       const callingAdmin = await createUser({ isAdmin: true });
       const targetAdmin = await createUser({ isAdmin: true });
 
@@ -203,32 +185,18 @@ describe('admin routes', () => {
       });
       expect(res.statusCode).toBe(200);
 
-      const stored = await prisma.user.findUniqueOrThrow({ where: { id: targetAdmin.id } });
-      expect(stored.deletedAt).not.toBeNull();
+      const stored = await prisma.user.findUnique({ where: { id: targetAdmin.id } });
+      expect(stored).toBeNull();
     });
 
-    it('restores a deactivated user', async () => {
+    it('deleting a user removes them from the user list', async () => {
       const admin = await createUser({ isAdmin: true });
       const target = await createUser();
-      await prisma.user.update({ where: { id: target.id }, data: { deletedAt: new Date() } });
-
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/admin/users/${target.id}/restore`,
-        headers: authHeader(admin),
-      });
-      expect(res.statusCode).toBe(200);
-      expect(res.json().deletedAt).toBeNull();
-    });
-
-    it('excludes deactivated users from the default user list', async () => {
-      const admin = await createUser({ isAdmin: true });
-      const deactivated = await createUser();
-      await prisma.user.update({ where: { id: deactivated.id }, data: { deletedAt: new Date() } });
+      await app.inject({ method: 'DELETE', url: `/api/admin/users/${target.id}`, headers: authHeader(admin) });
 
       const res = await app.inject({ method: 'GET', url: '/api/admin/users', headers: authHeader(admin) });
       const ids = res.json().items.map((u: { id: string }) => u.id);
-      expect(ids).not.toContain(deactivated.id);
+      expect(ids).not.toContain(target.id);
     });
   });
 
@@ -285,58 +253,44 @@ describe('admin routes', () => {
   });
 
   describe('content moderation', () => {
-    it('restores a soft-deleted post', async () => {
+    it('permanently deletes a post', async () => {
       const admin = await createUser({ isAdmin: true });
       const author = await createUser();
       const group = await createGroupWithMember(author);
       await addMember(group.id, admin.id);
       const post = await createPost({ groupId: group.id, authorId: author.id });
-      await app.inject({ method: 'DELETE', url: `/api/posts/${post.id}`, headers: authHeader(author) });
 
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/admin/content/posts/${post.id}/restore`,
-        headers: authHeader(admin),
-      });
+      const res = await app.inject({ method: 'DELETE', url: `/api/posts/${post.id}`, headers: authHeader(author) });
       expect(res.statusCode).toBe(200);
-      expect(res.json().deletedAt).toBeNull();
 
-      const list = await app.inject({
-        method: 'GET',
-        url: `/api/posts?groupId=${group.id}`,
-        headers: authHeader(author),
-      });
-      expect(list.json().items.map((p: { id: string }) => p.id)).toContain(post.id);
+      const stored = await prisma.post.findUnique({ where: { id: post.id } });
+      expect(stored).toBeNull();
     });
 
-    it('restores a soft-deleted comment', async () => {
+    it('permanently deletes a comment', async () => {
       const admin = await createUser({ isAdmin: true });
       const author = await createUser();
       const group = await createGroupWithMember(author);
       await addMember(group.id, admin.id);
       const post = await createPost({ groupId: group.id, authorId: author.id });
       const comment = await createComment({ postId: post.id, authorId: author.id });
-      await app.inject({ method: 'DELETE', url: `/api/comments/${comment.id}`, headers: authHeader(author) });
 
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/admin/content/comments/${comment.id}/restore`,
-        headers: authHeader(admin),
-      });
+      const res = await app.inject({ method: 'DELETE', url: `/api/comments/${comment.id}`, headers: authHeader(author) });
       expect(res.statusCode).toBe(200);
-      expect(res.json().deletedAt).toBeNull();
+
+      const stored = await prisma.comment.findUnique({ where: { id: comment.id } });
+      expect(stored).toBeNull();
     });
 
-    it('lets an admin see soft-deleted posts across groups they are not a member of via includeDeleted', async () => {
+    it('lets an admin see posts across groups they are not a member of', async () => {
       const admin = await createUser({ isAdmin: true });
       const author = await createUser();
       const group = await createGroupWithMember(author); // admin is NOT a member
       const post = await createPost({ groupId: group.id, authorId: author.id });
-      await app.inject({ method: 'DELETE', url: `/api/posts/${post.id}`, headers: authHeader(author) });
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/admin/content/posts?includeDeleted=true',
+        url: '/api/admin/content/posts',
         headers: authHeader(admin),
       });
       expect(res.statusCode).toBe(200);

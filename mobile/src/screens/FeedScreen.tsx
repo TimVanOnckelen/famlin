@@ -45,6 +45,17 @@ export function FeedScreen() {
   });
 
   const activeGroupId = selectedGroupId || groups?.[0]?.id;
+
+  const { data: onThisDay } = useQuery({
+    queryKey: ['onThisDay', activeGroupId],
+    queryFn: async () => {
+      const response = await api.get<{ items: Post[] }>('/posts/on-this-day', {
+        params: { groupId: activeGroupId },
+      });
+      return response.data.items;
+    },
+    enabled: !!activeGroupId,
+  });
   const activeGroup = groups?.find((g: Group) => g.id === activeGroupId);
   const groupsLoaded = groups !== undefined;
   const hasGroups = !!groups && groups.length > 0;
@@ -52,6 +63,7 @@ export function FeedScreen() {
   const {
     data,
     isLoading,
+    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -137,6 +149,16 @@ export function FeedScreen() {
           </>
         )}
 
+        {hasGroups && (
+          <TouchableOpacity
+            style={styles.favoritesButton}
+            onPress={() => navigation.navigate('Search', { groupId: activeGroupId, groupName: activeGroup?.name })}
+            accessibilityLabel={t('search.title', { group: activeGroup?.name || '' })}
+          >
+            <Icon name="search" size={20} color={colors.textTitle} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.favoritesButton}
           onPress={() => navigation.navigate('Favorites')}
@@ -166,11 +188,30 @@ export function FeedScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feedList}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         renderItem={({ item }) => <PostCard post={item} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          hasGroups && onThisDay && onThisDay.length > 0 ? (
+            <TouchableOpacity
+              style={styles.onThisDayBanner}
+              onPress={() => navigation.navigate('PostDetail', { postId: onThisDay[0].id })}
+            >
+              <View style={styles.onThisDayIcon}>
+                <Icon name="clock" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.onThisDayText}>
+                <Text style={styles.onThisDayTitle}>{t('feed.onThisDayTitle')}</Text>
+                <Text style={styles.onThisDaySubtitle}>
+                  {t('feed.onThisDayCount', { count: onThisDay.length })}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null
+        }
         ListEmptyComponent={
           !groupsLoaded || (isLoading && hasGroups) ? null : !hasGroups ? (
             <View style={styles.emptyState}>
@@ -298,5 +339,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     marginTop: 6,
+  },
+  onThisDayBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(217, 106, 94, 0.2)',
+  },
+  onThisDayIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(217, 106, 94, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onThisDayText: {
+    flex: 1,
+  },
+  onThisDayTitle: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.textTitle,
+  },
+  onThisDaySubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 });

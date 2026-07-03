@@ -76,7 +76,7 @@ export function NewPostScreen() {
         groupId,
         content,
         type: isMilestone ? 'MILESTONE' : 'UPDATE',
-        milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag) : undefined,
+        milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
         uploadedAssetUrls,
         latitude: location?.latitude,
         longitude: location?.longitude,
@@ -84,10 +84,7 @@ export function NewPostScreen() {
       });
       return response.data;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData<Post[]>(['posts', data.groupId], (old) =>
-        old ? [data, ...old] : [data]
-      );
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       navigation.goBack();
     },

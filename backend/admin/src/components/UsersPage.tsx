@@ -21,7 +21,7 @@ export function UsersPage() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.getUsers({ includeDeleted: true }), api.getGroups()])
+    Promise.all([api.getUsers(), api.getGroups()])
       .then(([page, g]) => {
         setUsers(page.items);
         setNextCursor(page.nextCursor);
@@ -37,17 +37,12 @@ export function UsersPage() {
     if (!nextCursor) return;
     setLoadingMore(true);
     try {
-      const page = await api.getUsers({ cursor: nextCursor, includeDeleted: true });
+      const page = await api.getUsers({ cursor: nextCursor });
       setUsers((current) => [...current, ...page.items]);
       setNextCursor(page.nextCursor);
     } finally {
       setLoadingMore(false);
     }
-  };
-
-  const handleRestore = async (user: User) => {
-    await api.restoreUser(user.id);
-    load();
   };
 
   useEffect(() => {
@@ -201,12 +196,9 @@ export function UsersPage() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className={user.deletedAt ? 'row-deactivated' : ''}>
+                <tr key={user.id}>
                   <td>
-                    <span className="cell-name">
-                      {user.name}
-                      {user.deletedAt && <span className="badge muted"> {t('users.deactivated')}</span>}
-                    </span>
+                    <span className="cell-name">{user.name}</span>
                     <span className="cell-email">{user.email}</span>
                   </td>
                   <td>
@@ -270,25 +262,14 @@ export function UsersPage() {
                     >
                       <Icon name="key" size={15} />
                     </button>
-                    {user.deletedAt ? (
-                      <button
-                        className="icon-button"
-                        title={t('users.restore')}
-                        aria-label={t('users.restore')}
-                        onClick={() => handleRestore(user)}
-                      >
-                        <Icon name="rotate-ccw" size={15} />
-                      </button>
-                    ) : (
-                      <button
-                        className="icon-button danger"
-                        title={t('common.delete')}
-                        aria-label={t('common.delete')}
-                        onClick={() => handleDelete(user)}
-                      >
-                        <Icon name="trash" size={15} />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button danger"
+                      title={t('common.delete')}
+                      aria-label={t('common.delete')}
+                      onClick={() => handleDelete(user)}
+                    >
+                      <Icon name="trash" size={15} />
+                    </button>
                   </td>
                 </tr>
               ))}

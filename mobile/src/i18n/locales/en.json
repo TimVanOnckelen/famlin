@@ -64,6 +64,7 @@
       "expired": "This invite has expired. Ask your family admin to send you a new one.",
       "used": "This invite was already used. Ask your family admin to send you a new one if this wasn't you.",
       "noServer": "Couldn't tell which Famlin server this invite is for. Open the link from your family admin again.",
+      "serverUnreachable": "Couldn't reach {{server}}. Check that the server is running and reachable, then try again.",
       "fillRequired": "Please fill in all fields."
     },
     "alerts": {
@@ -80,7 +81,16 @@
     "favorite": "Favorite",
     "milestoneBadge": "🎂 MILESTONE",
     "comments_one": "{{count}} comment",
-    "comments_other": "{{count}} comments"
+    "comments_other": "{{count}} comments",
+    "onThisDayTitle": "On this day",
+    "onThisDayCount_one": "{{count}} memory from this day",
+    "onThisDayCount_other": "{{count}} memories from this day"
+  },
+  "search": {
+    "title": "Search {{group}}",
+    "placeholder": "Search posts...",
+    "emptyTitle": "No results",
+    "emptySubtitle": "Try a different search term."
   },
   "groupMembers": {
     "count_one": "{{count}} member",

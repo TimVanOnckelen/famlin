@@ -108,8 +108,8 @@ export function verifyToken(token: string) {
 // under /uploads — issued separately from the main session token so it can
 // be embedded in image/video URLs (query string) without exposing the full
 // session credential to proxy/CDN logs. Carries the user's tokenVersion so a
-// password reset / deactivation can invalidate it the same way it invalidates
-// a session token (see isSessionCurrent).
+// password reset / account deletion can invalidate it the same way it
+// invalidates a session token (see isSessionCurrent).
 export function createMediaToken(userId: string, tokenVersion: number) {
   return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' });
 }
@@ -124,17 +124,46 @@ export function verifyMediaToken(token: string): { id: string; tokenVersion?: nu
   }
 }
 
-// Confirms a decoded token still corresponds to an active user at its issued
-// tokenVersion — the DB check that `verifyToken`/`verifyMediaToken` (signature
-// + expiry only) can't do on their own. Used by the /uploads auth hook so a
-// deactivated user or a token from before a password reset loses media access
-// immediately, matching the guarantee the main `authenticate` decorator makes.
+// /uploads is hit once per photo/video rendered (dozens per feed screen), far
+// more often than any other authenticated route, so isSessionCurrent's DB
+// lookup is cached briefly per user. Explicitly invalidated by every route
+// that changes tokenVersion (see invalidateSessionCache calls in
+// routes/auth.ts and routes/admin.ts) so revocation still takes effect
+// immediately in the normal case; the TTL only bounds staleness if a call
+// site is ever missed.
+const SESSION_CACHE_TTL_MS = 5_000;
+const sessionCache = new Map<string, { tokenVersion: number; expiresAt: number }>();
+
+export function invalidateSessionCache(userId: string) {
+  sessionCache.delete(userId);
+}
+
+// Confirms a decoded token still corresponds to an existing user at its
+// issued tokenVersion — the DB check that `verifyToken`/`verifyMediaToken`
+// (signature + expiry only) can't do on their own. Used by the /uploads auth
+// hook so a deleted user or a token from before a password reset loses media
+// access immediately, matching the guarantee the main `authenticate`
+// decorator makes.
 export async function isSessionCurrent(decoded: { id: string; tokenVersion?: number }): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
-    select: { tokenVersion: true, deletedAt: true },
-  });
-  if (!user || user.deletedAt) return false;
+  const cached = sessionCache.get(decoded.id);
+  const now = Date.now();
+  let user: { tokenVersion: number };
+
+  if (cached && cached.expiresAt > now) {
+    user = cached;
+  } else {
+    const found = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { tokenVersion: true },
+    });
+    if (!found) {
+      sessionCache.delete(decoded.id);
+      return false;
+    }
+    user = found;
+    sessionCache.set(decoded.id, { ...found, expiresAt: now + SESSION_CACHE_TTL_MS });
+  }
+
   if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false;
   return true;
 }
@@ -152,10 +181,10 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, name: true, isAdmin: true, tokenVersion: true, deletedAt: true },
+        select: { id: true, email: true, name: true, isAdmin: true, tokenVersion: true },
       });
 
-      if (!user || user.deletedAt) {
+      if (!user) {
         return reply.status(401).send({ error: 'User not found' });
       }
 
@@ -165,7 +194,7 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return reply.status(401).send({ error: 'Session expired' });
       }
 
-      const { tokenVersion, deletedAt, ...publicUser } = user;
+      const { tokenVersion, ...publicUser } = user;
       request.user = publicUser;
     } catch (err) {
       return reply.status(401).send({ error: 'Unauthorized' });

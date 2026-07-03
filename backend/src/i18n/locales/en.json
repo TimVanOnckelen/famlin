@@ -36,10 +36,17 @@
     "setupAlreadyComplete": "Setup has already been completed"
   },
   "notifications": {
-    "newPost": "{{author}} posted a new message in {{group}}",
-    "newComment": "{{author}} commented on a post in {{group}}",
-    "newLikePost": "{{author}} liked your post in {{group}}",
-    "newLikeComment": "{{author}} liked your comment in {{group}}",
+    "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
+    "newPostMedia": "{{author}} shared new photos in {{group}}",
+    "newComment": "{{author}} commented on a post in {{group}}: \"{{excerpt}}\"",
+    "newLikePost": "{{author}} reacted {{emoji}} to your post in {{group}}: \"{{excerpt}}\"",
+    "newLikePostMedia": "{{author}} reacted {{emoji}} to your post in {{group}}",
+    "newLikeComment": "{{author}} reacted {{emoji}} to your comment in {{group}}: \"{{excerpt}}\"",
+    "mention": "{{author}} mentioned you in a comment in {{group}}: \"{{excerpt}}\"",
+    "onThisDay_one": "A memory from {{group}} — {{author}}'s post from {{count}} year ago: \"{{excerpt}}\"",
+    "onThisDay_other": "A memory from {{group}} — {{author}}'s post from {{count}} years ago: \"{{excerpt}}\"",
+    "onThisDayMedia_one": "A memory from {{group}} — {{author}}'s post from {{count}} year ago",
+    "onThisDayMedia_other": "A memory from {{group}} — {{author}}'s post from {{count}} years ago",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app."

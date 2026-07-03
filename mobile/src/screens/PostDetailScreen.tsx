@@ -20,11 +20,25 @@ import { Icon } from '@/components/Icon';
 import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
+import { ReactionPicker } from '@/components/ReactionPicker';
 import { api } from '@/api/client';
 import { Post, Comment } from '@/types';
+import { ReactionType, REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
+
+interface GroupMemberUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+}
+
+// Matches a trailing "@partial-name" at the end of the text being typed —
+// deliberately only the end, not anywhere in the string, since that's the
+// only place a user is actively composing a mention.
+const TRAILING_MENTION_REGEX = /(?:^|\s)@([\p{L}\d_]*)$/u;
 
 export function PostDetailScreen() {
   const { t } = useTranslation();
@@ -37,6 +51,10 @@ export function PostDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState('');
+  const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false);
+  const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
@@ -54,9 +72,18 @@ export function PostDetailScreen() {
     },
   });
 
+  const { data: groupMembers } = useQuery({
+    queryKey: ['groupMembers', post?.groupId],
+    queryFn: async () => {
+      const response = await api.get<GroupMemberUser[]>(`/groups/${post!.groupId}/members`);
+      return response.data;
+    },
+    enabled: !!post?.groupId,
+  });
+
   const likeMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post(`/posts/${postId}/like`);
+    mutationFn: async (type: ReactionType) => {
+      const response = await api.post(`/posts/${postId}/like`, { type });
       return response.data;
     },
     onSuccess: () => {
@@ -78,13 +105,23 @@ export function PostDetailScreen() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: async ({ content, parentId }: { content: string; parentId?: string }) => {
-      const response = await api.post(`/posts/${postId}/comments`, { content, parentId });
+    mutationFn: async ({
+      content,
+      parentId,
+      mentionedUserIds,
+    }: {
+      content: string;
+      parentId?: string;
+      mentionedUserIds?: string[];
+    }) => {
+      const response = await api.post(`/posts/${postId}/comments`, { content, parentId, mentionedUserIds });
       return response.data;
     },
     onSuccess: () => {
       setCommentText('');
       setReplyingTo(null);
+      setSelectedMentions([]);
+      setMentionQuery(null);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -92,8 +129,8 @@ export function PostDetailScreen() {
   });
 
   const likeCommentMutation = useMutation({
-    mutationFn: async (commentId: string) => {
-      const response = await api.post(`/comments/${commentId}/like`);
+    mutationFn: async ({ commentId, type }: { commentId: string; type: ReactionType }) => {
+      const response = await api.post(`/comments/${commentId}/like`, { type });
       return response.data;
     },
     onSuccess: () => refetch(),
@@ -169,9 +206,35 @@ export function PostDetailScreen() {
   );
 
   function submitComment() {
-    if (!commentText.trim()) return;
-    commentMutation.mutate({ content: commentText.trim(), parentId: replyingTo?.id });
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+    // Only mention someone whose "@name" is still actually present in the
+    // final text — if the user deleted it after picking it from the list,
+    // don't notify them.
+    const mentionedUserIds = selectedMentions
+      .filter((m) => commentText.includes(`@${m.name}`))
+      .map((m) => m.id);
+    commentMutation.mutate({ content: trimmed, parentId: replyingTo?.id, mentionedUserIds });
   }
+
+  function handleCommentTextChange(text: string) {
+    setCommentText(text);
+    const match = text.match(TRAILING_MENTION_REGEX);
+    setMentionQuery(match ? match[1] : null);
+  }
+
+  function selectMention(member: GroupMemberUser) {
+    const replaced = commentText.replace(TRAILING_MENTION_REGEX, (matched) =>
+      (matched.startsWith(' ') ? ' ' : '') + `@${member.name} `
+    );
+    setCommentText(replaced);
+    setSelectedMentions((prev) => (prev.some((m) => m.id === member.id) ? prev : [...prev, { id: member.id, name: member.name }]));
+    setMentionQuery(null);
+  }
+
+  const mentionSuggestions = (groupMembers || []).filter(
+    (m) => mentionQuery !== null && m.id !== user?.id && m.name.toLowerCase().includes(mentionQuery.toLowerCase())
+  );
 
   if (!post) return null;
 
@@ -323,15 +386,16 @@ export function PostDetailScreen() {
 
               <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
                 <TouchableOpacity
-                  style={[styles.likeButton, post.likedByMe && styles.likeButtonActive]}
-                  onPress={() => likeMutation.mutate()}
+                  style={[styles.likeButton, post.myReaction && styles.likeButtonActive]}
+                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LIKE')}
+                  onLongPress={() => setPostReactionPickerOpen(true)}
                 >
-              <Icon
-                name="heart"
-                size={16}
-                color={post.likedByMe ? colors.primary : colors.textMuted}
-              />
-              <Text style={[styles.likeButtonText, post.likedByMe && styles.likeButtonTextActive]}>
+              {post.myReaction ? (
+                <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
+              ) : (
+                <Icon name="heart" size={16} color={colors.textMuted} />
+              )}
+              <Text style={[styles.likeButtonText, post.myReaction && styles.likeButtonTextActive]}>
                 {post.likeCount}
               </Text>
                 </TouchableOpacity>
@@ -358,7 +422,8 @@ export function PostDetailScreen() {
               comment={item}
               replies={repliesByParentId.get(item.id) || []}
               currentUserId={user?.id}
-              onLike={(commentId) => likeCommentMutation.mutate(commentId)}
+              onLike={(commentId, type) => likeCommentMutation.mutate({ commentId, type })}
+              onLongPressLike={(commentId) => setReactionPickerCommentId(commentId)}
               onReply={(comment) => setReplyingTo({ id: comment.id, authorName: comment.author.name })}
               onEdit={(id, content) => editCommentMutation.mutateAsync({ id, content })}
               onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
@@ -378,6 +443,17 @@ export function PostDetailScreen() {
           </View>
         )}
 
+        {mentionSuggestions.length > 0 && (
+          <View style={styles.mentionList}>
+            {mentionSuggestions.slice(0, 5).map((member) => (
+              <TouchableOpacity key={member.id} style={styles.mentionItem} onPress={() => selectMention(member)}>
+                <Avatar name={member.name} avatarUrl={member.avatarUrl} size={28} />
+                <Text style={styles.mentionItemText}>{member.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={styles.inputContainer}>
           <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={36} />
           <TextInput
@@ -385,7 +461,7 @@ export function PostDetailScreen() {
             placeholder={replyingTo ? t('postDetail.replyPlaceholder') : t('postDetail.commentPlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={commentText}
-            onChangeText={setCommentText}
+            onChangeText={handleCommentTextChange}
             multiline
           />
           <TouchableOpacity
@@ -397,6 +473,23 @@ export function PostDetailScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <ReactionPicker
+        visible={postReactionPickerOpen}
+        onSelect={(type) => {
+          setPostReactionPickerOpen(false);
+          likeMutation.mutate(type);
+        }}
+        onClose={() => setPostReactionPickerOpen(false)}
+      />
+      <ReactionPicker
+        visible={reactionPickerCommentId !== null}
+        onSelect={(type) => {
+          if (reactionPickerCommentId) likeCommentMutation.mutate({ commentId: reactionPickerCommentId, type });
+          setReactionPickerCommentId(null);
+        }}
+        onClose={() => setReactionPickerCommentId(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -406,6 +499,7 @@ function CommentItem({
   replies,
   currentUserId,
   onLike,
+  onLongPressLike,
   onReply,
   onEdit,
   onDelete,
@@ -413,7 +507,8 @@ function CommentItem({
   comment: Comment;
   replies: Comment[];
   currentUserId?: string;
-  onLike: (commentId: string) => void;
+  onLike: (commentId: string, type: ReactionType) => void;
+  onLongPressLike: (commentId: string) => void;
   onReply: (comment: Comment) => void;
   onEdit: (commentId: string, content: string) => Promise<unknown>;
   onDelete: (commentId: string) => void;
@@ -425,7 +520,8 @@ function CommentItem({
         <CommentBody
           comment={comment}
           isOwn={comment.authorId === currentUserId}
-          onLike={() => onLike(comment.id)}
+          onLike={(type) => onLike(comment.id, type)}
+          onLongPressLike={() => onLongPressLike(comment.id)}
           onReply={() => onReply(comment)}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -440,7 +536,8 @@ function CommentItem({
                   <CommentBody
                     comment={reply}
                     isOwn={reply.authorId === currentUserId}
-                    onLike={() => onLike(reply.id)}
+                    onLike={(type) => onLike(reply.id, type)}
+                    onLongPressLike={() => onLongPressLike(reply.id)}
                     onReply={() => onReply(comment)}
                     onEdit={onEdit}
                     onDelete={onDelete}
@@ -459,13 +556,15 @@ function CommentBody({
   comment,
   isOwn,
   onLike,
+  onLongPressLike,
   onReply,
   onEdit,
   onDelete,
 }: {
   comment: Comment;
   isOwn: boolean;
-  onLike: () => void;
+  onLike: (type: ReactionType) => void;
+  onLongPressLike: () => void;
   onReply: () => void;
   onEdit: (commentId: string, content: string) => Promise<unknown>;
   onDelete: (commentId: string) => void;
@@ -532,9 +631,9 @@ function CommentBody({
           {formatRelativeDate(comment.createdAt)}
           {comment.editedAt ? ` · ${t('common.edited')}` : ''}
         </Text>
-        <TouchableOpacity onPress={onLike}>
-          <Text style={[styles.commentAction, comment.likedByMe && styles.commentActionActive]}>
-            {t('postDetail.like')}
+        <TouchableOpacity onPress={() => onLike(comment.myReaction ?? 'LIKE')} onLongPress={onLongPressLike}>
+          <Text style={[styles.commentAction, comment.myReaction && styles.commentActionActive]}>
+            {comment.myReaction ? REACTION_EMOJI[comment.myReaction] : t('postDetail.like')}
             {comment.likeCount > 0 ? ` · ${comment.likeCount}` : ''}
           </Text>
         </TouchableOpacity>
@@ -598,6 +697,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderBottomWidth: 1.5,
     borderBottomColor: colors.border,
+    marginBottom: 14,
   },
   milestoneContainer: {
     backgroundColor: '#FFF5E6',
@@ -916,5 +1016,27 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     marginLeft: 2,
+  },
+  reactionEmoji: {
+    fontSize: 16,
+  },
+  mentionList: {
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 6,
+    maxHeight: 200,
+  },
+  mentionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  mentionItemText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    color: colors.textTitle,
   },
 });

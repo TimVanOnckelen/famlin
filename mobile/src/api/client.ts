@@ -1,10 +1,15 @@
 import axios from 'axios';
 import { getToken, deleteToken, getServerUrl } from '@/utils/storage';
 
-const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+// Dev convenience only — in every other case the base URL comes from
+// initApiBaseUrl() (stored server) or setApiBaseUrl() (login/invite flow).
+// There is deliberately no hardcoded localhost fallback: silently targeting
+// localhost when neither of those has run yet would mask real failures
+// instead of surfacing them.
+const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-let currentServerUrl = DEFAULT_API_URL.replace(/\/+$/, '');
-let currentBaseUrl = `${currentServerUrl}/api`;
+let currentServerUrl: string | null = DEFAULT_API_URL ? DEFAULT_API_URL.replace(/\/+$/, '') : null;
+let currentBaseUrl: string | null = currentServerUrl ? `${currentServerUrl}/api` : null;
 
 export function setApiBaseUrl(serverUrl: string) {
   const normalized = serverUrl.trim().replace(/\/$/, '');
@@ -12,7 +17,7 @@ export function setApiBaseUrl(serverUrl: string) {
   currentBaseUrl = `${normalized}/api`;
 }
 
-export function getCurrentServerUrl(): string {
+export function getCurrentServerUrl(): string | null {
   return currentServerUrl;
 }
 
@@ -45,7 +50,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  config.baseURL = currentBaseUrl;
+  // If neither initApiBaseUrl() nor setApiBaseUrl() has run yet, leave
+  // baseURL unset so the request fails fast instead of silently hitting a
+  // hardcoded default.
+  config.baseURL = currentBaseUrl ?? undefined;
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

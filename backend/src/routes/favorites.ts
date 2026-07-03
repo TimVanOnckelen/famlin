@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { isGroupMember } from '../services/groups.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { paginationQuerySchema } from '../types.js';
+import { summarizeReactions } from '../services/reactions.js';
 import { getT } from '../i18n/index.js';
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
@@ -12,7 +13,7 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
 
     const post = await prisma.post.findUnique({ where: { id: postId } });
 
-    if (!post || post.deletedAt) {
+    if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
@@ -45,11 +46,10 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
     const favorites = await prisma.favorite.findMany({
       where: {
         userId: request.user!.id,
-        // Only surface favorites the user can still see: the post is live and
-        // they're still a member of its group (a removed member must never
-        // keep reading a group's content via their old favorites).
+        // Only surface favorites the user can still see: still a member of
+        // the post's group (a removed member must never keep reading a
+        // group's content via their old favorites).
         post: {
-          deletedAt: null,
           group: { members: { some: { userId: request.user!.id } } },
         },
       },
@@ -58,8 +58,8 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
           include: {
             author: { select: { id: true, name: true, avatarUrl: true } },
             group: { select: { id: true, name: true } },
-            _count: { select: { comments: { where: { deletedAt: null } }, likes: true } },
-            likes: { where: { userId: request.user!.id }, select: { id: true } },
+            _count: { select: { comments: true, likes: true } },
+            likes: { select: { type: true, userId: true } },
           },
         },
       },
@@ -70,13 +70,19 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
     const { items, nextCursor } = paginate(favorites, take);
 
     return {
-      items: items.map(({ post }) => ({
-        ...post,
-        commentCount: post._count.comments,
-        likeCount: post._count.likes,
-        likedByMe: post.likes.length > 0,
-        favoritedByMe: true,
-      })),
+      items: items.map(({ post }) => {
+        const { _count, likes, ...rest } = post;
+        const { counts, myReaction } = summarizeReactions(likes, request.user!.id);
+        return {
+          ...rest,
+          commentCount: _count.comments,
+          likeCount: _count.likes,
+          likedByMe: myReaction !== null,
+          myReaction,
+          reactions: counts,
+          favoritedByMe: true,
+        };
+      }),
       nextCursor,
     };
   });

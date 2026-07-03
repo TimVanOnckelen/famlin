@@ -1,17 +1,19 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { createPostBodySchema, updatePostBodySchema, paginationQuerySchema } from '../types.js';
-import { notifyGroup } from '../services/notifications.js';
+import { createPostBodySchema, updatePostBodySchema, paginationQuerySchema, searchPostsQuerySchema } from '../types.js';
+import { notifyGroup, excerptText } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { shapePost } from '../services/posts.js';
+import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { getT } from '../i18n/index.js';
 
 const postInclude = (userId: string) => ({
   author: { select: { id: true, name: true, avatarUrl: true } },
-  // Count only live comments so the feed's count matches what actually opens.
-  _count: { select: { comments: { where: { deletedAt: null } }, likes: true } },
-  likes: { where: { userId }, select: { id: true } },
+  _count: { select: { comments: true, likes: true } },
+  // All reaction rows (not just this user's) so the response can show a
+  // per-emoji breakdown, not just a total — see services/reactions.ts.
+  likes: { select: { type: true, userId: true } },
   favorites: { where: { userId }, select: { id: true } },
 });
 
@@ -31,14 +33,63 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const posts = await prisma.post.findMany({
-      where: { groupId, deletedAt: null },
+      where: { groupId },
       include: postInclude(request.user!.id),
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
     });
 
     const { items, nextCursor } = paginate(posts, take);
-    return { items: items.map(shapePost), nextCursor };
+    return { items: items.map((post) => shapePost(post, request.user!.id)), nextCursor };
+  });
+
+  // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
+  // dynamic :id param route.
+  fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query);
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const posts = await prisma.post.findMany({
+      where: {
+        groupId,
+        OR: [
+          { content: { contains: q, mode: 'insensitive' } },
+          { milestoneTag: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      include: postInclude(request.user!.id),
+      orderBy: { createdAt: 'desc' },
+      ...paginationArgs({ cursor, take }),
+    });
+
+    const { items, nextCursor } = paginate(posts, take);
+    return { items: items.map((post) => shapePost(post, request.user!.id)), nextCursor };
+  });
+
+  fastify.get('/on-this-day', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId } = request.query as { groupId?: string };
+    if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const posts = await getOnThisDayPosts(groupId);
+    if (posts.length === 0) return { items: [] };
+
+    const full = await prisma.post.findMany({
+      where: { id: { in: posts.map((p) => p.id) } },
+      include: postInclude(request.user!.id),
+    });
+    const byId = new Map(full.map((p) => [p.id, p]));
+    const ordered = posts.map((p) => byId.get(p.id)).filter((p): p is NonNullable<typeof p> => !!p);
+
+    return { items: ordered.map((post) => shapePost(post, request.user!.id)) };
   });
 
   fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -50,7 +101,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
-    if (!post || post.deletedAt) {
+    if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
@@ -58,7 +109,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
-    return shapePost(post);
+    return shapePost(post, request.user!.id);
   });
 
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -81,10 +132,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         longitude: body.longitude,
         locationName: body.locationName,
       },
-      include: {
-        author: { select: { id: true, name: true, avatarUrl: true } },
-        group: { select: { id: true, name: true } },
-      },
+      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
     // Fire-and-forget: fanning out push/email to the group shouldn't hold the
@@ -94,10 +142,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
       groupId: body.groupId,
       senderId: request.user!.id,
       postId: post.id,
-      params: { author: post.author.name, group: post.group.name },
+      params: { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) },
     }).catch((err) => request.log.error(err, 'Failed to send post notifications'));
 
-    return post;
+    return shapePost(post, request.user!.id);
   });
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -107,7 +155,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     const post = await prisma.post.findUnique({ where: { id } });
 
-    if (!post || post.deletedAt) {
+    if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
@@ -132,7 +180,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
-    return shapePost(updated);
+    return shapePost(updated, request.user!.id);
   });
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -141,7 +189,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     const post = await prisma.post.findUnique({ where: { id } });
 
-    if (!post || post.deletedAt) {
+    if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
@@ -149,10 +197,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
     }
 
-    await prisma.post.update({
-      where: { id },
-      data: { deletedAt: new Date(), deletedById: request.user!.id },
-    });
+    await prisma.post.delete({ where: { id } });
 
     return { success: true };
   });

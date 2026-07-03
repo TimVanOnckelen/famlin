@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/static/img/logo.svg" alt="Famlin logo" width="96" height="96">
+  <img src="assets/github-banner.png" alt="Famlin banner">
 </p>
 
 # Famlin
@@ -14,6 +14,8 @@ Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgre
 - **Private by default** — every post belongs to exactly one group, and only group members can see it.
 - **Mobile first** — iOS and Android app built with Expo.
 - **Admin web UI** — manage users, groups, and server settings from `/admin`.
+
+📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
 
 ## Table of contents
 
