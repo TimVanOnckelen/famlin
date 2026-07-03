@@ -7,10 +7,10 @@ export async function reactionCounts(target: { postId: string } | { commentId: s
   const groups = await prisma.like.groupBy({
     by: ['type'],
     where: target,
-    _count: true,
+    _count: { _all: true },
   });
   const counts: Record<string, number> = {};
-  for (const g of groups) counts[g.type] = g._count;
+  for (const g of groups) counts[g.type] = g._count._all;
   return counts;
 }
 
