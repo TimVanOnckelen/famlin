@@ -15,6 +15,8 @@ Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgre
 - **Mobile first** — iOS and Android app built with Expo.
 - **Admin web UI** — manage users, groups, and server settings from `/admin`.
 
+📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
+
 ## Table of contents
 
 - [Quick start](#quick-start)

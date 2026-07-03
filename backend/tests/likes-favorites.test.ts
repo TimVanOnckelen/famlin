@@ -34,10 +34,10 @@ describe('likes routes', () => {
     const post = await createPost({ groupId: group.id, authorId: author.id });
 
     const first = await app.inject({ method: 'POST', url: `/api/posts/${post.id}/like`, headers: authHeader(author) });
-    expect(first.json()).toEqual({ liked: true });
+    expect(first.json()).toEqual({ myReaction: 'LIKE', counts: { LIKE: 1 } });
 
     const second = await app.inject({ method: 'POST', url: `/api/posts/${post.id}/like`, headers: authHeader(author) });
-    expect(second.json()).toEqual({ liked: false });
+    expect(second.json()).toEqual({ myReaction: null, counts: {} });
   });
 
   it('toggles a like on a comment on and off', async () => {
@@ -47,10 +47,10 @@ describe('likes routes', () => {
     const comment = await createComment({ postId: post.id, authorId: author.id });
 
     const first = await app.inject({ method: 'POST', url: `/api/comments/${comment.id}/like`, headers: authHeader(author) });
-    expect(first.json()).toEqual({ liked: true });
+    expect(first.json()).toEqual({ myReaction: 'LIKE', counts: { LIKE: 1 } });
 
     const second = await app.inject({ method: 'POST', url: `/api/comments/${comment.id}/like`, headers: authHeader(author) });
-    expect(second.json()).toEqual({ liked: false });
+    expect(second.json()).toEqual({ myReaction: null, counts: {} });
   });
 
   it('rejects liking a comment on a soft-deleted post', async () => {
