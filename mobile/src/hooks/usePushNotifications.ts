@@ -6,6 +6,7 @@ import { api } from '@/api/client';
 import { fetchNotificationConfig } from '@/api/auth';
 import { setPushToken } from '@/utils/storage';
 import { useAuthStore } from '@/stores/authStore';
+import { navigate } from '@/navigation/navigationRef';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,6 +30,26 @@ export function usePushNotifications() {
     }
     registerPushTokenAsync();
   }, [userId]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    function handleResponse(response: Notifications.NotificationResponse) {
+      const data = response.notification.request.content.data as { relatedPostId?: string } | undefined;
+      if (data?.relatedPostId) {
+        navigate('PostDetail', { postId: data.relatedPostId });
+      }
+    }
+
+    // Cold start: the app was launched by tapping a notification, so there's
+    // no "tap" event to listen for — check whether that's how we got here.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) handleResponse(response);
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => subscription.remove();
+  }, []);
 }
 
 async function registerPushTokenAsync() {

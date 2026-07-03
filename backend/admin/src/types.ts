@@ -16,7 +16,6 @@ export interface User {
   pushOnNewComment: boolean;
   pushOnNewLike: boolean;
   createdAt: string;
-  deletedAt: string | null;
   groups?: GroupRef[];
 }
 
@@ -82,10 +81,8 @@ export interface ModerationPost {
   type: 'UPDATE' | 'MILESTONE';
   createdAt: string;
   editedAt: string | null;
-  deletedAt: string | null;
   author: { id: string; name: string };
   group: { id: string; name: string };
-  deletedBy: { id: string; name: string } | null;
   commentCount: number;
   likeCount: number;
 }
@@ -95,9 +92,7 @@ export interface ModerationComment {
   content: string;
   createdAt: string;
   editedAt: string | null;
-  deletedAt: string | null;
   author: { id: string; name: string };
-  deletedBy: { id: string; name: string } | null;
   post: { id: string; content: string | null; group: { id: string; name: string } };
 }
 

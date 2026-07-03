@@ -81,7 +81,16 @@
     "favorite": "Favoriet",
     "milestoneBadge": "🎂 MIJLPAAL",
     "comments_one": "{{count}} reactie",
-    "comments_other": "{{count}} reacties"
+    "comments_other": "{{count}} reacties",
+    "onThisDayTitle": "Op deze dag",
+    "onThisDayCount_one": "{{count}} herinnering van deze dag",
+    "onThisDayCount_other": "{{count}} herinneringen van deze dag"
+  },
+  "search": {
+    "title": "Zoeken in {{group}}",
+    "placeholder": "Zoek berichten...",
+    "emptyTitle": "Geen resultaten",
+    "emptySubtitle": "Probeer een andere zoekterm."
   },
   "groupMembers": {
     "count_one": "{{count}} lid",

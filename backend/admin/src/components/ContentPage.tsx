@@ -16,7 +16,6 @@ export function ContentPage() {
   const [tab, setTab] = useState<Tab>('posts');
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupId, setGroupId] = useState('');
-  const [showDeleted, setShowDeleted] = useState(false);
   const [posts, setPosts] = useState<ModerationPost[]>([]);
   const [comments, setComments] = useState<ModerationComment[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -29,7 +28,7 @@ export function ContentPage() {
 
   const load = () => {
     setLoading(true);
-    const params = { groupId: groupId || undefined, includeDeleted: showDeleted };
+    const params = { groupId: groupId || undefined };
     const request =
       tab === 'posts'
         ? api.getContentPosts(params).then((page) => {
@@ -47,7 +46,7 @@ export function ContentPage() {
     if (!nextCursor) return;
     setLoadingMore(true);
     try {
-      const params = { groupId: groupId || undefined, includeDeleted: showDeleted, cursor: nextCursor };
+      const params = { groupId: groupId || undefined, cursor: nextCursor };
       if (tab === 'posts') {
         const page = await api.getContentPosts(params);
         setPosts((current) => [...current, ...page.items]);
@@ -65,7 +64,7 @@ export function ContentPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, groupId, showDeleted]);
+  }, [tab, groupId]);
 
   const handleDeletePost = async (post: ModerationPost) => {
     if (!confirm(t('content.deleteConfirm'))) return;
@@ -73,21 +72,9 @@ export function ContentPage() {
     load();
   };
 
-  const handleRestorePost = async (post: ModerationPost) => {
-    if (!confirm(t('content.restoreConfirm'))) return;
-    await api.restorePost(post.id);
-    load();
-  };
-
   const handleDeleteComment = async (comment: ModerationComment) => {
     if (!confirm(t('content.deleteConfirm'))) return;
     await api.deleteComment(comment.id);
-    load();
-  };
-
-  const handleRestoreComment = async (comment: ModerationComment) => {
-    if (!confirm(t('content.restoreConfirm'))) return;
-    await api.restoreComment(comment.id);
     load();
   };
 
@@ -113,10 +100,6 @@ export function ContentPage() {
               </option>
             ))}
           </select>
-          <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
-            <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-            {t('content.showDeleted')}
-          </label>
         </div>
 
         {loading ? (
@@ -132,7 +115,6 @@ export function ContentPage() {
                   <th>{t('content.table.author')}</th>
                   <th>{t('content.table.content')}</th>
                   <th>{t('content.table.date')}</th>
-                  <th>{t('content.table.status')}</th>
                   <th>{t('content.table.actions')}</th>
                 </tr>
               </thead>
@@ -143,38 +125,15 @@ export function ContentPage() {
                     <td>{post.author.name}</td>
                     <td>{truncate(post.content)}</td>
                     <td>{new Date(post.createdAt).toLocaleDateString(i18n.language)}</td>
-                    <td>
-                      {post.deletedAt && post.deletedBy ? (
-                        <span className="muted">
-                          {t('content.deletedBy', {
-                            name: post.deletedBy.name,
-                            date: new Date(post.deletedAt).toLocaleDateString(i18n.language),
-                          })}
-                        </span>
-                      ) : (
-                        <span className="badge">{t('content.statusVisible')}</span>
-                      )}
-                    </td>
                     <td className="actions">
-                      {post.deletedAt ? (
-                        <button
-                          className="icon-button"
-                          title={t('content.restore')}
-                          aria-label={t('content.restore')}
-                          onClick={() => handleRestorePost(post)}
-                        >
-                          <Icon name="rotate-ccw" size={15} />
-                        </button>
-                      ) : (
-                        <button
-                          className="icon-button danger"
-                          title={t('common.delete')}
-                          aria-label={t('common.delete')}
-                          onClick={() => handleDeletePost(post)}
-                        >
-                          <Icon name="trash" size={15} />
-                        </button>
-                      )}
+                      <button
+                        className="icon-button danger"
+                        title={t('common.delete')}
+                        aria-label={t('common.delete')}
+                        onClick={() => handleDeletePost(post)}
+                      >
+                        <Icon name="trash" size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -191,7 +150,6 @@ export function ContentPage() {
                 <th>{t('content.table.author')}</th>
                 <th>{t('content.table.content')}</th>
                 <th>{t('content.table.date')}</th>
-                <th>{t('content.table.status')}</th>
                 <th>{t('content.table.actions')}</th>
               </tr>
             </thead>
@@ -202,38 +160,15 @@ export function ContentPage() {
                   <td>{comment.author.name}</td>
                   <td>{truncate(comment.content)}</td>
                   <td>{new Date(comment.createdAt).toLocaleDateString(i18n.language)}</td>
-                  <td>
-                    {comment.deletedAt && comment.deletedBy ? (
-                      <span className="muted">
-                        {t('content.deletedBy', {
-                          name: comment.deletedBy.name,
-                          date: new Date(comment.deletedAt).toLocaleDateString(i18n.language),
-                        })}
-                      </span>
-                    ) : (
-                      <span className="badge">{t('content.statusVisible')}</span>
-                    )}
-                  </td>
                   <td className="actions">
-                    {comment.deletedAt ? (
-                      <button
-                        className="icon-button"
-                        title={t('content.restore')}
-                        aria-label={t('content.restore')}
-                        onClick={() => handleRestoreComment(comment)}
-                      >
-                        <Icon name="rotate-ccw" size={15} />
-                      </button>
-                    ) : (
-                      <button
-                        className="icon-button danger"
-                        title={t('common.delete')}
-                        aria-label={t('common.delete')}
-                        onClick={() => handleDeleteComment(comment)}
-                      >
-                        <Icon name="trash" size={15} />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button danger"
+                      title={t('common.delete')}
+                      aria-label={t('common.delete')}
+                      onClick={() => handleDeleteComment(comment)}
+                    >
+                      <Icon name="trash" size={15} />
+                    </button>
                   </td>
                 </tr>
               ))}

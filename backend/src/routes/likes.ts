@@ -3,18 +3,21 @@ import { prisma } from '../db.js';
 import { notifyUser } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { getT } from '../i18n/index.js';
+import { reactionBodySchema } from '../types.js';
+import { reactionCounts } from '../services/reactions.js';
 
 export default async function likeRoutes(fastify: FastifyInstance) {
   fastify.post('/posts/:postId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { postId } = request.params as { postId: string };
+    const { type } = reactionBodySchema.parse(request.body ?? {});
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { group: { select: { id: true, name: true } } },
     });
 
-    if (!post || post.deletedAt) {
+    if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
@@ -26,19 +29,24 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       where: { postId_userId: { postId, userId: request.user!.id } },
     });
 
-    if (existing) {
+    let myReaction: string | null;
+
+    if (existing && existing.type === type) {
+      // Tapping the same reaction again removes it.
       await prisma.like.delete({ where: { id: existing.id } });
-      return { liked: false };
+      myReaction = null;
+    } else if (existing) {
+      // Switching reactions updates the existing row instead of adding a
+      // second one — the postId_userId unique constraint is still one
+      // reaction per user per post.
+      await prisma.like.update({ where: { id: existing.id }, data: { type } });
+      myReaction = type;
+    } else {
+      await prisma.like.create({ data: { postId, userId: request.user!.id, type } });
+      myReaction = type;
     }
 
-    await prisma.like.create({
-      data: {
-        postId,
-        userId: request.user!.id,
-      },
-    });
-
-    if (post.authorId !== request.user!.id) {
+    if (myReaction && post.authorId !== request.user!.id) {
       void notifyUser({
         type: 'new_like_post',
         userId: post.authorId,
@@ -48,19 +56,21 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
-    return { liked: true };
+    const counts = await reactionCounts({ postId });
+    return { myReaction, counts };
   });
 
   fastify.post('/comments/:commentId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { commentId } = request.params as { commentId: string };
+    const { type } = reactionBodySchema.parse(request.body ?? {});
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
       include: { post: { include: { group: { select: { id: true, name: true } } } } },
     });
 
-    if (!comment || comment.deletedAt || comment.post.deletedAt) {
+    if (!comment) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
     }
 
@@ -72,19 +82,20 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       where: { commentId_userId: { commentId, userId: request.user!.id } },
     });
 
-    if (existing) {
+    let myReaction: string | null;
+
+    if (existing && existing.type === type) {
       await prisma.like.delete({ where: { id: existing.id } });
-      return { liked: false };
+      myReaction = null;
+    } else if (existing) {
+      await prisma.like.update({ where: { id: existing.id }, data: { type } });
+      myReaction = type;
+    } else {
+      await prisma.like.create({ data: { commentId, userId: request.user!.id, type } });
+      myReaction = type;
     }
 
-    await prisma.like.create({
-      data: {
-        commentId,
-        userId: request.user!.id,
-      },
-    });
-
-    if (comment.authorId !== request.user!.id) {
+    if (myReaction && comment.authorId !== request.user!.id) {
       void notifyUser({
         type: 'new_like_comment',
         userId: comment.authorId,
@@ -94,6 +105,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
-    return { liked: true };
+    const counts = await reactionCounts({ commentId });
+    return { myReaction, counts };
   });
 }

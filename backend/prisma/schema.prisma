@@ -19,10 +19,6 @@ model User {
   // the version they were signed with) stop being accepted immediately,
   // instead of remaining valid for the rest of their 30-day lifetime.
   tokenVersion      Int            @default(0)
-  // Soft-deleted (deactivated) rather than removed, so their existing posts/
-  // comments/photos stay intact for the rest of the family — mirrors the
-  // Post/Comment soft-delete convention. A deleted user can no longer log in.
-  deletedAt         DateTime?
   emailOnNewPost    Boolean        @default(true)
   emailOnNewComment Boolean        @default(true)
   emailOnNewLike    Boolean        @default(true)
@@ -38,8 +34,6 @@ model User {
   notifications     Notification[]
   createdInvites    Invite[]       @relation("InviteCreatedBy")
   usedInvites       Invite[]       @relation("InviteUsedBy")
-  deletedPosts      Post[]         @relation("PostDeletedBy")
-  deletedComments   Comment[]      @relation("CommentDeletedBy")
 }
 
 model Group {
@@ -79,15 +73,12 @@ model Post {
   latitude        Float?
   longitude       Float?
   locationName    String?
-  deletedAt       DateTime?
-  deletedById     String?
-  deletedBy       User?     @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
   comments        Comment[]
   likes           Like[]
   favorites       Favorite[]
   notifications   Notification[]
 
-  @@index([groupId, deletedAt, createdAt])
+  @@index([groupId, createdAt])
 }
 
 enum PostType {
@@ -111,26 +102,35 @@ model Comment {
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
   likes     Like[]
-  deletedAt   DateTime?
-  deletedById String?
-  deletedBy   User?     @relation("CommentDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
 
-  @@index([postId, deletedAt])
+  @@index([postId, createdAt])
 }
 
-// Likes a post or a comment (exactly one of postId/commentId is set).
+// Reacts to a post or a comment (exactly one of postId/commentId is set).
+// Still named Like/one-row-per-user for history, but `type` now holds one of
+// several emoji reactions rather than a plain boolean like.
 model Like {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   postId    String?
-  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
   commentId String?
-  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  comment   Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
 
   @@unique([postId, userId])
   @@unique([commentId, userId])
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  HAHA
+  WOW
+  SAD
+  CARE
 }
 
 // A post a user has bookmarked for their personal favorites overview.

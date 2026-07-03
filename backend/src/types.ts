@@ -47,6 +47,16 @@ export const createCommentBodySchema = z.object({
   content: z.string().min(1).max(2000),
   parentId: z.string().optional(),
   assetUrl: uploadPathSchema.optional(),
+  // IDs the client resolved from the group member list while typing "@name" —
+  // the server only trusts these as a set of candidate ids and still
+  // re-validates each one is a current member of the post's group.
+  mentionedUserIds: z.array(z.string()).max(20).optional(),
+});
+
+export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE']);
+
+export const reactionBodySchema = z.object({
+  type: reactionTypeSchema.default('LIKE'),
 });
 
 export const updatePostBodySchema = z
@@ -157,6 +167,11 @@ export const createInviteBodySchema = z.object({
 export const paginationQuerySchema = z.object({
   cursor: z.string().optional(),
   take: z.coerce.number().int().min(1).max(100).default(30),
+});
+
+export const searchPostsQuerySchema = paginationQuerySchema.extend({
+  groupId: z.string(),
+  q: z.string().trim().min(1).max(200),
 });
 
 export const inviteRegisterBodySchema = z.object({

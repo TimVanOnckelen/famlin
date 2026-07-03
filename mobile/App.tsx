@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef } from '@/navigation/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import axios from 'axios';
@@ -19,6 +20,7 @@ import { NewPostScreen } from '@/screens/NewPostScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
+import { SearchScreen } from '@/screens/SearchScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
@@ -146,7 +148,7 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <StatusBar style="dark" />
       <Stack.Navigator
         screenOptions={{
@@ -194,6 +196,14 @@ function AppContent() {
             <Stack.Screen
               name="GroupMembers"
               component={GroupMembersScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Search"
+              component={SearchScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',

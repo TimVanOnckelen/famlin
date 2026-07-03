@@ -15,7 +15,7 @@ The **Users** page lists every account, their group memberships, and whether the
 - **Reset a password** — click the key icon, enter a new password (8+ characters), and share it with the user directly. There's no self-service/email-based reset flow yet. Resetting a password immediately signs that account out everywhere else it was logged in.
 - **Manage group membership** — click the people icon to open a modal listing every group with add/remove buttons. This is the same membership data as the Groups page, just scoped to one user.
 - **Toggle notifications** — the bell and mail icons flip all push/email notification types for that user on or off in one click; per-event-type settings (new post vs. comment vs. like) are only editable by the user themselves, in the app.
-- **Delete a user** — deactivates the account rather than erasing it: they're immediately signed out everywhere and can no longer log in, but their existing posts/comments stay visible (same as removing them from a group, below). You can't delete your own account this way, and you can't delete the last remaining admin. A deactivated user shows greyed out in the list with a **Deactivated** label; click the restore icon on their row to reactivate them.
+- **Delete a user** — permanently removes the account, and everything they created with it: their posts, comments, likes, and favorites are deleted along with them (unlike removing someone from a group, below, which keeps their existing posts/comments visible). This can't be undone. You can't delete your own account this way, and you can't delete the last remaining admin.
 
 ## Groups
 
@@ -31,8 +31,6 @@ The **Groups** page is a two-pane view: pick a group on the left, manage it on t
 The **Content** page gives admins cross-group visibility into posts and comments, without needing to be a member of every group.
 
 - Switch between the **Posts** and **Comments** tabs, and optionally filter by group.
-- Check **Show deleted** to include posts/comments that have already been soft-deleted (by their author, a group member, or an admin) — deleted items show who removed them and when.
-- **Delete** (trash icon) removes a post or comment the same way a member's own delete would: it's soft-deleted, not erased.
-- **Restore** (the icon on an already-deleted item) undoes that — the post/comment becomes visible to group members again immediately.
+- **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
 
-There's no bulk action or audit log beyond the "deleted by / on" label shown per item.
+There's no bulk action or audit log.

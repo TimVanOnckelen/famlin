@@ -41,16 +41,15 @@ const userSelect = {
   pushOnNewComment: true,
   pushOnNewLike: true,
   createdAt: true,
-  deletedAt: true,
 } as const;
 
 // Guards against ever leaving the app with zero admins: called before an
-// update/delete that would strip isAdmin from (or deactivate) `userId`.
+// update/delete that would strip isAdmin from (or delete) `userId`.
 async function isLastAdmin(userId: string): Promise<boolean> {
   const target = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (!target?.isAdmin) return false;
 
-  const adminCount = await prisma.user.count({ where: { isAdmin: true, deletedAt: null } });
+  const adminCount = await prisma.user.count({ where: { isAdmin: true } });
   return adminCount <= 1;
 }
 
@@ -165,11 +164,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/users', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { includeDeleted } = request.query as { includeDeleted?: string };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const users = await prisma.user.findMany({
-      where: includeDeleted === 'true' ? {} : { deletedAt: null },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       select: {
@@ -217,11 +214,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Soft-deletes (deactivates) the account rather than removing the row, so
-  // their existing posts/comments/photos stay intact for the rest of the
-  // family — mirrors the Post/Comment soft-delete convention. Also bumps
-  // tokenVersion so any session already open on their device stops working
-  // immediately instead of at natural token expiry.
+  // Permanently removes the account — cascades to delete all of their posts,
+  // comments, likes, favorites, and notifications too (see onDelete: Cascade
+  // on Post.author/Comment.author etc. in schema.prisma). Also invalidates
+  // the session cache so any token already in flight for this user id stops
+  // being treated as current right away rather than waiting out its TTL.
   fastify.delete('/users/:id', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
@@ -236,32 +233,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await prisma.user.update({
-        where: { id },
-        data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
-      });
+      await prisma.user.delete({ where: { id } });
       invalidateSessionCache(id);
       return { success: true };
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
-      throw err;
-    }
-  });
-
-  fastify.post('/users/:id/restore', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-
-    const { id } = request.params as { id: string };
-    try {
-      const user = await prisma.user.update({
-        where: { id },
-        data: { deletedAt: null },
-        select: userSelect,
-      });
-      invalidateSessionCache(id);
-      return user;
-    } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.userNotFound') });
       throw err;
     }
   });
@@ -458,25 +434,20 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // Content moderation: cross-group visibility into posts/comments so an
   // admin can review them without being a member of every group. Deleting
   // reuses DELETE /api/posts/:id and /api/comments/:id (already allow an
-  // admin to remove any post/comment); these routes add the matching
-  // restore action since those deletes are soft.
+  // admin to remove any post/comment) — that removal is permanent.
   fastify.get('/content/posts', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId, includeDeleted } = request.query as { groupId?: string; includeDeleted?: string };
+    const { groupId } = request.query as { groupId?: string };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const posts = await prisma.post.findMany({
-      where: {
-        ...(groupId ? { groupId } : {}),
-        ...(includeDeleted === 'true' ? {} : { deletedAt: null }),
-      },
+      where: groupId ? { groupId } : {},
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
         author: { select: { id: true, name: true } },
         group: { select: { id: true, name: true } },
-        deletedBy: { select: { id: true, name: true } },
         _count: { select: { comments: true, likes: true } },
       },
     });
@@ -496,54 +467,20 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/content/comments', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId, includeDeleted } = request.query as { groupId?: string; includeDeleted?: string };
+    const { groupId } = request.query as { groupId?: string };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const comments = await prisma.comment.findMany({
-      where: {
-        ...(groupId ? { post: { groupId } } : {}),
-        ...(includeDeleted === 'true' ? {} : { deletedAt: null }),
-      },
+      where: groupId ? { post: { groupId } } : {},
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
         author: { select: { id: true, name: true } },
-        deletedBy: { select: { id: true, name: true } },
         post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
       },
     });
 
     return paginate(comments, take);
-  });
-
-  fastify.post('/content/posts/:id/restore', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-
-    const { id } = request.params as { id: string };
-    const post = await prisma.post.findUnique({ where: { id } });
-    if (!post) {
-      return reply.status(404).send({ error: 'Post not found' });
-    }
-
-    return prisma.post.update({
-      where: { id },
-      data: { deletedAt: null, deletedById: null },
-    });
-  });
-
-  fastify.post('/content/comments/:id/restore', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-
-    const { id } = request.params as { id: string };
-    const comment = await prisma.comment.findUnique({ where: { id } });
-    if (!comment) {
-      return reply.status(404).send({ error: 'Comment not found' });
-    }
-
-    return prisma.comment.update({
-      where: { id },
-      data: { deletedAt: null, deletedById: null },
-    });
   });
 
   // Server settings (stored in DB, editable by admin)

@@ -6,9 +6,9 @@ import { createUserToken } from '../plugins/auth.js';
 import { consumeInvite } from '../services/invites.js';
 import { generateInviteToken } from '../services/invites.js';
 
-// Exercises the group-membership authorization matrix and the soft-delete
+// Exercises the group-membership authorization matrix and the hard-delete
 // regressions found in code review (comments/likes on a deleted post were
-// still reachable; a deactivated user's token still worked). Runs against
+// still reachable; a deleted user's token still worked). Runs against
 // the real dev database using uniquely-prefixed, self-cleaning fixtures so
 // it doesn't collide with seed data.
 
@@ -86,7 +86,7 @@ describe('group membership authorization', () => {
   });
 });
 
-describe('soft-deleted post regressions', () => {
+describe('deleted post regressions', () => {
   let postId: string;
 
   beforeAll(async () => {
@@ -132,16 +132,16 @@ describe('soft-deleted post regressions', () => {
 });
 
 describe('session invalidation', () => {
-  it('rejects a token for a deactivated (soft-deleted) user', async () => {
+  it('rejects a token for a deleted user', async () => {
     const user = await prisma.user.create({
-      data: { email: `deactivated-${runId}@test.local`, name: 'Deactivated', deletedAt: new Date() },
+      data: { email: `deleted-${runId}@test.local`, name: 'Deleted' },
     });
     const token = createUserToken({ id: user.id, email: user.email, name: user.name, isAdmin: false, tokenVersion: user.tokenVersion });
 
+    await prisma.user.delete({ where: { id: user.id } });
+
     const res = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { authorization: `Bearer ${token}` } });
     expect(res.statusCode).toBe(401);
-
-    await prisma.user.delete({ where: { id: user.id } });
   });
 
   it('rejects a token whose tokenVersion no longer matches the user (e.g. after a password reset)', async () => {

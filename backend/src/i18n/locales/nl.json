@@ -40,6 +40,9 @@
     "newComment": "{{author}} reageerde op een bericht in {{group}}",
     "newLikePost": "{{author}} vindt je bericht in {{group}} leuk",
     "newLikeComment": "{{author}} vindt je reactie in {{group}} leuk",
+    "mention": "{{author}} heeft je genoemd in een reactie in {{group}}",
+    "onThisDay_one": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden",
+    "onThisDay_other": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."

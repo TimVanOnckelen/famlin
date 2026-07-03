@@ -152,10 +152,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
           where: { email: oidcUser.email },
         });
 
-        if (user?.deletedAt) {
-          return reply.status(403).send({ error: t('errors.emailNotAllowed') });
-        }
-
         if (!user) {
           // Only provision a new account when the email is whitelisted for
           // OIDC login (an empty allowedEmails list means "allow everyone"),
@@ -221,7 +217,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         where: { email: normalizedEmail },
       });
 
-      if (!user || !user.passwordHash || user.deletedAt) {
+      if (!user || !user.passwordHash) {
         // Still pay the bcrypt cost so response timing doesn't reveal
         // whether this email has an account.
         await bcrypt.compare(password, DUMMY_PASSWORD_HASH);

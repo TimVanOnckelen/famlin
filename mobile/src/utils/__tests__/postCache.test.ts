@@ -15,6 +15,8 @@ function makePost(overrides: Partial<Post>): Post {
     commentCount: 0,
     likeCount: 0,
     likedByMe: false,
+    myReaction: null,
+    reactions: {},
     favoritedByMe: false,
     ...overrides,
   };

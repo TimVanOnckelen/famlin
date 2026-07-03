@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,8 +9,10 @@ import { Icon } from '@/components/Icon';
 import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
+import { ReactionPicker } from '@/components/ReactionPicker';
 import { api } from '@/api/client';
 import { Post } from '@/types';
+import { ReactionType, REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { patchPostInCaches } from '@/utils/postCache';
@@ -20,22 +22,33 @@ export function PostCard({ post }: { post: Post }) {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
 
   const likeMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post(`/posts/${post.id}/like`);
+    mutationFn: async (type: ReactionType) => {
+      const response = await api.post(`/posts/${post.id}/like`, { type });
       return response.data;
     },
-    onMutate: async () => {
+    onMutate: async (type) => {
       await queryClient.cancelQueries({ queryKey: ['posts'] });
       await queryClient.cancelQueries({ queryKey: ['post', post.id] });
 
-      const nextLiked = !post.likedByMe;
-      const nextCount = post.likeCount + (nextLiked ? 1 : -1);
-      const patch = (p: Post) => ({ ...p, likedByMe: nextLiked, likeCount: nextCount });
+      const nextReaction = post.myReaction === type ? null : type;
+      const patch = (p: Post) => {
+        const reactions = { ...p.reactions };
+        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
+        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
+        return {
+          ...p,
+          myReaction: nextReaction,
+          reactions,
+          likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
+          likedByMe: nextReaction !== null,
+        };
+      };
 
       patchPostInCaches(queryClient, post.id, patch);
     },
@@ -44,6 +57,11 @@ export function PostCard({ post }: { post: Post }) {
       queryClient.invalidateQueries({ queryKey: ['post', post.id] });
     },
   });
+
+  function selectReaction(type: ReactionType) {
+    setReactionPickerOpen(false);
+    likeMutation.mutate(type);
+  }
 
   const favoriteMutation = useMutation({
     mutationFn: async () => {
@@ -154,15 +172,16 @@ export function PostCard({ post }: { post: Post }) {
       <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => likeMutation.mutate()}
+          onPress={() => likeMutation.mutate(post.myReaction ?? 'LIKE')}
+          onLongPress={() => setReactionPickerOpen(true)}
           disabled={likeMutation.isPending}
         >
-          <Icon
-            name="heart"
-            size={18}
-            color={post.likedByMe ? colors.primary : colors.textMuted}
-          />
-          <Text style={[styles.actionText, post.likedByMe && styles.actionTextActive]}>
+          {post.myReaction ? (
+            <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
+          ) : (
+            <Icon name="heart" size={18} color={colors.textMuted} />
+          )}
+          <Text style={[styles.actionText, post.myReaction && styles.actionTextActive]}>
             {post.likeCount}
           </Text>
         </TouchableOpacity>
@@ -171,6 +190,12 @@ export function PostCard({ post }: { post: Post }) {
           <Text style={styles.actionText}>{t('feed.comments', { count: post.commentCount })}</Text>
         </TouchableOpacity>
       </View>
+
+      <ReactionPicker
+        visible={reactionPickerOpen}
+        onSelect={selectReaction}
+        onClose={() => setReactionPickerOpen(false)}
+      />
     </View>
   );
 }
@@ -297,5 +322,8 @@ const styles = StyleSheet.create({
   },
   actionTextActive: {
     color: colors.primary,
+  },
+  reactionEmoji: {
+    fontSize: 18,
   },
 });

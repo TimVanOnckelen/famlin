@@ -6,7 +6,13 @@ import i18n from '../i18n/index.js';
 
 const expo = new Expo();
 
-export type NotifyType = 'new_post' | 'new_comment' | 'new_like_post' | 'new_like_comment';
+export type NotifyType =
+  | 'new_post'
+  | 'new_comment'
+  | 'new_like_post'
+  | 'new_like_comment'
+  | 'mention'
+  | 'on_this_day';
 
 // Maps each event to the i18next key (under `notifications.`) used to render
 // its message — always in the server's configured defaultLanguage, since
@@ -17,13 +23,20 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   new_comment: 'notifications.newComment',
   new_like_post: 'notifications.newLikePost',
   new_like_comment: 'notifications.newLikeComment',
+  mention: 'notifications.mention',
+  on_this_day: 'notifications.onThisDay',
 };
 
+// Mentions and "on this day" memories reuse the closest existing preference
+// column (comment activity / new post activity, respectively) rather than
+// adding two more boolean columns + admin UI toggles for an MVP-scale feature set.
 const EMAIL_PREF_FIELD: Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment' | 'emailOnNewLike'> = {
   new_post: 'emailOnNewPost',
   new_comment: 'emailOnNewComment',
   new_like_post: 'emailOnNewLike',
   new_like_comment: 'emailOnNewLike',
+  mention: 'emailOnNewComment',
+  on_this_day: 'emailOnNewPost',
 };
 
 const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike'> = {
@@ -31,6 +44,8 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
   new_comment: 'pushOnNewComment',
   new_like_post: 'pushOnNewLike',
   new_like_comment: 'pushOnNewLike',
+  mention: 'pushOnNewComment',
+  on_this_day: 'pushOnNewPost',
 };
 
 interface Recipient {
@@ -48,7 +63,10 @@ interface NotifyOptions {
   type: NotifyType;
   senderId: string;
   postId: string;
-  params: { author: string; group: string };
+  // Extra keys beyond author/group (e.g. `count` for on-this-day's
+  // "N years ago" pluralization) are simply ignored by templates that don't
+  // reference them, so this stays permissive rather than per-type.
+  params: Record<string, string | number>;
   recipientIds: string[];
 }
 
@@ -76,7 +94,7 @@ async function notify(options: NotifyOptions) {
   if (ids.length === 0) return;
 
   const recipients = await prisma.user.findMany({
-    where: { id: { in: ids }, deletedAt: null },
+    where: { id: { in: ids } },
     select: {
       id: true,
       email: true,
@@ -103,7 +121,7 @@ async function notify(options: NotifyOptions) {
     })),
   });
 
-  await sendPushNotifications(type, recipients, message, settings);
+  await sendPushNotifications(type, recipients, message, settings, postId);
   await sendEmailNotifications(type, recipients, message, settings);
 }
 
@@ -114,7 +132,10 @@ export async function notifyGroup(options: {
   groupId: string;
   senderId: string;
   postId: string;
-  params: { author: string; group: string };
+  // Extra keys beyond author/group (e.g. `count` for on-this-day's
+  // "N years ago" pluralization) are simply ignored by templates that don't
+  // reference them, so this stays permissive rather than per-type.
+  params: Record<string, string | number>;
 }) {
   const { groupId, ...rest } = options;
   const members = await prisma.groupMember.findMany({
@@ -131,7 +152,10 @@ export async function notifyUser(options: {
   userId: string;
   senderId: string;
   postId: string;
-  params: { author: string; group: string };
+  // Extra keys beyond author/group (e.g. `count` for on-this-day's
+  // "N years ago" pluralization) are simply ignored by templates that don't
+  // reference them, so this stays permissive rather than per-type.
+  params: Record<string, string | number>;
 }) {
   const { userId, ...rest } = options;
   await notify({ ...rest, recipientIds: [userId] });
@@ -145,7 +169,10 @@ export async function notifyUsers(options: {
   userIds: string[];
   senderId: string;
   postId: string;
-  params: { author: string; group: string };
+  // Extra keys beyond author/group (e.g. `count` for on-this-day's
+  // "N years ago" pluralization) are simply ignored by templates that don't
+  // reference them, so this stays permissive rather than per-type.
+  params: Record<string, string | number>;
 }) {
   const { userIds, ...rest } = options;
   await notify({ ...rest, recipientIds: userIds });
@@ -155,7 +182,8 @@ async function sendPushNotifications(
   type: NotifyType,
   recipients: Recipient[],
   message: string,
-  settings: Awaited<ReturnType<typeof getAllSettings>>
+  settings: Awaited<ReturnType<typeof getAllSettings>>,
+  postId: string
 ) {
   if (!settings.pushNotificationsEnabled) return;
 
@@ -175,6 +203,9 @@ async function sendPushNotifications(
     sound: 'default',
     title: pushTitle,
     body: message,
+    // Lets the client's notification-tap handler navigate straight to the
+    // relevant post (see mobile's usePushNotifications.ts).
+    data: { relatedPostId: postId },
   }));
 
   const chunks = expo.chunkPushNotifications(messages);
