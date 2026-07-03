@@ -17,27 +17,25 @@ const img = {
   avatarMom: '/uploads/1f61554d-6cbb-4411-891a-71f6c70bbd09.jpg',
   avatarSophie: '/uploads/1d71bf72-1a72-4b1f-bbd2-db63e6772a1f.jpg',
   avatarTestUser: '/uploads/864f53f4-0bfc-4431-a218-e0a1c67c7aac.jpg',
-  bbq0: '/uploads/00b18551-50c3-4bfa-9116-9b24562b3269.jpg',
-  bbq1: '/uploads/ffd6b52e-91aa-465a-8219-8ae231120202.jpg',
+  bbq0: '/uploads/8b6748a3-0348-483a-965f-954b9f46578c.jpg',
+  bbq1: '/uploads/232c421f-8f21-436d-996b-97558591f0f5.jpg',
   beach0: '/uploads/243f7bee-37d7-4e5a-b564-39aa8acb2d12.jpg',
   beach1: '/uploads/d87cbf81-7b4b-4299-9a49-4181c8bb152d.jpg',
   beach2: '/uploads/30222cc9-413e-4995-bce7-b92b4b6c0805.jpg',
-  birthdayKid0: '/uploads/f70bf711-642d-4cee-8011-15ec91703f8c.jpg',
-  birthdayKid1: '/uploads/0bf4ff56-f531-4967-bb8a-be764c1c1c14.jpg',
+  birthdayKid0: '/uploads/b92866f3-b9c1-4196-9af2-875ce269f4b8.jpg',
   birthdayTeen0: '/uploads/586d6eca-ace5-4d99-9aff-9b024d6944db.jpg',
   birthdayTeen1: '/uploads/3f2aac90-f151-4261-a20b-e9af24a0d148.jpg',
   dinner0: '/uploads/146dc697-5748-46c8-847a-20c2cf343cb2.jpg',
   garden0: '/uploads/f36529ce-1f38-411c-842d-15b529c47488.jpg',
   keys0: '/uploads/32e7c6fb-e33c-4692-8117-a6fd019b25f7.jpg',
   mountain0: '/uploads/181d9462-8493-4c1d-af3e-5a426b8cf8de.jpg',
-  playground0: '/uploads/d38facb3-8902-4850-a8d6-37a3c411a80a.jpg',
-  puppy0: '/uploads/95605cf6-089a-4f62-bb54-279fd7eab73d.jpg',
-  puppy1: '/uploads/8160fdf6-e739-477f-9bfc-f6ca4a329e94.jpg',
+  playground0: '/uploads/b0b8cba8-3e45-4f70-914d-04a999dc799c.jpg',
+  puppy0: '/uploads/4be48732-a8d2-4c35-b521-7f5a79390a63.jpg',
   school0: '/uploads/8c66ad09-44f8-4eac-92d0-566a440e5833.jpg',
   snow0: '/uploads/4fba2dd7-c9e2-41fe-b959-6c24b66c5632.jpg',
   snow1: '/uploads/e87d358c-adf5-4ee0-8e36-b3240284271f.jpg',
-  travel0: '/uploads/1f6ef9d3-ca4b-43c5-98ce-1ed955f89224.jpg',
-  travel1: '/uploads/f433ec82-7416-4b2e-b291-876ff3cb5b33.jpg',
+  travel0: '/uploads/f7be58f2-b063-4617-974a-dec61f1c12a3.jpg',
+  travel1: '/uploads/1b2d99fc-b695-4dea-92e0-a429ba818f7b.jpg',
 };
 
 function at(date: string, time: string) {
@@ -49,8 +47,8 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@example.com',
-      name: 'Alex',
+      email: 'tim@xeweb.be',
+      name: 'Tim',
       isAdmin: true,
       passwordHash: testPasswordHash,
       avatarUrl: img.avatarAlex,
@@ -234,7 +232,7 @@ async function main() {
       content: "Everyone, meet the newest member of the family! He's still tired from the trip home. 🐶",
       type: 'MILESTONE',
       milestoneTag: '🐶 New pet',
-      uploadedAssetUrls: [img.puppy0, img.puppy1],
+      uploadedAssetUrls: [img.puppy0],
       createdAt: at('2026-06-18', '20:05'),
     },
   });
@@ -268,7 +266,7 @@ async function main() {
       content: 'Emma turned 6 today! 🎉 Our little girl was spoiled with cake and presents.',
       type: 'MILESTONE',
       milestoneTag: '🎂 Birthday',
-      uploadedAssetUrls: [img.birthdayKid0, img.birthdayKid1],
+      uploadedAssetUrls: [img.birthdayKid0],
       createdAt: at('2026-07-02', '18:40'),
     },
   });
@@ -413,7 +411,7 @@ async function main() {
     data: {
       postId: kidBirthdayPost.id,
       authorId: dad.id,
-      content: '@Alex could you also send the photos to Grandpa and Grandma?',
+      content: '@Tim could you also send the photos to Grandpa and Grandma?',
       createdAt: at('2026-07-02', '19:30'),
     },
   });
@@ -421,7 +419,7 @@ async function main() {
     data: {
       postId: kidBirthdayPost.id,
       authorId: mom.id,
-      assetUrl: img.birthdayKid1,
+      assetUrl: img.birthdayKid0,
       content: 'Look at those balloons! So well organized.',
       createdAt: at('2026-07-02', '19:45'),
     },
@@ -573,7 +571,7 @@ async function main() {
 
   console.log('Screenshot fixtures created');
   console.log(`  Group: ${group.name} (${group.id})`);
-  console.log('  Login: admin@example.com / test123456 (admin)');
+  console.log('  Login: tim@xeweb.be / test123456 (admin)');
   console.log('         test@example.com / test123456');
 }
 
