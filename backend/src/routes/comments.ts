@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { createCommentBodySchema, updateCommentBodySchema } from '../types.js';
-import { notifyUsers } from '../services/notifications.js';
+import { notifyUsers, excerptText } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
@@ -123,7 +123,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       userIds: threadRecipientIds,
       senderId: request.user!.id,
       postId: post.id,
-      params: { author: comment.author.name, group: post.group.name },
+      params: { author: comment.author.name, group: post.group.name, excerpt: excerptText(comment.content) },
     }).catch((err) => request.log.error(err, 'Failed to send comment notifications'));
 
     if (mentionedIds.length > 0) {
@@ -132,7 +132,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         userIds: mentionedIds,
         senderId: request.user!.id,
         postId: post.id,
-        params: { author: comment.author.name, group: post.group.name },
+        params: { author: comment.author.name, group: post.group.name, excerpt: excerptText(comment.content) },
       }).catch((err) => request.log.error(err, 'Failed to send mention notifications'));
     }
 

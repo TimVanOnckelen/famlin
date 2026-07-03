@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { createPostBodySchema, updatePostBodySchema, paginationQuerySchema, searchPostsQuerySchema } from '../types.js';
-import { notifyGroup } from '../services/notifications.js';
+import { notifyGroup, excerptText } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { shapePost } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
@@ -142,7 +142,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       groupId: body.groupId,
       senderId: request.user!.id,
       postId: post.id,
-      params: { author: post.author.name, group: post.group.name },
+      params: { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) },
     }).catch((err) => request.log.error(err, 'Failed to send post notifications'));
 
     return shapePost(post, request.user!.id);

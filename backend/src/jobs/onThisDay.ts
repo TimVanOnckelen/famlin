@@ -1,5 +1,5 @@
 import { getAllOnThisDayPosts } from '../services/onThisDay.js';
-import { notifyGroup } from '../services/notifications.js';
+import { notifyGroup, excerptText } from '../services/notifications.js';
 
 // No real user has this id, so notifyGroup's sender-exclusion filter never
 // excludes anyone — this is a system-generated notification, not one "from"
@@ -19,7 +19,7 @@ export async function runOnThisDayJob(referenceDate = new Date()) {
       groupId: post.groupId,
       senderId: SYSTEM_SENDER_ID,
       postId: post.id,
-      params: { author: post.authorName, group: post.groupName, count: yearsAgo },
+      params: { author: post.authorName, group: post.groupName, count: yearsAgo, excerpt: excerptText(post.content) },
     }).catch((err) => console.error('Failed to send on-this-day notification', err));
   }
 }

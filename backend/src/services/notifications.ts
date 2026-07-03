@@ -6,6 +6,35 @@ import i18n from '../i18n/index.js';
 
 const expo = new Expo();
 
+const EXCERPT_MAX_LENGTH = 80;
+
+// Trims a post/comment body down to a short quote for notification text.
+// Collapses newlines so a multi-line post doesn't blow up a one-line
+// notification.
+export function excerptText(content?: string | null): string {
+  if (!content) return '';
+  const collapsed = content.replace(/\s+/g, ' ').trim();
+  if (!collapsed) return '';
+  return collapsed.length > EXCERPT_MAX_LENGTH
+    ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…`
+    : collapsed;
+}
+
+// Mirrors mobile's constants/reactions.ts REACTION_EMOJI — kept as a small
+// local copy rather than a shared package since this is the only backend use.
+const REACTION_EMOJI: Record<string, string> = {
+  LIKE: '👍',
+  LOVE: '❤️',
+  HAHA: '😂',
+  WOW: '😮',
+  SAD: '😢',
+  CARE: '🥰',
+};
+
+export function reactionEmoji(type: string): string {
+  return REACTION_EMOJI[type] ?? REACTION_EMOJI.LIKE;
+}
+
 export type NotifyType =
   | 'new_post'
   | 'new_comment'
@@ -26,6 +55,22 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   mention: 'notifications.mention',
   on_this_day: 'notifications.onThisDay',
 };
+
+// Posts (and the posts on-this-day resurfaces) can be photo/video-only with
+// no text — these types fall back to a "media" variant of their template
+// when `params.excerpt` is empty, since new_comment/mention/new_like_comment
+// always have text (a comment can't be empty) and don't need one.
+const MEDIA_MESSAGE_KEY: Partial<Record<NotifyType, string>> = {
+  new_post: 'notifications.newPostMedia',
+  new_like_post: 'notifications.newLikePostMedia',
+  on_this_day: 'notifications.onThisDayMedia',
+};
+
+function resolveMessageKey(type: NotifyType, params: Record<string, string | number>): string {
+  const hasExcerpt = typeof params.excerpt === 'string' && params.excerpt.trim().length > 0;
+  if (!hasExcerpt && MEDIA_MESSAGE_KEY[type]) return MEDIA_MESSAGE_KEY[type]!;
+  return MESSAGE_KEY[type];
+}
 
 // Mentions and "on this day" memories reuse the closest existing preference
 // column (comment activity / new post activity, respectively) rather than
@@ -110,7 +155,7 @@ async function notify(options: NotifyOptions) {
 
   const settings = await getAllSettings();
   const t = i18n.getFixedT(settings.defaultLanguage);
-  const message = t(MESSAGE_KEY[type], params);
+  const message = t(resolveMessageKey(type, params), params);
 
   await prisma.notification.createMany({
     data: recipients.map((r) => ({

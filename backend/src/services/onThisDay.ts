@@ -18,7 +18,6 @@ export async function getOnThisDayPosts(groupId: string, referenceDate = new Dat
   return prisma.$queryRaw<OnThisDayPost[]>`
     SELECT id, "groupId", "createdAt" FROM "Post"
     WHERE "groupId" = ${groupId}
-      AND "deletedAt" IS NULL
       AND EXTRACT(MONTH FROM "createdAt") = ${month}
       AND EXTRACT(DAY FROM "createdAt") = ${day}
       AND EXTRACT(YEAR FROM "createdAt") < ${year}
@@ -29,6 +28,7 @@ export async function getOnThisDayPosts(groupId: string, referenceDate = new Dat
 interface OnThisDayPostWithNames extends OnThisDayPost {
   authorName: string;
   groupName: string;
+  content: string | null;
 }
 
 // Same match across every group, joined with author/group name so the daily
@@ -40,12 +40,11 @@ export async function getAllOnThisDayPosts(referenceDate = new Date()): Promise<
   const year = referenceDate.getFullYear();
 
   return prisma.$queryRaw<OnThisDayPostWithNames[]>`
-    SELECT p.id, p."groupId", p."createdAt", u.name as "authorName", g.name as "groupName"
+    SELECT p.id, p."groupId", p."createdAt", p.content, u.name as "authorName", g.name as "groupName"
     FROM "Post" p
     JOIN "User" u ON u.id = p."authorId"
     JOIN "Group" g ON g.id = p."groupId"
-    WHERE p."deletedAt" IS NULL
-      AND EXTRACT(MONTH FROM p."createdAt") = ${month}
+    WHERE EXTRACT(MONTH FROM p."createdAt") = ${month}
       AND EXTRACT(DAY FROM p."createdAt") = ${day}
       AND EXTRACT(YEAR FROM p."createdAt") < ${year}
   `;

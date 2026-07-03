@@ -697,6 +697,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderBottomWidth: 1.5,
     borderBottomColor: colors.border,
+    marginBottom: 14,
   },
   milestoneContainer: {
     backgroundColor: '#FFF5E6',

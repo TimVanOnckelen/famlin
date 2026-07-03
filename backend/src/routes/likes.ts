@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { notifyUser } from '../services/notifications.js';
+import { notifyUser, excerptText, reactionEmoji } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { getT } from '../i18n/index.js';
 import { reactionBodySchema } from '../types.js';
@@ -52,7 +52,12 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         userId: post.authorId,
         senderId: request.user!.id,
         postId: post.id,
-        params: { author: request.user!.name, group: post.group.name },
+        params: {
+          author: request.user!.name,
+          group: post.group.name,
+          excerpt: excerptText(post.content),
+          emoji: reactionEmoji(type),
+        },
       }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
@@ -101,7 +106,12 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         userId: comment.authorId,
         senderId: request.user!.id,
         postId: comment.post.id,
-        params: { author: request.user!.name, group: comment.post.group.name },
+        params: {
+          author: request.user!.name,
+          group: comment.post.group.name,
+          excerpt: excerptText(comment.content),
+          emoji: reactionEmoji(type),
+        },
       }).catch((err) => request.log.error(err, 'Failed to send like notification'));
     }
 
