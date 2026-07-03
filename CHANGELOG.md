@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.6](https://github.com/TimVanOnckelen/famlin/compare/v0.1.5...v0.1.6) (2026-07-03)
+
+
+### Features
+
+* add reaction system to posts and comments ([5055b27](https://github.com/TimVanOnckelen/famlin/commit/5055b27826a74631776efd91c0148decf0b75bfa))
+* add testing framework and implement tests for various modules ([c2ae6ab](https://github.com/TimVanOnckelen/famlin/commit/c2ae6ab116d1658b5146616f6bdbfb4cf2a93ffc))
+* enhance expo-notifications mock with additional response handling ([2822427](https://github.com/TimVanOnckelen/famlin/commit/2822427c32b0517b434b6ade08d02955bdb27660))
+* enhance notification messages with excerpts and reactions; add new media notification templates ([fa8ca70](https://github.com/TimVanOnckelen/famlin/commit/fa8ca70334a7380a24bda1d997cf106804a86548))
+* optimize session management and enhance media token revocation; update nodemailer version ([6049900](https://github.com/TimVanOnckelen/famlin/commit/6049900d5594145a679893bc6d13b036328a5e24))
+
+
+### Bug Fixes
+
+* update image URLs and admin credentials in seed-screenshots; add temp directory to .gitignore ([adefad5](https://github.com/TimVanOnckelen/famlin/commit/adefad5e8475aea1d367db75bc428c3c1299d6f1))
+* update like response structure in tests for consistency ([fc8498c](https://github.com/TimVanOnckelen/famlin/commit/fc8498c1241bfd0a437608bacdd7f81d837a0f69))
+
 ## [0.1.5](https://github.com/TimVanOnckelen/famlin/compare/v0.1.4...v0.1.5) (2026-07-02)
 
 
