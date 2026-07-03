@@ -81,10 +81,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         longitude: body.longitude,
         locationName: body.locationName,
       },
-      include: {
-        author: { select: { id: true, name: true, avatarUrl: true } },
-        group: { select: { id: true, name: true } },
-      },
+      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
     // Fire-and-forget: fanning out push/email to the group shouldn't hold the
@@ -97,7 +94,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       params: { author: post.author.name, group: post.group.name },
     }).catch((err) => request.log.error(err, 'Failed to send post notifications'));
 
-    return post;
+    return shapePost(post);
   });
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

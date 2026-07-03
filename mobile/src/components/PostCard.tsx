@@ -13,6 +13,7 @@ import { api } from '@/api/client';
 import { Post } from '@/types';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
+import { patchPostInCaches } from '@/utils/postCache';
 
 export function PostCard({ post }: { post: Post }) {
   const { t } = useTranslation();
@@ -34,11 +35,9 @@ export function PostCard({ post }: { post: Post }) {
 
       const nextLiked = !post.likedByMe;
       const nextCount = post.likeCount + (nextLiked ? 1 : -1);
-      const patch = (p: Post) =>
-        p.id === post.id ? { ...p, likedByMe: nextLiked, likeCount: nextCount } : p;
+      const patch = (p: Post) => ({ ...p, likedByMe: nextLiked, likeCount: nextCount });
 
-      queryClient.setQueriesData<Post[]>({ queryKey: ['posts'] }, (old) => old?.map(patch));
-      queryClient.setQueryData<Post>(['post', post.id], (old) => (old ? patch(old) : old));
+      patchPostInCaches(queryClient, post.id, patch);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -56,11 +55,9 @@ export function PostCard({ post }: { post: Post }) {
       await queryClient.cancelQueries({ queryKey: ['post', post.id] });
 
       const nextFavorited = !post.favoritedByMe;
-      const patch = (p: Post) =>
-        p.id === post.id ? { ...p, favoritedByMe: nextFavorited } : p;
+      const patch = (p: Post) => ({ ...p, favoritedByMe: nextFavorited });
 
-      queryClient.setQueriesData<Post[]>({ queryKey: ['posts'] }, (old) => old?.map(patch));
-      queryClient.setQueryData<Post>(['post', post.id], (old) => (old ? patch(old) : old));
+      patchPostInCaches(queryClient, post.id, patch);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });

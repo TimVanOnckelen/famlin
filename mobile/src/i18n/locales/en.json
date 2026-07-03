@@ -64,6 +64,7 @@
       "expired": "This invite has expired. Ask your family admin to send you a new one.",
       "used": "This invite was already used. Ask your family admin to send you a new one if this wasn't you.",
       "noServer": "Couldn't tell which Famlin server this invite is for. Open the link from your family admin again.",
+      "serverUnreachable": "Couldn't reach {{server}}. Check that the server is running and reachable, then try again.",
       "fillRequired": "Please fill in all fields."
     },
     "alerts": {

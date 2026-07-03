@@ -64,6 +64,7 @@
       "expired": "Deze uitnodiging is verlopen. Vraag je familiebeheerder om een nieuwe link.",
       "used": "Deze uitnodiging is al gebruikt. Vraag je familiebeheerder om een nieuwe link als jij dit niet was.",
       "noServer": "We konden niet bepalen voor welke Famlin-server deze uitnodiging is. Open de link van je familiebeheerder opnieuw.",
+      "serverUnreachable": "Kon {{server}} niet bereiken. Controleer of de server actief en bereikbaar is, en probeer opnieuw.",
       "fillRequired": "Vul alle velden in."
     },
     "alerts": {

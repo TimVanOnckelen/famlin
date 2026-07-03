@@ -52,6 +52,7 @@ export function FeedScreen() {
   const {
     data,
     isLoading,
+    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -166,7 +167,7 @@ export function FeedScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feedList}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         renderItem={({ item }) => <PostCard post={item} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}

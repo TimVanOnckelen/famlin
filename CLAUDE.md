@@ -28,6 +28,7 @@ Run from the repo root unless noted. There is no root install/workspace — inst
 
 **Mobile** (`cd mobile`)
 - `npm start` (Expo) · `npm run ios` · `npm run android` · `npx tsc --noEmit` — typecheck.
+- `npm test` — Jest (`jest-expo` preset) unit/hook tests, no device/simulator needed.
 - `npm run build:ios` / `build:android` — EAS builds.
 
 **Docs site** (`cd docs`)

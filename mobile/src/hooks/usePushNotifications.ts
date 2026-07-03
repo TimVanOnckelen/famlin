@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 import { api } from '@/api/client';
 import { fetchNotificationConfig } from '@/api/auth';
 import { setPushToken } from '@/utils/storage';
+import { useAuthStore } from '@/stores/authStore';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -16,12 +17,18 @@ Notifications.setNotificationHandler({
 });
 
 export function usePushNotifications() {
+  // Registration needs an authenticated request (POST /push-tokens) and a
+  // resolved API base URL, neither of which is guaranteed at first mount —
+  // wait for the user to be loaded (bootstrap fetchMe or login) and re-run
+  // whenever the signed-in user changes.
+  const userId = useAuthStore((state) => state.user?.id);
+
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !userId) {
       return;
     }
     registerPushTokenAsync();
-  }, []);
+  }, [userId]);
 }
 
 async function registerPushTokenAsync() {
