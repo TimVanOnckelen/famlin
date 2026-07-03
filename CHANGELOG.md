@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/TimVanOnckelen/famlin/compare/v0.1.4...v0.1.5) (2026-07-02)
+
+
+### Features
+
+* enhance authentication and error handling in admin and comment routes; improve media token management ([973ac3b](https://github.com/TimVanOnckelen/famlin/commit/973ac3b005d3acec6ac109a25737deed37938035))
+
 ## [0.1.4](https://github.com/TimVanOnckelen/famlin/compare/v0.1.3...v0.1.4) (2026-07-02)
 
 
