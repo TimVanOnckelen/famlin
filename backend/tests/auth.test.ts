@@ -126,6 +126,49 @@ describe('auth routes', () => {
       });
       expect(res.statusCode).toBe(200);
     });
+
+    // /uploads/* is authorized via isSessionCurrent(), which caches its DB
+    // lookup briefly (see plugins/auth.ts) for a hot path hit on every
+    // photo/video render. These confirm the explicit cache invalidation on
+    // every tokenVersion/deletedAt-changing route still makes revocation
+    // effectively immediate, rather than only after the cache TTL expires.
+    it('revokes an already-issued media token immediately after a password change', async () => {
+      const user = await createUser({ email: 'media-pw@example.com', password: 'old-password123' });
+      const staleHeader = authHeader(user);
+
+      const tokenRes = await app.inject({ method: 'GET', url: '/api/uploads/media-token', headers: staleHeader });
+      const mediaToken = tokenRes.json().token;
+
+      const changeRes = await app.inject({
+        method: 'POST',
+        url: '/api/auth/change-password',
+        headers: staleHeader,
+        payload: { currentPassword: 'old-password123', newPassword: 'new-password456' },
+      });
+      expect(changeRes.statusCode).toBe(200);
+
+      const res = await app.inject({ method: 'GET', url: `/uploads/nonexistent.jpg?token=${mediaToken}` });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('revokes an already-issued media token immediately after admin deactivation', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const user = await createUser();
+      const userHeader = authHeader(user);
+
+      const tokenRes = await app.inject({ method: 'GET', url: '/api/uploads/media-token', headers: userHeader });
+      const mediaToken = tokenRes.json().token;
+
+      const deactivateRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${user.id}`,
+        headers: authHeader(admin),
+      });
+      expect(deactivateRes.statusCode).toBe(200);
+
+      const res = await app.inject({ method: 'GET', url: `/uploads/nonexistent.jpg?token=${mediaToken}` });
+      expect(res.statusCode).toBe(401);
+    });
   });
 
   describe('registration is admin-only', () => {

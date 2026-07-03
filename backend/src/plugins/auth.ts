@@ -124,17 +124,46 @@ export function verifyMediaToken(token: string): { id: string; tokenVersion?: nu
   }
 }
 
+// /uploads is hit once per photo/video rendered (dozens per feed screen), far
+// more often than any other authenticated route, so isSessionCurrent's DB
+// lookup is cached briefly per user. Explicitly invalidated by every route
+// that changes tokenVersion/deletedAt (see invalidateSessionCache calls in
+// routes/auth.ts and routes/admin.ts) so revocation still takes effect
+// immediately in the normal case; the TTL only bounds staleness if a call
+// site is ever missed.
+const SESSION_CACHE_TTL_MS = 5_000;
+const sessionCache = new Map<string, { tokenVersion: number; deletedAt: Date | null; expiresAt: number }>();
+
+export function invalidateSessionCache(userId: string) {
+  sessionCache.delete(userId);
+}
+
 // Confirms a decoded token still corresponds to an active user at its issued
 // tokenVersion — the DB check that `verifyToken`/`verifyMediaToken` (signature
 // + expiry only) can't do on their own. Used by the /uploads auth hook so a
 // deactivated user or a token from before a password reset loses media access
 // immediately, matching the guarantee the main `authenticate` decorator makes.
 export async function isSessionCurrent(decoded: { id: string; tokenVersion?: number }): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
-    select: { tokenVersion: true, deletedAt: true },
-  });
-  if (!user || user.deletedAt) return false;
+  const cached = sessionCache.get(decoded.id);
+  const now = Date.now();
+  let user: { tokenVersion: number; deletedAt: Date | null };
+
+  if (cached && cached.expiresAt > now) {
+    user = cached;
+  } else {
+    const found = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { tokenVersion: true, deletedAt: true },
+    });
+    if (!found) {
+      sessionCache.delete(decoded.id);
+      return false;
+    }
+    user = found;
+    sessionCache.set(decoded.id, { ...found, expiresAt: now + SESSION_CACHE_TTL_MS });
+  }
+
+  if (user.deletedAt) return false;
   if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false;
   return true;
 }

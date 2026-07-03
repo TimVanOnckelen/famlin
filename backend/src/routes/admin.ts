@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { invalidateSessionCache } from '../plugins/auth.js';
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -239,6 +240,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         where: { id },
         data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
       });
+      invalidateSessionCache(id);
       return { success: true };
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
@@ -256,6 +258,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         data: { deletedAt: null },
         select: userSelect,
       });
+      invalidateSessionCache(id);
       return user;
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.userNotFound') });

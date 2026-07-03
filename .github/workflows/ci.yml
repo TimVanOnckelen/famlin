@@ -89,6 +89,9 @@ jobs:
       - name: Typecheck
         working-directory: mobile
         run: npx tsc --noEmit
+      - name: Test
+        working-directory: mobile
+        run: npm test
 
   docs:
     name: Docs site

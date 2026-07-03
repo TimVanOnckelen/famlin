@@ -83,8 +83,14 @@ export const notificationPrefsSchema = z.object({
   pushOnNewLike: z.boolean().optional(),
 });
 
+// Clients always upload the photo first and pass back the resulting
+// /uploads path (see mobile ProfileScreen's pickAvatar flow) — an arbitrary
+// external URL here would let a user beacon every group member's client to
+// attacker-controlled infrastructure on avatar render. (OIDC-provided profile
+// pictures are synced separately in routes/auth.ts and don't go through this
+// schema.)
 export const updateUserBodySchema = notificationPrefsSchema.extend({
-  avatarUrl: z.union([uploadPathSchema, z.string().url()]).optional().nullable(),
+  avatarUrl: uploadPathSchema.optional().nullable(),
 });
 
 export const adminUpdateUserBodySchema = notificationPrefsSchema.extend({

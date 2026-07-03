@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../db.js';
-import { verifyOidcToken, createUserToken, getDiscovery, OidcError } from '../plugins/auth.js';
+import { verifyOidcToken, createUserToken, getDiscovery, OidcError, invalidateSessionCache } from '../plugins/auth.js';
 import { isEmailAllowed, getOidcSettings, getAllSettings } from '../services/settings.js';
 import { getValidInvite, consumeInvite, inviteFailureResponse } from '../services/invites.js';
 import { getT } from '../i18n/index.js';
@@ -312,6 +312,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       where: { id: user.id },
       data: { passwordHash, tokenVersion: { increment: 1 } },
     });
+    invalidateSessionCache(user.id);
 
     return { success: true };
   });
@@ -334,6 +335,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         where: { id },
         data: { passwordHash, tokenVersion: { increment: 1 } },
       });
+      invalidateSessionCache(id);
 
       return { success: true, user: sanitizeUser(user) };
     } catch (err: any) {
