@@ -66,10 +66,16 @@ export async function uploadMedia(files: { uri: string; name: string; type: stri
   // to clear the client's default `application/json` Content-Type (see
   // client.ts), since otherwise axios's transformRequest treats this as a
   // JSON request and serializes the FormData instead of sending it as-is.
+  //
+  // Disable the default axios timeout for uploads: the global 15 s limit is
+  // fine for small JSON requests but is far too short for photo/video uploads
+  // over typical mobile or remote-server network speeds, which causes every
+  // upload to fail with a spurious timeout error.
   const response = await api.post<{ urls: string[] }>('/uploads', formData, {
     headers: {
       'Content-Type': undefined,
     },
+    timeout: 0,
   });
 
   return response.data.urls;

@@ -3,7 +3,7 @@
 // between cases — see the same pattern in api/__tests__/client.test.ts.
 
 jest.mock('@/api/client', () => ({
-  api: { get: jest.fn() },
+  api: { get: jest.fn(), post: jest.fn() },
   getCurrentServerUrl: jest.fn(),
   getCurrentMediaToken: jest.fn(),
   setMediaToken: jest.fn(),
@@ -132,6 +132,20 @@ describe('api/uploads', () => {
       await ensureFreshMediaToken();
 
       expect(client.api.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('uploadMedia', () => {
+    it('passes timeout: 0 so large uploads do not time out on remote servers', async () => {
+      const client = require('@/api/client');
+      client.api.post.mockResolvedValueOnce({ data: { urls: ['/uploads/abc.jpg'] } });
+
+      const { uploadMedia } = require('@/api/uploads');
+      const urls = await uploadMedia([{ uri: 'file:///photo.jpg', name: 'photo.jpg', type: 'image/jpeg' }]);
+
+      expect(urls).toEqual(['/uploads/abc.jpg']);
+      const [, , config] = client.api.post.mock.calls[0];
+      expect(config.timeout).toBe(0);
     });
   });
 });
