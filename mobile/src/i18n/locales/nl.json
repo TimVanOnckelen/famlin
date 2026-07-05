@@ -37,9 +37,10 @@
     "passwordLabel": "Wachtwoord",
     "passwordPlaceholder": "••••••••",
     "loginButton": "Inloggen",
-    "loginWithSso": "Inloggen met SSO",
+    "loginWithSso": "Inloggen met {{name}}",
     "ssoNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
     "ssoNoIdToken": "De SSO-provider heeft geen ID-token teruggegeven.",
+    "ssoLoginFailed": "SSO-login is mislukt",
     "alerts": {
       "loginFailedTitle": "Inloggen mislukt",
       "serverAddressMissingTitle": "Serveradres ontbreekt",
@@ -106,6 +107,8 @@
     "contentPlaceholder": "Schrijf iets voor de familie...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
+    "addImmichPhotoTitle": "Immich-foto's",
+    "addImmichPhotoSubtitle": "Kies uit een gedeeld album",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
     "alerts": {
@@ -131,6 +134,14 @@
       "namePlaceholder": "Bijv. huis van oma",
       "tapHint": "Tik op de kaart om de pin te plaatsen"
     }
+  },
+  "immichPicker": {
+    "title": "Foto's kiezen",
+    "addCount_one": "{{count}} toevoegen",
+    "addCount_other": "{{count}} toevoegen",
+    "noAssets": "Dit album heeft nog geen foto's.",
+    "loadAlbumsError": "Albums laden mislukt",
+    "loadAssetsError": "Foto's laden mislukt"
   },
   "postDetail": {
     "title": "Bericht",
@@ -184,6 +195,7 @@
     "languageDescription": "Kies je voorkeurstaal",
     "server": "Server",
     "connectedTo": "Verbonden met",
+    "serverVersion": "Serverversie {{version}}",
     "app": "App",
     "version": "Versie {{version}}",
     "logout": "Uitloggen",

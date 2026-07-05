@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, GroupMember, Invite, User } from '../api/client';
+import { api, ApiError, Group, GroupMember, ImmichAlbumLink, ImmichAlbumSummary, Invite, User } from '../api/client';
 import i18n from '../i18n';
 import { Icon } from './Icon';
 
@@ -21,6 +21,18 @@ export function GroupsPage() {
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [immichLinks, setImmichLinks] = useState<ImmichAlbumLink[]>([]);
+  const [immichLinksLoading, setImmichLinksLoading] = useState(false);
+  const [availableImmichAlbums, setAvailableImmichAlbums] = useState<ImmichAlbumSummary[] | null>(null);
+  const [immichNotConfigured, setImmichNotConfigured] = useState(false);
+  // Set when Immich IS configured but the catalog fetch still failed (server
+  // down, key revoked, ...) — distinct from immichNotConfigured so the admin
+  // isn't told to "configure Immich" when it already is. Already-linked
+  // albums still load fine either way since they come from Famlin's own DB.
+  const [immichAlbumsError, setImmichAlbumsError] = useState(false);
+  const [selectedAlbumId, setSelectedAlbumId] = useState('');
+  const [linkingAlbum, setLinkingAlbum] = useState(false);
+
   // Group create/edit modal. `formGroup === null` while closed; a Group with an
   // empty id means "create", otherwise "edit".
   const [formGroup, setFormGroup] = useState<Group | null>(null);
@@ -39,9 +51,20 @@ export function GroupsPage() {
   };
 
   useEffect(() => {
-    Promise.all([loadGroups(), api.getAllUsers().then(setUsers)]).finally(() =>
-      setLoading(false)
-    );
+    Promise.all([
+      loadGroups(),
+      api.getAllUsers().then(setUsers),
+      api
+        .getImmichAlbums()
+        .then(setAvailableImmichAlbums)
+        .catch((err) => {
+          if (err instanceof ApiError && err.code === 'not_configured') {
+            setImmichNotConfigured(true);
+          } else {
+            setImmichAlbumsError(true);
+          }
+        }),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const loadMembers = (groupId: string) => {
@@ -60,15 +83,26 @@ export function GroupsPage() {
       .finally(() => setInvitesLoading(false));
   };
 
+  const loadImmichLinks = (groupId: string) => {
+    setImmichLinksLoading(true);
+    api
+      .getGroupImmichAlbums(groupId)
+      .then(setImmichLinks)
+      .finally(() => setImmichLinksLoading(false));
+  };
+
   useEffect(() => {
     setNewMemberId('');
     setInviteEmail('');
+    setSelectedAlbumId('');
     if (selectedId) {
       loadMembers(selectedId);
       loadInvites(selectedId);
+      loadImmichLinks(selectedId);
     } else {
       setMembers([]);
       setInvites([]);
+      setImmichLinks([]);
     }
   }, [selectedId]);
 
@@ -157,7 +191,40 @@ export function GroupsPage() {
     }
   };
 
+  const handleLinkAlbum = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !selectedAlbumId || !availableImmichAlbums) return;
+    const album = availableImmichAlbums.find((a) => a.id === selectedAlbumId);
+    if (!album) return;
+    setLinkingAlbum(true);
+    try {
+      await api.linkImmichAlbum(selectedGroup.id, { immichAlbumId: album.id, albumName: album.albumName });
+      setSelectedAlbumId('');
+      loadImmichLinks(selectedGroup.id);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : t('common.error');
+      alert(t('groups.immichAlbums.linkError', { error: message }));
+    } finally {
+      setLinkingAlbum(false);
+    }
+  };
+
+  const handleUnlinkAlbum = async (link: ImmichAlbumLink) => {
+    if (!selectedGroup) return;
+    if (!confirm(t('groups.immichAlbums.unlinkConfirm', { name: link.albumName }))) return;
+    try {
+      await api.unlinkImmichAlbum(link.id);
+      loadImmichLinks(selectedGroup.id);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : t('common.error');
+      alert(t('groups.immichAlbums.unlinkError', { error: message }));
+    }
+  };
+
   const nonMembers = users.filter((u) => !members.some((m) => m.id === u.id));
+  const linkableAlbums = (availableImmichAlbums ?? []).filter(
+    (a) => !immichLinks.some((link) => link.immichAlbumId === a.id)
+  );
 
   if (loading) return <div className="loading">{t('common.loading')}</div>;
 
@@ -349,6 +416,57 @@ export function GroupsPage() {
                         </li>
                       );
                     })}
+                  </ul>
+                )}
+
+                <div className="md-section-header">
+                  <h4>{t('groups.immichAlbums.title')}</h4>
+                  {immichNotConfigured ? (
+                    <span className="hint">{t('groups.immichAlbums.notConfigured')}</span>
+                  ) : immichAlbumsError ? (
+                    <span className="hint">{t('groups.immichAlbums.loadError')}</span>
+                  ) : (
+                    <form className="md-add-member" onSubmit={handleLinkAlbum}>
+                      <select
+                        value={selectedAlbumId}
+                        onChange={(e) => setSelectedAlbumId(e.target.value)}
+                        disabled={linkableAlbums.length === 0}
+                      >
+                        <option value="">{t('groups.immichAlbums.selectAlbum')}</option>
+                        {linkableAlbums.map((album) => (
+                          <option key={album.id} value={album.id}>
+                            {album.albumName} ({album.assetCount})
+                          </option>
+                        ))}
+                      </select>
+                      <button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
+                        {t('groups.immichAlbums.linkAlbum')}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {immichLinksLoading ? (
+                  <div className="loading">{t('common.loading')}</div>
+                ) : immichLinks.length === 0 ? (
+                  <div className="empty">{t('groups.immichAlbums.noAlbums')}</div>
+                ) : (
+                  <ul className="member-cards">
+                    {immichLinks.map((link) => (
+                      <li key={link.id} className="member-card">
+                        <span className="member-card-info">
+                          <span className="member-card-name">{link.albumName}</span>
+                        </span>
+                        <button
+                          className="icon-button danger"
+                          title={t('common.remove')}
+                          aria-label={t('common.remove')}
+                          onClick={() => handleUnlinkAlbum(link)}
+                        >
+                          <Icon name="x" size={14} />
+                        </button>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </>

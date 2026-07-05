@@ -1,14 +1,19 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import pkg from '../../package.json' with { type: 'json' };
 import { prisma } from '../db.js';
-import { verifyOidcToken, createUserToken, getDiscovery, OidcError, invalidateSessionCache } from '../plugins/auth.js';
-import { isEmailAllowed, getOidcSettings, getAllSettings } from '../services/settings.js';
-import { getValidInvite, consumeInvite, inviteFailureResponse } from '../services/invites.js';
+import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache } from '../plugins/auth.js';
+import { getOidcSettings, getAllSettings } from '../services/settings.js';
+import { getValidInvite, consumeInvite } from '../services/invites.js';
+import { completeOidcLogin } from '../services/oidcLogin.js';
+import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
 import { getT } from '../i18n/index.js';
 import { sanitizeUser } from '../services/users.js';
 import {
   loginBodySchema,
+  oidcExchangeBodySchema,
+  oidcMobileHandoffBodySchema,
   passwordLoginBodySchema,
   registerBodySchema,
   setupBodySchema,
@@ -31,16 +36,37 @@ const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
   no_email: 'errors.oidcAccountNoEmail',
   not_allowed: 'errors.emailNotAllowed',
+  exchange_failed: 'errors.oidcExchangeFailed',
 };
+
+function oidcErrorStatus(code: OidcError['code']): number {
+  if (code === 'not_configured') return 503;
+  if (code === 'exchange_failed') return 400;
+  return 403;
+}
 
 export default async function authRoutes(fastify: FastifyInstance) {
   // Public: lets clients discover whether OIDC login is enabled and, if so,
   // which endpoints/client/scopes to use to build their own auth request.
   // Resolving discovery server-side avoids relying on the provider allowing
   // CORS for browser-based clients to fetch it directly.
-  fastify.get('/oidc-config', async () => {
-    const { name, issuer, clientId, scopes } = await getOidcSettings();
-    const disabled = { enabled: false, name, authorizationEndpoint: '', tokenEndpoint: '', clientId: '', scopes };
+  fastify.get('/oidc-config', async (request) => {
+    const { name, issuer, clientId, clientSecret, scopes } = await getOidcSettings();
+    // Some providers (Google) reject a secretless PKCE exchange from a
+    // public client — when a secret is configured, clients must hand the
+    // authorization code to the backend instead (POST /oidc/exchange for the
+    // admin UI, GET /oidc/mobile-callback for the mobile app) rather than
+    // exchanging it themselves. The secret itself never leaves the backend.
+    const usesClientSecret = !!clientSecret;
+    const disabled = {
+      enabled: false,
+      name,
+      authorizationEndpoint: '',
+      tokenEndpoint: '',
+      clientId: '',
+      scopes,
+      usesClientSecret,
+    };
 
     if (!issuer || !clientId) {
       return disabled;
@@ -48,6 +74,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     try {
       const { doc } = await getDiscovery(issuer);
+      const origin = `${request.protocol}://${request.hostname}`;
       return {
         enabled: true,
         name,
@@ -55,6 +82,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
         tokenEndpoint: doc.token_endpoint,
         clientId,
         scopes,
+        usesClientSecret,
+        ...(usesClientSecret ? { mobileCallbackUrl: `${origin}/api/auth/oidc/mobile-callback` } : {}),
       };
     } catch {
       return disabled;
@@ -121,7 +150,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
   );
 
   // Generic OIDC login — works with any OpenID Connect provider (Google,
-  // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin.
+  // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin. Used
+  // when the client did its own PKCE exchange directly against the provider
+  // (the default — see POST /oidc/exchange for providers that need a secret).
   fastify.post(
     '/oidc',
     { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
@@ -130,77 +161,110 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const t = getT(request);
 
       try {
-        // A valid invite is its own authorization: it can let an OIDC login
-        // provision an account even for an email that isn't on the
-        // allowedEmails whitelist. Resolve it up front so we know whether to
-        // relax that check before verifying the token.
-        let invite: Awaited<ReturnType<typeof getValidInvite>>['invite'] = null;
-        if (inviteToken) {
-          const result = await getValidInvite(inviteToken);
-          const failure = inviteFailureResponse(result.reason, t);
-          if (failure) return reply.status(failure.status).send({ error: failure.error });
-          invite = result.invite;
-        }
-
-        const oidcUser = await verifyOidcToken(idToken, { allowUnlisted: !!invite });
-
-        if (invite?.email && invite.email !== oidcUser.email) {
-          return reply.status(403).send({ error: t('errors.inviteEmailMismatch') });
-        }
-
-        let user = await prisma.user.findUnique({
-          where: { email: oidcUser.email },
-        });
-
-        if (!user) {
-          // Only provision a new account when the email is whitelisted for
-          // OIDC login (an empty allowedEmails list means "allow everyone"),
-          // unless a valid invite is covering this signup.
-          if (!invite && !(await isEmailAllowed(oidcUser.email))) {
-            return reply.status(403).send({ error: t('errors.emailNotAllowed') });
-          }
-
-          user = await prisma.user.create({
-            data: {
-              email: oidcUser.email,
-              name: oidcUser.name,
-              avatarUrl: oidcUser.picture,
-            },
-          });
-        } else {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              name: oidcUser.name,
-              avatarUrl: oidcUser.picture || user.avatarUrl,
-            },
-          });
-        }
-
-        if (inviteToken) {
-          await consumeInvite(inviteToken, user.id);
-        }
-
-        const token = createUserToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.isAdmin,
-          tokenVersion: user.tokenVersion,
-        });
-
-        return {
-          token,
-          user: sanitizeUser(user),
-        };
+        const outcome = await completeOidcLogin(idToken, inviteToken, t);
+        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
+        return outcome.result;
       } catch (err) {
         if (err instanceof OidcError) {
-          const status = err.code === 'not_configured' ? 503 : 403;
-          return reply.status(status).send({ error: t(OIDC_ERROR_KEY[err.code]) });
+          return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
         }
         fastify.log.error(err);
         return reply.status(401).send({ error: t('errors.authFailed') });
       }
+    }
+  );
+
+  // Server-mediated OIDC login for the admin UI, used instead of POST /oidc
+  // when the provider requires a client secret (e.g. Google) — the browser
+  // can't hold the secret, so it hands the authorization code here and the
+  // backend does the exchange.
+  fastify.post(
+    '/oidc/exchange',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const { code, redirectUri, codeVerifier, inviteToken } = oidcExchangeBodySchema.parse(request.body);
+      const t = getT(request);
+
+      try {
+        const idToken = await exchangeOidcCode({ code, redirectUri, codeVerifier });
+        const outcome = await completeOidcLogin(idToken, inviteToken, t);
+        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
+        return outcome.result;
+      } catch (err) {
+        if (err instanceof OidcError) {
+          return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
+        }
+        fastify.log.error(err);
+        return reply.status(401).send({ error: t('errors.authFailed') });
+      }
+    }
+  );
+
+  // The redirect_uri Google (or another secret-requiring provider) sends the
+  // user's browser back to for the mobile app's login. A plain custom-scheme
+  // redirect (famlin://) isn't accepted by providers that mandate their own
+  // fixed native-app redirect scheme, so this HTTPS URL — under the
+  // self-hoster's own domain — is what gets registered with the provider
+  // instead; it completes the login server-side, then hands off to the app's
+  // famlin:// scheme, which the OS *does* already know how to route back to
+  // Famlin. See mobileCallbackUrl in GET /oidc-config and createOidcHandoff.
+  fastify.get(
+    '/oidc/mobile-callback',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request);
+      const { code, state, error } = request.query as { code?: string; state?: string; error?: string };
+
+      if (error || !code) {
+        return reply.redirect(`famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}`);
+      }
+
+      // The mobile app is a stateless HTTP client with no session on this
+      // request, so an in-progress invite claim can only travel through the
+      // `state` param Google echoes back unchanged — same trust level as the
+      // client-supplied inviteToken already accepted by POST /oidc, since the
+      // invite's own validity is what's actually authoritative server-side.
+      let inviteToken: string | undefined;
+      if (state) {
+        try {
+          const parsed = JSON.parse(state);
+          if (typeof parsed?.inviteToken === 'string') inviteToken = parsed.inviteToken;
+        } catch {
+          // Malformed state — proceed without an invite token.
+        }
+      }
+
+      try {
+        const redirectUri = `${request.protocol}://${request.hostname}/api/auth/oidc/mobile-callback`;
+        const idToken = await exchangeOidcCode({ code, redirectUri });
+        const outcome = await completeOidcLogin(idToken, inviteToken, t);
+        if ('error' in outcome) {
+          return reply.redirect('famlin://oidc-callback?error=login_failed');
+        }
+        const handoff = createOidcHandoff(outcome.result);
+        return reply.redirect(`famlin://oidc-callback?handoff=${handoff}`);
+      } catch (err) {
+        if (!(err instanceof OidcError)) fastify.log.error(err);
+        return reply.redirect('famlin://oidc-callback?error=login_failed');
+      }
+    }
+  );
+
+  // Redeems the one-time code from the famlin://oidc-callback deep link for
+  // the actual Famlin session token — see createOidcHandoff for why the
+  // token itself isn't passed directly in that redirect's query string.
+  fastify.post(
+    '/oidc/mobile-handoff',
+    { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const { code } = oidcMobileHandoffBodySchema.parse(request.body);
+      const t = getT(request);
+
+      const result = consumeOidcHandoff(code);
+      if (!result) {
+        return reply.status(400).send({ error: t('errors.oidcHandoffExpired') });
+      }
+      return result;
     }
   );
 
@@ -385,5 +449,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
       pushEnabled: settings.pushNotificationsEnabled,
       emailEnabled: settings.emailNotificationsEnabled,
     };
+  });
+
+  // Public: lets clients (e.g. the mobile app's profile screen) display
+  // which server version they're connected to.
+  fastify.get('/server-info', async () => {
+    return { version: pkg.version };
   });
 }

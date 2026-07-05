@@ -8,10 +8,10 @@ import {
   ScrollView,
   Switch,
   Alert,
-  SafeAreaView,
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,6 +27,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { uploadMedia, getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
+import { ImmichPickerModal } from '@/components/ImmichPickerModal';
+import { getGroupImmichAlbums } from '@/api/immich';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
 
@@ -54,6 +56,7 @@ export function NewPostScreen() {
   const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [location, setLocation] = useState<PickedLocation | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showImmichPicker, setShowImmichPicker] = useState(false);
 
   const { data: groups } = useQuery<Group[], Error>({
     queryKey: ['groups'],
@@ -61,6 +64,12 @@ export function NewPostScreen() {
       const response = await api.get<Group[]>('/groups');
       return response.data;
     },
+  });
+
+  const { data: immichAlbums, isError: immichAlbumsErrored } = useQuery({
+    queryKey: ['immich-albums', groupId],
+    queryFn: () => getGroupImmichAlbums(groupId!),
+    enabled: !!groupId,
   });
 
   React.useEffect(() => {
@@ -138,6 +147,11 @@ export function NewPostScreen() {
 
   function removeUploadedAsset(url: string) {
     setUploadedAssetUrls((prev) => prev.filter((u) => u !== url));
+  }
+
+  function handleImmichConfirm(urls: string[]) {
+    setShowImmichPicker(false);
+    setUploadedAssetUrls((prev) => [...prev, ...urls]);
   }
 
   const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }));
@@ -256,6 +270,18 @@ export function NewPostScreen() {
           </View>
         </TouchableOpacity>
 
+        {(!!immichAlbums?.length || immichAlbumsErrored) && (
+          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowImmichPicker(true)}>
+            <View style={styles.addPhotoIcon}>
+              <Icon name="image" size={18} color={colors.white} />
+            </View>
+            <View>
+              <Text style={styles.addPhotoTitle}>{t('newPost.addImmichPhotoTitle')}</Text>
+              <Text style={styles.addPhotoSubtitle}>{t('newPost.addImmichPhotoSubtitle')}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {location ? (
           <View style={styles.locationChip}>
             <Icon name="map-pin" size={16} color={colors.primary} />
@@ -352,6 +378,15 @@ export function NewPostScreen() {
           setShowLocationPicker(false);
         }}
       />
+
+      {groupId && (
+        <ImmichPickerModal
+          visible={showImmichPicker}
+          groupId={groupId}
+          onCancel={() => setShowImmichPicker(false)}
+          onConfirm={handleImmichConfirm}
+        />
+      )}
     </SafeAreaView>
   );
 }

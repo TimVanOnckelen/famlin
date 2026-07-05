@@ -54,10 +54,52 @@ export async function getDiscovery(issuer: string) {
 // Thrown for expected, user-facing OIDC failures so routes can map them to a
 // translated message instead of leaking jose/fetch internals via err.message.
 export class OidcError extends Error {
-  constructor(public code: 'not_configured' | 'no_email' | 'not_allowed') {
+  constructor(public code: 'not_configured' | 'no_email' | 'not_allowed' | 'exchange_failed') {
     super(code);
     this.name = 'OidcError';
   }
+}
+
+// Server-mediated authorization code exchange for providers (e.g. Google)
+// that reject a secretless PKCE exchange from a public client — see
+// oidcClientSecret in services/settings.ts. Unlike the client-side PKCE flow,
+// the secret itself is proof of client identity, so codeVerifier is optional
+// here (still passed through when the caller generated one, for defense in
+// depth, but its absence isn't a problem).
+export async function exchangeOidcCode(params: {
+  code: string;
+  redirectUri: string;
+  codeVerifier?: string;
+}): Promise<string> {
+  const { issuer, clientId, clientSecret } = await getOidcSettings();
+  if (!issuer || !clientId || !clientSecret) {
+    throw new OidcError('not_configured');
+  }
+
+  const { doc } = await getDiscovery(issuer);
+
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: params.code,
+    redirect_uri: params.redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+  if (params.codeVerifier) {
+    body.set('code_verifier', params.codeVerifier);
+  }
+
+  const res = await fetch(doc.token_endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  const data = (await res.json().catch(() => null)) as { id_token?: string } | null;
+  if (!res.ok || !data?.id_token) {
+    throw new OidcError('exchange_failed');
+  }
+  return data.id_token;
 }
 
 export async function verifyOidcToken(idToken: string, options?: { allowUnlisted?: boolean }) {
@@ -166,6 +208,31 @@ export async function isSessionCurrent(decoded: { id: string; tokenVersion?: num
 
   if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false;
   return true;
+}
+
+// Shared by anything gated the same way /uploads/* is: accepts either a
+// normal session token (header) or a scoped media token (query string, for
+// <Image>/<Video> sources that can't send custom headers) — see
+// routes/uploads.ts and routes/immich.ts. Returns the authenticated user id,
+// or null if neither form of auth checks out.
+export async function authenticateMediaRequest(request: FastifyRequest): Promise<string | null> {
+  const authHeader = request.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const decoded = verifyToken(authHeader.slice(7));
+      if (await isSessionCurrent(decoded)) return decoded.id;
+    } catch {
+      // fall through to the media-token check below
+    }
+  }
+
+  const queryToken = (request.query as { token?: string } | undefined)?.token;
+  if (queryToken) {
+    const decoded = verifyMediaToken(queryToken);
+    if (decoded && (await isSessionCurrent(decoded))) return decoded.id;
+  }
+
+  return null;
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {

@@ -176,6 +176,17 @@
       "expiresOn": "Verloopt {{date}}",
       "neverExpires": "Verloopt nooit",
       "createdOn": "Aangemaakt {{date}}"
+    },
+    "immichAlbums": {
+      "title": "Immich-albums",
+      "notConfigured": "Configureer Immich bij Serverinstellingen om albums te koppelen.",
+      "loadError": "Kan Immich niet bereiken om albums op te halen — gekoppelde albums blijven werken.",
+      "selectAlbum": "Selecteer een album…",
+      "linkAlbum": "Album koppelen",
+      "noAlbums": "Nog geen albums gekoppeld aan deze groep.",
+      "linkError": "Album koppelen mislukt: {{error}}",
+      "unlinkConfirm": "Album \"{{name}}\" ontkoppelen van deze groep?",
+      "unlinkError": "Album ontkoppelen mislukt: {{error}}"
     }
   },
   "content": {
@@ -206,6 +217,8 @@
     "oidcName": "Weergavenaam",
     "oidcIssuer": "Issuer-URL",
     "oidcClientId": "Client ID",
+    "oidcClientSecret": "Client secret (optioneel)",
+    "oidcClientSecretHint": "Alleen nodig voor providers die een PKCE-uitwisseling zonder secret weigeren, zoals Google. Laat leeg voor providers zoals Authentik/Keycloak/Auth0 die een publieke/native client ondersteunen. Indien ingesteld, wisselt Famlin de autorisatiecode op de backend uit in plaats van in de browser of app.",
     "oidcScopes": "Scopes",
     "oidcHint": "Werkt met elke OpenID Connect-provider (Google, Microsoft, Authentik, Keycloak, Auth0, ...). Registreer Famlin als publieke/native client met PKCE en voeg de redirect-URI's van deze app toe.",
     "accessControl": "Toegangsbeheer",
@@ -223,6 +236,15 @@
     "senderAddress": "Afzenderadres",
     "saveSettings": "Instellingen opslaan",
     "saving": "Opslaan...",
-    "saved": "Instellingen opgeslagen."
+    "saved": "Instellingen opgeslagen.",
+    "immich": "Immich-integratie",
+    "immichHint": "Configureer één Immich-server + API-sleutel voor de hele instantie en koppel vervolgens specifieke albums aan groepen via de pagina Groepen. Leden kunnen dan foto's uit een gekoppeld album kiezen bij het maken van een bericht. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
+    "immichServerUrl": "Server-URL",
+    "immichApiKey": "API-sleutel",
+    "immichTestConnection": "Verbinding testen",
+    "immichTesting": "Testen...",
+    "immichTestOk": "Verbinding gelukt.",
+    "immichTestUnauthorized": "Verbonden, maar de API-sleutel werd geweigerd.",
+    "immichTestUnreachable": "Kan de Immich-server niet bereiken."
   }
 }

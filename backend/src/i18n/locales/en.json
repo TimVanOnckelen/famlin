@@ -20,6 +20,8 @@
     "oidcNotConfigured": "OIDC login is not configured",
     "invalidOidcToken": "Invalid OIDC token",
     "oidcAccountNoEmail": "OIDC account has no email",
+    "oidcExchangeFailed": "Could not complete sign-in with the identity provider",
+    "oidcHandoffExpired": "Sign-in expired, please try again",
     "emailNotAllowed": "Email not allowed",
     "inviteNotFound": "This invite link doesn't exist",
     "inviteExpired": "This invite link has expired",
@@ -33,7 +35,11 @@
     "cannotRemoveLastAdmin": "Cannot remove the last remaining admin",
     "parentCommentNotFound": "Parent comment not found",
     "assetNotFoundOnPost": "Asset not found on this post",
-    "setupAlreadyComplete": "Setup has already been completed"
+    "setupAlreadyComplete": "Setup has already been completed",
+    "immichNotConfigured": "Immich is not configured",
+    "immichUnreachable": "Could not reach the Immich server with these settings",
+    "immichAlbumAlreadyLinked": "This album is already linked to this group",
+    "immichAlbumLinkNotFound": "Immich album link not found"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

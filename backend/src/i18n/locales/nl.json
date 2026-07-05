@@ -20,6 +20,8 @@
     "oidcNotConfigured": "OIDC-login is niet geconfigureerd",
     "invalidOidcToken": "Ongeldig OIDC-token",
     "oidcAccountNoEmail": "OIDC-account heeft geen e-mailadres",
+    "oidcExchangeFailed": "Aanmelden bij de identiteitsprovider is mislukt",
+    "oidcHandoffExpired": "Aanmelding verlopen, probeer het opnieuw",
     "emailNotAllowed": "E-mailadres is niet toegestaan",
     "inviteNotFound": "Deze uitnodigingslink bestaat niet",
     "inviteExpired": "Deze uitnodigingslink is verlopen",
@@ -33,7 +35,11 @@
     "cannotRemoveLastAdmin": "Kan de laatste beheerder niet verwijderen",
     "parentCommentNotFound": "Bovenliggende reactie niet gevonden",
     "assetNotFoundOnPost": "Bestand niet gevonden bij dit bericht",
-    "setupAlreadyComplete": "Installatie is al voltooid"
+    "setupAlreadyComplete": "Installatie is al voltooid",
+    "immichNotConfigured": "Immich is niet geconfigureerd",
+    "immichUnreachable": "Kan de Immich-server niet bereiken met deze instellingen",
+    "immichAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
+    "immichAlbumLinkNotFound": "Immich-albumkoppeling niet gevonden"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

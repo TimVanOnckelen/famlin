@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, SafeAreaView, TextInput, ScrollView, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import { useTranslation } from 'react-i18next';
 
 import { AppIcon } from '@/components/Logo';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchOidcConfig, loginWithOidc, loginWithPassword, OidcConfig } from '@/api/auth';
+import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
+import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
 import { FontAwesome } from '@expo/vector-icons';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { setApiBaseUrl } from '@/api/client';
@@ -92,45 +93,10 @@ export function LoginScreen() {
         return;
       }
 
-      const discovery: AuthSession.DiscoveryDocument = {
-        authorizationEndpoint: config.authorizationEndpoint,
-        tokenEndpoint: config.tokenEndpoint,
-      };
-      const redirectUri = AuthSession.makeRedirectUri();
-      const authRequest = new AuthSession.AuthRequest({
-        clientId: config.clientId,
-        scopes: config.scopes.split(' ').filter(Boolean),
-        redirectUri,
-        responseType: AuthSession.ResponseType.Code,
-        usePKCE: true,
-      });
-
-      const result = await authRequest.promptAsync(discovery);
-      if (result.type === 'error') {
-        Alert.alert(t('login.alerts.loginFailedTitle'), result.error?.message || t('common.tryAgain'));
-        return;
-      }
-      if (result.type !== 'success') {
-        return;
-      }
-
-      const tokenResult = await AuthSession.exchangeCodeAsync(
-        {
-          clientId: config.clientId,
-          code: result.params.code,
-          redirectUri,
-          extraParams: authRequest.codeVerifier ? { code_verifier: authRequest.codeVerifier } : undefined,
-        },
-        discovery
-      );
-
-      if (!tokenResult.idToken) {
-        throw new Error(t('login.ssoNoIdToken'));
-      }
-
-      const loginResult = await loginWithOidc(tokenResult.idToken);
+      const loginResult = await performOidcLogin(config);
       await setAuth(loginResult.user, loginResult.token, serverUrl);
     } catch (err: any) {
+      if (err instanceof OidcCancelledError) return;
       Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
     } finally {
       setIsSsoLoading(false);
@@ -271,7 +237,7 @@ export function LoginScreen() {
                 >
                   <FontAwesome name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
                   <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
-                    {isSsoLoading ? t('common.loading') : t('login.loginWithSso')}
+                    {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
                   </Text>
                 </TouchableOpacity>
               </>

@@ -1,6 +1,16 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { invalidateSessionCache } from '../plugins/auth.js';
+import { getAllSettings, updateSettings } from '../services/settings.js';
+import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
+import { paginationArgs, paginate } from '../services/pagination.js';
+import {
+  testImmichConnection,
+  listImmichAlbums,
+  immichErrorKey,
+  immichErrorStatus,
+  ImmichError,
+} from '../services/immich.js';
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -9,10 +19,9 @@ import {
   updateServerSettingsBodySchema,
   createInviteBodySchema,
   paginationQuerySchema,
+  testImmichConnectionBodySchema,
+  linkImmichAlbumBodySchema,
 } from '../types.js';
-import { getAllSettings, updateSettings } from '../services/settings.js';
-import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
-import { paginationArgs, paginate } from '../services/pagination.js';
 import { getT } from '../i18n/index.js';
 
 // Builds the invite link's origin from the request that reached us, since
@@ -494,5 +503,74 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const body = updateServerSettingsBodySchema.parse(request.body);
     return updateSettings(body);
+  });
+
+  // Immich integration: one server-level connection (configured above via
+  // /settings) shared by every group; here an admin links specific Immich
+  // albums to specific Famlin groups so members can pick photos from them.
+  fastify.post('/immich/test', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const body = testImmichConnectionBodySchema.parse(request.body);
+    return testImmichConnection(body.serverUrl, body.apiKey);
+  });
+
+  fastify.get('/immich/albums', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    try {
+      return await listImmichAlbums();
+    } catch (err) {
+      if (err instanceof ImmichError) {
+        return reply.status(immichErrorStatus(err)).send({ error: t(immichErrorKey(err)), code: err.code });
+      }
+      throw err;
+    }
+  });
+
+  fastify.get('/groups/:id/immich-albums', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const { id } = request.params as { id: string };
+    return prisma.immichAlbumLink.findMany({
+      where: { groupId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+  });
+
+  fastify.post('/groups/:id/immich-albums', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    const body = linkImmichAlbumBodySchema.parse(request.body);
+
+    try {
+      const link = await prisma.immichAlbumLink.create({
+        data: { groupId: id, immichAlbumId: body.immichAlbumId, albumName: body.albumName },
+      });
+      return link;
+    } catch (err: any) {
+      // Unique constraint: this album is already linked to this group.
+      if (err?.code === 'P2002') {
+        return reply.status(409).send({ error: t('errors.immichAlbumAlreadyLinked') });
+      }
+      throw err;
+    }
+  });
+
+  fastify.delete('/immich-albums/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    try {
+      await prisma.immichAlbumLink.delete({ where: { id } });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.immichAlbumLinkNotFound') });
+      throw err;
+    }
   });
 }

@@ -1,6 +1,13 @@
 import { prisma } from '../db.js';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n/index.js';
 
+// The official pre-built Android app — used as the default `playStoreUrl` for
+// deployments that haven't configured one, so self-hosters get a working
+// download link without having to build their own via EAS. There is no
+// equivalent single iOS listing (Apple requires per-developer distribution),
+// so `appStoreUrl` has no such default.
+const DEFAULT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=be.xeweb.famlin';
+
 export interface ServerSettings {
   defaultLanguage: SupportedLanguage;
   appStoreUrl: string;
@@ -9,6 +16,7 @@ export interface ServerSettings {
   oidcName: string;
   oidcIssuer: string;
   oidcClientId: string;
+  oidcClientSecret: string;
   oidcScopes: string;
   smtpHost: string;
   smtpPort: number;
@@ -17,6 +25,8 @@ export interface ServerSettings {
   smtpFrom: string;
   pushNotificationsEnabled: boolean;
   emailNotificationsEnabled: boolean;
+  immichServerUrl: string;
+  immichApiKey: string;
 }
 
 const SETTING_KEYS: (keyof ServerSettings)[] = [
@@ -27,6 +37,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'oidcName',
   'oidcIssuer',
   'oidcClientId',
+  'oidcClientSecret',
   'oidcScopes',
   'smtpHost',
   'smtpPort',
@@ -35,6 +46,8 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'smtpFrom',
   'pushNotificationsEnabled',
   'emailNotificationsEnabled',
+  'immichServerUrl',
+  'immichApiKey',
 ];
 
 function serializeValue(key: keyof ServerSettings, value: any): string {
@@ -81,11 +94,16 @@ async function loadAllSettings(): Promise<ServerSettings> {
   return {
     defaultLanguage: parseValue('defaultLanguage', map.get('defaultLanguage') || DEFAULT_LANGUAGE),
     appStoreUrl: parseValue('appStoreUrl', map.get('appStoreUrl') || ''),
-    playStoreUrl: parseValue('playStoreUrl', map.get('playStoreUrl') || ''),
+    // Distinguish "never configured" (fall back to the official listing) from
+    // an admin explicitly clearing the field to hide the download button —
+    // the latter must stay blank, so this can't use the `|| ''` pattern the
+    // other optional fields use above.
+    playStoreUrl: parseValue('playStoreUrl', map.has('playStoreUrl') ? map.get('playStoreUrl')! : DEFAULT_PLAY_STORE_URL),
     allowedEmails: parseValue('allowedEmails', map.get('allowedEmails') || ''),
     oidcName: parseValue('oidcName', map.get('oidcName') || 'SSO'),
     oidcIssuer: parseValue('oidcIssuer', map.get('oidcIssuer') || ''),
     oidcClientId: parseValue('oidcClientId', map.get('oidcClientId') || ''),
+    oidcClientSecret: parseValue('oidcClientSecret', map.get('oidcClientSecret') || ''),
     oidcScopes: parseValue('oidcScopes', map.get('oidcScopes') || 'openid email profile'),
     smtpHost: parseValue('smtpHost', map.get('smtpHost') || ''),
     smtpPort: parseValue('smtpPort', map.get('smtpPort') || '587'),
@@ -100,6 +118,8 @@ async function loadAllSettings(): Promise<ServerSettings> {
       'emailNotificationsEnabled',
       map.get('emailNotificationsEnabled') ?? 'true'
     ),
+    immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
+    immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
   };
 }
 
@@ -154,6 +174,10 @@ export interface OidcSettings {
   name: string;
   issuer: string;
   clientId: string;
+  // Only present for providers (e.g. Google) that reject a secretless PKCE
+  // exchange — see exchangeOidcCode() in plugins/auth.ts. Never returned by
+  // the public GET /api/auth/oidc-config endpoint.
+  clientSecret: string;
   scopes: string;
 }
 
@@ -163,6 +187,20 @@ export async function getOidcSettings(): Promise<OidcSettings> {
     name: settings.oidcName,
     issuer: settings.oidcIssuer.trim().replace(/\/$/, ''),
     clientId: settings.oidcClientId.trim(),
+    clientSecret: settings.oidcClientSecret.trim(),
     scopes: settings.oidcScopes,
   };
+}
+
+export interface ImmichSettings {
+  serverUrl: string;
+  apiKey: string;
+  configured: boolean;
+}
+
+export async function getImmichSettings(): Promise<ImmichSettings> {
+  const settings = await getAllSettings();
+  const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '');
+  const apiKey = settings.immichApiKey.trim();
+  return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey };
 }

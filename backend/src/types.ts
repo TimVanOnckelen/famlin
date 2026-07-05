@@ -8,9 +8,58 @@ const UPLOAD_PATH_REGEX =
   /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)$/;
 const uploadPathSchema = z.string().regex(UPLOAD_PATH_REGEX, 'Must be an uploaded asset path');
 
+// Matches exactly what routes/immich.ts's proxy route serves:
+// /api/immich/assets/<ImmichAlbumLink cuid>/<Immich asset uuid>/<variant>.<ext>.
+// Unlike an upload path, the extension here reflects the real bytes each
+// variant streams: `thumbnail`/`preview` always come back as a JPEG (Immich's
+// thumbnail endpoint never returns video), so only `original` can be `.mp4`.
+// Keeping this as strict as the upload path regex above is what stops a
+// post/comment from pointing at an arbitrary URL. Use parseImmichAssetPath()
+// below instead of re-deriving this shape elsewhere in the codebase.
+const IMMICH_ASSET_PATH_REGEX =
+  /^\/api\/immich\/assets\/([a-z0-9]+)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(?:(thumbnail|preview)\.jpg|(original)\.(?:jpg|mp4))$/;
+
+export interface ImmichAssetPath {
+  linkId: string;
+  assetId: string;
+  variant: 'thumbnail' | 'preview' | 'original';
+}
+
+// Single source of truth for the Immich proxy URL shape — used by the zod
+// validator below, by routes/immich.ts to validate :variantExt, and by
+// routes/posts.ts to extract the embedded link id for the cross-group check.
+export function parseImmichAssetPath(path: string): ImmichAssetPath | null {
+  const match = path.match(IMMICH_ASSET_PATH_REGEX);
+  if (!match) return null;
+  const [, linkId, assetId, thumbOrPreview, original] = match;
+  return { linkId, assetId, variant: (thumbOrPreview ?? original) as ImmichAssetPath['variant'] };
+}
+
+const immichAssetPathSchema = z
+  .string()
+  .refine((path) => parseImmichAssetPath(path) !== null, 'Must be a valid Immich asset path');
+const assetPathSchema = z.union([uploadPathSchema, immichAssetPathSchema]);
+
 export const loginBodySchema = z.object({
   idToken: z.string(),
   inviteToken: z.string().optional(),
+});
+
+// Used by the admin UI when the configured OIDC provider requires a client
+// secret (e.g. Google) — the browser can't hold the secret, so it hands the
+// authorization code to the backend instead of exchanging it itself.
+export const oidcExchangeBodySchema = z.object({
+  code: z.string(),
+  redirectUri: z.string(),
+  codeVerifier: z.string().optional(),
+  inviteToken: z.string().optional(),
+});
+
+// Redeems the one-time code the mobile app receives from the
+// famlin://oidc-callback deep link after GET /api/auth/oidc/mobile-callback
+// completes a server-mediated (client-secret) login.
+export const oidcMobileHandoffBodySchema = z.object({
+  code: z.string(),
 });
 
 export const createGroupBodySchema = z.object({
@@ -38,7 +87,7 @@ export const createPostBodySchema = z
     content: z.string().max(5000).optional(),
     type: z.enum(['UPDATE', 'MILESTONE']).default('UPDATE'),
     milestoneTag: z.string().max(50).optional(),
-    uploadedAssetUrls: z.array(uploadPathSchema).max(20).optional(),
+    uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .merge(locationFieldsSchema)
   .refine(requireLatLngTogether, { message: 'latitude and longitude must be provided together', path: ['latitude'] });
@@ -46,7 +95,7 @@ export const createPostBodySchema = z
 export const createCommentBodySchema = z.object({
   content: z.string().min(1).max(2000),
   parentId: z.string().optional(),
-  assetUrl: uploadPathSchema.optional(),
+  assetUrl: assetPathSchema.optional(),
   // IDs the client resolved from the group member list while typing "@name" —
   // the server only trusts these as a set of candidate ids and still
   // re-validates each one is a current member of the post's group.
@@ -148,6 +197,7 @@ export const updateServerSettingsBodySchema = z.object({
   oidcName: z.string().max(50).optional(),
   oidcIssuer: z.string().optional(),
   oidcClientId: z.string().optional(),
+  oidcClientSecret: z.string().optional(),
   oidcScopes: z.string().optional(),
   smtpHost: z.string().optional(),
   smtpPort: z.number().optional(),
@@ -157,6 +207,18 @@ export const updateServerSettingsBodySchema = z.object({
   smtpFrom: z.string().max(200).optional(),
   pushNotificationsEnabled: z.boolean().optional(),
   emailNotificationsEnabled: z.boolean().optional(),
+  immichServerUrl: z.union([z.literal(''), z.string().url()]).optional(),
+  immichApiKey: z.string().optional(),
+});
+
+export const testImmichConnectionBodySchema = z.object({
+  serverUrl: z.string().url(),
+  apiKey: z.string().min(1),
+});
+
+export const linkImmichAlbumBodySchema = z.object({
+  immichAlbumId: z.string().uuid(),
+  albumName: z.string().min(1).max(200),
 });
 
 export const createInviteBodySchema = z.object({

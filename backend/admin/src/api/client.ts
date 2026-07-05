@@ -8,6 +8,8 @@ import {
   ModerationPost,
   ModerationComment,
   Invite,
+  ImmichAlbumSummary,
+  ImmichAlbumLink,
 } from '../types';
 
 export type {
@@ -20,10 +22,16 @@ export type {
   ModerationPost,
   ModerationComment,
   Invite,
+  ImmichAlbumSummary,
+  ImmichAlbumLink,
 };
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  // Machine-readable error code, when the backend sends one (e.g. Immich's
+  // `not_configured`/`unreachable`/`unauthorized` — see ImmichError in
+  // backend/src/services/immich.ts) — lets callers branch on the failure
+  // reason instead of only having a translated message to show.
+  constructor(public status: number, message: string, public code?: string) {
     super(message);
   }
 }
@@ -56,7 +64,7 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new ApiError(res.status, data.error || `HTTP ${res.status}`);
+    throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code);
   }
 
   return res.json();
@@ -77,6 +85,12 @@ export const api = {
     request<{ token: string; user: User }>('/api/auth/oidc', {
       method: 'POST',
       body: { idToken },
+    }),
+
+  exchangeOidcCode: (code: string, redirectUri: string, codeVerifier: string) =>
+    request<{ token: string; user: User }>('/api/auth/oidc/exchange', {
+      method: 'POST',
+      body: { code, redirectUri, codeVerifier },
     }),
 
   loginWithPassword: (email: string, password: string) =>
@@ -185,4 +199,21 @@ export const api = {
       method: 'POST',
       body: { newPassword },
     }),
+
+  testImmichConnection: (serverUrl: string, apiKey: string) =>
+    request<{ ok: true } | { ok: false; error: 'unreachable' | 'unauthorized' }>('/api/admin/immich/test', {
+      method: 'POST',
+      body: { serverUrl, apiKey },
+    }),
+
+  getImmichAlbums: () => request<ImmichAlbumSummary[]>('/api/admin/immich/albums'),
+
+  getGroupImmichAlbums: (groupId: string) =>
+    request<ImmichAlbumLink[]>(`/api/admin/groups/${groupId}/immich-albums`),
+
+  linkImmichAlbum: (groupId: string, data: { immichAlbumId: string; albumName: string }) =>
+    request<ImmichAlbumLink>(`/api/admin/groups/${groupId}/immich-albums`, { method: 'POST', body: data }),
+
+  unlinkImmichAlbum: (id: string) =>
+    request<void>(`/api/admin/immich-albums/${id}`, { method: 'DELETE' }),
 };

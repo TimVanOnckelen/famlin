@@ -44,6 +44,7 @@ export interface ServerSettings {
   oidcName: string;
   oidcIssuer: string;
   oidcClientId: string;
+  oidcClientSecret: string;
   oidcScopes: string;
   smtpHost: string;
   smtpPort: number;
@@ -52,6 +53,22 @@ export interface ServerSettings {
   smtpFrom: string;
   pushNotificationsEnabled: boolean;
   emailNotificationsEnabled: boolean;
+  immichServerUrl: string;
+  immichApiKey: string;
+}
+
+export interface ImmichAlbumSummary {
+  id: string;
+  albumName: string;
+  assetCount: number;
+}
+
+export interface ImmichAlbumLink {
+  id: string;
+  groupId: string;
+  immichAlbumId: string;
+  albumName: string;
+  createdAt: string;
 }
 
 export interface Invite {
@@ -73,6 +90,10 @@ export interface OidcConfig {
   tokenEndpoint: string;
   clientId: string;
   scopes: string;
+  // True when the provider requires a client secret (e.g. Google) — the
+  // browser hands the authorization code to POST /oidc/exchange instead of
+  // exchanging it itself.
+  usesClientSecret: boolean;
 }
 
 export interface ModerationPost {

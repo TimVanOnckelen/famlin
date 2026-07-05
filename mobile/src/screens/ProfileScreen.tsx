@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, SafeAreaView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import Constants from 'expo-constants';
 
 import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { updateMe, fetchNotificationConfig, NotificationPrefs } from '@/api/auth';
+import { updateMe, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
 import { uploadMedia } from '@/api/uploads';
 import { setLanguage } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
@@ -27,6 +29,11 @@ export function ProfileScreen() {
   });
   const showPush = notificationConfig?.pushEnabled ?? true;
   const showEmail = notificationConfig?.emailEnabled ?? true;
+
+  const { data: serverInfo } = useQuery({
+    queryKey: ['server-info'],
+    queryFn: fetchServerInfo,
+  });
 
   const updatePrefs = useMutation({
     mutationFn: async (prefs: NotificationPrefs) => {
@@ -188,6 +195,9 @@ export function ProfileScreen() {
               <Text style={styles.serverUrl} numberOfLines={1} ellipsizeMode="middle">
                 {serverUrl || t('common.unknown')}
               </Text>
+              {serverInfo?.version && (
+                <Text style={styles.serverVersion}>{t('profile.serverVersion', { version: serverInfo.version })}</Text>
+              )}
             </View>
           </View>
         </View>
@@ -198,7 +208,9 @@ export function ProfileScreen() {
             <Logo size={40} />
             <View style={styles.appInfoText}>
               <Text style={styles.appName}>{t('common.appName')}</Text>
-              <Text style={styles.appVersion}>{t('profile.version', { version: '0.1.0' })}</Text>
+              <Text style={styles.appVersion}>
+                {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
+              </Text>
             </View>
           </View>
         </View>
@@ -495,6 +507,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: colors.textTitle,
+  },
+  serverVersion: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
   },
   appInfo: {
     flexDirection: 'row',
