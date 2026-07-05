@@ -12,7 +12,7 @@ There's no public sign-up page — family members join through an invite link an
 
 ## What happens when they open it
 
-- It opens a small page hosted by your Famlin server, styled and translated to match the app, which hands off to the mobile app via a `famlin://invite/<token>?server=...` deep link. They need the Famlin app already installed for that to do anything — if you've set **App Store / Google Play URLs** in [Admin configuration](./admin-configuration#first-login), the page also shows download buttons.
+- It opens a small page hosted by your Famlin server, styled and translated to match the app, which hands off to the mobile app via a `famlin://invite/<token>?server=...` deep link. They need the Famlin app already installed for that to do anything — the page shows a Google Play download button by default (the official Android app), plus an App Store button if you've set one in [Admin configuration](./admin-configuration#first-login).
 - If they don't have an account yet, the app walks them through creating one (OIDC or email/password) — the invite itself is the authorization, so it works even if their email isn't allow-listed.
 - If they're already logged in on that device, opening the link just adds their existing account to the group.
 

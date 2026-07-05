@@ -1,12 +1,32 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { createPostBodySchema, updatePostBodySchema, paginationQuerySchema, searchPostsQuerySchema } from '../types.js';
+import {
+  createPostBodySchema,
+  updatePostBodySchema,
+  paginationQuerySchema,
+  searchPostsQuerySchema,
+  parseImmichAssetPath,
+} from '../types.js';
 import { notifyGroup, excerptText } from '../services/notifications.js';
 import { isGroupMember } from '../services/groups.js';
 import { shapePost } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { getT } from '../i18n/index.js';
+
+// A post's uploadedAssetUrls can include Immich proxy URLs (see
+// routes/immich.ts) alongside normal /uploads/* ones — confirm each one's
+// embedded album link actually belongs to *this* post's group, so a member
+// of group A can't attach group B's linked album photos to a post in group A.
+async function immichUrlsBelongToGroup(urls: string[] | undefined, groupId: string): Promise<boolean> {
+  if (!urls || urls.length === 0) return true;
+
+  const linkIds = [...new Set(urls.map((url) => parseImmichAssetPath(url)?.linkId).filter((id): id is string => !!id))];
+  if (linkIds.length === 0) return true;
+
+  const links = await prisma.immichAlbumLink.findMany({ where: { id: { in: linkIds } } });
+  return links.length === linkIds.length && links.every((link) => link.groupId === groupId);
+}
 
 const postInclude = (userId: string) => ({
   author: { select: { id: true, name: true, avatarUrl: true } },
@@ -118,6 +138,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (!(await isGroupMember(body.groupId, request.user!.id))) {
       return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    if (!(await immichUrlsBelongToGroup(body.uploadedAssetUrls, body.groupId))) {
+      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
     }
 
     const post = await prisma.post.create({

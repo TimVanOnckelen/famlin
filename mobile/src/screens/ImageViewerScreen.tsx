@@ -13,6 +13,8 @@ import {
   Platform,
   Alert,
   useWindowDimensions,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -72,13 +74,47 @@ export function ImageViewerScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { urls, initialIndex = 0, postId, assetUrls } = route.params;
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [commentsVisible, setCommentsVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const currentAssetUrl: string | undefined = assetUrls?.[currentIndex];
   const canComment = !!postId && !!currentAssetUrl;
+
+  const translateY = useRef(new Animated.Value(0)).current;
+  const backdropOpacity = translateY.interpolate({
+    inputRange: [0, height],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
+        Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onPanResponderMove: (_evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_evt, gestureState) => {
+        if (gestureState.dy > 120 || gestureState.vy > 0.8) {
+          Animated.timing(translateY, {
+            toValue: height,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => navigation.goBack());
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 0,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     ScreenOrientation.unlockAsync();
@@ -104,73 +140,81 @@ export function ImageViewerScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} hitSlop={16}>
-          <Icon name="x" size={24} color={colors.white} />
-        </TouchableOpacity>
-        {urls.length > 1 && (
-          <Text style={styles.counter}>
-            {currentIndex + 1} / {urls.length}
-          </Text>
-        )}
-        {canComment ? (
-          <TouchableOpacity
-            onPress={() => setCommentsVisible(true)}
-            style={styles.closeButton}
-            hitSlop={16}
-            accessibilityLabel={t('imageViewer.commentsButton')}
-          >
-            <Icon name="message-circle" size={22} color={colors.white} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.placeholder} />
-        )}
-      </View>
-
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentOffset={{ x: initialIndex * width, y: 0 }}
-        decelerationRate="fast"
-        scrollEventThrottle={16}
-        onScroll={handleScroll}
-        style={styles.scrollView}
+    <View style={styles.root}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+      <Animated.View
+        style={[styles.animatedContent, { transform: [{ translateY }] }]}
+        {...panResponder.panHandlers}
       >
-        {urls.map((url: string, index: number) =>
-          isVideoUrl(url) ? (
-            <VideoPage
-              key={`${url}-${index}`}
-              url={url}
-              width={width}
-              isActive={index === currentIndex}
-              accessibilityLabel={t('imageViewer.videoAccessibilityLabel', { index: index + 1, total: urls.length })}
-            />
-          ) : (
-            <View key={`${url}-${index}`} style={[styles.page, { width }]}>
-              <Image
-                source={{ uri: url }}
-                style={styles.image}
-                resizeMode="contain"
-                accessible
-                accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
-              />
-            </View>
-          )
-        )}
-      </ScrollView>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} hitSlop={16}>
+              <Icon name="x" size={24} color={colors.white} />
+            </TouchableOpacity>
+            {urls.length > 1 && (
+              <Text style={styles.counter}>
+                {currentIndex + 1} / {urls.length}
+              </Text>
+            )}
+            {canComment ? (
+              <TouchableOpacity
+                onPress={() => setCommentsVisible(true)}
+                style={styles.closeButton}
+                hitSlop={16}
+                accessibilityLabel={t('imageViewer.commentsButton')}
+              >
+                <Icon name="message-circle" size={22} color={colors.white} />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.placeholder} />
+            )}
+          </View>
 
-      {canComment && (
-        <PhotoCommentsSheet
-          visible={commentsVisible}
-          onClose={() => setCommentsVisible(false)}
-          postId={postId}
-          assetUrl={currentAssetUrl!}
-        />
-      )}
-    </SafeAreaView>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: initialIndex * width, y: 0 }}
+            decelerationRate="fast"
+            scrollEventThrottle={16}
+            onScroll={handleScroll}
+            style={styles.scrollView}
+          >
+            {urls.map((url: string, index: number) =>
+              isVideoUrl(url) ? (
+                <VideoPage
+                  key={`${url}-${index}`}
+                  url={url}
+                  width={width}
+                  isActive={index === currentIndex}
+                  accessibilityLabel={t('imageViewer.videoAccessibilityLabel', { index: index + 1, total: urls.length })}
+                />
+              ) : (
+                <View key={`${url}-${index}`} style={[styles.page, { width }]}>
+                  <Image
+                    source={{ uri: url }}
+                    style={styles.image}
+                    resizeMode="contain"
+                    accessible
+                    accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
+                  />
+                </View>
+              )
+            )}
+          </ScrollView>
+
+          {canComment && (
+            <PhotoCommentsSheet
+              visible={commentsVisible}
+              onClose={() => setCommentsVisible(false)}
+              postId={postId}
+              assetUrl={currentAssetUrl!}
+            />
+          )}
+        </SafeAreaView>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -314,16 +358,26 @@ function PhotoCommentsSheet({
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#000',
+  },
+  animatedContent: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingTop: 24,
     paddingBottom: 12,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },

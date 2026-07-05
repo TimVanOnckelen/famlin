@@ -5,22 +5,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import { useTranslation } from 'react-i18next';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { AppIcon } from '@/components/Logo';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchOidcConfig, loginWithOidc, loginWithPassword } from '@/api/auth';
+import { fetchOidcConfig, loginWithPassword } from '@/api/auth';
+import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
 import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client';
@@ -57,6 +57,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
   const [submitting, setSubmitting] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [ssoName, setSsoName] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -120,7 +121,10 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
         if (result.email) setEmail(result.email);
 
         fetchOidcConfig()
-          .then((config) => setSsoEnabled(config.enabled))
+          .then((config) => {
+            setSsoEnabled(config.enabled);
+            setSsoName(config.name);
+          })
           .catch(() => setSsoEnabled(false));
 
         setMode('choose');
@@ -153,47 +157,12 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
         return;
       }
 
-      const discovery: AuthSession.DiscoveryDocument = {
-        authorizationEndpoint: config.authorizationEndpoint,
-        tokenEndpoint: config.tokenEndpoint,
-      };
-      const redirectUri = AuthSession.makeRedirectUri();
-      const authRequest = new AuthSession.AuthRequest({
-        clientId: config.clientId,
-        scopes: config.scopes.split(' ').filter(Boolean),
-        redirectUri,
-        responseType: AuthSession.ResponseType.Code,
-        usePKCE: true,
-      });
-
-      const result = await authRequest.promptAsync(discovery);
-      if (result.type === 'error') {
-        Alert.alert(t('invite.alerts.failedTitle'), result.error?.message || t('common.tryAgain'));
-        return;
-      }
-      if (result.type !== 'success') {
-        return;
-      }
-
-      const tokenResult = await AuthSession.exchangeCodeAsync(
-        {
-          clientId: config.clientId,
-          code: result.params.code,
-          redirectUri,
-          extraParams: authRequest.codeVerifier ? { code_verifier: authRequest.codeVerifier } : undefined,
-        },
-        discovery
-      );
-
-      if (!tokenResult.idToken) {
-        throw new Error(t('login.ssoNoIdToken'));
-      }
-
-      const loginResult = await loginWithOidc(tokenResult.idToken, token);
+      const loginResult = await performOidcLogin(config, token);
       const serverUrl = (await getServerUrl()) || '';
       await setAuth(loginResult.user, loginResult.token, serverUrl);
       onDone();
     } catch (err: any) {
+      if (err instanceof OidcCancelledError) return;
       Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
     } finally {
       setSsoLoading(false);
@@ -299,7 +268,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                         >
                           <FontAwesome name="key" size={20} color={ssoLoading ? colors.textMuted : colors.textTitle} />
                           <Text style={[styles.ssoButtonText, ssoLoading && styles.ssoButtonTextDisabled]}>
-                            {ssoLoading ? t('common.loading') : t('login.loginWithSso')}
+                            {ssoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoName })}
                           </Text>
                         </TouchableOpacity>
                       )}

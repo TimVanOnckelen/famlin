@@ -37,9 +37,10 @@
     "passwordLabel": "Password",
     "passwordPlaceholder": "••••••••",
     "loginButton": "Log in",
-    "loginWithSso": "Log in with SSO",
+    "loginWithSso": "Log in with {{name}}",
     "ssoNotConfigured": "SSO login is not configured on this server.",
     "ssoNoIdToken": "The SSO provider did not return an ID token.",
+    "ssoLoginFailed": "SSO login failed",
     "alerts": {
       "loginFailedTitle": "Login failed",
       "serverAddressMissingTitle": "Server address missing",
@@ -106,6 +107,8 @@
     "contentPlaceholder": "Write something for the family...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
+    "addImmichPhotoTitle": "Immich photos",
+    "addImmichPhotoSubtitle": "Choose from a shared album",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
     "alerts": {
@@ -131,6 +134,14 @@
       "namePlaceholder": "E.g. Grandma's house",
       "tapHint": "Tap the map to place the pin"
     }
+  },
+  "immichPicker": {
+    "title": "Choose photos",
+    "addCount_one": "Add {{count}}",
+    "addCount_other": "Add {{count}}",
+    "noAssets": "This album has no photos yet.",
+    "loadAlbumsError": "Could not load albums",
+    "loadAssetsError": "Could not load photos"
   },
   "postDetail": {
     "title": "Post",
@@ -184,6 +195,7 @@
     "languageDescription": "Choose your preferred language",
     "server": "Server",
     "connectedTo": "Connected to",
+    "serverVersion": "Server version {{version}}",
     "app": "App",
     "version": "Version {{version}}",
     "logout": "Log out",

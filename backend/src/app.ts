@@ -7,7 +7,7 @@ import staticPlugin from '@fastify/static';
 import path from 'path';
 import fs from 'fs/promises';
 import { ZodError } from 'zod';
-import authPlugin, { verifyToken, verifyMediaToken, isSessionCurrent } from './plugins/auth.js';
+import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import { config } from './config.js';
 import { getT } from './i18n/index.js';
 
@@ -21,6 +21,7 @@ import favoriteRoutes from './routes/favorites.js';
 import pushTokenRoutes from './routes/push-tokens.js';
 import notificationRoutes from './routes/notifications.js';
 import uploadRoutes from './routes/uploads.js';
+import immichRoutes from './routes/immich.js';
 import inviteRoutes from './routes/invites.js';
 import inviteLandingRoutes from './routes/invite-landing.js';
 import landingRoutes from './routes/landing.js';
@@ -124,24 +125,11 @@ export async function buildApp() {
   fastify.addHook('onRequest', async (request, reply) => {
     if (!request.raw.url?.startsWith('/uploads/')) return;
 
-    const authHeader = request.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      try {
-        const decoded = verifyToken(authHeader.slice(7));
-        // Signature/expiry alone isn't enough — confirm the token still maps
-        // to an active user at its issued tokenVersion, so a deactivated user
-        // or a pre-password-reset token can't keep reading family media.
-        if (await isSessionCurrent(decoded)) return;
-      } catch {
-        // fall through to the media-token check below
-      }
-    }
-
-    const queryToken = (request.query as { token?: string } | undefined)?.token;
-    if (queryToken) {
-      const decoded = verifyMediaToken(queryToken);
-      if (decoded && (await isSessionCurrent(decoded))) return;
-    }
+    // Signature/expiry alone isn't enough — authenticateMediaRequest also
+    // confirms the token still maps to an active user at its issued
+    // tokenVersion, so a deactivated user or a pre-password-reset token can't
+    // keep reading family media.
+    if (await authenticateMediaRequest(request)) return;
 
     return reply.status(401).send({ error: 'Unauthorized' });
   });
@@ -163,6 +151,7 @@ export async function buildApp() {
   await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' });
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' });
   await fastify.register(uploadRoutes, { prefix: '/api/uploads' });
+  await fastify.register(immichRoutes, { prefix: '/api/immich' });
   await fastify.register(inviteRoutes, { prefix: '/api/invites' });
   await fastify.register(inviteLandingRoutes);
   await fastify.register(landingRoutes);

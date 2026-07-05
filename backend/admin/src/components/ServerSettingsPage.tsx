@@ -19,6 +19,7 @@ export function ServerSettingsPage() {
     oidcName: '',
     oidcIssuer: '',
     oidcClientId: '',
+    oidcClientSecret: '',
     oidcScopes: '',
     smtpHost: '',
     smtpPort: 587,
@@ -27,7 +28,12 @@ export function ServerSettingsPage() {
     smtpFrom: '',
     pushNotificationsEnabled: true,
     emailNotificationsEnabled: true,
+    immichServerUrl: '',
+    immichApiKey: '',
   });
+
+  const [testingImmich, setTestingImmich] = useState(false);
+  const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null);
 
   useEffect(() => {
     api
@@ -49,6 +55,19 @@ export function ServerSettingsPage() {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
+
+  const handleTestImmich = async () => {
+    setTestingImmich(true);
+    setImmichTestResult(null);
+    try {
+      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey);
+      setImmichTestResult(result.ok ? 'ok' : result.error);
+    } catch {
+      setImmichTestResult('unreachable');
+    } finally {
+      setTestingImmich(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +160,15 @@ export function ServerSettingsPage() {
           />
         </label>
         <label>
+          {t('serverSettings.oidcClientSecret')}
+          <input
+            type="password"
+            value={form.oidcClientSecret}
+            onChange={(e) => updateField('oidcClientSecret', e.target.value)}
+          />
+        </label>
+        <p className="hint">{t('serverSettings.oidcClientSecretHint')}</p>
+        <label>
           {t('serverSettings.oidcScopes')}
           <input
             type="text"
@@ -227,6 +255,49 @@ export function ServerSettingsPage() {
             placeholder="Famlin <noreply@example.com>"
           />
         </label>
+
+        <h3 style={{ marginTop: '1.5rem' }}>{t('serverSettings.immich')}</h3>
+        <p className="hint">{t('serverSettings.immichHint')}</p>
+        <label>
+          {t('serverSettings.immichServerUrl')}
+          <input
+            type="url"
+            value={form.immichServerUrl}
+            onChange={(e) => {
+              updateField('immichServerUrl', e.target.value);
+              setImmichTestResult(null);
+            }}
+            placeholder="https://immich.example.com"
+          />
+        </label>
+        <label>
+          {t('serverSettings.immichApiKey')}
+          <input
+            type="password"
+            value={form.immichApiKey}
+            onChange={(e) => {
+              updateField('immichApiKey', e.target.value);
+              setImmichTestResult(null);
+            }}
+          />
+        </label>
+        <div className="row" style={{ alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={handleTestImmich}
+            disabled={testingImmich || !form.immichServerUrl || !form.immichApiKey}
+          >
+            {testingImmich ? t('serverSettings.immichTesting') : t('serverSettings.immichTestConnection')}
+          </button>
+          {immichTestResult === 'ok' && <span className="success">{t('serverSettings.immichTestOk')}</span>}
+          {immichTestResult === 'unauthorized' && (
+            <span className="error">{t('serverSettings.immichTestUnauthorized')}</span>
+          )}
+          {immichTestResult === 'unreachable' && (
+            <span className="error">{t('serverSettings.immichTestUnreachable')}</span>
+          )}
+        </div>
 
         <div style={{ marginTop: '1rem' }}>
           <button type="submit" disabled={saving}>

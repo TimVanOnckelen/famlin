@@ -176,6 +176,17 @@
       "expiresOn": "Expires {{date}}",
       "neverExpires": "Never expires",
       "createdOn": "Created {{date}}"
+    },
+    "immichAlbums": {
+      "title": "Immich albums",
+      "notConfigured": "Configure Immich in Server settings to link albums.",
+      "loadError": "Could not reach Immich to list albums — linked albums still work.",
+      "selectAlbum": "Select an album…",
+      "linkAlbum": "Link album",
+      "noAlbums": "No albums linked to this group yet.",
+      "linkError": "Could not link album: {{error}}",
+      "unlinkConfirm": "Unlink album \"{{name}}\" from this group?",
+      "unlinkError": "Could not unlink album: {{error}}"
     }
   },
   "content": {
@@ -206,6 +217,8 @@
     "oidcName": "Display name",
     "oidcIssuer": "Issuer URL",
     "oidcClientId": "Client ID",
+    "oidcClientSecret": "Client secret (optional)",
+    "oidcClientSecretHint": "Only needed for providers that reject a secretless PKCE exchange, such as Google. Leave blank for providers like Authentik/Keycloak/Auth0 that support a public/native client. When set, Famlin exchanges the authorization code on the backend instead of in the browser or app.",
     "oidcScopes": "Scopes",
     "oidcHint": "Works with any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, Auth0, ...). Register Famlin as a public/native client with PKCE and add this app's redirect URIs.",
     "accessControl": "Access control",
@@ -223,6 +236,15 @@
     "senderAddress": "Sender address",
     "saveSettings": "Save settings",
     "saving": "Saving...",
-    "saved": "Settings saved."
+    "saved": "Settings saved.",
+    "immich": "Immich integration",
+    "immichHint": "Configure one Immich server + API key for the whole instance, then link specific albums to groups from the Groups page. Members can then pick photos from a linked album when composing a post. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
+    "immichServerUrl": "Server URL",
+    "immichApiKey": "API key",
+    "immichTestConnection": "Test connection",
+    "immichTesting": "Testing...",
+    "immichTestOk": "Connected successfully.",
+    "immichTestUnauthorized": "Connected, but the API key was rejected.",
+    "immichTestUnreachable": "Could not reach the Immich server."
   }
 }

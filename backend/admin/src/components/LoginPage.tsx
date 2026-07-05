@@ -45,26 +45,34 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         }
         const config = JSON.parse(configJson) as OidcConfig;
 
-        const tokenRes = await fetch(config.tokenEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            code,
-            redirect_uri: getOidcRedirectUri(),
-            client_id: config.clientId,
-            code_verifier: verifier,
-          }),
-        });
-        if (!tokenRes.ok) {
-          throw new Error(t('login.ssoLoginFailed'));
-        }
-        const tokenData = await tokenRes.json();
-        if (!tokenData.id_token) {
-          throw new Error(t('login.ssoLoginFailed'));
+        let result: { token: string; user: User };
+        if (config.usesClientSecret) {
+          // Providers that require a client secret (e.g. Google) reject a
+          // secretless PKCE exchange from the browser — hand the code to the
+          // backend instead, which holds the secret and does the exchange.
+          result = await api.exchangeOidcCode(code, getOidcRedirectUri(), verifier);
+        } else {
+          const tokenRes = await fetch(config.tokenEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code,
+              redirect_uri: getOidcRedirectUri(),
+              client_id: config.clientId,
+              code_verifier: verifier,
+            }),
+          });
+          if (!tokenRes.ok) {
+            throw new Error(t('login.ssoLoginFailed'));
+          }
+          const tokenData = await tokenRes.json();
+          if (!tokenData.id_token) {
+            throw new Error(t('login.ssoLoginFailed'));
+          }
+          result = await api.loginWithOidc(tokenData.id_token);
         }
 
-        const result = await api.loginWithOidc(tokenData.id_token);
         localStorage.setItem('famlin_admin_token', result.token);
         onLogin(result.user);
       } catch (err: any) {

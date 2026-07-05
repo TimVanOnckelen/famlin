@@ -7,7 +7,24 @@
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "backend/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "mobile/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "mobile/app.json",
+          "jsonpath": "$.expo.version"
+        }
+      ]
     }
   }
 }
