@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.7](https://github.com/TimVanOnckelen/famlin/compare/v0.1.6...v0.1.7) (2026-07-05)
+
+
+### Features
+
+* add Immich service integration for album and asset management ([d6ef9f2](https://github.com/TimVanOnckelen/famlin/commit/d6ef9f22031af9b089457ef11732686600133587))
+* add Immich service integration for album and asset management ([b3fc2b6](https://github.com/TimVanOnckelen/famlin/commit/b3fc2b6a3fad61bf0491e60e6b98c898aca26620))
+
+
+### Bug Fixes
+
+* align Expo config version with app metadata ([f3310a3](https://github.com/TimVanOnckelen/famlin/commit/f3310a3d8e7293641e4aef19796f0c43caa23cc5))
+* remove hardcoded Expo fallback versions ([2d5946d](https://github.com/TimVanOnckelen/famlin/commit/2d5946d5ae453240ac7afadbb7e7c26a897c6438))
+
 ## [0.1.6](https://github.com/TimVanOnckelen/famlin/compare/v0.1.5...v0.1.6) (2026-07-03)
 
 
