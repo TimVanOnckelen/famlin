@@ -69,7 +69,12 @@ async function performPkceLogin(config: OidcConfig, inviteToken?: string): Promi
 // APP_CALLBACK_URI with a one-time handoff code, which is what
 // openAuthSessionAsync is actually watching for here.
 async function performServerMediatedLogin(config: OidcConfig, inviteToken?: string): Promise<LoginResponse> {
-  const state = JSON.stringify(inviteToken ? { inviteToken } : {});
+  const { getRandomBytesAsync } = await import('expo-crypto');
+  const nonceBytes = await getRandomBytesAsync(16);
+  const nonce = Array.from(nonceBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const state = JSON.stringify({ ...(inviteToken ? { inviteToken } : {}), nonce });
   const authUrl = `${config.authorizationEndpoint}?${new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.mobileCallbackUrl!,
@@ -84,6 +89,10 @@ async function performServerMediatedLogin(config: OidcConfig, inviteToken?: stri
   }
 
   const { queryParams } = Linking.parse(result.url);
+  const returnedState = queryParams?.state;
+  if (typeof returnedState !== 'string' || returnedState !== state) {
+    throw new Error(i18n.t('login.ssoLoginFailed'));
+  }
   const error = queryParams?.error;
   if (error) {
     throw new Error(typeof error === 'string' ? error : i18n.t('login.ssoLoginFailed'));
