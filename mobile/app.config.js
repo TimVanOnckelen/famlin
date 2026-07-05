@@ -2,7 +2,7 @@ export default ({ config }) => ({
   ...config,
   name: "Famlin",
   slug: "famlin",
-  version: "0.1.0",
+  version: config.version ?? "0.1.0",
   orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -11,14 +11,14 @@ export default ({ config }) => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "be.xeweb.famlin",
-    buildNumber: "0.1.0",
+    buildNumber: config.ios?.buildNumber ?? "0.1.0",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
     package: "be.xeweb.famlin",
-    versionCode: 1,
+    versionCode: config.android?.versionCode ?? 1,
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#006e94",
