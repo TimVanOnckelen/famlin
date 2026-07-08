@@ -45,6 +45,21 @@ function oidcErrorStatus(code: OidcError['code']): number {
   return 403;
 }
 
+// Maps internal OIDC error codes to the stable codes the mobile app uses in
+// the famlin://oidc-callback redirect, so the app can show a specific message.
+function oidcErrorToMobileCode(code: OidcError['code']): string {
+  switch (code) {
+    case 'not_configured':
+      return 'oidc_not_configured';
+    case 'no_email':
+      return 'oidc_no_email';
+    case 'not_allowed':
+      return 'email_not_allowed';
+    case 'exchange_failed':
+      return 'oidc_exchange_failed';
+  }
+}
+
 export default async function authRoutes(fastify: FastifyInstance) {
   // Public: lets clients discover whether OIDC login is enabled and, if so,
   // which endpoints/client/scopes to use to build their own auth request.
@@ -245,17 +260,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const idToken = await exchangeOidcCode({ code, redirectUri });
         const outcome = await completeOidcLogin(idToken, inviteToken, t);
         if ('error' in outcome) {
-          return reply.redirect(`famlin://oidc-callback?error=login_failed${stateParam}`);
+          fastify.log.warn(
+            { loginError: outcome.error.error, code: outcome.error.code, status: outcome.error.status, inviteToken: inviteToken ?? null, redirectUri },
+            'OIDC mobile callback login outcome failed'
+          );
+          return reply.redirect(`famlin://oidc-callback?error=${outcome.error.code}${stateParam}`);
         }
         const handoff = createOidcHandoff(outcome.result);
         return reply.redirect(`famlin://oidc-callback?handoff=${handoff}${stateParam}`);
       } catch (err) {
+        const errorCode = err instanceof OidcError ? oidcErrorToMobileCode(err.code) : 'unknown';
         if (err instanceof OidcError) {
-          fastify.log.warn({ oidcError: err.code, redirectUri }, 'OIDC mobile callback failed');
+          fastify.log.warn({ oidcError: err.code, errorCode, redirectUri }, 'OIDC mobile callback failed');
         } else {
           fastify.log.error(err);
         }
-        return reply.redirect(`famlin://oidc-callback?error=login_failed${stateParam}`);
+        return reply.redirect(`famlin://oidc-callback?error=${errorCode}${stateParam}`);
       }
     }
   );

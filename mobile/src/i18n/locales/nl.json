@@ -41,6 +41,15 @@
     "ssoNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
     "ssoNoIdToken": "De SSO-provider heeft geen ID-token teruggegeven.",
     "ssoLoginFailed": "SSO-login is mislukt",
+    "errors": {
+      "oidcNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
+      "oidcExchangeFailed": "Aanmelden bij de identiteitsprovider is mislukt. Probeer opnieuw of neem contact op met je serverbeheerder.",
+      "oidcNoEmail": "Het SSO-account heeft geen e-mailadres. Gebruik een ander account.",
+      "emailNotAllowed": "Dit e-mailadres is niet toegestaan op deze server. Gebruik het e-mailadres waarmee je familiebeheerder je heeft uitgenodigd, of vraag hen dit adres toe te voegen.",
+      "inviteEmailMismatch": "Deze uitnodiging is voor een ander e-mailadres. Meld je aan met het e-mailadres waarnaar de uitnodiging is verstuurd.",
+      "inviteInvalid": "Deze uitnodigingslink is ongeldig, verlopen of al gebruikt. Vraag je familiebeheerder om een nieuwe.",
+      "unknown": "Aanmelden is om een onbekende reden mislukt. Probeer opnieuw."
+    },
     "alerts": {
       "loginFailedTitle": "Inloggen mislukt",
       "serverAddressMissingTitle": "Serveradres ontbreekt",

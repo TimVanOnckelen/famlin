@@ -37,10 +37,10 @@ describe('GET /api/auth/oidc/mobile-callback', () => {
     expect(location).toContain(`&state=${encodeURIComponent(state)}`);
   });
 
-  it('echoes state on the login_failed redirect', async () => {
+  it('echoes state on the OIDC error redirect with a specific code', async () => {
     // OIDC isn't configured in the test database, so the code exchange
-    // throws OidcError('not_configured') and the handler takes the
-    // login_failed path — the state echo must survive that too.
+    // throws OidcError('not_configured') and the handler redirects with the
+    // matching mobile error code — the state echo must survive that too.
     const res = await app.inject({
       method: 'GET',
       url: `/api/auth/oidc/mobile-callback?code=fake-code&state=${encodeURIComponent(state)}`,
@@ -48,7 +48,7 @@ describe('GET /api/auth/oidc/mobile-callback', () => {
 
     expect(res.statusCode).toBe(302);
     const location = res.headers.location as string;
-    expect(location).toContain('famlin://oidc-callback?error=login_failed');
+    expect(location).toContain('famlin://oidc-callback?error=oidc_not_configured');
     expect(location).toContain(`&state=${encodeURIComponent(state)}`);
   });
 

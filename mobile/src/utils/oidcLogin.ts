@@ -12,6 +12,28 @@ export class OidcCancelledError extends Error {}
 // redirect (see performServerMediatedLogin).
 const APP_CALLBACK_URI = 'famlin://oidc-callback';
 
+function getServerMediatedErrorMessage(code: string | string[] | undefined): string {
+  const key = Array.isArray(code) ? code[0] : code;
+  switch (key) {
+    case 'oidc_not_configured':
+      return i18n.t('login.errors.oidcNotConfigured');
+    case 'oidc_exchange_failed':
+      return i18n.t('login.errors.oidcExchangeFailed');
+    case 'oidc_no_email':
+      return i18n.t('login.errors.oidcNoEmail');
+    case 'email_not_allowed':
+      return i18n.t('login.errors.emailNotAllowed');
+    case 'invite_email_mismatch':
+      return i18n.t('login.errors.inviteEmailMismatch');
+    case 'invite_not_found':
+    case 'invite_expired':
+    case 'invite_used':
+      return i18n.t('login.errors.inviteInvalid');
+    default:
+      return i18n.t('login.errors.unknown');
+  }
+}
+
 // Most providers (Authentik, Keycloak, Auth0, ...) accept redirect_uri on
 // the app's own custom scheme, so the app can do the whole PKCE exchange
 // itself. Google (config.usesClientSecret) doesn't, so it goes through
@@ -95,7 +117,7 @@ async function performServerMediatedLogin(config: OidcConfig, inviteToken?: stri
   }
   const error = queryParams?.error;
   if (error) {
-    throw new Error(typeof error === 'string' ? error : i18n.t('login.ssoLoginFailed'));
+    throw new Error(getServerMediatedErrorMessage(error));
   }
   const handoff = queryParams?.handoff;
   if (typeof handoff !== 'string') {
