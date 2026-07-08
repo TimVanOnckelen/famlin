@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import type { StorageAdapter } from '@famlin/api-client';
 
 const TOKEN_KEY = 'famlin_token';
 const SERVER_URL_KEY = 'famlin_server_url';
@@ -75,3 +76,12 @@ export async function setPushToken(value: string): Promise<void> {
 export async function deletePushToken(): Promise<void> {
   return deleteItem(PUSH_TOKEN_KEY);
 }
+
+// Adapts these primitives to @famlin/api-client's StorageAdapter port, so the
+// shared client/auth store can read/write the session token and server URL
+// without importing anything React-Native-specific themselves.
+export const mobileStorageAdapter: StorageAdapter = {
+  getItem,
+  setItem,
+  removeItem: deleteItem,
+};

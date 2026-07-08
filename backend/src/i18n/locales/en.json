@@ -39,7 +39,9 @@
     "immichNotConfigured": "Immich is not configured",
     "immichUnreachable": "Could not reach the Immich server with these settings",
     "immichAlbumAlreadyLinked": "This album is already linked to this group",
-    "immichAlbumLinkNotFound": "Immich album link not found"
+    "immichAlbumLinkNotFound": "Immich album link not found",
+    "apiTokenSessionRequired": "API tokens can only be created from a normal login session, not with another API token",
+    "apiTokenNotFound": "API token not found"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

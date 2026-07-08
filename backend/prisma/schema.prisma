@@ -34,6 +34,30 @@ model User {
   notifications     Notification[]
   createdInvites    Invite[]       @relation("InviteCreatedBy")
   usedInvites       Invite[]       @relation("InviteUsedBy")
+  apiTokens         ApiToken[]
+}
+
+// A personal access token a member creates to call the API from their own
+// scripts and integrations (Authorization: Bearer famlin_pat_...). Only a
+// SHA-256 hash of the secret is stored — the plaintext is returned once at
+// creation. It authenticates as the owning user, so the group-membership
+// authorization rule applies to it unchanged; revocation is deleting the row
+// (deleting the user cascades). Deliberately independent of User.tokenVersion:
+// a password reset signs out sessions but keeps integrations running.
+model ApiToken {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  tokenHash    String    @unique
+  // First characters of the secret, kept so the owner can tell tokens apart
+  // in the list without storing anything that's usable as a credential.
+  tokenPreview String
+  lastUsedAt   DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Group {

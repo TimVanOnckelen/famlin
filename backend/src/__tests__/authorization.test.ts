@@ -86,6 +86,79 @@ describe('group membership authorization', () => {
   });
 });
 
+describe('multi-group feed filter', () => {
+  let postAId: string;
+  let postBId: string;
+
+  beforeAll(async () => {
+    const postA = await prisma.post.create({
+      data: { groupId: groupAId, authorId: memberA.id, content: 'post in group A', uploadedAssetUrls: [] },
+    });
+    const postB = await prisma.post.create({
+      data: { groupId: groupBId, authorId: memberB.id, content: 'post in group B', uploadedAssetUrls: [] },
+    });
+    postAId = postA.id;
+    postBId = postB.id;
+  });
+
+  afterAll(async () => {
+    await prisma.post.deleteMany({ where: { id: { in: [postAId, postBId] } } });
+  });
+
+  it('returns only the caller\'s own groups when no filter is given', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/posts',
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const ids = res.json().items.map((p: { id: string }) => p.id);
+    expect(ids).toContain(postAId);
+    expect(ids).not.toContain(postBId);
+  });
+
+  it('accepts a groupIds subset the caller belongs to', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts?groupIds=${groupAId}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const ids = res.json().items.map((p: { id: string }) => p.id);
+    expect(ids).toContain(postAId);
+  });
+
+  it('rejects a groupIds list containing a group the caller is not in', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts?groupIds=${groupAId},${groupBId}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('returns an empty page (not an error) for a user in no groups', async () => {
+    const loner = await prisma.user.create({
+      data: { email: `loner-${runId}@test.local`, name: 'No Groups' },
+    });
+    const lonerToken = createUserToken({
+      id: loner.id,
+      email: loner.email,
+      name: loner.name,
+      isAdmin: false,
+      tokenVersion: loner.tokenVersion,
+    });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/posts',
+      headers: { authorization: `Bearer ${lonerToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ items: [], nextCursor: null });
+    await prisma.user.delete({ where: { id: loner.id } });
+  });
+});
+
 describe('deleted post regressions', () => {
   let postId: string;
 

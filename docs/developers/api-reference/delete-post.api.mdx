@@ -1,0 +1,71 @@
+---
+id: delete-post
+title: "Delete a post"
+description: "Permanent — cascades to the post's comments, reactions, and favorites."
+sidebar_label: "Delete a post"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVsFuGzcQ/ZXBXmoJiuS2OQlFAQVR0RRpY9gOgkIystTuSMuYIjckV/ZWENCP6Bf2S/qGu7aVqO2phwI5CFqSQ3Lem5k33GeuZq+idvZVmU2zkg1HvnAhZqMsqk3IpotMhiG7GWE1FF7XYg3bC/ZbZdlG+vP3P6hQoVAwoOgoVkw1Nn0VqHDbLUzCiDyrQnbiU9mS1mrnvI4cxks7HF5X7Jl0IOuosaUbD4f0xpo2HaWaWDlPZ/gpS6rcajvAfZY6b3EAnK2VV1uMvLi8zywG8FGXWNLiba1ihW/PHxvtGVijb3iUhaLircqm+yy2tewI0Wu7yQ6HGzEONRzmIOvfnJ/L36ccvEweyCWFsxFAxUTVtdFFInXyIYjd/vQet/rAhbBcewlB1N0toSkKDuHIcOWcYSUQ+V5ta8Od64cDAqSjDLOrftPhILPPz78+dfRnHQJwjUjbnTK6HBHf10LEiECr55275ZIKTACEVua/Q8TeO39K8OfZ9GODZHqGJCnVyvCIolc2GAVyaadVyoN8Bph1fPZa2U2jNpxTBXNGZuRs80luTT4YZ0LBU5QX/f03T2zN08QDV9+ecvWLi8d5d5R2Xwwrz09ZueTgGl8wSjTS2qFKvwg2YAlZqdyTOiaxgZhMs4mq9USELkz2ujxgIbDfPUhQ4w1sqhjrMJ1M1mprtB33NTyGLp7A+xX8kruz9EOyhbzVxrUin5moUeCigWK26fAVK89+1ogfi5vj5SvhvKP12OiRW3Eo64Uv6UsyOnFmRogPwqgMqaQuEPZbtuCxQ/IeHLwfj8f5SFQjxQAuSwjueEVIhgEKZ2kVQT4DjqSf3l3T2rst5Rdvrq4pcScVNjFuo20+phcuVgRfsMN2BRgg4nSn2unS5rNUjPq3lGBTepG8pu+SU9/n0gMkVNquXcLax7FncnbxCgAlMh04MOWF1s9Bz2HSPtDfxVJ00gXpaxXa0+UcruM0aVJYywVFnvrfo7+yisHSuvVaF5BS2rqVNpy6Xs9NoCbwmN5pQUyLv2X65mxS8o6N1EmQewZL27omNb5Vo01J7UO+aBThpuvigdRGaRtit4pYadOiD3dgQNPSzoyhvm6l44YCN5S0amk43HjX1LTl7Qp3VroeDqf0cKeTdiy11wGR3r20j+dYSnsDnaUrUdeDtHMFAHYDRF3Xj0d9HoFFuEVIMK3i0gJoB31MV8y0eCsdKxELTk/pgAj5pNHSsTrhGSWPdjLx+NC4c15aW194IWUKKhhVCzGRXOmfCl0rRzjq7vXzSWbsn5Tuf/bu6as68n2c1AahF3RJeva9TC0gzTrrIAf8T/Eogl5UAhOL+/1KBX7rzeEg0x8blIBoCupFeS1CmwSn1EG+IYNrZQL/Cz9nl72yDuif/OsnlW2lLJVpZITPW267R9vhBladcqfbu4VO24+2nPQcEcJHuX45fz2/nkMX/gKS8s52
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Delete a post"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/posts/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Permanent — cascades to the post's comments, reactions, and favorites.
+**There is no undo.** Only the author (or an admin) can delete.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./delete-post.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./delete-post.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./delete-post.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

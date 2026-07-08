@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"linkId":{"type":"string","description":"The Famlin-side link id — what the asset endpoints take."},"albumName":{"type":"string"},"assetCount":{"type":"integer"}},"title":"ImmichAlbum"},"schemaType":"response"}

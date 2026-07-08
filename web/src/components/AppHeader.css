@@ -1,0 +1,114 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--fam-surface);
+  border-bottom: 1px solid var(--fam-border);
+}
+
+.app-header-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.app-header-wordmark {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--fam-primary);
+  letter-spacing: -1.2px;
+  line-height: 1;
+}
+
+/* ── Right-side actions ─────────────────────────────────────────────────── */
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.btn-new-post {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  list-style: none;
+  cursor: pointer;
+  border-radius: 50%;
+  display: block;
+}
+
+.user-menu-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.user-menu-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  background: var(--fam-surface);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-raised);
+  border: 1px solid var(--fam-border);
+  overflow: hidden;
+}
+
+.user-menu-identity {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--fam-border);
+}
+
+.user-menu-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.user-menu-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.user-menu-item:hover {
+  background: var(--fam-primary-tint);
+}

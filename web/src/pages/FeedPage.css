@@ -1,0 +1,92 @@
+.feed-shell {
+  min-height: 100vh;
+}
+
+.feed-column {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Family filter (multi-select chips) ─────────────────────────────────── */
+
+.feed-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.filter-chip:hover {
+  background: var(--fam-primary-tint);
+}
+
+.filter-chip-active {
+  background: var(--fam-primary);
+  border-color: var(--fam-primary);
+  color: white;
+}
+
+.filter-chip-active:hover {
+  background: var(--fam-primary);
+}
+
+.feed-hint {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
+.feed-retry {
+  border: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--fam-primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.feed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 56px 24px;
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.feed-empty p {
+  margin: 0;
+}
+
+.feed-empty-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.feed-load-more {
+  align-self: center;
+}

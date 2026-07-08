@@ -1,0 +1,71 @@
+---
+id: react-to-post
+title: "React to a post"
+description: "Sending your current reaction again **removes** it; a different one"
+sidebar_label: "React to a post"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlV8FuGzcQ/ZXBXmoLaylNclKKAkrqImlT2LCdGoUlZKldSmLMJbckV4oqCOhH9Av7JX1Driy7cnIK2kN0WC3JITnzZubN7CazjXQiKGveVNkwc1KU4cqeWx+yPAti7rPhTXbBsxDx2STPKulLpxoeY8OlNJUyc1rb1lHZOidNINfJk5gLZajXc7K2S+l7PVLhBQmq1Gwmo6g1cmx6Pb9SoVx0En06M3J/CBSk1uPBLw00648NlGuEE7UM0rGKm8xgAH14HZbkmWLtGhEWeHfy91Y5CQODa2WeeVxVi2y4ycK64V0+OBiRbbeTJCx9eGmrNUvs986E9thcWhOgOa+JptGqjOgNPnjGY3N4tp1+kCWj2TjGOijp96v/1iDPpGlrxvztm59PMXx79iv/vR69HuHv+uwaz8vRD3i+Gl2cJn/MRKuhz25LUEHzkTuvXfEN2/hj63wDRyYdnj55wn8PPfobe3LvwRkQprCQFOx8rmVOjW49u+IEPv2gqLStCT77YrjU653ePDKt1mLK5iTPCa3PZtHf/xVuBxH/eXzoqGCdC1otpEEs00p4SuFfHfezLeMUAXsEiIf3nN9BfHdZ2voCSaPXFNc8IXEWJAJpKXxMp3u6NY0Uro+TRVUpnhL6/JEgRK4EOZeOtZMfRd3oGJkRwuGzPOEzfLo9hOhVsmX7yNKF9IxuirrnT749DLRflPfwXU7KLIVWVU7yY8OplpNlhJf2VlZUYgJhpYT+cjEmnbPuseR7qODrthbmBHBWHII5BSeM1yJAq6US0enFqCxlE07eCjNvxVwWtIA4IuKokKYYFEYX7PXtfQ666e6f7EE7jRM7rJ49mpQknCRjA+izlvUUd9gZdEAIzJ1tm68GneeH6CDWkJRlgmeGmKy+CjQgiQK4sFVX92JRRMEbZgPRqAFP+cEmVcTtQKtbCQkU0uWuZrZOQ3gRQuOHg8FM1FqZfscA/dLWB1ZG7rMrQz9GWapko+26ZpiZKL1EB6DCOh4+BfdIN2pZoZvJ/eVLhj6he1/oDmJWKOuqNI+T0IEyI65CnkmNBJD1HhR8C9I9KpIl7wHG+36/X+RMItEVUJk9sZJTJsdj8MzYCEI19MyXP11f0czZmorzs8sriiAKqDbQdq5M0aeXlrkWaei5deGTPLoOUPx6ODYFW2Gd+iPG2ZBeRq3pu6jU9wU3Lewxjr+LfYtxuufbzvrItltuYGY2Tnd+7yAfnb8BEuzChELXcx2gcwqR9c5PyenMrxbGJta4OIWNOI2QLlgr2NyC/v7zr71hvIrB2NjZTJWgYKrtVKHICVPtQPTcm/XpOpYhunnUJZOjQSWXUnNeeb7neGzQMFIpDE1bpavUPnJgxVKUGlKf2kdUtbgKpyq9/sZ3xgDPsRlpTV2eE0zyJW6oaLpGyxlJsWNKv1BNrzek3Z2xfnKuJkMQk7Dx7hyTCNXTUbwSPHAcd05hADrdYPO4DcAgEnCrsRwBiAsmHkyLMDbcqkbT+3QpJd2840oXgQWmh3CAtBxxqHGlS0SVR42WPAEo0pUr67gkdhnqY0jlMfVBPrFdSk1wrMG4Hw7peOFBbGz23Pg/9u9duAf5MQwajXvYlshIm47GbkDcKksGcoc5vGvuI5eBURZsHeQ2m6nw8p3T2y1PI7sckxBel8Kp1ECCkirl+X3fy38SlqOLjoKP6VOqdpPCrDkfhW55hNdbud5/h2wnkEw0HzVIi6/SPSexw9xvPihT23y3I5WOz8pO7lUD5i8IT7tvmNpWvMeJFX8M4RkVtU36puOPHJ7bZLqrTFhPZ/LvH6e75Tg=
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"React to a post"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/posts/{postId}/like"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Sending your current reaction again **removes** it; a different one
+**switches** it. One reaction per user per post.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./react-to-post.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./react-to-post.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./react-to-post.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

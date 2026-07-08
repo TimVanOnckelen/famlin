@@ -33,6 +33,7 @@ Setup differs slightly depending on whether your provider supports a secretless 
 1. Register Famlin as a **public/native client** (no client secret), with **PKCE** enabled.
 2. Add redirect URIs:
    - Mobile app: `famlin://` (the app's URL scheme; see `mobile/app.config.js`)
+   - Web app: `https://famlin.yourdomain.com/`
    - Admin UI: `https://famlin.yourdomain.com/admin/`
 3. In `/admin` → Server settings, fill in **Issuer URL**, **Client ID**, **Scopes** (defaults to `openid email profile`), and **Display name** (shown on the login button). Leave **Client secret** blank.
 
@@ -41,9 +42,10 @@ Setup differs slightly depending on whether your provider supports a secretless 
 Google's OAuth clients always require a client secret for the token exchange, and its native "iOS"/"Android" client types force the mobile redirect onto a Google-generated scheme Famlin's shared, pre-built Android app can't have baked in ahead of time (every self-hosted deployment registers its own separate Google client). So instead, register one ordinary **Web application** client:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/auth/clients) → **Create OAuth client** → **Web application**.
-2. Add two **Authorized redirect URIs**:
-   - `https://famlin.yourdomain.com/admin/`
-   - `https://famlin.yourdomain.com/api/auth/oidc/mobile-callback`
+2. Add three **Authorized redirect URIs**:
+   - `https://famlin.yourdomain.com/` (web app)
+   - `https://famlin.yourdomain.com/admin/` (admin UI)
+   - `https://famlin.yourdomain.com/api/auth/oidc/mobile-callback` (mobile app)
 3. Copy the **Client ID** and **Client secret** Google generates.
 4. In `/admin` → Server settings, fill in:
    - **Issuer URL**: `https://accounts.google.com`
@@ -51,7 +53,7 @@ Google's OAuth clients always require a client secret for the token exchange, an
    - **Scopes**: `openid email profile`
    - **Display name**: e.g. `Google`
 
-Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for both the admin UI and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
+Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
 
 ### Access control
 

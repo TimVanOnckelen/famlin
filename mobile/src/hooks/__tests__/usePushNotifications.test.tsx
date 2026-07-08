@@ -7,12 +7,9 @@ jest.mock('@/stores/authStore', () => ({
   useAuthStore: jest.fn(),
 }));
 
-jest.mock('@/api/auth', () => ({
+jest.mock('@famlin/api-client', () => ({
   fetchNotificationConfig: jest.fn(),
-}));
-
-jest.mock('@/api/client', () => ({
-  api: { post: jest.fn() },
+  registerPushToken: jest.fn(),
 }));
 
 jest.mock('@/utils/storage', () => ({
@@ -21,8 +18,7 @@ jest.mock('@/utils/storage', () => ({
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuthStore } from '@/stores/authStore';
-import { fetchNotificationConfig } from '@/api/auth';
-import { api } from '@/api/client';
+import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client';
 import { setPushToken } from '@/utils/storage';
 
 describe('usePushNotifications', () => {
@@ -39,7 +35,7 @@ describe('usePushNotifications', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchNotificationConfig).not.toHaveBeenCalled();
-    expect(api.post).not.toHaveBeenCalled();
+    expect(registerPushToken).not.toHaveBeenCalled();
   });
 
   it('registers the push token once when a signed-in user is present', async () => {
@@ -47,14 +43,14 @@ describe('usePushNotifications', () => {
       selector({ user: { id: 'u1' } })
     );
     (fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: true });
-    (api.post as jest.Mock).mockResolvedValue({});
+    (registerPushToken as jest.Mock).mockResolvedValue(undefined);
 
     renderHook(() => usePushNotifications());
 
-    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(registerPushToken).toHaveBeenCalledTimes(1));
 
     expect(fetchNotificationConfig).toHaveBeenCalledTimes(1);
-    expect(api.post).toHaveBeenCalledWith('/push-tokens', { token: 'test-expo-push-token' });
+    expect(registerPushToken).toHaveBeenCalledWith('test-expo-push-token');
     expect(setPushToken).toHaveBeenCalledWith('test-expo-push-token');
   });
 
@@ -70,6 +66,6 @@ describe('usePushNotifications', () => {
     // Let the (short-circuited) async path settle before asserting the negative.
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(api.post).not.toHaveBeenCalled();
+    expect(registerPushToken).not.toHaveBeenCalled();
   });
 });

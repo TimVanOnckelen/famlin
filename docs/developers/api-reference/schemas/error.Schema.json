@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Human-readable, translated via the `Accept-Language` header (`en`/`nl`)."}},"required":["error"],"title":"Error"},"schemaType":"response"}

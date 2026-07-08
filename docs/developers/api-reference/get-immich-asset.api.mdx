@@ -1,0 +1,73 @@
+---
+id: get-immich-asset
+title: "Stream an Immich asset rendition"
+description: "`variantExt` is `thumbnail.jpg`, `preview.jpg`, `original.jpg`, or"
+sidebar_label: "Stream an Immich asset rendition"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVttuGzcQ/ZXBvtQyNlo3MPqg3uAAbpqgQQ3bQVDYRpbaHUm0d8ktyZWsCgL6Ef3CfknPcFeWfEnQ5CEv7ZNELjmXc4ZnZpXYhp0K2ppXZTJKphxe1bUuZkfec0jSJKipT0YXSbebXKVJyb5wupEruJDPldPKhOPbkJP2lIdZW4+N0tXwupnmKeWN47nmxWZpnZ5qozafrbs02726Ocxp786Ez/rLnpRjUtVCLT29Pjl++S1ZUy231vJLUyhDYxyiuS7ZDoZ01IYZVfqGKc/aprKq9Nl+PqIZq5IdPFP+Y7A3bL7PhwjiVJkp5+T495Z96DxOrFsoV3KZkredYfLMN9pMaWHdjcdFgNQop2oO7ASqVWKwADSVNjcANU20ANWoMMN/Ma8dA+vgWk4TX8y4VslolYRlI7d8cLCerNfpnSElXHy2pTRBFrUK2GlbXd6zvCXvs42zaWspkHu8CyZb2rHaZX13CcKTq92IIiGbYMCEWyYfAelhNb7hUiuKNlJazNiQsZRLIcDjH7HM8w3/KFbPJgyT9ZXk6xtrPHtx8vzgQH7umz6fMWrDlFrWNF4GnE2TwpoAI3Jc12rK2XXDU1n9CzbGQADpIfskVlYmYHziVbn8/OCbx+GeKBe0qqgPkPYmUu8PanwgCB4efP34+hvtPXympM1cVRr1z7eNFIS8WNyfA+KSCmzAOPzch0I1TaWLCHd27cXgE1nZ8TUXIVaKaFDQHfjsnHVPJX8/wJ/bWplnDlSqccUpBaeMr1RAVHMpAbCVHxUFN+HZL0i6VZJ3z/xezibPclPlg2GEf1vtF71/lETQoZIAjuNGB/XhweFjrE7Z29YVjFoLUIzWlP8JNHASmjezfduIMgjtGCWZanSmY7/IonT5bNVp4Tpb9VqGf1vtWcsTZzff6GfrKpiZhdD4UZZNVI3bQ75VdVPxsLD1o/R/A/5kF4Z+imepZMj9shb85XF7LlqnwzIaHzOE3YkkYHm1+/lMOOlg3z10h70EtBEjWXeHHgVzROAPNOPxKUDufadHwLnL5D1gej8cDtH88H4iRwhZKFrwmFAsg9gUFdQJbxBa8/rdOU2crSk/+fXsnCK8CqFllYWI5kN6YdHopF2JnkVLHmJKaJYj9LV76jeiFzFq+i4G9YN0vki6NhMbc+157pE8OnmFBIWZLjkg5QTWh0kf48hyA3/HpSiGRQ4ICFJ7eozQYY3wPPAtlyxy+vvPv7bxylcsLo2dTHQh4lXbsa7Q0k25wcZT63lI77RkTBdPIn21l5U850rekRc/g0uztC3FAaHVVUnLTb1oPNJpN/6g4U+VNj50X8GVrpZf+T4ZwHRpjqqtnkr3KOChRCug/f2ps21DNddj+JzpZn9/RBufcVKRt9klglJDjnd2DMW7HgotLvHuB/HmGAlgygg2jdcADAiGVzQ0EAu6RWiwrcKlQaJd6kM6Y6aLt6LdEVhg+hgOGWtIKki0uxOmNEY0lw1A0bmUAQf59Q8vjjooFHAaIDZSK33LPgtIrsYV6oZEim982ywfFstqK47/j4+CTq8vgW9D1lQoQsE5iuCq19QLNBEtU1E3hafdSCgDyOhuyhxtx8TRzlwHgZuBMrGxWo2V57euWq9lu5uuRBNL7aVvQMknqvL8Eb4+a8D6QIY3vNwZ+DBmtHImKnaMfyxC9EnR7Z32rWtAH3Labyqz3PW5CaYHU+bRL+h1Q9wXdrtTJOsrnO5oi5B3B7qJYefqzogrLN21/5fH52gi/wBh9/uH
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Stream an Immich asset rendition"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/immich/assets/{linkId}/{assetId}/{variantExt}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+`variantExt` is `thumbnail.jpg`, `preview.jpg`, `original.jpg`, or
+`original.mp4` (thumbnails/previews are always JPEG; only `original`
+can be a video). Auth like `/uploads/*`: header or `?token=`.
+`Range` requests are forwarded, so video seeking works.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./get-immich-asset.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-immich-asset.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-immich-asset.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

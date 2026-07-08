@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -21,19 +21,27 @@ import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
-import { api } from '@/api/client';
-import { Post, Comment } from '@/types';
-import { ReactionType, REACTION_EMOJI } from '@/constants/reactions';
+import { ReactorStack } from '@/components/ReactorStack';
+import { Scrim } from '@/components/Scrim';
+import { Post, Comment, ReactionType } from '@/types';
+import {
+  fetchPost,
+  fetchComments,
+  fetchGroupMembers,
+  GroupMember,
+  reactToPost,
+  toggleFavoritePost,
+  createComment,
+  reactToComment,
+  updatePost,
+  deletePost,
+  updateComment,
+  deleteComment,
+} from '@famlin/api-client';
+import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
-
-interface GroupMemberUser {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string | null;
-}
 
 // Matches a trailing "@partial-name" at the end of the text being typed —
 // deliberately only the end, not anywhere in the string, since that's the
@@ -43,6 +51,7 @@ const TRAILING_MENTION_REGEX = /(?:^|\s)@([\p{L}\d_]*)$/u;
 export function PostDetailScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const { postId } = route.params;
   const queryClient = useQueryClient();
@@ -58,34 +67,22 @@ export function PostDetailScreen() {
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
-    queryFn: async () => {
-      const response = await api.get<Post>(`/posts/${postId}`);
-      return response.data;
-    },
+    queryFn: () => fetchPost(postId),
   });
 
   const { data: comments, refetch } = useQuery({
     queryKey: ['comments', postId],
-    queryFn: async () => {
-      const response = await api.get<Comment[]>(`/posts/${postId}/comments`);
-      return response.data;
-    },
+    queryFn: () => fetchComments(postId),
   });
 
-  const { data: groupMembers } = useQuery({
+  const { data: groupMembers } = useQuery<GroupMember[]>({
     queryKey: ['groupMembers', post?.groupId],
-    queryFn: async () => {
-      const response = await api.get<GroupMemberUser[]>(`/groups/${post!.groupId}/members`);
-      return response.data;
-    },
+    queryFn: () => fetchGroupMembers(post!.groupId),
     enabled: !!post?.groupId,
   });
 
   const likeMutation = useMutation({
-    mutationFn: async (type: ReactionType) => {
-      const response = await api.post(`/posts/${postId}/like`, { type });
-      return response.data;
-    },
+    mutationFn: (type: ReactionType) => reactToPost(postId, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -93,10 +90,7 @@ export function PostDetailScreen() {
   });
 
   const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post(`/posts/${postId}/favorite`);
-      return response.data;
-    },
+    mutationFn: () => toggleFavoritePost(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -105,7 +99,7 @@ export function PostDetailScreen() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       content,
       parentId,
       mentionedUserIds,
@@ -113,10 +107,7 @@ export function PostDetailScreen() {
       content: string;
       parentId?: string;
       mentionedUserIds?: string[];
-    }) => {
-      const response = await api.post(`/posts/${postId}/comments`, { content, parentId, mentionedUserIds });
-      return response.data;
-    },
+    }) => createComment(postId, { content, parentId, mentionedUserIds }),
     onSuccess: () => {
       setCommentText('');
       setReplyingTo(null);
@@ -129,18 +120,12 @@ export function PostDetailScreen() {
   });
 
   const likeCommentMutation = useMutation({
-    mutationFn: async ({ commentId, type }: { commentId: string; type: ReactionType }) => {
-      const response = await api.post(`/comments/${commentId}/like`, { type });
-      return response.data;
-    },
+    mutationFn: ({ commentId, type }: { commentId: string; type: ReactionType }) => reactToComment(commentId, type),
     onSuccess: () => refetch(),
   });
 
   const editPostMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const response = await api.patch(`/posts/${postId}`, { content });
-      return response.data;
-    },
+    mutationFn: (content: string) => updatePost(postId, content),
     onSuccess: () => {
       setIsEditingPost(false);
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
@@ -152,9 +137,7 @@ export function PostDetailScreen() {
   });
 
   const deletePostMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/posts/${postId}`);
-    },
+    mutationFn: () => deletePost(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       navigation.goBack();
@@ -165,10 +148,7 @@ export function PostDetailScreen() {
   });
 
   const editCommentMutation = useMutation({
-    mutationFn: async ({ id, content }: { id: string; content: string }) => {
-      const response = await api.patch(`/comments/${id}`, { content });
-      return response.data;
-    },
+    mutationFn: ({ id, content }: { id: string; content: string }) => updateComment(id, content),
     onSuccess: () => refetch(),
     onError: (err: any) => {
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'));
@@ -176,9 +156,7 @@ export function PostDetailScreen() {
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: async (commentId: string) => {
-      await api.delete(`/comments/${commentId}`);
-    },
+    mutationFn: (commentId: string) => deleteComment(commentId),
     onSuccess: () => {
       refetch();
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
@@ -223,7 +201,7 @@ export function PostDetailScreen() {
     setMentionQuery(match ? match[1] : null);
   }
 
-  function selectMention(member: GroupMemberUser) {
+  function selectMention(member: GroupMember) {
     const replaced = commentText.replace(TRAILING_MENTION_REGEX, (matched) =>
       (matched.startsWith(' ') ? ' ' : '') + `@${member.name} `
     );
@@ -242,6 +220,8 @@ export function PostDetailScreen() {
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
+  const hasPhotos = allPhotoUrls.length > 0;
+  const reactors = post.recentReactors ?? [];
 
   function openFullscreen(index: number) {
     navigation.navigate('ImageViewer', {
@@ -277,15 +257,20 @@ export function PostDetailScreen() {
   const canSavePostEdit = editPostContent.trim().length > 0 || allPhotoUrls.length > 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={18} color={colors.primary} />
-          <Text style={styles.backButtonText}>{t('common.back')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('postDetail.title')}</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <SafeAreaView
+      style={styles.container}
+      edges={hasPhotos ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
+    >
+      {!hasPhotos && (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="arrow-left" size={18} color={colors.primary} />
+            <Text style={styles.backButtonText}>{t('common.back')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('postDetail.title')}</Text>
+          <View style={styles.headerRight} />
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -296,8 +281,35 @@ export function PostDetailScreen() {
           data={topLevelComments}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            <View style={[styles.postContainer, isMilestone && styles.milestoneContainer]}>
-              {isMilestone && (
+            <>
+              {hasPhotos && (
+                <View>
+                  <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
+                    <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />
+                  </TouchableOpacity>
+                  {isMilestone && (
+                    <View style={styles.heroScrim} pointerEvents="none">
+                      <Scrim />
+                      <View style={styles.heroBadge}>
+                        <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
+                      </View>
+                      {!!post.content && (
+                        <Text style={styles.heroMilestoneTitle} numberOfLines={3}>
+                          {post.content}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+            <View
+              style={[
+                styles.postContainer,
+                hasPhotos && styles.postContainerOverlap,
+                isMilestone && !hasPhotos && styles.milestoneContainer,
+              ]}
+            >
+              {isMilestone && !hasPhotos && (
                 <View style={styles.milestoneBadge}>
                   <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
                 </View>
@@ -357,26 +369,23 @@ export function PostDetailScreen() {
                   </View>
                 </View>
               ) : isMilestone ? (
-                <Text style={styles.milestoneTitle}>{post.content}</Text>
+                !hasPhotos && <Text style={styles.milestoneTitle}>{post.content}</Text>
               ) : (
-                <Text style={styles.postContent}>{post.content}</Text>
+                !!post.content && <Text style={styles.postContent}>{post.content}</Text>
               )}
 
               {post.latitude != null && post.longitude != null && (
                 <PostLocationPreview latitude={post.latitude} longitude={post.longitude} locationName={post.locationName} />
               )}
 
-              {allPhotoUrls.length > 0 && (
+              {allPhotoUrls.length > 1 && (
                 <View style={styles.photoGallery}>
-                  {allPhotoUrls.map((url: string, index: number) => (
+                  {allPhotoUrls.slice(1).map((url: string, index: number) => (
                     <TouchableOpacity
                       key={url}
                       activeOpacity={0.95}
-                      style={[
-                        styles.photoWrapper,
-                        allPhotoUrls.length === 1 && styles.photoWrapperSingle,
-                      ]}
-                      onPress={() => openFullscreen(index)}
+                      style={styles.photoWrapper}
+                      onPress={() => openFullscreen(index + 1)}
                     >
                       <MediaThumbnail url={url} style={styles.photoImage} />
                     </TouchableOpacity>
@@ -387,7 +396,7 @@ export function PostDetailScreen() {
               <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
                 <TouchableOpacity
                   style={[styles.likeButton, post.myReaction && styles.likeButtonActive]}
-                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LIKE')}
+                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
                   onLongPress={() => setPostReactionPickerOpen(true)}
                 >
               {post.myReaction ? (
@@ -400,6 +409,7 @@ export function PostDetailScreen() {
               </Text>
                 </TouchableOpacity>
                 <Text style={styles.commentCount}>{t('postDetail.comments', { count: post.commentCount })}</Text>
+                {reactors.length > 0 && <ReactorStack reactors={reactors} />}
                 <TouchableOpacity
                   style={styles.favoriteButton}
                   onPress={() => favoriteMutation.mutate()}
@@ -416,21 +426,34 @@ export function PostDetailScreen() {
 
               <Text style={styles.commentsHeader}>{t('postDetail.commentsHeader', { count: comments?.length || 0 })}</Text>
             </View>
+            </>
           }
           renderItem={({ item }) => (
-            <CommentItem
-              comment={item}
-              replies={repliesByParentId.get(item.id) || []}
-              currentUserId={user?.id}
-              onLike={(commentId, type) => likeCommentMutation.mutate({ commentId, type })}
-              onLongPressLike={(commentId) => setReactionPickerCommentId(commentId)}
-              onReply={(comment) => setReplyingTo({ id: comment.id, authorName: comment.author.name })}
-              onEdit={(id, content) => editCommentMutation.mutateAsync({ id, content })}
-              onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
-            />
+            <View style={hasPhotos ? styles.commentPad : undefined}>
+              <CommentItem
+                comment={item}
+                replies={repliesByParentId.get(item.id) || []}
+                currentUserId={user?.id}
+                onLike={(commentId, type) => likeCommentMutation.mutate({ commentId, type })}
+                onLongPressLike={(commentId) => setReactionPickerCommentId(commentId)}
+                onReply={(comment) => setReplyingTo({ id: comment.id, authorName: comment.author.name })}
+                onEdit={(id, content) => editCommentMutation.mutateAsync({ id, content })}
+                onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
+              />
+            </View>
           )}
-          contentContainerStyle={styles.commentsList}
+          contentContainerStyle={hasPhotos ? styles.commentsListHero : styles.commentsList}
         />
+
+        {hasPhotos && (
+          <TouchableOpacity
+            style={[styles.floatingBack, { top: insets.top + 8 }]}
+            onPress={() => navigation.goBack()}
+            accessibilityLabel={t('common.back')}
+          >
+            <Icon name="arrow-left" size={20} color={colors.textTitle} />
+          </TouchableOpacity>
+        )}
 
         {replyingTo && (
           <View style={styles.replyingBar}>
@@ -699,9 +722,64 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     marginBottom: 14,
   },
+  heroImage: {
+    width: '100%',
+    height: 360,
+  },
+  heroScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 64,
+    paddingHorizontal: 16,
+    // Room for the sheet below to overlap the photo without covering the title.
+    paddingBottom: 52,
+    justifyContent: 'flex-end',
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  heroMilestoneTitle: {
+    fontFamily: 'Nunito_900Black',
+    fontSize: 23,
+    color: colors.white,
+    letterSpacing: -0.3,
+  },
+  postContainerOverlap: {
+    marginTop: -36,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingTop: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  floatingBack: {
+    position: 'absolute',
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  commentPad: {
+    paddingHorizontal: 14,
+  },
   milestoneContainer: {
-    backgroundColor: '#FFF5E6',
-    borderBottomColor: 'rgba(242, 184, 92, 0.3)',
+    backgroundColor: colors.milestoneBg,
+    borderBottomColor: colors.milestoneDivider,
   },
   milestoneBadge: {
     marginBottom: 10,
@@ -709,7 +787,7 @@ const styles = StyleSheet.create({
   milestoneBadgeText: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 11,
-    color: colors.white,
+    color: colors.milestoneText,
     backgroundColor: colors.milestone,
     paddingHorizontal: 13,
     paddingVertical: 4,
@@ -727,7 +805,7 @@ const styles = StyleSheet.create({
   },
   authorName: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textTitle,
   },
   postTime: {
@@ -740,9 +818,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   postContent: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 16,
-    color: colors.textTitle,
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 17,
+    color: colors.textBody,
     lineHeight: 26,
     marginBottom: 12,
   },
@@ -870,6 +948,11 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 80,
   },
+  // Hero variant: no horizontal padding so the photo runs edge-to-edge;
+  // comment rows re-add it via commentPad.
+  commentsListHero: {
+    paddingBottom: 80,
+  },
   commentItem: {
     flexDirection: 'row',
     gap: 10,
@@ -894,10 +977,10 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   commentText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 15,
-    color: colors.textTitle,
-    lineHeight: 22,
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 16,
+    color: colors.textBody,
+    lineHeight: 24,
   },
   commentTime: {
     fontFamily: 'Nunito_600SemiBold',
@@ -1002,9 +1085,9 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

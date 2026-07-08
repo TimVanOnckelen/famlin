@@ -25,14 +25,19 @@ import { SearchScreen } from '@/screens/SearchScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
-import { initApiBaseUrl, setUnauthorizedHandler } from '@/api/client';
+import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter } from '@/api/client';
 import { fetchMe } from '@/api/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { getServerUrl } from '@/utils/storage';
+import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
 import { ensureFreshMediaToken } from '@/api/uploads';
 
 const Stack = createNativeStackNavigator();
 const queryClient = new QueryClient();
+
+// Must run before any @famlin/api-client call that touches storage
+// (initApiBaseUrl/loadToken below, or any request through the shared axios
+// client) — those all read/write via the registered adapter.
+setStorageAdapter(mobileStorageAdapter);
 
 // Parses `famlin://invite/<token>?server=<url>` (from the /invite/:token web
 // landing page's "Open in the app" button). Returns null for any other URL.

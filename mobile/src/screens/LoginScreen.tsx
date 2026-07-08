@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 
-import { AppIcon } from '@/components/Logo';
+import { PhotoCollage } from '@/components/PhotoCollage';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
@@ -134,7 +134,7 @@ export function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
         <View style={styles.logoSection}>
-          <AppIcon size={96} />
+          <PhotoCollage />
           <Text style={styles.title}>{t('common.appName')}</Text>
           <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
         </View>
@@ -271,6 +271,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   logoSection: {
+    alignSelf: 'stretch',
     alignItems: 'center',
     marginBottom: 28,
   },

@@ -73,6 +73,7 @@
     }
   },
   "feed": {
+    "allFamilies": "All families",
     "emptyTitle": "No messages in this group yet.",
     "emptySubtitle": "Be the first to share something!",
     "noGroupsTitle": "You're not in any group yet.",

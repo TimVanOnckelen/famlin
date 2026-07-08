@@ -1,0 +1,63 @@
+---
+id: get-media-token
+title: "Get a media token"
+description: "A narrow-scope token (7-day expiry) for reading `/uploads/*` and Immich"
+sidebar_label: "Get a media token"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFu20YQ/ZUBD40lSJRbFCigpikUwE1dJEgQywgKywhX5IjcZLnL7C4ls4KBfkS/sF/SmSEl21GPPdYXi9yZ2ffezDxpn7gGvYra2csimSclxjdYaLV0n9EmkySqMiTzm+S6MU4VAb6Bmo+T20lSYMi9bjiVEhdglfduNw05VYTI+XD2w7RQHeBdo303go3z4FEV2paQzdq+5GycgbIFXNa1zquVbby76+D6/esAW61AQfazFPspgy8t+g4a5VWNET38/edfUjN7ruvyRQYMVmptdYGOShnVoQ8QKxUhV/ZZhIB0rCxkizZWzus/hHoGFcFCn8KlBIKzphOoKyt8fwQdQQewLhKigCFQFuQeC7RRK5OuWCyPoXGWTpP5Pvnu/Jz/PVVpWWEvYC8Q5eTORqrBoappjM4F0OxT4Ph9EvIKa8WfYtcgVXDrT5hHSiSdqHNR97f15R7CQvSkcnIvf5Pk+/NvT8G80UTDlhPQdquMLiZ9o5A+SKO2VLN4RPK/Q4s0Kf4U7dcz9WtbKzvlNqi1wQlEr2wwKmIhoxFJzGyR59jE6Wtly1aVeOgknGVos1lmTTZKE5bA45eWyfE09/fTDEcdDQO4kBeDWDRclRuWgaGrWNHDTDX6OLPSw+mhhwH9luaMKu+T1hsKrmJswnw226jaaJvinaobg2nu6hOSv7vWg9tZ+EVioUC6o6tZ5ftbrp23XsdOiq9RefQ8uvR4+/j4ipXvxX0cdFSYATFSCaPnPugEzAKoS9RMZUCRsCEcFjnrmXwkMT6maZpNeC6kEwSZG7HDNdBIjGh0VvZhRX77sISNdzVk795eLUFEVARtZlypbZbCSxcrICy8mVEqBdpu2KluvrJPt3QOLwU1PBdQLzLeOm6YthsnXIduDkou3l0SQe5MT46U8izr16QvtmwrQ1LfS94ERxwIEG39+wuCTtWgtTxaGbPIxH2OePmUHlbWbTY6p2WB2q21QbGjQZsAbcAUPmhmDDf/qvTt2azALRrelsD3jFa2c62Y0rrVpoDuMC+aVrHsrZtcr1TahtifUq+06Z6FgQzJtLILY2DYXjYycekC1h2Mx6V3bUO2VK/pzko34/EcDncejbAnQqNGHI91LEhugDO5krZ7JJlrIkAeH91E0kgYarDYJzeW2u1aea0imTQpKtRTuEKEm2v2JBGWND2VQwyfJ4g9qbefiSDa8guSor9y5zyb17B4QSaFVtmFSJbCs2KV7MErZEN/aslPpmP/4Hn/f8fxD4LeTyLexRndrUVXMb394JQ39NWgKXLgnrChPrgleVZFXeCw/X6tAl57c3/Pr4U5+xrtrPKaLV9cjhIEuDjgZ+y4EWL6vNzKtAzn5MuIvfHo468uluQT/wAYnCXC
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Get a media token"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/uploads/media-token"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+A narrow-scope token (7-day expiry) for reading `/uploads/*` and Immich
+proxy URLs via a `?token=` query parameter — for `<img>` tags and video
+players that can't send an `Authorization` header. It can only read
+media; it is not a session credential.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-media-token.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-media-token.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

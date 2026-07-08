@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"content":{"type":"string","maxLength":5000},"milestoneTag":{"type":"string","maxLength":50},"latitude":{"type":"number","nullable":true},"longitude":{"type":"number","nullable":true},"locationName":{"type":"string","nullable":true}}}}}}}

@@ -14,8 +14,13 @@
 services:
   famlin-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      # Context is the repo root (not ./backend): the image also bundles the
+      # member-facing web app (web/ + packages/api-client), which lives
+      # outside backend/ — see backend/Dockerfile. The dev `base` target
+      # doesn't build web; use `npm run dev:web` on the host for web dev
+      # (Vite dev server proxying /api to this container).
+      context: .
+      dockerfile: backend/Dockerfile
       target: base
     environment:
       NODE_ENV: development
@@ -36,3 +41,11 @@ services:
       - /app/node_modules
       - /app/dist
       - /app/admin/node_modules
+      # The member-facing web app builds on the HOST (it needs the root npm
+      # workspace, which isn't mounted into this container) into
+      # backend/dist/web — this more-specific bind punches through the
+      # anonymous /app/dist volume above so the dev backend serves it at /.
+      # Run `npm run build:web` (once) or `npm run watch:web` (rebuild on
+      # change) from the repo root; the backend must (re)start after the
+      # first build to pick it up.
+      - ./backend/dist/web:/app/dist/web

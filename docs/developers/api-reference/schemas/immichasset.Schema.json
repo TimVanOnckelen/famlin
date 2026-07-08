@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"assetId":{"type":"string","format":"uuid"},"type":{"type":"string","enum":["IMAGE","VIDEO"]},"width":{"type":"integer","nullable":true},"height":{"type":"integer","nullable":true},"thumbnailUrl":{"type":"string"},"previewUrl":{"type":"string"},"originalUrl":{"type":"string"}},"title":"ImmichAsset"},"schemaType":"response"}

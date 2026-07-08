@@ -45,7 +45,11 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ./backend
+          # Context is the repo root: the image bundles the member-facing web
+          # app (web/ + packages/api-client), which lives outside backend/ —
+          # see backend/Dockerfile.
+          context: .
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

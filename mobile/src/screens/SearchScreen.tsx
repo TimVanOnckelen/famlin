@@ -8,8 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
-import { api } from '@/api/client';
-import { Post } from '@/types';
+import { searchPosts } from '@famlin/api-client';
 
 export function SearchScreen() {
   const { t } = useTranslation();
@@ -27,12 +26,7 @@ export function SearchScreen() {
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['postSearch', groupId, debouncedQuery],
-    queryFn: async ({ pageParam }: { pageParam?: string }) => {
-      const response = await api.get<{ items: Post[]; nextCursor: string | null }>('/posts/search', {
-        params: { groupId, q: debouncedQuery, cursor: pageParam },
-      });
-      return response.data;
-    },
+    queryFn: ({ pageParam }: { pageParam?: string }) => searchPosts({ groupId, q: debouncedQuery, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: debouncedQuery.length > 0,

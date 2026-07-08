@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Contributing
@@ -36,13 +36,13 @@ Feature suggestions are welcome. Please open an issue and describe:
 5. Ensure the project still builds and runs correctly.
 6. Open a pull request with a clear description of what changed and why.
 
-Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly. All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in both `en` and `nl` locales for any UI string changes.
+Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, web app + shared API client (`packages/api-client`, both with their own Vitest suites), mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly and a full Docker image build. All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in both `en` and `nl` locales for any UI string changes.
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, ...) for commit and PR titles — [release-please](https://github.com/googleapis/release-please) reads them to generate the changelog and version bump automatically, so a clear prefix helps your change show up correctly in the next release.
 
 ## Releases
 
-Famlin uses release-please to automate versioning and changelogs. Merging to `main` keeps an open release pull request up to date; merging that PR cuts a GitHub Release tagged `vX.Y.Z`. The same workflow run then builds and publishes a versioned backend image to `ghcr.io/timvanonckelen/famlin`, which is what `docker-compose.yml` runs by default — see [Server setup](/server-setup) and [Maintenance](/maintenance#building-from-source-instead) if you need to build from source instead.
+Famlin uses release-please to automate versioning and changelogs. Merging to `main` keeps an open release pull request up to date; merging that PR cuts a GitHub Release tagged `vX.Y.Z`. The same workflow run then rewrites the GitHub Release notes into human-readable highlights and breaking changes using [GitHub Models](https://docs.github.com/en/github-models) (the raw commit-level changelog stays in a collapsed section, and `CHANGELOG.md` is untouched; if the model call fails the release simply keeps the auto-generated notes), and builds and publishes a versioned backend image to `ghcr.io/timvanonckelen/famlin`, which is what `docker-compose.yml` runs by default — see [Server setup](/server-setup) and [Maintenance](/maintenance#building-from-source-instead) if you need to build from source instead.
 
 The same release also builds the mobile app with EAS (`mobile-build.yml`, `production` profile, both platforms) and submits it straight to the App Store and Play Store production tracks via `eas submit --auto-submit`. This needs several secrets configured on the repo (Settings → Secrets and variables → Actions), none of which are required just to build:
 
@@ -66,7 +66,7 @@ docker compose up --build
 
 ## Code style
 
-- Use TypeScript for backend and admin code.
+- Use TypeScript for backend, admin, web, and shared-package code.
 - Follow the existing project structure and naming conventions described in the [Architecture](./architecture) page.
 - Keep commits focused and write clear commit messages.
 

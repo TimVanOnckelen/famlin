@@ -1,0 +1,1 @@
+{"parameters":[{"name":"postId","in":"path","required":true,"schema":{"type":"string"}},{"name":"assetUrl","in":"query","schema":{"type":"string"},"description":"Only comments pinned to this photo/video of the post."}]}

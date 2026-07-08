@@ -1,0 +1,152 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 34, 42, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 24px 24px;
+  overflow-y: auto;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-raised);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+}
+
+.modal-textarea {
+  width: 100%;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--fam-text-title);
+  resize: vertical;
+}
+
+.modal-textarea::placeholder {
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+/* ── Type chips (styleguide "Inputs & chips") ───────────────────────────── */
+
+.type-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.type-chip {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+}
+
+.type-chip-active {
+  border: 2px solid var(--fam-primary);
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary-dark);
+  font-weight: 700;
+}
+
+.type-chip-milestone-active {
+  border: 2px solid var(--fam-milestone);
+  background: #fff3dd;
+  color: #8a5a12;
+  font-weight: 700;
+}
+
+/* ── Photo previews ─────────────────────────────────────────────────────── */
+
+.photo-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photo-preview {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--fam-primary-tint);
+}
+
+.photo-preview img,
+.photo-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 34, 42, 0.72);
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modal-error {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c85a34;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Native select reuses .field-input; keep the chevron area breathable. */
+select.field-input {
+  appearance: auto;
+  padding-right: 12px;
+}

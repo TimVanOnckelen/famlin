@@ -215,8 +215,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const t = getT(request);
       const { code, state, error } = request.query as { code?: string; state?: string; error?: string };
 
+      // The app validates that the state it sent survives the whole round
+      // trip (CSRF binding — see performServerMediatedLogin in the mobile
+      // app's utils/oidcLogin.ts) and rejects any callback without it, so
+      // every redirect below must echo it, error paths included.
+      const stateParam = typeof state === 'string' ? `&state=${encodeURIComponent(state)}` : '';
+
       if (error || !code) {
-        return reply.redirect(`famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}`);
+        return reply.redirect(`famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}${stateParam}`);
       }
 
       // The mobile app is a stateless HTTP client with no session on this
@@ -239,13 +245,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const idToken = await exchangeOidcCode({ code, redirectUri });
         const outcome = await completeOidcLogin(idToken, inviteToken, t);
         if ('error' in outcome) {
-          return reply.redirect('famlin://oidc-callback?error=login_failed');
+          return reply.redirect(`famlin://oidc-callback?error=login_failed${stateParam}`);
         }
         const handoff = createOidcHandoff(outcome.result);
-        return reply.redirect(`famlin://oidc-callback?handoff=${handoff}`);
+        return reply.redirect(`famlin://oidc-callback?handoff=${handoff}${stateParam}`);
       } catch (err) {
         if (!(err instanceof OidcError)) fastify.log.error(err);
-        return reply.redirect('famlin://oidc-callback?error=login_failed');
+        return reply.redirect(`famlin://oidc-callback?error=login_failed${stateParam}`);
       }
     }
   );
