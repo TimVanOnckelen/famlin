@@ -11,6 +11,12 @@ dist/
 build/
 web-build/
 
+# Keep api-client build output so mobile's file: dependency works on fresh checkouts
+# (EAS and npm ci for file: deps don't install the package's devDependencies before
+# running prepare, so tsc may be unavailable; committed dist/ lets prepare skip safely).
+!packages/api-client/dist/
+!packages/api-client/dist/**
+
 # Environment variables
 .env
 .env.local

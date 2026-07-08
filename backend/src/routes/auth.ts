@@ -240,8 +240,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
         }
       }
 
+      const redirectUri = `${request.protocol}://${request.hostname}/api/auth/oidc/mobile-callback`;
       try {
-        const redirectUri = `${request.protocol}://${request.hostname}/api/auth/oidc/mobile-callback`;
         const idToken = await exchangeOidcCode({ code, redirectUri });
         const outcome = await completeOidcLogin(idToken, inviteToken, t);
         if ('error' in outcome) {
@@ -250,7 +250,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const handoff = createOidcHandoff(outcome.result);
         return reply.redirect(`famlin://oidc-callback?handoff=${handoff}${stateParam}`);
       } catch (err) {
-        if (!(err instanceof OidcError)) fastify.log.error(err);
+        if (err instanceof OidcError) {
+          fastify.log.warn({ oidcError: err.code, redirectUri }, 'OIDC mobile callback failed');
+        } else {
+          fastify.log.error(err);
+        }
         return reply.redirect(`famlin://oidc-callback?error=login_failed${stateParam}`);
       }
     }
