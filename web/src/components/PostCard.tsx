@@ -75,7 +75,7 @@ function Lightbox({
   );
 }
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
@@ -122,6 +122,8 @@ export function PostCard({ post }: { post: Post }) {
   const timeLine = `${formatRelativeDate(post.createdAt, i18n.language)}${
     post.editedAt ? ` · ${t('common.edited')}` : ''
   }`;
+  // When the feed spans several families, label each post with its group.
+  const groupChip = showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>;
 
   // The styleguide's photo-first rule: with a photo, the photo leads —
   // edge-to-edge hero with the author chip (and milestone title) on top of it.
@@ -202,7 +204,10 @@ export function PostCard({ post }: { post: Post }) {
               <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={44} />
               <div>
                 <div className="post-author-name">{post.author.name}</div>
-                <div className="post-time">{timeLine}</div>
+                <div className="post-meta">
+                  <span className="post-time">{timeLine}</span>
+                  {groupChip}
+                </div>
               </div>
               {favoriteButton}
             </div>
@@ -211,7 +216,12 @@ export function PostCard({ post }: { post: Post }) {
 
         {isMilestone && !hasPhotos && post.content && <div className="post-milestone-title">{post.content}</div>}
         {!isMilestone && post.content && <p className="post-content">{post.content}</p>}
-        {hasPhotos && <div className="post-time">{timeLine}</div>}
+        {hasPhotos && (
+          <div className="post-meta">
+            <span className="post-time">{timeLine}</span>
+            {groupChip}
+          </div>
+        )}
 
         <div className={`post-actions${isMilestone && !hasPhotos ? ' post-actions-milestone' : ''}`}>
           <div className="reaction-wrap">

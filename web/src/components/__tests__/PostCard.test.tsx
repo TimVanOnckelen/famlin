@@ -24,6 +24,16 @@ describe('PostCard', () => {
     expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument();
   });
 
+  it('labels the post with its family when showGroup is set', () => {
+    renderWithQueryClient(<PostCard post={makePost()} showGroup />);
+    expect(screen.getByText('Familie de Vries')).toBeInTheDocument();
+  });
+
+  it('omits the family label by default', () => {
+    renderWithQueryClient(<PostCard post={makePost()} />);
+    expect(screen.queryByText('Familie de Vries')).not.toBeInTheDocument();
+  });
+
   it('renders the milestone badge and title for milestone posts', () => {
     renderWithQueryClient(<PostCard post={makePost({ type: 'MILESTONE', content: 'Emma turns 5! 🎉' })} />);
     expect(screen.getByText(/MILESTONE/)).toBeInTheDocument();

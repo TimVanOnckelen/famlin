@@ -19,7 +19,7 @@ import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { patchPostInCaches } from '@/utils/postCache';
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
@@ -95,6 +95,15 @@ export function PostCard({ post }: { post: Post }) {
 
   const hasPhotos = allPhotoUrls.length > 0;
   const reactors = post.recentReactors ?? [];
+  // Which family this post belongs to — shown when the surrounding list
+  // spans several (multi-group feed, favorites).
+  const groupTag = showGroup && post.group && (
+    <View style={styles.groupTag}>
+      <Text style={styles.groupTagText} numberOfLines={1}>
+        {post.group.name}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={[styles.postCard, isMilestone && !hasPhotos && styles.milestoneCard]}>
@@ -166,6 +175,7 @@ export function PostCard({ post }: { post: Post }) {
                   {post.editedAt ? ` · ${t('common.edited')}` : ''}
                 </Text>
               </View>
+              {groupTag}
               <TouchableOpacity
                 onPress={() => favoriteMutation.mutate()}
                 disabled={favoriteMutation.isPending}
@@ -189,10 +199,13 @@ export function PostCard({ post }: { post: Post }) {
         )}
 
         {hasPhotos && (
-          <Text style={styles.postTime}>
-            {formatRelativeDate(post.createdAt)}
-            {post.editedAt ? ` · ${t('common.edited')}` : ''}
-          </Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.postTime}>
+              {formatRelativeDate(post.createdAt)}
+              {post.editedAt ? ` · ${t('common.edited')}` : ''}
+            </Text>
+            {groupTag}
+          </View>
         )}
 
         {post.latitude != null && post.longitude != null && (
@@ -367,6 +380,24 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
     marginBottom: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  groupTag: {
+    backgroundColor: colors.primaryTint,
+    borderRadius: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    maxWidth: 130,
+    marginBottom: 6,
+  },
+  groupTagText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    color: colors.primaryDark,
   },
   postContent: {
     fontFamily: 'Nunito_400Regular',

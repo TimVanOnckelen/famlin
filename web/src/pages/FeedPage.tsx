@@ -38,6 +38,10 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
   const composerDefaultGroupId =
     selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
 
+  // Label each card with its family whenever the feed spans more than one.
+  const effectiveGroupCount = selectedGroupIds.length > 0 ? selectedGroupIds.length : groups.length;
+  const showGroupOnCards = effectiveGroupCount > 1;
+
   return (
     <div className="feed-shell">
       <AppHeader user={user} onNewPost={() => setComposerOpen(true)} onLogout={onLogout} />
@@ -86,7 +90,7 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
         )}
 
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
+          <PostCard key={post.id} post={post} showGroup={showGroupOnCards} />
         ))}
 
         {postsQuery.hasNextPage && (
