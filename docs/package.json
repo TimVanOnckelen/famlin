@@ -1,13 +1,13 @@
 {
   "name": "famlin-docs",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "private": true,
   "description": "Documentation website for Famlin",
   "license": "MIT",
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "docusaurus gen-api-docs all && docusaurus build",
+    "build": "docusaurus clean-api-docs all && docusaurus gen-api-docs all && docusaurus build",
     "gen-api-docs": "docusaurus gen-api-docs all",
     "clean-api-docs": "docusaurus clean-api-docs all",
     "swizzle": "docusaurus swizzle",

@@ -1,8 +1,20 @@
 name: Mobile build
 
+# Store builds are chained from release-please.yml via workflow_call — the
+# `on: release` event does NOT fire for release-please's GITHUB_TOKEN-created
+# release (GitHub suppresses workflow-triggered-workflow events), same as
+# docker-publish.yml. `on: release` is kept only for manually-published
+# releases; workflow_dispatch runs a manual build without store submission
+# unless the production profile is chosen with a release event.
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Release tag to build (e.g. v1.2.3). Omit to build the calling ref.
+        type: string
+        required: false
   workflow_dispatch:
     inputs:
       platform:
@@ -23,6 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # When chained from release-please, build the released tag; empty
+          # means the triggering ref (release tag / dispatched branch).
+          ref: ${{ inputs.tag_name || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -42,8 +58,12 @@ jobs:
       # Release builds go straight to the App Store / Play Store, which needs
       # store credentials on disk for `eas submit` (referenced via eas.json's
       # $ASC_API_KEY_PATH / $GOOGLE_SERVICE_ACCOUNT_KEY_PATH env-var fields).
+      # A "release run" is either a published-release event or the
+      # workflow_call chain from release-please — i.e. anything that isn't a
+      # manual workflow_dispatch (a called workflow inherits the caller's
+      # event_name, `push` here).
       - name: Write store submission credentials
-        if: github.event_name == 'release'
+        if: github.event_name != 'workflow_dispatch'
         working-directory: mobile
         run: |
           mkdir -p secrets
@@ -51,7 +71,7 @@ jobs:
           echo "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 -d > secrets/google-play.json
 
       - name: Build (manual run)
-        if: github.event_name != 'release'
+        if: github.event_name == 'workflow_dispatch'
         working-directory: mobile
         run: |
           eas build \
@@ -61,7 +81,7 @@ jobs:
             --no-wait
 
       - name: Build and submit to stores (release)
-        if: github.event_name == 'release'
+        if: github.event_name != 'workflow_dispatch'
         working-directory: mobile
         env:
           ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
@@ -78,6 +98,6 @@ jobs:
             --auto-submit
 
       - name: Clean up store credentials
-        if: always() && github.event_name == 'release'
+        if: always() && github.event_name != 'workflow_dispatch'
         working-directory: mobile
         run: rm -rf secrets

@@ -23,6 +23,26 @@
           "type": "json",
           "path": "mobile/app.json",
           "jsonpath": "$.expo.version"
+        },
+        {
+          "type": "json",
+          "path": "backend/admin/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "web/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/api-client/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "docs/package.json",
+          "jsonpath": "$.version"
         }
       ]
     }

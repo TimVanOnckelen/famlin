@@ -44,6 +44,19 @@ jobs:
     with:
       tag_name: ${{ needs.release-please.outputs.tag_name }}
 
+  # Same GITHUB_TOKEN suppression applies to mobile-build.yml's `on: release`
+  # trigger, so the store build+submit is chained here too. `secrets: inherit`
+  # passes the EXPO/App Store/Play Store secrets the build needs.
+  build-mobile:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    permissions:
+      contents: read
+    secrets: inherit
+    uses: ./.github/workflows/mobile-build.yml
+    with:
+      tag_name: ${{ needs.release-please.outputs.tag_name }}
+
   # Rewrite the GitHub Release body into human-readable notes (highlights +
   # breaking changes) using GitHub Models — authenticated by the workflow's
   # own GITHUB_TOKEN via the `models: read` permission, no extra secrets.

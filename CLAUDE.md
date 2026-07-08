@@ -34,7 +34,8 @@ Run from the repo root unless noted. `backend/`, `backend/admin/`, `mobile/`, an
 - `npm run build:ios` / `build:android` — EAS builds.
 
 **Docs site** (`cd docs`)
-- `npm start` — Docusaurus dev server · `npm run build` — static build to `docs/build/` · `npm run typecheck`.
+- `npm start` — Docusaurus dev server · `npm run build` — static build to `docs/build/` (also regenerates the API reference first) · `npm run typecheck`.
+- `npm run gen-api-docs` / `clean-api-docs` — (re)generate `developers/api-reference/` from `docs/openapi/famlin.yaml` (docusaurus-plugin-openapi-docs). The generated MDX + `sidebar.ts` are committed (sidebars-developers.ts imports the sidebar at config-load time, so a fresh checkout must have them), but never hand-edited — edit the spec and regenerate. `npm run build` runs clean+gen automatically; a bare `gen-api-docs` won't overwrite existing files, so run `clean-api-docs` first when regenerating manually.
 
 **Web** (`cd web`, or `npm run dev:web`/`build:web` from the root)
 - `npm run dev` — Vite dev server (port 5174, proxies `/api` to `http://localhost:3000`) · `npm run build` — `tsc && vite build` to `web/dist/` · `npx tsc --noEmit` — typecheck.
@@ -99,7 +100,7 @@ Services live in `backend/src/services/` (`settings.ts`, `notifications.ts`, `in
 | Change | Doc to update |
 | --- | --- |
 | New/changed backend route, prefix, or data model field | `docs/developers/architecture.md` (routes table / data model section) — and the table in this file's [Architecture as-built](#architecture-as-built) section above |
-| New/changed member-facing endpoint, request/response field, auth mechanism, pagination/error convention, or rate limit | `docs/developers/api.md` — the public API reference third-party integrations are built against; keep its endpoint tables and examples in sync |
+| New/changed member-facing endpoint, request/response field, auth mechanism, pagination/error convention, or rate limit | `docs/openapi/famlin.yaml` — the hand-maintained OpenAPI spec the generated API reference (`docs/developers/api-reference/`, docusaurus-plugin-openapi-docs) is built from; regenerate with `npm run gen-api-docs` after editing (clean first, see Docs commands). Auth/conventions/recipes prose lives in `docs/developers/api.md` |
 | New/changed startup env var, Docker Compose service, or deploy step | `docs/docs/server-setup.md` |
 | New/changed OIDC/SSO, allowed-emails, or SMTP setup step | `docs/docs/admin-configuration.md` |
 | New/changed invite flow (creation, redemption, expiry/revocation) | `docs/docs/inviting-family.md` |

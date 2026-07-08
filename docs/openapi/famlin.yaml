@@ -455,9 +455,10 @@ paths:
       summary: Create a post
       description: |
         `uploadedAssetUrls` must be paths returned by the
-        [upload endpoint](#tag/uploads-media) (`/uploads/...`) or Immich proxy
-        paths for an album linked to **this** post's group — arbitrary URLs are
-        rejected. `latitude` and `longitude` must be provided together.
+        [upload endpoint](/developers/api-reference/upload-files) (`/uploads/...`)
+        or Immich proxy paths for an album linked to **this** post's group —
+        arbitrary URLs are rejected. `latitude` and `longitude` must be
+        provided together.
       requestBody:
         required: true
         content:
