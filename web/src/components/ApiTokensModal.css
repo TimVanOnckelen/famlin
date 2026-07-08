@@ -1,0 +1,126 @@
+.api-tokens-card {
+  max-width: 640px;
+}
+
+.api-tokens-intro {
+  font-size: 15px;
+  color: var(--fam-text-muted);
+  line-height: 1.5;
+}
+
+.api-tokens-intro a {
+  color: var(--fam-primary);
+  font-weight: 700;
+}
+
+/* ── One-time display of a freshly created token ────────────────────────── */
+
+.api-token-created {
+  border: 1.5px solid var(--fam-primary);
+  background: var(--fam-primary-tint);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-token-created-heading {
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.api-token-created-warning {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-accent);
+}
+
+.api-token-secret-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.api-token-secret {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: var(--fam-surface);
+  border: 1.5px solid var(--fam-border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+/* ── Create form ────────────────────────────────────────────────────────── */
+
+.api-token-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.api-token-name-field {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ── Existing tokens ────────────────────────────────────────────────────── */
+
+.api-token-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+
+.api-token-item {
+  border: 1.5px solid var(--fam-border);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+}
+
+.api-token-item-main {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.api-token-item-name {
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.api-token-item-preview {
+  font-size: 13px;
+  color: var(--fam-text-muted);
+}
+
+.api-token-item-meta {
+  grid-column: 1;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--fam-text-muted);
+}
+
+.api-token-revoke {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.api-tokens-hint {
+  font-size: 15px;
+  color: var(--fam-text-muted);
+}

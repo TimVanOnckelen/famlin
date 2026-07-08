@@ -5,6 +5,7 @@ import { fetchGroups, fetchPosts, User } from '@famlin/api-client';
 import { AppHeader } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { NewPostModal } from '@/components/NewPostModal';
+import { ApiTokensModal } from '@/components/ApiTokensModal';
 import './FeedPage.css';
 
 export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -13,6 +14,7 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
   // them (the backend scopes to memberships), one or more = just those.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [apiTokensOpen, setApiTokensOpen] = useState(false);
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const groups = groupsQuery.data ?? [];
@@ -44,7 +46,12 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
 
   return (
     <div className="feed-shell">
-      <AppHeader user={user} onNewPost={() => setComposerOpen(true)} onLogout={onLogout} />
+      <AppHeader
+        user={user}
+        onNewPost={() => setComposerOpen(true)}
+        onApiTokens={() => setApiTokensOpen(true)}
+        onLogout={onLogout}
+      />
 
       <main className="feed-column">
         {groups.length > 1 && (
@@ -111,6 +118,8 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
           onClose={() => setComposerOpen(false)}
         />
       )}
+
+      {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
     </div>
   );
 }

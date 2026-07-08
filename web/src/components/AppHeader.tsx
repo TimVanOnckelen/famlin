@@ -7,10 +7,12 @@ import './AppHeader.css';
 export function AppHeader({
   user,
   onNewPost,
+  onApiTokens,
   onLogout,
 }: {
   user: User;
   onNewPost: () => void;
+  onApiTokens: () => void;
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
@@ -40,6 +42,9 @@ export function AppHeader({
                 <div className="user-menu-name">{user.name}</div>
                 <div className="user-menu-email">{user.email}</div>
               </div>
+              <button className="user-menu-item" onClick={onApiTokens}>
+                {t('apiTokens.menuItem')}
+              </button>
               <button className="user-menu-item" onClick={onLogout}>
                 {t('common.logout')}
               </button>

@@ -39,7 +39,9 @@
     "immichNotConfigured": "Immich is niet geconfigureerd",
     "immichUnreachable": "Kan de Immich-server niet bereiken met deze instellingen",
     "immichAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
-    "immichAlbumLinkNotFound": "Immich-albumkoppeling niet gevonden"
+    "immichAlbumLinkNotFound": "Immich-albumkoppeling niet gevonden",
+    "apiTokenSessionRequired": "API-tokens kunnen alleen worden aangemaakt vanuit een gewone inlogsessie, niet met een ander API-token",
+    "apiTokenNotFound": "API-token niet gevonden"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

@@ -5,6 +5,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { config } from '../config.js';
 import { prisma } from '../db.js';
 import { getOidcSettings, isEmailAllowed } from '../services/settings.js';
+import { API_TOKEN_PREFIX, verifyApiToken } from '../services/apiTokens.js';
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user: {
@@ -18,6 +19,11 @@ export interface AuthenticatedRequest extends FastifyRequest {
 declare module 'fastify' {
   interface FastifyRequest {
     user?: AuthenticatedRequest['user'];
+    // How this request authenticated: an interactive login session (JWT) or a
+    // developer personal access token. Routes that mint new credentials
+    // (routes/api-tokens.ts) require 'session' so a leaked PAT can't be used
+    // to create replacement PATs and outlive its own revocation.
+    authMethod?: 'session' | 'api-token';
   }
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -218,11 +224,19 @@ export async function isSessionCurrent(decoded: { id: string; tokenVersion?: num
 export async function authenticateMediaRequest(request: FastifyRequest): Promise<string | null> {
   const authHeader = request.headers.authorization;
   if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const decoded = verifyToken(authHeader.slice(7));
-      if (await isSessionCurrent(decoded)) return decoded.id;
-    } catch {
-      // fall through to the media-token check below
+    const bearer = authHeader.slice(7);
+    if (bearer.startsWith(API_TOKEN_PREFIX)) {
+      // Developer personal access tokens can read media too — verifyApiToken
+      // already checks existence (revocation) and expiry against the DB.
+      const user = await verifyApiToken(bearer);
+      if (user) return user.id;
+    } else {
+      try {
+        const decoded = verifyToken(bearer);
+        if (await isSessionCurrent(decoded)) return decoded.id;
+      } catch {
+        // fall through to the media-token check below
+      }
     }
   }
 
@@ -244,6 +258,20 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       }
 
       const token = authHeader.slice(7);
+
+      // Developer personal access token — the DB row is the credential
+      // (existence = valid, deletion = revoked), so unlike a JWT there is no
+      // signature or tokenVersion to check.
+      if (token.startsWith(API_TOKEN_PREFIX)) {
+        const user = await verifyApiToken(token);
+        if (!user) {
+          return reply.status(401).send({ error: 'Unauthorized' });
+        }
+        request.user = user;
+        request.authMethod = 'api-token';
+        return;
+      }
+
       const decoded = verifyToken(token);
 
       const user = await prisma.user.findUnique({
@@ -263,6 +291,7 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
       const { tokenVersion, ...publicUser } = user;
       request.user = publicUser;
+      request.authMethod = 'session';
     } catch (err) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }

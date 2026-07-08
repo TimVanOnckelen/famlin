@@ -129,6 +129,13 @@ export const pushTokenBodySchema = z.object({
   token: z.string(),
 });
 
+export const createApiTokenBodySchema = z.object({
+  name: z.string().min(1).max(100),
+  // Omitted = the token never expires (revocable any time); capped at ten
+  // years so a typo can't create an effectively-immortal "temporary" token.
+  expiresInDays: z.number().int().positive().max(3650).optional(),
+});
+
 export const updateNotificationBodySchema = z.object({
   read: z.boolean(),
 });
