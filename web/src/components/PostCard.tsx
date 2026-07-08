@@ -227,7 +227,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           <div className="reaction-wrap">
             <button
               className={`action-btn${post.myReaction ? ' action-btn-active' : ''}`}
-              onClick={() => reactMutation.mutate(post.myReaction ?? 'LIKE')}
+              onClick={() => reactMutation.mutate(post.myReaction ?? 'LOVE')}
               disabled={reactMutation.isPending}
             >
               {post.myReaction ? (

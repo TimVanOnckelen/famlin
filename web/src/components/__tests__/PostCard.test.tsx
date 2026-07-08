@@ -48,11 +48,11 @@ describe('PostCard', () => {
     expect(container.querySelector('.post-hero-chip')).toHaveTextContent('Grandpa John');
   });
 
-  it('sends a LIKE when the reaction button is clicked without a prior reaction', async () => {
+  it('sends a LOVE (matching the heart icon) when the reaction button is clicked without a prior reaction', async () => {
     const user = userEvent.setup();
     renderWithQueryClient(<PostCard post={makePost({ likeCount: 0 })} />);
     await user.click(screen.getByRole('button', { name: /^0$/ }));
-    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LIKE');
+    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LOVE');
   });
 
   it('sends the chosen emoji reaction from the picker', async () => {

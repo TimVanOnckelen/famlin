@@ -221,7 +221,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       <View style={[styles.actionsRow, isMilestone && !hasPhotos && styles.actionsRowMilestone]}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => likeMutation.mutate(post.myReaction ?? 'LIKE')}
+          onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
           onLongPress={() => setReactionPickerOpen(true)}
           disabled={likeMutation.isPending}
         >

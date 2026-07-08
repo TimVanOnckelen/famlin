@@ -396,7 +396,7 @@ export function PostDetailScreen() {
               <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
                 <TouchableOpacity
                   style={[styles.likeButton, post.myReaction && styles.likeButtonActive]}
-                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LIKE')}
+                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
                   onLongPress={() => setPostReactionPickerOpen(true)}
                 >
               {post.myReaction ? (
