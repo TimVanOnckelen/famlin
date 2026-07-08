@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.8](https://github.com/TimVanOnckelen/famlin/compare/v0.1.7...v0.1.8) (2026-07-08)
+
+
+### Features
+
+* add group labeling to posts in multi-group feeds ([cf42a0d](https://github.com/TimVanOnckelen/famlin/commit/cf42a0d2f154489c55b677f2516cd16a00ddebf0))
+* add personal access tokens (API tokens) functionality ([b34e33c](https://github.com/TimVanOnckelen/famlin/commit/b34e33c28144d003df0a9b1629ce773162f5e8ec))
+* add profile page with avatar upload and notification preferences ([aacc40a](https://github.com/TimVanOnckelen/famlin/commit/aacc40a45245004035c5ffa2551b25f49f95ac33))
+* enhance documentation with API reference improvements ([6409b7b](https://github.com/TimVanOnckelen/famlin/commit/6409b7bd46908591aaf1f9db7dc58503ceed5e6c))
+* initialize web application with React, Vite, and TypeScript ([ddfbf31](https://github.com/TimVanOnckelen/famlin/commit/ddfbf3175a97d973b98c59a7a81032f8ff62a054))
+* update post reaction from 'LIKE' to 'LOVE' across components and tests ([69870e4](https://github.com/TimVanOnckelen/famlin/commit/69870e4edbd722212d037f6c11a79dafbc306350))
+
 ## [0.1.7](https://github.com/TimVanOnckelen/famlin/compare/v0.1.6...v0.1.7) (2026-07-05)
 
 
