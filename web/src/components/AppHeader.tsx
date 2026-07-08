@@ -7,11 +7,13 @@ import './AppHeader.css';
 export function AppHeader({
   user,
   onNewPost,
+  onProfile,
   onApiTokens,
   onLogout,
 }: {
   user: User;
   onNewPost: () => void;
+  onProfile: () => void;
   onApiTokens: () => void;
   onLogout: () => void;
 }) {
@@ -42,6 +44,9 @@ export function AppHeader({
                 <div className="user-menu-name">{user.name}</div>
                 <div className="user-menu-email">{user.email}</div>
               </div>
+              <button className="user-menu-item" onClick={onProfile}>
+                {t('profile.title')}
+              </button>
               <button className="user-menu-item" onClick={onApiTokens}>
                 {t('apiTokens.menuItem')}
               </button>

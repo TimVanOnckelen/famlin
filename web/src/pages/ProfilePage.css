@@ -1,0 +1,273 @@
+.profile-shell {
+  min-height: 100vh;
+}
+
+.profile-column {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.profile-title {
+  font-size: 27px;
+  font-weight: 900;
+  color: var(--fam-primary);
+}
+
+/* ── Profile card ────────────────────────────────────────────────────────── */
+
+.profile-card {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-avatar-button {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  margin-bottom: 14px;
+}
+
+.profile-avatar-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.profile-avatar-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+.profile-avatar-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--fam-primary);
+  border: 2px solid var(--fam-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.profile-email {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+.profile-admin-badge {
+  margin-top: 12px;
+  background: var(--fam-milestone);
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+}
+
+.profile-error {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-accent);
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+
+.profile-section {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+}
+
+.profile-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--fam-text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.profile-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.profile-setting-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.profile-setting-desc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Notification prefs table ────────────────────────────────────────────── */
+
+.profile-notification-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  text-transform: uppercase;
+}
+
+.profile-notification-spacer,
+.profile-notification-label {
+  flex: 1;
+}
+
+.profile-notification-col {
+  width: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.profile-notification-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.profile-toggle {
+  appearance: none;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: var(--fam-border);
+  position: relative;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.profile-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.profile-toggle:checked {
+  background: var(--fam-primary);
+}
+
+.profile-toggle:checked::after {
+  transform: translateX(18px);
+}
+
+.profile-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+/* ── Language ────────────────────────────────────────────────────────────── */
+
+.profile-language-select {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.profile-language-select:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+/* ── Server info ─────────────────────────────────────────────────────────── */
+
+.profile-server-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-server-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--fam-primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-server-text {
+  min-width: 0;
+}
+
+.profile-server-url {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-logout {
+  margin-top: 8px;
+}

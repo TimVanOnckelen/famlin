@@ -23,14 +23,14 @@ beforeEach(() => {
 
 describe('FeedPage', () => {
   it('shows every family by default (no group filter sent)', async () => {
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     expect(await screen.findByText('Lovely day in the garden.')).toBeInTheDocument();
     expect(fetchPosts).toHaveBeenCalledWith({ groupIds: [], cursor: undefined });
   });
 
   it('filters to one family and back to all', async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await user.click(await screen.findByRole('button', { name: 'Neefjes' }));
     await waitFor(() =>
@@ -45,7 +45,7 @@ describe('FeedPage', () => {
 
   it('selects multiple families at once', async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await user.click(await screen.findByRole('button', { name: 'Familie de Vries' }));
     await user.click(screen.getByRole('button', { name: 'Neefjes' }));
@@ -56,20 +56,20 @@ describe('FeedPage', () => {
 
   it('hides the filter for single-family users', async () => {
     vi.mocked(fetchGroups).mockResolvedValue([groups[0]]);
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     await screen.findByText('Lovely day in the garden.');
     expect(screen.queryByRole('button', { name: 'All families' })).not.toBeInTheDocument();
   });
 
   it('shows the empty state when there are no posts', async () => {
     vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null });
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     expect(await screen.findByText(/No posts yet/)).toBeInTheDocument();
   });
 
   it('offers Show more only when a next cursor exists', async () => {
     vi.mocked(fetchPosts).mockResolvedValue({ items: [makePost()], nextCursor: 'cursor-2' });
-    renderWithQueryClient(<FeedPage user={makeUser()} onLogout={() => {}} />);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     expect(await screen.findByRole('button', { name: 'Show more' })).toBeInTheDocument();
   });
 });

@@ -8,7 +8,15 @@ import { NewPostModal } from '@/components/NewPostModal';
 import { ApiTokensModal } from '@/components/ApiTokensModal';
 import './FeedPage.css';
 
-export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void }) {
+export function FeedPage({
+  user,
+  onOpenProfile,
+  onLogout,
+}: {
+  user: User;
+  onOpenProfile: () => void;
+  onLogout: () => void;
+}) {
   const { t } = useTranslation();
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
@@ -49,6 +57,7 @@ export function FeedPage({ user, onLogout }: { user: User; onLogout: () => void 
       <AppHeader
         user={user}
         onNewPost={() => setComposerOpen(true)}
+        onProfile={onOpenProfile}
         onApiTokens={() => setApiTokensOpen(true)}
         onLogout={onLogout}
       />

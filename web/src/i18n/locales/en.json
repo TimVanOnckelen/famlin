@@ -56,6 +56,29 @@
     "submit": "Post",
     "failed": "Your post couldn't be created. Try again."
   },
+  "profile": {
+    "title": "Profile",
+    "backToFeed": "Back to the feed",
+    "changePhoto": "Change profile photo",
+    "photoUploadFailed": "Your photo couldn't be uploaded. Try again.",
+    "adminBadge": "Admin",
+    "notifications": "Notifications",
+    "push": "Push",
+    "email": "Email",
+    "notifyNewPost": "New posts",
+    "notifyNewComment": "New comments",
+    "notifyNewLike": "Likes",
+    "settings": "Settings",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language",
+    "server": "Server",
+    "connectedTo": "Connected to",
+    "serverVersion": "Server version {{version}}",
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands"
+    }
+  },
   "apiTokens": {
     "menuItem": "API tokens",
     "title": "API tokens",

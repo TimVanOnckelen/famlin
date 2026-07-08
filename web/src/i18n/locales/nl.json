@@ -56,6 +56,29 @@
     "submit": "Plaatsen",
     "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw."
   },
+  "profile": {
+    "title": "Profiel",
+    "backToFeed": "Terug naar de feed",
+    "changePhoto": "Profielfoto wijzigen",
+    "photoUploadFailed": "Je foto kon niet geüpload worden. Probeer opnieuw.",
+    "adminBadge": "Admin",
+    "notifications": "Meldingen",
+    "push": "Push",
+    "email": "E-mail",
+    "notifyNewPost": "Nieuwe berichten",
+    "notifyNewComment": "Nieuwe reacties",
+    "notifyNewLike": "Likes",
+    "settings": "Instellingen",
+    "language": "Taal",
+    "languageDescription": "Kies je voorkeurstaal",
+    "server": "Server",
+    "connectedTo": "Verbonden met",
+    "serverVersion": "Serverversie {{version}}",
+    "languages": {
+      "en": "English",
+      "nl": "Nederlands"
+    }
+  },
   "apiTokens": {
     "menuItem": "API-tokens",
     "title": "API-tokens",

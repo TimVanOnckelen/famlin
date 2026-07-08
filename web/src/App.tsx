@@ -4,10 +4,19 @@ import { fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 
 export default function App() {
   const { user, setAuth, clearSession, loadToken, isLoading, logout } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
+  // No client-side routing yet — the profile page is a simple view switch.
+  const [view, setView] = useState<'feed' | 'profile'>('feed');
+
+  // A session ending on the profile view (logout or 401) shouldn't land the
+  // next login on the profile page.
+  useEffect(() => {
+    if (!user) setView('feed');
+  }, [user]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -41,5 +50,13 @@ export default function App() {
     return null;
   }
 
-  return user ? <FeedPage user={user} onLogout={() => logout()} /> : <LoginPage />;
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  if (view === 'profile') {
+    return <ProfilePage user={user} onBack={() => setView('feed')} onLogout={() => logout()} />;
+  }
+
+  return <FeedPage user={user} onOpenProfile={() => setView('profile')} onLogout={() => logout()} />;
 }
