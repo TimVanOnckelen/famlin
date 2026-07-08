@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string","example":"Family Smith"},"description":{"type":"string","nullable":true},"createdAt":{"type":"string","format":"date-time"},"joinedAt":{"type":"string","format":"date-time","description":"When *you* joined this group."}},"title":"Group"},"schemaType":"response"}

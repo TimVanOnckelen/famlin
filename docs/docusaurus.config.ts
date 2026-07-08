@@ -52,9 +52,33 @@ const config: Config = {
         routeBasePath: 'developers',
         sidebarPath: './sidebars-developers.ts',
         editUrl: 'https://github.com/TimVanOnckelen/famlin/tree/main/docs/',
+        // Renders the generated API-reference pages (openapi/famlin.yaml →
+        // developers/api-reference) with the OpenAPI theme's layout.
+        docItemComponent: '@theme/ApiItem',
+      },
+    ],
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'api',
+        docsPluginId: 'developers',
+        config: {
+          famlin: {
+            specPath: 'openapi/famlin.yaml',
+            outputDir: 'developers/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+              categoryLinkSource: 'tag',
+            },
+            hideSendButton: false,
+            showSchemas: true,
+          },
+        },
       },
     ],
   ],
+
+  themes: ['docusaurus-theme-openapi-docs'],
 
   themeConfig: {
     image: 'img/docusaurus-social-card.jpg',

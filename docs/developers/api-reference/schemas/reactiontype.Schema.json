@@ -1,0 +1,1 @@
+{"schema":{"type":"string","enum":["LIKE","LOVE","HAHA","WOW","SAD","CARE"],"default":"LIKE","title":"ReactionType"},"schemaType":"response"}

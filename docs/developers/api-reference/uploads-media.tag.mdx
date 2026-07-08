@@ -1,0 +1,24 @@
+---
+id: uploads-media
+title: "Uploads & media"
+description: "Uploads & media"
+custom_edit_url: null
+---
+
+
+
+Upload photos/videos and read them back. Files under `/uploads/*` are
+auth-gated: send your normal `Authorization` header, or append
+`?token=<media token>` for contexts that can't send headers (an `<img>`
+tag, a video player).
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

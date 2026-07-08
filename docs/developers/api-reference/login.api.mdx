@@ -1,0 +1,74 @@
+---
+id: login
+title: "Log in with email and password"
+description: "Returns a session token (JWT) valid for 30 days — the credential the"
+sidebar_label: "Log in with email and password"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV91uG0UUfpXRckEcbey0wAUGIdIqFUWBRkmqCtlRd7x77J12d2aZmbVrrEg8BE/Ik/CdmfVfHZoi4ApyEe/P+f3ON+ecXSWmISu9Mvp5kQyTysyUTtLEy5lLhqPkLM9Nq31ymyaO8tYqv8Rj3BXkcqsaVoTaFfnWaiekcOQcnglv3pIWR9+/uumJuaxUIabGis9ORSGXTvz+62/ClyRySwVpr2TFt2NtplOV851sGidaR33xDGqV0bOTSs2pEEp7msWAnWgsTckKOdYjZOGMZs08RwjR/+3RoKA5VZyjG8hGfbIWO4liJ0HMnVjKTV2TLqjoDcd6Lwkn6F2jLAmpCyH5t6oQRkhKeoS0KJHp0rQiL6WeEV/asW6kcwtji/5Yj/UVBJFArVjeG/HoVEjvqW48kkAGj74QtdKtp3j7/BJaqIKln1ty/okpgPoq3CIQ1MnbltIkNwADxcEr4FWpPMAyeOO4JqvE5SXVkq/8siFUyUzeUO47u9HQKIGIqvBsHS+XurGMmFfkWDtKbM04b5WeQQUVrSXcdxJ3O0YOpPESmCH/G8b0Pmv7jHoRLmRAGlqxFF9FrCOfjrge8J+X0Ad9lBtrGen6KWrGIaVCTQPPOiOqe456s9sc1ehF4nWK4o1RKPhWBZZm1rSNkKiMtF6YaDCcEy7SXfhjSF1jmDic2uPTU/7Zz+jCzGaBwMnfqNx+ZfzHYXnd0RmHMe3A6w5in+uCY2Yf9qXuL+pfIIeWNd1rQ86ll/alvdeObqtKTiqKpGcaubMCh2VHdmJMRVJvwnmhf6TFpXH+IZmn4dA/KHah3tL9Mk3ryge8bUQ+6Gwj9We+IOOVZxiSl1yvNe8+P310SLUfFAquZ+m6TaVdC8MFuqmlOXhT7DTff46RZK2xDzPyu7aWGqdQFlzaVHgrtatCN50rGU5YhtFDjT+5QE9t5YwyUUIczfEoI50NMl1lvX4Sj95ONwv+b7dgnYcHHVaPvzzEiluzCK0ZIOUESIr/BByQrMmXhqd+w+zl7u1L3PGgHMjWl4P1NgDCzTE4YXGVtHxMk9L7xg0Hg6msKzRCeifrpqI+puhBcj9hHAqz0OJZkBUFNZVZhqNwt7NWXDOkEbUJYczas5aj2UDHHjmUIMYnIwgdeDsT924CgCmG+hpJvu73+1nK/A8QIyZGeEETXjt6OCKYB5tFBk1TTK2pRXb54vpGvAdO1hdPjC/DXuCQUrDk0OjEQi6xSWSchbHql8CfoXgSohZfh6C+yeIESRPm1dV22J9HOHeGb2jS3+7DvB22W17tzdi92Ts1AcyOB10tzi6fQ4lrG9FDKSwX5n1UzyGyXBcwsoFbigFIYfKKq3NgA2ui1UzKjGHKNmteAITf7i95tZmoKu5VHfjdzvdKMaTiI5e63liH7UtqMWlVVYQFLDBub1mUM4nZ7uNbkEFVS0z3mExY0s6w13XnnjcFl8NDISZLcXwcd4Ca6gl8lqo5Ph6KtU+jq6XgsxsTAZeR48aOjvuDE0fBJfpCL2hOiJdaZJQGNQBjw36iDTMHfMI6wo+lxyoJREPqfXFNJEYvXdx4AqaHcIRNmynKzT02rjRENOcHgCK6BHV4CnSccoGKaWgFaEbMlTiveW/hNBZck8DGoL0h33tUWW1b5/9fBf/OV0HXED2984OmAqnDEhe3p9jCRxhaCpJMAvzENo5eW4YtZZSsVhPpCAvX3R0/Rt+x3WfdXFoVt63RLazGGRP6/luCSPI0FvfkhmNg8arlWA5m5F261ohz64OytzujiJsshCfdJ09tCtaxcsGfLfg/THBhAtnCrAjPVknVjUW8jzb57w9VU0AW
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Log in with email and password"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/auth/login"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Returns a session token (JWT) valid for 30 days — the credential the
+official apps use. For long-lived integrations prefer a
+[personal access token](/developers/api#personal-access-tokens-recommended):
+session tokens expire and are all invalidated when you change your
+password.
+
+Rate-limited to 10 attempts per 15 minutes per IP.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./login.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./login.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

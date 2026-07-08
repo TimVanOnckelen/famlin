@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"Enabled channels","content":{"application/json":{"schema":{"type":"object","properties":{"pushEnabled":{"type":"boolean"},"emailEnabled":{"type":"boolean"}}}}}}}}

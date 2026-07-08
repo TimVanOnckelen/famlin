@@ -1,0 +1,25 @@
+---
+id: api-tokens
+title: "API tokens"
+description: "API tokens"
+custom_edit_url: null
+---
+
+
+
+Self-service **personal access tokens** (`famlin_pat_...`) for scripts and
+integrations. The secret is returned exactly once at creation and stored
+only as a SHA-256 hash. Creating a token requires an interactive login
+session — a request authenticated with another API token gets a `403`,
+so a leaked token can't mint replacements for itself.
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

@@ -1,0 +1,1 @@
+{"parameters":[{"name":"file","in":"path","required":true,"schema":{"type":"string"},"example":"8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg"},{"name":"token","in":"query","schema":{"type":"string"},"description":"Media token, when no `Authorization` header is sent."}]}

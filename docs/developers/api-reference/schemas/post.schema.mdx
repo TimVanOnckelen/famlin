@@ -1,0 +1,32 @@
+---
+id: post
+title: "Post"
+description: ""
+sidebar_label: "Post"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"id":"string","authorId":"string","author":{"id":"string","name":"string","avatarUrl":"string"},"groupId":"string","group":{"id":"string","name":"string"},"content":"First day of school!","type":"UPDATE","milestoneTag":"string","uploadedAssetUrls":["string"],"latitude":0,"longitude":0,"locationName":"string","createdAt":"2024-07-29T15:51:28.071Z","editedAt":"2024-07-29T15:51:28.071Z","commentCount":0,"likeCount":0,"likedByMe":true,"myReaction":"LIKE","reactions":{"LOVE":3,"LIKE":2},"recentReactors":[{"id":"string","name":"string","avatarUrl":"string"}],"favoritedByMe":true}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Post"}
+>
+</Heading>
+
+
+
+
+
+<Schema
+  {...require("./post.Schema.json")}
+>
+  
+</Schema>
+            

@@ -1,0 +1,1715 @@
+# OpenAPI description of Famlin's member-facing REST API.
+#
+# This file is the source the generated API reference in the Developers tab
+# is built from (docusaurus-plugin-openapi-docs — see docusaurus.config.ts and
+# the gen-api-docs script in package.json). It is maintained by hand: when a
+# backend route or response shape changes, update it here and regenerate.
+# Admin-only endpoints under /api/admin are deliberately not described.
+openapi: 3.0.3
+
+info:
+  title: Famlin API
+  version: current
+  description: |
+    Every Famlin server exposes this REST API under `/api` — the same API the
+    official mobile and web apps use. With a [personal access token](/developers/api)
+    you can build your own integrations against your family's server.
+
+    All content is scoped by **group membership**: you can only read and write
+    content in groups (families) you belong to, and there is no way around that
+    per token. See [Using the API](/developers/api) for authentication,
+    conventions, and worked examples.
+
+servers:
+  - url: https://famlin.example.com
+    description: Your own Famlin deployment
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Account
+    description: |
+      Log in and manage the authenticated user's own profile and preferences.
+  - name: API tokens
+    description: |
+      Self-service **personal access tokens** (`famlin_pat_...`) for scripts and
+      integrations. The secret is returned exactly once at creation and stored
+      only as a SHA-256 hash. Creating a token requires an interactive login
+      session — a request authenticated with another API token gets a `403`,
+      so a leaked token can't mint replacements for itself.
+  - name: Groups
+    description: |
+      Read-only access to the groups (families) you belong to. Group management
+      is an admin capability and not part of this API.
+  - name: Posts
+    description: |
+      The heart of Famlin: updates and milestones shared with a group, with
+      photos/videos, reactions, comments, and favorites attached.
+  - name: Comments
+    description: |
+      Comments on a post. Replies are one level deep via `parentId`. A comment
+      can be pinned to a single photo/video of the post via `assetUrl`; replies
+      inherit their parent's pin.
+  - name: Reactions
+    description: |
+      Emoji reactions on posts and comments — one reaction per user per
+      post/comment. Sending your current reaction again removes it; sending a
+      different one switches it.
+  - name: Favorites
+    description: Personal bookmarks on posts, visible only to you.
+  - name: Notifications
+    description: Your in-app notification history.
+  - name: Uploads & media
+    description: |
+      Upload photos/videos and read them back. Files under `/uploads/*` are
+      auth-gated: send your normal `Authorization` header, or append
+      `?token=<media token>` for contexts that can't send headers (an `<img>`
+      tag, a video player).
+  - name: Immich
+    description: |
+      When the server admin has connected an [Immich](https://immich.app)
+      server and linked albums to your groups, these endpoints let you browse
+      those albums and reference their photos in posts. Assets are proxied
+      through Famlin — clients never talk to Immich directly.
+  - name: Push tokens
+    description: Expo push-notification device tokens (for client apps).
+  - name: Invites
+    description: |
+      Public endpoints behind invite links. Invites are created by admins; a
+      valid invite is its own authorization and can provision an account even
+      when the email isn't on the server's allow-list.
+
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      tags: [Account]
+      summary: Log in with email and password
+      security: []
+      description: |
+        Returns a session token (JWT) valid for 30 days — the credential the
+        official apps use. For long-lived integrations prefer a
+        [personal access token](/developers/api#personal-access-tokens-recommended):
+        session tokens expire and are all invalidated when you change your
+        password.
+
+        Rate-limited to 10 attempts per 15 minutes per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                inviteToken:
+                  type: string
+                  description: |
+                    Optional invite token; when valid (and matching this
+                    account's email, if the invite is email-restricted) the
+                    account joins the invite's group as part of the login.
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Session JWT, valid 30 days.
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/me:
+    get:
+      operationId: getMe
+      tags: [Account]
+      summary: Get the authenticated user
+      responses:
+        '200':
+          description: The current user, including their groups
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      groups:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      operationId: updateMe
+      tags: [Account]
+      summary: Update profile and notification preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                avatarUrl:
+                  type: string
+                  nullable: true
+                  description: |
+                    An `/uploads/...` path previously returned by the upload
+                    endpoint. Arbitrary external URLs are rejected. `null`
+                    clears the avatar.
+                  example: /uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg
+                emailOnNewPost: { type: boolean }
+                emailOnNewComment: { type: boolean }
+                emailOnNewLike: { type: boolean }
+                pushOnNewPost: { type: boolean }
+                pushOnNewComment: { type: boolean }
+                pushOnNewLike: { type: boolean }
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [Account]
+      summary: Change your password
+      description: |
+        Immediately invalidates every existing session token for the account.
+        Personal access tokens deliberately stay valid — revoke those
+        individually if needed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword:
+                  type: string
+                  minLength: 8
+                  maxLength: 100
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/server-info:
+    get:
+      operationId: getServerInfo
+      tags: [Account]
+      summary: Get the server version
+      security: []
+      responses:
+        '200':
+          description: Server info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: 0.1.7
+
+  /api/auth/notification-config:
+    get:
+      operationId: getNotificationConfig
+      tags: [Account]
+      summary: Which notification channels the server has enabled
+      security: []
+      responses:
+        '200':
+          description: Enabled channels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pushEnabled: { type: boolean }
+                  emailEnabled: { type: boolean }
+
+  /api/api-tokens:
+    get:
+      operationId: listApiTokens
+      tags: [API tokens]
+      summary: List your API tokens
+      description: Never contains token secrets — only the display preview.
+      responses:
+        '200':
+          description: Your tokens, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createApiToken
+      tags: [API tokens]
+      summary: Create an API token
+      description: |
+        Returns the plaintext secret **exactly once** — it is stored only as a
+        SHA-256 hash and can never be retrieved again.
+
+        Requires a **session-authenticated** request: calling this with another
+        API token returns `403`, so a leaked token can't create replacements
+        for itself and outlive its own revocation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: Photo frame script
+                expiresInDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 3650
+                  description: Omit for a token that never expires.
+      responses:
+        '201':
+          description: The created token, including its secret (shown only here)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedApiToken'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The request was authenticated with an API token instead of a login session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/api-tokens/{id}:
+    delete:
+      operationId: revokeApiToken
+      tags: [API tokens]
+      summary: Revoke an API token
+      description: Takes effect immediately. You can only revoke your own tokens.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found (or not your token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/groups:
+    get:
+      operationId: listGroups
+      tags: [Groups]
+      summary: List your groups
+      responses:
+        '200':
+          description: Groups you belong to
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/groups/{id}:
+    get:
+      operationId: getGroup
+      tags: [Groups]
+      summary: Get one group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/groups/{id}/members:
+    get:
+      operationId: listGroupMembers
+      tags: [Groups]
+      summary: List a group's members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Members, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupMember'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/posts:
+    get:
+      operationId: listPosts
+      tags: [Posts]
+      summary: List posts (your feed)
+      description: |
+        Newest first, cursor-paginated. The feed is a filter over your groups:
+        `groupIds` selects a subset, the legacy `groupId` selects one, and
+        neither means every group you belong to. Requesting a group you're not
+        a member of is a `403`.
+      parameters:
+        - name: groupIds
+          in: query
+          schema: { type: string }
+          description: Comma-separated group ids (must all be groups you're in).
+          example: cmb1ghi,cmb1jkl
+        - name: groupId
+          in: query
+          schema: { type: string }
+          description: Legacy single-group filter.
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+    post:
+      operationId: createPost
+      tags: [Posts]
+      summary: Create a post
+      description: |
+        `uploadedAssetUrls` must be paths returned by the
+        [upload endpoint](#tag/uploads-media) (`/uploads/...`) or Immich proxy
+        paths for an album linked to **this** post's group — arbitrary URLs are
+        rejected. `latitude` and `longitude` must be provided together.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId]
+              properties:
+                groupId: { type: string }
+                content:
+                  type: string
+                  maxLength: 5000
+                type:
+                  type: string
+                  enum: [UPDATE, MILESTONE]
+                  default: UPDATE
+                milestoneTag:
+                  type: string
+                  maxLength: 50
+                  example: First steps!
+                uploadedAssetUrls:
+                  type: array
+                  maxItems: 20
+                  items: { type: string }
+                  example: ['/uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg']
+                latitude:
+                  type: number
+                  minimum: -90
+                  maximum: 90
+                longitude:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+                locationName:
+                  type: string
+                  maxLength: 200
+      responses:
+        '200':
+          description: The created post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/posts/search:
+    get:
+      operationId: searchPosts
+      tags: [Posts]
+      summary: Search posts in a group
+      description: Case-insensitive match on `content` and `milestoneTag`, within one group.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of matching posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/posts/on-this-day:
+    get:
+      operationId: getOnThisDay
+      tags: [Posts]
+      summary: Posts from this day in earlier years
+      description: |
+        Posts created on today's month/day in a prior year. Not paginated —
+        the result set is at most a handful of posts.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Memories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/posts/{id}:
+    get:
+      operationId: getPost
+      tags: [Posts]
+      summary: Get one post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updatePost
+      tags: [Posts]
+      summary: Edit your own post
+      description: |
+        Only the author can edit, and only while still a member of the post's
+        group. Sets `editedAt`. Pass `null` for the location fields to clear
+        the location.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 5000
+                milestoneTag:
+                  type: string
+                  maxLength: 50
+                latitude:
+                  type: number
+                  nullable: true
+                longitude:
+                  type: number
+                  nullable: true
+                locationName:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: The updated post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not the author, or no longer a member of the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deletePost
+      tags: [Posts]
+      summary: Delete a post
+      description: |
+        Permanent — cascades to the post's comments, reactions, and favorites.
+        **There is no undo.** Only the author (or an admin) can delete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not the author or an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{postId}/comments:
+    get:
+      operationId: listComments
+      tags: [Comments]
+      summary: List a post's comments
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: assetUrl
+          in: query
+          schema: { type: string }
+          description: Only comments pinned to this photo/video of the post.
+      responses:
+        '200':
+          description: Comments, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createComment
+      tags: [Comments]
+      summary: Comment on a post
+      description: |
+        `mentionedUserIds` are ids resolved from the group member list for
+        `@name` mentions — the server re-validates each id is a current member
+        of the post's group before notifying them. A reply (`parentId`)
+        inherits its parent's `assetUrl` pin.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                parentId:
+                  type: string
+                  description: Id of the comment being replied to.
+                assetUrl:
+                  type: string
+                  description: One of the post's `uploadedAssetUrls`, to pin the comment to that photo/video.
+                mentionedUserIds:
+                  type: array
+                  maxItems: 20
+                  items: { type: string }
+      responses:
+        '200':
+          description: The created comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/comments/{id}:
+    patch:
+      operationId: updateComment
+      tags: [Comments]
+      summary: Edit your own comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '200':
+          description: The updated comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not the author, or no longer a member of the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteComment
+      tags: [Comments]
+      summary: Delete a comment
+      description: Permanent. Only the author (or an admin) can delete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not the author or an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{postId}/like:
+    post:
+      operationId: reactToPost
+      tags: [Reactions]
+      summary: React to a post
+      description: |
+        Sending your current reaction again **removes** it; a different one
+        **switches** it. One reaction per user per post.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: '#/components/schemas/ReactionType'
+      responses:
+        '200':
+          description: Your reaction after the toggle, plus per-emoji counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReactionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/comments/{commentId}/like:
+    post:
+      operationId: reactToComment
+      tags: [Reactions]
+      summary: React to a comment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: '#/components/schemas/ReactionType'
+      responses:
+        '200':
+          description: Your reaction after the toggle, plus per-emoji counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReactionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{postId}/favorite:
+    post:
+      operationId: toggleFavorite
+      tags: [Favorites]
+      summary: Toggle a favorite
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The new favorite state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorited: { type: boolean }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/favorites:
+    get:
+      operationId: listFavorites
+      tags: [Favorites]
+      summary: List your favorited posts
+      description: |
+        Across all your groups, newest-favorited first, cursor-paginated.
+        Favorites on posts in groups you've since left are hidden.
+      parameters:
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/notifications:
+    get:
+      operationId: listNotifications
+      tags: [Notifications]
+      summary: List your notifications
+      description: The 100 most recent notifications, newest first.
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [Notifications]
+      summary: Count unread notifications
+      responses:
+        '200':
+          description: The unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/notifications/{id}:
+    patch:
+      operationId: updateNotification
+      tags: [Notifications]
+      summary: Mark a notification read or unread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [read]
+              properties:
+                read: { type: boolean }
+      responses:
+        '200':
+          description: The updated notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [Notifications]
+      summary: Mark all notifications read
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/uploads:
+    post:
+      operationId: uploadFiles
+      tags: [Uploads & media]
+      summary: Upload photos or videos
+      description: |
+        Allowed: jpg, jpeg, png, gif, webp, heic, heif, mp4, mov, m4v, webm.
+        Max 200 MB per file, 10 files per request, 60 uploads per 10 minutes.
+        Pass the returned paths into `uploadedAssetUrls` when creating a post,
+        or into `avatarUrl` when updating your profile.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: The stored paths, in upload order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  urls:
+                    type: array
+                    items: { type: string }
+                    example: ['/uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg']
+        '400':
+          description: Unsupported file type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/uploads/media-token:
+    get:
+      operationId: getMediaToken
+      tags: [Uploads & media]
+      summary: Get a media token
+      description: |
+        A narrow-scope token (7-day expiry) for reading `/uploads/*` and Immich
+        proxy URLs via a `?token=` query parameter — for `<img>` tags and video
+        players that can't send an `Authorization` header. It can only read
+        media; it is not a session credential.
+      responses:
+        '200':
+          description: The media token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /uploads/{file}:
+    get:
+      operationId: getUploadedFile
+      tags: [Uploads & media]
+      summary: Download an uploaded file
+      description: |
+        Requires an `Authorization` header **or** `?token=<media token>`.
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema: { type: string }
+          example: 8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg
+        - name: token
+          in: query
+          schema: { type: string }
+          description: Media token, when no `Authorization` header is sent.
+      responses:
+        '200':
+          description: The file bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+            video/*:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/immich/groups/{groupId}/albums:
+    get:
+      operationId: listGroupImmichAlbums
+      tags: [Immich]
+      summary: List a group's linked Immich albums
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Linked albums (empty when Immich isn't configured or nothing is linked)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImmichAlbum'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/immich/albums/{linkId}/assets:
+    get:
+      operationId: listImmichAlbumAssets
+      tags: [Immich]
+      summary: List an album's assets
+      parameters:
+        - name: linkId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Assets with ready-to-use proxy URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImmichAsset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/immich/assets/{linkId}/{assetId}/{variantExt}:
+    get:
+      operationId: getImmichAsset
+      tags: [Immich]
+      summary: Stream an Immich asset rendition
+      description: |
+        `variantExt` is `thumbnail.jpg`, `preview.jpg`, `original.jpg`, or
+        `original.mp4` (thumbnails/previews are always JPEG; only `original`
+        can be a video). Auth like `/uploads/*`: header or `?token=`.
+        `Range` requests are forwarded, so video seeking works.
+      parameters:
+        - name: linkId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: variantExt
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [thumbnail.jpg, preview.jpg, original.jpg, original.mp4]
+        - name: token
+          in: query
+          schema: { type: string }
+          description: Media token, when no `Authorization` header is sent.
+      responses:
+        '200':
+          description: The rendition bytes
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial content (for `Range` requests)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/push-tokens:
+    post:
+      operationId: registerPushToken
+      tags: [Push tokens]
+      summary: Register an Expo push token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: unregisterPushToken
+      tags: [Push tokens]
+      summary: Unregister an Expo push token
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Unregistered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/invites/{token}:
+    get:
+      operationId: previewInvite
+      tags: [Invites]
+      summary: Preview an invite
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The invite's state and group info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePreview'
+
+  /api/invites/{token}/register:
+    post:
+      operationId: registerViaInvite
+      tags: [Invites]
+      summary: Create an account from an invite
+      security: []
+      description: |
+        Creates a local-password account and joins the invite's group in one
+        step. The invite is single-use. When the invite is email-restricted,
+        `email` may be omitted (the invite's address is used).
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, password]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 100
+      responses:
+        '200':
+          description: Logged in as the new account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/invites/{token}/accept:
+    post:
+      operationId: acceptInvite
+      tags: [Invites]
+      summary: Join a group with an existing account
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Joined
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  groupId: { type: string }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        A personal access token (`famlin_pat_...`, created in the web app) or
+        a session JWT from `POST /api/auth/login`. Both are sent the same way:
+        `Authorization: Bearer <token>`.
+
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+      description: Cursor from the previous page's `nextCursor`.
+    take:
+      name: take
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 30
+      description: Page size.
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid, expired, or revoked credential
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotGroupMember:
+      description: You are not a member of this group
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Invalid request body or query (see `details`)
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+              - type: object
+                properties:
+                  details:
+                    type: object
+                    description: Zod field errors.
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable, translated via the `Accept-Language` header (`en`/`nl`).
+      required: [error]
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    ReactionType:
+      type: string
+      enum: [LIKE, LOVE, HAHA, WOW, SAD, CARE]
+      default: LIKE
+
+    ReactionCounts:
+      type: object
+      description: Per-emoji reaction counts; only emojis with at least one reaction appear.
+      additionalProperties:
+        type: integer
+      example:
+        LOVE: 3
+        LIKE: 2
+
+    ReactionResult:
+      type: object
+      properties:
+        myReaction:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ReactionType'
+          description: Your reaction after the toggle (`null` when it was removed).
+        counts:
+          $ref: '#/components/schemas/ReactionCounts'
+
+    UserSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        avatarUrl:
+          type: string
+          nullable: true
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        avatarUrl:
+          type: string
+          nullable: true
+        isAdmin: { type: boolean }
+        emailOnNewPost: { type: boolean }
+        emailOnNewComment: { type: boolean }
+        emailOnNewLike: { type: boolean }
+        pushOnNewPost: { type: boolean }
+        pushOnNewComment: { type: boolean }
+        pushOnNewLike: { type: boolean }
+
+    Group:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: Family Smith }
+        description:
+          type: string
+          nullable: true
+        createdAt: { type: string, format: date-time }
+        joinedAt:
+          type: string
+          format: date-time
+          description: When *you* joined this group.
+
+    GroupMember:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        avatarUrl:
+          type: string
+          nullable: true
+        joinedAt: { type: string, format: date-time }
+
+    Post:
+      type: object
+      properties:
+        id: { type: string }
+        authorId: { type: string }
+        author:
+          $ref: '#/components/schemas/UserSummary'
+        groupId: { type: string }
+        group:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+        content:
+          type: string
+          nullable: true
+          example: First day of school!
+        type:
+          type: string
+          enum: [UPDATE, MILESTONE]
+        milestoneTag:
+          type: string
+          nullable: true
+        uploadedAssetUrls:
+          type: array
+          items: { type: string }
+          description: '`/uploads/...` or `/api/immich/assets/...` paths — auth-gated, see Uploads & media.'
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        locationName:
+          type: string
+          nullable: true
+        createdAt: { type: string, format: date-time }
+        editedAt:
+          type: string
+          format: date-time
+          nullable: true
+        commentCount: { type: integer }
+        likeCount: { type: integer }
+        likedByMe: { type: boolean }
+        myReaction:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ReactionType'
+        reactions:
+          $ref: '#/components/schemas/ReactionCounts'
+        recentReactors:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: The three most recent reactors, newest first.
+        favoritedByMe: { type: boolean }
+
+    PostsPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as `?cursor=` for the next page; `null` on the last page.
+
+    Comment:
+      type: object
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        authorId: { type: string }
+        author:
+          $ref: '#/components/schemas/UserSummary'
+        content: { type: string }
+        assetUrl:
+          type: string
+          nullable: true
+          description: The photo/video this comment is pinned to (`null` = the post as a whole).
+        parentId:
+          type: string
+          nullable: true
+        createdAt: { type: string, format: date-time }
+        editedAt:
+          type: string
+          format: date-time
+          nullable: true
+        likeCount: { type: integer }
+        likedByMe: { type: boolean }
+        myReaction:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ReactionType'
+        reactions:
+          $ref: '#/components/schemas/ReactionCounts'
+
+    ApiToken:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: Photo frame script }
+        tokenPreview:
+          type: string
+          description: First characters of the secret, for telling tokens apart.
+          example: Zx9kQ2aB
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Updated at most every few minutes while the token is in use.
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt: { type: string, format: date-time }
+
+    CreatedApiToken:
+      allOf:
+        - $ref: '#/components/schemas/ApiToken'
+        - type: object
+          properties:
+            token:
+              type: string
+              description: The full secret — shown only in this response.
+              example: famlin_pat_Zx9kQ2aB7cD4eF6gH8iJ0kL1mN3oP5qR7sT9uV1wX3y
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, or `on_this_day`.'
+        message: { type: string }
+        relatedPostId:
+          type: string
+          nullable: true
+        post:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            groupId: { type: string }
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt: { type: string, format: date-time }
+
+    ImmichAlbum:
+      type: object
+      properties:
+        linkId:
+          type: string
+          description: The Famlin-side link id — what the asset endpoints take.
+        albumName: { type: string }
+        assetCount: { type: integer }
+
+    ImmichAsset:
+      type: object
+      properties:
+        assetId: { type: string, format: uuid }
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        thumbnailUrl: { type: string }
+        previewUrl: { type: string }
+        originalUrl: { type: string }
+
+    InvitePreview:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [valid, expired, used, not_found]
+        groupName:
+          type: string
+          nullable: true
+        groupDescription:
+          type: string
+          nullable: true
+        inviterName:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+          description: Set when the invite is restricted to one email address.

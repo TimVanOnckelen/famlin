@@ -1,0 +1,1 @@
+{"schema":{"type":"object","description":"Per-emoji reaction counts; only emojis with at least one reaction appear.","additionalProperties":{"type":"integer"},"example":{"LOVE":3,"LIKE":2},"title":"ReactionCounts"},"schemaType":"response"}

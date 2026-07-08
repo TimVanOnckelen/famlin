@@ -1,0 +1,71 @@
+---
+id: upload-files
+title: "Upload photos or videos"
+description: "Allowed: jpg, jpeg, png, gif, webp, heic, heif, mp4, mov, m4v, webm."
+sidebar_label: "Upload photos or videos"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV1Fv2zYQ/isHPWxNINtJmnWtMQxIhhbrsGJFm6AY7KCipLPNViI5knLiBQb2I/YL90v2HSW3aZ2HPuyty4Mikce777473p1vM+vYq6iteV5n06xzjVX1M91wyPIsqmXIprPsMq0G+oZarrXKrvKs5lB57eQgjp01jb3mekrv3DLHg/F0Bo+lXuR0zaXLacW6Sk+stO4UD7vG43SdBNrx3LxQN3RydEQvzgmgaAEUOR0fpZeQljz/0XGIOT06om4AJesQarXpIgeoealCoLhiSMfOG67JqbgKpE20VPTHuD4LgeOlb0JB1ys2VHkGDWZJipyFibmxfjii1ioqD9lBtHN1L7qxnSfnrQCEYTA2ADy39Sab3qZP7RnMRt9xnlXWRDZRttquidopHycL69sRNCpZDtWK2/QWN45BrS3fcRWhGnbgatSIDHbF5B0p5b3aQEhHbsOd9RA9gGJDjCgYzkptlN9k2/5PEAdnTei1gn3592lwL0BliNbviMxBy8A+WV+zzz5xTDnX6Cql1ORdEA1f7lWHeHy5V0DPN6p1wsQsmwwJMXlcHy0eVk/U6Lg84dHp4js1elI9rkff8yO8n5YPq5N6jETNrnYcnN7n9qUJnXPWR/gtbFMy/p+5yt5bf1+kPkXxc9cqM0Ju1qqU6xC9MqFRAmqtVUrz4qyq2MXRr8osO7XkApcMGe7pQcGmmBSmKQ7GWR/rXTrOBvu4yVFHITB7mhZ2hBzvE/JCh6DlUmuzVo2uc+IbJ+pypAEu29q+Byrcoxr0aNV8LVwdP9zn6llKGGupUX751WTNyZN9Jl7BKjW61RHpUjGSo/4q6IBky3FlpatKQxHsqJ74miind8UKq4H9mr302VT/ILCK0YXpZLJQbaPNeKhx48q2e579Lh3IXht6lmSpZujdtELt9kp0V53XcZOUl6w8+7NOQMyu7m6/Frp7Ru8KfaBVAAnSJCY9JAntgTmTXowIqoYU2JQujJJgQGHvyVsQ8HY8Hhd5321BPyAL+xgACHlwgEIyN4rQjQJU0i9vLmjhbUvFy99eX1AiTgHapLFLbYoxndu4ImDBCROTpqBaqFOb6dwU4oX1+s+UW1M6T6jphwTqx0IatkRJm4VNvg4hHJg8e/kcDkpkeufAlBdaP3f6KUQ2O/r7WEpdtPABgHSgV08BHdqoM5JPhXhR0D9//f0Rr+ziAyPHYqErlE7MRqVUEGXqHTeBusBjeqPFY5rdy/TVg0nNa27kigSxczA3mFGoUobKTjd1P7FIvmCy4WU/+AVSS6VNiP0uYqWbzbdhcAY0zQ3mOxquLMGlUMFCTeWGDg+X3nYOc2FbwuZKu8PDKe1sWtNsSK5d7whSDT5+0GMonQ30IJnElT5IJ0s4gOEq2jwdAzEIMKwaK4FFuG2XllWcGxn+kutjes1Ms0vpUIlYcLpPB2EMIskg6VB9zckTorUsgIre5LX10sqGixdSpuTpFqOOSK4Yle5BPxeTW9logzTBta7Zhs9z5PZjuft/Ut5NykNpiXwTJ65B/gnFqf7dDoVyhtagIbkrlShYKymk2Li9LVVg2NluZRmueqlxeF0rr6XIpxKHA6mIp/L3niGS/dRHYnTRD3MYZDqBcd80vs13h/recEd8r2dJNf1Q7qVYQbgcfgS0tpYzojjpzT++Csjt9l9Oh7dk
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Upload photos or videos"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/uploads"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Allowed: jpg, jpeg, png, gif, webp, heic, heif, mp4, mov, m4v, webm.
+Max 200 MB per file, 10 files per request, 60 uploads per 10 minutes.
+Pass the returned paths into `uploadedAssetUrls` when creating a post,
+or into `avatarUrl` when updating your profile.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./upload-files.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./upload-files.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

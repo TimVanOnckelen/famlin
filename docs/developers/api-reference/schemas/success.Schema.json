@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"success":{"type":"boolean","example":true}},"title":"Success"},"schemaType":"response"}
