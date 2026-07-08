@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/TimVanOnckelen/famlin/compare/v0.1.8...v0.1.9) (2026-07-08)
+
+
+### Bug Fixes
+
+* **mobile:** include api-client dist for EAS builds ([43de6df](https://github.com/TimVanOnckelen/famlin/commit/43de6df59e38140a374d58e4f44c3aa37151c412))
+
 ## [0.1.8](https://github.com/TimVanOnckelen/famlin/compare/v0.1.7...v0.1.8) (2026-07-08)
 
 
