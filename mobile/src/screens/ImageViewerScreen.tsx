@@ -27,8 +27,8 @@ import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { isVideoUrl } from '@/utils/media';
-import { api } from '@/api/client';
 import { Comment } from '@/types';
+import { fetchComments, createComment, deleteComment } from '@famlin/api-client';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -236,10 +236,7 @@ function PhotoCommentsSheet({
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ['comments', postId, assetUrl],
-    queryFn: async () => {
-      const response = await api.get<Comment[]>(`/posts/${postId}/comments`, { params: { assetUrl } });
-      return response.data;
-    },
+    queryFn: () => fetchComments(postId, assetUrl),
     enabled: visible,
   });
 
@@ -250,10 +247,7 @@ function PhotoCommentsSheet({
   }
 
   const commentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const response = await api.post(`/posts/${postId}/comments`, { content, assetUrl });
-      return response.data;
-    },
+    mutationFn: (content: string) => createComment(postId, { content, assetUrl }),
     onSuccess: () => {
       setCommentText('');
       invalidateComments();
@@ -264,9 +258,7 @@ function PhotoCommentsSheet({
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: async (commentId: string) => {
-      await api.delete(`/comments/${commentId}`);
-    },
+    mutationFn: (commentId: string) => deleteComment(commentId),
     onSuccess: () => invalidateComments(),
     onError: (err: any) => {
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'));

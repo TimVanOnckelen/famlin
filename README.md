@@ -8,11 +8,12 @@
 
 > ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
 
-Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend and an Expo React Native mobile app.
+Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend, an Expo React Native mobile app, and a desktop-focused web app.
 
 - **Self-hosted** — run it on your own server (e.g. Synology NAS, VPS, or home server).
 - **Private by default** — every post belongs to exactly one group, and only group members can see it.
 - **Mobile first** — iOS and Android app built with Expo.
+- **Web app** — family members can also follow along in the browser, served at `/` from the same container.
 - **Admin web UI** — manage users, groups, and server settings from `/admin`.
 
 📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
@@ -65,23 +66,24 @@ docker compose exec famlin-backend npx prisma db seed
 
 This creates a group "Familie de Vries" with sample users and posts.
 
-### 4. Test the mobile app
+### 4. Run the web app
 
-#### Option A — Expo web preview in Docker
+The member-facing web app (`web/`) and its shared API layer (`packages/api-client`) are npm workspaces at the repo root:
 
 ```bash
-docker compose -f docker-compose.mobile.yml up
+npm install       # repo root — links and builds @famlin/api-client
+npm run dev:web   # Vite dev server on http://localhost:5174, /api proxied to the backend
 ```
 
-Open http://localhost:8081 in your browser.
+(Or `npm run build:web` to have the backend container itself serve the bundled app at http://localhost:3000/ — see the [Quick start](https://famlin.app/docs/developers/quick-start) guide.)
 
-> Note: native features such as push notifications, camera, and SSO login will not work in the web preview.
-
-#### Option B — Local Expo development build
+### 5. Test the mobile app
 
 If you have Node installed locally (and the backend is already running in Docker):
 
 ```bash
+npm install      # repo root first — mobile's @famlin/api-client file: dependency
+                 # needs the workspace install to build
 cd mobile
 cp .env.example .env
 npm install
@@ -101,9 +103,10 @@ famlin/
   backend/                       Fastify API, Prisma schema, Docker image
     admin/                       React + Vite admin UI
   mobile/                        Expo React Native app
+  web/                           React + Vite member-facing web app (served at /)
+  packages/api-client/           shared API/data layer for mobile + web
   docker-compose.yml             production/standard backend stack
   docker-compose.override.yml    local development with hot reload
-  docker-compose.mobile.yml      Expo web preview in Docker
 ```
 
 ## Useful commands
@@ -173,17 +176,9 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ## Troubleshooting
 
-### Port 8081 is occupied by Docker
+### `npm install` in `mobile/` fails with `tsc: command not found`
 
-If you run `npm run ios` locally while the Docker mobile preview is also running, Expo automatically picks a different port. Stop the Docker preview if you want to work locally:
-
-```bash
-docker compose -f docker-compose.mobile.yml down
-```
-
-### `expo-secure-store` does not work on web
-
-The app automatically uses `AsyncStorage` on web and `SecureStore` on iOS/Android. This is already configured in `mobile/src/utils/storage.ts`.
+Run `npm install` in the repo root first — mobile's `@famlin/api-client` `file:` dependency is built by the root workspace install.
 
 ## License
 

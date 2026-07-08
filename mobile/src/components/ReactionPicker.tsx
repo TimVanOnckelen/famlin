@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { colors } from '@/constants/colors';
-import { REACTION_TYPES, REACTION_EMOJI, ReactionType } from '@/constants/reactions';
+import { REACTION_EMOJI } from '@/constants/reactions';
+import { REACTION_TYPES, ReactionType } from '@famlin/api-client';
 
 // A row of emoji reactions shown in a transparent full-screen modal so a tap
 // anywhere else dismisses it — used from both the post and comment "like"

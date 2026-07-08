@@ -8,7 +8,7 @@ import {
   parseImmichAssetPath,
 } from '../types.js';
 import { notifyGroup, excerptText } from '../services/notifications.js';
-import { isGroupMember } from '../services/groups.js';
+import { isGroupMember, getUserGroupIds } from '../services/groups.js';
 import { shapePost } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
@@ -33,27 +33,50 @@ const postInclude = (userId: string) => ({
   _count: { select: { comments: true, likes: true } },
   // All reaction rows (not just this user's) so the response can show a
   // per-emoji breakdown, not just a total — see services/reactions.ts.
-  likes: { select: { type: true, userId: true } },
+  // Ordered most-recent-first and carrying the reactor's identity so
+  // shapePost can expose recentReactors ("who reacted, not just a count").
+  likes: {
+    select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+    orderBy: { createdAt: 'desc' as const },
+  },
   favorites: { where: { userId }, select: { id: true } },
 });
 
 export default async function postRoutes(fastify: FastifyInstance) {
+  // The feed is a filter over the user's groups: `groupIds` (comma-separated)
+  // selects a subset, the legacy `groupId` selects one, and neither means
+  // every group the user belongs to. Whatever is requested is checked against
+  // their memberships — never trust the ids alone.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
-    const { groupId } = request.query as { groupId?: string };
+    const { groupId, groupIds } = request.query as { groupId?: string; groupIds?: string };
 
-    if (!groupId) {
-      return reply.status(400).send({ error: t('errors.groupIdRequired') });
-    }
+    const requested = groupIds
+      ? [...new Set(groupIds.split(',').filter(Boolean))]
+      : groupId
+        ? [groupId]
+        : null;
 
-    if (!(await isGroupMember(groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    const memberGroupIds = await getUserGroupIds(request.user!.id);
+
+    let effectiveGroupIds: string[];
+    if (requested) {
+      if (requested.length === 0 || requested.some((id) => !memberGroupIds.includes(id))) {
+        return reply.status(403).send({ error: t('errors.notGroupMember') });
+      }
+      effectiveGroupIds = requested;
+    } else {
+      effectiveGroupIds = memberGroupIds;
     }
 
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
+    if (effectiveGroupIds.length === 0) {
+      return { items: [], nextCursor: null };
+    }
+
     const posts = await prisma.post.findMany({
-      where: { groupId },
+      where: { groupId: { in: effectiveGroupIds } },
       include: postInclude(request.user!.id),
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),

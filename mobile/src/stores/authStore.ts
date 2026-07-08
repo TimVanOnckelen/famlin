@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User } from '@/types';
 import { setToken, deleteToken, getToken, setServerUrl, deleteServerUrl, getPushToken, deletePushToken } from '@/utils/storage';
-import { api, setApiBaseUrl, setMediaToken } from '@/api/client';
+import { setApiBaseUrl, setMediaToken, unregisterPushToken } from '@famlin/api-client';
 import { refreshMediaToken } from '@/api/uploads';
 
 interface AuthState {
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     const pushToken = await getPushToken();
     if (pushToken) {
-      await api.delete('/push-tokens', { params: { token: pushToken } }).catch(() => {});
+      await unregisterPushToken(pushToken).catch(() => {});
       await deletePushToken();
     }
     await deleteToken();

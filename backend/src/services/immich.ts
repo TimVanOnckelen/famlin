@@ -165,19 +165,37 @@ export type ImmichAssetVariant = 'thumbnail' | 'preview' | 'original';
 export async function proxyImmichAsset(
   assetId: string,
   variant: ImmichAssetVariant,
-  reply: FastifyReply
+  reply: FastifyReply,
+  rangeHeader?: string
 ): Promise<void> {
   const creds = await requireImmichSettings();
   const path =
     variant === 'original' ? `/assets/${assetId}/original` : `/assets/${assetId}/thumbnail?size=${variant}`;
   // Override the default JSON Accept header — this response is binary image
-  // data, not a JSON payload.
-  const res = await immichFetch(path, creds, { headers: { Accept: '*/*' } });
+  // data, not a JSON payload. The client's Range header must be forwarded:
+  // native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via
+  // byte-range requests and refuse to play when the server ignores them —
+  // web <video> tolerates a full-body 200, so dropping Range only breaks
+  // video on mobile.
+  const headers: Record<string, string> = { Accept: '*/*' };
+  if (rangeHeader) headers.Range = rangeHeader;
+  const res = await immichFetch(path, creds, { headers });
   if (!res.body) throw new ImmichError('unreachable');
 
+  // Relay the status (206 for a satisfied Range) and range/caching headers so
+  // a partial response stays partial for the player.
+  reply.status(res.status);
   reply.header('content-type', res.headers.get('content-type') || 'application/octet-stream');
-  const cacheControl = res.headers.get('cache-control');
-  if (cacheControl) reply.header('cache-control', cacheControl);
+  for (const name of ['content-range', 'accept-ranges', 'cache-control']) {
+    const value = res.headers.get(name);
+    if (value) reply.header(name, value);
+  }
+  // fetch transparently decompresses encoded bodies — only relay a length
+  // when it still describes the bytes actually being sent.
+  if (!res.headers.get('content-encoding')) {
+    const contentLength = res.headers.get('content-length');
+    if (contentLength) reply.header('content-length', contentLength);
+  }
 
   return reply.send(Readable.fromWeb(res.body as import('stream/web').ReadableStream));
 }

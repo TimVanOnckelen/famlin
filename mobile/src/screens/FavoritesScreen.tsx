@@ -8,8 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
-import { api } from '@/api/client';
-import { Post } from '@/types';
+import { fetchFavorites } from '@famlin/api-client';
 
 export function FavoritesScreen() {
   const { t } = useTranslation();
@@ -17,12 +16,7 @@ export function FavoritesScreen() {
 
   const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['favorites'],
-    queryFn: async ({ pageParam }: { pageParam?: string }) => {
-      const response = await api.get<{ items: Post[]; nextCursor: string | null }>('/favorites', {
-        params: { cursor: pageParam },
-      });
-      return response.data;
-    },
+    queryFn: ({ pageParam }: { pageParam?: string }) => fetchFavorites(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });

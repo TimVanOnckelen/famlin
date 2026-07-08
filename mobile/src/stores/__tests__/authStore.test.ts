@@ -14,10 +14,10 @@ jest.mock('@/api/uploads', () => ({
   refreshMediaToken: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/api/client', () => ({
-  api: { delete: jest.fn().mockResolvedValue(undefined) },
+jest.mock('@famlin/api-client', () => ({
   setApiBaseUrl: jest.fn(),
   setMediaToken: jest.fn(),
+  unregisterPushToken: jest.fn().mockResolvedValue(undefined),
 }));
 
 const testUser: User = {
@@ -41,7 +41,7 @@ describe('authStore', () => {
 
   it('setAuth stores the token/server, sets the api base URL, updates state, and refreshes the media token', async () => {
     const storage = require('@/utils/storage');
-    const client = require('@/api/client');
+    const client = require('@famlin/api-client');
     const uploads = require('@/api/uploads');
     const { useAuthStore } = require('@/stores/authStore');
 
@@ -61,7 +61,7 @@ describe('authStore', () => {
 
   it('logout deletes the token AND the server URL and resets state', async () => {
     const storage = require('@/utils/storage');
-    const client = require('@/api/client');
+    const client = require('@famlin/api-client');
     storage.getPushToken.mockResolvedValue(null); // no push token registered
     const { useAuthStore } = require('@/stores/authStore');
 
@@ -80,19 +80,19 @@ describe('authStore', () => {
 
   it('logout also unregisters this device push token when one is stored', async () => {
     const storage = require('@/utils/storage');
-    const client = require('@/api/client');
+    const client = require('@famlin/api-client');
     storage.getPushToken.mockResolvedValue('push-token-xyz');
     const { useAuthStore } = require('@/stores/authStore');
 
     await useAuthStore.getState().logout();
 
-    expect(client.api.delete).toHaveBeenCalledWith('/push-tokens', { params: { token: 'push-token-xyz' } });
+    expect(client.unregisterPushToken).toHaveBeenCalledWith('push-token-xyz');
     expect(storage.deletePushToken).toHaveBeenCalledTimes(1);
   });
 
   it('clearSession deletes the token but PRESERVES the server URL', async () => {
     const storage = require('@/utils/storage');
-    const client = require('@/api/client');
+    const client = require('@famlin/api-client');
     const { useAuthStore } = require('@/stores/authStore');
 
     await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com');

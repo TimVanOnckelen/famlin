@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { getUploadUrl } from '@/api/uploads';
+import { colors } from '@/constants/colors';
 
 interface AvatarProps {
   name: string;
@@ -8,7 +9,7 @@ interface AvatarProps {
   size?: number;
 }
 
-const AVATAR_COLORS = ['#006e94', '#318ea2', '#187191', '#005480', '#ed835e'];
+const AVATAR_COLORS = ['#006e94', '#318ea2', '#4b8b5a', '#005480', '#ed835e'];
 
 function getInitials(name: string) {
   return name
@@ -44,7 +45,7 @@ export function Avatar({ name, avatarUrl, size = 44 }: AvatarProps) {
 
 const styles = StyleSheet.create({
   image: {
-    backgroundColor: '#eee',
+    backgroundColor: colors.border,
   },
   fallback: {
     alignItems: 'center',
@@ -52,6 +53,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: 'Nunito_800ExtraBold',
-    color: '#fff',
+    color: colors.white,
   },
 });

@@ -14,8 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
-import { api } from '@/api/client';
-import { Notification } from '@/types';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@famlin/api-client';
 import { formatDateTime } from '@/i18n/utils';
 
 export function NotificationsScreen() {
@@ -25,10 +24,7 @@ export function NotificationsScreen() {
 
   const { data: notifications, isLoading, refetch } = useQuery({
     queryKey: ['notifications'],
-    queryFn: async () => {
-      const response = await api.get<Notification[]>('/notifications');
-      return response.data;
-    },
+    queryFn: fetchNotifications,
     refetchInterval: 30000,
   });
 
@@ -39,9 +35,7 @@ export function NotificationsScreen() {
   );
 
   const markRead = useMutation({
-    mutationFn: async (id: string) => {
-      await api.patch(`/notifications/${id}`, { read: true });
-    },
+    mutationFn: (id: string) => markNotificationRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unread-count'] });
@@ -49,9 +43,7 @@ export function NotificationsScreen() {
   });
 
   const markAllRead = useMutation({
-    mutationFn: async () => {
-      await api.post('/notifications/mark-all-read');
-    },
+    mutationFn: markAllNotificationsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['unread-count'] });
@@ -160,7 +152,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   unreadItem: {
-    backgroundColor: '#FFF8F3',
+    backgroundColor: colors.primaryTint,
   },
   dotContainer: {
     width: 20,
@@ -177,9 +169,9 @@ const styles = StyleSheet.create({
   },
   notificationMessage: {
     fontFamily: 'Nunito_600SemiBold',
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textTitle,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   notificationTime: {
     fontFamily: 'Nunito_600SemiBold',

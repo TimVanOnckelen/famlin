@@ -15,12 +15,12 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
     "test": "jest"
   },
   "dependencies": {
+    "@famlin/api-client": "file:../packages/api-client",
     "@expo-google-fonts/nunito": "^0.2.3",
     "@expo/metro-runtime": "~57.0.2",
     "@expo/vector-icons": "^15.0.3",
@@ -50,13 +50,11 @@
     "expo-web-browser": "~57.0.0",
     "i18next": "^26.3.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
     "react-i18next": "^17.0.8",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-svg": "15.15.4",
-    "react-native-web": "^0.21.0",
     "react-native-webview": "13.16.1",
     "zustand": "^4.5.2"
   },

@@ -43,3 +43,71 @@ jobs:
     uses: ./.github/workflows/docker-publish.yml
     with:
       tag_name: ${{ needs.release-please.outputs.tag_name }}
+
+  # Rewrite the GitHub Release body into human-readable notes (highlights +
+  # breaking changes) using GitHub Models — authenticated by the workflow's
+  # own GITHUB_TOKEN via the `models: read` permission, no extra secrets.
+  # Only the Release body is touched; CHANGELOG.md stays release-please's.
+  # Best-effort: if the model call fails, the release keeps the standard
+  # auto-generated notes and the run still succeeds.
+  enhance-release-notes:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      models: read
+    steps:
+      - name: Fetch generated release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          gh release view "$TAG_NAME" -R "$GITHUB_REPOSITORY" \
+            --json body --jq .body > release-notes.md
+          {
+            echo "Rewrite these auto-generated release notes for Famlin $TAG_NAME:"
+            echo
+            cat release-notes.md
+          } > prompt.md
+
+      - name: Generate human-readable notes
+        id: ai
+        continue-on-error: true
+        uses: actions/ai-inference@v2
+        with:
+          prompt-file: prompt.md
+          max-completion-tokens: '1500'
+          system-prompt: >-
+            You rewrite auto-generated conventional-commit release notes for
+            Famlin, a self-hosted family updates app. The audience is
+            self-hosting admins and the families using the app. Produce
+            concise GitHub-flavored markdown: a 1-3 sentence summary of the
+            release, then a "### ✨ Highlights" list describing user-facing
+            features and fixes in plain language, and a
+            "### ⚠️ Breaking changes" section ONLY if the input contains
+            breaking changes, stating what an admin must do when upgrading.
+            Skip internal chores, refactors, and dependency bumps unless they
+            affect operators. Preserve any PR/issue links like (#123) on the
+            items you keep. Output raw markdown only — no code fences, and do
+            not repeat the version heading.
+
+      - name: Update release notes
+        if: steps.ai.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          RESPONSE_FILE: ${{ steps.ai.outputs.response-file }}
+        run: |
+          {
+            cat "$RESPONSE_FILE"
+            echo
+            echo "---"
+            echo
+            echo "<details><summary>Full changelog (auto-generated)</summary>"
+            echo
+            cat release-notes.md
+            echo
+            echo "</details>"
+          } > final-notes.md
+          gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file final-notes.md

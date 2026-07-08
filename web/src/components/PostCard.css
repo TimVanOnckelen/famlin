@@ -1,0 +1,478 @@
+/* Post card — from the styleguide's "Post card" and "Photo-first patterns"
+   sections: white 18px-radius cards, photos edge-to-edge with the author chip
+   floating on top, milestones on an amber gradient with the badge pill. */
+
+.post-card {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid #edf1f3;
+  overflow: hidden;
+}
+
+.post-card-milestone {
+  background: linear-gradient(145deg, #fff3dd, #ffe6c0);
+  border: 1.5px solid var(--fam-milestone);
+  box-shadow: 0 3px 16px rgba(238, 177, 84, 0.28);
+}
+
+.post-body {
+  padding: 14px;
+}
+
+/* ── Hero photo (photo leads, chrome floats on top) ─────────────────────── */
+
+.post-hero {
+  position: relative;
+  background: var(--fam-primary-tint);
+}
+
+.post-hero-media {
+  display: block;
+  width: 100%;
+  max-height: 560px;
+  object-fit: cover;
+}
+
+.post-hero-clickable {
+  cursor: pointer;
+}
+
+.post-hero-chip {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--r-pill);
+  padding: 3px 12px 3px 3px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  backdrop-filter: blur(4px);
+}
+
+.post-hero-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 14px 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(20, 10, 5, 0.72));
+  pointer-events: none;
+}
+
+.post-hero-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: white;
+}
+
+/* ── Milestone badge ────────────────────────────────────────────────────── */
+
+.milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--fam-milestone);
+  padding: 4px 13px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 800;
+  color: #5c3d0a;
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+}
+
+.milestone-badge-overlay {
+  position: absolute;
+  right: 56px;
+  top: 12px;
+  margin: 0;
+}
+
+/* ── Extra photo thumbnails ─────────────────────────────────────────────── */
+
+.post-thumbs {
+  display: flex;
+  gap: 6px;
+  padding: 6px 14px 0;
+}
+
+.post-thumb {
+  position: relative;
+  flex: 1;
+  max-width: 33%;
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--fam-primary-tint);
+}
+
+.post-thumb img,
+.post-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.post-thumb-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ── Author row / content ───────────────────────────────────────────────── */
+
+.post-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.post-author-row > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-author-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.post-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+.post-content {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--fam-text-body);
+  margin: 0 0 4px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.post-milestone-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: var(--fam-text-title);
+  margin-bottom: 6px;
+  overflow-wrap: break-word;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────── */
+
+.post-actions {
+  display: flex;
+  gap: 4px;
+  border-top: 1px solid #edf1f3;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.post-actions-milestone {
+  border-top-color: #eccf94;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.action-btn:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.action-btn-active {
+  color: var(--fam-primary);
+}
+
+.reaction-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.favorite-btn-active {
+  color: var(--fam-primary);
+}
+
+.favorite-btn-overlay {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+}
+
+.favorite-btn-overlay:hover {
+  background: white;
+}
+
+/* ── Reaction picker (hover popover) ────────────────────────────────────── */
+
+.reaction-wrap {
+  position: relative;
+}
+
+.reaction-picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  gap: 2px;
+  background: var(--fam-surface);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-raised);
+  border: 1px solid var(--fam-border);
+  padding: 4px 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  z-index: 10;
+}
+
+.reaction-wrap:hover .reaction-picker,
+.reaction-wrap:focus-within .reaction-picker {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.reaction-option {
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px 4px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.1s ease;
+}
+
+.reaction-option:hover {
+  transform: scale(1.3);
+}
+
+.reaction-option-active {
+  background: var(--fam-primary-tint);
+}
+
+/* ── Comments ───────────────────────────────────────────────────────────── */
+
+.comments-section {
+  border-top: 1px solid #edf1f3;
+  margin-top: 10px;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-card-milestone .comments-section {
+  border-top-color: #eccf94;
+}
+
+.comments-hint {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+.comment {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.comment + .comment {
+  margin-top: 10px;
+}
+
+.comment-reply {
+  margin-left: 40px;
+  margin-top: 8px;
+}
+
+.comment-main {
+  min-width: 0;
+}
+
+.comment-bubble {
+  background: var(--fam-bg);
+  border-radius: 4px 16px 16px 16px;
+  padding: 8px 14px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--fam-text-body);
+  overflow-wrap: break-word;
+}
+
+.post-card-milestone .comment-bubble {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.comment-author {
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin-right: 8px;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  padding: 4px 14px 0;
+}
+
+.comment-like {
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.comment-like:hover {
+  color: var(--fam-primary);
+}
+
+.comment-like-active {
+  color: var(--fam-primary);
+}
+
+.comment-composer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.comment-input {
+  flex: 1;
+  background: var(--fam-bg);
+  border: 1.5px solid var(--fam-border);
+  border-radius: 22px;
+  padding: 11px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-title);
+}
+
+.comment-input::placeholder {
+  color: var(--fam-text-muted);
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  background: var(--fam-surface);
+}
+
+.comment-send {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+/* ── Lightbox ───────────────────────────────────────────────────────────── */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 20, 24, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  cursor: zoom-out;
+}
+
+.lightbox-media {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: var(--r-md);
+  cursor: default;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--fam-text-title);
+  font-size: 28px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.lightbox-prev {
+  left: 24px;
+}
+
+.lightbox-next {
+  right: 24px;
+}

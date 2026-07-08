@@ -49,23 +49,42 @@ npm run test:docker
 
 This execs into the running `famlin-backend` container and runs the Vitest suite against a dedicated `<db>_test` database (created automatically on first run) — never the real one, since Postgres isn't published to the host and the suite refuses to run against any database without "test" in its name. Plain `npm test` only works if you have direct Postgres access (e.g. `DATABASE_URL` pointed at a local Postgres instead of Docker).
 
-## 5. Test the mobile app
+## 5. Run the web app
 
-### Option A — Expo web preview in Docker
+The member-facing web app (`web/`) and its shared API layer (`packages/api-client`) are npm workspaces at the repo root, so install there first:
 
 ```bash
-docker compose -f docker-compose.mobile.yml up
+npm install   # repo root — links and builds @famlin/api-client
 ```
 
-Open http://localhost:8081 in your browser.
+Then pick a mode:
 
-> Note: native features such as push notifications, camera, and SSO login will not work in the web preview.
+**Option A — Vite dev server (HMR, fastest iteration)**
 
-### Option B — Local Expo development build
+```bash
+npm run dev:web
+```
+
+Open http://localhost:5174 — `/api` requests are proxied to the backend container on port 3000.
+
+**Option B — bundled, like production**
+
+```bash
+npm run build:web    # or: npm run watch:web (rebuilds on change)
+```
+
+This builds into `backend/dist/web`, which the dev compose overlay bind-mounts into the container — the backend then serves the web app at http://localhost:3000/ exactly as a production deployment would. After the **first** build, restart the backend once so it detects the new bundle (`docker compose restart famlin-backend`); subsequent rebuilds only need a browser refresh.
+
+> After changing `packages/api-client/src/`, rebuild it with `npm run build:api-client` (or rerun the root `npm install`) — the mobile app and the web app both consume the compiled `dist/`, not the TypeScript source.
+
+## 6. Test the mobile app
 
 If you have Node installed locally (and the backend is already running in Docker):
 
 ```bash
+npm install      # repo root first — mobile's @famlin/api-client file: dependency
+                 # needs the workspace install to build (its prepare script
+                 # fails with "tsc: command not found" otherwise)
 cd mobile
 cp .env.example .env
 npm install
@@ -99,6 +118,21 @@ cd backend && npm run test:docker
 
 # Run the mobile test suite (Jest, no device/simulator needed)
 cd mobile && npm test
+
+# Run the shared API client test suite (Vitest)
+cd packages/api-client && npm test
+
+# Run the web app test suite (Vitest + Testing Library, jsdom)
+cd web && npm test
+
+# Rebuild the shared API client after changing packages/api-client/src/
+npm run build:api-client
+
+# Build the web app into backend/dist/web (served by the backend at /)
+npm run build:web
+
+# ...or rebuild it automatically on every change
+npm run watch:web
 ```
 
 ## Production deployment

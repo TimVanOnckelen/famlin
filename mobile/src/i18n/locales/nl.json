@@ -73,6 +73,7 @@
     }
   },
   "feed": {
+    "allFamilies": "Alle families",
     "emptyTitle": "Nog geen berichten in deze groep.",
     "emptySubtitle": "Wees de eerste om iets te delen!",
     "noGroupsTitle": "Je zit nog in geen enkele groep.",

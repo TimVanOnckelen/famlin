@@ -1,0 +1,26 @@
+{
+  "name": "@famlin/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.48.0",
+    "axios": "^1.7.2",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.48.0",
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "vitest": "^2.1.9"
+  }
+}

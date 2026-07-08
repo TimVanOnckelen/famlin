@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
 import { prisma } from '../src/db.js';
+import { updateSettings } from '../src/services/settings.js';
 import { buildTestApp, createUser, createGroupWithMember, authHeader } from './helpers.js';
 
 // listImmichAlbums/getImmichAlbumAssets/getImmichAlbumInfo talk to a real
@@ -268,6 +269,48 @@ describe('immich integration', () => {
       });
       expect(res.statusCode).toBe(404);
       expect(isAssetInAlbumMock).toHaveBeenCalledWith(link.immichAlbumId, '11111111-1111-4111-8111-111111111111');
+    });
+  });
+
+  describe('asset proxy range forwarding', () => {
+    // Native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via
+    // byte-range requests and refuse to play when the server ignores them —
+    // the proxy must forward Range to Immich and relay the 206 back.
+    it('forwards the Range header to Immich and relays the partial response', async () => {
+      const member = await createUser();
+      const group = await createGroupWithMember(member);
+      const link = await linkAlbum(group.id);
+
+      await updateSettings({ immichServerUrl: 'http://immich.local', immichApiKey: 'test-key' });
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(new Uint8Array([0, 1]), {
+          status: 206,
+          headers: {
+            'content-type': 'video/mp4',
+            'content-range': 'bytes 0-1/12345',
+            'accept-ranges': 'bytes',
+          },
+        })
+      );
+
+      try {
+        const res = await app.inject({
+          method: 'GET',
+          url: `/api/immich/assets/${link.id}/11111111-1111-4111-8111-111111111111/original.mp4`,
+          headers: { ...authHeader(member), range: 'bytes=0-1' },
+        });
+
+        expect(res.statusCode).toBe(206);
+        expect(res.headers['content-type']).toBe('video/mp4');
+        expect(res.headers['content-range']).toBe('bytes 0-1/12345');
+        expect(res.headers['accept-ranges']).toBe('bytes');
+
+        const [, init] = fetchMock.mock.calls[0]!;
+        expect((init!.headers as Record<string, string>).Range).toBe('bytes=0-1');
+      } finally {
+        fetchMock.mockRestore();
+        await updateSettings({ immichServerUrl: '', immichApiKey: '' });
+      }
     });
   });
 

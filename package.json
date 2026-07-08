@@ -14,14 +14,22 @@
     "fastify",
     "prisma"
   ],
+  "workspaces": [
+    "packages/*",
+    "web"
+  ],
   "scripts": {
     "dev:backend": "cd backend && npm run dev",
     "test:backend": "cd backend && npm test",
     "dev:admin": "cd backend/admin && npm run dev",
     "dev:mobile": "cd mobile && npm start",
     "dev:docs": "cd docs && npm start",
+    "dev:web": "npm run dev --workspace=web",
     "build:admin": "cd backend/admin && npm run build",
     "build:docs": "cd docs && npm run build",
+    "build:web": "npm run build --workspace=web",
+    "watch:web": "npm run watch --workspace=web",
+    "build:api-client": "npm run build --workspace=packages/api-client",
     "db:migrate": "cd backend && npm run db:migrate",
     "db:seed": "cd backend && npm run db:seed"
   },

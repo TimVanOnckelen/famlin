@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { api } from '@/api/client';
-import { fetchNotificationConfig } from '@/api/auth';
+import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client';
 import { setPushToken } from '@/utils/storage';
 import { useAuthStore } from '@/stores/authStore';
 import { navigate } from '@/navigation/navigationRef';
@@ -93,7 +92,7 @@ async function registerPushTokenAsync() {
     const tokenData = await Notifications.getExpoPushTokenAsync();
     const token = tokenData.data;
 
-    await api.post('/push-tokens', { token });
+    await registerPushToken(token);
     await setPushToken(token);
   } catch (err) {
     console.error('Failed to register push token', err);

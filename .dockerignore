@@ -1,0 +1,20 @@
+# Context for backend/Dockerfile is the repo root — keep it lean. Only
+# backend/, web/, packages/, and the root package(-lock).json are used.
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+**/.env
+**/.env.local
+**/*.log
+.DS_Store
+**/.DS_Store
+
+# Not part of the server image
+mobile
+docs
+website
+design
+graphify-out
+temp

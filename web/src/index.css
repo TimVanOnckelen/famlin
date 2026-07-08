@@ -1,0 +1,134 @@
+/* Design tokens — from design/Famlin Styleguide.dc.html (Deep Teal palette).
+   Keep values in sync with that file; it is the source of truth. */
+:root {
+  --fam-primary: #006e94;
+  --fam-primary-dark: #005480;
+  --fam-grad: linear-gradient(150deg, #318ea2, #005480);
+  --fam-primary-tint: #daf3fe;
+  --fam-accent: #ed835e;
+  --fam-milestone: #eeb154;
+
+  --fam-bg: #edf7fb;
+  --fam-surface: #ffffff;
+  --fam-border: #d9e3e7;
+  --fam-text-muted: #597784;
+  --fam-text-body: #233036;
+  --fam-text-title: #0f222a;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-pill: 100px;
+
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-raised: 0 2px 12px rgba(0, 0, 0, 0.07);
+  --shadow-primary: 0 4px 14px rgba(0, 110, 148, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fam-bg);
+  font-family: 'Nunito', system-ui, sans-serif;
+  color: var(--fam-text-body);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--fam-text-title);
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn {
+  height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--fam-primary);
+  color: white;
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn-secondary {
+  background: var(--fam-surface);
+  color: var(--fam-primary);
+  border: 1.5px solid var(--fam-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--fam-primary-tint);
+}
+
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.field-input {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-title);
+}
+
+.field-input::placeholder {
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}

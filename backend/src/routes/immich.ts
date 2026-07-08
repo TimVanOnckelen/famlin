@@ -113,7 +113,7 @@ export default async function immichRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: t('errors.immichAlbumLinkNotFound') });
       }
 
-      return await proxyImmichAsset(assetId, parsed.variant, reply);
+      return await proxyImmichAsset(assetId, parsed.variant, reply, request.headers.range);
     } catch (err) {
       if (err instanceof ImmichError) return reply.status(immichErrorStatus(err)).send({ error: t(immichErrorKey(err)) });
       throw err;

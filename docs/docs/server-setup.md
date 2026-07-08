@@ -12,7 +12,7 @@ This guide covers running Famlin **in production, for your family** — on a Syn
 - A domain or subdomain pointed at the server (e.g. `famlin.yourdomain.com`), if you want to expose Famlin outside your local network.
 - A reverse proxy that can terminate TLS — Traefik, Nginx, Caddy, or your NAS's built-in reverse proxy all work.
 
-Famlin ships as a single backend container (Fastify API + admin UI, served from the same process) plus a Postgres container. The mobile app talks to it over HTTPS; there's nothing else to run server-side.
+Famlin ships as a single backend container (Fastify API + the family-facing web app at `/` + the admin UI at `/admin`, all served from the same process) plus a Postgres container. Family members can use the web app in a browser or the mobile app over HTTPS; there's nothing else to run server-side.
 
 ## 1. Get the files onto the server
 
@@ -104,7 +104,7 @@ docker compose -f docker-compose.yml up -d
 This starts:
 
 - `famlin-db` — Postgres 16, with a named volume `famlin-db-data` for persistence.
-- `famlin-backend` — the API + admin UI, pulled from `ghcr.io/timvanonckelen/famlin`. On container start it automatically runs `prisma migrate deploy` before starting the server, so schema migrations are applied on every deploy/restart.
+- `famlin-backend` — the API, the family-facing web app (at `/`), and the admin UI (at `/admin`), pulled from `ghcr.io/timvanonckelen/famlin`. On container start it automatically runs `prisma migrate deploy` before starting the server, so schema migrations are applied on every deploy/restart.
 
 Check that both containers are healthy:
 
@@ -144,7 +144,7 @@ Famlin does not terminate TLS itself. Point your reverse proxy at the container'
 
 - Forward the whole path space (`/`, `/api`, `/admin`, `/uploads`) to the backend — everything is served from the one Fastify process.
 - Uploaded photos require a valid session or media token to fetch (see [Security](./security)), not just a correct URL, so your proxy doesn't need to restrict access to `/uploads/` itself — just don't cache responses across different users/sessions.
-- Both the mobile app and the admin UI do OIDC's Authorization Code + PKCE flow directly against your identity provider, then hand the resulting token to the backend — no proxy-level auth or special CORS handling is needed beyond passing requests through as-is.
+- The mobile app, the web app, and the admin UI all do OIDC's Authorization Code + PKCE flow directly against your identity provider, then hand the resulting token to the backend — no proxy-level auth or special CORS handling is needed beyond passing requests through as-is.
 - **Set `TRUST_PROXY=true`** in `.env` once Famlin is behind a reverse proxy, and make sure the proxy sets (not merely appends to) `X-Forwarded-Proto` and `X-Forwarded-Host` on every request it forwards — all the examples below do this. This is what lets Famlin build correct invite links and origin URLs; leaving it `false` behind a proxy, or `true` with no proxy in front, both produce wrong links.
 
 <details>
@@ -198,4 +198,4 @@ If you're on a Synology NAS, the built-in **Control Panel → Login Portal → R
 
 ## Next steps
 
-Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up.
+Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.

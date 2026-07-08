@@ -59,7 +59,10 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
             author: { select: { id: true, name: true, avatarUrl: true } },
             group: { select: { id: true, name: true } },
             _count: { select: { comments: true, likes: true } },
-            likes: { select: { type: true, userId: true } },
+            likes: {
+              select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+              orderBy: { createdAt: 'desc' as const },
+            },
           },
         },
       },
@@ -80,6 +83,7 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
           likedByMe: myReaction !== null,
           myReaction,
           reactions: counts,
+          recentReactors: likes.slice(0, 3).map((like) => like.user),
           favoritedByMe: true,
         };
       }),

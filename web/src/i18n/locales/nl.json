@@ -1,0 +1,66 @@
+{
+  "common": {
+    "appName": "Famlin",
+    "loading": "Bezig...",
+    "or": "of",
+    "logout": "Uitloggen",
+    "error": "Fout",
+    "cancel": "Annuleren",
+    "retry": "Opnieuw proberen",
+    "edited": "bewerkt"
+  },
+  "login": {
+    "subtitle": "Jouw familie, dichterbij",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "jouw@email.com",
+    "passwordLabel": "Wachtwoord",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Inloggen",
+    "loginWithSso": "Inloggen met {{name}}",
+    "loginFailed": "Inloggen mislukt. Controleer je e-mailadres en wachtwoord.",
+    "ssoLoginFailed": "SSO-login is mislukt",
+    "invitationOnly": "Enkel beschikbaar voor familieleden met een uitnodiging"
+  },
+  "feed": {
+    "filterLabel": "Filter op familie",
+    "allFamilies": "Alle families",
+    "newPost": "Nieuw bericht",
+    "milestoneBadge": "🎂 MIJLPAAL",
+    "favorite": "Bewaar als favoriet",
+    "comments_one": "{{count}} reactie",
+    "comments_other": "{{count}} reacties",
+    "empty": "Nog geen berichten — deel de eerste update met je familie!",
+    "loadMore": "Toon meer",
+    "loadFailed": "De feed kon niet geladen worden."
+  },
+  "comments": {
+    "placeholder": "Schrijf een reactie…",
+    "send": "Versturen",
+    "sendFailed": "Je reactie kon niet geplaatst worden. Probeer opnieuw.",
+    "like": "Vind ik leuk",
+    "empty": "Nog geen reacties — wees de eerste!",
+    "loadFailed": "Reacties konden niet geladen worden."
+  },
+  "newPost": {
+    "title": "Nieuw bericht",
+    "group": "Groep",
+    "typeLabel": "Berichttype",
+    "typeUpdate": "Update",
+    "typeMilestone": "🎂 Mijlpaal",
+    "placeholder": "Deel een update met je familie…",
+    "milestonePlaceholder": "Wat is de mijlpaal? (bijv. Emma wordt 5! 🎉)",
+    "addPhotos": "Foto's toevoegen",
+    "addImmich": "Kies uit Immich",
+    "removePhoto": "Foto verwijderen",
+    "submit": "Plaatsen",
+    "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw."
+  },
+  "immich": {
+    "title": "Kies uit Immich",
+    "backToAlbums": "Albums",
+    "empty": "Dit album is leeg.",
+    "loadFailed": "Immich-foto's konden niet geladen worden.",
+    "addCount_one": "Voeg {{count}} foto toe",
+    "addCount_other": "Voeg {{count}} foto's toe"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "common": {
+    "appName": "Famlin",
+    "loading": "Loading...",
+    "or": "or",
+    "logout": "Log out",
+    "error": "Error",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "edited": "edited"
+  },
+  "login": {
+    "subtitle": "Your family, closer",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Log in",
+    "loginWithSso": "Log in with {{name}}",
+    "loginFailed": "Login failed. Check your email and password.",
+    "ssoLoginFailed": "SSO login failed",
+    "invitationOnly": "Only available for family members with an invitation"
+  },
+  "feed": {
+    "filterLabel": "Filter by family",
+    "allFamilies": "All families",
+    "newPost": "New post",
+    "milestoneBadge": "🎂 MILESTONE",
+    "favorite": "Save as favorite",
+    "comments_one": "{{count}} comment",
+    "comments_other": "{{count}} comments",
+    "empty": "No posts yet — share the first update with your family!",
+    "loadMore": "Show more",
+    "loadFailed": "The feed couldn't be loaded."
+  },
+  "comments": {
+    "placeholder": "Write a comment…",
+    "send": "Send",
+    "sendFailed": "Your comment couldn't be posted. Try again.",
+    "like": "Like",
+    "empty": "No comments yet — be the first!",
+    "loadFailed": "Comments couldn't be loaded."
+  },
+  "newPost": {
+    "title": "New post",
+    "group": "Group",
+    "typeLabel": "Post type",
+    "typeUpdate": "Update",
+    "typeMilestone": "🎂 Milestone",
+    "placeholder": "Share an update with your family…",
+    "milestonePlaceholder": "What's the milestone? (e.g. Emma turns 5! 🎉)",
+    "addPhotos": "Add photos",
+    "addImmich": "Choose from Immich",
+    "removePhoto": "Remove photo",
+    "submit": "Post",
+    "failed": "Your post couldn't be created. Try again."
+  },
+  "immich": {
+    "title": "Choose from Immich",
+    "backToAlbums": "Albums",
+    "empty": "This album is empty.",
+    "loadFailed": "Immich photos couldn't be loaded.",
+    "addCount_one": "Add {{count}} photo",
+    "addCount_other": "Add {{count}} photos"
+  }
+}

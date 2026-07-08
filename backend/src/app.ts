@@ -154,12 +154,13 @@ export async function buildApp() {
   await fastify.register(immichRoutes, { prefix: '/api/immich' });
   await fastify.register(inviteRoutes, { prefix: '/api/invites' });
   await fastify.register(inviteLandingRoutes);
-  await fastify.register(landingRoutes);
 
   // Serve admin web UI static build (if present)
   const adminDir = path.join(process.cwd(), 'dist', 'admin');
+  let adminServed = false;
   try {
     await fs.access(adminDir);
+    adminServed = true;
     // wildcard: true (default) resolves each request against the filesystem
     // live, instead of registering a fixed route per file found at boot —
     // required so newly built assets (e.g. from `vite build --watch` in dev)
@@ -174,20 +175,60 @@ export async function buildApp() {
       return reply.sendFile('index.html', adminDir);
     });
 
-    // Anything under /admin that isn't a real static file is a client-side
-    // route (or a stale reference to a since-rebuilt asset) — fall back to
-    // index.html so the SPA router can take over.
-    fastify.setNotFoundHandler((request, reply) => {
-      if (request.raw.url?.startsWith('/admin/')) {
-        return reply.sendFile('index.html', adminDir);
-      }
-      return reply.status(404).send({ error: 'Not found' });
-    });
-
     fastify.log.info('Admin UI served at /admin');
   } catch {
     fastify.log.info('Admin UI build not found, skipping /admin serving');
   }
+
+  // Serve the member-facing web app build (if present) at / — same
+  // single-container pattern as the admin UI above. When there is no web
+  // build (e.g. local backend dev without running `npm run build:web`),
+  // fall back to the original server-rendered landing page instead.
+  const webDir = path.join(process.cwd(), 'dist', 'web');
+  let webServed = false;
+  try {
+    // Check for index.html, not just the directory: the dev compose overlay
+    // bind-mounts ./backend/dist/web, which creates an EMPTY directory on
+    // first run if the host never built the web app — that must still fall
+    // back to the landing page, not serve a 404 at /.
+    await fs.access(path.join(webDir, 'index.html'));
+    webServed = true;
+    await fastify.register(staticPlugin, {
+      root: webDir,
+      prefix: '/',
+      decorateReply: false,
+    });
+
+    fastify.get('/', async (_request, reply) => {
+      return reply.sendFile('index.html', webDir);
+    });
+
+    fastify.log.info('Web app served at /');
+  } catch {
+    await fastify.register(landingRoutes);
+    fastify.log.info('Web app build not found, serving landing page at /');
+  }
+
+  // Anything under /admin (or, when the web app is served, any GET that isn't
+  // an API/uploads path) that doesn't match a real static file is a
+  // client-side route (or a stale reference to a since-rebuilt asset) — fall
+  // back to that SPA's index.html so its router can take over.
+  fastify.setNotFoundHandler((request, reply) => {
+    const url = request.raw.url ?? '';
+    if (adminServed && url.startsWith('/admin/')) {
+      return reply.sendFile('index.html', adminDir);
+    }
+    if (
+      webServed &&
+      request.method === 'GET' &&
+      !url.startsWith('/api/') &&
+      !url.startsWith('/uploads/') &&
+      !url.startsWith('/admin')
+    ) {
+      return reply.sendFile('index.html', webDir);
+    }
+    return reply.status(404).send({ error: 'Not found' });
+  });
 
   fastify.get('/health', async () => ({ status: 'ok' }));
 

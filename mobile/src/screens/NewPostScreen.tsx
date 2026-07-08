@@ -21,14 +21,13 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { api } from '@/api/client';
-import { Group, Post } from '@/types';
+import { Group } from '@/types';
+import { fetchGroups, createPost, getGroupImmichAlbums } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { uploadMedia, getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 import { ImmichPickerModal } from '@/components/ImmichPickerModal';
-import { getGroupImmichAlbums } from '@/api/immich';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
 
@@ -60,10 +59,7 @@ export function NewPostScreen() {
 
   const { data: groups } = useQuery<Group[], Error>({
     queryKey: ['groups'],
-    queryFn: async (): Promise<Group[]> => {
-      const response = await api.get<Group[]>('/groups');
-      return response.data;
-    },
+    queryFn: fetchGroups,
   });
 
   const { data: immichAlbums, isError: immichAlbumsErrored } = useQuery({
@@ -78,10 +74,10 @@ export function NewPostScreen() {
     }
   }, [groups]);
 
-  const createPost = useMutation({
-    mutationFn: async () => {
+  const createPostMutation = useMutation({
+    mutationFn: () => {
       if (!groupId) throw new Error(t('newPost.alerts.noGroupSelected'));
-      const response = await api.post<Post>('/posts', {
+      return createPost({
         groupId,
         content,
         type: isMilestone ? 'MILESTONE' : 'UPDATE',
@@ -91,7 +87,6 @@ export function NewPostScreen() {
         longitude: location?.longitude,
         locationName: location?.locationName,
       });
-      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -165,7 +160,7 @@ export function NewPostScreen() {
         <Text style={styles.headerTitle}>{t('newPost.title')}</Text>
         <TouchableOpacity
           style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-          onPress={() => createPost.mutate()}
+          onPress={() => createPostMutation.mutate()}
           disabled={!canSubmit}
         >
           <Text style={styles.postButtonText}>{t('newPost.postButton')}</Text>
@@ -421,7 +416,8 @@ const styles = StyleSheet.create({
   postButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: 18,
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 100,
   },
   postButtonDisabled: {
@@ -605,7 +601,7 @@ const styles = StyleSheet.create({
   },
   tagChipActive: {
     borderColor: colors.milestone,
-    backgroundColor: '#FFF5E6',
+    backgroundColor: colors.milestoneBg,
   },
   tagChipText: {
     fontFamily: 'Nunito_600SemiBold',
@@ -622,7 +618,7 @@ const styles = StyleSheet.create({
     color: colors.textTitle,
     borderWidth: 1.5,
     borderColor: colors.milestone,
-    backgroundColor: '#FFF5E6',
+    backgroundColor: colors.milestoneBg,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,

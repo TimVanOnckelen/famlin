@@ -14,15 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { api } from '@/api/client';
-
-interface GroupMemberUser {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string | null;
-  joinedAt: string;
-}
+import { fetchGroupMembers } from '@famlin/api-client';
 
 export function GroupMembersScreen() {
   const { t, i18n } = useTranslation();
@@ -32,10 +24,7 @@ export function GroupMembersScreen() {
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['groupMembers', groupId],
-    queryFn: async () => {
-      const response = await api.get<GroupMemberUser[]>(`/groups/${groupId}/members`);
-      return response.data;
-    },
+    queryFn: () => fetchGroupMembers(groupId),
   });
 
   return (

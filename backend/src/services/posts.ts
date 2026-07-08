@@ -8,7 +8,7 @@ import { summarizeReactions } from './reactions.js';
 export function shapePost<
   T extends {
     _count: { comments: number; likes: number };
-    likes: { type: ReactionType; userId: string }[];
+    likes: { type: ReactionType; userId: string; user: { id: string; name: string; avatarUrl: string | null } }[];
     favorites: { id: string }[];
   }
 >(post: T, userId: string) {
@@ -21,6 +21,9 @@ export function shapePost<
     likedByMe: myReaction !== null,
     myReaction,
     reactions: counts,
+    // Who reacted, not just a count — the include orders likes newest-first,
+    // so this is the three most recent reactors.
+    recentReactors: likes.slice(0, 3).map((like) => like.user),
     favoritedByMe: favorites.length > 0,
   };
 }

@@ -17,48 +17,52 @@ import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
-import { api } from '@/api/client';
-import { Post, Group } from '@/types';
+import { Group } from '@/types';
+import { fetchGroups, fetchUnreadNotificationCount, fetchOnThisDay, fetchPosts } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 
 export function FeedScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  // The feed is a filter over the user's families: empty selection = all of
+  // them (the backend scopes to memberships), one or more = just those.
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
-    queryFn: async () => {
-      const response = await api.get<Group[]>('/groups');
-      return response.data;
-    },
+    queryFn: fetchGroups,
   });
 
   const { data: unreadCount } = useQuery({
     queryKey: ['unread-count'],
-    queryFn: async () => {
-      const response = await api.get<{ count: number }>('/notifications/unread-count');
-      return response.data.count;
-    },
+    queryFn: fetchUnreadNotificationCount,
     refetchInterval: 30000,
   });
 
-  const activeGroupId = selectedGroupId || groups?.[0]?.id;
-
-  const { data: onThisDay } = useQuery({
-    queryKey: ['onThisDay', activeGroupId],
-    queryFn: async () => {
-      const response = await api.get<{ items: Post[] }>('/posts/on-this-day', {
-        params: { groupId: activeGroupId },
-      });
-      return response.data.items;
-    },
-    enabled: !!activeGroupId,
-  });
-  const activeGroup = groups?.find((g: Group) => g.id === activeGroupId);
   const groupsLoaded = groups !== undefined;
   const hasGroups = !!groups && groups.length > 0;
+
+  // Group-scoped affordances (members, on-this-day, search context) only
+  // have one clear target when the filter narrows to exactly one family.
+  const effectiveGroupIds =
+    selectedGroupIds.length > 0 ? selectedGroupIds : (groups ?? []).map((g: Group) => g.id);
+  const singleActiveGroup =
+    effectiveGroupIds.length === 1
+      ? groups?.find((g: Group) => g.id === effectiveGroupIds[0])
+      : undefined;
+
+  function toggleGroup(groupId: string) {
+    setSelectedGroupIds((prev) =>
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
+    );
+  }
+
+  const { data: onThisDay } = useQuery({
+    queryKey: ['onThisDay', singleActiveGroup?.id],
+    queryFn: () => fetchOnThisDay(singleActiveGroup!.id),
+    enabled: !!singleActiveGroup,
+  });
 
   const {
     data,
@@ -69,25 +73,26 @@ export function FeedScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['posts', activeGroupId],
-    queryFn: async ({ pageParam }: { pageParam?: string }) => {
-      const response = await api.get<{ items: Post[]; nextCursor: string | null }>('/posts', {
-        params: { groupId: activeGroupId, cursor: pageParam },
-      });
-      return response.data;
-    },
+    queryKey: ['posts', [...selectedGroupIds].sort().join(',') || 'all'],
+    queryFn: ({ pageParam }: { pageParam?: string }) =>
+      fetchPosts({ groupIds: selectedGroupIds, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: !!activeGroupId,
+    enabled: hasGroups,
   });
 
   const posts = data?.pages.flatMap((page) => page.items);
 
+  // Search is still a per-group feature (the backend search endpoint requires
+  // one group) — use the narrowed family, or fall back to the first one, the
+  // same default the single-select feed had.
+  const searchGroup = singleActiveGroup ?? groups?.[0];
+
   function openMembers() {
-    if (!activeGroup) return;
+    if (!singleActiveGroup) return;
     navigation.navigate('GroupMembers', {
-      groupId: activeGroup.id,
-      groupName: activeGroup.name,
+      groupId: singleActiveGroup.id,
+      groupName: singleActiveGroup.name,
     });
   }
 
@@ -97,63 +102,31 @@ export function FeedScreen() {
       <View style={styles.header}>
         <Logo size={36} />
 
-        {!hasGroups && <View style={styles.groupListWrapper} />}
+        {/* Single family: show its name so the context stays clear — the
+            filter row below only appears with more than one family. */}
+        <View style={styles.headerTitleWrapper}>
+          {hasGroups && groups!.length === 1 && (
+            <Text style={styles.headerGroupName} numberOfLines={1}>
+              {groups![0].name}
+            </Text>
+          )}
+        </View>
 
-        {hasGroups && (
-          <>
-            {groups!.length > 1 ? (
-              <FlatList
-                horizontal
-                data={groups}
-                keyExtractor={(item) => item.id}
-                showsHorizontalScrollIndicator={false}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[
-                      styles.groupChip,
-                      item.id === activeGroupId && styles.groupChipActive,
-                    ]}
-                    onPress={() => setSelectedGroupId(item.id)}
-                  >
-                    <Text
-                      style={[
-                        styles.groupChipText,
-                        item.id === activeGroupId && styles.groupChipTextActive,
-                      ]}
-                    >
-                      {item.name}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.groupList}
-                style={styles.groupListWrapper}
-              />
-            ) : (
-              // Single group: show the current group name so the context is always
-              // clear, rendered as a static (non-toggle) chip.
-              <View style={styles.groupListSingle}>
-                <View style={[styles.groupChip, styles.groupChipActive]}>
-                  <Text style={[styles.groupChipText, styles.groupChipTextActive]}>
-                    {activeGroup?.name}
-                  </Text>
-                </View>
-              </View>
-            )}
-            <TouchableOpacity
-              style={styles.membersButton}
-              onPress={openMembers}
-              accessibilityLabel={t('feed.viewMembers')}
-            >
-              <Icon name="users" size={18} color={colors.primary} />
-            </TouchableOpacity>
-          </>
+        {!!singleActiveGroup && (
+          <TouchableOpacity
+            style={styles.membersButton}
+            onPress={openMembers}
+            accessibilityLabel={t('feed.viewMembers')}
+          >
+            <Icon name="users" size={18} color={colors.primary} />
+          </TouchableOpacity>
         )}
 
         {hasGroups && (
           <TouchableOpacity
             style={styles.favoritesButton}
-            onPress={() => navigation.navigate('Search', { groupId: activeGroupId, groupName: activeGroup?.name })}
-            accessibilityLabel={t('search.title', { group: activeGroup?.name || '' })}
+            onPress={() => navigation.navigate('Search', { groupId: searchGroup?.id, groupName: searchGroup?.name })}
+            accessibilityLabel={t('search.title', { group: searchGroup?.name || '' })}
           >
             <Icon name="search" size={20} color={colors.textTitle} />
           </TouchableOpacity>
@@ -182,6 +155,33 @@ export function FeedScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {hasGroups && groups!.length > 1 && (
+        <View style={styles.filterRow}>
+          <FlatList
+            horizontal
+            data={[{ id: 'all', name: t('feed.allFamilies') } as Group, ...groups!]}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => {
+              const isAll = item.id === 'all';
+              const isActive = isAll ? selectedGroupIds.length === 0 : selectedGroupIds.includes(item.id);
+              return (
+                <TouchableOpacity
+                  style={[styles.groupChip, isActive && styles.groupChipActive]}
+                  onPress={() => (isAll ? setSelectedGroupIds([]) : toggleGroup(item.id))}
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+            contentContainerStyle={styles.groupList}
+          />
+        </View>
+      )}
 
       <FlatList
         data={hasGroups ? posts || [] : []}
@@ -244,18 +244,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  groupListWrapper: {
+  headerTitleWrapper: {
     flex: 1,
+    paddingHorizontal: 12,
+  },
+  headerGroupName: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 16,
+    color: colors.textTitle,
+  },
+  filterRow: {
+    paddingVertical: 10,
   },
   groupList: {
     paddingHorizontal: 12,
     gap: 8,
     alignItems: 'center',
-  },
-  groupListSingle: {
-    flexDirection: 'row',
-    flex: 1,
-    paddingHorizontal: 12,
   },
   membersButton: {
     width: 40,
@@ -289,14 +293,16 @@ const styles = StyleSheet.create({
   },
   notificationsBadgeText: {
     fontFamily: 'Nunito_700Bold',
-    fontSize: 10,
+    fontSize: 11,
     color: colors.white,
   },
   groupChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 100,
-    backgroundColor: colors.bg,
+    // The filter row sits on the feed background, so chips are white cards
+    // (they used to be bg-tinted inside the white header).
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
   },

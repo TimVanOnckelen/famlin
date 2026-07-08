@@ -8,3 +8,13 @@ export async function isGroupMember(groupId: string, userId: string): Promise<bo
   });
   return !!membership;
 }
+
+// All groups the user belongs to — the implicit filter for feed queries that
+// span groups (GET /api/posts without an explicit groupIds selection).
+export async function getUserGroupIds(userId: string): Promise<string[]> {
+  const memberships = await prisma.groupMember.findMany({
+    where: { userId },
+    select: { groupId: true },
+  });
+  return memberships.map((m) => m.groupId);
+}
