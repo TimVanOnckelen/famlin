@@ -5,6 +5,12 @@
 node_modules
 **/node_modules
 **/dist
+# packages/api-client/dist is committed and is what the api-client prepare
+# script (packages/api-client/scripts/prepare.js) falls back to when
+# devDependencies aren't locally resolvable (npm workspaces hoist them to the
+# repo root, not into packages/api-client/node_modules) — without it, the
+# webbuild stage's `npm ci` fails outright instead of using the committed dist.
+!packages/api-client/dist
 **/.env
 **/.env.local
 **/*.log
