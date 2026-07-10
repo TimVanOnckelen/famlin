@@ -3,7 +3,7 @@ import { prisma } from '../db.js';
 import { isGroupMember } from '../services/groups.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { paginationQuerySchema } from '../types.js';
-import { summarizeReactions } from '../services/reactions.js';
+import { shapePostsWithPeople } from '../services/posts.js';
 import { getT } from '../i18n/index.js';
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
@@ -63,6 +63,11 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
               select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
               orderBy: { createdAt: 'desc' as const },
             },
+            // Every row here is already this user's own favorite (the outer
+            // query is scoped to userId), so this relation only exists to let
+            // shapePost compute favoritedByMe the same way every other
+            // post-returning endpoint does — it's always exactly one row.
+            favorites: { where: { userId: request.user!.id }, select: { id: true } },
           },
         },
       },
@@ -73,20 +78,10 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
     const { items, nextCursor } = paginate(favorites, take);
 
     return {
-      items: items.map(({ post }) => {
-        const { _count, likes, ...rest } = post;
-        const { counts, myReaction } = summarizeReactions(likes, request.user!.id);
-        return {
-          ...rest,
-          commentCount: _count.comments,
-          likeCount: _count.likes,
-          likedByMe: myReaction !== null,
-          myReaction,
-          reactions: counts,
-          recentReactors: likes.slice(0, 3).map((like) => like.user),
-          favoritedByMe: true,
-        };
-      }),
+      items: await shapePostsWithPeople(
+        items.map(({ post }) => post),
+        request.user!.id
+      ),
       nextCursor,
     };
   });

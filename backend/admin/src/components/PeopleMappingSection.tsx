@@ -7,12 +7,16 @@ interface PeopleMappingSectionProps {
   users: User[];
 }
 
+const UNMAPPED_PREVIEW_COUNT = 18;
+
 export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
   const { t } = useTranslation();
   const [people, setPeople] = useState<MediaPerson[]>([]);
   const [peopleLinks, setPeopleLinks] = useState<MediaPersonLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [personQuery, setPersonQuery] = useState('');
+  const [showAllUnmapped, setShowAllUnmapped] = useState(false);
 
   // Form state for adding/editing a mapping
   const [selectedPerson, setSelectedPerson] = useState<MediaPerson | null>(null);
@@ -97,7 +101,19 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
   };
 
   const mappedPersonIds = new Set(peopleLinks.map((l) => l.externalPersonId));
-  const unmappedPeople = people.filter((p) => !mappedPersonIds.has(p.id));
+  const unmappedPeople = people
+    .filter((p) => !mappedPersonIds.has(p.id))
+    .sort((a, b) => {
+      if (!!a.name !== !!b.name) return a.name ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  const query = personQuery.trim().toLowerCase();
+  const filteredUnmapped = query
+    ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query))
+    : unmappedPeople;
+  const visibleUnmapped = showAllUnmapped
+    ? filteredUnmapped
+    : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT);
 
   if (loading) return <div className="loading">{t('common.loading')}</div>;
 
@@ -235,33 +251,50 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
               </div>
             </form>
           ) : (
-            <ul className="member-cards">
-              {unmappedPeople.map((person) => (
-                <li
-                  key={person.id}
-                  className="member-card"
-                  onClick={() => handleSelectPerson(person)}
-                  style={{ cursor: 'pointer' }}
+            <>
+              <div className="people-toolbar">
+                <input
+                  type="search"
+                  value={personQuery}
+                  onChange={(e) => setPersonQuery(e.target.value)}
+                  placeholder={t('media.peopleMapping.searchPlaceholder')}
+                  aria-label={t('media.peopleMapping.searchPlaceholder')}
+                />
+              </div>
+              {filteredUnmapped.length === 0 ? (
+                <div className="empty">{t('media.peopleMapping.noMatches')}</div>
+              ) : (
+                <ul className="people-grid">
+                  {visibleUnmapped.map((person) => (
+                    <li key={person.id}>
+                      <button type="button" className="person-tile" onClick={() => handleSelectPerson(person)}>
+                        {person.thumbnailDataUri ? (
+                          <img src={person.thumbnailDataUri} alt="" className="person-tile-photo" />
+                        ) : (
+                          <span className="person-tile-photo person-tile-placeholder">
+                            <Icon name="users" size={20} />
+                          </span>
+                        )}
+                        <span className="person-tile-name">
+                          {person.name || t('media.peopleMapping.unnamed')}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {filteredUnmapped.length > UNMAPPED_PREVIEW_COUNT && (
+                <button
+                  type="button"
+                  className="secondary people-show-more"
+                  onClick={() => setShowAllUnmapped((v) => !v)}
                 >
-                  {person.thumbnailDataUri && (
-                    <img
-                      src={person.thumbnailDataUri}
-                      alt={person.name}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: 'var(--r-sm)',
-                        objectFit: 'cover',
-                      }}
-                    />
-                  )}
-                  <span className="member-card-info">
-                    <span className="member-card-name">{person.name}</span>
-                  </span>
-                  <Icon name="chevron-right" size={16} />
-                </li>
-              ))}
-            </ul>
+                  {showAllUnmapped
+                    ? t('media.peopleMapping.showFewer')
+                    : t('media.peopleMapping.showAll', { count: filteredUnmapped.length })}
+                </button>
+              )}
+            </>
           )}
         </>
       )}
