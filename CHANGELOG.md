@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.10](https://github.com/TimVanOnckelen/famlin/compare/v0.1.9...v0.1.10) (2026-07-10)
+
+
+### Features
+
+* add end-to-end tests for local-folder media provider ([b5dd878](https://github.com/TimVanOnckelen/famlin/commit/b5dd8783ea48bfbf5cc00ffc6c82df4cf2d45dd3))
+* implement MediaPickerModal component for selecting media from albums ([c6ef5b8](https://github.com/TimVanOnckelen/famlin/commit/c6ef5b851be21c0584a354c29b04f793f8ac9022))
+
+
+### Bug Fixes
+
+* **api-client:** skip build when dependencies are missing ([de1e14e](https://github.com/TimVanOnckelen/famlin/commit/de1e14ee1742aa14b2cc05ab395db36d8baaa3b2))
+* **dockerignore:** ensure api-client dist is included for build stability ([7a9667d](https://github.com/TimVanOnckelen/famlin/commit/7a9667ddb3e98c0d457967d900a57d4ea3f7688f))
+* **mobile:** surface specific OIDC mobile-callback errors ([1473acf](https://github.com/TimVanOnckelen/famlin/commit/1473acf38c31b9317243db3ace309065306ae778))
+
 ## [0.1.9](https://github.com/TimVanOnckelen/famlin/compare/v0.1.8...v0.1.9) (2026-07-08)
 
 

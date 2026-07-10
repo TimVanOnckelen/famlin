@@ -1,6 +1,6 @@
 {
   "name": "famlin-admin",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "type": "module",
   "description": "React + Vite admin UI for Famlin",
