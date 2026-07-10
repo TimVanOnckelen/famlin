@@ -9,7 +9,7 @@ import {
 } from '../types.js';
 import { emitDomainEvent } from '../events.js';
 import { isGroupMember, getUserGroupIds } from '../services/groups.js';
-import { shapePost } from '../services/posts.js';
+import { shapePost, shapePostsWithPeople } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { getT } from '../i18n/index.js';
@@ -87,7 +87,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     });
 
     const { items, nextCursor } = paginate(posts, take);
-    return { items: items.map((post) => shapePost(post, request.user!.id)), nextCursor };
+    return { items: await shapePostsWithPeople(items, request.user!.id), nextCursor };
   });
 
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
@@ -114,7 +114,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     });
 
     const { items, nextCursor } = paginate(posts, take);
-    return { items: items.map((post) => shapePost(post, request.user!.id)), nextCursor };
+    return { items: await shapePostsWithPeople(items, request.user!.id), nextCursor };
   });
 
   fastify.get('/on-this-day', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -136,7 +136,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const byId = new Map(full.map((p) => [p.id, p]));
     const ordered = posts.map((p) => byId.get(p.id)).filter((p): p is NonNullable<typeof p> => !!p);
 
-    return { items: ordered.map((post) => shapePost(post, request.user!.id)) };
+    return { items: await shapePostsWithPeople(ordered, request.user!.id) };
   });
 
   fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -156,7 +156,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
-    return shapePost(post, request.user!.id);
+    const [shaped] = await shapePostsWithPeople([post], request.user!.id);
+    return shaped;
   });
 
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -197,7 +198,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
       content: post.content,
     });
 
-    return shapePost(post, request.user!.id);
+    // people: [] unenriched — a freshly created post can't wait on an Immich
+    // person-tag crawl before the client sees its own post; the next feed
+    // fetch will carry real tags for it.
+    return { ...shapePost(post, request.user!.id), people: [] };
   });
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -232,7 +236,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
-    return shapePost(updated, request.user!.id);
+    // Same reasoning as POST / above — don't make an edit wait on Immich.
+    return { ...shapePost(updated, request.user!.id), people: [] };
   });
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

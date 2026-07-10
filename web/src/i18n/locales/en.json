@@ -30,6 +30,7 @@
     "favorite": "Save as favorite",
     "comments_one": "{{count}} comment",
     "comments_other": "{{count}} comments",
+    "peopleInPost": "People in this post",
     "empty": "No posts yet — share the first update with your family!",
     "loadMore": "Show more",
     "loadFailed": "The feed couldn't be loaded."
@@ -40,7 +41,10 @@
     "sendFailed": "Your comment couldn't be posted. Try again.",
     "like": "Like",
     "empty": "No comments yet — be the first!",
-    "loadFailed": "Comments couldn't be loaded."
+    "loadFailed": "Comments couldn't be loaded.",
+    "addAttachment": "Attach a photo or video",
+    "removeAttachment": "Remove attachment",
+    "viewAttachment": "View attachment"
   },
   "newPost": {
     "title": "New post",
@@ -121,9 +125,22 @@
     "loadFailed": "Album photos couldn't be loaded.",
     "addCount_one": "Add {{count}} photo",
     "addCount_other": "Add {{count}} photos",
+    "filterByPerson": "Filter by person",
+    "allPeople": "All people",
     "providers": {
       "immich": "Immich",
       "local": "Server folder"
     }
+  },
+  "photos": {
+    "title": "Photos",
+    "filterLabel": "Filter by family",
+    "allFamilies": "All families",
+    "filterByPerson": "Filter by person",
+    "allPeople": "All people",
+    "empty": "No photos yet",
+    "loadFailed": "Photos couldn't be loaded.",
+    "shareToFeed": "Share to feed",
+    "viewPost": "View post"
   }
 }

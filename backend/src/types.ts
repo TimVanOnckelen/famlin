@@ -102,15 +102,26 @@ export const createPostBodySchema = z
   .merge(locationFieldsSchema)
   .refine(requireLatLngTogether, { message: 'latitude and longitude must be provided together', path: ['latitude'] });
 
-export const createCommentBodySchema = z.object({
-  content: z.string().min(1).max(2000),
-  parentId: z.string().optional(),
-  assetUrl: assetPathSchema.optional(),
-  // IDs the client resolved from the group member list while typing "@name" —
-  // the server only trusts these as a set of candidate ids and still
-  // re-validates each one is a current member of the post's group.
-  mentionedUserIds: z.array(z.string()).max(20).optional(),
-});
+export const createCommentBodySchema = z
+  .object({
+    // Optional so a comment can be photo/video-only — the refine below still
+    // requires at least one of content/attachmentUrl.
+    content: z.string().max(2000).optional(),
+    parentId: z.string().optional(),
+    assetUrl: assetPathSchema.optional(),
+    // A photo/video the commenter uploaded specifically for this comment
+    // (via POST /api/uploads), distinct from assetUrl above which instead
+    // pins the comment to an existing asset already on the post.
+    attachmentUrl: uploadPathSchema.optional(),
+    // IDs the client resolved from the group member list while typing "@name" —
+    // the server only trusts these as a set of candidate ids and still
+    // re-validates each one is a current member of the post's group.
+    mentionedUserIds: z.array(z.string()).max(20).optional(),
+  })
+  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+    message: 'content or attachmentUrl is required',
+    path: ['content'],
+  });
 
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE']);
 
@@ -248,6 +259,22 @@ export const testLocalMediaBodySchema = z.object({
   rootPath: z.string().regex(/^\//, 'Must be an absolute path').max(500),
 });
 
+export const newAssetModeSchema = z.enum(['OFF', 'MANUAL', 'AUTO']);
+
+export const updateMediaAlbumLinkBodySchema = z.object({
+  newAssetMode: newAssetModeSchema,
+});
+
+// provider isn't restricted to the registered provider enum here (unlike
+// linkMediaAlbumBodySchema) because a person mapping can outlive a provider
+// being removed from the registry — the row itself is harmless to keep.
+export const createMediaPersonLinkBodySchema = z.object({
+  provider: z.string().min(1).max(50),
+  externalPersonId: z.string().min(1).max(300),
+  label: z.string().min(1).max(100),
+  userId: z.string().optional(),
+});
+
 export const createInviteBodySchema = z.object({
   email: z.string().email().optional(),
   expiresInDays: z.number().int().positive().max(365).optional(),
@@ -261,6 +288,17 @@ export const paginationQuerySchema = z.object({
 export const searchPostsQuerySchema = paginationQuerySchema.extend({
   groupId: z.string(),
   q: z.string().trim().min(1).max(200),
+});
+
+// GET /api/media/groups/:groupId/photos — bigger default/max page than the
+// generic paginationQuerySchema above (a photo grid wants more tiles per
+// page than the feed's 30/100), and its cursor is an opaque base64 keyset
+// token over the in-memory-merged (takenAt, id) ordering rather than a
+// Prisma row id — see services/media/photoTimeline.ts's encodeCursor.
+export const photoTimelineQuerySchema = z.object({
+  cursor: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(200).default(60),
+  personId: z.string().optional(),
 });
 
 export const inviteRegisterBodySchema = z.object({

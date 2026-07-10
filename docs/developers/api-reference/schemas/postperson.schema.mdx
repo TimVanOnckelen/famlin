@@ -1,0 +1,34 @@
+---
+id: postperson
+title: "PostPerson"
+description: "A person mapped by an admin and recognized in a post's photos."
+sidebar_label: "PostPerson"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"id":"string","provider":"immich","label":"string","userId":"string","userName":"string","userAvatarUrl":"string"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostPerson"}
+>
+</Heading>
+
+
+
+A person mapped by an admin and recognized in a post's photos.
+If linked to a Famlin user, includes their profile information.
+
+
+<Schema
+  {...require("./postperson.Schema.json")}
+>
+  
+</Schema>
+            

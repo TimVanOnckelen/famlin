@@ -8,7 +8,10 @@ export type NotifyType =
   | 'new_like_post'
   | 'new_like_comment'
   | 'mention'
-  | 'on_this_day';
+  | 'on_this_day'
+  // A MANUAL-mode MediaAlbumLink picked up new assets (src/jobs/newAssets.ts)
+  // — not tied to any Post, unlike every other type here.
+  | 'new_media_assets';
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().
@@ -30,7 +33,9 @@ export interface ChannelSendArgs {
   recipients: Recipient[];
   message: string;
   settings: ServerSettings;
-  postId: string;
+  // null for event types with no associated post (currently only
+  // new_media_assets, which is scoped to an album/group instead).
+  postId: string | null;
 }
 
 // A delivery mechanism for notifications. The in-app Notification row is NOT

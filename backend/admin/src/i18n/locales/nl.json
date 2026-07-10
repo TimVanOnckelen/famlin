@@ -194,7 +194,15 @@
       "noAlbums": "Nog geen albums gekoppeld aan deze groep.",
       "linkError": "Album koppelen mislukt: {{error}}",
       "unlinkConfirm": "Album \"{{name}}\" ontkoppelen van deze groep?",
-      "unlinkError": "Album ontkoppelen mislukt: {{error}}"
+      "unlinkError": "Album ontkoppelen mislukt: {{error}}",
+      "newAssetMode": "Automatisch toevoegen",
+      "newAssetMode.off": "Uit",
+      "newAssetMode.manual": "Handmatig (melding)",
+      "newAssetMode.auto": "Automatisch (bericht)",
+      "newAssetMode.offHelp": "Nieuwe foto's in dit album worden niet aan leden getoond.",
+      "newAssetMode.manualHelp": "Leden krijgen een melding wanneer nieuwe foto's in dit album verschijnen.",
+      "newAssetMode.autoHelp": "Een bericht wordt automatisch aangemaakt in de groepsfeed wanneer nieuwe foto's verschijnen.",
+      "updateModeError": "Modus bijwerken mislukt: {{error}}"
     }
   },
   "content": {
@@ -202,20 +210,41 @@
     "tabPosts": "Berichten",
     "tabComments": "Reacties",
     "allGroups": "Alle groepen",
+    "allAuthors": "Alle auteurs",
+    "searchPlaceholder": "Zoek in inhoud…",
+    "clearFilters": "Filters wissen",
+    "milestone": "Mijlpaal",
+    "noText": "(geen tekst)",
+    "commentsTooltip": "Reacties",
+    "likesTooltip": "Likes",
     "table": {
       "group": "Groep",
       "author": "Auteur",
       "content": "Inhoud",
+      "comment": "Reactie",
+      "onPost": "Bij bericht",
+      "activity": "Activiteit",
       "date": "Datum",
       "actions": "Acties"
     },
     "deleteConfirm": "Weet je zeker dat je dit wilt verwijderen?",
     "noPosts": "Geen berichten gevonden.",
-    "noComments": "Geen reacties gevonden."
+    "noComments": "Geen reacties gevonden.",
+    "noResults": "Niets gevonden met deze filters."
   },
   "serverSettings": {
     "title": "Serverinstellingen",
     "general": "Algemeen",
+    "generalDesc": "Taal en app store-links.",
+    "signInAccess": "Aanmelden & toegang",
+    "notifications": "Meldingen",
+    "media": "Media",
+    "statusConfigured": "Geconfigureerd",
+    "statusNotConfigured": "Niet ingesteld",
+    "statusEnabled": "Ingeschakeld",
+    "statusDisabled": "Uitgeschakeld",
+    "unsavedChanges": "Je hebt niet-opgeslagen wijzigingen",
+    "discard": "Verwerpen",
     "defaultLanguage": "Standaardtaal",
     "defaultLanguageHint": "Gebruikt voor server-gerenderde pagina's zonder ingelogde gebruiker, zoals de uitnodigingspagina.",
     "appStoreUrl": "App Store-URL",
@@ -230,7 +259,8 @@
     "oidcScopes": "Scopes",
     "oidcHint": "Werkt met elke OpenID Connect-provider (Google, Microsoft, Authentik, Keycloak, Auth0, ...). Registreer Famlin als publieke/native client met PKCE en voeg de redirect-URI's van deze app toe.",
     "accessControl": "Toegangsbeheer",
-    "allowedEmails": "Toegestane e-mailadressen voor SSO-login (komma-gescheiden, leeg = alles toegestaan)",
+    "allowedEmails": "Toegestane e-mailadressen",
+    "allowedEmailsHint": "Komma-gescheiden. SSO-logins zijn beperkt tot deze adressen; laat leeg om iedereen toe te staan. Uitnodigingslinks werken altijd, ongeacht deze lijst.",
     "push": "Pushmeldingen",
     "pushEnabled": "Pushmeldingen inschakelen",
     "pushHint": "Verstuurd via de push-relay van Expo (geen Apple/Google-certificaten nodig op je server). Zet uit als je server helemaal geen pushmeldingen mag versturen — in-app- en e-mailmeldingen blijven gewoon werken.",
@@ -245,7 +275,6 @@
     "saveSettings": "Instellingen opslaan",
     "saving": "Opslaan...",
     "saved": "Instellingen opgeslagen.",
-    "integrations": "Media-integraties",
     "integrationsHint": "Elke mediabron configureer je één keer voor de hele instantie; welke albums zichtbaar zijn voor welke groep koppel je via de pagina Groepen. Leden kunnen dan foto's uit een gekoppeld album kiezen bij het maken van een bericht.",
     "immich": "Immich",
     "immichHint": "Configureer één Immich-server + API-sleutel. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
@@ -264,5 +293,27 @@
     "localMediaTestOk": "Pad bestaat en is leesbaar.",
     "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
     "localMediaTestNotADirectory": "Pad bestaat maar is geen map."
+  },
+  "media": {
+    "peopleMapping": {
+      "title": "Personen toewijzen",
+      "hint": "Wijs personen uit je foto's toe aan familieleden zodat zij met hun naam verschijnen in het familieoverzicht. Alleen toegewezen personen zijn zichtbaar voor familieleden.",
+      "notConfigured": "Immich is nog niet geconfigureerd. Vul hierboven de server-URL en API-sleutel in en sla op om personen toe te wijzen.",
+      "mapped": "Toegewezen personen",
+      "unmapped": "Niet-toegewezen personen",
+      "searchPlaceholder": "Zoek personen…",
+      "noMatches": "Geen personen gevonden voor je zoekopdracht.",
+      "showAll": "Toon alle {{count}}",
+      "showFewer": "Toon minder",
+      "unnamed": "Naamloos",
+      "noPeople": "Geen personen gevonden in je Immich-bibliotheek.",
+      "displayName": "Weergavenaam",
+      "familyMember": "Familielid (optioneel)",
+      "selectUser": "Selecteer een familielid…",
+      "userMappingHint": "Indien ingesteld, zullen foto's van deze persoon getagd worden met zijn of haar Famlin-profiel. Laat leeg om alleen de weergavenaam te tonen.",
+      "saveError": "Toewijzing opslaan mislukt: {{error}}",
+      "removeConfirm": "Toewijzing verwijderen voor \"{{name}}\"?",
+      "removeError": "Toewijzing verwijderen mislukt: {{error}}"
+    }
   }
 }

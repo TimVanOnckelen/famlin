@@ -3,7 +3,9 @@ import { prisma } from '../db.js';
 import { authenticateMediaRequest } from '../plugins/auth.js';
 import { isGroupMember } from '../services/groups.js';
 import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js';
-import { parseMediaAssetPath } from '../types.js';
+import { resolvePersonFilterForAlbum } from '../services/media/personFilter.js';
+import { getGroupPhotoTimeline } from '../services/media/photoTimeline.js';
+import { parseMediaAssetPath, photoTimelineQuerySchema } from '../types.js';
 import { getT } from '../i18n/index.js';
 
 // Member-facing, provider-generic media endpoints — read/proxy-only, same
@@ -43,9 +45,31 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     );
   });
 
+  // Merged, capture-date-ordered photo feed across every linked album in the
+  // group *and* photos uploaded directly to the group's posts — the "camera
+  // roll" view, as opposed to /groups/:groupId/albums' per-album browse.
+  // See services/media/photoTimeline.ts for the merge/cursor logic.
+  fastify.get('/groups/:groupId/photos', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId } = request.params as { groupId: string };
+    const { cursor, take, personId } = photoTimelineQuerySchema.parse(request.query);
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const result = await getGroupPhotoTimeline(groupId, { cursor, take, personId });
+    if (!result.ok) return reply.status(result.status).send({ error: t(result.errorKey) });
+
+    return { items: result.items, nextCursor: result.nextCursor };
+  });
+
   fastify.get('/albums/:linkId/assets', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { linkId } = request.params as { linkId: string };
+    // externalPersonId (not the MediaPersonLink row id) — filters the album
+    // down to one recognized person via set intersection.
+    const { personId } = request.query as { personId?: string };
 
     const link = await prisma.mediaAlbumLink.findUnique({ where: { id: linkId } });
     if (!link) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
@@ -57,9 +81,19 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     const provider = getMediaProvider(link.provider);
     if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
 
+    let personAssetIds: Set<string> | null = null;
+    if (personId) {
+      // Shared with the merged photo timeline's ?personId= filter — see
+      // resolvePersonFilterForAlbum's doc comment.
+      const result = await resolvePersonFilterForAlbum(link, personId);
+      if (!result.ok) return reply.status(result.status).send({ error: t(result.errorKey) });
+      personAssetIds = result.assetIds;
+    }
+
     try {
       const assets = await provider.listAlbumAssets(link.externalAlbumId);
-      return assets.map((asset) => ({
+      const filtered = personAssetIds ? assets.filter((asset) => personAssetIds!.has(asset.id)) : assets;
+      return filtered.map((asset) => ({
         assetId: asset.id,
         type: asset.type,
         width: asset.width,
@@ -74,6 +108,32 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
       }
       throw err;
     }
+  });
+
+  // Mapped people for every media source a group has at least one linked
+  // album on — the member-facing "filter by person" picker's catalog. Empty
+  // array (not an error) when the group has no linked albums or none of its
+  // providers have any mapped people.
+  fastify.get('/people', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId } = request.query as { groupId?: string };
+    if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const links = await prisma.mediaAlbumLink.findMany({ where: { groupId }, select: { provider: true } });
+    const providerIds = [...new Set(links.map((l) => l.provider))];
+    if (providerIds.length === 0) return [];
+
+    const people = await prisma.mediaPersonLink.findMany({ where: { provider: { in: providerIds } } });
+    return people.map((p) => ({
+      id: p.externalPersonId,
+      provider: p.provider,
+      label: p.label,
+      userId: p.userId,
+    }));
   });
 
   // No fastify.authenticate here: this is loaded as an <Image>/<Video> `uri`,

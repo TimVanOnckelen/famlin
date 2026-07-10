@@ -316,6 +316,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/list-group-photos",
+          label: "List a group's merged photo timeline",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/list-media-album-assets",
           label: "List an album's assets",
           className: "api-method get",
@@ -324,6 +330,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/get-media-asset",
           label: "Stream a media asset rendition",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-group-media-people",
+          label: "List people mapped to a group",
           className: "api-method get",
         },
       ],
@@ -466,6 +478,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/postperson",
+          label: "PostPerson",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/post",
           label: "Post",
           className: "schema",
@@ -502,6 +520,18 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/photoitem",
+          label: "PhotoItem",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/phototimelinepage",
+          label: "PhotoTimelinePage",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/mediaalbum",
           label: "MediaAlbum",
           className: "schema",
@@ -510,6 +540,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/mediaasset",
           label: "MediaAsset",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/mediaperson",
+          label: "MediaPerson",
           className: "schema",
         },
         {

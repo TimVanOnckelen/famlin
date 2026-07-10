@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { getUploadUrl } from '@/api/uploads';
-import { getGroupMediaAlbums, getMediaAlbumAssets, MediaAsset, MediaGroupAlbum } from '@/api/media';
+import { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, MediaAsset, MediaGroupAlbum, MediaPerson } from '@/api/media';
 
 interface MediaPickerModalProps {
   visible: boolean;
@@ -38,6 +38,8 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
 
   const [albums, setAlbums] = useState<MediaGroupAlbum[] | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
+  const [people, setPeople] = useState<MediaPerson[] | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [assets, setAssets] = useState<MediaAsset[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -47,14 +49,17 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
     if (!visible) return;
     setAlbums(null);
     setSelectedLinkId(null);
+    setPeople(null);
+    setSelectedPersonId(null);
     setAssets(null);
     setSelected(new Set());
     setError(null);
     setLoading(true);
-    getGroupMediaAlbums(groupId)
-      .then((result) => {
-        setAlbums(result);
-        if (result.length === 1) setSelectedLinkId(result[0].linkId);
+    Promise.all([getGroupMediaAlbums(groupId), getGroupMediaPeople(groupId)])
+      .then(([albums, people]) => {
+        setAlbums(albums);
+        setPeople(people);
+        if (albums.length === 1) setSelectedLinkId(albums[0].linkId);
       })
       .catch(() => setError(t('mediaPicker.loadAlbumsError')))
       .finally(() => setLoading(false));
@@ -64,11 +69,11 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
     if (!selectedLinkId) return;
     setAssets(null);
     setLoading(true);
-    getMediaAlbumAssets(selectedLinkId)
+    getMediaAlbumAssets(selectedLinkId, selectedPersonId || undefined)
       .then(setAssets)
       .catch(() => setError(t('mediaPicker.loadAssetsError')))
       .finally(() => setLoading(false));
-  }, [selectedLinkId]);
+  }, [selectedLinkId, selectedPersonId]);
 
   function toggle(assetId: string) {
     setSelected((prev) => {
@@ -132,38 +137,66 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
         )}
 
         {!loading && !error && selectedLinkId && assets && (
-          <FlatList
-            data={assets}
-            key={columns}
-            numColumns={columns}
-            keyExtractor={(item) => item.assetId}
-            contentContainerStyle={styles.grid}
-            columnWrapperStyle={styles.gridRow}
-            ListEmptyComponent={
-              <View style={styles.centered}>
-                <Text style={styles.emptyText}>{t('mediaPicker.noAssets')}</Text>
+          <>
+            {people && people.length > 0 && (
+              <View style={styles.filterRow}>
+                <FlatList
+                  horizontal
+                  data={[{ id: null, label: t('mediaPicker.allPeople') }, ...people]}
+                  keyExtractor={(item) => (item.id || 'all')}
+                  showsHorizontalScrollIndicator={false}
+                  renderItem={({ item }) => {
+                    const isAll = item.id === null;
+                    const isActive = isAll ? selectedPersonId === null : selectedPersonId === item.id;
+                    return (
+                      <TouchableOpacity
+                        style={[styles.personChip, isActive && styles.personChipActive]}
+                        onPress={() => (isAll ? setSelectedPersonId(null) : setSelectedPersonId(item.id))}
+                        accessibilityState={{ selected: isActive }}
+                      >
+                        <Text style={[styles.personChipText, isActive && styles.personChipTextActive]}>
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }}
+                  contentContainerStyle={styles.personList}
+                />
               </View>
-            }
-            renderItem={({ item }) => {
-              const isSelected = selected.has(item.assetId);
-              return (
-                <TouchableOpacity
-                  style={[styles.thumbWrapper, { width: thumbSize, height: thumbSize }]}
-                  onPress={() => toggle(item.assetId)}
-                >
-                  <Image source={{ uri: getUploadUrl(item.thumbnailUrl) }} style={styles.thumb} />
-                  {item.type === 'VIDEO' && (
-                    <View style={styles.videoBadge} pointerEvents="none">
-                      <Icon name="play" size={12} color={colors.white} />
+            )}
+            <FlatList
+              data={assets}
+              key={columns}
+              numColumns={columns}
+              keyExtractor={(item) => item.assetId}
+              contentContainerStyle={styles.grid}
+              columnWrapperStyle={styles.gridRow}
+              ListEmptyComponent={
+                <View style={styles.centered}>
+                  <Text style={styles.emptyText}>{t('mediaPicker.noAssets')}</Text>
+                </View>
+              }
+              renderItem={({ item }) => {
+                const isSelected = selected.has(item.assetId);
+                return (
+                  <TouchableOpacity
+                    style={[styles.thumbWrapper, { width: thumbSize, height: thumbSize }]}
+                    onPress={() => toggle(item.assetId)}
+                  >
+                    <Image source={{ uri: getUploadUrl(item.thumbnailUrl) }} style={styles.thumb} />
+                    {item.type === 'VIDEO' && (
+                      <View style={styles.videoBadge} pointerEvents="none">
+                        <Icon name="play" size={12} color={colors.white} />
+                      </View>
+                    )}
+                    <View style={[styles.checkCircle, isSelected && styles.checkCircleActive]}>
+                      {isSelected && <Icon name="check" size={12} color={colors.white} />}
                     </View>
-                  )}
-                  <View style={[styles.checkCircle, isSelected && styles.checkCircleActive]}>
-                    {isSelected && <Icon name="check" size={12} color={colors.white} />}
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </>
         )}
       </SafeAreaView>
     </Modal>
@@ -222,6 +255,36 @@ const styles = StyleSheet.create({
   albumList: {
     padding: 16,
     gap: 8,
+  },
+  filterRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  personList: {
+    paddingHorizontal: 12,
+    gap: 8,
+    alignItems: 'center',
+  },
+  personChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  personChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  personChipText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.textTitle,
+  },
+  personChipTextActive: {
+    color: colors.white,
   },
   albumRow: {
     flexDirection: 'row',

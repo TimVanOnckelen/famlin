@@ -3,8 +3,8 @@ import i18n from '../../i18n/index.js';
 import { getAllSettings } from '../settings.js';
 import type { NotificationChannel, NotifyType, Recipient } from './types.js';
 
-// Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day reuse the closest
-// existing preference column, see the note there.
+// Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
+// reuse the closest existing preference column, see the note there.
 const EMAIL_PREF_FIELD: Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment' | 'emailOnNewLike'> = {
   new_post: 'emailOnNewPost',
   new_comment: 'emailOnNewComment',
@@ -12,6 +12,7 @@ const EMAIL_PREF_FIELD: Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment
   new_like_comment: 'emailOnNewLike',
   mention: 'emailOnNewComment',
   on_this_day: 'emailOnNewPost',
+  new_media_assets: 'emailOnNewPost',
 };
 
 export async function createTransporter(settings?: Awaited<ReturnType<typeof getAllSettings>>) {

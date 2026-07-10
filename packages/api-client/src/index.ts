@@ -39,8 +39,8 @@ export {
   clearBrowserOidcLogin,
 } from './oidcBrowser';
 
-export type { MediaGroupAlbum, MediaAsset } from './media';
-export { getGroupMediaAlbums, getMediaAlbumAssets } from './media';
+export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
+export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';
 
 // Legacy Immich-only equivalents of ./media — see the note in ./immich.ts.
 export type { ImmichGroupAlbum, ImmichAsset } from './immich';
@@ -51,7 +51,7 @@ export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from './uploads';
 
-export type { ReactionType, User, Group, Post, Comment, Notification } from './types';
+export type { ReactionType, User, Group, Post, PostPerson, Comment, Notification } from './types';
 export { REACTION_TYPES } from './types';
 
 export { patchPostInCaches } from './postCache';

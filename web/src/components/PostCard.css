@@ -109,6 +109,12 @@
   cursor: pointer;
 }
 
+/* Reserve the hero's space while the photo streams in from the media proxy;
+   once loaded, the photo's own height takes over. */
+.post-hero .shimmer-frame:not(.shimmer-frame-loaded) {
+  aspect-ratio: 4 / 3;
+}
+
 .post-hero-chip {
   position: absolute;
   left: 10px;
@@ -136,12 +142,10 @@
 }
 
 .post-hero-title {
-  font-family: 'Caveat', cursive;
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  font-size: 20px;
+  font-weight: 800;
   color: white;
-  line-height: 1;
+  line-height: 1.3;
 }
 
 /* ── Milestone badge ────────────────────────────────────────────────────── */
@@ -194,6 +198,11 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.post-thumb .shimmer-frame {
+  width: 100%;
+  height: 100%;
 }
 
 .post-thumb-more {
@@ -253,6 +262,35 @@
   white-space: nowrap;
 }
 
+/* ── People chips ──────────────────────────────────────────────────────── */
+
+.post-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.post-person-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--fam-bg);
+  border-radius: var(--r-pill);
+  padding: 4px 10px 4px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-body);
+}
+
+.post-person-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
 .post-content {
   font-size: 17px;
   line-height: 1.55;
@@ -260,17 +298,6 @@
   margin: 0 0 4px;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-/* A photo post's text reads as a handwritten caption under the photo,
-   rather than a paragraph — text-only posts stay plain Nunito body text. */
-.post-caption {
-  font-family: 'Caveat', cursive;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: #3a4a52;
-  text-align: center;
 }
 
 .post-milestone-title {
@@ -498,6 +525,83 @@
   color: var(--fam-primary);
 }
 
+.comment-attachment {
+  display: block;
+  border: none;
+  background: none;
+  padding: 6px 14px 0;
+  cursor: pointer;
+}
+
+.comment-attachment img,
+.comment-attachment video {
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: 12px;
+  display: block;
+  object-fit: cover;
+}
+
+.comment-attachment .shimmer-frame:not(.shimmer-frame-loaded) {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+}
+
+.comment-composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-attachment-preview {
+  position: relative;
+  width: fit-content;
+}
+
+.comment-attachment-preview img,
+.comment-attachment-preview video {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+.comment-attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.comment-attach-button {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-bg);
+  color: var(--fam-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.comment-attach-button:hover {
+  color: var(--fam-primary);
+  border-color: var(--fam-primary);
+}
+
 .comment-composer {
   display: flex;
   gap: 8px;
@@ -550,6 +654,24 @@
   max-height: 100%;
   border-radius: var(--r-md);
   cursor: default;
+}
+
+/* The lightbox image sits inside a shimmer frame: the frame is the flex item,
+   so the viewport-height cap moves onto the img (max-height:100% of an
+   auto-height frame would be a no-op). */
+.lightbox .shimmer-frame {
+  max-width: 100%;
+  border-radius: var(--r-md);
+  cursor: default;
+}
+
+.lightbox .shimmer-frame:not(.shimmer-frame-loaded) {
+  width: min(720px, 80vw);
+  aspect-ratio: 4 / 3;
+}
+
+.lightbox .shimmer-frame img {
+  max-height: calc(100vh - 64px);
 }
 
 .lightbox-nav {

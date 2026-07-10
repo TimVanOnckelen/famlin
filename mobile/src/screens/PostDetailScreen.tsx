@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
@@ -39,7 +41,7 @@ import {
   deleteComment,
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
-import { getUploadUrl } from '@/api/uploads';
+import { getUploadUrl, uploadMedia } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -64,6 +66,8 @@ export function PostDetailScreen() {
   const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
+  const [commentAttachment, setCommentAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
+  const [attachmentUploading, setAttachmentUploading] = useState(false);
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
@@ -103,19 +107,25 @@ export function PostDetailScreen() {
       content,
       parentId,
       mentionedUserIds,
+      attachmentUrl,
     }: {
       content: string;
       parentId?: string;
       mentionedUserIds?: string[];
-    }) => createComment(postId, { content, parentId, mentionedUserIds }),
+      attachmentUrl?: string;
+    }) => createComment(postId, { content: content || undefined, parentId, mentionedUserIds, attachmentUrl }),
     onSuccess: () => {
       setCommentText('');
       setReplyingTo(null);
       setSelectedMentions([]);
       setMentionQuery(null);
+      setCommentAttachment(null);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (err: any) => {
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'));
     },
   });
 
@@ -185,14 +195,55 @@ export function PostDetailScreen() {
 
   function submitComment() {
     const trimmed = commentText.trim();
-    if (!trimmed) return;
+    if (!trimmed && !commentAttachment?.uploadedUrl) return;
     // Only mention someone whose "@name" is still actually present in the
     // final text — if the user deleted it after picking it from the list,
     // don't notify them.
     const mentionedUserIds = selectedMentions
       .filter((m) => commentText.includes(`@${m.name}`))
       .map((m) => m.id);
-    commentMutation.mutate({ content: trimmed, parentId: replyingTo?.id, mentionedUserIds });
+    commentMutation.mutate({
+      content: trimmed,
+      parentId: replyingTo?.id,
+      mentionedUserIds,
+      attachmentUrl: commentAttachment?.uploadedUrl,
+    });
+  }
+
+  async function pickCommentAttachment() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      quality: 0.8,
+      videoMaxDuration: 120,
+    });
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    const isVideo = asset.type === 'video';
+    setCommentAttachment({ uri: asset.uri, isVideo });
+
+    try {
+      setAttachmentUploading(true);
+      const [uploadedUrl] = await uploadMedia([
+        {
+          uri: asset.uri,
+          name: asset.fileName || `${isVideo ? 'video' : 'photo'}.${isVideo ? 'mp4' : 'jpg'}`,
+          type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+        },
+      ]);
+      setCommentAttachment({ uri: asset.uri, isVideo, uploadedUrl });
+    } catch (err: any) {
+      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      setCommentAttachment(null);
+    } finally {
+      setAttachmentUploading(false);
+    }
   }
 
   function handleCommentTextChange(text: string) {
@@ -477,8 +528,36 @@ export function PostDetailScreen() {
           </View>
         )}
 
+        {commentAttachment && (
+          <View style={styles.attachmentPreviewRow}>
+            <View style={styles.attachmentPreview}>
+              <MediaThumbnail url={commentAttachment.uri} style={styles.attachmentPreviewImage} />
+              {attachmentUploading && (
+                <View style={styles.attachmentUploadingOverlay}>
+                  <ActivityIndicator size="small" color={colors.white} />
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.attachmentRemoveButton}
+                onPress={() => setCommentAttachment(null)}
+                accessibilityLabel={t('postDetail.removeAttachment')}
+              >
+                <Icon name="x" size={12} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.inputContainer}>
           <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={36} />
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={pickCommentAttachment}
+            disabled={attachmentUploading}
+            accessibilityLabel={t('postDetail.addAttachment')}
+          >
+            <Icon name="image" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder={replyingTo ? t('postDetail.replyPlaceholder') : t('postDetail.commentPlaceholder')}
@@ -488,9 +567,12 @@ export function PostDetailScreen() {
             multiline
           />
           <TouchableOpacity
-            style={[styles.sendButton, !commentText.trim() && styles.sendButtonDisabled]}
+            style={[
+              styles.sendButton,
+              !commentText.trim() && !commentAttachment?.uploadedUrl && styles.sendButtonDisabled,
+            ]}
             onPress={submitComment}
-            disabled={!commentText.trim()}
+            disabled={(!commentText.trim() && !commentAttachment?.uploadedUrl) || attachmentUploading}
           >
             <Icon name="send" size={18} color={colors.white} />
           </TouchableOpacity>
@@ -593,6 +675,7 @@ function CommentBody({
   onDelete: (commentId: string) => void;
 }) {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [saving, setSaving] = useState(false);
@@ -647,8 +730,20 @@ function CommentBody({
     <>
       <View style={styles.commentBubble}>
         <Text style={styles.commentAuthor}>{comment.author.name}</Text>
-        <Text style={styles.commentText}>{comment.content}</Text>
+        {!!comment.content && <Text style={styles.commentText}>{comment.content}</Text>}
       </View>
+      {!!comment.attachmentUrl && (
+        <TouchableOpacity
+          style={styles.commentAttachment}
+          activeOpacity={0.9}
+          accessibilityLabel={t('postDetail.viewAttachment')}
+          onPress={() =>
+            navigation.navigate('ImageViewer', { urls: [getUploadUrl(comment.attachmentUrl!)], initialIndex: 0 })
+          }
+        >
+          <MediaThumbnail url={getUploadUrl(comment.attachmentUrl)} style={styles.commentAttachmentImage} />
+        </TouchableOpacity>
+      )}
       <View style={styles.commentMetaRow}>
         <Text style={styles.commentTime}>
           {formatRelativeDate(comment.createdAt)}
@@ -976,6 +1071,17 @@ const styles = StyleSheet.create({
     color: colors.textTitle,
     marginBottom: 3,
   },
+  commentAttachment: {
+    marginTop: 6,
+    width: 160,
+    height: 160,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  commentAttachmentImage: {
+    width: '100%',
+    height: '100%',
+  },
   commentText: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 16,
@@ -1059,6 +1165,47 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 13,
     color: colors.primary,
+  },
+  attachmentPreviewRow: {
+    backgroundColor: colors.white,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+  },
+  attachmentPreview: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  attachmentPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  attachmentUploadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachmentRemoveButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputContainer: {
     backgroundColor: colors.white,

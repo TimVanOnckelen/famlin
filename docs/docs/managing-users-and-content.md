@@ -30,7 +30,8 @@ The **Groups** page is a two-pane view: pick a group on the left, manage it on t
 
 The **Content** page gives admins cross-group visibility into posts and comments, without needing to be a member of every group.
 
-- Switch between the **Posts** and **Comments** tabs, and optionally filter by group.
+- Switch between the **Posts** and **Comments** tabs, and narrow the list with the filter bar: a text search over the content, a group filter, and an author filter (combine them freely; **Clear filters** resets everything).
+- The posts tab also shows each post's comment/like counts and marks milestone posts; the comments tab shows a snippet of the post each comment was left on.
 - **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
 
 There's no bulk action or audit log.

@@ -109,6 +109,11 @@
   display: block;
 }
 
+.photo-preview .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
 .photo-preview-remove {
   position: absolute;
   top: 4px;

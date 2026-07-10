@@ -25,6 +25,7 @@ export function makePost(overrides: Partial<Post> = {}): Post {
     myReaction: null,
     reactions: {},
     favoritedByMe: false,
+    people: [],
     ...overrides,
   };
 }
@@ -40,6 +41,7 @@ export function makeComment(overrides: Partial<Comment> = {}): Comment {
     editedAt: null,
     parentId: null,
     assetUrl: null,
+    attachmentUrl: null,
     likeCount: 0,
     likedByMe: false,
     myReaction: null,

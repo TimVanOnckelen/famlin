@@ -35,6 +35,7 @@ model User {
   createdInvites    Invite[]       @relation("InviteCreatedBy")
   usedInvites       Invite[]       @relation("InviteUsedBy")
   apiTokens         ApiToken[]
+  mediaPersonLinks  MediaPersonLink[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -120,6 +121,10 @@ model Comment {
   // Set when the comment is pinned to one photo/video in the post's
   // uploadedAssetUrls rather than the post as a whole (null = post-level).
   assetUrl  String?
+  // A photo/video the commenter uploaded as part of this comment itself
+  // (an /uploads/ path, like Post.uploadedAssetUrls) — distinct from
+  // assetUrl, which instead points at an existing asset on the post.
+  attachmentUrl String?
   content   String
   createdAt DateTime  @default(now())
   editedAt  DateTime?
@@ -211,9 +216,42 @@ model MediaAlbumLink {
   // without an extra round-trip; not kept in sync if renamed provider-side.
   albumName       String
   createdAt       DateTime @default(now())
+  // Whether/how src/jobs/newAssets.ts surfaces newly-added assets on this
+  // album: OFF (never), MANUAL (a notification), AUTO (a real Post).
+  newAssetMode       NewAssetMode @default(OFF)
+  // Last time the new-assets job scanned this link — null means it has never
+  // run for this link, in which case the job only initializes the timestamp
+  // (never notifies the album's entire pre-existing history).
+  newAssetsCheckedAt DateTime?
 
   @@unique([groupId, provider, externalAlbumId])
   @@index([groupId])
+}
+
+enum NewAssetMode {
+  OFF
+  MANUAL
+  AUTO
+}
+
+// Maps a provider's face/person identity (e.g. an Immich person) to a
+// human-readable label and, optionally, the Famlin user it represents — lets
+// members filter an album's assets down to just one person via
+// GET /api/media/albums/:linkId/assets?personId=. Independent of any single
+// MediaAlbumLink since the same provider-level person id can appear across
+// several linked albums.
+model MediaPersonLink {
+  id               String   @id @default(cuid())
+  provider         String
+  externalPersonId String
+  // Display name shown to family members — set by the admin at mapping time,
+  // not synced from the provider afterwards.
+  label            String
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+
+  @@unique([provider, externalPersonId])
 }
 
 model Setting {

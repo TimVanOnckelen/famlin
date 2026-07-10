@@ -13,11 +13,13 @@ const EXCERPT_MAX_LENGTH = 80;
 
 // Trims a post/comment body down to a short quote for notification text.
 // Collapses newlines so a multi-line post doesn't blow up a one-line
-// notification.
-export function excerptText(content?: string | null): string {
-  if (!content) return '';
+// notification. `fallback` fills the quote for an attachment-only comment
+// with no text of its own (a plain emoji, like reactionEmoji below, needs no
+// translation) rather than leaving the notification with an empty `""`.
+export function excerptText(content?: string | null, fallback = ''): string {
+  if (!content) return fallback;
   const collapsed = content.replace(/\s+/g, ' ').trim();
-  if (!collapsed) return '';
+  if (!collapsed) return fallback;
   return collapsed.length > EXCERPT_MAX_LENGTH
     ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…`
     : collapsed;
@@ -49,6 +51,7 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   new_like_comment: 'notifications.newLikeComment',
   mention: 'notifications.mention',
   on_this_day: 'notifications.onThisDay',
+  new_media_assets: 'notifications.newMediaAssets',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
@@ -70,7 +73,10 @@ function resolveMessageKey(type: NotifyType, params: Record<string, string | num
 interface NotifyOptions {
   type: NotifyType;
   senderId: string;
-  postId: string;
+  // Omitted (or null) for event types with no associated post — currently
+  // only new_media_assets, which is scoped to an album/group instead of a
+  // single post.
+  postId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -79,7 +85,8 @@ interface NotifyOptions {
 }
 
 async function notify(options: NotifyOptions) {
-  const { type, senderId, postId, params, recipientIds } = options;
+  const { type, senderId, params, recipientIds } = options;
+  const postId = options.postId ?? null;
 
   const ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
   if (ids.length === 0) return;
@@ -136,7 +143,7 @@ export async function notifyGroup(options: {
   type: NotifyType;
   groupId: string;
   senderId: string;
-  postId: string;
+  postId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -156,7 +163,7 @@ export async function notifyUser(options: {
   type: NotifyType;
   userId: string;
   senderId: string;
-  postId: string;
+  postId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -173,7 +180,7 @@ export async function notifyUsers(options: {
   type: NotifyType;
   userIds: string[];
   senderId: string;
-  postId: string;
+  postId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.

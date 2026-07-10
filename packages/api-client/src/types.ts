@@ -1,6 +1,15 @@
 export const REACTION_TYPES = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'] as const;
 export type ReactionType = (typeof REACTION_TYPES)[number];
 
+export interface PostPerson {
+  id: string;
+  provider: string;
+  label: string;
+  userId: string | null;
+  userName: string | null;
+  userAvatarUrl: string | null;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -56,6 +65,7 @@ export interface Post {
   // reacted, not just a count. Optional: older servers don't send it.
   recentReactors?: { id: string; name: string; avatarUrl?: string | null }[];
   favoritedByMe: boolean;
+  people?: PostPerson[];
 }
 
 export interface Comment {
@@ -74,6 +84,10 @@ export interface Comment {
   // Set when the comment is pinned to one photo/video in the post rather
   // than the post as a whole — matches an entry in Post.uploadedAssetUrls.
   assetUrl?: string | null;
+  // A photo/video the commenter uploaded as part of this comment itself —
+  // distinct from assetUrl above, which instead points at an existing asset
+  // on the post.
+  attachmentUrl?: string | null;
   likeCount: number;
   likedByMe: boolean;
   myReaction: ReactionType | null;

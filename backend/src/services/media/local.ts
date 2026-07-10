@@ -225,15 +225,33 @@ export const localProvider: MediaProvider = {
     } catch {
       throw new MediaProviderError('local', 'unreachable');
     }
-    return files.map((name) => ({
-      id: encodeLocalAssetId(name),
-      type: 'IMAGE' as const,
-      width: null,
-      height: null,
-      // thumbnail/preview are always generated JPEGs; original streams the
-      // real file, so its URL extension must match the real bytes.
-      originalExt: fileExt(name) === 'jpeg' ? 'jpeg' : fileExt(name),
-    }));
+    return Promise.all(
+      files.map(async (name) => {
+        // mtime is the closest local equivalent of "when this was added to
+        // the source" — there's no separate upload-time record for a plain
+        // folder, and a sync tool (Syncthing, rsync) sets it to roughly when
+        // the file landed on disk rather than the photo's capture date.
+        let addedAt: string | null = null;
+        try {
+          addedAt = (await fsp.stat(path.join(dir, name))).mtime.toISOString();
+        } catch {
+          // race with a concurrent delete — leave addedAt null rather than failing the listing
+        }
+        return {
+          id: encodeLocalAssetId(name),
+          type: 'IMAGE' as const,
+          width: null,
+          height: null,
+          // thumbnail/preview are always generated JPEGs; original streams the
+          // real file, so its URL extension must match the real bytes.
+          originalExt: fileExt(name) === 'jpeg' ? 'jpeg' : fileExt(name),
+          addedAt,
+          // No separate capture-date concept for a plain folder — mtime is
+          // the only signal available, same as addedAt.
+          takenAt: addedAt,
+        };
+      })
+    );
   },
 
   async isAssetInAlbum(externalAlbumId: string, assetId: string) {

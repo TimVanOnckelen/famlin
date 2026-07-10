@@ -50,7 +50,11 @@ tags:
     description: |
       Comments on a post. Replies are one level deep via `parentId`. A comment
       can be pinned to a single photo/video of the post via `assetUrl`; replies
-      inherit their parent's pin.
+      inherit their parent's pin. A comment can also carry its own photo/video
+      via `attachmentUrl` — a file the commenter uploaded (`POST
+      /api/uploads`) as part of the comment itself, independent of any
+      pinning — and `content` is then optional (a comment can be a photo or
+      video with no text).
   - name: Reactions
     description: |
       Emoji reactions on posts and comments — one reaction per user per
@@ -722,7 +726,9 @@ paths:
         `mentionedUserIds` are ids resolved from the group member list for
         `@name` mentions — the server re-validates each id is a current member
         of the post's group before notifying them. A reply (`parentId`)
-        inherits its parent's `assetUrl` pin.
+        inherits its parent's `assetUrl` pin. `content` and `attachmentUrl` are
+        each optional, but at least one is required — a comment can be a photo
+        or video with no text.
       parameters:
         - name: postId
           in: path
@@ -734,11 +740,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [content]
               properties:
                 content:
                   type: string
-                  minLength: 1
                   maxLength: 2000
                 parentId:
                   type: string
@@ -746,6 +750,12 @@ paths:
                 assetUrl:
                   type: string
                   description: One of the post's `uploadedAssetUrls`, to pin the comment to that photo/video.
+                attachmentUrl:
+                  type: string
+                  description: >-
+                    A photo/video path returned by `POST /api/uploads`, uploaded by the
+                    commenter as part of this comment itself — distinct from `assetUrl`,
+                    which instead pins the comment to an existing asset already on the post.
                 mentionedUserIds:
                   type: array
                   maxItems: 20
@@ -1164,6 +1174,54 @@ paths:
         '403':
           $ref: '#/components/responses/NotGroupMember'
 
+  /api/media/groups/{groupId}/photos:
+    get:
+      operationId: listGroupPhotos
+      tags: [Media]
+      summary: List a group's merged photo timeline
+      description: |
+        Photos across linked albums and direct post uploads, newest first,
+        cursor-paginated. With an optional `personId` filter, shows only assets
+        of a mapped person from linked albums, excluding post uploads.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: personId
+          in: query
+          schema: { type: string }
+          description: |
+            Optional filter to show only photos of a mapped person
+            (use their `id` from `GET /api/media/people`).
+        - $ref: '#/components/parameters/cursor'
+        - name: take
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 60
+          description: Page size.
+      responses:
+        '200':
+          description: A page of photos with URLs ready to use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoTimelinePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          description: |
+            Not found (e.g., the person isn't mapped).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/media/albums/{linkId}/assets:
     get:
       operationId: listMediaAlbumAssets
@@ -1174,6 +1232,12 @@ paths:
           in: path
           required: true
           schema: { type: string }
+        - name: personId
+          in: query
+          schema: { type: string }
+          description: |
+            Optional filter to show only assets of a mapped person
+            (use their `externalPersonId` from `GET /api/media/people`).
       responses:
         '200':
           description: Assets with ready-to-use proxy URLs
@@ -1183,12 +1247,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MediaAsset'
+        '400':
+          description: |
+            Bad request (e.g., the provider doesn't support filtering by person).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/NotGroupMember'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: |
+            Not found (e.g., the person isn't mapped, or the album doesn't exist).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/media/assets/{linkId}/{assetId}/{variantExt}:
     get:
@@ -1239,6 +1315,39 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /api/media/people:
+    get:
+      operationId: listGroupMediaPeople
+      tags: [Media]
+      summary: List people mapped to a group
+      description: |
+        Returns all explicitly-mapped people visible to members of the group.
+        Face data and source IDs are never exposed to family unless an admin
+        has mapped them with a `label` and optionally linked them to a user.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+          description: The group whose mapped people to list
+      responses:
+        '200':
+          description: |
+            List of people mapped by an admin for this group,
+            each with their display label and optional user link.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaPerson'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
 
   /api/immich/groups/{groupId}/albums:
     get:
@@ -1533,6 +1642,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request (bad query parameters, unsupported provider, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
   schemas:
     Error:
@@ -1629,6 +1744,35 @@ components:
           nullable: true
         joinedAt: { type: string, format: date-time }
 
+    PostPerson:
+      type: object
+      description: |
+        A person mapped by an admin and recognized in a post's photos.
+        If linked to a Famlin user, includes their profile information.
+      properties:
+        id:
+          type: string
+          description: The unique identifier for this mapping.
+        provider:
+          type: string
+          enum: [immich, local]
+          description: Which media source this person's face data comes from.
+        label:
+          type: string
+          description: Human-readable name set by the admin.
+        userId:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their user id; otherwise `null`.
+        userName:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their display name; otherwise `null`.
+        userAvatarUrl:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their avatar URL; otherwise `null`.
+
     Post:
       type: object
       properties:
@@ -1685,6 +1829,11 @@ components:
           items:
             $ref: '#/components/schemas/UserSummary'
           description: The three most recent reactors, newest first.
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPerson'
+          description: Admin-mapped media people recognized in this post's photos, empty if none matched.
         favoritedByMe: { type: boolean }
 
     PostsPage:
@@ -1712,6 +1861,12 @@ components:
           type: string
           nullable: true
           description: The photo/video this comment is pinned to (`null` = the post as a whole).
+        attachmentUrl:
+          type: string
+          nullable: true
+          description: >-
+            A photo/video the commenter uploaded as part of this comment itself
+            (`null` if the comment has none) — distinct from `assetUrl` above.
         parentId:
           type: string
           nullable: true
@@ -1782,6 +1937,64 @@ components:
           nullable: true
         createdAt: { type: string, format: date-time }
 
+    PhotoItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this photo in the timeline.
+        source:
+          type: string
+          enum: [album, post]
+          description: Whether this photo comes from a linked album or a direct post upload.
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+        takenAt:
+          type: string
+          format: date-time
+          description: ISO 8601 capture date; ordered newest-first.
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        thumbnailUrl:
+          type: string
+        previewUrl:
+          type: string
+        originalUrl:
+          type: string
+        albumName:
+          type: string
+          nullable: true
+          description: Album name when source is 'album'; null otherwise.
+        linkId:
+          type: string
+          nullable: true
+          description: Famlin-side link id when source is 'album'; null otherwise.
+        assetId:
+          type: string
+          nullable: true
+          description: Provider-defined asset id when source is 'album'; null otherwise.
+        postId:
+          type: string
+          nullable: true
+          description: Post id when source is 'post'; null otherwise.
+
+    PhotoTimelinePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhotoItem'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as ?cursor= for the next page; null on the last page.
+
     MediaAlbum:
       type: object
       properties:
@@ -1813,6 +2026,32 @@ components:
         thumbnailUrl: { type: string }
         previewUrl: { type: string }
         originalUrl: { type: string }
+
+    MediaPerson:
+      type: object
+      description: |
+        A person mapped by an admin, with an optional link to a Famlin user.
+        Members can filter album assets by person using their `id` as a `personId`
+        query parameter on the asset listing.
+      properties:
+        id:
+          type: string
+          description: |
+            The unique identifier for this mapping (provider + externalPersonId).
+            Use this value as `personId=` when filtering assets.
+        provider:
+          type: string
+          enum: [immich, local]
+          description: Which media source this person comes from.
+        label:
+          type: string
+          description: Human-readable name set by the admin at mapping time.
+        userId:
+          type: string
+          nullable: true
+          description: |
+            If this person is linked to a Famlin user, their user id.
+            Otherwise `null`.
 
     ImmichAlbum:
       type: object

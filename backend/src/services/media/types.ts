@@ -31,6 +31,29 @@ export interface MediaAssetSummary {
   // 'mp4') — must stay within what MEDIA_ASSET_PATH_REGEX (src/types.ts)
   // accepts, since it's embedded in the URLs handed to clients.
   originalExt: string;
+  // ISO 8601 timestamp of when the asset was added/uploaded to the source —
+  // NOT when the photo/video was captured (fileCreatedAt/EXIF date). Powers
+  // src/jobs/newAssets.ts's "what's new since I last checked" scan. null when
+  // a provider can't report it.
+  addedAt?: string | null;
+  // ISO 8601 timestamp of when the photo/video was actually CAPTURED (EXIF
+  // date on Immich; falls back to file mtime — same as addedAt — on the
+  // local provider, which has no separate capture-date concept). Powers the
+  // photo timeline (GET /api/media/groups/:groupId/photos), which orders by
+  // "when it was taken" rather than "when it landed on the source". null
+  // when a provider can't report it — callers should fall back to addedAt.
+  takenAt?: string | null;
+}
+
+// One person/face identity a provider can recognize within its library
+// (e.g. an Immich "person"). Surfaced only by providers that implement
+// listPeople(); used by the admin UI to map a person to a Famlin user
+// (MediaPersonLink) and, from there, to filter an album's assets by person.
+export interface MediaPersonSummary {
+  id: string;
+  name: string;
+  // A small inline data: URI, or null if no thumbnail could be fetched.
+  thumbnailDataUri: string | null;
 }
 
 // A source of external photos/videos that groups can link albums from —
@@ -71,4 +94,32 @@ export interface MediaProvider {
     reply: FastifyReply,
     rangeHeader?: string
   ): Promise<void>;
+  // Optional capabilities — not every provider can recognize people. Routes
+  // must check for the method's presence and respond 400 (translated) rather
+  // than assume every provider implements it (see admin.ts /media/:provider/people
+  // and media.ts's ?personId= filter).
+  listPeople?(): Promise<MediaPersonSummary[]>;
+  // Person-centric: every asset id the provider associates with one person.
+  // On Immich this only ever sees people recognized within the API key
+  // owner's own library — a shared album's assets owned by another Immich
+  // user never appear here, even though the asset itself is readable. Kept
+  // as the fallback for providers that can't do the asset-centric query
+  // below (or as a plain per-person crawl when that's all that's needed).
+  getPersonAssetIds?(externalPersonId: string): Promise<Set<string>>;
+  // Asset-centric, cross-owner: every tagged person on every asset in one
+  // album, keyed by assetId. Exists because Immich person entities are
+  // per-library — getPersonAssetIds()/listPeople() only see people the API
+  // key's own account recognizes, so a shared album containing photos owned
+  // by *other* Immich users never gets those people tagged or mappable.
+  // AssetResponseDto.people is populated for any asset the caller can read
+  // regardless of owner, so walking assets (this method) sees people
+  // getPersonAssetIds() cannot. Implementations should cache the per-album
+  // result briefly (remote crawl) — see immich.ts's getAlbumAssetPeople.
+  getAlbumAssetPeople?(externalAlbumId: string): Promise<Map<string, Array<{ id: string; name: string }>>>;
+  // One person's thumbnail outside the listPeople() catalog crawl — used to
+  // backfill a preview image for a person discovered only via
+  // getAlbumAssetPeople (i.e. not present in the key owner's own /people
+  // list). null (not a throw) when the thumbnail can't be fetched (e.g. the
+  // API key isn't authorized to read that person, a common cross-owner case).
+  getPersonThumbnail?(externalPersonId: string): Promise<string | null>;
 }

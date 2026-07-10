@@ -160,6 +160,69 @@ jobs:
         working-directory: docs
         run: npm run build
 
+  # Guardrail for unmarked breaking changes: when a PR changes the OpenAPI
+  # spec in a way oasdiff classifies as breaking, at least one commit in the
+  # PR (or the PR title, which becomes the commit on squash-merge) must be
+  # marked in conventional-commit breaking form — `feat!:` / `fix(scope)!:`
+  # or a `BREAKING CHANGE:` footer. That marker is what release-please turns
+  # into the "⚠ BREAKING CHANGES" changelog section and version bump, and
+  # what the release-notes rewrite uses to warn self-hosting admins — an
+  # unmarked breaking change ships silently as a minor entry.
+  api-breaking-changes:
+    name: API breaking-change check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      SPEC: docs/openapi/famlin.yaml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare spec against base and require a breaking marker
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          BASE_SHA=$(git merge-base "origin/$BASE_REF" HEAD)
+          if git diff --quiet "$BASE_SHA" HEAD -- "$SPEC"; then
+            echo "OpenAPI spec unchanged — nothing to check."
+            exit 0
+          fi
+          if ! git show "$BASE_SHA:$SPEC" > /tmp/base-spec.yaml 2>/dev/null; then
+            echo "Spec does not exist on the base branch — nothing to compare against."
+            exit 0
+          fi
+          mkdir -p /tmp/specs
+          mv /tmp/base-spec.yaml /tmp/specs/base.yaml
+          cp "$SPEC" /tmp/specs/head.yaml
+          set +e
+          OUTPUT=$(docker run --rm -v /tmp/specs:/specs:ro tufin/oasdiff \
+            breaking /specs/base.yaml /specs/head.yaml --fail-on ERR 2>&1)
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ]; then
+            echo "Spec changed, but no breaking API changes detected."
+            exit 0
+          fi
+          echo "$OUTPUT"
+          {
+            echo "## ⚠️ Breaking API changes detected in \`$SPEC\`"
+            echo '```'
+            echo "$OUTPUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          MARKER='^[[:alnum:]]+(\([^)]*\))?!:|BREAKING[- ]CHANGE:'
+          if git log --format='%s%n%b' "$BASE_SHA"..HEAD | grep -qE "$MARKER"; then
+            echo "A commit in this PR is marked as breaking — OK."
+            exit 0
+          fi
+          if printf '%s' "$PR_TITLE" | grep -qE "$MARKER"; then
+            echo "The PR title is marked as breaking — OK."
+            exit 0
+          fi
+          echo "::error::$SPEC has breaking API changes (see the job summary), but no commit or PR title carries a conventional-commit breaking marker. Mark it with a '!' after the type (e.g. 'feat!: ...') or add a 'BREAKING CHANGE: <what an admin must do when upgrading>' footer, so release-please surfaces it in the release's breaking-changes section."
+          exit 1
+
   docker:
     name: Docker build
     runs-on: ubuntu-latest

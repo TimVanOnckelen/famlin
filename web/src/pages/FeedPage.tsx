@@ -11,10 +11,12 @@ import './FeedPage.css';
 export function FeedPage({
   user,
   onOpenProfile,
+  onOpenPhotos,
   onLogout,
 }: {
   user: User;
   onOpenProfile: () => void;
+  onOpenPhotos?: () => void;
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
@@ -58,6 +60,7 @@ export function FeedPage({
         user={user}
         onNewPost={() => setComposerOpen(true)}
         onProfile={onOpenProfile}
+        onPhotos={onOpenPhotos}
         onApiTokens={() => setApiTokensOpen(true)}
         onLogout={onLogout}
       />

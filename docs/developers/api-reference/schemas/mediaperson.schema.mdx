@@ -1,0 +1,35 @@
+---
+id: mediaperson
+title: "MediaPerson"
+description: "A person mapped by an admin, with an optional link to a Famlin user."
+sidebar_label: "MediaPerson"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"id":"string","provider":"immich","label":"string","userId":"string"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"MediaPerson"}
+>
+</Heading>
+
+
+
+A person mapped by an admin, with an optional link to a Famlin user.
+Members can filter album assets by person using their `id` as a `personId`
+query parameter on the asset listing.
+
+
+<Schema
+  {...require("./mediaperson.Schema.json")}
+>
+  
+</Schema>
+            

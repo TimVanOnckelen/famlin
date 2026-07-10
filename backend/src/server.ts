@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { buildApp } from './app.js';
 import { config } from './config.js';
 import { runOnThisDayJob } from './jobs/onThisDay.js';
+import { runNewAssetsJob } from './jobs/newAssets.js';
 
 async function start() {
   const fastify = await buildApp();
@@ -19,6 +20,13 @@ async function start() {
   // setting — kept simple for an MVP-scale feature.
   cron.schedule('0 8 * * *', () => {
     runOnThisDayJob().catch((err) => fastify.log.error(err, 'on-this-day job failed'));
+  });
+
+  // Hourly, offset from the top of the hour so it doesn't compete with other
+  // scheduled work — surfaces newly-added assets on MANUAL/AUTO-mode linked
+  // albums (see src/jobs/newAssets.ts).
+  cron.schedule('15 * * * *', () => {
+    runNewAssetsJob().catch((err) => fastify.log.error(err, 'new-assets job failed'));
   });
 }
 

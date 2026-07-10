@@ -25,6 +25,8 @@ import {
   testImmichConnectionBodySchema,
   testLocalMediaBodySchema,
   linkMediaAlbumBodySchema,
+  updateMediaAlbumLinkBodySchema,
+  createMediaPersonLinkBodySchema,
 } from '../types.js';
 import { getT } from '../i18n/index.js';
 
@@ -39,6 +41,12 @@ import { getT } from '../i18n/index.js';
 function getPublicOrigin(request: any): string {
   return `${request.protocol}://${request.hostname}`;
 }
+
+// Safety cap on GET /media/:provider/people's combined (own + cross-owner
+// discovered) catalog size — this feeds an admin "map this person" picker,
+// not a paginated browse UI, mirroring immich.ts's own MAX_PEOPLE cap on
+// listPeople() itself.
+const ADMIN_PEOPLE_CATALOG_CAP = 200;
 
 // Fields safe to expose to admin clients. passwordHash is selected only so
 // toSafeUser() below can derive `hasPassword` from it — every caller of this
@@ -465,11 +473,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/content/posts', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId } = request.query as { groupId?: string };
+    const { groupId, authorId, q } = request.query as {
+      groupId?: string;
+      authorId?: string;
+      q?: string;
+    };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const posts = await prisma.post.findMany({
-      where: groupId ? { groupId } : {},
+      where: {
+        ...(groupId ? { groupId } : {}),
+        ...(authorId ? { authorId } : {}),
+        ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
@@ -494,11 +510,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/content/comments', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId } = request.query as { groupId?: string };
+    const { groupId, authorId, q } = request.query as {
+      groupId?: string;
+      authorId?: string;
+      q?: string;
+    };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const comments = await prisma.comment.findMany({
-      where: groupId ? { post: { groupId } } : {},
+      where: {
+        ...(groupId ? { post: { groupId } } : {}),
+        ...(authorId ? { authorId } : {}),
+        ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
@@ -624,6 +648,143 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return { success: true };
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+      throw err;
+    }
+  });
+
+  // Toggles whether/how src/jobs/newAssets.ts surfaces newly-added assets on
+  // this linked album — OFF (default), MANUAL (a notification), or AUTO (a
+  // real Post). The job itself resolves this per link on every run.
+  fastify.patch('/media-albums/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    const body = updateMediaAlbumLinkBodySchema.parse(request.body);
+
+    try {
+      return await prisma.mediaAlbumLink.update({
+        where: { id },
+        data: { newAssetMode: body.newAssetMode },
+      });
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+      throw err;
+    }
+  });
+
+  // The admin "map a person" picker's catalog for one provider — only
+  // providers that implement the optional listPeople() capability (Immich
+  // today) support this. listPeople() alone only sees people the API key's
+  // own account recognizes; on top of that, this also surfaces cross-owner
+  // people (recognized in *other* Immich users' shared-album photos) via
+  // getAlbumAssetPeople across every album linked to this provider, so an
+  // admin can map someone who never appears in the key owner's own /people
+  // list. Same response shape either way — the admin UI needs no changes.
+  fastify.get('/media/:provider/people', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { provider: providerId } = request.params as { provider: string };
+    const provider = getMediaProvider(providerId);
+    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+    if (!provider.listPeople) {
+      return reply.status(400).send({ error: t('errors.mediaProviderLacksPeople') });
+    }
+
+    try {
+      const ownPeople = await provider.listPeople();
+      const byId = new Map(ownPeople.map((p) => [p.id, p]));
+
+      if (provider.getAlbumAssetPeople) {
+        const links = await prisma.mediaAlbumLink.findMany({
+          where: { provider: providerId },
+          select: { externalAlbumId: true },
+        });
+        const albumIds = [...new Set(links.map((l) => l.externalAlbumId))];
+
+        for (const albumId of albumIds) {
+          if (byId.size >= ADMIN_PEOPLE_CATALOG_CAP) break;
+          try {
+            const albumPeople = await provider.getAlbumAssetPeople(albumId);
+            for (const people of albumPeople.values()) {
+              for (const person of people) {
+                if (byId.has(person.id) || byId.size >= ADMIN_PEOPLE_CATALOG_CAP) continue;
+                const thumbnailDataUri = provider.getPersonThumbnail
+                  ? await provider.getPersonThumbnail(person.id).catch(() => null)
+                  : null;
+                byId.set(person.id, { id: person.id, name: person.name, thumbnailDataUri });
+              }
+            }
+          } catch (err) {
+            // One failing album's cross-owner discovery shouldn't blank out
+            // the key owner's own people (already resolved above) — log and
+            // move on to the next linked album.
+            console.warn(`admin media people: failed to discover album people for ${providerId}/${albumId}:`, err);
+          }
+        }
+      }
+
+      return [...byId.values()];
+    } catch (err) {
+      if (err instanceof MediaProviderError) {
+        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });
+      }
+      throw err;
+    }
+  });
+
+  // Every provider-person -> Famlin-user mapping, across every provider —
+  // the admin UI's single management table.
+  fastify.get('/media/people-links', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    return prisma.mediaPersonLink.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  });
+
+  // Upserts on the (provider, externalPersonId) unique pair — re-mapping an
+  // already-linked person (a different label/user) is a normal edit, not an
+  // error.
+  fastify.post('/media/people-links', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const body = createMediaPersonLinkBodySchema.parse(request.body);
+
+    if (body.userId) {
+      const user = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } });
+      if (!user) return reply.status(400).send({ error: t('errors.userNotFound') });
+    }
+
+    return prisma.mediaPersonLink.upsert({
+      where: { provider_externalPersonId: { provider: body.provider, externalPersonId: body.externalPersonId } },
+      create: {
+        provider: body.provider,
+        externalPersonId: body.externalPersonId,
+        label: body.label,
+        userId: body.userId,
+      },
+      update: {
+        label: body.label,
+        userId: body.userId ?? null,
+      },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  });
+
+  fastify.delete('/media/people-links/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    try {
+      await prisma.mediaPersonLink.delete({ where: { id } });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
       throw err;
     }
   });

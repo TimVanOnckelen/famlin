@@ -95,7 +95,8 @@
     "comments_other": "{{count}} reacties",
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
-    "onThisDayCount_other": "{{count}} herinneringen van deze dag"
+    "onThisDayCount_other": "{{count}} herinneringen van deze dag",
+    "peopleInPost": "Personen herkend in dit bericht"
   },
   "search": {
     "title": "Zoeken in {{group}}",
@@ -149,6 +150,7 @@
     "title": "Foto's kiezen",
     "addCount_one": "{{count}} toevoegen",
     "addCount_other": "{{count}} toevoegen",
+    "allPeople": "Iedereen",
     "noAssets": "Dit album heeft nog geen foto's.",
     "loadAlbumsError": "Albums laden mislukt",
     "loadAssetsError": "Foto's laden mislukt"
@@ -175,6 +177,9 @@
     "deleteCommentConfirmTitle": "Reactie verwijderen?",
     "deleteCommentConfirmMessage": "Dit kan niet ongedaan worden gemaakt.",
     "editPlaceholder": "Bewerk je bericht...",
+    "addAttachment": "Voeg een foto of video toe",
+    "removeAttachment": "Bijlage verwijderen",
+    "viewAttachment": "Bijlage bekijken",
     "alerts": {
       "editFailed": "Wijzigingen konden niet worden opgeslagen",
       "deleteFailed": "Verwijderen mislukt"
@@ -189,6 +194,12 @@
     "title": "Favorieten",
     "emptyTitle": "Nog geen favorieten.",
     "emptySubtitle": "Tik op het bladwijzer-icoon bij een bericht om het hier te bewaren."
+  },
+  "photos": {
+    "title": "Foto's",
+    "emptyTitle": "Nog geen foto's.",
+    "emptySubtitle": "Foto's van je familie zullen hier verschijnen.",
+    "allPeople": "Iedereen"
   },
   "profile": {
     "title": "Profiel",
@@ -224,7 +235,7 @@
   },
   "tabs": {
     "feed": "Feed",
-    "notifications": "Meldingen",
+    "photos": "Foto's",
     "profile": "Profiel"
   },
   "imageViewer": {

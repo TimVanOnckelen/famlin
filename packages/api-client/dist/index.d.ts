@@ -4,14 +4,14 @@ export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMedia
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody } from './auth';
 export { fetchOidcConfig, loginWithOidc, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, changePassword, } from './auth';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
-export type { MediaGroupAlbum, MediaAsset } from './media';
-export { getGroupMediaAlbums, getMediaAlbumAssets } from './media';
+export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
+export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';
 export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from './uploads';
-export type { ReactionType, User, Group, Post, Comment, Notification } from './types';
+export type { ReactionType, User, Group, Post, PostPerson, Comment, Notification } from './types';
 export { REACTION_TYPES } from './types';
 export { patchPostInCaches } from './postCache';
 export type { GroupMember } from './groups';

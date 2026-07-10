@@ -5,9 +5,10 @@ import type { NotificationChannel, NotifyType, Recipient } from './types.js';
 
 const expo = new Expo();
 
-// Mentions and "on this day" memories reuse the closest existing preference
-// column (comment activity / new post activity, respectively) rather than
-// adding two more boolean columns + admin UI toggles for an MVP-scale feature set.
+// Mentions, "on this day" memories, and new-media-assets alerts all reuse the
+// closest existing preference column (comment activity / new post activity)
+// rather than adding more boolean columns + admin UI toggles for an
+// MVP-scale feature set.
 const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike'> = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
@@ -15,6 +16,7 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
   new_like_comment: 'pushOnNewLike',
   mention: 'pushOnNewComment',
   on_this_day: 'pushOnNewPost',
+  new_media_assets: 'pushOnNewPost',
 };
 
 export const pushChannel: NotificationChannel = {

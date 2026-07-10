@@ -146,6 +146,56 @@ describe('comments routes', () => {
     });
   });
 
+  describe('comment attachments', () => {
+    it('creates a photo-only comment with no text content', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const photoUrl = assetPath();
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrl: photoUrl },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().content).toBe('');
+      expect(res.json().attachmentUrl).toBe(photoUrl);
+    });
+
+    it('rejects a comment with neither content nor an attachment', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: {},
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects an attachmentUrl that is not a valid uploaded asset path', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrl: 'https://evil.example.com/x.jpg' },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+  });
+
   describe('soft delete', () => {
     it('rejects replying to a soft-deleted parent comment', async () => {
       const author = await createUser();

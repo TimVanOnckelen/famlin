@@ -95,7 +95,8 @@
     "comments_other": "{{count}} comments",
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
-    "onThisDayCount_other": "{{count}} memories from this day"
+    "onThisDayCount_other": "{{count}} memories from this day",
+    "peopleInPost": "People recognized in this post"
   },
   "search": {
     "title": "Search {{group}}",
@@ -149,6 +150,7 @@
     "title": "Choose photos",
     "addCount_one": "Add {{count}}",
     "addCount_other": "Add {{count}}",
+    "allPeople": "Everyone",
     "noAssets": "This album has no photos yet.",
     "loadAlbumsError": "Could not load albums",
     "loadAssetsError": "Could not load photos"
@@ -175,6 +177,9 @@
     "deleteCommentConfirmTitle": "Delete comment?",
     "deleteCommentConfirmMessage": "This can't be undone.",
     "editPlaceholder": "Edit your post...",
+    "addAttachment": "Attach a photo or video",
+    "removeAttachment": "Remove attachment",
+    "viewAttachment": "View attachment",
     "alerts": {
       "editFailed": "Could not save changes",
       "deleteFailed": "Could not delete"
@@ -189,6 +194,12 @@
     "title": "Favorites",
     "emptyTitle": "No favorites yet.",
     "emptySubtitle": "Tap the bookmark icon on a post to save it here."
+  },
+  "photos": {
+    "title": "Photos",
+    "emptyTitle": "No photos yet.",
+    "emptySubtitle": "Photos from your family will appear here.",
+    "allPeople": "Everyone"
   },
   "profile": {
     "title": "Profile",
@@ -224,7 +235,7 @@
   },
   "tabs": {
     "feed": "Feed",
-    "notifications": "Notifications",
+    "photos": "Photos",
     "profile": "Profile"
   },
   "imageViewer": {

@@ -30,6 +30,7 @@
     "favorite": "Bewaar als favoriet",
     "comments_one": "{{count}} reactie",
     "comments_other": "{{count}} reacties",
+    "peopleInPost": "Personen in dit bericht",
     "empty": "Nog geen berichten — deel de eerste update met je familie!",
     "loadMore": "Toon meer",
     "loadFailed": "De feed kon niet geladen worden."
@@ -40,7 +41,10 @@
     "sendFailed": "Je reactie kon niet geplaatst worden. Probeer opnieuw.",
     "like": "Vind ik leuk",
     "empty": "Nog geen reacties — wees de eerste!",
-    "loadFailed": "Reacties konden niet geladen worden."
+    "loadFailed": "Reacties konden niet geladen worden.",
+    "addAttachment": "Voeg een foto of video toe",
+    "removeAttachment": "Bijlage verwijderen",
+    "viewAttachment": "Bijlage bekijken"
   },
   "newPost": {
     "title": "Nieuw bericht",
@@ -121,9 +125,22 @@
     "loadFailed": "Albumfoto's konden niet geladen worden.",
     "addCount_one": "Voeg {{count}} foto toe",
     "addCount_other": "Voeg {{count}} foto's toe",
+    "filterByPerson": "Filter op persoon",
+    "allPeople": "Alle personen",
     "providers": {
       "immich": "Immich",
       "local": "Servermap"
     }
+  },
+  "photos": {
+    "title": "Foto's",
+    "filterLabel": "Filter op familie",
+    "allFamilies": "Alle families",
+    "filterByPerson": "Filter op persoon",
+    "allPeople": "Alle personen",
+    "empty": "Nog geen foto's",
+    "loadFailed": "Foto's konden niet geladen worden.",
+    "shareToFeed": "Delen op feed",
+    "viewPost": "Bericht bekijken"
   }
 }

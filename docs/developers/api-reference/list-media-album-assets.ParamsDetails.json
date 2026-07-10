@@ -1,1 +1,1 @@
-{"parameters":[{"name":"linkId","in":"path","required":true,"schema":{"type":"string"}}]}
+{"parameters":[{"name":"linkId","in":"path","required":true,"schema":{"type":"string"}},{"name":"personId","in":"query","schema":{"type":"string"},"description":"Optional filter to show only assets of a mapped person\n(use their `externalPersonId` from `GET /api/media/people`).\n"}]}

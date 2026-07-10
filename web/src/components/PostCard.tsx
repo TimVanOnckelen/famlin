@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Post,
+  PostPerson,
   ReactionType,
   REACTION_TYPES,
   reactToPost,
@@ -13,64 +14,53 @@ import {
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { CommentsSection } from '@/components/CommentsSection';
+import { Lightbox } from '@/components/Lightbox';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
 
-function Lightbox({
-  assetUrls,
-  initialIndex,
-  onClose,
-}: {
-  assetUrls: string[];
-  initialIndex: number;
-  onClose: () => void;
-}) {
-  const [index, setIndex] = useState(initialIndex);
+function PersonChip({ person }: { person: PostPerson }) {
+  // Use the user's avatar/name if mapped to an account, otherwise use label
+  const displayName = person.userName || person.label;
+  const avatarUrl = person.userAvatarUrl;
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') setIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight') setIndex((i) => Math.min(assetUrls.length - 1, i + 1));
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [assetUrls.length, onClose]);
+  if (avatarUrl) {
+    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl;
+    return (
+      <div className="post-person-chip" title={displayName}>
+        <img src={src} alt={displayName} className="post-person-avatar" />
+        <span>{person.label}</span>
+      </div>
+    );
+  }
 
-  const url = getUploadUrl(assetUrls[index]);
+  // Fallback avatar with first letter of the label when no image
+  const firstLetter = person.label.charAt(0).toUpperCase();
+  const AVATAR_COLORS = ['#006e94', '#ed835e', '#4b8b5a', '#005480'];
+  let hash = 0;
+  for (let i = 0; i < person.label.length; i++) {
+    hash = (hash * 31 + person.label.charCodeAt(i)) | 0;
+  }
+  const bgColor = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 
   return (
-    <div className="lightbox" onClick={onClose} role="dialog" aria-modal>
-      {index > 0 && (
-        <button
-          className="lightbox-nav lightbox-prev"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIndex(index - 1);
-          }}
-          aria-label="‹"
-        >
-          ‹
-        </button>
-      )}
-      {isVideoUrl(assetUrls[index]) ? (
-        <video src={url} className="lightbox-media" controls autoPlay onClick={(e) => e.stopPropagation()} />
-      ) : (
-        <img src={url} className="lightbox-media" alt="" onClick={(e) => e.stopPropagation()} />
-      )}
-      {index < assetUrls.length - 1 && (
-        <button
-          className="lightbox-nav lightbox-next"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIndex(index + 1);
-          }}
-          aria-label="›"
-        >
-          ›
-        </button>
-      )}
+    <div className="post-person-chip" title={displayName}>
+      <div
+        className="post-person-avatar"
+        style={{
+          background: bgColor,
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '11px',
+          fontWeight: 800,
+        }}
+      >
+        {firstLetter}
+      </div>
+      <span>{person.label}</span>
     </div>
   );
 }
@@ -160,10 +150,9 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             {isVideoUrl(post.uploadedAssetUrls[0]) ? (
               <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
             ) : (
-              <img
+              <ShimmerImage
                 src={heroUrl}
                 className="post-hero-media post-hero-clickable"
-                alt=""
                 loading="lazy"
                 onClick={() => setLightboxIndex(0)}
               />
@@ -191,7 +180,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 {isVideoUrl(assetUrl) ? (
                   <video src={getUploadUrl(assetUrl)} preload="metadata" />
                 ) : (
-                  <img src={getUploadUrl(assetUrl)} alt="" loading="lazy" />
+                  <ShimmerImage src={getUploadUrl(assetUrl)} loading="lazy" />
                 )}
                 {i === 2 && extraAssets.length > 3 && (
                   <span className="post-thumb-more">+{extraAssets.length - 3}</span>
@@ -223,12 +212,20 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             <div className="post-milestone-title">{post.content}</div>
           )}
           {!isMilestone && post.content && (
-            <p className={`post-content${hasPhotos ? ' post-caption' : ''}`}>{post.content}</p>
+            <p className="post-content">{post.content}</p>
           )}
           {hasPhotos && (
             <div className="post-meta">
               <span className="post-time">{timeLine}</span>
               {groupChip}
+            </div>
+          )}
+
+          {post.people && post.people.length > 0 && (
+            <div className="post-people" aria-label={t('feed.peopleInPost')}>
+              {post.people.map((person) => (
+                <PersonChip key={person.id} person={person} />
+              ))}
             </div>
           )}
 

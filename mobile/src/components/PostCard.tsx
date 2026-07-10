@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,12 +12,57 @@ import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
-import { Post, ReactionType } from '@/types';
+import { Post, PostPerson, ReactionType } from '@/types';
 import { reactToPost, toggleFavoritePost } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { patchPostInCaches } from '@/utils/postCache';
+
+const AVATAR_COLORS = ['#006e94', '#318ea2', '#4b8b5a', '#005480', '#ed835e'];
+
+function getPersonAvatarInitial(label: string) {
+  return label.charAt(0).toUpperCase();
+}
+
+function getPersonAvatarColor(label: string) {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function PersonChip({ person }: { person: PostPerson }) {
+  const displayName = person.userName || person.label;
+  const avatarUrl = person.userAvatarUrl;
+
+  if (avatarUrl) {
+    const uri = avatarUrl.startsWith('http') ? avatarUrl : getUploadUrl(avatarUrl);
+    return (
+      <View style={styles.personChip}>
+        <Image source={{ uri }} style={styles.personAvatar} />
+        <Text style={styles.personLabel} numberOfLines={1}>
+          {person.label}
+        </Text>
+      </View>
+    );
+  }
+
+  const initial = getPersonAvatarInitial(person.label);
+  const bgColor = getPersonAvatarColor(person.label);
+
+  return (
+    <View style={styles.personChip}>
+      <View style={[styles.personAvatar, { backgroundColor: bgColor }]}>
+        <Text style={styles.personAvatarText}>{initial}</Text>
+      </View>
+      <Text style={styles.personLabel} numberOfLines={1}>
+        {person.label}
+      </Text>
+    </View>
+  );
+}
 
 export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t } = useTranslation();
@@ -215,6 +260,18 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             locationName={post.locationName}
             mapHeight={100}
           />
+        )}
+
+        {post.people && post.people.length > 0 && (
+          <View
+            style={styles.peopleContainer}
+            accessible={true}
+            accessibilityLabel={t('feed.peopleInPost')}
+          >
+            {post.people.map((person) => (
+              <PersonChip key={person.id} person={person} />
+            ))}
+          </View>
         )}
       </TouchableOpacity>
 
@@ -448,5 +505,43 @@ const styles = StyleSheet.create({
   },
   reactionEmoji: {
     fontSize: 18,
+  },
+  peopleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  personChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.white,
+    borderRadius: 100,
+    paddingVertical: 4,
+    paddingLeft: 4,
+    paddingRight: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  personAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.border,
+  },
+  personAvatarText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 10,
+    color: colors.white,
+  },
+  personLabel: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textTitle,
+    maxWidth: 120,
   },
 });

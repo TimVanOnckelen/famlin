@@ -11,6 +11,9 @@ import {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaProviderId,
+  NewAssetMode,
+  MediaPerson,
+  MediaPersonLink,
 } from '../types';
 
 export type {
@@ -26,6 +29,9 @@ export type {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaProviderId,
+  NewAssetMode,
+  MediaPerson,
+  MediaPersonLink,
 };
 
 export class ApiError extends Error {
@@ -42,6 +48,22 @@ export class ApiError extends Error {
 export interface Page<T> {
   items: T[];
   nextCursor: string | null;
+}
+
+export interface ContentFilterParams {
+  groupId?: string;
+  authorId?: string;
+  q?: string;
+  cursor?: string;
+}
+
+function contentQueryString(params: ContentFilterParams) {
+  const query = new URLSearchParams();
+  if (params.groupId) query.set('groupId', params.groupId);
+  if (params.authorId) query.set('authorId', params.authorId);
+  if (params.q) query.set('q', params.q);
+  if (params.cursor) query.set('cursor', params.cursor);
+  return query.toString();
 }
 
 function getToken() {
@@ -166,19 +188,13 @@ export const api = {
   revokeInvite: (id: string) =>
     request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
 
-  getContentPosts: (params: { groupId?: string; cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.groupId) query.set('groupId', params.groupId);
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
+  getContentPosts: (params: ContentFilterParams = {}) => {
+    const qs = contentQueryString(params);
     return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`);
   },
 
-  getContentComments: (params: { groupId?: string; cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.groupId) query.set('groupId', params.groupId);
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
+  getContentComments: (params: ContentFilterParams = {}) => {
+    const qs = contentQueryString(params);
     return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
   },
 
@@ -226,4 +242,19 @@ export const api = {
 
   unlinkMediaAlbum: (id: string) =>
     request<void>(`/api/admin/media-albums/${id}`, { method: 'DELETE' }),
+
+  updateMediaAlbumLink: (id: string, data: { newAssetMode: NewAssetMode }) =>
+    request<MediaAlbumLink>(`/api/admin/media-albums/${id}`, { method: 'PATCH', body: data }),
+
+  getMediaPeople: (provider: MediaProviderId) =>
+    request<MediaPerson[]>(`/api/admin/media/${provider}/people`),
+
+  getMediaPersonLinks: () =>
+    request<MediaPersonLink[]>('/api/admin/media/people-links'),
+
+  createMediaPersonLink: (data: { provider: MediaProviderId; externalPersonId: string; label: string; userId?: string }) =>
+    request<MediaPersonLink>('/api/admin/media/people-links', { method: 'POST', body: data }),
+
+  deleteMediaPersonLink: (id: string) =>
+    request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
 };

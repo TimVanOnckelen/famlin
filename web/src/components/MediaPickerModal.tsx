@@ -4,9 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import {
   MediaAsset,
   getGroupMediaAlbums,
+  getGroupMediaPeople,
   getMediaAlbumAssets,
   getUploadUrl,
 } from '@famlin/api-client';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import './MediaPickerModal.css';
 
 // Picks photos/videos from the group's linked albums, whatever media source
@@ -23,6 +25,7 @@ export function MediaPickerModal({
 }) {
   const { t } = useTranslation();
   const [chosenLinkId, setChosenLinkId] = useState<string | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const albumsQuery = useQuery({
@@ -31,14 +34,20 @@ export function MediaPickerModal({
   });
   const albums = albumsQuery.data ?? [];
 
+  const peopleQuery = useQuery({
+    queryKey: ['media-people', groupId],
+    queryFn: () => getGroupMediaPeople(groupId),
+  });
+  const people = peopleQuery.data ?? [];
+
   // A single linked album skips the album list entirely.
   const linkId = chosenLinkId ?? (albums.length === 1 ? albums[0].linkId : null);
   // The source badge only disambiguates when the group actually mixes sources.
   const multipleProviders = new Set(albums.map((a) => a.provider)).size > 1;
 
   const assetsQuery = useQuery({
-    queryKey: ['media-assets', linkId],
-    queryFn: () => getMediaAlbumAssets(linkId!),
+    queryKey: ['media-assets', linkId, selectedPersonId],
+    queryFn: () => getMediaAlbumAssets(linkId!, selectedPersonId ?? undefined),
     enabled: linkId !== null,
   });
   const assets = assetsQuery.data ?? [];
@@ -101,11 +110,32 @@ export function MediaPickerModal({
                 className="media-picker-back"
                 onClick={() => {
                   setChosenLinkId(null);
+                  setSelectedPersonId(null);
                   setSelected(new Set());
                 }}
               >
                 ‹ {t('mediaPicker.backToAlbums')}
               </button>
+            )}
+            {people.length > 0 && (
+              <div className="media-picker-person-filter" role="group" aria-label={t('mediaPicker.filterByPerson')}>
+                <button
+                  className={`filter-chip${selectedPersonId === null ? ' filter-chip-active' : ''}`}
+                  onClick={() => setSelectedPersonId(null)}
+                >
+                  {t('mediaPicker.allPeople')}
+                </button>
+                {people.map((person) => (
+                  <button
+                    key={person.id}
+                    className={`filter-chip${selectedPersonId === person.id ? ' filter-chip-active' : ''}`}
+                    onClick={() => setSelectedPersonId(person.id)}
+                    aria-pressed={selectedPersonId === person.id}
+                  >
+                    {person.label}
+                  </button>
+                ))}
+              </div>
             )}
             {assetsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
             {assetsQuery.isError && <div className="modal-error">{t('mediaPicker.loadFailed')}</div>}
@@ -122,7 +152,7 @@ export function MediaPickerModal({
                     onClick={() => toggle(asset.assetId)}
                     aria-pressed={isSelected}
                   >
-                    <img src={getUploadUrl(asset.thumbnailUrl)} alt="" loading="lazy" />
+                    <ShimmerImage src={getUploadUrl(asset.thumbnailUrl)} loading="lazy" />
                     {asset.type === 'VIDEO' && <span className="media-picker-video-badge">▶</span>}
                     {isSelected && <span className="media-picker-check">✓</span>}
                   </button>

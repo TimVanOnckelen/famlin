@@ -10,10 +10,15 @@ export async function fetchComments(postId: string, assetUrl?: string): Promise<
 }
 
 export interface CreateCommentBody {
-  content: string;
+  // Optional so a comment can be photo/video-only — the server rejects a
+  // request with neither content nor attachmentUrl.
+  content?: string;
   parentId?: string;
   mentionedUserIds?: string[];
   assetUrl?: string;
+  // A photo/video the commenter uploaded as part of this comment itself
+  // (from POST /api/uploads) — distinct from assetUrl above.
+  attachmentUrl?: string;
 }
 
 export async function createComment(postId: string, data: CreateCommentBody): Promise<Comment> {

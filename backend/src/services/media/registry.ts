@@ -19,6 +19,18 @@ export function listMediaProviders(): MediaProvider[] {
   return [...providers.values()];
 }
 
+// Test-only escape hatch (mirrors __clearDomainEventHandlersForTests in
+// events.ts): lets a test register a fake MediaProvider — e.g. to exercise
+// src/jobs/newAssets.ts without hitting a real Immich/local source — and
+// remove it afterwards so it can't leak into other test files.
+export function __registerMediaProviderForTests(provider: MediaProvider): void {
+  providers.set(provider.id, provider);
+}
+
+export function __unregisterMediaProviderForTests(id: string): void {
+  providers.delete(id);
+}
+
 // Single source of truth for mapping a MediaProviderError to a translated
 // key/HTTP status — every route that touches a provider imports these
 // instead of re-deriving the mapping (mirrors OIDC_ERROR_KEY in

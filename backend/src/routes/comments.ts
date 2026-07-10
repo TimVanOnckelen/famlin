@@ -75,9 +75,10 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       data: {
         postId,
         authorId: request.user!.id,
-        content: body.content,
+        content: body.content?.trim() ?? '',
         parentId: body.parentId,
         assetUrl,
+        attachmentUrl: body.attachmentUrl,
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
@@ -96,6 +97,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       authorId: request.user!.id,
       authorName: comment.author.name,
       content: comment.content,
+      hasAttachment: !!comment.attachmentUrl,
       parentId: comment.parentId,
       mentionedUserIds: body.mentionedUserIds ?? [],
     });

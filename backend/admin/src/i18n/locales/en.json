@@ -194,7 +194,15 @@
       "noAlbums": "No albums linked to this group yet.",
       "linkError": "Could not link album: {{error}}",
       "unlinkConfirm": "Unlink album \"{{name}}\" from this group?",
-      "unlinkError": "Could not unlink album: {{error}}"
+      "unlinkError": "Could not unlink album: {{error}}",
+      "newAssetMode": "Auto-add mode",
+      "newAssetMode.off": "Off",
+      "newAssetMode.manual": "Manual (notify)",
+      "newAssetMode.auto": "Auto (post)",
+      "newAssetMode.offHelp": "New photos in this album won't be surfaced to members.",
+      "newAssetMode.manualHelp": "Members get a notification when new photos appear in this album.",
+      "newAssetMode.autoHelp": "A post is automatically created in the group feed when new photos appear.",
+      "updateModeError": "Could not update mode: {{error}}"
     }
   },
   "content": {
@@ -202,20 +210,41 @@
     "tabPosts": "Posts",
     "tabComments": "Comments",
     "allGroups": "All groups",
+    "allAuthors": "All authors",
+    "searchPlaceholder": "Search content…",
+    "clearFilters": "Clear filters",
+    "milestone": "Milestone",
+    "noText": "(no text)",
+    "commentsTooltip": "Comments",
+    "likesTooltip": "Likes",
     "table": {
       "group": "Group",
       "author": "Author",
       "content": "Content",
+      "comment": "Comment",
+      "onPost": "On post",
+      "activity": "Activity",
       "date": "Date",
       "actions": "Actions"
     },
     "deleteConfirm": "Are you sure you want to remove this?",
     "noPosts": "No posts found.",
-    "noComments": "No comments found."
+    "noComments": "No comments found.",
+    "noResults": "Nothing matches your filters."
   },
   "serverSettings": {
     "title": "Server settings",
     "general": "General",
+    "generalDesc": "Language and app store links.",
+    "signInAccess": "Sign-in & access",
+    "notifications": "Notifications",
+    "media": "Media",
+    "statusConfigured": "Configured",
+    "statusNotConfigured": "Not set up",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Disabled",
+    "unsavedChanges": "You have unsaved changes",
+    "discard": "Discard",
     "defaultLanguage": "Default language",
     "defaultLanguageHint": "Used for server-rendered pages without a signed-in user, such as the invite link page.",
     "appStoreUrl": "App Store URL",
@@ -230,7 +259,8 @@
     "oidcScopes": "Scopes",
     "oidcHint": "Works with any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, Auth0, ...). Register Famlin as a public/native client with PKCE and add this app's redirect URIs.",
     "accessControl": "Access control",
-    "allowedEmails": "Allowed email addresses for SSO login (comma-separated, empty = all allowed)",
+    "allowedEmails": "Allowed email addresses",
+    "allowedEmailsHint": "Comma-separated. SSO sign-ins are limited to these addresses; leave empty to allow everyone. Invite links always work regardless of this list.",
     "push": "Push notifications",
     "pushEnabled": "Enable push notifications",
     "pushHint": "Sent via Expo's push relay (no Apple/Google credentials needed on your server). Turn off if you don't want the server to send push notifications at all — in-app and email notifications are unaffected.",
@@ -245,7 +275,6 @@
     "saveSettings": "Save settings",
     "saving": "Saving...",
     "saved": "Settings saved.",
-    "integrations": "Media integrations",
     "integrationsHint": "Each media source is configured once for the whole instance; which albums are visible to which group is linked from the Groups page. Members can then pick photos from a linked album when composing a post.",
     "immich": "Immich",
     "immichHint": "Configure one Immich server + API key. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
@@ -264,5 +293,27 @@
     "localMediaTestOk": "Path exists and is readable.",
     "localMediaTestNotFound": "Path not found or not readable from the server.",
     "localMediaTestNotADirectory": "Path exists but is not a directory."
+  },
+  "media": {
+    "peopleMapping": {
+      "title": "People mapping",
+      "hint": "Map people detected in your photos to family members so they appear with their names in the family feed. Only mapped people become visible to family members.",
+      "notConfigured": "Immich is not configured yet. Fill in the server URL and API key above and save to map people.",
+      "mapped": "Mapped people",
+      "unmapped": "Unmapped people",
+      "searchPlaceholder": "Search people…",
+      "noMatches": "No people match your search.",
+      "showAll": "Show all {{count}}",
+      "showFewer": "Show fewer",
+      "unnamed": "Unnamed",
+      "noPeople": "No people found in your Immich library.",
+      "displayName": "Display name",
+      "familyMember": "Family member (optional)",
+      "selectUser": "Select a family member…",
+      "userMappingHint": "If set, this person's photos will be tagged with their Famlin profile. Leave empty to show the display name only.",
+      "saveError": "Could not save mapping: {{error}}",
+      "removeConfirm": "Remove mapping for \"{{name}}\"?",
+      "removeError": "Could not remove mapping: {{error}}"
+    }
   }
 }

@@ -8,12 +8,14 @@ export function AppHeader({
   user,
   onNewPost,
   onProfile,
+  onPhotos,
   onApiTokens,
   onLogout,
 }: {
   user: User;
   onNewPost: () => void;
   onProfile: () => void;
+  onPhotos?: () => void;
   onApiTokens: () => void;
   onLogout: () => void;
 }) {
@@ -47,6 +49,11 @@ export function AppHeader({
               <button className="user-menu-item" onClick={onProfile}>
                 {t('profile.title')}
               </button>
+              {onPhotos && (
+                <button className="user-menu-item" onClick={onPhotos}>
+                  {t('photos.title')}
+                </button>
+              )}
               <button className="user-menu-item" onClick={onApiTokens}>
                 {t('apiTokens.menuItem')}
               </button>
