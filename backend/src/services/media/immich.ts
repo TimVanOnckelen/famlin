@@ -33,7 +33,14 @@ async function immichFetch(
   }
   if (res.status === 401 || res.status === 403) throw new MediaProviderError('immich', 'unauthorized');
   if (init?.allow404 && res.status === 404) return res;
-  if (!res.ok) throw new MediaProviderError('immich', 'unreachable');
+  if (!res.ok) {
+    // The client only ever sees the generic translated message, so keep the
+    // real status/body in the server log — it's the only way to tell a
+    // validation 400 from an actual outage when debugging.
+    const detail = await res.text().catch(() => '');
+    console.warn(`Immich request failed: ${init?.method ?? 'GET'} ${path} -> ${res.status} ${detail.slice(0, 300)}`);
+    throw new MediaProviderError('immich', 'unreachable');
+  }
   return res;
 }
 
@@ -289,8 +296,11 @@ export const immichProvider: MediaProvider = {
     let page: string | undefined;
 
     for (let i = 0; i < PERSON_ASSET_MAX_PAGES && ids.size < PERSON_ASSET_ID_CAP; i++) {
+      // Immich returns `nextPage` as a string ("2") but validates `page` as
+      // an integer — sending the string back gets a 400 on any person with
+      // more than one page of assets.
       const body: Record<string, unknown> = { personIds: [externalPersonId], size: 1000 };
-      if (page) body.page = page;
+      if (page) body.page = Number(page);
 
       const res = await immichFetch('/search/metadata', creds, {
         method: 'POST',
