@@ -261,7 +261,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const outcome = await completeOidcLogin(idToken, inviteToken, t);
         if ('error' in outcome) {
           fastify.log.warn(
-            { loginError: outcome.error.error, code: outcome.error.code, status: outcome.error.status, inviteToken: inviteToken ?? null, redirectUri },
+            {
+              loginError: outcome.error.error,
+              code: outcome.error.code,
+              status: outcome.error.status,
+              hasInviteToken: !!inviteToken,
+              redirectUri,
+            },
             'OIDC mobile callback login outcome failed'
           );
           return reply.redirect(`famlin://oidc-callback?error=${outcome.error.code}${stateParam}`);
