@@ -103,7 +103,8 @@
       "pushNotifications": "Push notifications",
       "emailNotifications": "Email notifications",
       "memberSince": "Member since",
-      "actions": "Actions"
+      "actions": "Actions",
+      "sso": "SSO"
     },
     "noUsers": "No users found.",
     "noGroups": "No groups",
@@ -140,6 +141,7 @@
     "memberCount_other": "{{count}} members",
     "membersOf": "Members of {{name}}",
     "addMember": "Add member",
+    "addExistingUser": "+ Add an existing user",
     "selectUser": "Select a user…",
     "noMembers": "No members in this group yet.",
     "joinedOn": "joined {{date}}",
@@ -153,7 +155,8 @@
       "actions": "Actions"
     },
     "invites": {
-      "title": "Invites",
+      "title": "Invite a family member",
+      "hint": "Share the link or send it by email — they only create an account once they accept. No need to add them as a user first.",
       "emailLabel": "Email (optional)",
       "emailPlaceholder": "someone@example.com",
       "expiresLabel": "Expires",
@@ -177,10 +180,15 @@
       "neverExpires": "Never expires",
       "createdOn": "Created {{date}}"
     },
-    "immichAlbums": {
-      "title": "Immich albums",
-      "notConfigured": "Configure Immich in Server settings to link albums.",
-      "loadError": "Could not reach Immich to list albums — linked albums still work.",
+    "mediaAlbums": {
+      "title": "Linked albums",
+      "providerLabel": "Media source",
+      "providers": {
+        "immich": "Immich",
+        "local": "Local folders"
+      },
+      "notConfigured": "Configure this media source in Server settings to link albums.",
+      "loadError": "Could not read this media source to list albums — linked albums still work.",
       "selectAlbum": "Select an album…",
       "linkAlbum": "Link album",
       "noAlbums": "No albums linked to this group yet.",
@@ -237,14 +245,24 @@
     "saveSettings": "Save settings",
     "saving": "Saving...",
     "saved": "Settings saved.",
-    "immich": "Immich integration",
-    "immichHint": "Configure one Immich server + API key for the whole instance, then link specific albums to groups from the Groups page. Members can then pick photos from a linked album when composing a post. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
+    "integrations": "Media integrations",
+    "integrationsHint": "Each media source is configured once for the whole instance; which albums are visible to which group is linked from the Groups page. Members can then pick photos from a linked album when composing a post.",
+    "immich": "Immich",
+    "immichHint": "Configure one Immich server + API key. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server URL",
     "immichApiKey": "API key",
     "immichTestConnection": "Test connection",
     "immichTesting": "Testing...",
     "immichTestOk": "Connected successfully.",
     "immichTestUnauthorized": "Connected, but the API key was rejected.",
-    "immichTestUnreachable": "Could not reach the Immich server."
+    "immichTestUnreachable": "Could not reach the Immich server.",
+    "localMedia": "Local folders",
+    "localMediaHint": "Serve photos straight from a directory on this server (e.g. a NAS share mounted into the container). Every subdirectory of the path becomes a linkable album; only image files are listed.",
+    "localMediaPath": "Media folder path",
+    "localMediaTest": "Check path",
+    "localMediaTesting": "Checking...",
+    "localMediaTestOk": "Path exists and is readable.",
+    "localMediaTestNotFound": "Path not found or not readable from the server.",
+    "localMediaTestNotADirectory": "Path exists but is not a directory."
   }
 }

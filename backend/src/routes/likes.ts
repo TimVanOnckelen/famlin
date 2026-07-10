@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { notifyUser, excerptText, reactionEmoji } from '../services/notifications.js';
+import { emitDomainEvent } from '../events.js';
 import { isGroupMember } from '../services/groups.js';
 import { getT } from '../i18n/index.js';
 import { reactionBodySchema } from '../types.js';
@@ -46,19 +46,19 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       myReaction = type;
     }
 
-    if (myReaction && post.authorId !== request.user!.id) {
-      void notifyUser({
-        type: 'new_like_post',
-        userId: post.authorId,
-        senderId: request.user!.id,
+    if (myReaction) {
+      emitDomainEvent('reaction.added', {
+        targetKind: 'post',
         postId: post.id,
-        params: {
-          author: request.user!.name,
-          group: post.group.name,
-          excerpt: excerptText(post.content),
-          emoji: reactionEmoji(type),
-        },
-      }).catch((err) => request.log.error(err, 'Failed to send like notification'));
+        commentId: null,
+        groupId: post.groupId,
+        groupName: post.group.name,
+        targetAuthorId: post.authorId,
+        targetContent: post.content,
+        reactorId: request.user!.id,
+        reactorName: request.user!.name,
+        reactionType: type,
+      });
     }
 
     const counts = await reactionCounts({ postId });
@@ -100,19 +100,19 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       myReaction = type;
     }
 
-    if (myReaction && comment.authorId !== request.user!.id) {
-      void notifyUser({
-        type: 'new_like_comment',
-        userId: comment.authorId,
-        senderId: request.user!.id,
+    if (myReaction) {
+      emitDomainEvent('reaction.added', {
+        targetKind: 'comment',
         postId: comment.post.id,
-        params: {
-          author: request.user!.name,
-          group: comment.post.group.name,
-          excerpt: excerptText(comment.content),
-          emoji: reactionEmoji(type),
-        },
-      }).catch((err) => request.log.error(err, 'Failed to send like notification'));
+        commentId: comment.id,
+        groupId: comment.post.groupId,
+        groupName: comment.post.group.name,
+        targetAuthorId: comment.authorId,
+        targetContent: comment.content,
+        reactorId: request.user!.id,
+        reactorName: request.user!.name,
+        reactionType: type,
+      });
     }
 
     const counts = await reactionCounts({ commentId });

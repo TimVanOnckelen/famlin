@@ -40,3 +40,4 @@ export declare function fetchNotificationConfig(): Promise<{
 export declare function fetchServerInfo(): Promise<{
     version: string;
 }>;
+export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;

@@ -55,6 +55,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     name: 'Grandpa John',
     avatarUrl: null,
     isAdmin: false,
+    hasPassword: true,
     emailOnNewPost: true,
     emailOnNewComment: true,
     emailOnNewLike: true,

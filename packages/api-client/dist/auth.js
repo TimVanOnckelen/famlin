@@ -9,6 +9,7 @@ exports.fetchMe = fetchMe;
 exports.updateMe = updateMe;
 exports.fetchNotificationConfig = fetchNotificationConfig;
 exports.fetchServerInfo = fetchServerInfo;
+exports.changePassword = changePassword;
 const client_1 = require("./client");
 async function fetchOidcConfig() {
     const response = await client_1.api.get('/auth/oidc-config');
@@ -54,4 +55,7 @@ async function fetchNotificationConfig() {
 async function fetchServerInfo() {
     const response = await client_1.api.get('/auth/server-info');
     return response.data;
+}
+async function changePassword(currentPassword, newPassword) {
+    await client_1.api.post('/auth/change-password', { currentPassword, newPassword });
 }

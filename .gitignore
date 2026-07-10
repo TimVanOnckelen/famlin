@@ -58,6 +58,9 @@ prisma/migrations/*_init/
 # Docker volumes
 famlin-db-data/
 
+# Local-media provider's generated thumbnail cache (regenerated on demand)
+media-cache/
+
 # Coverage
 coverage/
 

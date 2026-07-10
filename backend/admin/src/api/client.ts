@@ -8,8 +8,9 @@ import {
   ModerationPost,
   ModerationComment,
   Invite,
-  ImmichAlbumSummary,
-  ImmichAlbumLink,
+  MediaAlbumSummary,
+  MediaAlbumLink,
+  MediaProviderId,
 } from '../types';
 
 export type {
@@ -22,15 +23,17 @@ export type {
   ModerationPost,
   ModerationComment,
   Invite,
-  ImmichAlbumSummary,
-  ImmichAlbumLink,
+  MediaAlbumSummary,
+  MediaAlbumLink,
+  MediaProviderId,
 };
 
 export class ApiError extends Error {
-  // Machine-readable error code, when the backend sends one (e.g. Immich's
-  // `not_configured`/`unreachable`/`unauthorized` — see ImmichError in
-  // backend/src/services/immich.ts) — lets callers branch on the failure
-  // reason instead of only having a translated message to show.
+  // Machine-readable error code, when the backend sends one (e.g. a media
+  // source's `not_configured`/`unreachable`/`unauthorized` — see
+  // MediaProviderError in backend/src/services/media/types.ts) — lets callers
+  // branch on the failure reason instead of only having a translated message
+  // to show.
   constructor(public status: number, message: string, public code?: string) {
     super(message);
   }
@@ -206,14 +209,21 @@ export const api = {
       body: { serverUrl, apiKey },
     }),
 
-  getImmichAlbums: () => request<ImmichAlbumSummary[]>('/api/admin/immich/albums'),
+  testLocalMediaPath: (rootPath: string) =>
+    request<{ ok: true } | { ok: false; error: 'not_found' | 'not_a_directory' }>('/api/admin/media/local/test', {
+      method: 'POST',
+      body: { rootPath },
+    }),
 
-  getGroupImmichAlbums: (groupId: string) =>
-    request<ImmichAlbumLink[]>(`/api/admin/groups/${groupId}/immich-albums`),
+  getMediaAlbums: (provider: MediaProviderId) =>
+    request<MediaAlbumSummary[]>(`/api/admin/media/${provider}/albums`),
 
-  linkImmichAlbum: (groupId: string, data: { immichAlbumId: string; albumName: string }) =>
-    request<ImmichAlbumLink>(`/api/admin/groups/${groupId}/immich-albums`, { method: 'POST', body: data }),
+  getGroupMediaAlbums: (groupId: string) =>
+    request<MediaAlbumLink[]>(`/api/admin/groups/${groupId}/media-albums`),
 
-  unlinkImmichAlbum: (id: string) =>
-    request<void>(`/api/admin/immich-albums/${id}`, { method: 'DELETE' }),
+  linkMediaAlbum: (groupId: string, data: { provider: MediaProviderId; externalAlbumId: string; albumName: string }) =>
+    request<MediaAlbumLink>(`/api/admin/groups/${groupId}/media-albums`, { method: 'POST', body: data }),
+
+  unlinkMediaAlbum: (id: string) =>
+    request<void>(`/api/admin/media-albums/${id}`, { method: 'DELETE' }),
 };

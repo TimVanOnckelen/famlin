@@ -197,6 +197,9 @@ tr:last-child td {
 }
 
 .cell-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 800;
 }
 
@@ -272,6 +275,18 @@ button.danger {
 
 button.danger:hover {
   background: var(--danger-hover);
+}
+
+button.link-button {
+  background: none;
+  color: var(--primary);
+  padding: 0.3rem 0;
+  border-radius: 0;
+}
+
+button.link-button:hover {
+  background: none;
+  text-decoration: underline;
 }
 
 button:disabled {
@@ -359,6 +374,11 @@ input[type='checkbox'] {
 .badge.milestone {
   background: var(--fam-milestone);
   color: #5c3d0a;
+}
+
+.badge.sso {
+  background: var(--fam-accent);
+  color: white;
 }
 
 .login-page {

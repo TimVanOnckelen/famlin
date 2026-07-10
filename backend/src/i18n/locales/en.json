@@ -40,6 +40,10 @@
     "immichUnreachable": "Could not reach the Immich server with these settings",
     "immichAlbumAlreadyLinked": "This album is already linked to this group",
     "immichAlbumLinkNotFound": "Immich album link not found",
+    "mediaSourceNotConfigured": "This media source is not configured",
+    "mediaSourceUnavailable": "Could not read from this media source",
+    "mediaAlbumAlreadyLinked": "This album is already linked to this group",
+    "mediaAlbumLinkNotFound": "Media album link not found",
     "apiTokenSessionRequired": "API tokens can only be created from a normal login session, not with another API token",
     "apiTokenNotFound": "API token not found"
   },

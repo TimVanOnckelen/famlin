@@ -2,7 +2,7 @@ export type { StorageAdapter } from './storage';
 export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
 export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMediaToken, initApiBaseUrl, setUnauthorizedHandler, } from './client';
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody } from './auth';
-export { fetchOidcConfig, loginWithOidc, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, } from './auth';
+export { fetchOidcConfig, loginWithOidc, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, changePassword, } from './auth';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
 export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';

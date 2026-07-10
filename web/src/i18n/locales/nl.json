@@ -74,6 +74,14 @@
     "server": "Server",
     "connectedTo": "Verbonden met",
     "serverVersion": "Serverversie {{version}}",
+    "security": "Wachtwoord",
+    "currentPassword": "Huidig wachtwoord",
+    "newPassword": "Nieuw wachtwoord",
+    "confirmPassword": "Bevestig nieuw wachtwoord",
+    "changePassword": "Wachtwoord wijzigen",
+    "passwordChanged": "Je wachtwoord is gewijzigd.",
+    "passwordMismatch": "De nieuwe wachtwoorden komen niet overeen.",
+    "passwordChangeFailed": "Je wachtwoord kon niet gewijzigd worden. Probeer opnieuw.",
     "languages": {
       "en": "English",
       "nl": "Nederlands"

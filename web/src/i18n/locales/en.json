@@ -74,6 +74,14 @@
     "server": "Server",
     "connectedTo": "Connected to",
     "serverVersion": "Server version {{version}}",
+    "security": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Your password has been changed.",
+    "passwordMismatch": "New passwords don't match.",
+    "passwordChangeFailed": "Your password couldn't be changed. Try again.",
     "languages": {
       "en": "English",
       "nl": "Nederlands"

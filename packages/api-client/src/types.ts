@@ -7,6 +7,8 @@ export interface User {
   name: string;
   avatarUrl?: string | null;
   isAdmin: boolean;
+  // False for SSO-only accounts (no local password to change).
+  hasPassword: boolean;
   emailOnNewPost: boolean;
   emailOnNewComment: boolean;
   emailOnNewLike: boolean;

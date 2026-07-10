@@ -28,6 +28,7 @@ export {
   updateMe,
   fetchNotificationConfig,
   fetchServerInfo,
+  changePassword,
 } from './auth';
 
 export {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, GroupMember, ImmichAlbumLink, ImmichAlbumSummary, Invite, User } from '../api/client';
+import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User } from '../api/client';
 import i18n from '../i18n';
 import { Icon } from './Icon';
 
@@ -13,6 +13,7 @@ export function GroupsPage() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [newMemberId, setNewMemberId] = useState('');
   const [addingMember, setAddingMember] = useState(false);
+  const [showAddExisting, setShowAddExisting] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [invitesLoading, setInvitesLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -21,17 +22,36 @@ export function GroupsPage() {
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [immichLinks, setImmichLinks] = useState<ImmichAlbumLink[]>([]);
-  const [immichLinksLoading, setImmichLinksLoading] = useState(false);
-  const [availableImmichAlbums, setAvailableImmichAlbums] = useState<ImmichAlbumSummary[] | null>(null);
-  const [immichNotConfigured, setImmichNotConfigured] = useState(false);
-  // Set when Immich IS configured but the catalog fetch still failed (server
-  // down, key revoked, ...) — distinct from immichNotConfigured so the admin
-  // isn't told to "configure Immich" when it already is. Already-linked
-  // albums still load fine either way since they come from Famlin's own DB.
-  const [immichAlbumsError, setImmichAlbumsError] = useState(false);
+  const [mediaLinks, setMediaLinks] = useState<MediaAlbumLink[]>([]);
+  const [mediaLinksLoading, setMediaLinksLoading] = useState(false);
+  // One album catalog per media provider. `error` is set when the provider IS
+  // configured but the catalog fetch still failed (server down, key revoked,
+  // unreadable folder, ...) — distinct from notConfigured so the admin isn't
+  // told to "configure it" when it already is. Already-linked albums still
+  // load fine either way since they come from Famlin's own DB.
+  const [catalogs, setCatalogs] = useState<
+    Record<MediaProviderId, { albums: MediaAlbumSummary[] | null; notConfigured: boolean; error: boolean }>
+  >({
+    immich: { albums: null, notConfigured: false, error: false },
+    local: { albums: null, notConfigured: false, error: false },
+  });
+  const [selectedProvider, setSelectedProvider] = useState<MediaProviderId>('immich');
   const [selectedAlbumId, setSelectedAlbumId] = useState('');
   const [linkingAlbum, setLinkingAlbum] = useState(false);
+
+  const loadCatalog = (provider: MediaProviderId) =>
+    api
+      .getMediaAlbums(provider)
+      .then((albums) =>
+        setCatalogs((prev) => ({ ...prev, [provider]: { albums, notConfigured: false, error: false } }))
+      )
+      .catch((err) => {
+        const notConfigured = err instanceof ApiError && err.code === 'not_configured';
+        setCatalogs((prev) => ({
+          ...prev,
+          [provider]: { albums: null, notConfigured, error: !notConfigured },
+        }));
+      });
 
   // Group create/edit modal. `formGroup === null` while closed; a Group with an
   // empty id means "create", otherwise "edit".
@@ -54,16 +74,8 @@ export function GroupsPage() {
     Promise.all([
       loadGroups(),
       api.getAllUsers().then(setUsers),
-      api
-        .getImmichAlbums()
-        .then(setAvailableImmichAlbums)
-        .catch((err) => {
-          if (err instanceof ApiError && err.code === 'not_configured') {
-            setImmichNotConfigured(true);
-          } else {
-            setImmichAlbumsError(true);
-          }
-        }),
+      loadCatalog('immich'),
+      loadCatalog('local'),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -83,26 +95,27 @@ export function GroupsPage() {
       .finally(() => setInvitesLoading(false));
   };
 
-  const loadImmichLinks = (groupId: string) => {
-    setImmichLinksLoading(true);
+  const loadMediaLinks = (groupId: string) => {
+    setMediaLinksLoading(true);
     api
-      .getGroupImmichAlbums(groupId)
-      .then(setImmichLinks)
-      .finally(() => setImmichLinksLoading(false));
+      .getGroupMediaAlbums(groupId)
+      .then(setMediaLinks)
+      .finally(() => setMediaLinksLoading(false));
   };
 
   useEffect(() => {
     setNewMemberId('');
+    setShowAddExisting(false);
     setInviteEmail('');
     setSelectedAlbumId('');
     if (selectedId) {
       loadMembers(selectedId);
       loadInvites(selectedId);
-      loadImmichLinks(selectedId);
+      loadMediaLinks(selectedId);
     } else {
       setMembers([]);
       setInvites([]);
-      setImmichLinks([]);
+      setMediaLinks([]);
     }
   }, [selectedId]);
 
@@ -131,6 +144,7 @@ export function GroupsPage() {
     try {
       await api.addGroupMember(selectedGroup.id, newMemberId);
       setNewMemberId('');
+      setShowAddExisting(false);
       loadMembers(selectedGroup.id);
       loadGroups();
     } catch (err) {
@@ -193,37 +207,43 @@ export function GroupsPage() {
 
   const handleLinkAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroup || !selectedAlbumId || !availableImmichAlbums) return;
-    const album = availableImmichAlbums.find((a) => a.id === selectedAlbumId);
+    const albums = catalogs[selectedProvider].albums;
+    if (!selectedGroup || !selectedAlbumId || !albums) return;
+    const album = albums.find((a) => a.id === selectedAlbumId);
     if (!album) return;
     setLinkingAlbum(true);
     try {
-      await api.linkImmichAlbum(selectedGroup.id, { immichAlbumId: album.id, albumName: album.albumName });
+      await api.linkMediaAlbum(selectedGroup.id, {
+        provider: selectedProvider,
+        externalAlbumId: album.id,
+        albumName: album.name,
+      });
       setSelectedAlbumId('');
-      loadImmichLinks(selectedGroup.id);
+      loadMediaLinks(selectedGroup.id);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('groups.immichAlbums.linkError', { error: message }));
+      alert(t('groups.mediaAlbums.linkError', { error: message }));
     } finally {
       setLinkingAlbum(false);
     }
   };
 
-  const handleUnlinkAlbum = async (link: ImmichAlbumLink) => {
+  const handleUnlinkAlbum = async (link: MediaAlbumLink) => {
     if (!selectedGroup) return;
-    if (!confirm(t('groups.immichAlbums.unlinkConfirm', { name: link.albumName }))) return;
+    if (!confirm(t('groups.mediaAlbums.unlinkConfirm', { name: link.albumName }))) return;
     try {
-      await api.unlinkImmichAlbum(link.id);
-      loadImmichLinks(selectedGroup.id);
+      await api.unlinkMediaAlbum(link.id);
+      loadMediaLinks(selectedGroup.id);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('groups.immichAlbums.unlinkError', { error: message }));
+      alert(t('groups.mediaAlbums.unlinkError', { error: message }));
     }
   };
 
   const nonMembers = users.filter((u) => !members.some((m) => m.id === u.id));
-  const linkableAlbums = (availableImmichAlbums ?? []).filter(
-    (a) => !immichLinks.some((link) => link.immichAlbumId === a.id)
+  const currentCatalog = catalogs[selectedProvider];
+  const linkableAlbums = (currentCatalog.albums ?? []).filter(
+    (a) => !mediaLinks.some((link) => link.provider === selectedProvider && link.externalAlbumId === a.id)
   );
 
   if (loading) return <div className="loading">{t('common.loading')}</div>;
@@ -286,85 +306,30 @@ export function GroupsPage() {
                 </div>
 
                 <div className="md-section-header">
-                  <h4>{t('groups.memberCount', { count: members.length })}</h4>
-                  <form className="md-add-member" onSubmit={handleAddMember}>
-                    <select
-                      value={newMemberId}
-                      onChange={(e) => setNewMemberId(e.target.value)}
-                      disabled={nonMembers.length === 0}
-                    >
-                      <option value="">{t('groups.selectUser')}</option>
-                      {nonMembers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} ({u.email})
-                        </option>
-                      ))}
-                    </select>
-                    <button type="submit" disabled={!newMemberId || addingMember}>
-                      {t('groups.addMember')}
-                    </button>
-                  </form>
-                </div>
-
-                {membersLoading ? (
-                  <div className="loading">{t('common.loading')}</div>
-                ) : members.length === 0 ? (
-                  <div className="empty">{t('groups.noMembers')}</div>
-                ) : (
-                  <ul className="member-cards">
-                    {members.map((member) => (
-                      <li key={member.id} className="member-card">
-                        <span className="avatar" style={{ background: avatarColor(member.name) }}>
-                          {initials(member.name)}
-                        </span>
-                        <span className="member-card-info">
-                          <span className="member-card-name">
-                            {member.name}
-                            {member.isAdmin && <span className="badge admin">{t('common.admin')}</span>}
-                          </span>
-                          <span className="member-card-sub">
-                            {member.email} · {t('groups.joinedOn', {
-                              date: new Date(member.joinedAt).toLocaleDateString(i18n.language),
-                            })}
-                          </span>
-                        </span>
-                        <button
-                          className="icon-button danger"
-                          title={t('common.remove')}
-                          aria-label={t('common.remove')}
-                          onClick={() => handleRemoveMember(member)}
-                        >
-                          <Icon name="x" size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="md-section-header">
                   <h4>{t('groups.invites.title')}</h4>
-                  <form className="md-add-member" onSubmit={handleGenerateInvite}>
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder={t('groups.invites.emailPlaceholder')}
-                      aria-label={t('groups.invites.emailLabel')}
-                    />
-                    <select
-                      value={inviteExpiry}
-                      onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}
-                      aria-label={t('groups.invites.expiresLabel')}
-                    >
-                      <option value="7">{t('groups.invites.expires7Days')}</option>
-                      <option value="30">{t('groups.invites.expires30Days')}</option>
-                      <option value="never">{t('groups.invites.expiresNever')}</option>
-                    </select>
-                    <button type="submit" disabled={generatingInvite}>
-                      {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
-                    </button>
-                  </form>
                 </div>
+                <p className="hint">{t('groups.invites.hint')}</p>
+                <form className="md-add-member" onSubmit={handleGenerateInvite}>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder={t('groups.invites.emailPlaceholder')}
+                    aria-label={t('groups.invites.emailLabel')}
+                  />
+                  <select
+                    value={inviteExpiry}
+                    onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}
+                    aria-label={t('groups.invites.expiresLabel')}
+                  >
+                    <option value="7">{t('groups.invites.expires7Days')}</option>
+                    <option value="30">{t('groups.invites.expires30Days')}</option>
+                    <option value="never">{t('groups.invites.expiresNever')}</option>
+                  </select>
+                  <button type="submit" disabled={generatingInvite}>
+                    {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
+                  </button>
+                </form>
 
                 {invitesLoading ? (
                   <div className="loading">{t('common.loading')}</div>
@@ -420,42 +385,127 @@ export function GroupsPage() {
                 )}
 
                 <div className="md-section-header">
-                  <h4>{t('groups.immichAlbums.title')}</h4>
-                  {immichNotConfigured ? (
-                    <span className="hint">{t('groups.immichAlbums.notConfigured')}</span>
-                  ) : immichAlbumsError ? (
-                    <span className="hint">{t('groups.immichAlbums.loadError')}</span>
-                  ) : (
-                    <form className="md-add-member" onSubmit={handleLinkAlbum}>
-                      <select
-                        value={selectedAlbumId}
-                        onChange={(e) => setSelectedAlbumId(e.target.value)}
-                        disabled={linkableAlbums.length === 0}
-                      >
-                        <option value="">{t('groups.immichAlbums.selectAlbum')}</option>
-                        {linkableAlbums.map((album) => (
-                          <option key={album.id} value={album.id}>
-                            {album.albumName} ({album.assetCount})
-                          </option>
-                        ))}
-                      </select>
-                      <button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
-                        {t('groups.immichAlbums.linkAlbum')}
-                      </button>
-                    </form>
+                  <h4>{t('groups.memberCount', { count: members.length })}</h4>
+                  {!showAddExisting && (
+                    <button type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
+                      {t('groups.addExistingUser')}
+                    </button>
                   )}
                 </div>
 
-                {immichLinksLoading ? (
+                {showAddExisting && (
+                  <form className="md-add-member" onSubmit={handleAddMember}>
+                    <select
+                      value={newMemberId}
+                      onChange={(e) => setNewMemberId(e.target.value)}
+                      disabled={nonMembers.length === 0}
+                      autoFocus
+                    >
+                      <option value="">{t('groups.selectUser')}</option>
+                      {nonMembers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.email})
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" disabled={!newMemberId || addingMember}>
+                      {t('groups.addMember')}
+                    </button>
+                    <button type="button" className="secondary" onClick={() => setShowAddExisting(false)}>
+                      {t('common.cancel')}
+                    </button>
+                  </form>
+                )}
+
+                {membersLoading ? (
                   <div className="loading">{t('common.loading')}</div>
-                ) : immichLinks.length === 0 ? (
-                  <div className="empty">{t('groups.immichAlbums.noAlbums')}</div>
+                ) : members.length === 0 ? (
+                  <div className="empty">{t('groups.noMembers')}</div>
                 ) : (
                   <ul className="member-cards">
-                    {immichLinks.map((link) => (
+                    {members.map((member) => (
+                      <li key={member.id} className="member-card">
+                        <span className="avatar" style={{ background: avatarColor(member.name) }}>
+                          {initials(member.name)}
+                        </span>
+                        <span className="member-card-info">
+                          <span className="member-card-name">
+                            {member.name}
+                            {member.isAdmin && <span className="badge admin">{t('common.admin')}</span>}
+                            {!member.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
+                          </span>
+                          <span className="member-card-sub">
+                            {member.email} · {t('groups.joinedOn', {
+                              date: new Date(member.joinedAt).toLocaleDateString(i18n.language),
+                            })}
+                          </span>
+                        </span>
+                        <button
+                          className="icon-button danger"
+                          title={t('common.remove')}
+                          aria-label={t('common.remove')}
+                          onClick={() => handleRemoveMember(member)}
+                        >
+                          <Icon name="x" size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="md-section-header">
+                  <h4>{t('groups.mediaAlbums.title')}</h4>
+                  <form className="md-add-member" onSubmit={handleLinkAlbum}>
+                    <select
+                      value={selectedProvider}
+                      onChange={(e) => {
+                        setSelectedProvider(e.target.value as MediaProviderId);
+                        setSelectedAlbumId('');
+                      }}
+                      aria-label={t('groups.mediaAlbums.providerLabel')}
+                    >
+                      <option value="immich">{t('groups.mediaAlbums.providers.immich')}</option>
+                      <option value="local">{t('groups.mediaAlbums.providers.local')}</option>
+                    </select>
+                    {currentCatalog.notConfigured ? (
+                      <span className="hint">{t('groups.mediaAlbums.notConfigured')}</span>
+                    ) : currentCatalog.error ? (
+                      <span className="hint">{t('groups.mediaAlbums.loadError')}</span>
+                    ) : (
+                      <>
+                        <select
+                          value={selectedAlbumId}
+                          onChange={(e) => setSelectedAlbumId(e.target.value)}
+                          disabled={linkableAlbums.length === 0}
+                        >
+                          <option value="">{t('groups.mediaAlbums.selectAlbum')}</option>
+                          {linkableAlbums.map((album) => (
+                            <option key={album.id} value={album.id}>
+                              {album.name} ({album.assetCount})
+                            </option>
+                          ))}
+                        </select>
+                        <button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
+                          {t('groups.mediaAlbums.linkAlbum')}
+                        </button>
+                      </>
+                    )}
+                  </form>
+                </div>
+
+                {mediaLinksLoading ? (
+                  <div className="loading">{t('common.loading')}</div>
+                ) : mediaLinks.length === 0 ? (
+                  <div className="empty">{t('groups.mediaAlbums.noAlbums')}</div>
+                ) : (
+                  <ul className="member-cards">
+                    {mediaLinks.map((link) => (
                       <li key={link.id} className="member-card">
                         <span className="member-card-info">
-                          <span className="member-card-name">{link.albumName}</span>
+                          <span className="member-card-name">
+                            {link.albumName}
+                            <span className="badge">{t(`groups.mediaAlbums.providers.${link.provider}`)}</span>
+                          </span>
                         </span>
                         <button
                           className="icon-button danger"

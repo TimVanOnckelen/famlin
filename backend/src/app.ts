@@ -10,6 +10,7 @@ import { ZodError } from 'zod';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import { config } from './config.js';
 import { getT } from './i18n/index.js';
+import { registerNotificationSubscriber } from './subscribers/notifications.js';
 
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
@@ -23,6 +24,7 @@ import apiTokenRoutes from './routes/api-tokens.js';
 import notificationRoutes from './routes/notifications.js';
 import uploadRoutes from './routes/uploads.js';
 import immichRoutes from './routes/immich.js';
+import mediaRoutes from './routes/media.js';
 import inviteRoutes from './routes/invites.js';
 import inviteLandingRoutes from './routes/invite-landing.js';
 import landingRoutes from './routes/landing.js';
@@ -31,6 +33,11 @@ import landingRoutes from './routes/landing.js';
 // listener, so tests can exercise routes via `.inject()` against the exact
 // same plugin/route wiring the real server uses.
 export async function buildApp() {
+  // Domain-event subscribers are registered here (not in server.ts) so tests
+  // exercising routes via buildApp() get the same event->notification wiring
+  // production has. Registration is idempotent — see the guard inside.
+  registerNotificationSubscriber();
+
   const fastify = Fastify({
     trustProxy: config.TRUST_PROXY,
     logger: {
@@ -154,6 +161,7 @@ export async function buildApp() {
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' });
   await fastify.register(uploadRoutes, { prefix: '/api/uploads' });
   await fastify.register(immichRoutes, { prefix: '/api/immich' });
+  await fastify.register(mediaRoutes, { prefix: '/api/media' });
   await fastify.register(inviteRoutes, { prefix: '/api/invites' });
   await fastify.register(inviteLandingRoutes);
 

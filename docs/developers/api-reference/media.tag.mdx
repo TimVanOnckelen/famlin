@@ -1,0 +1,26 @@
+---
+id: media
+title: "Media"
+description: "Media"
+custom_edit_url: null
+---
+
+
+
+When the server admin has connected external media sources (an
+[Immich](https://immich.app) server, a local photo folder) and linked
+their albums to your groups, these endpoints let you browse those
+albums and reference their photos in posts. Assets are proxied through
+Famlin — clients never talk to the source directly. Each linked album
+carries a `provider` id saying which source it lives on.
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

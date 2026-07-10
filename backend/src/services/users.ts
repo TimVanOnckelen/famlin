@@ -8,6 +8,9 @@ export function sanitizeUser(user: any) {
     name: user.name,
     avatarUrl: user.avatarUrl,
     isAdmin: user.isAdmin,
+    // Lets clients (web/mobile profile screens) show or hide the
+    // change-password UI: SSO-only accounts have no local password to change.
+    hasPassword: !!user.passwordHash,
     emailOnNewPost: user.emailOnNewPost,
     emailOnNewComment: user.emailOnNewComment,
     emailOnNewLike: user.emailOnNewLike,

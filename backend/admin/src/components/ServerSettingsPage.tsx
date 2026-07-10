@@ -30,10 +30,13 @@ export function ServerSettingsPage() {
     emailNotificationsEnabled: true,
     immichServerUrl: '',
     immichApiKey: '',
+    localMediaPath: '',
   });
 
   const [testingImmich, setTestingImmich] = useState(false);
   const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null);
+  const [testingLocalMedia, setTestingLocalMedia] = useState(false);
+  const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null);
 
   useEffect(() => {
     api
@@ -66,6 +69,19 @@ export function ServerSettingsPage() {
       setImmichTestResult('unreachable');
     } finally {
       setTestingImmich(false);
+    }
+  };
+
+  const handleTestLocalMedia = async () => {
+    setTestingLocalMedia(true);
+    setLocalMediaTestResult(null);
+    try {
+      const result = await api.testLocalMediaPath(form.localMediaPath);
+      setLocalMediaTestResult(result.ok ? 'ok' : result.error);
+    } catch {
+      setLocalMediaTestResult('not_found');
+    } finally {
+      setTestingLocalMedia(false);
     }
   };
 
@@ -256,7 +272,10 @@ export function ServerSettingsPage() {
           />
         </label>
 
-        <h3 style={{ marginTop: '1.5rem' }}>{t('serverSettings.immich')}</h3>
+        <h3 style={{ marginTop: '1.5rem' }}>{t('serverSettings.integrations')}</h3>
+        <p className="hint">{t('serverSettings.integrationsHint')}</p>
+
+        <h4 style={{ marginTop: '1rem' }}>{t('serverSettings.immich')}</h4>
         <p className="hint">{t('serverSettings.immichHint')}</p>
         <label>
           {t('serverSettings.immichServerUrl')}
@@ -296,6 +315,38 @@ export function ServerSettingsPage() {
           )}
           {immichTestResult === 'unreachable' && (
             <span className="error">{t('serverSettings.immichTestUnreachable')}</span>
+          )}
+        </div>
+
+        <h4 style={{ marginTop: '1.5rem' }}>{t('serverSettings.localMedia')}</h4>
+        <p className="hint">{t('serverSettings.localMediaHint')}</p>
+        <label>
+          {t('serverSettings.localMediaPath')}
+          <input
+            type="text"
+            value={form.localMediaPath}
+            onChange={(e) => {
+              updateField('localMediaPath', e.target.value);
+              setLocalMediaTestResult(null);
+            }}
+            placeholder="/media/family-photos"
+          />
+        </label>
+        <div className="row" style={{ alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={handleTestLocalMedia}
+            disabled={testingLocalMedia || !form.localMediaPath}
+          >
+            {testingLocalMedia ? t('serverSettings.localMediaTesting') : t('serverSettings.localMediaTest')}
+          </button>
+          {localMediaTestResult === 'ok' && <span className="success">{t('serverSettings.localMediaTestOk')}</span>}
+          {localMediaTestResult === 'not_found' && (
+            <span className="error">{t('serverSettings.localMediaTestNotFound')}</span>
+          )}
+          {localMediaTestResult === 'not_a_directory' && (
+            <span className="error">{t('serverSettings.localMediaTestNotADirectory')}</span>
           )}
         </div>
 

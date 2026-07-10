@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   api,
+  changePassword,
   fetchNotificationConfig,
   fetchServerInfo,
   updateMe,
@@ -31,6 +32,11 @@ export function ProfilePage({
   const { updateUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
@@ -64,6 +70,32 @@ export function ProfilePage({
       setUploadError(err.response?.data?.error || t('profile.photoUploadFailed'));
     },
   });
+
+  const updatePassword = useMutation({
+    mutationFn: () => changePassword(currentPassword, newPassword),
+    onSuccess: () => {
+      setPasswordError(null);
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (err: any) => {
+      setPasswordSuccess(false);
+      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'));
+    },
+  });
+
+  function handlePasswordSubmit(e: FormEvent) {
+    e.preventDefault();
+    setPasswordSuccess(false);
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('profile.passwordMismatch'));
+      return;
+    }
+    setPasswordError(null);
+    updatePassword.mutate();
+  }
 
   function pickAvatar(files: FileList | null) {
     const file = files?.[0];
@@ -196,6 +228,62 @@ export function ProfilePage({
             </select>
           </div>
         </section>
+
+        {user.hasPassword && (
+          <section className="profile-section">
+            <h2 className="profile-section-title">{t('profile.security')}</h2>
+            <form className="profile-password-form" onSubmit={handlePasswordSubmit}>
+              <label className="field">
+                <span className="field-label">{t('profile.currentPassword')}</span>
+                <input
+                  className="field-input"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">{t('profile.newPassword')}</span>
+                <input
+                  className="field-input"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">{t('profile.confirmPassword')}</span>
+                <input
+                  className="field-input"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </label>
+              {passwordError && (
+                <div className="profile-error" role="alert">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="profile-password-success" role="status">
+                  {t('profile.passwordChanged')}
+                </div>
+              )}
+              <button className="btn btn-secondary" type="submit" disabled={updatePassword.isPending}>
+                {updatePassword.isPending ? t('common.loading') : t('profile.changePassword')}
+              </button>
+            </form>
+          </section>
+        )}
 
         <section className="profile-section">
           <h2 className="profile-section-title">{t('profile.server')}</h2>

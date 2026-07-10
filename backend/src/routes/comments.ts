@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { createCommentBodySchema, updateCommentBodySchema } from '../types.js';
-import { notifyUsers, excerptText } from '../services/notifications.js';
+import { emitDomainEvent } from '../events.js';
 import { isGroupMember } from '../services/groups.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
@@ -71,38 +71,6 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
     }
 
-    // Only the post's author and people already participating in this
-    // thread are relevant to a new comment — not the whole group.
-    const priorParticipants = await prisma.comment.findMany({
-      where: { postId },
-      select: { authorId: true },
-      distinct: ['authorId'],
-    });
-    const candidateIds = [...new Set([post.authorId, ...priorParticipants.map((c) => c.authorId)])];
-    // Narrow to people who are still members of the group — a removed member
-    // (even the original author) shouldn't keep getting its activity.
-    const members = await prisma.groupMember.findMany({
-      where: { groupId: post.groupId, userId: { in: candidateIds } },
-      select: { userId: true },
-    });
-    const recipientIds = members.map((m) => m.userId);
-
-    // The client resolves "@name" against the group member list and sends
-    // back user ids — re-validate each one is a *current* member of this
-    // post's group rather than trusting the client outright (same pattern as
-    // the thread-participant lookup above).
-    let mentionedIds: string[] = [];
-    if (body.mentionedUserIds && body.mentionedUserIds.length > 0) {
-      const mentionMembers = await prisma.groupMember.findMany({
-        where: { groupId: post.groupId, userId: { in: body.mentionedUserIds } },
-        select: { userId: true },
-      });
-      mentionedIds = mentionMembers.map((m) => m.userId).filter((id) => id !== request.user!.id);
-    }
-    // A mentioned thread participant gets the "mention" notification instead
-    // of the generic "new_comment" one, so they aren't notified twice.
-    const threadRecipientIds = recipientIds.filter((id) => !mentionedIds.includes(id));
-
     const comment = await prisma.comment.create({
       data: {
         postId,
@@ -116,25 +84,21 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // Fire-and-forget: fanning out push/email shouldn't hold the response (a
-    // slow SMTP server would otherwise stall comment creation).
-    void notifyUsers({
-      type: 'new_comment',
-      userIds: threadRecipientIds,
-      senderId: request.user!.id,
+    // Handlers run fire-and-forget (see events.ts) — the notifications
+    // subscriber decides who in the thread gets told (and re-validates the
+    // client-supplied mention ids against current group membership).
+    emitDomainEvent('comment.created', {
+      commentId: comment.id,
       postId: post.id,
-      params: { author: comment.author.name, group: post.group.name, excerpt: excerptText(comment.content) },
-    }).catch((err) => request.log.error(err, 'Failed to send comment notifications'));
-
-    if (mentionedIds.length > 0) {
-      void notifyUsers({
-        type: 'mention',
-        userIds: mentionedIds,
-        senderId: request.user!.id,
-        postId: post.id,
-        params: { author: comment.author.name, group: post.group.name, excerpt: excerptText(comment.content) },
-      }).catch((err) => request.log.error(err, 'Failed to send mention notifications'));
-    }
+      postAuthorId: post.authorId,
+      groupId: post.groupId,
+      groupName: post.group.name,
+      authorId: request.user!.id,
+      authorName: comment.author.name,
+      content: comment.content,
+      parentId: comment.parentId,
+      mentionedUserIds: body.mentionedUserIds ?? [],
+    });
 
     return { ...comment, likeCount: 0, likedByMe: false, myReaction: null, reactions: {} };
   });

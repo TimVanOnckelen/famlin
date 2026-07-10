@@ -9,6 +9,8 @@ export interface User {
   name: string;
   avatarUrl: string | null;
   isAdmin: boolean;
+  // False for SSO-only accounts (never given a local password).
+  hasPassword: boolean;
   emailOnNewPost: boolean;
   emailOnNewComment: boolean;
   emailOnNewLike: boolean;
@@ -55,18 +57,24 @@ export interface ServerSettings {
   emailNotificationsEnabled: boolean;
   immichServerUrl: string;
   immichApiKey: string;
+  localMediaPath: string;
 }
 
-export interface ImmichAlbumSummary {
+// A media source members can pick photos from — mirrors the backend's
+// provider registry (backend/src/services/media/registry.ts).
+export type MediaProviderId = 'immich' | 'local';
+
+export interface MediaAlbumSummary {
   id: string;
-  albumName: string;
+  name: string;
   assetCount: number;
 }
 
-export interface ImmichAlbumLink {
+export interface MediaAlbumLink {
   id: string;
   groupId: string;
-  immichAlbumId: string;
+  provider: MediaProviderId;
+  externalAlbumId: string;
   albumName: string;
   createdAt: string;
 }

@@ -91,3 +91,7 @@ export async function fetchServerInfo(): Promise<{ version: string }> {
   const response = await api.get('/auth/server-info');
   return response.data;
 }
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await api.post('/auth/change-password', { currentPassword, newPassword });
+}

@@ -40,6 +40,10 @@
     "immichUnreachable": "Kan de Immich-server niet bereiken met deze instellingen",
     "immichAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
     "immichAlbumLinkNotFound": "Immich-albumkoppeling niet gevonden",
+    "mediaSourceNotConfigured": "Deze mediabron is niet geconfigureerd",
+    "mediaSourceUnavailable": "Kan deze mediabron niet lezen",
+    "mediaAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
+    "mediaAlbumLinkNotFound": "Media-albumkoppeling niet gevonden",
     "apiTokenSessionRequired": "API-tokens kunnen alleen worden aangemaakt vanuit een gewone inlogsessie, niet met een ander API-token",
     "apiTokenNotFound": "API-token niet gevonden"
   },

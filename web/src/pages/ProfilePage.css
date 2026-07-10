@@ -236,6 +236,21 @@
   box-shadow: 0 0 0 3px var(--fam-primary-tint);
 }
 
+/* ── Password ────────────────────────────────────────────────────────────── */
+
+.profile-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.profile-password-success {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-primary);
+}
+
 /* ── Server info ─────────────────────────────────────────────────────────── */
 
 .profile-server-row {

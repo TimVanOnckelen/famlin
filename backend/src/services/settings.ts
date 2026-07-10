@@ -27,6 +27,7 @@ export interface ServerSettings {
   emailNotificationsEnabled: boolean;
   immichServerUrl: string;
   immichApiKey: string;
+  localMediaPath: string;
 }
 
 const SETTING_KEYS: (keyof ServerSettings)[] = [
@@ -48,6 +49,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'emailNotificationsEnabled',
   'immichServerUrl',
   'immichApiKey',
+  'localMediaPath',
 ];
 
 function serializeValue(key: keyof ServerSettings, value: any): string {
@@ -120,6 +122,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     ),
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
+    localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
   };
 }
 
@@ -203,4 +206,17 @@ export async function getImmichSettings(): Promise<ImmichSettings> {
   const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '');
   const apiKey = settings.immichApiKey.trim();
   return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey };
+}
+
+export interface LocalMediaSettings {
+  // Absolute path (inside the container) whose immediate subdirectories are
+  // the linkable "albums" of the local-folder media provider.
+  rootPath: string;
+  configured: boolean;
+}
+
+export async function getLocalMediaSettings(): Promise<LocalMediaSettings> {
+  const settings = await getAllSettings();
+  const rootPath = settings.localMediaPath.trim().replace(/\/+$/, '');
+  return { rootPath, configured: !!rootPath };
 }
