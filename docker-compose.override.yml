@@ -54,5 +54,7 @@ services:
       # anonymous /app/dist volume above so the dev backend serves it at /.
       # Run `npm run build:web` (once) or `npm run watch:web` (rebuild on
       # change) from the repo root; the backend must (re)start after the
-      # first build to pick it up.
+      # first build to pick it up. Unlike the admin watch-build below,
+      # `watch:web` also auto-refreshes the browser tab — see the
+      # `LIVERELOAD`/`watchLivereload()` note in CLAUDE.md.
       - ./backend/dist/web:/app/dist/web

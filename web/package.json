@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "watch": "vite build --watch",
+    "watch": "LIVERELOAD=1 vite build --watch",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -27,10 +27,12 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/livereload": "^0.9.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "jsdom": "^29.1.1",
+    "livereload": "^0.10.3",
     "typescript": "^5.5.2",
     "vite": "^5.3.1",
     "vitest": "^2.1.9"

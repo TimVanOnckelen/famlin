@@ -64,8 +64,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
     }
   };
 
-  const handleSaveMapping = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveMapping = async () => {
     if (!selectedPerson || !personLabel.trim()) return;
 
     setSaving(true);
@@ -120,7 +119,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
   if (error && people.length === 0) {
     return (
       <div>
-        <h4 style={{ marginTop: '1.5rem' }}>{t('media.peopleMapping.title')}</h4>
+        <h4 className="settings-subsection-title">{t('media.peopleMapping.title')}</h4>
         <p className="hint">{t('media.peopleMapping.hint')}</p>
         {error === 'not_configured' ? (
           <p className="hint">{t('media.peopleMapping.notConfigured')}</p>
@@ -133,7 +132,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
 
   return (
     <div>
-      <h4 style={{ marginTop: '1.5rem' }}>{t('media.peopleMapping.title')}</h4>
+      <h4 className="settings-subsection-title">{t('media.peopleMapping.title')}</h4>
       <p className="hint">{t('media.peopleMapping.hint')}</p>
 
       {/* Mapped people */}
@@ -197,7 +196,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
           </h5>
 
           {selectedPerson ? (
-            <form onSubmit={handleSaveMapping} style={{ marginBottom: '1rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 {selectedPerson.thumbnailDataUri && (
                   <img
@@ -218,6 +217,12 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                       type="text"
                       value={personLabel}
                       onChange={(e) => setPersonLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveMapping();
+                        }
+                      }}
                       required
                       autoFocus
                     />
@@ -235,7 +240,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   </label>
                   <p className="hint">{t('media.peopleMapping.userMappingHint')}</p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button type="submit" disabled={saving || !personLabel.trim()}>
+                    <button type="button" onClick={handleSaveMapping} disabled={saving || !personLabel.trim()}>
                       {saving ? t('common.loading') : t('common.save')}
                     </button>
                     <button
@@ -249,7 +254,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   </div>
                 </div>
               </div>
-            </form>
+            </div>
           ) : (
             <>
               <div className="people-toolbar">
@@ -257,6 +262,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   type="search"
                   value={personQuery}
                   onChange={(e) => setPersonQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.preventDefault();
+                  }}
                   placeholder={t('media.peopleMapping.searchPlaceholder')}
                   aria-label={t('media.peopleMapping.searchPlaceholder')}
                 />

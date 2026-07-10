@@ -287,7 +287,7 @@
     "peopleMapping": {
       "title": "Personen toewijzen",
       "hint": "Wijs personen uit je foto's toe aan familieleden zodat zij met hun naam verschijnen in het familieoverzicht. Alleen toegewezen personen zijn zichtbaar voor familieleden.",
-      "notConfigured": "Immich is niet geconfigureerd. Configureer het in het Media-integraties gedeelte hierboven om personen toe te wijzen.",
+      "notConfigured": "Immich is nog niet geconfigureerd. Vul hierboven de server-URL en API-sleutel in en sla op om personen toe te wijzen.",
       "mapped": "Toegewezen personen",
       "unmapped": "Niet-toegewezen personen",
       "searchPlaceholder": "Zoek personen…",

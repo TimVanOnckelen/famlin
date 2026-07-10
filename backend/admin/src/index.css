@@ -1245,6 +1245,18 @@ h3 {
   box-shadow: 0 0 0 3px rgba(0, 110, 148, 0.25);
 }
 
+.settings-subsection {
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.settings-subsection-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
 .people-toolbar {
   margin: 0.75rem 0 0;
 }
@@ -1366,4 +1378,114 @@ h3 {
   .settings-content {
     max-width: none;
   }
+}
+
+/* --- Content moderation --- */
+.seg-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-sm);
+}
+
+.seg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.seg-tab:hover {
+  background: var(--fam-primary-tint);
+  color: var(--text);
+}
+
+.seg-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+.seg-tab.active:hover {
+  background: var(--primary-hover);
+}
+
+.content-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.content-toolbar select {
+  min-width: 160px;
+}
+
+.search-field {
+  position: relative;
+  flex: 1 1 220px;
+  max-width: 340px;
+}
+
+.search-field .search-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.search-field input {
+  width: 100%;
+  padding-left: 2.4rem;
+}
+
+.content-table {
+  transition: opacity 0.15s ease;
+}
+
+.content-table.refreshing {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.cell-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.65rem;
+}
+
+.cell-content {
+  max-width: 340px;
+}
+
+.cell-content .badge {
+  margin-right: 0.4rem;
+}
+
+.cell-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
 }

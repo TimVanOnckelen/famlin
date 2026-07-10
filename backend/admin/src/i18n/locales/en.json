@@ -210,16 +210,27 @@
     "tabPosts": "Posts",
     "tabComments": "Comments",
     "allGroups": "All groups",
+    "allAuthors": "All authors",
+    "searchPlaceholder": "Search content…",
+    "clearFilters": "Clear filters",
+    "milestone": "Milestone",
+    "noText": "(no text)",
+    "commentsTooltip": "Comments",
+    "likesTooltip": "Likes",
     "table": {
       "group": "Group",
       "author": "Author",
       "content": "Content",
+      "comment": "Comment",
+      "onPost": "On post",
+      "activity": "Activity",
       "date": "Date",
       "actions": "Actions"
     },
     "deleteConfirm": "Are you sure you want to remove this?",
     "noPosts": "No posts found.",
-    "noComments": "No comments found."
+    "noComments": "No comments found.",
+    "noResults": "Nothing matches your filters."
   },
   "serverSettings": {
     "title": "Server settings",
@@ -287,7 +298,7 @@
     "peopleMapping": {
       "title": "People mapping",
       "hint": "Map people detected in your photos to family members so they appear with their names in the family feed. Only mapped people become visible to family members.",
-      "notConfigured": "Immich is not configured. Configure it in the Media integrations section above to map people.",
+      "notConfigured": "Immich is not configured yet. Fill in the server URL and API key above and save to map people.",
       "mapped": "Mapped people",
       "unmapped": "Unmapped people",
       "searchPlaceholder": "Search people…",

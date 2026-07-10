@@ -467,11 +467,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/content/posts', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId } = request.query as { groupId?: string };
+    const { groupId, authorId, q } = request.query as {
+      groupId?: string;
+      authorId?: string;
+      q?: string;
+    };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const posts = await prisma.post.findMany({
-      where: groupId ? { groupId } : {},
+      where: {
+        ...(groupId ? { groupId } : {}),
+        ...(authorId ? { authorId } : {}),
+        ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
@@ -496,11 +504,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/content/comments', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
-    const { groupId } = request.query as { groupId?: string };
+    const { groupId, authorId, q } = request.query as {
+      groupId?: string;
+      authorId?: string;
+      q?: string;
+    };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
     const comments = await prisma.comment.findMany({
-      where: groupId ? { post: { groupId } } : {},
+      where: {
+        ...(groupId ? { post: { groupId } } : {}),
+        ...(authorId ? { authorId } : {}),
+        ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {

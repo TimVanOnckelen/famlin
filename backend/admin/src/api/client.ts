@@ -50,6 +50,22 @@ export interface Page<T> {
   nextCursor: string | null;
 }
 
+export interface ContentFilterParams {
+  groupId?: string;
+  authorId?: string;
+  q?: string;
+  cursor?: string;
+}
+
+function contentQueryString(params: ContentFilterParams) {
+  const query = new URLSearchParams();
+  if (params.groupId) query.set('groupId', params.groupId);
+  if (params.authorId) query.set('authorId', params.authorId);
+  if (params.q) query.set('q', params.q);
+  if (params.cursor) query.set('cursor', params.cursor);
+  return query.toString();
+}
+
 function getToken() {
   return localStorage.getItem('famlin_admin_token');
 }
@@ -172,19 +188,13 @@ export const api = {
   revokeInvite: (id: string) =>
     request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
 
-  getContentPosts: (params: { groupId?: string; cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.groupId) query.set('groupId', params.groupId);
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
+  getContentPosts: (params: ContentFilterParams = {}) => {
+    const qs = contentQueryString(params);
     return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`);
   },
 
-  getContentComments: (params: { groupId?: string; cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.groupId) query.set('groupId', params.groupId);
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
+  getContentComments: (params: ContentFilterParams = {}) => {
+    const qs = contentQueryString(params);
     return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
   },
 

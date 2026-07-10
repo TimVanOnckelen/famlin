@@ -512,6 +512,9 @@ export function ServerSettingsPage() {
                       <span className="test-err">{t('serverSettings.immichTestUnreachable')}</span>
                     )}
                   </div>
+                  <div className="settings-subsection">
+                    <PeopleMappingSection users={users} />
+                  </div>
                 </SettingsCard>
 
                 <SettingsCard
@@ -583,12 +586,6 @@ export function ServerSettingsPage() {
               </div>
             )}
           </form>
-
-          {activeSection === 'media' && (
-            <div className="card">
-              <PeopleMappingSection users={users} />
-            </div>
-          )}
         </div>
       </div>
     </>
