@@ -50,7 +50,11 @@ tags:
     description: |
       Comments on a post. Replies are one level deep via `parentId`. A comment
       can be pinned to a single photo/video of the post via `assetUrl`; replies
-      inherit their parent's pin.
+      inherit their parent's pin. A comment can also carry its own photo/video
+      via `attachmentUrl` — a file the commenter uploaded (`POST
+      /api/uploads`) as part of the comment itself, independent of any
+      pinning — and `content` is then optional (a comment can be a photo or
+      video with no text).
   - name: Reactions
     description: |
       Emoji reactions on posts and comments — one reaction per user per
@@ -722,7 +726,9 @@ paths:
         `mentionedUserIds` are ids resolved from the group member list for
         `@name` mentions — the server re-validates each id is a current member
         of the post's group before notifying them. A reply (`parentId`)
-        inherits its parent's `assetUrl` pin.
+        inherits its parent's `assetUrl` pin. `content` and `attachmentUrl` are
+        each optional, but at least one is required — a comment can be a photo
+        or video with no text.
       parameters:
         - name: postId
           in: path
@@ -734,11 +740,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [content]
               properties:
                 content:
                   type: string
-                  minLength: 1
                   maxLength: 2000
                 parentId:
                   type: string
@@ -746,6 +750,12 @@ paths:
                 assetUrl:
                   type: string
                   description: One of the post's `uploadedAssetUrls`, to pin the comment to that photo/video.
+                attachmentUrl:
+                  type: string
+                  description: >-
+                    A photo/video path returned by `POST /api/uploads`, uploaded by the
+                    commenter as part of this comment itself — distinct from `assetUrl`,
+                    which instead pins the comment to an existing asset already on the post.
                 mentionedUserIds:
                   type: array
                   maxItems: 20
@@ -1712,6 +1722,12 @@ components:
           type: string
           nullable: true
           description: The photo/video this comment is pinned to (`null` = the post as a whole).
+        attachmentUrl:
+          type: string
+          nullable: true
+          description: >-
+            A photo/video the commenter uploaded as part of this comment itself
+            (`null` if the comment has none) — distinct from `assetUrl` above.
         parentId:
           type: string
           nullable: true

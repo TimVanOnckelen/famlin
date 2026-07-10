@@ -175,6 +175,9 @@
     "deleteCommentConfirmTitle": "Delete comment?",
     "deleteCommentConfirmMessage": "This can't be undone.",
     "editPlaceholder": "Edit your post...",
+    "addAttachment": "Attach a photo or video",
+    "removeAttachment": "Remove attachment",
+    "viewAttachment": "View attachment",
     "alerts": {
       "editFailed": "Could not save changes",
       "deleteFailed": "Could not delete"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,67 +13,10 @@ import {
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { CommentsSection } from '@/components/CommentsSection';
+import { Lightbox } from '@/components/Lightbox';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
-
-function Lightbox({
-  assetUrls,
-  initialIndex,
-  onClose,
-}: {
-  assetUrls: string[];
-  initialIndex: number;
-  onClose: () => void;
-}) {
-  const [index, setIndex] = useState(initialIndex);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') setIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight') setIndex((i) => Math.min(assetUrls.length - 1, i + 1));
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [assetUrls.length, onClose]);
-
-  const url = getUploadUrl(assetUrls[index]);
-
-  return (
-    <div className="lightbox" onClick={onClose} role="dialog" aria-modal>
-      {index > 0 && (
-        <button
-          className="lightbox-nav lightbox-prev"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIndex(index - 1);
-          }}
-          aria-label="‹"
-        >
-          ‹
-        </button>
-      )}
-      {isVideoUrl(assetUrls[index]) ? (
-        <video src={url} className="lightbox-media" controls autoPlay onClick={(e) => e.stopPropagation()} />
-      ) : (
-        <img src={url} className="lightbox-media" alt="" onClick={(e) => e.stopPropagation()} />
-      )}
-      {index < assetUrls.length - 1 && (
-        <button
-          className="lightbox-nav lightbox-next"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIndex(index + 1);
-          }}
-          aria-label="›"
-        >
-          ›
-        </button>
-      )}
-    </div>
-  );
-}
 
 export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t, i18n } = useTranslation();

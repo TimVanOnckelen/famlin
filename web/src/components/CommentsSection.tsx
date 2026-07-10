@@ -1,20 +1,32 @@
-import { FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  api,
   Post,
   Comment,
   fetchComments,
   createComment,
   reactToComment,
+  getUploadUrl,
   patchPostInCaches,
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
+import { Lightbox } from '@/components/Lightbox';
 import { formatRelativeDate } from '@/utils/time';
+import { isVideoUrl } from '@/utils/media';
+
+async function uploadCommentAttachment(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<{ urls: string[] }>('/uploads', formData);
+  return response.data.urls[0];
+}
 
 function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Basic like toggle (LIKE reaction) — the full per-emoji picker stays a
   // post-level affordance for now, matching the calm comment row in mobile.
@@ -48,8 +60,22 @@ function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean 
       <div className="comment-main">
         <div className="comment-bubble">
           <span className="comment-author">{comment.author.name}</span>
-          <span className="comment-text">{comment.content}</span>
+          {!!comment.content && <span className="comment-text">{comment.content}</span>}
         </div>
+        {comment.attachmentUrl && (
+          <button
+            type="button"
+            className="comment-attachment"
+            onClick={() => setLightboxOpen(true)}
+            aria-label={t('comments.viewAttachment')}
+          >
+            {isVideoUrl(comment.attachmentUrl) ? (
+              <video src={getUploadUrl(comment.attachmentUrl)} muted preload="metadata" />
+            ) : (
+              <img src={getUploadUrl(comment.attachmentUrl)} alt="" loading="lazy" />
+            )}
+          </button>
+        )}
         <div className="comment-meta">
           <span>{formatRelativeDate(comment.createdAt, i18n.language)}</span>
           <button
@@ -62,6 +88,10 @@ function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean 
           </button>
         </div>
       </div>
+
+      {lightboxOpen && comment.attachmentUrl && (
+        <Lightbox assetUrls={[comment.attachmentUrl]} initialIndex={0} onClose={() => setLightboxOpen(false)} />
+      )}
     </div>
   );
 }
@@ -70,6 +100,9 @@ export function CommentsSection({ post }: { post: Post }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commentsQuery = useQuery({
     queryKey: ['comments', post.id],
@@ -77,9 +110,13 @@ export function CommentsSection({ post }: { post: Post }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (content: string) => createComment(post.id, { content }),
+    mutationFn: async ({ content, file }: { content: string; file: File | null }) => {
+      const attachmentUrl = file ? await uploadCommentAttachment(file) : undefined;
+      return createComment(post.id, { content: content || undefined, attachmentUrl });
+    },
     onSuccess: (created) => {
       setDraft('');
+      clearAttachment();
       queryClient.setQueryData<Comment[]>(['comments', post.id], (old) =>
         old ? [...old, created] : [created]
       );
@@ -87,11 +124,26 @@ export function CommentsSection({ post }: { post: Post }) {
     },
   });
 
+  function clearAttachment() {
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+    setAttachmentFile(null);
+    setAttachmentPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function pickAttachment(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+    setAttachmentFile(file);
+    setAttachmentPreviewUrl(URL.createObjectURL(file));
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault();
     const content = draft.trim();
-    if (content && !createMutation.isPending) {
-      createMutation.mutate(content);
+    if ((content || attachmentFile) && !createMutation.isPending) {
+      createMutation.mutate({ content, file: attachmentFile });
     }
   }
 
@@ -117,21 +169,59 @@ export function CommentsSection({ post }: { post: Post }) {
         </div>
       ))}
 
-      <form className="comment-composer" onSubmit={submit}>
-        <input
-          className="comment-input"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={t('comments.placeholder')}
-          maxLength={2000}
-        />
-        <button
-          type="submit"
-          className="btn btn-primary comment-send"
-          disabled={!draft.trim() || createMutation.isPending}
-        >
-          {t('comments.send')}
-        </button>
+      <form className="comment-composer-form" onSubmit={submit}>
+        {attachmentPreviewUrl && (
+          <div className="comment-attachment-preview">
+            {attachmentFile?.type.startsWith('video/') ? (
+              <video src={attachmentPreviewUrl} muted />
+            ) : (
+              <img src={attachmentPreviewUrl} alt="" />
+            )}
+            <button
+              type="button"
+              className="comment-attachment-remove"
+              onClick={clearAttachment}
+              aria-label={t('comments.removeAttachment')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <div className="comment-composer">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/mp4,video/quicktime,video/webm"
+            hidden
+            onChange={pickAttachment}
+          />
+          <button
+            type="button"
+            className="comment-attach-button"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label={t('comments.addAttachment')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
+              <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
+              <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <input
+            className="comment-input"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={t('comments.placeholder')}
+            maxLength={2000}
+          />
+          <button
+            type="submit"
+            className="btn btn-primary comment-send"
+            disabled={(!draft.trim() && !attachmentFile) || createMutation.isPending}
+          >
+            {t('comments.send')}
+          </button>
+        </div>
       </form>
       {createMutation.isError && <div className="comments-hint">{t('comments.sendFailed')}</div>}
     </div>

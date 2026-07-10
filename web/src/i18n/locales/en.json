@@ -40,7 +40,10 @@
     "sendFailed": "Your comment couldn't be posted. Try again.",
     "like": "Like",
     "empty": "No comments yet — be the first!",
-    "loadFailed": "Comments couldn't be loaded."
+    "loadFailed": "Comments couldn't be loaded.",
+    "addAttachment": "Attach a photo or video",
+    "removeAttachment": "Remove attachment",
+    "viewAttachment": "View attachment"
   },
   "newPost": {
     "title": "New post",

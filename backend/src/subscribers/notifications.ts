@@ -59,7 +59,11 @@ export function registerNotificationSubscriber(): void {
     // of the generic "new_comment" one, so they aren't notified twice.
     const threadRecipientIds = recipientIds.filter((id) => !mentionedIds.includes(id));
 
-    const params = { author: event.authorName, group: event.groupName, excerpt: excerptText(event.content) };
+    const params = {
+      author: event.authorName,
+      group: event.groupName,
+      excerpt: excerptText(event.content, event.hasAttachment ? '📷' : ''),
+    };
 
     await notifyUsers({
       type: 'new_comment',

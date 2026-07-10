@@ -45,7 +45,11 @@
     "mediaAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
     "mediaAlbumLinkNotFound": "Media-albumkoppeling niet gevonden",
     "apiTokenSessionRequired": "API-tokens kunnen alleen worden aangemaakt vanuit een gewone inlogsessie, niet met een ander API-token",
-    "apiTokenNotFound": "API-token niet gevonden"
+    "apiTokenNotFound": "API-token niet gevonden",
+    "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",
+    "mediaProviderLacksPeople": "Deze mediabron ondersteunt geen persoonsherkenning",
+    "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon",
+    "mediaPersonNotMapped": "Deze persoon is niet gekoppeld voor deze mediabron"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -59,9 +63,15 @@
     "onThisDay_other": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden: \"{{excerpt}}\"",
     "onThisDayMedia_one": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden",
     "onThisDayMedia_other": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden",
+    "newMediaAssets_one": "{{count}} nieuwe foto toegevoegd aan \"{{album}}\" in {{group}}",
+    "newMediaAssets_other": "{{count}} nieuwe foto's toegevoegd aan \"{{album}}\" in {{group}}",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."
+  },
+  "media": {
+    "newAssetsPostContent_one": "📸 {{count}} nieuwe foto in {{album}}",
+    "newAssetsPostContent_other": "📸 {{count}} nieuwe foto's in {{album}}"
   },
   "inviteLanding": {
     "notFoundTitle": "Uitnodiging niet gevonden",

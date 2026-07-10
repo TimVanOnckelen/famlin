@@ -40,6 +40,7 @@ export function makeComment(overrides: Partial<Comment> = {}): Comment {
     editedAt: null,
     parentId: null,
     assetUrl: null,
+    attachmentUrl: null,
     likeCount: 0,
     likedByMe: false,
     myReaction: null,

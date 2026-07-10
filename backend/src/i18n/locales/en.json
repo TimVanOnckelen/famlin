@@ -45,7 +45,11 @@
     "mediaAlbumAlreadyLinked": "This album is already linked to this group",
     "mediaAlbumLinkNotFound": "Media album link not found",
     "apiTokenSessionRequired": "API tokens can only be created from a normal login session, not with another API token",
-    "apiTokenNotFound": "API token not found"
+    "apiTokenNotFound": "API token not found",
+    "mediaPersonLinkNotFound": "Person mapping not found",
+    "mediaProviderLacksPeople": "This media source doesn't support recognizing people",
+    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person",
+    "mediaPersonNotMapped": "This person hasn't been mapped for this media source"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -59,9 +63,15 @@
     "onThisDay_other": "A memory from {{group}} — {{author}}'s post from {{count}} years ago: \"{{excerpt}}\"",
     "onThisDayMedia_one": "A memory from {{group}} — {{author}}'s post from {{count}} year ago",
     "onThisDayMedia_other": "A memory from {{group}} — {{author}}'s post from {{count}} years ago",
+    "newMediaAssets_one": "{{count}} new photo was added to \"{{album}}\" in {{group}}",
+    "newMediaAssets_other": "{{count}} new photos were added to \"{{album}}\" in {{group}}",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app."
+  },
+  "media": {
+    "newAssetsPostContent_one": "📸 {{count}} new photo in {{album}}",
+    "newAssetsPostContent_other": "📸 {{count}} new photos in {{album}}"
   },
   "inviteLanding": {
     "notFoundTitle": "Invite not found",

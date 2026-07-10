@@ -69,6 +69,7 @@ export interface Comment {
     editedAt?: string | null;
     parentId?: string | null;
     assetUrl?: string | null;
+    attachmentUrl?: string | null;
     likeCount: number;
     likedByMe: boolean;
     myReaction: ReactionType | null;

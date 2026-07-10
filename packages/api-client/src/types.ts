@@ -74,6 +74,10 @@ export interface Comment {
   // Set when the comment is pinned to one photo/video in the post rather
   // than the post as a whole — matches an entry in Post.uploadedAssetUrls.
   assetUrl?: string | null;
+  // A photo/video the commenter uploaded as part of this comment itself —
+  // distinct from assetUrl above, which instead points at an existing asset
+  // on the post.
+  attachmentUrl?: string | null;
   likeCount: number;
   likedByMe: boolean;
   myReaction: ReactionType | null;

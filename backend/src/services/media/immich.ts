@@ -1,7 +1,7 @@
 import type { FastifyReply } from 'fastify';
 import { Readable } from 'stream';
 import { getImmichSettings } from '../settings.js';
-import { MediaProviderError, type MediaProvider, type MediaAssetVariant } from './types.js';
+import { MediaProviderError, type MediaProvider, type MediaAssetVariant, type MediaPersonSummary } from './types.js';
 
 interface ImmichCreds {
   serverUrl: string;
@@ -62,6 +62,20 @@ const IMMICH_ALBUM_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 // is a metadata search scoped to the album via POST /search/metadata. `size`
 // is capped at Immich's own max page size; a single page is plenty for a
 // family album, so pagination (`nextPage`) isn't followed here.
+interface ImmichSearchAssetItem {
+  id: string;
+  type: string;
+  width: number | null;
+  height: number | null;
+  // The Asset DB row's own creation timestamp (roughly "when Immich ingested
+  // this file") — not present on every Immich server version's
+  // AssetResponseDto, hence optional.
+  createdAt?: string;
+  // EXIF/file capture timestamp — always present, used as the addedAt
+  // fallback when `createdAt` isn't returned (see listAlbumAssets below).
+  fileCreatedAt?: string;
+}
+
 async function searchAlbumAssets(immichAlbumId: string) {
   const creds = await requireImmichSettings();
   const res = await immichFetch('/search/metadata', creds, {
@@ -69,14 +83,49 @@ async function searchAlbumAssets(immichAlbumId: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ albumIds: [immichAlbumId], size: 1000 }),
   });
-  const data = (await res.json()) as {
-    assets: { items: Array<{ id: string; type: string; width: number | null; height: number | null }> };
-  };
+  const data = (await res.json()) as { assets: { items: ImmichSearchAssetItem[] } };
   return data.assets.items;
 }
 
 const albumAssetIdsCache = new Map<string, { ids: Set<string>; expiresAt: number }>();
 const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000;
+
+// Immich's GET /people is expected to return { people: PersonResponseDto[],
+// total, hidden } on current server versions — handled defensively in case
+// an older/newer server ever returns a bare array instead.
+function extractPeopleList(data: unknown): Array<{ id: string; name?: string }> {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && Array.isArray((data as { people?: unknown }).people)) {
+    return (data as { people: Array<{ id: string; name?: string }> }).people;
+  }
+  return [];
+}
+
+const MAX_PEOPLE = 100;
+const MAX_THUMBNAIL_BYTES = 50 * 1024;
+
+async function fetchPersonThumbnailDataUri(personId: string, creds: ImmichCreds): Promise<string | null> {
+  try {
+    const res = await immichFetch(`/people/${personId}/thumbnail`, creds, {
+      headers: { Accept: '*/*' },
+      allow404: true,
+    });
+    if (res.status === 404 || !res.body) return null;
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.length === 0 || buffer.length > MAX_THUMBNAIL_BYTES) return null;
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  } catch {
+    // Any failure (network, non-2xx, oversized body) — the person is still
+    // usable for mapping, just without a preview image.
+    return null;
+  }
+}
+
+// Caps how many /search/metadata pages getPersonAssetIds() will walk, so a
+// person with a huge library can't turn one request into an unbounded crawl.
+const PERSON_ASSET_ID_CAP = 5000;
+const PERSON_ASSET_MAX_PAGES = 20;
 
 export const immichProvider: MediaProvider = {
   id: 'immich',
@@ -89,12 +138,26 @@ export const immichProvider: MediaProvider = {
     return IMMICH_ALBUM_ID_REGEX.test(externalAlbumId);
   },
 
-  // For the admin's "link an album" picker.
+  // For the admin's "link an album" picker. Immich's plain GET /albums only
+  // returns albums the API key's owner created — shared-with-me albums need
+  // the separate ?shared=true call. Merged and deduped by id, since an album
+  // shared back to its own owner (or returned by both calls in some Immich
+  // versions) would otherwise show up twice.
   async listAlbums() {
     const creds = await requireImmichSettings();
-    const res = await immichFetch('/albums', creds);
-    const albums = (await res.json()) as Array<{ id: string; albumName: string; assetCount: number }>;
-    return albums.map((a) => ({ id: a.id, name: a.albumName, assetCount: a.assetCount }));
+    const [ownedRes, sharedRes] = await Promise.all([
+      immichFetch('/albums', creds),
+      immichFetch('/albums?shared=true', creds),
+    ]);
+    const [owned, shared] = await Promise.all([
+      ownedRes.json() as Promise<Array<{ id: string; albumName: string; assetCount: number }>>,
+      sharedRes.json() as Promise<Array<{ id: string; albumName: string; assetCount: number }>>,
+    ]);
+    const byId = new Map<string, { id: string; name: string; assetCount: number }>();
+    for (const a of [...owned, ...shared]) {
+      byId.set(a.id, { id: a.id, name: a.albumName, assetCount: a.assetCount });
+    }
+    return [...byId.values()];
   },
 
   // For the member-facing album list — fetches just one album's metadata
@@ -120,6 +183,14 @@ export const immichProvider: MediaProvider = {
       // thumbnail/preview always come back from Immich as a JPEG still (even
       // for a video) — only the original rendition can be the real video file.
       originalExt: a.type === 'VIDEO' ? 'mp4' : 'jpg',
+      // Prefer the Asset row's own `createdAt` (roughly "when Immich ingested
+      // this file", i.e. actually added to the source) over `fileCreatedAt`
+      // (the EXIF/file capture date) — the new-assets job cares about the
+      // former. Not every Immich server version's AssetResponseDto includes
+      // `createdAt` on this endpoint, so fall back to `fileCreatedAt` when
+      // it's missing; that's still a reasonable proxy since a freshly
+      // uploaded photo/video usually has a recent capture date too.
+      addedAt: a.createdAt ?? a.fileCreatedAt ?? null,
     }));
   },
 
@@ -186,5 +257,57 @@ export const immichProvider: MediaProvider = {
     }
 
     return reply.send(Readable.fromWeb(res.body as import('stream/web').ReadableStream));
+  },
+
+  // Immich-only capability (see the optional methods on MediaProvider) — the
+  // local provider has no face-recognition concept. Capped at 100 people:
+  // this feeds an admin "map this person to a family member" picker, not a
+  // paginated browse UI.
+  async listPeople(): Promise<MediaPersonSummary[]> {
+    const creds = await requireImmichSettings();
+    const res = await immichFetch(`/people?size=${MAX_PEOPLE}`, creds);
+    const data = await res.json();
+    const people = extractPeopleList(data).slice(0, MAX_PEOPLE);
+
+    return Promise.all(
+      people.map(async (p) => ({
+        id: p.id,
+        name: p.name || '',
+        thumbnailDataUri: await fetchPersonThumbnailDataUri(p.id, creds),
+      }))
+    );
+  },
+
+  // Collects every asset id Immich associates with a person, so a route can
+  // intersect it with an album's asset ids to filter by person. Paginates via
+  // /search/metadata's `nextPage` cursor, capped at PERSON_ASSET_ID_CAP total
+  // ids / PERSON_ASSET_MAX_PAGES pages so a person with a huge library can't
+  // turn one request into an unbounded crawl.
+  async getPersonAssetIds(externalPersonId: string): Promise<Set<string>> {
+    const creds = await requireImmichSettings();
+    const ids = new Set<string>();
+    let page: string | undefined;
+
+    for (let i = 0; i < PERSON_ASSET_MAX_PAGES && ids.size < PERSON_ASSET_ID_CAP; i++) {
+      const body: Record<string, unknown> = { personIds: [externalPersonId], size: 1000 };
+      if (page) body.page = page;
+
+      const res = await immichFetch('/search/metadata', creds, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json()) as { assets: { items: Array<{ id: string }>; nextPage?: string | null } };
+      const items = data.assets?.items ?? [];
+      for (const item of items) {
+        ids.add(item.id);
+        if (ids.size >= PERSON_ASSET_ID_CAP) break;
+      }
+
+      page = data.assets?.nextPage ?? undefined;
+      if (!page || items.length === 0) break;
+    }
+
+    return ids;
   },
 };

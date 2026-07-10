@@ -27,6 +27,7 @@ export interface DomainEvents {
     authorId: string;
     authorName: string;
     content: string;
+    hasAttachment: boolean;
     parentId: string | null;
     // As sent by the client (resolved from "@name" typing) — NOT yet
     // validated. Subscribers must re-check each id is a current member of

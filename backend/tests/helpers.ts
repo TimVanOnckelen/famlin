@@ -72,7 +72,7 @@ export async function createPost(overrides: { groupId: string; authorId: string 
   });
 }
 
-export async function createComment(overrides: { postId: string; authorId: string } & Partial<{ content: string; parentId: string; assetUrl: string }>) {
+export async function createComment(overrides: { postId: string; authorId: string } & Partial<{ content: string; parentId: string; assetUrl: string; attachmentUrl: string }>) {
   return prisma.comment.create({
     data: {
       postId: overrides.postId,
@@ -80,6 +80,7 @@ export async function createComment(overrides: { postId: string; authorId: strin
       content: overrides.content ?? 'A comment',
       parentId: overrides.parentId,
       assetUrl: overrides.assetUrl,
+      attachmentUrl: overrides.attachmentUrl,
     },
   });
 }

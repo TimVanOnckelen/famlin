@@ -40,7 +40,10 @@
     "sendFailed": "Je reactie kon niet geplaatst worden. Probeer opnieuw.",
     "like": "Vind ik leuk",
     "empty": "Nog geen reacties — wees de eerste!",
-    "loadFailed": "Reacties konden niet geladen worden."
+    "loadFailed": "Reacties konden niet geladen worden.",
+    "addAttachment": "Voeg een foto of video toe",
+    "removeAttachment": "Bijlage verwijderen",
+    "viewAttachment": "Bijlage bekijken"
   },
   "newPost": {
     "title": "Nieuw bericht",

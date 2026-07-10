@@ -297,4 +297,205 @@ describe('admin routes', () => {
       expect(res.json().items.map((p: { id: string }) => p.id)).toContain(post.id);
     });
   });
+
+  describe('media album new-asset mode', () => {
+    it('rejects a non-admin and leaves the link unchanged', async () => {
+      const nonAdmin = await createUser();
+      const group = await createGroupWithMember(nonAdmin);
+      const link = await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: 'local', externalAlbumId: 'nam-a', albumName: 'A' },
+      });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media-albums/${link.id}`,
+        headers: authHeader(nonAdmin),
+        payload: { newAssetMode: 'AUTO' },
+      });
+      expect(res.statusCode).toBe(403);
+
+      const stored = await prisma.mediaAlbumLink.findUnique({ where: { id: link.id } });
+      expect(stored?.newAssetMode).toBe('OFF');
+    });
+
+    it('lets an admin set the new-asset mode', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const group = await createGroupWithMember(admin);
+      const link = await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: 'local', externalAlbumId: 'nam-b', albumName: 'B' },
+      });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media-albums/${link.id}`,
+        headers: authHeader(admin),
+        payload: { newAssetMode: 'MANUAL' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().newAssetMode).toBe('MANUAL');
+
+      const stored = await prisma.mediaAlbumLink.findUnique({ where: { id: link.id } });
+      expect(stored?.newAssetMode).toBe('MANUAL');
+    });
+
+    it('rejects an invalid mode value', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const group = await createGroupWithMember(admin);
+      const link = await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: 'local', externalAlbumId: 'nam-c', albumName: 'C' },
+      });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media-albums/${link.id}`,
+        headers: authHeader(admin),
+        payload: { newAssetMode: 'NOPE' },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('404s for a nonexistent link', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/api/admin/media-albums/does-not-exist',
+        headers: authHeader(admin),
+        payload: { newAssetMode: 'AUTO' },
+      });
+      expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('media person links', () => {
+    it('rejects a non-admin listing or creating people-links', async () => {
+      const nonAdmin = await createUser();
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(nonAdmin),
+      });
+      expect(listRes.statusCode).toBe(403);
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(nonAdmin),
+        payload: { provider: 'immich', externalPersonId: 'p1', label: 'Grandpa' },
+      });
+      expect(createRes.statusCode).toBe(403);
+
+      expect(await prisma.mediaPersonLink.count()).toBe(0);
+    });
+
+    it('creates a people-link and lists it with the mapped user', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const mappedUser = await createUser({ name: 'Grandpa Joe' });
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(admin),
+        payload: { provider: 'immich', externalPersonId: 'person-1', label: 'Grandpa', userId: mappedUser.id },
+      });
+      expect(createRes.statusCode).toBe(200);
+      const created = createRes.json();
+      expect(created.label).toBe('Grandpa');
+      expect(created.user).toMatchObject({ id: mappedUser.id, name: 'Grandpa Joe' });
+
+      const listRes = await app.inject({
+        method: 'GET',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(admin),
+      });
+      expect(listRes.statusCode).toBe(200);
+      expect(listRes.json().map((p: { id: string }) => p.id)).toContain(created.id);
+    });
+
+    it('upserts on the (provider, externalPersonId) pair instead of erroring', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const userA = await createUser({ name: 'A' });
+      const userB = await createUser({ name: 'B' });
+
+      const first = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(admin),
+        payload: { provider: 'immich', externalPersonId: 'dup-person', label: 'First', userId: userA.id },
+      });
+      expect(first.statusCode).toBe(200);
+
+      const second = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(admin),
+        payload: { provider: 'immich', externalPersonId: 'dup-person', label: 'Renamed', userId: userB.id },
+      });
+      expect(second.statusCode).toBe(200);
+      expect(second.json().id).toBe(first.json().id);
+      expect(second.json().label).toBe('Renamed');
+      expect(second.json().user.id).toBe(userB.id);
+
+      expect(
+        await prisma.mediaPersonLink.count({ where: { provider: 'immich', externalPersonId: 'dup-person' } })
+      ).toBe(1);
+    });
+
+    it('rejects a userId that does not exist', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/people-links',
+        headers: authHeader(admin),
+        payload: { provider: 'immich', externalPersonId: 'ghost-person', label: 'Ghost', userId: 'does-not-exist' },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('deletes a people-link, 404s for a nonexistent one', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const created = await prisma.mediaPersonLink.create({
+        data: { provider: 'immich', externalPersonId: 'to-delete', label: 'Bye' },
+      });
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/people-links/${created.id}`,
+        headers: authHeader(admin),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(await prisma.mediaPersonLink.findUnique({ where: { id: created.id } })).toBeNull();
+
+      const missingRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/people-links/${created.id}`,
+        headers: authHeader(admin),
+      });
+      expect(missingRes.statusCode).toBe(404);
+    });
+
+    it('400s /media/:provider/people for a provider without the capability (local)', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/admin/media/local/people',
+        headers: authHeader(admin),
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('404s /media/:provider/people for an unregistered provider', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/admin/media/nope/people',
+        headers: authHeader(admin),
+      });
+      expect(res.statusCode).toBe(404);
+    });
+  });
 });

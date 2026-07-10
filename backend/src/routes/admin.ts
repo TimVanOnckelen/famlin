@@ -25,6 +25,8 @@ import {
   testImmichConnectionBodySchema,
   testLocalMediaBodySchema,
   linkMediaAlbumBodySchema,
+  updateMediaAlbumLinkBodySchema,
+  createMediaPersonLinkBodySchema,
 } from '../types.js';
 import { getT } from '../i18n/index.js';
 
@@ -624,6 +626,106 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return { success: true };
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+      throw err;
+    }
+  });
+
+  // Toggles whether/how src/jobs/newAssets.ts surfaces newly-added assets on
+  // this linked album — OFF (default), MANUAL (a notification), or AUTO (a
+  // real Post). The job itself resolves this per link on every run.
+  fastify.patch('/media-albums/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    const body = updateMediaAlbumLinkBodySchema.parse(request.body);
+
+    try {
+      return await prisma.mediaAlbumLink.update({
+        where: { id },
+        data: { newAssetMode: body.newAssetMode },
+      });
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+      throw err;
+    }
+  });
+
+  // The admin "map a person" picker's catalog for one provider — only
+  // providers that implement the optional listPeople() capability (Immich
+  // today) support this.
+  fastify.get('/media/:provider/people', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { provider: providerId } = request.params as { provider: string };
+    const provider = getMediaProvider(providerId);
+    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+    if (!provider.listPeople) {
+      return reply.status(400).send({ error: t('errors.mediaProviderLacksPeople') });
+    }
+
+    try {
+      return await provider.listPeople();
+    } catch (err) {
+      if (err instanceof MediaProviderError) {
+        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });
+      }
+      throw err;
+    }
+  });
+
+  // Every provider-person -> Famlin-user mapping, across every provider —
+  // the admin UI's single management table.
+  fastify.get('/media/people-links', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    return prisma.mediaPersonLink.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  });
+
+  // Upserts on the (provider, externalPersonId) unique pair — re-mapping an
+  // already-linked person (a different label/user) is a normal edit, not an
+  // error.
+  fastify.post('/media/people-links', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const body = createMediaPersonLinkBodySchema.parse(request.body);
+
+    if (body.userId) {
+      const user = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } });
+      if (!user) return reply.status(400).send({ error: t('errors.userNotFound') });
+    }
+
+    return prisma.mediaPersonLink.upsert({
+      where: { provider_externalPersonId: { provider: body.provider, externalPersonId: body.externalPersonId } },
+      create: {
+        provider: body.provider,
+        externalPersonId: body.externalPersonId,
+        label: body.label,
+        userId: body.userId,
+      },
+      update: {
+        label: body.label,
+        userId: body.userId ?? null,
+      },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+  });
+
+  fastify.delete('/media/people-links/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    try {
+      await prisma.mediaPersonLink.delete({ where: { id } });
+      return { success: true };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
       throw err;
     }
   });

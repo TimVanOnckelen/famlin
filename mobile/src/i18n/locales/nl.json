@@ -175,6 +175,9 @@
     "deleteCommentConfirmTitle": "Reactie verwijderen?",
     "deleteCommentConfirmMessage": "Dit kan niet ongedaan worden gemaakt.",
     "editPlaceholder": "Bewerk je bericht...",
+    "addAttachment": "Voeg een foto of video toe",
+    "removeAttachment": "Bijlage verwijderen",
+    "viewAttachment": "Bijlage bekijken",
     "alerts": {
       "editFailed": "Wijzigingen konden niet worden opgeslagen",
       "deleteFailed": "Verwijderen mislukt"

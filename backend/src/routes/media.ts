@@ -46,6 +46,9 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
   fastify.get('/albums/:linkId/assets', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { linkId } = request.params as { linkId: string };
+    // externalPersonId (not the MediaPersonLink row id) — filters the album
+    // down to one recognized person via set intersection.
+    const { personId } = request.query as { personId?: string };
 
     const link = await prisma.mediaAlbumLink.findUnique({ where: { id: linkId } });
     if (!link) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
@@ -57,9 +60,32 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     const provider = getMediaProvider(link.provider);
     if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
 
+    let personAssetIds: Set<string> | null = null;
+    if (personId) {
+      // Only a mapped person can be filtered on — this also stops a client
+      // from probing arbitrary provider-side person ids that were never
+      // deliberately exposed to families via the admin mapping UI.
+      const personLink = await prisma.mediaPersonLink.findUnique({
+        where: { provider_externalPersonId: { provider: link.provider, externalPersonId: personId } },
+      });
+      if (!personLink) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
+      if (!provider.getPersonAssetIds) {
+        return reply.status(400).send({ error: t('errors.mediaProviderLacksPersonFilter') });
+      }
+      try {
+        personAssetIds = await provider.getPersonAssetIds(personId);
+      } catch (err) {
+        if (err instanceof MediaProviderError) {
+          return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) });
+        }
+        throw err;
+      }
+    }
+
     try {
       const assets = await provider.listAlbumAssets(link.externalAlbumId);
-      return assets.map((asset) => ({
+      const filtered = personAssetIds ? assets.filter((asset) => personAssetIds!.has(asset.id)) : assets;
+      return filtered.map((asset) => ({
         assetId: asset.id,
         type: asset.type,
         width: asset.width,
@@ -74,6 +100,32 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
       }
       throw err;
     }
+  });
+
+  // Mapped people for every media source a group has at least one linked
+  // album on — the member-facing "filter by person" picker's catalog. Empty
+  // array (not an error) when the group has no linked albums or none of its
+  // providers have any mapped people.
+  fastify.get('/people', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId } = request.query as { groupId?: string };
+    if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const links = await prisma.mediaAlbumLink.findMany({ where: { groupId }, select: { provider: true } });
+    const providerIds = [...new Set(links.map((l) => l.provider))];
+    if (providerIds.length === 0) return [];
+
+    const people = await prisma.mediaPersonLink.findMany({ where: { provider: { in: providerIds } } });
+    return people.map((p) => ({
+      id: p.externalPersonId,
+      provider: p.provider,
+      label: p.label,
+      userId: p.userId,
+    }));
   });
 
   // No fastify.authenticate here: this is loaded as an <Image>/<Video> `uri`,

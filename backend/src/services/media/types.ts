@@ -31,6 +31,22 @@ export interface MediaAssetSummary {
   // 'mp4') — must stay within what MEDIA_ASSET_PATH_REGEX (src/types.ts)
   // accepts, since it's embedded in the URLs handed to clients.
   originalExt: string;
+  // ISO 8601 timestamp of when the asset was added/uploaded to the source —
+  // NOT when the photo/video was captured (fileCreatedAt/EXIF date). Powers
+  // src/jobs/newAssets.ts's "what's new since I last checked" scan. null when
+  // a provider can't report it.
+  addedAt?: string | null;
+}
+
+// One person/face identity a provider can recognize within its library
+// (e.g. an Immich "person"). Surfaced only by providers that implement
+// listPeople(); used by the admin UI to map a person to a Famlin user
+// (MediaPersonLink) and, from there, to filter an album's assets by person.
+export interface MediaPersonSummary {
+  id: string;
+  name: string;
+  // A small inline data: URI, or null if no thumbnail could be fetched.
+  thumbnailDataUri: string | null;
 }
 
 // A source of external photos/videos that groups can link albums from —
@@ -71,4 +87,10 @@ export interface MediaProvider {
     reply: FastifyReply,
     rangeHeader?: string
   ): Promise<void>;
+  // Optional capabilities — not every provider can recognize people. Routes
+  // must check for the method's presence and respond 400 (translated) rather
+  // than assume every provider implements it (see admin.ts /media/:provider/people
+  // and media.ts's ?personId= filter).
+  listPeople?(): Promise<MediaPersonSummary[]>;
+  getPersonAssetIds?(externalPersonId: string): Promise<Set<string>>;
 }
