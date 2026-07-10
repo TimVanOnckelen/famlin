@@ -25,6 +25,7 @@ export function makePost(overrides: Partial<Post> = {}): Post {
     myReaction: null,
     reactions: {},
     favoritedByMe: false,
+    people: [],
     ...overrides,
   };
 }

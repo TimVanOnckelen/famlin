@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Post,
+  PostPerson,
   ReactionType,
   REACTION_TYPES,
   reactToPost,
@@ -17,6 +18,51 @@ import { Lightbox } from '@/components/Lightbox';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
+
+function PersonChip({ person }: { person: PostPerson }) {
+  // Use the user's avatar/name if mapped to an account, otherwise use label
+  const displayName = person.userName || person.label;
+  const avatarUrl = person.userAvatarUrl;
+
+  if (avatarUrl) {
+    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl;
+    return (
+      <div className="post-person-chip" title={displayName}>
+        <img src={src} alt={displayName} className="post-person-avatar" />
+        <span>{person.label}</span>
+      </div>
+    );
+  }
+
+  // Fallback avatar with first letter of the label when no image
+  const firstLetter = person.label.charAt(0).toUpperCase();
+  const AVATAR_COLORS = ['#006e94', '#ed835e', '#4b8b5a', '#005480'];
+  let hash = 0;
+  for (let i = 0; i < person.label.length; i++) {
+    hash = (hash * 31 + person.label.charCodeAt(i)) | 0;
+  }
+  const bgColor = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+
+  return (
+    <div className="post-person-chip" title={displayName}>
+      <div
+        className="post-person-avatar"
+        style={{
+          background: bgColor,
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '11px',
+          fontWeight: 800,
+        }}
+      >
+        {firstLetter}
+      </div>
+      <span>{person.label}</span>
+    </div>
+  );
+}
 
 export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t, i18n } = useTranslation();
@@ -172,6 +218,14 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             <div className="post-meta">
               <span className="post-time">{timeLine}</span>
               {groupChip}
+            </div>
+          )}
+
+          {post.people && post.people.length > 0 && (
+            <div className="post-people" aria-label={t('feed.peopleInPost')}>
+              {post.people.map((person) => (
+                <PersonChip key={person.id} person={person} />
+              ))}
             </div>
           )}
 

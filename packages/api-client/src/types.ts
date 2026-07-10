@@ -1,6 +1,15 @@
 export const REACTION_TYPES = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'] as const;
 export type ReactionType = (typeof REACTION_TYPES)[number];
 
+export interface PostPerson {
+  id: string;
+  provider: string;
+  label: string;
+  userId: string | null;
+  userName: string | null;
+  userAvatarUrl: string | null;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -56,6 +65,7 @@ export interface Post {
   // reacted, not just a count. Optional: older servers don't send it.
   recentReactors?: { id: string; name: string; avatarUrl?: string | null }[];
   favoritedByMe: boolean;
+  people?: PostPerson[];
 }
 
 export interface Comment {

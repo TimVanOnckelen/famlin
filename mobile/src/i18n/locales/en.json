@@ -95,7 +95,8 @@
     "comments_other": "{{count}} comments",
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
-    "onThisDayCount_other": "{{count}} memories from this day"
+    "onThisDayCount_other": "{{count}} memories from this day",
+    "peopleInPost": "People recognized in this post"
   },
   "search": {
     "title": "Search {{group}}",

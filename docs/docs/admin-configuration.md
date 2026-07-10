@@ -105,15 +105,13 @@ The hourly job runs at minute 15 of every hour (check the server logs to confirm
 
 For Immich albums with face recognition data, you can map recognized people to display names and optionally link them to Famlin users. This lets members filter album views by person when composing a post (e.g., "show me photos of Alice") and keeps face data private — only admin-mapped people are visible to family.
 
-1. Go to `/admin` → **Media** → **People mapping**.
-2. Click **Add mapping** and select:
-   - **Media source** (e.g. Immich)
-   - **Person** (a dropdown of recognized people from that source, with thumbnail previews)
-   - **Label** (a human-readable name shown to family, e.g. "Alice" or "Grandpa")
-   - **Linked user** (optional — pick a Famlin user if this person is someone in the family; leave blank otherwise)
-3. Click **Save**. Mapped people now appear in member UI when they're picking photos for a post, scoped to each group's linked albums.
+1. Go to `/admin` → Server settings → **Media** → **Immich** — the **People mapping** section sits inside the Immich card, since the recognized people come from Immich's face recognition.
+2. Under **Unmapped people**, search or browse the grid of recognized faces and click a person.
+3. Fill in the **Display name** (a human-readable name shown to family, e.g. "Alice" or "Grandpa") and optionally a **Family member** (pick a Famlin user if this person is someone in the family; leave blank otherwise), then click **Save**. Mapped people now appear in member UI when they're picking photos for a post, scoped to each group's linked albums.
 
-To remove a mapping, click the trash icon next to it.
+Mapped people also appear as tags on posts in the family feed, showing who's in each photo — when a person is linked to a Famlin user, their profile avatar appears on the tag.
+
+To remove a mapping, click the × next to it under **Mapped people**.
 
 ## Next steps
 

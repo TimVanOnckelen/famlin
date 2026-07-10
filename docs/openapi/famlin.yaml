@@ -1696,6 +1696,35 @@ components:
           nullable: true
         joinedAt: { type: string, format: date-time }
 
+    PostPerson:
+      type: object
+      description: |
+        A person mapped by an admin and recognized in a post's photos.
+        If linked to a Famlin user, includes their profile information.
+      properties:
+        id:
+          type: string
+          description: The unique identifier for this mapping.
+        provider:
+          type: string
+          enum: [immich, local]
+          description: Which media source this person's face data comes from.
+        label:
+          type: string
+          description: Human-readable name set by the admin.
+        userId:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their user id; otherwise `null`.
+        userName:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their display name; otherwise `null`.
+        userAvatarUrl:
+          type: string
+          nullable: true
+          description: If linked to a Famlin user, their avatar URL; otherwise `null`.
+
     Post:
       type: object
       properties:
@@ -1752,6 +1781,11 @@ components:
           items:
             $ref: '#/components/schemas/UserSummary'
           description: The three most recent reactors, newest first.
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPerson'
+          description: Admin-mapped media people recognized in this post's photos, empty if none matched.
         favoritedByMe: { type: boolean }
 
     PostsPage:

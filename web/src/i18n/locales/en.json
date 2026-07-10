@@ -30,6 +30,7 @@
     "favorite": "Save as favorite",
     "comments_one": "{{count}} comment",
     "comments_other": "{{count}} comments",
+    "peopleInPost": "People in this post",
     "empty": "No posts yet — share the first update with your family!",
     "loadMore": "Show more",
     "loadFailed": "The feed couldn't be loaded."

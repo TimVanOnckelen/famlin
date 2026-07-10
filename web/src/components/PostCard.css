@@ -253,6 +253,35 @@
   white-space: nowrap;
 }
 
+/* ── People chips ──────────────────────────────────────────────────────── */
+
+.post-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.post-person-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--fam-bg);
+  border-radius: var(--r-pill);
+  padding: 4px 10px 4px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-body);
+}
+
+.post-person-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
 .post-content {
   font-size: 17px;
   line-height: 1.55;

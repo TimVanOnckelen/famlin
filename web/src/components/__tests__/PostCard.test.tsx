@@ -68,4 +68,38 @@ describe('PostCard', () => {
     await user.click(screen.getByRole('button', { name: 'Save as favorite' }));
     expect(toggleFavoritePost).toHaveBeenCalledWith('post-1');
   });
+
+  it('renders person chips when post has people', () => {
+    renderWithQueryClient(
+      <PostCard
+        post={makePost({
+          people: [
+            {
+              id: 'person-1',
+              provider: 'immich',
+              label: 'Emma',
+              userId: 'user-2',
+              userName: 'Emma Smith',
+              userAvatarUrl: null,
+            },
+            {
+              id: 'person-2',
+              provider: 'immich',
+              label: 'Sophie',
+              userId: null,
+              userName: null,
+              userAvatarUrl: null,
+            },
+          ],
+        })}
+      />
+    );
+    expect(screen.getByText('Emma')).toBeInTheDocument();
+    expect(screen.getByText('Sophie')).toBeInTheDocument();
+  });
+
+  it('does not render people section when post has no people', () => {
+    const { container } = renderWithQueryClient(<PostCard post={makePost({ people: [] })} />);
+    expect(container.querySelector('.post-people')).not.toBeInTheDocument();
+  });
 });

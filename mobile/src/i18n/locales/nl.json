@@ -95,7 +95,8 @@
     "comments_other": "{{count}} reacties",
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
-    "onThisDayCount_other": "{{count}} herinneringen van deze dag"
+    "onThisDayCount_other": "{{count}} herinneringen van deze dag",
+    "peopleInPost": "Personen herkend in dit bericht"
   },
   "search": {
     "title": "Zoeken in {{group}}",

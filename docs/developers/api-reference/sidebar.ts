@@ -472,6 +472,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/postperson",
+          label: "PostPerson",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/post",
           label: "Post",
           className: "schema",

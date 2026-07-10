@@ -30,6 +30,7 @@
     "favorite": "Bewaar als favoriet",
     "comments_one": "{{count}} reactie",
     "comments_other": "{{count}} reacties",
+    "peopleInPost": "Personen in dit bericht",
     "empty": "Nog geen berichten — deel de eerste update met je familie!",
     "loadMore": "Toon meer",
     "loadFailed": "De feed kon niet geladen worden."

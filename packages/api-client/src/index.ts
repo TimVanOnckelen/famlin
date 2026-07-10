@@ -51,7 +51,7 @@ export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from './uploads';
 
-export type { ReactionType, User, Group, Post, Comment, Notification } from './types';
+export type { ReactionType, User, Group, Post, PostPerson, Comment, Notification } from './types';
 export { REACTION_TYPES } from './types';
 
 export { patchPostInCaches } from './postCache';
