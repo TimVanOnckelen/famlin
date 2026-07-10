@@ -14,19 +14,19 @@ const EMAIL_PREF_FIELD: Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment
   on_this_day: 'emailOnNewPost',
 };
 
-export async function createTransporter() {
-  const settings = await getAllSettings();
-  if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPass) {
+export async function createTransporter(settings?: Awaited<ReturnType<typeof getAllSettings>>) {
+  const resolved = settings ?? (await getAllSettings());
+  if (!resolved.smtpHost || !resolved.smtpUser || !resolved.smtpPass) {
     return null;
   }
 
   return nodemailer.createTransport({
-    host: settings.smtpHost,
-    port: settings.smtpPort || 587,
-    secure: (settings.smtpPort || 587) === 465,
+    host: resolved.smtpHost,
+    port: resolved.smtpPort || 587,
+    secure: (resolved.smtpPort || 587) === 465,
     auth: {
-      user: settings.smtpUser,
-      pass: settings.smtpPass,
+      user: resolved.smtpUser,
+      pass: resolved.smtpPass,
     },
   });
 }
