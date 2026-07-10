@@ -1,0 +1,202 @@
+.photos-shell {
+  min-height: 100vh;
+}
+
+.photos-column {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Family filter (single-select chips) ─────────────────────────────────── */
+
+.photos-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photos-person-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Photos timeline (grouped by month) ─────────────────────────────────── */
+
+.photos-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.photos-month-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.photos-month-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fam-text);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .photos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Photo tile ─────────────────────────────────────────────────────────── */
+
+.photo-tile {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r-md);
+}
+
+.photo-tile-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-tile-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.4);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.photo-tile-actions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.photo-tile-action {
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--fam-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.photo-tile-action:hover {
+  background: var(--fam-primary-dark, var(--fam-primary));
+}
+
+/* ── Loading and empty states ───────────────────────────────────────────── */
+
+.photos-hint {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
+.photos-retry {
+  border: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--fam-primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.photos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 56px 24px;
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.photos-empty p {
+  margin: 0;
+}
+
+.photos-empty-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+/* ── Infinite scroll sentinel ─────────────────────────────────────────────── */
+
+.photos-sentinel {
+  height: 100px;
+}

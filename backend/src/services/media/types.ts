@@ -36,6 +36,13 @@ export interface MediaAssetSummary {
   // src/jobs/newAssets.ts's "what's new since I last checked" scan. null when
   // a provider can't report it.
   addedAt?: string | null;
+  // ISO 8601 timestamp of when the photo/video was actually CAPTURED (EXIF
+  // date on Immich; falls back to file mtime — same as addedAt — on the
+  // local provider, which has no separate capture-date concept). Powers the
+  // photo timeline (GET /api/media/groups/:groupId/photos), which orders by
+  // "when it was taken" rather than "when it landed on the source". null
+  // when a provider can't report it — callers should fall back to addedAt.
+  takenAt?: string | null;
 }
 
 // One person/face identity a provider can recognize within its library

@@ -246,6 +246,9 @@ export const localProvider: MediaProvider = {
           // real file, so its URL extension must match the real bytes.
           originalExt: fileExt(name) === 'jpeg' ? 'jpeg' : fileExt(name),
           addedAt,
+          // No separate capture-date concept for a plain folder — mtime is
+          // the only signal available, same as addedAt.
+          takenAt: addedAt,
         };
       })
     );

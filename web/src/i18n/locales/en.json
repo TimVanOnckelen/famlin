@@ -131,5 +131,16 @@
       "immich": "Immich",
       "local": "Server folder"
     }
+  },
+  "photos": {
+    "title": "Photos",
+    "filterLabel": "Filter by family",
+    "allFamilies": "All families",
+    "filterByPerson": "Filter by person",
+    "allPeople": "All people",
+    "empty": "No photos yet",
+    "loadFailed": "Photos couldn't be loaded.",
+    "shareToFeed": "Share to feed",
+    "viewPost": "View post"
   }
 }

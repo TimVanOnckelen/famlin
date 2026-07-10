@@ -195,6 +195,12 @@
     "emptyTitle": "Nog geen favorieten.",
     "emptySubtitle": "Tik op het bladwijzer-icoon bij een bericht om het hier te bewaren."
   },
+  "photos": {
+    "title": "Foto's",
+    "emptyTitle": "Nog geen foto's.",
+    "emptySubtitle": "Foto's van je familie zullen hier verschijnen.",
+    "allPeople": "Iedereen"
+  },
   "profile": {
     "title": "Profiel",
     "changePhoto": "Profielfoto wijzigen",
@@ -229,7 +235,7 @@
   },
   "tabs": {
     "feed": "Feed",
-    "notifications": "Meldingen",
+    "photos": "Foto's",
     "profile": "Profiel"
   },
   "imageViewer": {

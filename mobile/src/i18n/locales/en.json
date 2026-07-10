@@ -195,6 +195,12 @@
     "emptyTitle": "No favorites yet.",
     "emptySubtitle": "Tap the bookmark icon on a post to save it here."
   },
+  "photos": {
+    "title": "Photos",
+    "emptyTitle": "No photos yet.",
+    "emptySubtitle": "Photos from your family will appear here.",
+    "allPeople": "Everyone"
+  },
   "profile": {
     "title": "Profile",
     "changePhoto": "Change profile photo",
@@ -229,7 +235,7 @@
   },
   "tabs": {
     "feed": "Feed",
-    "notifications": "Notifications",
+    "photos": "Photos",
     "profile": "Profile"
   },
   "imageViewer": {

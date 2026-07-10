@@ -35,6 +35,27 @@ export interface MediaPerson {
   userId: string | null;
 }
 
+export interface PhotoItem {
+  id: string;
+  source: 'album' | 'post';
+  type: 'IMAGE' | 'VIDEO';
+  takenAt: string; // ISO 8601 timestamp
+  width: number | null;
+  height: number | null;
+  thumbnailUrl: string;
+  previewUrl: string;
+  originalUrl: string;
+  albumName?: string;
+  linkId?: string;
+  assetId?: string;
+  postId?: string;
+}
+
+export interface PhotoTimelinePage {
+  items: PhotoItem[];
+  nextCursor: string | null;
+}
+
 export async function getGroupMediaAlbums(groupId: string): Promise<MediaGroupAlbum[]> {
   const response = await api.get<MediaGroupAlbum[]>(`/media/groups/${groupId}/albums`);
   return response.data;
@@ -53,6 +74,16 @@ export async function getMediaAlbumAssets(
 ): Promise<MediaAsset[]> {
   const response = await api.get<MediaAsset[]>(`/media/albums/${linkId}/assets`, {
     params: personId ? { personId } : undefined,
+  });
+  return response.data;
+}
+
+export async function getGroupPhotoTimeline(
+  groupId: string,
+  opts?: { cursor?: string; take?: number; personId?: string }
+): Promise<PhotoTimelinePage> {
+  const response = await api.get<PhotoTimelinePage>(`/media/groups/${groupId}/photos`, {
+    params: opts ? { cursor: opts.cursor, take: opts.take, personId: opts.personId } : undefined,
   });
   return response.data;
 }

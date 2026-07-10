@@ -8,6 +8,7 @@ import {
   getUploadUrl,
   Group,
   MediaAsset,
+  PhotoItem,
 } from '@famlin/api-client';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -26,10 +27,12 @@ export function NewPostModal({
   groups,
   defaultGroupId,
   onClose,
+  initialAsset,
 }: {
   groups: Group[];
   defaultGroupId: string | null;
   onClose: () => void;
+  initialAsset?: PhotoItem | null;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -37,7 +40,21 @@ export function NewPostModal({
   const [type, setType] = useState<'UPDATE' | 'MILESTONE'>('UPDATE');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(
+    initialAsset && initialAsset.source === 'album'
+      ? [
+          {
+            assetId: initialAsset.assetId || initialAsset.id,
+            type: initialAsset.type,
+            width: initialAsset.width,
+            height: initialAsset.height,
+            thumbnailUrl: initialAsset.thumbnailUrl,
+            previewUrl: initialAsset.previewUrl,
+            originalUrl: initialAsset.originalUrl,
+          },
+        ]
+      : []
+  );
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

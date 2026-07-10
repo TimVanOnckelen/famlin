@@ -131,5 +131,16 @@
       "immich": "Immich",
       "local": "Servermap"
     }
+  },
+  "photos": {
+    "title": "Foto's",
+    "filterLabel": "Filter op familie",
+    "allFamilies": "Alle families",
+    "filterByPerson": "Filter op persoon",
+    "allPeople": "Alle personen",
+    "empty": "Nog geen foto's",
+    "loadFailed": "Foto's konden niet geladen worden.",
+    "shareToFeed": "Delen op feed",
+    "viewPost": "Bericht bekijken"
   }
 }

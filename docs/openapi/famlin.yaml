@@ -1174,6 +1174,54 @@ paths:
         '403':
           $ref: '#/components/responses/NotGroupMember'
 
+  /api/media/groups/{groupId}/photos:
+    get:
+      operationId: listGroupPhotos
+      tags: [Media]
+      summary: List a group's merged photo timeline
+      description: |
+        Photos across linked albums and direct post uploads, newest first,
+        cursor-paginated. With an optional `personId` filter, shows only assets
+        of a mapped person from linked albums, excluding post uploads.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: personId
+          in: query
+          schema: { type: string }
+          description: |
+            Optional filter to show only photos of a mapped person
+            (use their `id` from `GET /api/media/people`).
+        - $ref: '#/components/parameters/cursor'
+        - name: take
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 60
+          description: Page size.
+      responses:
+        '200':
+          description: A page of photos with URLs ready to use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoTimelinePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          description: |
+            Not found (e.g., the person isn't mapped).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/media/albums/{linkId}/assets:
     get:
       operationId: listMediaAlbumAssets
@@ -1888,6 +1936,64 @@ components:
           format: date-time
           nullable: true
         createdAt: { type: string, format: date-time }
+
+    PhotoItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this photo in the timeline.
+        source:
+          type: string
+          enum: [album, post]
+          description: Whether this photo comes from a linked album or a direct post upload.
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+        takenAt:
+          type: string
+          format: date-time
+          description: ISO 8601 capture date; ordered newest-first.
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        thumbnailUrl:
+          type: string
+        previewUrl:
+          type: string
+        originalUrl:
+          type: string
+        albumName:
+          type: string
+          nullable: true
+          description: Album name when source is 'album'; null otherwise.
+        linkId:
+          type: string
+          nullable: true
+          description: Famlin-side link id when source is 'album'; null otherwise.
+        assetId:
+          type: string
+          nullable: true
+          description: Provider-defined asset id when source is 'album'; null otherwise.
+        postId:
+          type: string
+          nullable: true
+          description: Post id when source is 'post'; null otherwise.
+
+    PhotoTimelinePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhotoItem'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as ?cursor= for the next page; null on the last page.
 
     MediaAlbum:
       type: object

@@ -318,6 +318,9 @@ export const immichProvider: MediaProvider = {
       // it's missing; that's still a reasonable proxy since a freshly
       // uploaded photo/video usually has a recent capture date too.
       addedAt: a.createdAt ?? a.fileCreatedAt ?? null,
+      // The EXIF/file capture date, always present on Immich's response —
+      // what the photo timeline orders by (see MediaAssetSummary.takenAt).
+      takenAt: a.fileCreatedAt ?? null,
     }));
   },
 

@@ -3,7 +3,9 @@ import { prisma } from '../db.js';
 import { authenticateMediaRequest } from '../plugins/auth.js';
 import { isGroupMember } from '../services/groups.js';
 import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js';
-import { parseMediaAssetPath } from '../types.js';
+import { resolvePersonFilterForAlbum } from '../services/media/personFilter.js';
+import { getGroupPhotoTimeline } from '../services/media/photoTimeline.js';
+import { parseMediaAssetPath, photoTimelineQuerySchema } from '../types.js';
 import { getT } from '../i18n/index.js';
 
 // Member-facing, provider-generic media endpoints — read/proxy-only, same
@@ -43,6 +45,25 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     );
   });
 
+  // Merged, capture-date-ordered photo feed across every linked album in the
+  // group *and* photos uploaded directly to the group's posts — the "camera
+  // roll" view, as opposed to /groups/:groupId/albums' per-album browse.
+  // See services/media/photoTimeline.ts for the merge/cursor logic.
+  fastify.get('/groups/:groupId/photos', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { groupId } = request.params as { groupId: string };
+    const { cursor, take, personId } = photoTimelineQuerySchema.parse(request.query);
+
+    if (!(await isGroupMember(groupId, request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    const result = await getGroupPhotoTimeline(groupId, { cursor, take, personId });
+    if (!result.ok) return reply.status(result.status).send({ error: t(result.errorKey) });
+
+    return { items: result.items, nextCursor: result.nextCursor };
+  });
+
   fastify.get('/albums/:linkId/assets', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { linkId } = request.params as { linkId: string };
@@ -62,51 +83,11 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
 
     let personAssetIds: Set<string> | null = null;
     if (personId) {
-      // Only a mapped person can be filtered on — this also stops a client
-      // from probing arbitrary provider-side person ids that were never
-      // deliberately exposed to families via the admin mapping UI.
-      const personLink = await prisma.mediaPersonLink.findUnique({
-        where: { provider_externalPersonId: { provider: link.provider, externalPersonId: personId } },
-      });
-      if (!personLink) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
-
-      if (!provider.getAlbumAssetPeople && !provider.getPersonAssetIds) {
-        return reply.status(400).send({ error: t('errors.mediaProviderLacksPersonFilter') });
-      }
-
-      // Label-aware: the same real person can be recognized as a distinct
-      // provider-side person entity per Immich library owner (that's exactly
-      // the cross-owner shared-album case this feature exists for), so
-      // filtering by one mapped id must also match every other
-      // MediaPersonLink sharing this provider + label — e.g. "Emma" mapped
-      // twice, once per parent's library, filters both at once.
-      const sameLabelLinks = await prisma.mediaPersonLink.findMany({
-        where: { provider: link.provider, label: personLink.label },
-      });
-      const wantedPersonIds = new Set(sameLabelLinks.map((p) => p.externalPersonId));
-
-      try {
-        if (provider.getAlbumAssetPeople) {
-          // Asset-centric: works cross-owner, since it reads the `people`
-          // Immich attaches to every asset the requester's key can see in
-          // this shared album, rather than querying the key owner's own
-          // person index (which getPersonAssetIds is scoped to).
-          const albumPeople = await provider.getAlbumAssetPeople(link.externalAlbumId);
-          personAssetIds = new Set(
-            [...albumPeople.entries()]
-              .filter(([, people]) => people.some((p) => wantedPersonIds.has(p.id)))
-              .map(([assetId]) => assetId)
-          );
-        } else {
-          const sets = await Promise.all([...wantedPersonIds].map((id) => provider.getPersonAssetIds!(id)));
-          personAssetIds = new Set(sets.flatMap((s) => [...s]));
-        }
-      } catch (err) {
-        if (err instanceof MediaProviderError) {
-          return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) });
-        }
-        throw err;
-      }
+      // Shared with the merged photo timeline's ?personId= filter — see
+      // resolvePersonFilterForAlbum's doc comment.
+      const result = await resolvePersonFilterForAlbum(link, personId);
+      if (!result.ok) return reply.status(result.status).send({ error: t(result.errorKey) });
+      personAssetIds = result.assetIds;
     }
 
     try {

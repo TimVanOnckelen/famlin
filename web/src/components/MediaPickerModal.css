@@ -120,6 +120,11 @@
   display: block;
 }
 
+.media-picker-thumb .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
 .media-picker-thumb-selected {
   outline: 3px solid var(--fam-primary);
   outline-offset: -3px;

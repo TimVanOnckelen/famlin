@@ -290,6 +290,17 @@ export const searchPostsQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1).max(200),
 });
 
+// GET /api/media/groups/:groupId/photos — bigger default/max page than the
+// generic paginationQuerySchema above (a photo grid wants more tiles per
+// page than the feed's 30/100), and its cursor is an opaque base64 keyset
+// token over the in-memory-merged (takenAt, id) ordering rather than a
+// Prisma row id — see services/media/photoTimeline.ts's encodeCursor.
+export const photoTimelineQuerySchema = z.object({
+  cursor: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(200).default(60),
+  personId: z.string().optional(),
+});
+
 export const inviteRegisterBodySchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email().optional(),

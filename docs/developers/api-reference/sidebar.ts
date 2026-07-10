@@ -316,6 +316,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/list-group-photos",
+          label: "List a group's merged photo timeline",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/list-media-album-assets",
           label: "List an album's assets",
           className: "api-method get",
@@ -510,6 +516,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/notification",
           label: "Notification",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/photoitem",
+          label: "PhotoItem",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/phototimelinepage",
+          label: "PhotoTimelinePage",
           className: "schema",
         },
         {
