@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.11](https://github.com/TimVanOnckelen/famlin/compare/v0.1.10...v0.1.11) (2026-07-10)
+
+
+### Features
+
+* add API breaking-change check to CI workflow and update contributing guidelines for breaking changes ([1c879d5](https://github.com/TimVanOnckelen/famlin/commit/1c879d55d3cca2e9b3704a1f8cb98b2a8ac18d2a))
+* add comment attachment functionality with photo/video support ([ebcd619](https://github.com/TimVanOnckelen/famlin/commit/ebcd61956ae9665496722d41f7dbec3b50b52a3c))
+* add photo and photo timeline schemas, implement PhotosScreen and PhotosPage components ([e82bcd0](https://github.com/TimVanOnckelen/famlin/commit/e82bcd016cc2e5d53d10e9301420c7f6ccd9c145))
+* add ShimmerImage component for improved loading experience and update image rendering across components ([e89c207](https://github.com/TimVanOnckelen/famlin/commit/e89c20710f68bbe51888f5c798d6b8fd568c6983))
+* deeper Immich integration — shared albums, new-asset detection, people mapping ([ebf3232](https://github.com/TimVanOnckelen/famlin/commit/ebf323274f3bd19c8f0f1058620c3f98235107a4))
+* enhance development experience with nodemon integration for automatic restarts and Prisma migrations ([444f32d](https://github.com/TimVanOnckelen/famlin/commit/444f32df3151585713e8ba13e2000a19a1faeda2))
+* implement server settings layout with navigation and card components ([52aa6be](https://github.com/TimVanOnckelen/famlin/commit/52aa6bed0c450f4d7fd57721e9c55de06241618c))
+* integrate People Mapping section into Server Settings and enhance UI with new styles ([89835fd](https://github.com/TimVanOnckelen/famlin/commit/89835fd0d5a832c5329a463867b2816c370b7bac))
+* show mapped people as tags on posts in the feed ([3decf14](https://github.com/TimVanOnckelen/famlin/commit/3decf14512383c86700d3d4ebcb865452add662e))
+* tag people on photos owned by other Immich users in shared albums ([eed8fd8](https://github.com/TimVanOnckelen/famlin/commit/eed8fd8fb165e657feb63f0df4099a0cd11b1ec0))
+
+
+### Bug Fixes
+
+* coerce Immich search page cursor to a number and log failed Immich requests ([5a1b2af](https://github.com/TimVanOnckelen/famlin/commit/5a1b2af7c5962c52ff2ed8003f55b8ae081dd1d3))
+* remove redundant environment key from production submit configuration ([c495e15](https://github.com/TimVanOnckelen/famlin/commit/c495e156141e8d747bc39fc341c3bedd089e5834))
+* remove redundant service account key path from production configuration ([aab6eaa](https://github.com/TimVanOnckelen/famlin/commit/aab6eaa280c6a9d7e85b606591f3b8a8d08a0467))
+
 ## [0.1.10](https://github.com/TimVanOnckelen/famlin/compare/v0.1.9...v0.1.10) (2026-07-10)
 
 
