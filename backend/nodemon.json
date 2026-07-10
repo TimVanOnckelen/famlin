@@ -1,0 +1,7 @@
+{
+  "watch": ["src", "prisma/schema.prisma", "prisma/migrations"],
+  "ext": "ts,json,prisma,sql",
+  "ignore": ["src/**/*.test.ts", "**/__tests__/**"],
+  "delay": 300,
+  "exec": "npm run db:deploy && npm run db:generate && tsx src/server.ts"
+}

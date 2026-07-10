@@ -1,7 +1,13 @@
 # Local development overlay — automatically merged by `docker compose up`.
-# Runs the backend with hot-reload (`tsx watch`) against the bind-mounted source,
-# so saving a file in ./backend restarts the server inside the container. The
-# admin UI (backend/admin) is rebuilt to dist/admin on every change too via
+# Runs the backend with hot-reload (`nodemon`, see backend/nodemon.json)
+# against the bind-mounted source, so saving a file in ./backend restarts the
+# server inside the container. nodemon also watches prisma/schema.prisma and
+# prisma/migrations/, rerunning `db:deploy && db:generate` before restarting
+# the server whenever either changes — so a new migration (your own, or one
+# that appeared via `git pull` while the container was already running) is
+# applied and its Prisma Client regenerated automatically, no manual
+# `prisma generate` + container restart required. The admin UI
+# (backend/admin) is rebuilt to dist/admin on every change too via
 # `vite build --watch` — a browser refresh (no `docker compose up --build`)
 # is enough to see admin edits.
 #
@@ -28,7 +34,8 @@ services:
       # (some macOS/Windows Docker setups need polling for bind-mount watches):
       # CHOKIDAR_USEPOLLING: "true"
     # migrate + seed once, start the admin watch-build in the background, then
-    # watch src/ and restart on change (npm run dev = tsx watch).
+    # hand off to nodemon (npm run dev), which takes over migrate+generate on
+    # every subsequent schema/migration change and restarts on src/ changes.
     command: >
       sh -c "
         npx prisma migrate deploy &&
