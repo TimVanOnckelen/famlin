@@ -149,6 +149,7 @@
     "title": "Foto's kiezen",
     "addCount_one": "{{count}} toevoegen",
     "addCount_other": "{{count}} toevoegen",
+    "allPeople": "Iedereen",
     "noAssets": "Dit album heeft nog geen foto's.",
     "loadAlbumsError": "Albums laden mislukt",
     "loadAssetsError": "Foto's laden mislukt"

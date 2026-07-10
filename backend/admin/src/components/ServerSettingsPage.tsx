@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ServerSettings } from '../api/client';
+import { api, ServerSettings, User } from '../api/client';
 import { SUPPORTED_LANGUAGES } from '../i18n';
+import { PeopleMappingSection } from './PeopleMappingSection';
 
 export function ServerSettingsPage() {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<ServerSettings | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +41,13 @@ export function ServerSettingsPage() {
   const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null);
 
   useEffect(() => {
-    api
-      .getSettings()
-      .then((s) => {
+    Promise.all([
+      api.getSettings().then((s) => {
         setSettings(s);
         setForm(s);
-      })
+      }),
+      api.getAllUsers().then(setUsers),
+    ])
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -359,6 +362,10 @@ export function ServerSettingsPage() {
         {success && <div className="success">{t('serverSettings.saved')}</div>}
         {error && <div className="error">{error}</div>}
       </form>
+
+      <div className="card">
+        <PeopleMappingSection users={users} />
+      </div>
     </>
   );
 }

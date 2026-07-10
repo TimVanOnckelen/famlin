@@ -1184,6 +1184,12 @@ paths:
           in: path
           required: true
           schema: { type: string }
+        - name: personId
+          in: query
+          schema: { type: string }
+          description: |
+            Optional filter to show only assets of a mapped person
+            (use their `externalPersonId` from `GET /api/media/people`).
       responses:
         '200':
           description: Assets with ready-to-use proxy URLs
@@ -1193,12 +1199,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MediaAsset'
+        '400':
+          description: |
+            Bad request (e.g., the provider doesn't support filtering by person).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/NotGroupMember'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: |
+            Not found (e.g., the person isn't mapped, or the album doesn't exist).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/media/assets/{linkId}/{assetId}/{variantExt}:
     get:
@@ -1249,6 +1267,39 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /api/media/people:
+    get:
+      operationId: listGroupMediaPeople
+      tags: [Media]
+      summary: List people mapped to a group
+      description: |
+        Returns all explicitly-mapped people visible to members of the group.
+        Face data and source IDs are never exposed to family unless an admin
+        has mapped them with a `label` and optionally linked them to a user.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+          description: The group whose mapped people to list
+      responses:
+        '200':
+          description: |
+            List of people mapped by an admin for this group,
+            each with their display label and optional user link.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaPerson'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
 
   /api/immich/groups/{groupId}/albums:
     get:
@@ -1543,6 +1594,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request (bad query parameters, unsupported provider, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
   schemas:
     Error:
@@ -1829,6 +1886,32 @@ components:
         thumbnailUrl: { type: string }
         previewUrl: { type: string }
         originalUrl: { type: string }
+
+    MediaPerson:
+      type: object
+      description: |
+        A person mapped by an admin, with an optional link to a Famlin user.
+        Members can filter album assets by person using their `id` as a `personId`
+        query parameter on the asset listing.
+      properties:
+        id:
+          type: string
+          description: |
+            The unique identifier for this mapping (provider + externalPersonId).
+            Use this value as `personId=` when filtering assets.
+        provider:
+          type: string
+          enum: [immich, local]
+          description: Which media source this person comes from.
+        label:
+          type: string
+          description: Human-readable name set by the admin at mapping time.
+        userId:
+          type: string
+          nullable: true
+          description: |
+            If this person is linked to a Famlin user, their user id.
+            Otherwise `null`.
 
     ImmichAlbum:
       type: object

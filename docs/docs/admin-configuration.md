@@ -67,10 +67,14 @@ Famlin can let members pick photos from external sources when composing a post, 
 
 If your family already runs [Immich](https://immich.app) for photo storage:
 
-1. In Immich, create an API key (Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin never writes to Immich.
-2. In `/admin` → Server settings → **Media integrations** → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
-3. Save settings.
-4. Go to `/admin` → Groups, select a group, and under **Linked albums** choose **Immich** as the media source and pick an album from the dropdown.
+**Recommended setup:** Create a dedicated Famlin user in Immich, then have family members share their albums with that user. This way, Famlin can list all relevant albums in one place without you manually linking each one.
+
+1. In Immich (as an admin), create a user account for Famlin (e.g. `famlin@home.local`).
+2. Have each family member share their albums with this Famlin user (in Immich, right-click an album → Share → add the Famlin user).
+3. Create an API key for the Famlin account (log in as the Famlin user, Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin never writes to Immich.
+4. In `/admin` → Server settings → **Media integrations** → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
+5. Save settings.
+6. Go to `/admin` → Groups, select a group, and under **Linked albums** → **Immich** the dropdown now shows both the Famlin account's own albums and any shared with it. Pick the ones you want this group to see.
 
 Members never see an Immich login, token, or API key — the underlying image is streamed live from your Immich server through Famlin's own authenticated proxy.
 
@@ -84,6 +88,32 @@ Serve photos straight from a directory on the server — handy when your photos 
 4. Every immediate subdirectory of that path is now a linkable album: go to `/admin` → Groups, select a group, and under **Linked albums** choose **Local folders** as the media source and pick a folder.
 
 Only image files (`jpg`, `jpeg`, `png`, `gif`, `webp`, `avif`) directly inside the folder are listed — subfolders of an album and video files are ignored for now. Thumbnails are generated on the fly and cached inside the container.
+
+### New asset detection
+
+Each linked album can be configured to surface newly-added assets to your family automatically:
+
+- **OFF** (default) — never notify about new assets. The album appears in Famlin but doesn't send alerts or create posts.
+- **MANUAL** — send a notification when new assets appear. Members get a notification (as if a new post arrived) but Famlin doesn't auto-create a post — good for albums you want to stay aware of without flooding the feed.
+- **AUTO** — automatically create a post in the group with new assets. An hourly job checks linked albums; when it finds new photos/videos, it creates a real post (authored by an admin, preferring a group-member admin if one exists) that flows through Famlin's normal post pipeline with notifications — good for auto-import workflows (e.g., a Synology camera folder that fills hourly, a cloud-synced photo album).
+
+To set this, go to `/admin` → Groups → **Linked albums**, click an album, and choose a mode.
+
+The hourly job runs at minute 15 of every hour (check the server logs to confirm it's running). On the first run for an album, it only initializes the watermark — it doesn't retroactively notify about pre-existing assets, only new ones added after that point.
+
+### Mapping people in albums
+
+For Immich albums with face recognition data, you can map recognized people to display names and optionally link them to Famlin users. This lets members filter album views by person when composing a post (e.g., "show me photos of Alice") and keeps face data private — only admin-mapped people are visible to family.
+
+1. Go to `/admin` → **Media** → **People mapping**.
+2. Click **Add mapping** and select:
+   - **Media source** (e.g. Immich)
+   - **Person** (a dropdown of recognized people from that source, with thumbnail previews)
+   - **Label** (a human-readable name shown to family, e.g. "Alice" or "Grandpa")
+   - **Linked user** (optional — pick a Famlin user if this person is someone in the family; leave blank otherwise)
+3. Click **Save**. Mapped people now appear in member UI when they're picking photos for a post, scoped to each group's linked albums.
+
+To remove a mapping, click the trash icon next to it.
 
 ## Next steps
 

@@ -13,5 +13,12 @@ export interface MediaAsset {
     previewUrl: string;
     originalUrl: string;
 }
+export interface MediaPerson {
+    id: string;
+    provider: string;
+    label: string;
+    userId: string | null;
+}
 export declare function getGroupMediaAlbums(groupId: string): Promise<MediaGroupAlbum[]>;
-export declare function getMediaAlbumAssets(linkId: string): Promise<MediaAsset[]>;
+export declare function getGroupMediaPeople(groupId: string): Promise<MediaPerson[]>;
+export declare function getMediaAlbumAssets(linkId: string, personId?: string): Promise<MediaAsset[]>;

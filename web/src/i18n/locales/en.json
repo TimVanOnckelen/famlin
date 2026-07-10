@@ -124,6 +124,8 @@
     "loadFailed": "Album photos couldn't be loaded.",
     "addCount_one": "Add {{count}} photo",
     "addCount_other": "Add {{count}} photos",
+    "filterByPerson": "Filter by person",
+    "allPeople": "All people",
     "providers": {
       "immich": "Immich",
       "local": "Server folder"

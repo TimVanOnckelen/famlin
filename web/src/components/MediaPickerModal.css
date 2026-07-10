@@ -61,6 +61,39 @@
   padding: 0;
 }
 
+.media-picker-person-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.media-picker-person-filter .filter-chip {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.media-picker-person-filter .filter-chip:hover {
+  background: var(--fam-primary-tint);
+}
+
+.media-picker-person-filter .filter-chip-active {
+  background: var(--fam-primary);
+  border-color: var(--fam-primary);
+  color: white;
+}
+
+.media-picker-person-filter .filter-chip-active:hover {
+  background: var(--fam-primary);
+}
+
 .media-picker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));

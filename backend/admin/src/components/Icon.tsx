@@ -68,6 +68,9 @@ const paths: Record<string, ReactNode> = {
       <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
     </>
   ),
+  'chevron-right': (
+    <polyline points="9 18 15 12 9 6" />
+  ),
 };
 
 export type IconName = keyof typeof paths;

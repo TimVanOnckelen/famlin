@@ -124,6 +124,8 @@
     "loadFailed": "Albumfoto's konden niet geladen worden.",
     "addCount_one": "Voeg {{count}} foto toe",
     "addCount_other": "Voeg {{count}} foto's toe",
+    "filterByPerson": "Filter op persoon",
+    "allPeople": "Alle personen",
     "providers": {
       "immich": "Immich",
       "local": "Servermap"

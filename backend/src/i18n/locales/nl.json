@@ -48,8 +48,7 @@
     "apiTokenNotFound": "API-token niet gevonden",
     "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",
     "mediaProviderLacksPeople": "Deze mediabron ondersteunt geen persoonsherkenning",
-    "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon",
-    "mediaPersonNotMapped": "Deze persoon is niet gekoppeld voor deze mediabron"
+    "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

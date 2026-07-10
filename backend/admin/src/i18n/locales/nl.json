@@ -194,7 +194,15 @@
       "noAlbums": "Nog geen albums gekoppeld aan deze groep.",
       "linkError": "Album koppelen mislukt: {{error}}",
       "unlinkConfirm": "Album \"{{name}}\" ontkoppelen van deze groep?",
-      "unlinkError": "Album ontkoppelen mislukt: {{error}}"
+      "unlinkError": "Album ontkoppelen mislukt: {{error}}",
+      "newAssetMode": "Automatisch toevoegen",
+      "newAssetMode.off": "Uit",
+      "newAssetMode.manual": "Handmatig (melding)",
+      "newAssetMode.auto": "Automatisch (bericht)",
+      "newAssetMode.offHelp": "Nieuwe foto's in dit album worden niet aan leden getoond.",
+      "newAssetMode.manualHelp": "Leden krijgen een melding wanneer nieuwe foto's in dit album verschijnen.",
+      "newAssetMode.autoHelp": "Een bericht wordt automatisch aangemaakt in de groepsfeed wanneer nieuwe foto's verschijnen.",
+      "updateModeError": "Modus bijwerken mislukt: {{error}}"
     }
   },
   "content": {
@@ -264,5 +272,22 @@
     "localMediaTestOk": "Pad bestaat en is leesbaar.",
     "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
     "localMediaTestNotADirectory": "Pad bestaat maar is geen map."
+  },
+  "media": {
+    "peopleMapping": {
+      "title": "Personen toewijzen",
+      "hint": "Wijs personen uit je foto's toe aan familieleden zodat zij met hun naam verschijnen in het familieoverzicht. Alleen toegewezen personen zijn zichtbaar voor familieleden.",
+      "notConfigured": "Immich is niet geconfigureerd. Configureer het in het Media-integraties gedeelte hierboven om personen toe te wijzen.",
+      "mapped": "Toegewezen personen",
+      "unmapped": "Niet-toegewezen personen",
+      "noPeople": "Geen personen gevonden in je Immich-bibliotheek.",
+      "displayName": "Weergavenaam",
+      "familyMember": "Familielid (optioneel)",
+      "selectUser": "Selecteer een familielid…",
+      "userMappingHint": "Indien ingesteld, zullen foto's van deze persoon getagd worden met zijn of haar Famlin-profiel. Laat leeg om alleen de weergavenaam te tonen.",
+      "saveError": "Toewijzing opslaan mislukt: {{error}}",
+      "removeConfirm": "Toewijzing verwijderen voor \"{{name}}\"?",
+      "removeError": "Toewijzing verwijderen mislukt: {{error}}"
+    }
   }
 }

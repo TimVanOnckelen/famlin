@@ -70,12 +70,30 @@ export interface MediaAlbumSummary {
   assetCount: number;
 }
 
+export type NewAssetMode = 'OFF' | 'MANUAL' | 'AUTO';
+
 export interface MediaAlbumLink {
   id: string;
   groupId: string;
   provider: MediaProviderId;
   externalAlbumId: string;
   albumName: string;
+  createdAt: string;
+  newAssetMode: NewAssetMode;
+}
+
+export interface MediaPerson {
+  id: string;
+  name: string;
+  thumbnailDataUri: string | null;
+}
+
+export interface MediaPersonLink {
+  id: string;
+  provider: MediaProviderId;
+  externalPersonId: string;
+  label: string;
+  user: { id: string; name: string; email: string } | null;
   createdAt: string;
 }
 

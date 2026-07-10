@@ -48,8 +48,7 @@
     "apiTokenNotFound": "API token not found",
     "mediaPersonLinkNotFound": "Person mapping not found",
     "mediaProviderLacksPeople": "This media source doesn't support recognizing people",
-    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person",
-    "mediaPersonNotMapped": "This person hasn't been mapped for this media source"
+    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

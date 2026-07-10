@@ -149,6 +149,7 @@
     "title": "Choose photos",
     "addCount_one": "Add {{count}}",
     "addCount_other": "Add {{count}}",
+    "allPeople": "Everyone",
     "noAssets": "This album has no photos yet.",
     "loadAlbumsError": "Could not load albums",
     "loadAssetsError": "Could not load photos"

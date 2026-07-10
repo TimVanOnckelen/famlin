@@ -326,6 +326,12 @@ const sidebar: SidebarsConfig = {
           label: "Stream a media asset rendition",
           className: "api-method get",
         },
+        {
+          type: "doc",
+          id: "api-reference/list-group-media-people",
+          label: "List people mapped to a group",
+          className: "api-method get",
+        },
       ],
     },
     {
@@ -510,6 +516,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/mediaasset",
           label: "MediaAsset",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/mediaperson",
+          label: "MediaPerson",
           className: "schema",
         },
         {

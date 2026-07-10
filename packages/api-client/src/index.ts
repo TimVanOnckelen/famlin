@@ -39,8 +39,8 @@ export {
   clearBrowserOidcLogin,
 } from './oidcBrowser';
 
-export type { MediaGroupAlbum, MediaAsset } from './media';
-export { getGroupMediaAlbums, getMediaAlbumAssets } from './media';
+export type { MediaGroupAlbum, MediaAsset, MediaPerson } from './media';
+export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets } from './media';
 
 // Legacy Immich-only equivalents of ./media — see the note in ./immich.ts.
 export type { ImmichGroupAlbum, ImmichAsset } from './immich';

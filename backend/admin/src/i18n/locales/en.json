@@ -194,7 +194,15 @@
       "noAlbums": "No albums linked to this group yet.",
       "linkError": "Could not link album: {{error}}",
       "unlinkConfirm": "Unlink album \"{{name}}\" from this group?",
-      "unlinkError": "Could not unlink album: {{error}}"
+      "unlinkError": "Could not unlink album: {{error}}",
+      "newAssetMode": "Auto-add mode",
+      "newAssetMode.off": "Off",
+      "newAssetMode.manual": "Manual (notify)",
+      "newAssetMode.auto": "Auto (post)",
+      "newAssetMode.offHelp": "New photos in this album won't be surfaced to members.",
+      "newAssetMode.manualHelp": "Members get a notification when new photos appear in this album.",
+      "newAssetMode.autoHelp": "A post is automatically created in the group feed when new photos appear.",
+      "updateModeError": "Could not update mode: {{error}}"
     }
   },
   "content": {
@@ -264,5 +272,22 @@
     "localMediaTestOk": "Path exists and is readable.",
     "localMediaTestNotFound": "Path not found or not readable from the server.",
     "localMediaTestNotADirectory": "Path exists but is not a directory."
+  },
+  "media": {
+    "peopleMapping": {
+      "title": "People mapping",
+      "hint": "Map people detected in your photos to family members so they appear with their names in the family feed. Only mapped people become visible to family members.",
+      "notConfigured": "Immich is not configured. Configure it in the Media integrations section above to map people.",
+      "mapped": "Mapped people",
+      "unmapped": "Unmapped people",
+      "noPeople": "No people found in your Immich library.",
+      "displayName": "Display name",
+      "familyMember": "Family member (optional)",
+      "selectUser": "Select a family member…",
+      "userMappingHint": "If set, this person's photos will be tagged with their Famlin profile. Leave empty to show the display name only.",
+      "saveError": "Could not save mapping: {{error}}",
+      "removeConfirm": "Remove mapping for \"{{name}}\"?",
+      "removeError": "Could not remove mapping: {{error}}"
+    }
   }
 }

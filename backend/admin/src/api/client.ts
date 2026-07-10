@@ -11,6 +11,9 @@ import {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaProviderId,
+  NewAssetMode,
+  MediaPerson,
+  MediaPersonLink,
 } from '../types';
 
 export type {
@@ -26,6 +29,9 @@ export type {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaProviderId,
+  NewAssetMode,
+  MediaPerson,
+  MediaPersonLink,
 };
 
 export class ApiError extends Error {
@@ -226,4 +232,19 @@ export const api = {
 
   unlinkMediaAlbum: (id: string) =>
     request<void>(`/api/admin/media-albums/${id}`, { method: 'DELETE' }),
+
+  updateMediaAlbumLink: (id: string, data: { newAssetMode: NewAssetMode }) =>
+    request<MediaAlbumLink>(`/api/admin/media-albums/${id}`, { method: 'PATCH', body: data }),
+
+  getMediaPeople: (provider: MediaProviderId) =>
+    request<MediaPerson[]>(`/api/admin/media/${provider}/people`),
+
+  getMediaPersonLinks: () =>
+    request<MediaPersonLink[]>('/api/admin/media/people-links'),
+
+  createMediaPersonLink: (data: { provider: MediaProviderId; externalPersonId: string; label: string; userId?: string }) =>
+    request<MediaPersonLink>('/api/admin/media/people-links', { method: 'POST', body: data }),
+
+  deleteMediaPersonLink: (id: string) =>
+    request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
 };

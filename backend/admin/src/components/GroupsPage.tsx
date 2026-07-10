@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User } from '../api/client';
+import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User, NewAssetMode } from '../api/client';
 import i18n from '../i18n';
 import { Icon } from './Icon';
 
@@ -237,6 +237,16 @@ export function GroupsPage() {
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error');
       alert(t('groups.mediaAlbums.unlinkError', { error: message }));
+    }
+  };
+
+  const handleUpdateNewAssetMode = async (link: MediaAlbumLink, newMode: NewAssetMode) => {
+    try {
+      await api.updateMediaAlbumLink(link.id, { newAssetMode: newMode });
+      loadMediaLinks(selectedGroup!.id);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : t('common.error');
+      alert(t('groups.mediaAlbums.updateModeError', { error: message }));
     }
   };
 
@@ -498,26 +508,45 @@ export function GroupsPage() {
                 ) : mediaLinks.length === 0 ? (
                   <div className="empty">{t('groups.mediaAlbums.noAlbums')}</div>
                 ) : (
-                  <ul className="member-cards">
-                    {mediaLinks.map((link) => (
-                      <li key={link.id} className="member-card">
-                        <span className="member-card-info">
-                          <span className="member-card-name">
-                            {link.albumName}
-                            <span className="badge">{t(`groups.mediaAlbums.providers.${link.provider}`)}</span>
+                  <>
+                    <ul className="member-cards">
+                      {mediaLinks.map((link) => (
+                        <li key={link.id} className="member-card">
+                          <span className="member-card-info">
+                            <span className="member-card-name">
+                              {link.albumName}
+                              <span className="badge">{t(`groups.mediaAlbums.providers.${link.provider}`)}</span>
+                            </span>
+                            <span className="member-card-sub">
+                              {t('groups.mediaAlbums.newAssetMode')}:
+                              <select
+                                value={link.newAssetMode}
+                                onChange={(e) => handleUpdateNewAssetMode(link, e.target.value as NewAssetMode)}
+                                style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}
+                              >
+                                <option value="OFF">{t('groups.mediaAlbums.newAssetMode.off')}</option>
+                                <option value="MANUAL">{t('groups.mediaAlbums.newAssetMode.manual')}</option>
+                                <option value="AUTO">{t('groups.mediaAlbums.newAssetMode.auto')}</option>
+                              </select>
+                            </span>
+                            {link.newAssetMode !== 'OFF' && (
+                              <span className="hint" style={{ marginTop: '0.25rem' }}>
+                                {t(`groups.mediaAlbums.newAssetMode.${link.newAssetMode.toLowerCase()}Help`)}
+                              </span>
+                            )}
                           </span>
-                        </span>
-                        <button
-                          className="icon-button danger"
-                          title={t('common.remove')}
-                          aria-label={t('common.remove')}
-                          onClick={() => handleUnlinkAlbum(link)}
-                        >
-                          <Icon name="x" size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          <button
+                            className="icon-button danger"
+                            title={t('common.remove')}
+                            aria-label={t('common.remove')}
+                            onClick={() => handleUnlinkAlbum(link)}
+                          >
+                            <Icon name="x" size={14} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
                 )}
               </>
             )}
