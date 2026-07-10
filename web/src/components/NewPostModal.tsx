@@ -10,6 +10,7 @@ import {
   MediaAsset,
 } from '@famlin/api-client';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import './NewPostModal.css';
 
 async function uploadFiles(files: File[]): Promise<string[]> {
@@ -152,7 +153,7 @@ export function NewPostModal({
             ))}
             {mediaAssets.map((asset) => (
               <div key={asset.assetId} className="photo-preview">
-                <img src={getUploadUrl(asset.thumbnailUrl)} alt="" />
+                <ShimmerImage src={getUploadUrl(asset.thumbnailUrl)} />
                 <button
                   type="button"
                   className="photo-preview-remove"

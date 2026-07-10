@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getUploadUrl } from '@famlin/api-client';
 import { isVideoUrl } from '@/utils/media';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import './PostCard.css';
 
 // Shared by PostCard.tsx (a post's photo gallery) and CommentsSection.tsx (a
@@ -45,7 +46,7 @@ export function Lightbox({
       {isVideoUrl(assetUrls[index]) ? (
         <video src={url} className="lightbox-media" controls autoPlay onClick={(e) => e.stopPropagation()} />
       ) : (
-        <img src={url} className="lightbox-media" alt="" onClick={(e) => e.stopPropagation()} />
+        <ShimmerImage src={url} className="lightbox-media" onClick={(e) => e.stopPropagation()} />
       )}
       {index < assetUrls.length - 1 && (
         <button

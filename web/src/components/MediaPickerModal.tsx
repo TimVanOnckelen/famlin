@@ -8,6 +8,7 @@ import {
   getMediaAlbumAssets,
   getUploadUrl,
 } from '@famlin/api-client';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import './MediaPickerModal.css';
 
 // Picks photos/videos from the group's linked albums, whatever media source
@@ -151,7 +152,7 @@ export function MediaPickerModal({
                     onClick={() => toggle(asset.assetId)}
                     aria-pressed={isSelected}
                   >
-                    <img src={getUploadUrl(asset.thumbnailUrl)} alt="" loading="lazy" />
+                    <ShimmerImage src={getUploadUrl(asset.thumbnailUrl)} loading="lazy" />
                     {asset.type === 'VIDEO' && <span className="media-picker-video-badge">▶</span>}
                     {isSelected && <span className="media-picker-check">✓</span>}
                   </button>

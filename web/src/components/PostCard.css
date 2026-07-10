@@ -109,6 +109,12 @@
   cursor: pointer;
 }
 
+/* Reserve the hero's space while the photo streams in from the media proxy;
+   once loaded, the photo's own height takes over. */
+.post-hero .shimmer-frame:not(.shimmer-frame-loaded) {
+  aspect-ratio: 4 / 3;
+}
+
 .post-hero-chip {
   position: absolute;
   left: 10px;
@@ -192,6 +198,11 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.post-thumb .shimmer-frame {
+  width: 100%;
+  height: 100%;
 }
 
 .post-thumb-more {
@@ -531,6 +542,12 @@
   object-fit: cover;
 }
 
+.comment-attachment .shimmer-frame:not(.shimmer-frame-loaded) {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+}
+
 .comment-composer-form {
   display: flex;
   flex-direction: column;
@@ -637,6 +654,24 @@
   max-height: 100%;
   border-radius: var(--r-md);
   cursor: default;
+}
+
+/* The lightbox image sits inside a shimmer frame: the frame is the flex item,
+   so the viewport-height cap moves onto the img (max-height:100% of an
+   auto-height frame would be a no-op). */
+.lightbox .shimmer-frame {
+  max-width: 100%;
+  border-radius: var(--r-md);
+  cursor: default;
+}
+
+.lightbox .shimmer-frame:not(.shimmer-frame-loaded) {
+  width: min(720px, 80vw);
+  aspect-ratio: 4 / 3;
+}
+
+.lightbox .shimmer-frame img {
+  max-height: calc(100vh - 64px);
 }
 
 .lightbox-nav {

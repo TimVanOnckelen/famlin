@@ -13,6 +13,7 @@ import {
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
 import { Lightbox } from '@/components/Lightbox';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 
@@ -72,7 +73,7 @@ function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean 
             {isVideoUrl(comment.attachmentUrl) ? (
               <video src={getUploadUrl(comment.attachmentUrl)} muted preload="metadata" />
             ) : (
-              <img src={getUploadUrl(comment.attachmentUrl)} alt="" loading="lazy" />
+              <ShimmerImage src={getUploadUrl(comment.attachmentUrl)} loading="lazy" />
             )}
           </button>
         )}

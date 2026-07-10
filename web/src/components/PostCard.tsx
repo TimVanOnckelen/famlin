@@ -15,6 +15,7 @@ import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
+import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
@@ -149,10 +150,9 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             {isVideoUrl(post.uploadedAssetUrls[0]) ? (
               <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
             ) : (
-              <img
+              <ShimmerImage
                 src={heroUrl}
                 className="post-hero-media post-hero-clickable"
-                alt=""
                 loading="lazy"
                 onClick={() => setLightboxIndex(0)}
               />
@@ -180,7 +180,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 {isVideoUrl(assetUrl) ? (
                   <video src={getUploadUrl(assetUrl)} preload="metadata" />
                 ) : (
-                  <img src={getUploadUrl(assetUrl)} alt="" loading="lazy" />
+                  <ShimmerImage src={getUploadUrl(assetUrl)} loading="lazy" />
                 )}
                 {i === 2 && extraAssets.length > 3 && (
                   <span className="post-thumb-more">+{extraAssets.length - 3}</span>

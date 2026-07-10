@@ -1,0 +1,52 @@
+/* Wrapper rendered by ShimmerImage.tsx: an animated sweep fills the frame
+   until the photo loads, then the photo fades in. The frame has no intrinsic
+   size while empty — each call site's stylesheet reserves space for it
+   (aspect-ratio on the post hero, 100% inside fixed-size thumbs, ...). */
+
+.shimmer-frame {
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    var(--fam-primary-tint) 40%,
+    #ffffff 50%,
+    var(--fam-primary-tint) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.4s ease-in-out infinite;
+}
+
+.shimmer-frame-loaded::before {
+  content: none;
+}
+
+.shimmer-frame img {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.shimmer-frame-loaded img {
+  opacity: 1;
+}
+
+@keyframes shimmer-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-frame::before {
+    animation: none;
+  }
+}
