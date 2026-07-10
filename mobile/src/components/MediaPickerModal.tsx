@@ -16,28 +16,29 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { getUploadUrl } from '@/api/uploads';
-import { getGroupImmichAlbums, getImmichAlbumAssets, ImmichAsset, ImmichGroupAlbum } from '@/api/immich';
+import { getGroupMediaAlbums, getMediaAlbumAssets, MediaAsset, MediaGroupAlbum } from '@/api/media';
 
-interface ImmichPickerModalProps {
+interface MediaPickerModalProps {
   visible: boolean;
   groupId: string;
   onCancel: () => void;
   onConfirm: (urls: string[]) => void;
 }
 
-// Lets a member pick photos/videos from their group's linked Immich
-// album(s), following the same visible/onCancel/onConfirm shape as
-// LocationPickerModal — a self-contained full-screen modal rather than a
+// Lets a member pick photos/videos from their group's linked album(s),
+// whatever media source they live on (Immich, a local folder on the
+// server, ...) — following the same visible/onCancel/onConfirm shape as
+// LocationPickerModal: a self-contained full-screen modal rather than a
 // stack route, so NewPostScreen can just render it inline.
-export function ImmichPickerModal({ visible, groupId, onCancel, onConfirm }: ImmichPickerModalProps) {
+export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: MediaPickerModalProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const columns = 3;
   const thumbSize = (width - 32 - (columns - 1) * 4) / columns;
 
-  const [albums, setAlbums] = useState<ImmichGroupAlbum[] | null>(null);
+  const [albums, setAlbums] = useState<MediaGroupAlbum[] | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
-  const [assets, setAssets] = useState<ImmichAsset[] | null>(null);
+  const [assets, setAssets] = useState<MediaAsset[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,12 +51,12 @@ export function ImmichPickerModal({ visible, groupId, onCancel, onConfirm }: Imm
     setSelected(new Set());
     setError(null);
     setLoading(true);
-    getGroupImmichAlbums(groupId)
+    getGroupMediaAlbums(groupId)
       .then((result) => {
         setAlbums(result);
         if (result.length === 1) setSelectedLinkId(result[0].linkId);
       })
-      .catch(() => setError(t('immichPicker.loadAlbumsError')))
+      .catch(() => setError(t('mediaPicker.loadAlbumsError')))
       .finally(() => setLoading(false));
   }, [visible, groupId]);
 
@@ -63,9 +64,9 @@ export function ImmichPickerModal({ visible, groupId, onCancel, onConfirm }: Imm
     if (!selectedLinkId) return;
     setAssets(null);
     setLoading(true);
-    getImmichAlbumAssets(selectedLinkId)
+    getMediaAlbumAssets(selectedLinkId)
       .then(setAssets)
-      .catch(() => setError(t('immichPicker.loadAssetsError')))
+      .catch(() => setError(t('mediaPicker.loadAssetsError')))
       .finally(() => setLoading(false));
   }, [selectedLinkId]);
 
@@ -95,10 +96,10 @@ export function ImmichPickerModal({ visible, groupId, onCancel, onConfirm }: Imm
           <TouchableOpacity onPress={onCancel}>
             <Text style={styles.headerButton}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('immichPicker.title')}</Text>
+          <Text style={styles.headerTitle}>{t('mediaPicker.title')}</Text>
           <TouchableOpacity onPress={handleConfirm} disabled={selected.size === 0}>
             <Text style={[styles.headerButton, styles.headerButtonPrimary, selected.size === 0 && styles.headerButtonDisabled]}>
-              {t('immichPicker.addCount', { count: selected.size })}
+              {t('mediaPicker.addCount', { count: selected.size })}
             </Text>
           </TouchableOpacity>
         </View>
@@ -140,7 +141,7 @@ export function ImmichPickerModal({ visible, groupId, onCancel, onConfirm }: Imm
             columnWrapperStyle={styles.gridRow}
             ListEmptyComponent={
               <View style={styles.centered}>
-                <Text style={styles.emptyText}>{t('immichPicker.noAssets')}</Text>
+                <Text style={styles.emptyText}>{t('mediaPicker.noAssets')}</Text>
               </View>
             }
             renderItem={({ item }) => {

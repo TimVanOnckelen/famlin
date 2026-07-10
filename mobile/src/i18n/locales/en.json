@@ -41,6 +41,15 @@
     "ssoNotConfigured": "SSO login is not configured on this server.",
     "ssoNoIdToken": "The SSO provider did not return an ID token.",
     "ssoLoginFailed": "SSO login failed",
+    "errors": {
+      "oidcNotConfigured": "SSO login is not configured on this server.",
+      "oidcExchangeFailed": "Could not complete sign-in with the identity provider. Try again or contact your server admin.",
+      "oidcNoEmail": "The SSO account does not have an email address. Use a different account.",
+      "emailNotAllowed": "This email address is not allowed on this server. Use the email address your family admin invited, or ask them to add this address.",
+      "inviteEmailMismatch": "This invitation is for a different email address. Sign in with the email address the invitation was sent to.",
+      "inviteInvalid": "This invitation link is invalid, expired, or already used. Ask your family admin for a new one.",
+      "unknown": "Sign-in failed for an unknown reason. Try again."
+    },
     "alerts": {
       "loginFailedTitle": "Login failed",
       "serverAddressMissingTitle": "Server address missing",
@@ -108,8 +117,8 @@
     "contentPlaceholder": "Write something for the family...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
-    "addImmichPhotoTitle": "Immich photos",
-    "addImmichPhotoSubtitle": "Choose from a shared album",
+    "addAlbumPhotoTitle": "Album photos",
+    "addAlbumPhotoSubtitle": "Choose from a shared album",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
     "alerts": {
@@ -136,7 +145,7 @@
       "tapHint": "Tap the map to place the pin"
     }
   },
-  "immichPicker": {
+  "mediaPicker": {
     "title": "Choose photos",
     "addCount_one": "Add {{count}}",
     "addCount_other": "Add {{count}}",
@@ -194,6 +203,14 @@
     "notifyNewLike": "Likes",
     "language": "Language",
     "languageDescription": "Choose your preferred language",
+    "security": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Your password has been changed.",
+    "passwordMismatch": "New passwords don't match.",
+    "passwordChangeFailed": "Your password couldn't be changed. Try again.",
     "server": "Server",
     "connectedTo": "Connected to",
     "serverVersion": "Server version {{version}}",

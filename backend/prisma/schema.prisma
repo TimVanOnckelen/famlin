@@ -68,7 +68,7 @@ model Group {
   members     GroupMember[]
   posts       Post[]
   invites     Invite[]
-  immichAlbumLinks ImmichAlbumLink[]
+  mediaAlbumLinks MediaAlbumLink[]
 }
 
 model GroupMember {
@@ -194,21 +194,25 @@ model Notification {
   @@index([userId, readAt])
 }
 
-// Links one Immich album (identified by its Immich-side album id) to a
-// Famlin group, so group members can pick photos from it when composing a
-// post. An album can only be linked to one group at a time — that link is
-// the entire authorization boundary for the /api/immich asset proxy.
-model ImmichAlbumLink {
-  id            String   @id @default(cuid())
-  groupId       String
-  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  immichAlbumId String
-  // Cached label from Immich at link time, shown in the admin UI without an
-  // extra round-trip; not kept in sync if renamed on the Immich side.
-  albumName     String
-  createdAt     DateTime @default(now())
+// Links one external media album to a Famlin group, so group members can
+// pick photos from it when composing a post. `provider` says which media
+// source the album lives on ('immich', 'local', ... — see
+// src/services/media/registry.ts) and `externalAlbumId` is that provider's
+// album identifier (an Immich album uuid, a local folder name). The link is
+// the entire authorization boundary for the /api/media and /api/immich asset
+// proxies — plus the per-request isAssetInAlbum re-check.
+model MediaAlbumLink {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  provider        String   @default("immich")
+  externalAlbumId String
+  // Cached label from the provider at link time, shown in the admin UI
+  // without an extra round-trip; not kept in sync if renamed provider-side.
+  albumName       String
+  createdAt       DateTime @default(now())
 
-  @@unique([groupId, immichAlbumId])
+  @@unique([groupId, provider, externalAlbumId])
   @@index([groupId])
 }
 

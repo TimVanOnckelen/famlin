@@ -1,5 +1,10 @@
 import { api } from './client';
 
+// Legacy Immich-only surface (/api/immich/*) — prefer ./media.ts, which
+// covers every configured media source (Immich, local folders, ...) through
+// the provider-generic /api/media/* endpoints. Kept because older backends
+// and stored posts still use these URL shapes.
+
 export interface ImmichGroupAlbum {
   linkId: string;
   albumName: string;

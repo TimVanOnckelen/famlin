@@ -6,11 +6,14 @@ import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import {
   testImmichConnection,
-  listImmichAlbums,
-  immichErrorKey,
-  immichErrorStatus,
-  ImmichError,
-} from '../services/immich.js';
+} from '../services/media/immich.js';
+import {
+  getMediaProvider,
+  mediaErrorKey,
+  mediaErrorStatus,
+  MediaProviderError,
+} from '../services/media/registry.js';
+import fsp from 'fs/promises';
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -20,7 +23,8 @@ import {
   createInviteBodySchema,
   paginationQuerySchema,
   testImmichConnectionBodySchema,
-  linkImmichAlbumBodySchema,
+  testLocalMediaBodySchema,
+  linkMediaAlbumBodySchema,
 } from '../types.js';
 import { getT } from '../i18n/index.js';
 
@@ -36,13 +40,17 @@ function getPublicOrigin(request: any): string {
   return `${request.protocol}://${request.hostname}`;
 }
 
-// Fields safe to expose to admin clients — never includes passwordHash.
+// Fields safe to expose to admin clients. passwordHash is selected only so
+// toSafeUser() below can derive `hasPassword` from it — every caller of this
+// select MUST route its result through toSafeUser(), which strips the raw
+// hash before the object leaves this file.
 const userSelect = {
   id: true,
   email: true,
   name: true,
   avatarUrl: true,
   isAdmin: true,
+  passwordHash: true,
   emailOnNewPost: true,
   emailOnNewComment: true,
   emailOnNewLike: true,
@@ -51,6 +59,16 @@ const userSelect = {
   pushOnNewLike: true,
   createdAt: true,
 } as const;
+
+// Strips passwordHash from a userSelect-shaped row and replaces it with
+// `hasPassword` — the admin UI uses this to badge SSO-only accounts (never
+// given a local password) versus password accounts.
+function toSafeUser<T extends { passwordHash: string | null }>(
+  user: T
+): Omit<T, 'passwordHash'> & { hasPassword: boolean } {
+  const { passwordHash, ...safe } = user;
+  return { ...safe, hasPassword: !!passwordHash };
+}
 
 // Guards against ever leaving the app with zero admins: called before an
 // update/delete that would strip isAdmin from (or delete) `userId`.
@@ -192,7 +210,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // Flatten memberships into a plain `groups` array for the admin UI.
     return {
       items: items.map(({ groupMemberships, ...user }) => ({
-        ...user,
+        ...toSafeUser(user),
         groups: groupMemberships.map((m) => m.group),
       })),
       nextCursor,
@@ -216,7 +234,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         data: body,
         select: userSelect,
       });
-      return user;
+      return toSafeUser(user);
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
       throw err;
@@ -330,7 +348,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       orderBy: { joinedAt: 'asc' },
     });
 
-    return members.map((m) => ({ ...m.user, joinedAt: m.joinedAt }));
+    return members.map((m) => ({ ...toSafeUser(m.user), joinedAt: m.joinedAt }));
   });
 
   fastify.post('/groups/:id/members', async (request, reply) => {
@@ -505,9 +523,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return updateSettings(body);
   });
 
-  // Immich integration: one server-level connection (configured above via
-  // /settings) shared by every group; here an admin links specific Immich
-  // albums to specific Famlin groups so members can pick photos from them.
+  // Media integrations: each provider is one server-level connection
+  // (configured above via /settings) shared by every group; below, an admin
+  // links specific provider albums to specific Famlin groups so members can
+  // pick photos from them (see services/media/registry.ts for the providers).
   fastify.post('/immich/test', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
@@ -515,61 +534,96 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return testImmichConnection(body.serverUrl, body.apiKey);
   });
 
-  fastify.get('/immich/albums', async (request, reply) => {
+  // Validates a local-media root path before the admin saves it — the
+  // equivalent of /immich/test for the local-folder provider. Path probing is
+  // admin-only by definition of this route, and the saved value is what the
+  // provider later trusts.
+  fastify.post('/media/local/test', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const body = testLocalMediaBodySchema.parse(request.body);
+    try {
+      const stat = await fsp.stat(body.rootPath);
+      if (!stat.isDirectory()) return { ok: false as const, error: 'not_a_directory' as const };
+      await fsp.access(body.rootPath, fsp.constants.R_OK);
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, error: 'not_found' as const };
+    }
+  });
+
+  // The admin "link an album" picker's catalog, per provider.
+  fastify.get('/media/:provider/albums', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
     const t = getT(request);
+    const { provider: providerId } = request.params as { provider: string };
+    const provider = getMediaProvider(providerId);
+    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+
     try {
-      return await listImmichAlbums();
+      return await provider.listAlbums();
     } catch (err) {
-      if (err instanceof ImmichError) {
-        return reply.status(immichErrorStatus(err)).send({ error: t(immichErrorKey(err)), code: err.code });
+      if (err instanceof MediaProviderError) {
+        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });
       }
       throw err;
     }
   });
 
-  fastify.get('/groups/:id/immich-albums', async (request, reply) => {
+  fastify.get('/groups/:id/media-albums', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
     const { id } = request.params as { id: string };
-    return prisma.immichAlbumLink.findMany({
+    return prisma.mediaAlbumLink.findMany({
       where: { groupId: id },
       orderBy: { createdAt: 'desc' },
     });
   });
 
-  fastify.post('/groups/:id/immich-albums', async (request, reply) => {
+  fastify.post('/groups/:id/media-albums', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
     const t = getT(request);
     const { id } = request.params as { id: string };
-    const body = linkImmichAlbumBodySchema.parse(request.body);
+    const body = linkMediaAlbumBodySchema.parse(request.body);
+
+    // Syntactic validity per provider (Immich uuid / safe folder name) — a
+    // crafted album id must never reach the provider's filesystem/API.
+    const provider = getMediaProvider(body.provider)!;
+    if (!provider.isValidAlbumId(body.externalAlbumId)) {
+      return reply.status(400).send({ error: t('errors.validationFailed') });
+    }
 
     try {
-      const link = await prisma.immichAlbumLink.create({
-        data: { groupId: id, immichAlbumId: body.immichAlbumId, albumName: body.albumName },
+      const link = await prisma.mediaAlbumLink.create({
+        data: {
+          groupId: id,
+          provider: body.provider,
+          externalAlbumId: body.externalAlbumId,
+          albumName: body.albumName,
+        },
       });
       return link;
     } catch (err: any) {
       // Unique constraint: this album is already linked to this group.
       if (err?.code === 'P2002') {
-        return reply.status(409).send({ error: t('errors.immichAlbumAlreadyLinked') });
+        return reply.status(409).send({ error: t('errors.mediaAlbumAlreadyLinked') });
       }
       throw err;
     }
   });
 
-  fastify.delete('/immich-albums/:id', async (request, reply) => {
+  fastify.delete('/media-albums/:id', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
     const t = getT(request);
     const { id } = request.params as { id: string };
     try {
-      await prisma.immichAlbumLink.delete({ where: { id } });
+      await prisma.mediaAlbumLink.delete({ where: { id } });
       return { success: true };
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.immichAlbumLinkNotFound') });
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
       throw err;
     }
   });

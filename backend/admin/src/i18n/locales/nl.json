@@ -103,7 +103,8 @@
       "pushNotifications": "Pushmeldingen",
       "emailNotifications": "E-mail notificaties",
       "memberSince": "Lid sinds",
-      "actions": "Acties"
+      "actions": "Acties",
+      "sso": "SSO"
     },
     "noUsers": "Geen gebruikers gevonden.",
     "noGroups": "Geen groepen",
@@ -140,6 +141,7 @@
     "memberCount_other": "{{count}} leden",
     "membersOf": "Leden van {{name}}",
     "addMember": "Lid toevoegen",
+    "addExistingUser": "+ Bestaande gebruiker toevoegen",
     "selectUser": "Selecteer een gebruiker…",
     "noMembers": "Nog geen leden in deze groep.",
     "joinedOn": "lid sinds {{date}}",
@@ -153,7 +155,8 @@
       "actions": "Acties"
     },
     "invites": {
-      "title": "Uitnodigingen",
+      "title": "Nodig een familielid uit",
+      "hint": "Deel de link of verstuur ze per e-mail — ze maken pas een account aan zodra ze de uitnodiging accepteren. Je hoeft ze niet eerst als gebruiker aan te maken.",
       "emailLabel": "E-mail (optioneel)",
       "emailPlaceholder": "iemand@example.com",
       "expiresLabel": "Verloopt",
@@ -177,10 +180,15 @@
       "neverExpires": "Verloopt nooit",
       "createdOn": "Aangemaakt {{date}}"
     },
-    "immichAlbums": {
-      "title": "Immich-albums",
-      "notConfigured": "Configureer Immich bij Serverinstellingen om albums te koppelen.",
-      "loadError": "Kan Immich niet bereiken om albums op te halen — gekoppelde albums blijven werken.",
+    "mediaAlbums": {
+      "title": "Gekoppelde albums",
+      "providerLabel": "Mediabron",
+      "providers": {
+        "immich": "Immich",
+        "local": "Lokale mappen"
+      },
+      "notConfigured": "Configureer deze mediabron bij Serverinstellingen om albums te koppelen.",
+      "loadError": "Kan deze mediabron niet lezen om albums op te halen — gekoppelde albums blijven werken.",
       "selectAlbum": "Selecteer een album…",
       "linkAlbum": "Album koppelen",
       "noAlbums": "Nog geen albums gekoppeld aan deze groep.",
@@ -237,14 +245,24 @@
     "saveSettings": "Instellingen opslaan",
     "saving": "Opslaan...",
     "saved": "Instellingen opgeslagen.",
-    "immich": "Immich-integratie",
-    "immichHint": "Configureer één Immich-server + API-sleutel voor de hele instantie en koppel vervolgens specifieke albums aan groepen via de pagina Groepen. Leden kunnen dan foto's uit een gekoppeld album kiezen bij het maken van een bericht. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
+    "integrations": "Media-integraties",
+    "integrationsHint": "Elke mediabron configureer je één keer voor de hele instantie; welke albums zichtbaar zijn voor welke groep koppel je via de pagina Groepen. Leden kunnen dan foto's uit een gekoppeld album kiezen bij het maken van een bericht.",
+    "immich": "Immich",
+    "immichHint": "Configureer één Immich-server + API-sleutel. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server-URL",
     "immichApiKey": "API-sleutel",
     "immichTestConnection": "Verbinding testen",
     "immichTesting": "Testen...",
     "immichTestOk": "Verbinding gelukt.",
     "immichTestUnauthorized": "Verbonden, maar de API-sleutel werd geweigerd.",
-    "immichTestUnreachable": "Kan de Immich-server niet bereiken."
+    "immichTestUnreachable": "Kan de Immich-server niet bereiken.",
+    "localMedia": "Lokale mappen",
+    "localMediaHint": "Serveer foto's rechtstreeks uit een map op deze server (bijv. een NAS-share die in de container is gemount). Elke submap van het pad wordt een koppelbaar album; alleen afbeeldingsbestanden worden getoond.",
+    "localMediaPath": "Pad naar mediamap",
+    "localMediaTest": "Pad controleren",
+    "localMediaTesting": "Controleren...",
+    "localMediaTestOk": "Pad bestaat en is leesbaar.",
+    "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
+    "localMediaTestNotADirectory": "Pad bestaat maar is geen map."
   }
 }

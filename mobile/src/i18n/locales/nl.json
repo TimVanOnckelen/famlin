@@ -41,6 +41,15 @@
     "ssoNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
     "ssoNoIdToken": "De SSO-provider heeft geen ID-token teruggegeven.",
     "ssoLoginFailed": "SSO-login is mislukt",
+    "errors": {
+      "oidcNotConfigured": "SSO-login is niet geconfigureerd op deze server.",
+      "oidcExchangeFailed": "Aanmelden bij de identiteitsprovider is mislukt. Probeer opnieuw of neem contact op met je serverbeheerder.",
+      "oidcNoEmail": "Het SSO-account heeft geen e-mailadres. Gebruik een ander account.",
+      "emailNotAllowed": "Dit e-mailadres is niet toegestaan op deze server. Gebruik het e-mailadres waarmee je familiebeheerder je heeft uitgenodigd, of vraag hen dit adres toe te voegen.",
+      "inviteEmailMismatch": "Deze uitnodiging is voor een ander e-mailadres. Meld je aan met het e-mailadres waarnaar de uitnodiging is verstuurd.",
+      "inviteInvalid": "Deze uitnodigingslink is ongeldig, verlopen of al gebruikt. Vraag je familiebeheerder om een nieuwe.",
+      "unknown": "Aanmelden is om een onbekende reden mislukt. Probeer opnieuw."
+    },
     "alerts": {
       "loginFailedTitle": "Inloggen mislukt",
       "serverAddressMissingTitle": "Serveradres ontbreekt",
@@ -108,8 +117,8 @@
     "contentPlaceholder": "Schrijf iets voor de familie...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
-    "addImmichPhotoTitle": "Immich-foto's",
-    "addImmichPhotoSubtitle": "Kies uit een gedeeld album",
+    "addAlbumPhotoTitle": "Albumfoto's",
+    "addAlbumPhotoSubtitle": "Kies uit een gedeeld album",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
     "alerts": {
@@ -136,7 +145,7 @@
       "tapHint": "Tik op de kaart om de pin te plaatsen"
     }
   },
-  "immichPicker": {
+  "mediaPicker": {
     "title": "Foto's kiezen",
     "addCount_one": "{{count}} toevoegen",
     "addCount_other": "{{count}} toevoegen",
@@ -194,6 +203,14 @@
     "notifyNewLike": "Likes",
     "language": "Taal",
     "languageDescription": "Kies je voorkeurstaal",
+    "security": "Wachtwoord",
+    "currentPassword": "Huidig wachtwoord",
+    "newPassword": "Nieuw wachtwoord",
+    "confirmPassword": "Bevestig nieuw wachtwoord",
+    "changePassword": "Wachtwoord wijzigen",
+    "passwordChanged": "Je wachtwoord is gewijzigd.",
+    "passwordMismatch": "De nieuwe wachtwoorden komen niet overeen.",
+    "passwordChangeFailed": "Je wachtwoord kon niet gewijzigd worden. Probeer opnieuw.",
     "server": "Server",
     "connectedTo": "Verbonden met",
     "serverVersion": "Serverversie {{version}}",

@@ -105,9 +105,13 @@ export function FeedPage({
           </div>
         )}
 
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} showGroup={showGroupOnCards} />
-        ))}
+        {posts.length > 0 && (
+          <div className="feed-grid">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} showGroup={showGroupOnCards} />
+            ))}
+          </div>
+        )}
 
         {postsQuery.hasNextPage && (
           <button

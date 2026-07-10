@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Modal, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { updateMe, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
+import { updateMe, changePassword, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
 import { uploadMedia } from '@/api/uploads';
 import { setLanguage } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
@@ -22,6 +22,11 @@ export function ProfileScreen() {
   const queryClient = useQueryClient();
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
@@ -55,6 +60,31 @@ export function ProfileScreen() {
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.uploadFailed'));
     },
   });
+
+  const updatePassword = useMutation({
+    mutationFn: () => changePassword(currentPassword, newPassword),
+    onSuccess: () => {
+      setPasswordError(null);
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (err: any) => {
+      setPasswordSuccess(false);
+      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'));
+    },
+  });
+
+  function handlePasswordSubmit() {
+    setPasswordSuccess(false);
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('profile.passwordMismatch'));
+      return;
+    }
+    setPasswordError(null);
+    updatePassword.mutate();
+  }
 
   async function pickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -183,6 +213,61 @@ export function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {user?.hasPassword && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.security')}</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>{t('profile.currentPassword')}</Text>
+              <TextInput
+                style={styles.input}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                textContentType="password"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>{t('profile.newPassword')}</Text>
+              <TextInput
+                style={styles.input}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                textContentType="newPassword"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>{t('profile.confirmPassword')}</Text>
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                textContentType="newPassword"
+                autoCapitalize="none"
+              />
+            </View>
+
+            {passwordError && <Text style={styles.passwordError}>{passwordError}</Text>}
+            {passwordSuccess && <Text style={styles.passwordSuccess}>{t('profile.passwordChanged')}</Text>}
+
+            <TouchableOpacity
+              style={[styles.passwordButton, updatePassword.isPending && styles.passwordButtonDisabled]}
+              onPress={handlePasswordSubmit}
+              disabled={updatePassword.isPending || !currentPassword || !newPassword || !confirmPassword}
+            >
+              <Text style={styles.passwordButtonText}>
+                {updatePassword.isPending ? t('common.loading') : t('profile.changePassword')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
@@ -470,6 +555,53 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: colors.primary,
+  },
+  inputGroup: {
+    marginBottom: 14,
+  },
+  inputLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.textTitle,
+    marginBottom: 6,
+  },
+  input: {
+    width: '100%',
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    paddingHorizontal: 14,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    color: colors.textTitle,
+  },
+  passwordError: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.accent,
+    marginBottom: 10,
+  },
+  passwordSuccess: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
+    marginBottom: 10,
+  },
+  passwordButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 100,
+    alignItems: 'center',
+  },
+  passwordButtonDisabled: {
+    opacity: 0.6,
+  },
+  passwordButtonText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 16,
+    color: colors.white,
   },
   settingLabel: {
     fontFamily: 'Nunito_700Bold',

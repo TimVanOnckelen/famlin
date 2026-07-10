@@ -7,6 +7,7 @@ import { sanitizeUser } from './users.js';
 interface FailureResponse {
   status: number;
   error: string;
+  code: string;
 }
 
 // Shared by every OIDC entry point (direct client-side PKCE at POST /oidc,
@@ -30,7 +31,7 @@ export async function completeOidcLogin(
   const oidcUser = await verifyOidcToken(idToken, { allowUnlisted: !!invite });
 
   if (invite?.email && invite.email !== oidcUser.email) {
-    return { error: { status: 403, error: t('errors.inviteEmailMismatch') } };
+    return { error: { status: 403, error: t('errors.inviteEmailMismatch'), code: 'invite_email_mismatch' } };
   }
 
   let user = await prisma.user.findUnique({ where: { email: oidcUser.email } });
@@ -40,7 +41,7 @@ export async function completeOidcLogin(
     // login (an empty allowedEmails list means "allow everyone"), unless a
     // valid invite is covering this signup.
     if (!invite && !(await isEmailAllowed(oidcUser.email))) {
-      return { error: { status: 403, error: t('errors.emailNotAllowed') } };
+      return { error: { status: 403, error: t('errors.emailNotAllowed'), code: 'email_not_allowed' } };
     }
 
     user = await prisma.user.create({

@@ -5,38 +5,25 @@ import { prisma } from '../src/db.js';
 import { updateSettings } from '../src/services/settings.js';
 import { buildTestApp, createUser, createGroupWithMember, authHeader } from './helpers.js';
 
-// listImmichAlbums/getImmichAlbumAssets/getImmichAlbumInfo talk to a real
-// Immich server over fetch — mocked here so these tests exercise
-// route/authorization logic (admin guard, group membership, cross-group
-// isolation) rather than a live Immich instance. isAssetInAlbum is mocked
-// too: routes/immich.ts imports it as a cross-module reference, so mocking it
-// here works cleanly, whereas its own real implementation (which calls
-// getImmichAlbumAssets internally) can't be exercised this way — see the
-// dedicated 'asset proxy authorization' tests below for what's actually
-// covered. ImmichError is re-exported as-is so `instanceof` checks in the
-// routes still work.
-vi.mock('../src/services/immich.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/services/immich.js')>();
-  return {
-    ...actual,
-    listImmichAlbums: vi.fn(),
-    getImmichAlbumAssets: vi.fn(),
-    getImmichAlbumInfo: vi.fn(),
-    isAssetInAlbum: vi.fn(),
-  };
-});
+import { immichProvider } from '../src/services/media/immich.js';
 
-const immichService = await import('../src/services/immich.js');
-const listImmichAlbumsMock = vi.mocked(immichService.listImmichAlbums);
-const getImmichAlbumAssetsMock = vi.mocked(immichService.getImmichAlbumAssets);
-const getImmichAlbumInfoMock = vi.mocked(immichService.getImmichAlbumInfo);
-const isAssetInAlbumMock = vi.mocked(immichService.isAssetInAlbum);
+// The provider's album/asset lookups talk to a real Immich server over fetch
+// — spied here so these tests exercise route/authorization logic (admin
+// guard, group membership, cross-group isolation) rather than a live Immich
+// instance. isAssetInAlbum is spied too — see the dedicated 'asset proxy
+// authorization' tests below for what's actually covered. streamAsset is NOT
+// spied: the range-forwarding test mocks global fetch instead to exercise the
+// real proxy.
+const getAlbumInfoMock = vi.spyOn(immichProvider, 'getAlbumInfo');
+const listAlbumAssetsMock = vi.spyOn(immichProvider, 'listAlbumAssets');
+const isAssetInAlbumMock = vi.spyOn(immichProvider, 'isAssetInAlbum');
 
-async function linkAlbum(groupId: string, overrides: Partial<{ immichAlbumId: string; albumName: string }> = {}) {
-  return prisma.immichAlbumLink.create({
+async function linkAlbum(groupId: string, overrides: Partial<{ externalAlbumId: string; albumName: string }> = {}) {
+  return prisma.mediaAlbumLink.create({
     data: {
       groupId,
-      immichAlbumId: overrides.immichAlbumId ?? randomUUID(),
+      provider: 'immich',
+      externalAlbumId: overrides.externalAlbumId ?? randomUUID(),
       albumName: overrides.albumName ?? 'Family photos',
     },
   });
@@ -54,9 +41,8 @@ describe('immich integration', () => {
   });
 
   beforeEach(() => {
-    listImmichAlbumsMock.mockReset();
-    getImmichAlbumAssetsMock.mockReset();
-    getImmichAlbumInfoMock.mockReset();
+    getAlbumInfoMock.mockReset();
+    listAlbumAssetsMock.mockReset();
     isAssetInAlbumMock.mockReset();
     // Default to "the asset is in the album" so tests that aren't exercising
     // that specific check (e.g. auth/membership 401/403 tests, which never
@@ -71,13 +57,13 @@ describe('immich integration', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: `/api/admin/groups/${group.id}/immich-albums`,
+        url: `/api/admin/groups/${group.id}/media-albums`,
         headers: authHeader(nonAdmin),
-        payload: { immichAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
+        payload: { provider: 'immich', externalAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
       });
       expect(res.statusCode).toBe(403);
 
-      const links = await prisma.immichAlbumLink.findMany({ where: { groupId: group.id } });
+      const links = await prisma.mediaAlbumLink.findMany({ where: { groupId: group.id } });
       expect(links).toHaveLength(0);
     });
 
@@ -87,15 +73,16 @@ describe('immich integration', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: `/api/admin/groups/${group.id}/immich-albums`,
+        url: `/api/admin/groups/${group.id}/media-albums`,
         headers: authHeader(admin),
-        payload: { immichAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
+        payload: { provider: 'immich', externalAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
       });
       expect(res.statusCode).toBe(200);
 
-      const links = await prisma.immichAlbumLink.findMany({ where: { groupId: group.id } });
+      const links = await prisma.mediaAlbumLink.findMany({ where: { groupId: group.id } });
       expect(links).toHaveLength(1);
       expect(links[0].albumName).toBe('Family photos');
+      expect(links[0].provider).toBe('immich');
     });
 
     it('rejects linking the same album to a group twice', async () => {
@@ -105,9 +92,9 @@ describe('immich integration', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: `/api/admin/groups/${group.id}/immich-albums`,
+        url: `/api/admin/groups/${group.id}/media-albums`,
         headers: authHeader(admin),
-        payload: { immichAlbumId: link.immichAlbumId, albumName: 'Duplicate' },
+        payload: { provider: 'immich', externalAlbumId: link.externalAlbumId, albumName: 'Duplicate' },
       });
       expect(res.statusCode).toBe(409);
     });
@@ -119,12 +106,12 @@ describe('immich integration', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: `/api/admin/immich-albums/${link.id}`,
+        url: `/api/admin/media-albums/${link.id}`,
         headers: authHeader(admin),
       });
       expect(res.statusCode).toBe(200);
 
-      const stored = await prisma.immichAlbumLink.findUnique({ where: { id: link.id } });
+      const stored = await prisma.mediaAlbumLink.findUnique({ where: { id: link.id } });
       expect(stored).toBeNull();
     });
 
@@ -133,7 +120,7 @@ describe('immich integration', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: '/api/admin/immich-albums/does-not-exist',
+        url: '/api/admin/media-albums/does-not-exist',
         headers: authHeader(admin),
       });
       expect(res.statusCode).toBe(404);
@@ -159,7 +146,7 @@ describe('immich integration', () => {
       const member = await createUser();
       const group = await createGroupWithMember(member);
       const link = await linkAlbum(group.id, { albumName: 'Vacation 2025' });
-      getImmichAlbumInfoMock.mockResolvedValue({ assetCount: 12 });
+      getAlbumInfoMock.mockResolvedValue({ assetCount: 12 });
 
       const res = await app.inject({
         method: 'GET',
@@ -188,9 +175,9 @@ describe('immich integration', () => {
       const member = await createUser();
       const group = await createGroupWithMember(member);
       const link = await linkAlbum(group.id);
-      getImmichAlbumAssetsMock.mockResolvedValue([
-        { id: 'asset-1', type: 'IMAGE', width: 100, height: 100 },
-        { id: 'asset-2', type: 'VIDEO', width: 100, height: 100 },
+      listAlbumAssetsMock.mockResolvedValue([
+        { id: 'asset-1', type: 'IMAGE', width: 100, height: 100, originalExt: 'jpg' },
+        { id: 'asset-2', type: 'VIDEO', width: 100, height: 100, originalExt: 'mp4' },
       ]);
 
       const res = await app.inject({
@@ -268,7 +255,7 @@ describe('immich integration', () => {
         headers: authHeader(member),
       });
       expect(res.statusCode).toBe(404);
-      expect(isAssetInAlbumMock).toHaveBeenCalledWith(link.immichAlbumId, '11111111-1111-4111-8111-111111111111');
+      expect(isAssetInAlbumMock).toHaveBeenCalledWith(link.externalAlbumId, '11111111-1111-4111-8111-111111111111');
     });
   });
 

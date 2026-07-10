@@ -2,20 +2,23 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ImmichAsset,
-  getGroupImmichAlbums,
-  getImmichAlbumAssets,
+  MediaAsset,
+  getGroupMediaAlbums,
+  getMediaAlbumAssets,
   getUploadUrl,
 } from '@famlin/api-client';
-import './ImmichPickerModal.css';
+import './MediaPickerModal.css';
 
-export function ImmichPickerModal({
+// Picks photos/videos from the group's linked albums, whatever media source
+// they live on (Immich, a local folder on the server, ...) — the
+// provider-generic /api/media endpoints serve them all through one proxy.
+export function MediaPickerModal({
   groupId,
   onConfirm,
   onClose,
 }: {
   groupId: string;
-  onConfirm: (assets: ImmichAsset[]) => void;
+  onConfirm: (assets: MediaAsset[]) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -23,17 +26,19 @@ export function ImmichPickerModal({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const albumsQuery = useQuery({
-    queryKey: ['immich-albums', groupId],
-    queryFn: () => getGroupImmichAlbums(groupId),
+    queryKey: ['media-albums', groupId],
+    queryFn: () => getGroupMediaAlbums(groupId),
   });
   const albums = albumsQuery.data ?? [];
 
   // A single linked album skips the album list entirely.
   const linkId = chosenLinkId ?? (albums.length === 1 ? albums[0].linkId : null);
+  // The source badge only disambiguates when the group actually mixes sources.
+  const multipleProviders = new Set(albums.map((a) => a.provider)).size > 1;
 
   const assetsQuery = useQuery({
-    queryKey: ['immich-assets', linkId],
-    queryFn: () => getImmichAlbumAssets(linkId!),
+    queryKey: ['media-assets', linkId],
+    queryFn: () => getMediaAlbumAssets(linkId!),
     enabled: linkId !== null,
   });
   const assets = assetsQuery.data ?? [];
@@ -63,22 +68,27 @@ export function ImmichPickerModal({
       role="dialog"
       aria-modal
     >
-      <div className="modal-card immich-card" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">{t('immich.title')}</h2>
+      <div className="modal-card media-picker-card" onClick={(e) => e.stopPropagation()}>
+        <h2 className="modal-title">{t('mediaPicker.title')}</h2>
 
         {albumsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
-        {albumsQuery.isError && <div className="modal-error">{t('immich.loadFailed')}</div>}
+        {albumsQuery.isError && <div className="modal-error">{t('mediaPicker.loadFailed')}</div>}
 
         {linkId === null && albums.length > 1 && (
-          <div className="immich-albums">
+          <div className="media-picker-albums">
             {albums.map((album) => (
               <button
                 key={album.linkId}
-                className="immich-album"
+                className="media-picker-album"
                 onClick={() => setChosenLinkId(album.linkId)}
               >
-                <span className="immich-album-name">{album.albumName}</span>
-                <span className="immich-album-count">{album.assetCount}</span>
+                <span className="media-picker-album-name">{album.albumName}</span>
+                {multipleProviders && (
+                  <span className="media-picker-album-provider">
+                    {t(`mediaPicker.providers.${album.provider}`, album.provider)}
+                  </span>
+                )}
+                <span className="media-picker-album-count">{album.assetCount}</span>
               </button>
             ))}
           </div>
@@ -88,33 +98,33 @@ export function ImmichPickerModal({
           <>
             {albums.length > 1 && (
               <button
-                className="immich-back"
+                className="media-picker-back"
                 onClick={() => {
                   setChosenLinkId(null);
                   setSelected(new Set());
                 }}
               >
-                ‹ {t('immich.backToAlbums')}
+                ‹ {t('mediaPicker.backToAlbums')}
               </button>
             )}
             {assetsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
-            {assetsQuery.isError && <div className="modal-error">{t('immich.loadFailed')}</div>}
+            {assetsQuery.isError && <div className="modal-error">{t('mediaPicker.loadFailed')}</div>}
             {assetsQuery.isSuccess && assets.length === 0 && (
-              <div className="comments-hint">{t('immich.empty')}</div>
+              <div className="comments-hint">{t('mediaPicker.empty')}</div>
             )}
-            <div className="immich-grid">
+            <div className="media-picker-grid">
               {assets.map((asset) => {
                 const isSelected = selected.has(asset.assetId);
                 return (
                   <button
                     key={asset.assetId}
-                    className={`immich-thumb${isSelected ? ' immich-thumb-selected' : ''}`}
+                    className={`media-picker-thumb${isSelected ? ' media-picker-thumb-selected' : ''}`}
                     onClick={() => toggle(asset.assetId)}
                     aria-pressed={isSelected}
                   >
                     <img src={getUploadUrl(asset.thumbnailUrl)} alt="" loading="lazy" />
-                    {asset.type === 'VIDEO' && <span className="immich-video-badge">▶</span>}
-                    {isSelected && <span className="immich-check">✓</span>}
+                    {asset.type === 'VIDEO' && <span className="media-picker-video-badge">▶</span>}
+                    {isSelected && <span className="media-picker-check">✓</span>}
                   </button>
                 );
               })}
@@ -132,7 +142,7 @@ export function ImmichPickerModal({
             onClick={confirm}
             disabled={selected.size === 0}
           >
-            {t('immich.addCount', { count: selected.size })}
+            {t('mediaPicker.addCount', { count: selected.size })}
           </button>
         </div>
       </div>

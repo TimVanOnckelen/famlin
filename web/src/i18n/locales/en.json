@@ -51,7 +51,7 @@
     "placeholder": "Share an update with your family…",
     "milestonePlaceholder": "What's the milestone? (e.g. Emma turns 5! 🎉)",
     "addPhotos": "Add photos",
-    "addImmich": "Choose from Immich",
+    "addFromAlbums": "Choose from albums",
     "removePhoto": "Remove photo",
     "submit": "Post",
     "failed": "Your post couldn't be created. Try again."
@@ -74,6 +74,14 @@
     "server": "Server",
     "connectedTo": "Connected to",
     "serverVersion": "Server version {{version}}",
+    "security": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Your password has been changed.",
+    "passwordMismatch": "New passwords don't match.",
+    "passwordChangeFailed": "Your password couldn't be changed. Try again.",
     "languages": {
       "en": "English",
       "nl": "Nederlands"
@@ -106,12 +114,16 @@
     "revokeConfirm": "Revoke \"{{name}}\"? Anything still using this token will stop working immediately.",
     "revokeFailed": "The token couldn't be revoked. Try again."
   },
-  "immich": {
-    "title": "Choose from Immich",
+  "mediaPicker": {
+    "title": "Choose from albums",
     "backToAlbums": "Albums",
     "empty": "This album is empty.",
-    "loadFailed": "Immich photos couldn't be loaded.",
+    "loadFailed": "Album photos couldn't be loaded.",
     "addCount_one": "Add {{count}} photo",
-    "addCount_other": "Add {{count}} photos"
+    "addCount_other": "Add {{count}} photos",
+    "providers": {
+      "immich": "Immich",
+      "local": "Server folder"
+    }
   }
 }

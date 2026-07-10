@@ -302,6 +302,34 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Media",
+      link: {
+        type: "doc",
+        id: "api-reference/media",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-group-media-albums",
+          label: "List a group's linked albums (all media sources)",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-media-album-assets",
+          label: "List an album's assets",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-media-asset",
+          label: "Stream a media asset rendition",
+          className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Immich",
       link: {
         type: "doc",
@@ -470,6 +498,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/notification",
           label: "Notification",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/mediaalbum",
+          label: "MediaAlbum",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/mediaasset",
+          label: "MediaAsset",
           className: "schema",
         },
         {

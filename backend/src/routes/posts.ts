@@ -5,26 +5,27 @@ import {
   updatePostBodySchema,
   paginationQuerySchema,
   searchPostsQuerySchema,
-  parseImmichAssetPath,
+  parseMediaAssetPath,
 } from '../types.js';
-import { notifyGroup, excerptText } from '../services/notifications.js';
+import { emitDomainEvent } from '../events.js';
 import { isGroupMember, getUserGroupIds } from '../services/groups.js';
 import { shapePost } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { getT } from '../i18n/index.js';
 
-// A post's uploadedAssetUrls can include Immich proxy URLs (see
-// routes/immich.ts) alongside normal /uploads/* ones — confirm each one's
-// embedded album link actually belongs to *this* post's group, so a member
-// of group A can't attach group B's linked album photos to a post in group A.
-async function immichUrlsBelongToGroup(urls: string[] | undefined, groupId: string): Promise<boolean> {
+// A post's uploadedAssetUrls can include media proxy URLs (see
+// routes/media.ts and the legacy routes/immich.ts) alongside normal
+// /uploads/* ones — confirm each one's embedded album link actually belongs
+// to *this* post's group, so a member of group A can't attach group B's
+// linked album photos to a post in group A.
+async function mediaUrlsBelongToGroup(urls: string[] | undefined, groupId: string): Promise<boolean> {
   if (!urls || urls.length === 0) return true;
 
-  const linkIds = [...new Set(urls.map((url) => parseImmichAssetPath(url)?.linkId).filter((id): id is string => !!id))];
+  const linkIds = [...new Set(urls.map((url) => parseMediaAssetPath(url)?.linkId).filter((id): id is string => !!id))];
   if (linkIds.length === 0) return true;
 
-  const links = await prisma.immichAlbumLink.findMany({ where: { id: { in: linkIds } } });
+  const links = await prisma.mediaAlbumLink.findMany({ where: { id: { in: linkIds } } });
   return links.length === linkIds.length && links.every((link) => link.groupId === groupId);
 }
 
@@ -166,7 +167,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notGroupMember') });
     }
 
-    if (!(await immichUrlsBelongToGroup(body.uploadedAssetUrls, body.groupId))) {
+    if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, body.groupId))) {
       return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
     }
 
@@ -185,15 +186,16 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
     });
 
-    // Fire-and-forget: fanning out push/email to the group shouldn't hold the
-    // response (a slow SMTP server would otherwise stall post creation).
-    void notifyGroup({
-      type: 'new_post',
-      groupId: body.groupId,
-      senderId: request.user!.id,
+    // Handlers run fire-and-forget (see events.ts), so fanning out push/email
+    // to the group can't hold the response or fail post creation.
+    emitDomainEvent('post.created', {
       postId: post.id,
-      params: { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) },
-    }).catch((err) => request.log.error(err, 'Failed to send post notifications'));
+      groupId: post.group.id,
+      groupName: post.group.name,
+      authorId: request.user!.id,
+      authorName: post.author.name,
+      content: post.content,
+    });
 
     return shapePost(post, request.user!.id);
   });

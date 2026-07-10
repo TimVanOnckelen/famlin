@@ -1,0 +1,69 @@
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
+import { prisma } from '../../db.js';
+import i18n from '../../i18n/index.js';
+import type { NotificationChannel, NotifyType, Recipient } from './types.js';
+
+const expo = new Expo();
+
+// Mentions and "on this day" memories reuse the closest existing preference
+// column (comment activity / new post activity, respectively) rather than
+// adding two more boolean columns + admin UI toggles for an MVP-scale feature set.
+const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike'> = {
+  new_post: 'pushOnNewPost',
+  new_comment: 'pushOnNewComment',
+  new_like_post: 'pushOnNewLike',
+  new_like_comment: 'pushOnNewLike',
+  mention: 'pushOnNewComment',
+  on_this_day: 'pushOnNewPost',
+};
+
+export const pushChannel: NotificationChannel = {
+  id: 'push',
+
+  isEnabled(settings) {
+    return settings.pushNotificationsEnabled;
+  },
+
+  wants(recipient: Recipient, type: NotifyType) {
+    return recipient[PUSH_PREF_FIELD[type]];
+  },
+
+  async send({ recipients, message, settings, postId }) {
+    const tokens = await prisma.pushToken.findMany({
+      where: { userId: { in: recipients.map((r) => r.id) } },
+    });
+    const validTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
+    if (validTokens.length === 0) return;
+
+    const pushTitle = i18n.getFixedT(settings.defaultLanguage)('notifications.pushTitle');
+    const messages: ExpoPushMessage[] = validTokens.map((t) => ({
+      to: t.token,
+      sound: 'default',
+      title: pushTitle,
+      body: message,
+      // Lets the client's notification-tap handler navigate straight to the
+      // relevant post (see mobile's usePushNotifications.ts).
+      data: { relatedPostId: postId },
+    }));
+
+    const chunks = expo.chunkPushNotifications(messages);
+    let cursor = 0;
+    for (const chunk of chunks) {
+      try {
+        const tickets = await expo.sendPushNotificationsAsync(chunk);
+        const staleTokens = tickets
+          .map((ticket, i) => (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered'
+            ? validTokens[cursor + i].token
+            : null))
+          .filter((token): token is string => token !== null);
+
+        if (staleTokens.length > 0) {
+          await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } });
+        }
+      } catch (err) {
+        console.error('Failed to send push notifications', err);
+      }
+      cursor += chunk.length;
+    }
+  },
+};

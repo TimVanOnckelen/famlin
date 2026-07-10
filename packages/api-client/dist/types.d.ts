@@ -6,6 +6,7 @@ export interface User {
     name: string;
     avatarUrl?: string | null;
     isAdmin: boolean;
+    hasPassword: boolean;
     emailOnNewPost: boolean;
     emailOnNewComment: boolean;
     emailOnNewLike: boolean;

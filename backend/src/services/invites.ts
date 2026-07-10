@@ -9,19 +9,19 @@ export function generateInviteToken(): string {
 
 export type InviteValidity = 'not_found' | 'expired' | 'used' | null;
 
-const INVITE_STATUS: Record<Exclude<InviteValidity, null>, { status: number; key: string }> = {
-  not_found: { status: 404, key: 'errors.inviteNotFound' },
-  expired: { status: 410, key: 'errors.inviteExpired' },
-  used: { status: 410, key: 'errors.inviteUsed' },
+const INVITE_STATUS: Record<Exclude<InviteValidity, null>, { status: number; key: string; code: string }> = {
+  not_found: { status: 404, key: 'errors.inviteNotFound', code: 'invite_not_found' },
+  expired: { status: 410, key: 'errors.inviteExpired', code: 'invite_expired' },
+  used: { status: 410, key: 'errors.inviteUsed', code: 'invite_used' },
 };
 
 // Shared by every route that resolves an invite token before doing anything
-// else — maps `getValidInvite`'s reason to the (status, translated message)
-// three call sites used to repeat by hand.
+// else — maps `getValidInvite`'s reason to the (status, translated message,
+// stable error code) three call sites used to repeat by hand.
 export function inviteFailureResponse(reason: InviteValidity, t: (key: string) => string) {
   if (!reason) return null;
-  const { status, key } = INVITE_STATUS[reason];
-  return { status, error: t(key) };
+  const { status, key, code } = INVITE_STATUS[reason];
+  return { status, error: t(key), code };
 }
 
 export async function getValidInvite(token: string) {

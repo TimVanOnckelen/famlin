@@ -18,7 +18,7 @@ From `/admin` → Server settings you can then configure:
 - **Allowed email addresses** — restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
 - **SMTP** — host, port, username, password, and sender address for email notifications.
 - **Push notifications** — enable/disable Expo push notifications globally.
-- **Immich** — see [Immich integration](#immich-integration) below. Optional.
+- **Media integrations** (Immich, local folders) — see [Media integrations](#media-integrations) below. Optional.
 
 All of this is stored in the database, so it survives redeploys of the backend image without any env var changes.
 
@@ -59,16 +59,31 @@ Setting a **Client secret** makes Famlin do the authorization code exchange on t
 
 Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid OIDC login.
 
-## Immich integration
+## Media integrations
 
-If your family already runs [Immich](https://immich.app) for photo storage, you can let members pick photos from specific Immich albums when composing a Famlin post — without anyone creating their own Immich login or API key.
+Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. Each source is configured once for the whole server (`/admin` → Server settings → **Media integrations**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+
+### Immich
+
+If your family already runs [Immich](https://immich.app) for photo storage:
 
 1. In Immich, create an API key (Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin never writes to Immich.
-2. In `/admin` → Server settings → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
+2. In `/admin` → Server settings → **Media integrations** → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
 3. Save settings.
-4. Go to `/admin` → Groups, select a group, and under **Immich albums** pick an album from the dropdown to link it to that group. A group can have multiple linked albums; an album can only be linked to one group at a time.
+4. Go to `/admin` → Groups, select a group, and under **Linked albums** choose **Immich** as the media source and pick an album from the dropdown.
 
-Once linked, members of that group see a "Choose from Immich" option alongside the usual photo picker when creating a post. Picked photos are attached exactly like an uploaded photo — they appear in the feed and support comments and reactions the same way — but the underlying image is streamed live from your Immich server rather than copied into Famlin's own storage.
+Members never see an Immich login, token, or API key — the underlying image is streamed live from your Immich server through Famlin's own authenticated proxy.
+
+### Local folders
+
+Serve photos straight from a directory on the server — handy when your photos already live on the NAS Famlin runs on and are synced there by another tool (Syncthing, rsync, a phone upload app).
+
+1. Make the directory visible inside the Famlin container: add a bind mount to the `famlin-backend` service in your `docker-compose.yml`, e.g. `- /volume1/photos/famlin:/media/photos:ro` (read-only is enough — Famlin never writes to it).
+2. In `/admin` → Server settings → **Media integrations** → **Local folders**, enter the *container-side* path (e.g. `/media/photos`) and click **Check path**.
+3. Save settings.
+4. Every immediate subdirectory of that path is now a linkable album: go to `/admin` → Groups, select a group, and under **Linked albums** choose **Local folders** as the media source and pick a folder.
+
+Only image files (`jpg`, `jpeg`, `png`, `gif`, `webp`, `avif`) directly inside the folder are listed — subfolders of an album and video files are ignored for now. Thumbnails are generated on the fly and cached inside the container.
 
 ## Next steps
 

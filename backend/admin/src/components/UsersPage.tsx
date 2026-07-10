@@ -198,7 +198,10 @@ export function UsersPage() {
               {users.map((user) => (
                 <tr key={user.id}>
                   <td>
-                    <span className="cell-name">{user.name}</span>
+                    <span className="cell-name">
+                      {user.name}
+                      {!user.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
+                    </span>
                     <span className="cell-email">{user.email}</span>
                   </td>
                   <td>

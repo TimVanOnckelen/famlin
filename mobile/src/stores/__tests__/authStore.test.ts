@@ -25,6 +25,7 @@ const testUser: User = {
   email: 'a@example.com',
   name: 'Alice',
   isAdmin: false,
+  hasPassword: true,
   emailOnNewPost: true,
   emailOnNewComment: true,
   emailOnNewLike: true,
