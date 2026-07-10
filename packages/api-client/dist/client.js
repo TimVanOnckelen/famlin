@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.api = void 0;
 exports.setApiBaseUrl = setApiBaseUrl;
@@ -7,8 +10,7 @@ exports.setMediaToken = setMediaToken;
 exports.getCurrentMediaToken = getCurrentMediaToken;
 exports.initApiBaseUrl = initApiBaseUrl;
 exports.setUnauthorizedHandler = setUnauthorizedHandler;
-const tslib_1 = require("tslib");
-const axios_1 = tslib_1.__importDefault(require("axios"));
+const axios_1 = __importDefault(require("axios"));
 const storage_1 = require("./storage");
 // The base URL comes from initApiBaseUrl() (stored server) or
 // setApiBaseUrl() (login/invite flow) — there is deliberately no hardcoded

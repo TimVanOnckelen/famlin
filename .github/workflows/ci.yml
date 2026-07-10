@@ -100,6 +100,18 @@ jobs:
       - name: Test
         working-directory: mobile
         run: npm test
+      # tsc/Jest both resolve modules more leniently than Metro does at EAS
+      # build time (see the tslib/@famlin/api-client incident this guards
+      # against) — `expo export` runs the same Metro bundling step EAS build
+      # does (`expo export:embed`) without needing macOS/Xcode, so it catches
+      # bundler-only resolution failures on every PR instead of only at
+      # release time.
+      - name: Verify Metro bundle (iOS)
+        working-directory: mobile
+        run: npx expo export --platform ios --output-dir /tmp/expo-export-ios
+      - name: Verify Metro bundle (Android)
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir /tmp/expo-export-android
 
   web:
     name: Web app & shared API client
