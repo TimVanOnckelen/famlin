@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.1.12](https://github.com/TimVanOnckelen/famlin/compare/v0.1.11...v0.1.12) (2026-07-10)
+
+
+### Features
+
+* add admin panel with user and group management, settings, and localization support ([e33d914](https://github.com/TimVanOnckelen/famlin/commit/e33d9142e53f022428538f06df055670a488f936))
+* add API breaking-change check to CI workflow and update contributing guidelines for breaking changes ([1c879d5](https://github.com/TimVanOnckelen/famlin/commit/1c879d55d3cca2e9b3704a1f8cb98b2a8ac18d2a))
+* add comment attachment functionality with photo/video support ([ebcd619](https://github.com/TimVanOnckelen/famlin/commit/ebcd61956ae9665496722d41f7dbec3b50b52a3c))
+* add end-to-end tests for local-folder media provider ([b5dd878](https://github.com/TimVanOnckelen/famlin/commit/b5dd8783ea48bfbf5cc00ffc6c82df4cf2d45dd3))
+* add group labeling to posts in multi-group feeds ([cf42a0d](https://github.com/TimVanOnckelen/famlin/commit/cf42a0d2f154489c55b677f2516cd16a00ddebf0))
+* add Immich service integration for album and asset management ([d6ef9f2](https://github.com/TimVanOnckelen/famlin/commit/d6ef9f22031af9b089457ef11732686600133587))
+* add Immich service integration for album and asset management ([b3fc2b6](https://github.com/TimVanOnckelen/famlin/commit/b3fc2b6a3fad61bf0491e60e6b98c898aca26620))
+* add Notifications, PostDetail, and Profile screens with state management ([f79377e](https://github.com/TimVanOnckelen/famlin/commit/f79377e47f4b19d5d6d91fe3ad7dbddcbee8c74f))
+* add personal access tokens (API tokens) functionality ([b34e33c](https://github.com/TimVanOnckelen/famlin/commit/b34e33c28144d003df0a9b1629ce773162f5e8ec))
+* add photo and photo timeline schemas, implement PhotosScreen and PhotosPage components ([e82bcd0](https://github.com/TimVanOnckelen/famlin/commit/e82bcd016cc2e5d53d10e9301420c7f6ccd9c145))
+* add profile page with avatar upload and notification preferences ([aacc40a](https://github.com/TimVanOnckelen/famlin/commit/aacc40a45245004035c5ffa2551b25f49f95ac33))
+* add reaction system to posts and comments ([5055b27](https://github.com/TimVanOnckelen/famlin/commit/5055b27826a74631776efd91c0148decf0b75bfa))
+* add ShimmerImage component for improved loading experience and update image rendering across components ([e89c207](https://github.com/TimVanOnckelen/famlin/commit/e89c20710f68bbe51888f5c798d6b8fd568c6983))
+* add testing framework and implement tests for various modules ([c2ae6ab](https://github.com/TimVanOnckelen/famlin/commit/c2ae6ab116d1658b5146616f6bdbfb4cf2a93ffc))
+* deeper Immich integration — shared albums, new-asset detection, people mapping ([ebf3232](https://github.com/TimVanOnckelen/famlin/commit/ebf323274f3bd19c8f0f1058620c3f98235107a4))
+* enhance authentication and error handling in admin and comment routes; improve media token management ([973ac3b](https://github.com/TimVanOnckelen/famlin/commit/973ac3b005d3acec6ac109a25737deed37938035))
+* enhance development experience with nodemon integration for automatic restarts and Prisma migrations ([444f32d](https://github.com/TimVanOnckelen/famlin/commit/444f32df3151585713e8ba13e2000a19a1faeda2))
+* enhance documentation with API reference improvements ([6409b7b](https://github.com/TimVanOnckelen/famlin/commit/6409b7bd46908591aaf1f9db7dc58503ceed5e6c))
+* enhance expo-notifications mock with additional response handling ([2822427](https://github.com/TimVanOnckelen/famlin/commit/2822427c32b0517b434b6ade08d02955bdb27660))
+* enhance notification messages with excerpts and reactions; add new media notification templates ([fa8ca70](https://github.com/TimVanOnckelen/famlin/commit/fa8ca70334a7380a24bda1d997cf106804a86548))
+* enhance testing setup with dedicated test database and docker support ([4f41002](https://github.com/TimVanOnckelen/famlin/commit/4f41002c51fe6409d6be4134c36a277ed0feabe0))
+* implement first-run admin setup process ([bdc66bf](https://github.com/TimVanOnckelen/famlin/commit/bdc66bfe196e5f9351d56e6ff85e4bbc61cd56fe))
+* implement first-run admin setup process ([782801a](https://github.com/TimVanOnckelen/famlin/commit/782801accbc124aed19d5814f0b914b46004a980))
+* implement MediaPickerModal component for selecting media from albums ([c6ef5b8](https://github.com/TimVanOnckelen/famlin/commit/c6ef5b851be21c0584a354c29b04f793f8ac9022))
+* implement server settings layout with navigation and card components ([52aa6be](https://github.com/TimVanOnckelen/famlin/commit/52aa6bed0c450f4d7fd57721e9c55de06241618c))
+* initialize web application with React, Vite, and TypeScript ([ddfbf31](https://github.com/TimVanOnckelen/famlin/commit/ddfbf3175a97d973b98c59a7a81032f8ff62a054))
+* integrate People Mapping section into Server Settings and enhance UI with new styles ([89835fd](https://github.com/TimVanOnckelen/famlin/commit/89835fd0d5a832c5329a463867b2816c370b7bac))
+* optimize session management and enhance media token revocation; update nodemailer version ([6049900](https://github.com/TimVanOnckelen/famlin/commit/6049900d5594145a679893bc6d13b036328a5e24))
+* remove eas.json configuration file ([264f437](https://github.com/TimVanOnckelen/famlin/commit/264f43754561e1273303bbc1ab9b03fd50bc6a80))
+* show mapped people as tags on posts in the feed ([3decf14](https://github.com/TimVanOnckelen/famlin/commit/3decf14512383c86700d3d4ebcb865452add662e))
+* tag people on photos owned by other Immich users in shared albums ([eed8fd8](https://github.com/TimVanOnckelen/famlin/commit/eed8fd8fb165e657feb63f0df4099a0cd11b1ec0))
+* update CI configuration for test database and add early stage warning to website ([ccfbbd6](https://github.com/TimVanOnckelen/famlin/commit/ccfbbd66a76a57c1fc653052f9a2d99da002bc53))
+* update CI workflows for Docker image publishing and add production build configurations ([824aa05](https://github.com/TimVanOnckelen/famlin/commit/824aa058beb875ae8d0814084491cd98386e4f02))
+* update post reaction from 'LIKE' to 'LOVE' across components and tests ([69870e4](https://github.com/TimVanOnckelen/famlin/commit/69870e4edbd722212d037f6c11a79dafbc306350))
+
+
+### Bug Fixes
+
+* Add Podfile properties for Expo configuration and Hermes engine ([d310168](https://github.com/TimVanOnckelen/famlin/commit/d31016834cca8f12d767a80f9a63a20e6a77c6b4))
+* Add Podfile properties for Expo configuration and Hermes engine ([3a80354](https://github.com/TimVanOnckelen/famlin/commit/3a803548eeff1fa21b3dc54cc502cfd01fcf323f))
+* align Expo config version with app metadata ([f3310a3](https://github.com/TimVanOnckelen/famlin/commit/f3310a3d8e7293641e4aef19796f0c43caa23cc5))
+* **api-client:** skip build when dependencies are missing ([de1e14e](https://github.com/TimVanOnckelen/famlin/commit/de1e14ee1742aa14b2cc05ab395db36d8baaa3b2))
+* coerce Immich search page cursor to a number and log failed Immich requests ([5a1b2af](https://github.com/TimVanOnckelen/famlin/commit/5a1b2af7c5962c52ff2ed8003f55b8ae081dd1d3))
+* **dockerignore:** ensure api-client dist is included for build stability ([7a9667d](https://github.com/TimVanOnckelen/famlin/commit/7a9667ddb3e98c0d457967d900a57d4ea3f7688f))
+* **mobile:** include api-client dist for EAS builds ([43de6df](https://github.com/TimVanOnckelen/famlin/commit/43de6df59e38140a374d58e4f44c3aa37151c412))
+* **mobile:** surface specific OIDC mobile-callback errors ([1473acf](https://github.com/TimVanOnckelen/famlin/commit/1473acf38c31b9317243db3ace309065306ae778))
+* remove hardcoded Expo fallback versions ([2d5946d](https://github.com/TimVanOnckelen/famlin/commit/2d5946d5ae453240ac7afadbb7e7c26a897c6438))
+* remove redundant environment key from production submit configuration ([c495e15](https://github.com/TimVanOnckelen/famlin/commit/c495e156141e8d747bc39fc341c3bedd089e5834))
+* remove redundant service account key path from production configuration ([aab6eaa](https://github.com/TimVanOnckelen/famlin/commit/aab6eaa280c6a9d7e85b606591f3b8a8d08a0467))
+* update image URLs and admin credentials in seed-screenshots; add temp directory to .gitignore ([adefad5](https://github.com/TimVanOnckelen/famlin/commit/adefad5e8475aea1d367db75bc428c3c1299d6f1))
+* update like response structure in tests for consistency ([fc8498c](https://github.com/TimVanOnckelen/famlin/commit/fc8498c1241bfd0a437608bacdd7f81d837a0f69))
+
 ## [0.1.11](https://github.com/TimVanOnckelen/famlin/compare/v0.1.10...v0.1.11) (2026-07-10)
 
 
