@@ -151,126 +151,136 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   );
 
   return (
-    <article className={`post-card${isMilestone && !hasPhotos ? ' post-card-milestone' : ''}`}>
-      {hasPhotos && heroUrl && (
-        <div className="post-hero">
-          {isVideoUrl(post.uploadedAssetUrls[0]) ? (
-            <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
-          ) : (
-            <img
-              src={heroUrl}
-              className="post-hero-media post-hero-clickable"
-              alt=""
-              loading="lazy"
-              onClick={() => setLightboxIndex(0)}
-            />
-          )}
-          <div className="post-hero-chip">
-            <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={26} />
-            <span>{post.author.name}</span>
-          </div>
-          {isMilestone && <span className="milestone-badge milestone-badge-overlay">{t('feed.milestoneBadge')}</span>}
-          {favoriteButton}
-          {isMilestone && post.content && (
-            <div className="post-hero-scrim">
-              <div className="post-hero-title">{post.content}</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {visibleExtra.length > 0 && (
-        <div className="post-thumbs">
-          {visibleExtra.map((assetUrl, i) => (
-            <button key={assetUrl} className="post-thumb" onClick={() => setLightboxIndex(i + 1)}>
-              {isVideoUrl(assetUrl) ? (
-                <video src={getUploadUrl(assetUrl)} preload="metadata" />
-              ) : (
-                <img src={getUploadUrl(assetUrl)} alt="" loading="lazy" />
-              )}
-              {i === 2 && extraAssets.length > 3 && (
-                <span className="post-thumb-more">+{extraAssets.length - 3}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="post-body">
-        {!hasPhotos && (
-          <>
-            {isMilestone && <span className="milestone-badge">{t('feed.milestoneBadge')}</span>}
-            <div className="post-author-row">
-              <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={44} />
-              <div>
-                <div className="post-author-name">{post.author.name}</div>
-                <div className="post-meta">
-                  <span className="post-time">{timeLine}</span>
-                  {groupChip}
-                </div>
-              </div>
-              {favoriteButton}
-            </div>
-          </>
-        )}
-
-        {isMilestone && !hasPhotos && post.content && <div className="post-milestone-title">{post.content}</div>}
-        {!isMilestone && post.content && <p className="post-content">{post.content}</p>}
-        {hasPhotos && (
-          <div className="post-meta">
-            <span className="post-time">{timeLine}</span>
-            {groupChip}
-          </div>
-        )}
-
-        <div className={`post-actions${isMilestone && !hasPhotos ? ' post-actions-milestone' : ''}`}>
-          <div className="reaction-wrap">
-            <button
-              className={`action-btn${post.myReaction ? ' action-btn-active' : ''}`}
-              onClick={() => reactMutation.mutate(post.myReaction ?? 'LOVE')}
-              disabled={reactMutation.isPending}
-            >
-              {post.myReaction ? (
-                <span className="reaction-emoji">{REACTION_EMOJI[post.myReaction]}</span>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                </svg>
-              )}
-              {post.likeCount}
-            </button>
-            <div className="reaction-picker" role="menu">
-              {REACTION_TYPES.map((type) => (
-                <button
-                  key={type}
-                  className={`reaction-option${post.myReaction === type ? ' reaction-option-active' : ''}`}
-                  onClick={() => reactMutation.mutate(type)}
-                  aria-label={type}
-                >
-                  {REACTION_EMOJI[type]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinejoin="round"
+    <article className="post-card">
+      {isMilestone && <span className="post-pin" aria-hidden />}
+      {hasPhotos && !isMilestone && <span className="post-tape" aria-hidden />}
+      <div className={`post-card-inner${isMilestone && !hasPhotos ? ' post-card-milestone' : ''}`}>
+        {hasPhotos && heroUrl && (
+          <div className="post-hero">
+            {isVideoUrl(post.uploadedAssetUrls[0]) ? (
+              <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
+            ) : (
+              <img
+                src={heroUrl}
+                className="post-hero-media post-hero-clickable"
+                alt=""
+                loading="lazy"
+                onClick={() => setLightboxIndex(0)}
               />
-            </svg>
-            {t('feed.comments', { count: post.commentCount })}
-          </button>
-        </div>
+            )}
+            <div className="post-hero-chip">
+              <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={26} />
+              <span>{post.author.name}</span>
+            </div>
+            {isMilestone && (
+              <span className="milestone-badge milestone-badge-overlay">{t('feed.milestoneBadge')}</span>
+            )}
+            {favoriteButton}
+            {isMilestone && post.content && (
+              <div className="post-hero-scrim">
+                <div className="post-hero-title">{post.content}</div>
+              </div>
+            )}
+          </div>
+        )}
 
-        {commentsOpen && <CommentsSection post={post} />}
+        {visibleExtra.length > 0 && (
+          <div className="post-thumbs">
+            {visibleExtra.map((assetUrl, i) => (
+              <button key={assetUrl} className="post-thumb" onClick={() => setLightboxIndex(i + 1)}>
+                {isVideoUrl(assetUrl) ? (
+                  <video src={getUploadUrl(assetUrl)} preload="metadata" />
+                ) : (
+                  <img src={getUploadUrl(assetUrl)} alt="" loading="lazy" />
+                )}
+                {i === 2 && extraAssets.length > 3 && (
+                  <span className="post-thumb-more">+{extraAssets.length - 3}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="post-body">
+          {!hasPhotos && (
+            <>
+              {isMilestone && <span className="milestone-badge">{t('feed.milestoneBadge')}</span>}
+              <div className="post-author-row">
+                <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={44} />
+                <div>
+                  <div className="post-author-name">{post.author.name}</div>
+                  <div className="post-meta">
+                    <span className="post-time">{timeLine}</span>
+                    {groupChip}
+                  </div>
+                </div>
+                {favoriteButton}
+              </div>
+            </>
+          )}
+
+          {isMilestone && !hasPhotos && post.content && (
+            <div className="post-milestone-title">{post.content}</div>
+          )}
+          {!isMilestone && post.content && (
+            <p className={`post-content${hasPhotos ? ' post-caption' : ''}`}>{post.content}</p>
+          )}
+          {hasPhotos && (
+            <div className="post-meta">
+              <span className="post-time">{timeLine}</span>
+              {groupChip}
+            </div>
+          )}
+
+          <div className={`post-actions${isMilestone && !hasPhotos ? ' post-actions-milestone' : ''}`}>
+            <div className="reaction-wrap">
+              <button
+                className={`action-btn${post.myReaction ? ' action-btn-active' : ''}`}
+                onClick={() => reactMutation.mutate(post.myReaction ?? 'LOVE')}
+                disabled={reactMutation.isPending}
+              >
+                {post.myReaction ? (
+                  <span className="reaction-emoji">{REACTION_EMOJI[post.myReaction]}</span>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                )}
+                {post.likeCount}
+              </button>
+              <div className="reaction-picker" role="menu">
+                {REACTION_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    className={`reaction-option${post.myReaction === type ? ' reaction-option-active' : ''}`}
+                    onClick={() => reactMutation.mutate(type)}
+                    aria-label={type}
+                  >
+                    {REACTION_EMOJI[type]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t('feed.comments', { count: post.commentCount })}
+            </button>
+          </div>
+
+          {commentsOpen && <CommentsSection post={post} />}
+        </div>
       </div>
 
       {lightboxIndex !== null && (

@@ -278,7 +278,7 @@ export function ProfilePage({
                   {t('profile.passwordChanged')}
                 </div>
               )}
-              <button className="btn btn-secondary" type="submit" disabled={updatePassword.isPending}>
+              <button className="btn btn-primary" type="submit" disabled={updatePassword.isPending}>
                 {updatePassword.isPending ? t('common.loading') : t('profile.changePassword')}
               </button>
             </form>

@@ -4,6 +4,8 @@ export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMedia
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody } from './auth';
 export { fetchOidcConfig, loginWithOidc, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, changePassword, } from './auth';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
+export type { MediaGroupAlbum, MediaAsset } from './media';
+export { getGroupMediaAlbums, getMediaAlbumAssets } from './media';
 export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';

@@ -1,19 +1,90 @@
 /* Post card — from the styleguide's "Post card" and "Photo-first patterns"
    sections: white 18px-radius cards, photos edge-to-edge with the author chip
-   floating on top, milestones on an amber gradient with the badge pill. */
+   floating on top, milestones on an amber gradient with the badge pill.
+   The "memory wall" masonry feed (Famlin Web App mockup) layers a playful
+   pinned/taped treatment on top: .post-card is the untransformed positioning
+   context (so the decorative pin/tape and the Lightbox's fixed overlay stay
+   correct), .post-card-inner carries the actual rotation/hover so it never
+   becomes a containing block for the Lightbox's position:fixed. */
 
 .post-card {
+  position: relative;
+  break-inside: avoid;
+  margin-bottom: 22px;
+}
+
+.post-card-inner {
   background: var(--fam-surface);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
   border: 1px solid #edf1f3;
   overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .post-card-milestone {
   background: linear-gradient(145deg, #fff3dd, #ffe6c0);
   border: 1.5px solid var(--fam-milestone);
   box-shadow: 0 3px 16px rgba(238, 177, 84, 0.28);
+}
+
+/* Gentle alternating tilt, straightened + lifted on hover — the masonry wall
+   should feel like memories pinned to a board, not a rigid grid. */
+.post-card:nth-of-type(4n+1) .post-card-inner {
+  transform: rotate(-0.6deg);
+}
+.post-card:nth-of-type(4n+2) .post-card-inner {
+  transform: rotate(0.5deg);
+}
+.post-card:nth-of-type(4n+3) .post-card-inner {
+  transform: rotate(-0.4deg);
+}
+.post-card:nth-of-type(4n+4) .post-card-inner {
+  transform: rotate(0.7deg);
+}
+
+.post-card:hover .post-card-inner {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+/* Milestone "candle" pin, floating above the card. */
+.post-pin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: radial-gradient(circle at 35% 32%, #ffe6ad, #eeb154 55%, #b9791f 100%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Washi-tape strip on standard photo posts. */
+.post-tape {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  width: 68px;
+  height: 24px;
+  transform: translateX(-38px) rotate(-5deg);
+  background: linear-gradient(rgba(0, 110, 148, 0.4), rgba(0, 110, 148, 0.32));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.post-card:nth-of-type(3n+2) .post-tape {
+  transform: translateX(-30px) rotate(6deg);
+  background: linear-gradient(rgba(237, 131, 94, 0.42), rgba(237, 131, 94, 0.34));
+}
+
+.post-card:nth-of-type(3n+3) .post-tape {
+  transform: translateX(-34px) rotate(-3deg);
+  background: linear-gradient(rgba(75, 139, 90, 0.4), rgba(75, 139, 90, 0.32));
 }
 
 .post-body {
@@ -59,16 +130,18 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 40px 14px 12px;
+  padding: 52px 14px 14px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(20, 10, 5, 0.72));
   pointer-events: none;
 }
 
 .post-hero-title {
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: -0.3px;
+  font-family: 'Caveat', cursive;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
   color: white;
+  line-height: 1;
 }
 
 /* ── Milestone badge ────────────────────────────────────────────────────── */
@@ -187,6 +260,17 @@
   margin: 0 0 4px;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+}
+
+/* A photo post's text reads as a handwritten caption under the photo,
+   rather than a paragraph — text-only posts stay plain Nunito body text. */
+.post-caption {
+  font-family: 'Caveat', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #3a4a52;
+  text-align: center;
 }
 
 .post-milestone-title {

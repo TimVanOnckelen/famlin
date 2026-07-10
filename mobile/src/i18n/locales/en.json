@@ -117,8 +117,8 @@
     "contentPlaceholder": "Write something for the family...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
-    "addImmichPhotoTitle": "Immich photos",
-    "addImmichPhotoSubtitle": "Choose from a shared album",
+    "addAlbumPhotoTitle": "Album photos",
+    "addAlbumPhotoSubtitle": "Choose from a shared album",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
     "alerts": {
@@ -145,7 +145,7 @@
       "tapHint": "Tap the map to place the pin"
     }
   },
-  "immichPicker": {
+  "mediaPicker": {
     "title": "Choose photos",
     "addCount_one": "Add {{count}}",
     "addCount_other": "Add {{count}}",

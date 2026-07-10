@@ -590,8 +590,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   passwordButton: {
-    backgroundColor: colors.primaryDark,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
     borderRadius: 100,
     alignItems: 'center',
   },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   },
   passwordButtonText: {
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.white,
   },
   settingLabel: {

@@ -9,7 +9,7 @@ Famlin is a monorepo with these parts:
 - **`backend/`** — Fastify + TypeScript + Prisma + Postgres API (ESM).
 - **`backend/admin/`** — React + Vite admin UI, built into `backend/dist/admin/` and served by the backend at `/admin`.
 - **`web/`** — desktop-focused React + Vite member-facing web app, built into `backend/dist/web/` and served by the backend at `/` (same single-container pattern as the admin UI). An npm-workspace member at the repo root together with `packages/api-client`.
-- **`packages/api-client/`** — `@famlin/api-client`, the shared axios/data layer (auth, posts, comments, groups, notifications, Immich, invites, uploads, domain types, and the browser OIDC PKCE login flow used by `web/`'s login page) consumed by both `mobile/` (via a `file:` dependency) and `web/` (via the npm workspace). A storage-adapter seam (`setStorageAdapter`) lets each consumer plug in its own token persistence (SecureStore/AsyncStorage on mobile, `localStorage` on web).
+- **`packages/api-client/`** — `@famlin/api-client`, the shared axios/data layer (auth, posts, comments, groups, notifications, media albums (provider-generic `media.ts` plus the legacy Immich-only `immich.ts`), invites, uploads, domain types, and the browser OIDC PKCE login flow used by `web/`'s login page) consumed by both `mobile/` (via a `file:` dependency) and `web/` (via the npm workspace). A storage-adapter seam (`setStorageAdapter`) lets each consumer plug in its own token persistence (SecureStore/AsyncStorage on mobile, `localStorage` on web).
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 

@@ -22,12 +22,12 @@ import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Group } from '@/types';
-import { fetchGroups, createPost, getGroupImmichAlbums } from '@famlin/api-client';
+import { fetchGroups, createPost, getGroupMediaAlbums } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { uploadMedia, getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
-import { ImmichPickerModal } from '@/components/ImmichPickerModal';
+import { MediaPickerModal } from '@/components/MediaPickerModal';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
 
@@ -55,16 +55,16 @@ export function NewPostScreen() {
   const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [location, setLocation] = useState<PickedLocation | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [showImmichPicker, setShowImmichPicker] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   const { data: groups } = useQuery<Group[], Error>({
     queryKey: ['groups'],
     queryFn: fetchGroups,
   });
 
-  const { data: immichAlbums, isError: immichAlbumsErrored } = useQuery({
-    queryKey: ['immich-albums', groupId],
-    queryFn: () => getGroupImmichAlbums(groupId!),
+  const { data: mediaAlbums, isError: mediaAlbumsErrored } = useQuery({
+    queryKey: ['media-albums', groupId],
+    queryFn: () => getGroupMediaAlbums(groupId!),
     enabled: !!groupId,
   });
 
@@ -144,8 +144,8 @@ export function NewPostScreen() {
     setUploadedAssetUrls((prev) => prev.filter((u) => u !== url));
   }
 
-  function handleImmichConfirm(urls: string[]) {
-    setShowImmichPicker(false);
+  function handleMediaConfirm(urls: string[]) {
+    setShowMediaPicker(false);
     setUploadedAssetUrls((prev) => [...prev, ...urls]);
   }
 
@@ -265,14 +265,14 @@ export function NewPostScreen() {
           </View>
         </TouchableOpacity>
 
-        {(!!immichAlbums?.length || immichAlbumsErrored) && (
-          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowImmichPicker(true)}>
+        {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
+          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowMediaPicker(true)}>
             <View style={styles.addPhotoIcon}>
               <Icon name="image" size={18} color={colors.white} />
             </View>
             <View>
-              <Text style={styles.addPhotoTitle}>{t('newPost.addImmichPhotoTitle')}</Text>
-              <Text style={styles.addPhotoSubtitle}>{t('newPost.addImmichPhotoSubtitle')}</Text>
+              <Text style={styles.addPhotoTitle}>{t('newPost.addAlbumPhotoTitle')}</Text>
+              <Text style={styles.addPhotoSubtitle}>{t('newPost.addAlbumPhotoSubtitle')}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -375,11 +375,11 @@ export function NewPostScreen() {
       />
 
       {groupId && (
-        <ImmichPickerModal
-          visible={showImmichPicker}
+        <MediaPickerModal
+          visible={showMediaPicker}
           groupId={groupId}
-          onCancel={() => setShowImmichPicker(false)}
-          onConfirm={handleImmichConfirm}
+          onCancel={() => setShowMediaPicker(false)}
+          onConfirm={handleMediaConfirm}
         />
       )}
     </SafeAreaView>

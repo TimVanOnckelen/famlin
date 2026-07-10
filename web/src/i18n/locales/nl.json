@@ -51,7 +51,7 @@
     "placeholder": "Deel een update met je familie…",
     "milestonePlaceholder": "Wat is de mijlpaal? (bijv. Emma wordt 5! 🎉)",
     "addPhotos": "Foto's toevoegen",
-    "addImmich": "Kies uit Immich",
+    "addFromAlbums": "Kies uit albums",
     "removePhoto": "Foto verwijderen",
     "submit": "Plaatsen",
     "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw."
@@ -114,12 +114,16 @@
     "revokeConfirm": "\"{{name}}\" intrekken? Alles wat dit token nog gebruikt stopt onmiddellijk met werken.",
     "revokeFailed": "Het token kon niet ingetrokken worden. Probeer opnieuw."
   },
-  "immich": {
-    "title": "Kies uit Immich",
+  "mediaPicker": {
+    "title": "Kies uit albums",
     "backToAlbums": "Albums",
     "empty": "Dit album is leeg.",
-    "loadFailed": "Immich-foto's konden niet geladen worden.",
+    "loadFailed": "Albumfoto's konden niet geladen worden.",
     "addCount_one": "Voeg {{count}} foto toe",
-    "addCount_other": "Voeg {{count}} foto's toe"
+    "addCount_other": "Voeg {{count}} foto's toe",
+    "providers": {
+      "immich": "Immich",
+      "local": "Servermap"
+    }
   }
 }

@@ -4,12 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   api,
   createPost,
-  getGroupImmichAlbums,
+  getGroupMediaAlbums,
   getUploadUrl,
   Group,
-  ImmichAsset,
+  MediaAsset,
 } from '@famlin/api-client';
-import { ImmichPickerModal } from '@/components/ImmichPickerModal';
+import { MediaPickerModal } from '@/components/MediaPickerModal';
 import './NewPostModal.css';
 
 async function uploadFiles(files: File[]): Promise<string[]> {
@@ -36,30 +36,31 @@ export function NewPostModal({
   const [type, setType] = useState<'UPDATE' | 'MILESTONE'>('UPDATE');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [immichAssets, setImmichAssets] = useState<ImmichAsset[]>([]);
-  const [immichPickerOpen, setImmichPickerOpen] = useState(false);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // "Choose from Immich" only appears when the selected group actually has
-  // linked albums — same behavior as the mobile composer.
-  const immichAlbumsQuery = useQuery({
-    queryKey: ['immich-albums', groupId],
-    queryFn: () => getGroupImmichAlbums(groupId),
+  // "Choose from albums" only appears when the selected group actually has
+  // linked albums (from any media source) — same behavior as the mobile
+  // composer.
+  const mediaAlbumsQuery = useQuery({
+    queryKey: ['media-albums', groupId],
+    queryFn: () => getGroupMediaAlbums(groupId),
     enabled: !!groupId,
   });
-  const hasImmichAlbums = (immichAlbumsQuery.data?.length ?? 0) > 0;
+  const hasLinkedAlbums = (mediaAlbumsQuery.data?.length ?? 0) > 0;
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       const uploadedUrls = files.length > 0 ? await uploadFiles(files) : [];
       // previewUrl is a JPEG still even for a video, so videos attach their
-      // original rendition instead (mirrors mobile's ImmichPickerModal).
-      const immichUrls = immichAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl));
+      // original rendition instead (mirrors mobile's MediaPickerModal).
+      const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl));
       return createPost({
         groupId,
         content: content.trim() || undefined,
         type,
-        uploadedAssetUrls: [...uploadedUrls, ...immichUrls],
+        uploadedAssetUrls: [...uploadedUrls, ...mediaUrls],
       });
     },
     onSuccess: () => {
@@ -82,7 +83,7 @@ export function NewPostModal({
 
   const canSubmit =
     !!groupId &&
-    (content.trim().length > 0 || files.length > 0 || immichAssets.length > 0) &&
+    (content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0) &&
     !submitMutation.isPending;
 
   return (
@@ -130,7 +131,7 @@ export function NewPostModal({
           autoFocus
         />
 
-        {(files.length > 0 || immichAssets.length > 0) && (
+        {(files.length > 0 || mediaAssets.length > 0) && (
           <div className="photo-previews">
             {files.map((file, i) => (
               <div key={`${file.name}-${i}`} className="photo-preview">
@@ -149,13 +150,13 @@ export function NewPostModal({
                 </button>
               </div>
             ))}
-            {immichAssets.map((asset) => (
+            {mediaAssets.map((asset) => (
               <div key={asset.assetId} className="photo-preview">
                 <img src={getUploadUrl(asset.thumbnailUrl)} alt="" />
                 <button
                   type="button"
                   className="photo-preview-remove"
-                  onClick={() => setImmichAssets(immichAssets.filter((a) => a.assetId !== asset.assetId))}
+                  onClick={() => setMediaAssets(mediaAssets.filter((a) => a.assetId !== asset.assetId))}
                   aria-label={t('newPost.removePhoto')}
                 >
                   ×
@@ -182,8 +183,8 @@ export function NewPostModal({
             </svg>
             {t('newPost.addPhotos')}
           </button>
-          {hasImmichAlbums && (
-            <button type="button" className="btn btn-secondary" onClick={() => setImmichPickerOpen(true)}>
+          {hasLinkedAlbums && (
+            <button type="button" className="btn btn-secondary" onClick={() => setMediaPickerOpen(true)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
                   d="M12 3a9 9 0 109 9 9 9 0 00-9-9zm0 5a4 4 0 11-4 4 4 4 0 014-4z"
@@ -191,7 +192,7 @@ export function NewPostModal({
                   strokeWidth="2"
                 />
               </svg>
-              {t('newPost.addImmich')}
+              {t('newPost.addFromAlbums')}
             </button>
           )}
         </div>
@@ -208,18 +209,18 @@ export function NewPostModal({
         </div>
       </form>
 
-      {immichPickerOpen && (
-        <ImmichPickerModal
+      {mediaPickerOpen && (
+        <MediaPickerModal
           groupId={groupId}
           onConfirm={(assets) => {
             // Merge without duplicating an asset that was already picked.
-            setImmichAssets((prev) => [
+            setMediaAssets((prev) => [
               ...prev,
               ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId)),
             ]);
-            setImmichPickerOpen(false);
+            setMediaPickerOpen(false);
           }}
-          onClose={() => setImmichPickerOpen(false)}
+          onClose={() => setMediaPickerOpen(false)}
         />
       )}
     </div>

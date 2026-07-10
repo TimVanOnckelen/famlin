@@ -117,8 +117,8 @@
     "contentPlaceholder": "Schrijf iets voor de familie...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
-    "addImmichPhotoTitle": "Immich-foto's",
-    "addImmichPhotoSubtitle": "Kies uit een gedeeld album",
+    "addAlbumPhotoTitle": "Albumfoto's",
+    "addAlbumPhotoSubtitle": "Kies uit een gedeeld album",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
     "alerts": {
@@ -145,7 +145,7 @@
       "tapHint": "Tik op de kaart om de pin te plaatsen"
     }
   },
-  "immichPicker": {
+  "mediaPicker": {
     "title": "Foto's kiezen",
     "addCount_one": "{{count}} toevoegen",
     "addCount_other": "{{count}} toevoegen",
