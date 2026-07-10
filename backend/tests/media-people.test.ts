@@ -185,5 +185,95 @@ describe('member-facing media people endpoints', () => {
       const body = res.json() as Array<{ assetId: string }>;
       expect(body.map((a) => a.assetId)).toEqual(['asset-b']);
     });
+
+    it('uses getAlbumAssetPeople (asset-centric) when the provider implements it, ignoring getPersonAssetIds', async () => {
+      const member = await createUser();
+      const group = await createGroupWithMember(member);
+
+      const allAssets = [
+        { id: 'asset-a', type: 'IMAGE' as const, width: 10, height: 10, originalExt: 'jpg' },
+        { id: 'asset-b', type: 'IMAGE' as const, width: 10, height: 10, originalExt: 'jpg' },
+      ];
+      let personAssetIdsCalls = 0;
+      __registerMediaProviderForTests(
+        makeFakeProvider(FAKE_PROVIDER_ID, {
+          async listAlbumAssets() {
+            return allAssets;
+          },
+          // Would give the wrong answer if used — proves the asset-centric
+          // path takes priority when both are implemented.
+          async getPersonAssetIds() {
+            personAssetIdsCalls += 1;
+            return new Set(['asset-a']);
+          },
+          async getAlbumAssetPeople() {
+            return new Map([['asset-b', [{ id: 'person-b-2', name: 'B Person' }]]]);
+          },
+        })
+      );
+
+      const link = await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'fake-album-2', albumName: 'Fake' },
+      });
+      await prisma.mediaPersonLink.create({
+        data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'person-b-2', label: 'B Person' },
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/media/albums/${link.id}/assets?personId=person-b-2`,
+        headers: authHeader(member),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json() as Array<{ assetId: string }>;
+      expect(body.map((a) => a.assetId)).toEqual(['asset-b']);
+      expect(personAssetIdsCalls).toBe(0);
+    });
+
+    it('is label-aware: filtering by one mapped person also matches assets tagged under another MediaPersonLink sharing the same provider + label', async () => {
+      const member = await createUser();
+      const group = await createGroupWithMember(member);
+
+      const allAssets = [
+        { id: 'asset-a', type: 'IMAGE' as const, width: 10, height: 10, originalExt: 'jpg' },
+        { id: 'asset-b', type: 'IMAGE' as const, width: 10, height: 10, originalExt: 'jpg' },
+        { id: 'asset-c', type: 'IMAGE' as const, width: 10, height: 10, originalExt: 'jpg' },
+      ];
+      __registerMediaProviderForTests(
+        makeFakeProvider(FAKE_PROVIDER_ID, {
+          async listAlbumAssets() {
+            return allAssets;
+          },
+          async getAlbumAssetPeople() {
+            // Two distinct provider-side person ids — e.g. "Emma" recognized
+            // separately in two different libraries within one shared album.
+            return new Map([
+              ['asset-a', [{ id: 'emma-lib-a', name: 'Emma' }]],
+              ['asset-b', [{ id: 'emma-lib-b', name: 'Emma' }]],
+              ['asset-c', [{ id: 'someone-else', name: 'Not Emma' }]],
+            ]);
+          },
+        })
+      );
+
+      const link = await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'fake-album-label', albumName: 'Fake' },
+      });
+      await prisma.mediaPersonLink.create({
+        data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'emma-lib-a', label: 'Emma' },
+      });
+      await prisma.mediaPersonLink.create({
+        data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'emma-lib-b', label: 'Emma' },
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/media/albums/${link.id}/assets?personId=emma-lib-a`,
+        headers: authHeader(member),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json() as Array<{ assetId: string }>;
+      expect(body.map((a) => a.assetId).sort()).toEqual(['asset-a', 'asset-b']);
+    });
   });
 });

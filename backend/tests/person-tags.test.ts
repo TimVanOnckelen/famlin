@@ -221,4 +221,109 @@ describe('person tags on posts', () => {
     expect(res.statusCode).toBe(200);
     expect(calls).toBe(0);
   });
+
+  // Asset-centric (getAlbumAssetPeople) — the cross-owner fix this feature
+  // exists for: a shared-album asset owned by someone other than the API key
+  // holder never shows up in getPersonAssetIds()'s per-person crawl, but does
+  // show up in the asset's own `people` list, which getAlbumAssetPeople
+  // surfaces regardless of owner.
+  it('tags a post via getAlbumAssetPeople even though getPersonAssetIds would not return the asset', async () => {
+    const member = await createUser();
+    const mappedUser = await createUser({ name: 'Uncle Bob' });
+    const group = await createGroupWithMember(member);
+
+    let personAssetIdsCalls = 0;
+    let albumAssetPeopleCalls = 0;
+    __registerMediaProviderForTests(
+      makeFakeProvider(FAKE_PROVIDER_ID, {
+        // Deliberately returns nothing — simulates Immich's per-person index
+        // never seeing an asset owned by another library's user.
+        async getPersonAssetIds() {
+          personAssetIdsCalls += 1;
+          return new Set<string>();
+        },
+        async getAlbumAssetPeople(externalAlbumId: string) {
+          albumAssetPeopleCalls += 1;
+          expect(externalAlbumId).toBe('album-cross-owner');
+          return new Map([['asset-shared', [{ id: 'person-cross', name: 'Uncle Bob' }]]]);
+        },
+      })
+    );
+
+    const link = await prisma.mediaAlbumLink.create({
+      data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'album-cross-owner', albumName: 'Album' },
+    });
+    await prisma.mediaPersonLink.create({
+      data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'person-cross', label: 'Uncle Bob', userId: mappedUser.id },
+    });
+
+    const post = await createPost({
+      groupId: group.id,
+      authorId: member.id,
+      uploadedAssetUrls: [mediaAssetPath(link.id, 'asset-shared')],
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(member) });
+    expect(res.statusCode).toBe(200);
+    const items = res.json().items as Array<{ id: string; people: Array<{ label: string }> }>;
+    const shaped = items.find((p) => p.id === post.id)!;
+    expect(shaped.people.map((p) => p.label)).toEqual(['Uncle Bob']);
+
+    // A provider that implements getAlbumAssetPeople is handled entirely by
+    // the asset-centric pass — the person-centric fallback must not run for
+    // it at all.
+    expect(albumAssetPeopleCalls).toBe(1);
+    expect(personAssetIdsCalls).toBe(0);
+  });
+
+  it('dedupes two mapped people sharing the same label into one tag, preferring the one with a Famlin user', async () => {
+    const member = await createUser();
+    const mappedUser = await createUser({ name: 'Emma R.' });
+    const group = await createGroupWithMember(member);
+
+    __registerMediaProviderForTests(
+      makeFakeProvider(FAKE_PROVIDER_ID, {
+        async getAlbumAssetPeople() {
+          // Two distinct provider-side person ids on the same asset — the
+          // cross-owner case where each library recognizes "Emma" as its own
+          // separate person entity.
+          return new Map([
+            [
+              'asset-both',
+              [
+                { id: 'emma-lib-a', name: 'Emma' },
+                { id: 'emma-lib-b', name: 'Emma' },
+              ],
+            ],
+          ]);
+        },
+      })
+    );
+
+    const link = await prisma.mediaAlbumLink.create({
+      data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'album-dedupe', albumName: 'Album' },
+    });
+    // Mapped in an order where the unmapped-to-a-user entry comes first, so
+    // the dedupe must actively prefer the userId-bearing one rather than
+    // just keeping whichever was inserted first.
+    await prisma.mediaPersonLink.create({
+      data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'emma-lib-a', label: 'Emma' },
+    });
+    await prisma.mediaPersonLink.create({
+      data: { provider: FAKE_PROVIDER_ID, externalPersonId: 'emma-lib-b', label: 'Emma', userId: mappedUser.id },
+    });
+
+    const post = await createPost({
+      groupId: group.id,
+      authorId: member.id,
+      uploadedAssetUrls: [mediaAssetPath(link.id, 'asset-both')],
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(member) });
+    expect(res.statusCode).toBe(200);
+    const items = res.json().items as Array<{ id: string; people: Array<{ id: string; label: string; userId: string | null }> }>;
+    const shaped = items.find((p) => p.id === post.id)!;
+    expect(shaped.people).toHaveLength(1);
+    expect(shaped.people[0]).toMatchObject({ id: 'emma-lib-b', label: 'Emma', userId: mappedUser.id });
+  });
 });

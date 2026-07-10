@@ -1,7 +1,40 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
+import { __registerMediaProviderForTests, __unregisterMediaProviderForTests } from '../src/services/media/registry.js';
+import type { MediaProvider } from '../src/services/media/types.js';
 import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, createComment, authHeader } from './helpers.js';
+
+// Minimal fake provider (mirrors media-people.test.ts/person-tags.test.ts's
+// makeFakeProvider) — only the methods each admin people-catalog test
+// actually needs are overridden.
+function makeFakeProvider(id: string, overrides: Partial<MediaProvider> = {}): MediaProvider {
+  return {
+    id,
+    async isConfigured() {
+      return true;
+    },
+    isValidAlbumId() {
+      return true;
+    },
+    async listAlbums() {
+      return [];
+    },
+    async getAlbumInfo() {
+      return { assetCount: 0 };
+    },
+    async listAlbumAssets() {
+      return [];
+    },
+    async isAssetInAlbum() {
+      return true;
+    },
+    async streamAsset() {
+      // unused by these tests
+    },
+    ...overrides,
+  };
+}
 
 describe('admin routes', () => {
   let app: FastifyInstance;
@@ -12,6 +45,10 @@ describe('admin routes', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  afterEach(() => {
+    __unregisterMediaProviderForTests('fake-admin-people-provider');
   });
 
   // requireAdmin() sends the 403 itself and returns true; every handler must
@@ -496,6 +533,63 @@ describe('admin routes', () => {
         headers: authHeader(admin),
       });
       expect(res.statusCode).toBe(404);
+    });
+
+    it('/media/:provider/people includes people discovered only via getAlbumAssetPeople, deduped against the own-library catalog', async () => {
+      const FAKE_PROVIDER_ID = 'fake-admin-people-provider';
+      const admin = await createUser({ isAdmin: true });
+      const group = await createGroupWithMember(admin);
+
+      await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'album-1', albumName: 'Album 1' },
+      });
+      // A second linked album on the same provider, to prove discovery
+      // aggregates across every linked album, not just the first.
+      await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'album-2', albumName: 'Album 2' },
+      });
+
+      let thumbnailCalls = 0;
+      __registerMediaProviderForTests(
+        makeFakeProvider(FAKE_PROVIDER_ID, {
+          async listPeople() {
+            return [{ id: 'own-person', name: 'Own Library Person', thumbnailDataUri: 'data:image/jpeg;base64,own' }];
+          },
+          async getAlbumAssetPeople(externalAlbumId: string) {
+            if (externalAlbumId === 'album-1') {
+              return new Map([
+                ['asset-1', [{ id: 'own-person', name: 'Own Library Person' }]], // already in listPeople() — must not duplicate
+                ['asset-2', [{ id: 'cross-owner-person', name: 'Cross Owner Person' }]],
+              ]);
+            }
+            return new Map([['asset-3', [{ id: 'cross-owner-person', name: 'Cross Owner Person' }]]]); // same person, second album — still one entry
+          },
+          async getPersonThumbnail(externalPersonId: string) {
+            thumbnailCalls += 1;
+            return externalPersonId === 'cross-owner-person' ? 'data:image/jpeg;base64,cross' : null;
+          },
+        })
+      );
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media/${FAKE_PROVIDER_ID}/people`,
+        headers: authHeader(admin),
+      });
+      expect(res.statusCode).toBe(200);
+      const people = res.json() as Array<{ id: string; name: string; thumbnailDataUri: string | null }>;
+      expect(people.map((p) => p.id).sort()).toEqual(['cross-owner-person', 'own-person']);
+      expect(people.find((p) => p.id === 'own-person')).toMatchObject({
+        name: 'Own Library Person',
+        thumbnailDataUri: 'data:image/jpeg;base64,own',
+      });
+      expect(people.find((p) => p.id === 'cross-owner-person')).toMatchObject({
+        name: 'Cross Owner Person',
+        thumbnailDataUri: 'data:image/jpeg;base64,cross',
+      });
+      // Only the genuinely new person needs a thumbnail backfill — once, not
+      // once per album it turns up in.
+      expect(thumbnailCalls).toBe(1);
     });
   });
 });

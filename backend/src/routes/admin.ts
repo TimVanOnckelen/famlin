@@ -42,6 +42,12 @@ function getPublicOrigin(request: any): string {
   return `${request.protocol}://${request.hostname}`;
 }
 
+// Safety cap on GET /media/:provider/people's combined (own + cross-owner
+// discovered) catalog size — this feeds an admin "map this person" picker,
+// not a paginated browse UI, mirroring immich.ts's own MAX_PEOPLE cap on
+// listPeople() itself.
+const ADMIN_PEOPLE_CATALOG_CAP = 200;
+
 // Fields safe to expose to admin clients. passwordHash is selected only so
 // toSafeUser() below can derive `hasPassword` from it — every caller of this
 // select MUST route its result through toSafeUser(), which strips the raw
@@ -669,7 +675,12 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
   // The admin "map a person" picker's catalog for one provider — only
   // providers that implement the optional listPeople() capability (Immich
-  // today) support this.
+  // today) support this. listPeople() alone only sees people the API key's
+  // own account recognizes; on top of that, this also surfaces cross-owner
+  // people (recognized in *other* Immich users' shared-album photos) via
+  // getAlbumAssetPeople across every album linked to this provider, so an
+  // admin can map someone who never appears in the key owner's own /people
+  // list. Same response shape either way — the admin UI needs no changes.
   fastify.get('/media/:provider/people', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
@@ -682,7 +693,39 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      return await provider.listPeople();
+      const ownPeople = await provider.listPeople();
+      const byId = new Map(ownPeople.map((p) => [p.id, p]));
+
+      if (provider.getAlbumAssetPeople) {
+        const links = await prisma.mediaAlbumLink.findMany({
+          where: { provider: providerId },
+          select: { externalAlbumId: true },
+        });
+        const albumIds = [...new Set(links.map((l) => l.externalAlbumId))];
+
+        for (const albumId of albumIds) {
+          if (byId.size >= ADMIN_PEOPLE_CATALOG_CAP) break;
+          try {
+            const albumPeople = await provider.getAlbumAssetPeople(albumId);
+            for (const people of albumPeople.values()) {
+              for (const person of people) {
+                if (byId.has(person.id) || byId.size >= ADMIN_PEOPLE_CATALOG_CAP) continue;
+                const thumbnailDataUri = provider.getPersonThumbnail
+                  ? await provider.getPersonThumbnail(person.id).catch(() => null)
+                  : null;
+                byId.set(person.id, { id: person.id, name: person.name, thumbnailDataUri });
+              }
+            }
+          } catch (err) {
+            // One failing album's cross-owner discovery shouldn't blank out
+            // the key owner's own people (already resolved above) — log and
+            // move on to the next linked album.
+            console.warn(`admin media people: failed to discover album people for ${providerId}/${albumId}:`, err);
+          }
+        }
+      }
+
+      return [...byId.values()];
     } catch (err) {
       if (err instanceof MediaProviderError) {
         return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });

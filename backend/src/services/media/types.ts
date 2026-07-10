@@ -92,5 +92,27 @@ export interface MediaProvider {
   // than assume every provider implements it (see admin.ts /media/:provider/people
   // and media.ts's ?personId= filter).
   listPeople?(): Promise<MediaPersonSummary[]>;
+  // Person-centric: every asset id the provider associates with one person.
+  // On Immich this only ever sees people recognized within the API key
+  // owner's own library — a shared album's assets owned by another Immich
+  // user never appear here, even though the asset itself is readable. Kept
+  // as the fallback for providers that can't do the asset-centric query
+  // below (or as a plain per-person crawl when that's all that's needed).
   getPersonAssetIds?(externalPersonId: string): Promise<Set<string>>;
+  // Asset-centric, cross-owner: every tagged person on every asset in one
+  // album, keyed by assetId. Exists because Immich person entities are
+  // per-library — getPersonAssetIds()/listPeople() only see people the API
+  // key's own account recognizes, so a shared album containing photos owned
+  // by *other* Immich users never gets those people tagged or mappable.
+  // AssetResponseDto.people is populated for any asset the caller can read
+  // regardless of owner, so walking assets (this method) sees people
+  // getPersonAssetIds() cannot. Implementations should cache the per-album
+  // result briefly (remote crawl) — see immich.ts's getAlbumAssetPeople.
+  getAlbumAssetPeople?(externalAlbumId: string): Promise<Map<string, Array<{ id: string; name: string }>>>;
+  // One person's thumbnail outside the listPeople() catalog crawl — used to
+  // backfill a preview image for a person discovered only via
+  // getAlbumAssetPeople (i.e. not present in the key owner's own /people
+  // list). null (not a throw) when the thumbnail can't be fetched (e.g. the
+  // API key isn't authorized to read that person, a common cross-owner case).
+  getPersonThumbnail?(externalPersonId: string): Promise<string | null>;
 }

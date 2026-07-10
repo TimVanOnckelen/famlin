@@ -69,11 +69,38 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
         where: { provider_externalPersonId: { provider: link.provider, externalPersonId: personId } },
       });
       if (!personLink) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
-      if (!provider.getPersonAssetIds) {
+
+      if (!provider.getAlbumAssetPeople && !provider.getPersonAssetIds) {
         return reply.status(400).send({ error: t('errors.mediaProviderLacksPersonFilter') });
       }
+
+      // Label-aware: the same real person can be recognized as a distinct
+      // provider-side person entity per Immich library owner (that's exactly
+      // the cross-owner shared-album case this feature exists for), so
+      // filtering by one mapped id must also match every other
+      // MediaPersonLink sharing this provider + label — e.g. "Emma" mapped
+      // twice, once per parent's library, filters both at once.
+      const sameLabelLinks = await prisma.mediaPersonLink.findMany({
+        where: { provider: link.provider, label: personLink.label },
+      });
+      const wantedPersonIds = new Set(sameLabelLinks.map((p) => p.externalPersonId));
+
       try {
-        personAssetIds = await provider.getPersonAssetIds(personId);
+        if (provider.getAlbumAssetPeople) {
+          // Asset-centric: works cross-owner, since it reads the `people`
+          // Immich attaches to every asset the requester's key can see in
+          // this shared album, rather than querying the key owner's own
+          // person index (which getPersonAssetIds is scoped to).
+          const albumPeople = await provider.getAlbumAssetPeople(link.externalAlbumId);
+          personAssetIds = new Set(
+            [...albumPeople.entries()]
+              .filter(([, people]) => people.some((p) => wantedPersonIds.has(p.id)))
+              .map(([assetId]) => assetId)
+          );
+        } else {
+          const sets = await Promise.all([...wantedPersonIds].map((id) => provider.getPersonAssetIds!(id)));
+          personAssetIds = new Set(sets.flatMap((s) => [...s]));
+        }
       } catch (err) {
         if (err instanceof MediaProviderError) {
           return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) });

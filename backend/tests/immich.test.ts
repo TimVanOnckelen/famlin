@@ -301,6 +301,111 @@ describe('immich integration', () => {
     });
   });
 
+  describe('getAlbumAssetPeople (asset-centric, cross-owner)', () => {
+    afterEach(async () => {
+      await updateSettings({ immichServerUrl: '', immichApiKey: '' });
+    });
+
+    it('paginates the bulk withPeople search, coercing the string nextPage cursor back to a number', async () => {
+      await updateSettings({ immichServerUrl: 'http://immich.local', immichApiKey: 'test-key' });
+      const albumId = randomUUID();
+
+      const bulkSearchBodies: Array<Record<string, unknown>> = [];
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: unknown, init: unknown) => {
+        const req = init as RequestInit;
+        const body = JSON.parse(req.body as string) as Record<string, unknown>;
+        if (body.withPeople) {
+          bulkSearchBodies.push(body);
+          if (bulkSearchBodies.length === 1) {
+            return new Response(
+              JSON.stringify({
+                assets: {
+                  items: [{ id: 'asset-1', type: 'IMAGE', people: [{ id: 'p1', name: 'Person One' }] }],
+                  nextPage: '2',
+                },
+              }),
+              { status: 200, headers: { 'content-type': 'application/json' } }
+            );
+          }
+          return new Response(
+            JSON.stringify({ assets: { items: [{ id: 'asset-2', type: 'IMAGE', people: [] }], nextPage: null } }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          );
+        }
+        // Coverage-check call (listAlbumAssets' plain search, no withPeople) —
+        // both assets were already covered by the bulk search above.
+        return new Response(
+          JSON.stringify({
+            assets: { items: [{ id: 'asset-1', type: 'IMAGE' }, { id: 'asset-2', type: 'IMAGE' }] },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      });
+
+      try {
+        const result = await immichProvider.getAlbumAssetPeople!(albumId);
+        expect(result.get('asset-1')).toEqual([{ id: 'p1', name: 'Person One' }]);
+        expect(result.get('asset-2')).toEqual([]);
+
+        expect(bulkSearchBodies).toHaveLength(2);
+        // Immich returns nextPage as the string "2" but 400s if it's sent
+        // back as a string — the second request must send it as a number.
+        expect(bulkSearchBodies[1]).toMatchObject({ page: 2 });
+      } finally {
+        fetchMock.mockRestore();
+      }
+    });
+
+    it('falls back to an individual GET /assets/:id for an album asset the bulk search omitted entirely (cross-owner)', async () => {
+      await updateSettings({ immichServerUrl: 'http://immich.local', immichApiKey: 'test-key' });
+      const albumId = randomUUID();
+
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: unknown, init: unknown) => {
+        const urlStr = String(url);
+        const req = init as RequestInit;
+        if (urlStr.endsWith('/api/search/metadata')) {
+          const body = JSON.parse(req.body as string) as Record<string, unknown>;
+          if (body.withPeople) {
+            // The bulk search only sees the asset owned by the API key
+            // holder — the other, owned by a different Immich user in the
+            // shared album, is silently absent (not merely empty-peopled).
+            return new Response(
+              JSON.stringify({
+                assets: {
+                  items: [{ id: 'asset-mine', type: 'IMAGE', people: [{ id: 'p1', name: 'Me' }] }],
+                  nextPage: null,
+                },
+              }),
+              { status: 200, headers: { 'content-type': 'application/json' } }
+            );
+          }
+          // Coverage check: the album actually has two assets.
+          return new Response(
+            JSON.stringify({
+              assets: { items: [{ id: 'asset-mine', type: 'IMAGE' }, { id: 'asset-other-owner', type: 'IMAGE' }] },
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          );
+        }
+        if (urlStr.endsWith('/api/assets/asset-other-owner')) {
+          return new Response(JSON.stringify({ people: [{ id: 'p2', name: 'Other Owner Person' }] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        }
+        throw new Error(`unexpected fetch in test: ${urlStr}`);
+      });
+
+      try {
+        const result = await immichProvider.getAlbumAssetPeople!(albumId);
+        expect(result.get('asset-mine')).toEqual([{ id: 'p1', name: 'Me' }]);
+        expect(result.get('asset-other-owner')).toEqual([{ id: 'p2', name: 'Other Owner Person' }]);
+      } finally {
+        fetchMock.mockRestore();
+      }
+    });
+  });
+
   describe('cross-group isolation when attaching to a post', () => {
     it('rejects a post referencing an Immich URL linked to a different group', async () => {
       const author = await createUser();
