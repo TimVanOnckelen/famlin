@@ -7,18 +7,21 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "ios": {
         "resourceClass": "m-medium"
       }
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "ios": {
         "resourceClass": "m-medium"
       }
     },
     "production": {
       "autoIncrement": true,
+      "environment": "production",
       "ios": {
         "resourceClass": "m-medium"
       }
@@ -26,12 +29,9 @@
   },
   "submit": {
     "production": {
+      "environment": "production",
       "ios": {
-        "ascAppId": "$ASC_APP_ID",
-        "appleTeamId": "$APPLE_TEAM_ID",
-        "ascApiKeyPath": "$ASC_API_KEY_PATH",
-        "ascApiKeyId": "$ASC_API_KEY_ID",
-        "ascApiKeyIssuerId": "$ASC_API_KEY_ISSUER_ID"
+        "ascAppId": "6786783660"
       },
       "android": {
         "serviceAccountKeyPath": "$GOOGLE_SERVICE_ACCOUNT_KEY_PATH",
