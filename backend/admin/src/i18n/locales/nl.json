@@ -210,16 +210,27 @@
     "tabPosts": "Berichten",
     "tabComments": "Reacties",
     "allGroups": "Alle groepen",
+    "allAuthors": "Alle auteurs",
+    "searchPlaceholder": "Zoek in inhoud…",
+    "clearFilters": "Filters wissen",
+    "milestone": "Mijlpaal",
+    "noText": "(geen tekst)",
+    "commentsTooltip": "Reacties",
+    "likesTooltip": "Likes",
     "table": {
       "group": "Groep",
       "author": "Auteur",
       "content": "Inhoud",
+      "comment": "Reactie",
+      "onPost": "Bij bericht",
+      "activity": "Activiteit",
       "date": "Datum",
       "actions": "Acties"
     },
     "deleteConfirm": "Weet je zeker dat je dit wilt verwijderen?",
     "noPosts": "Geen berichten gevonden.",
-    "noComments": "Geen reacties gevonden."
+    "noComments": "Geen reacties gevonden.",
+    "noResults": "Niets gevonden met deze filters."
   },
   "serverSettings": {
     "title": "Serverinstellingen",

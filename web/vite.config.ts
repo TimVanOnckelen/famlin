@@ -18,7 +18,14 @@ const outDir = path.resolve(__dirname, '../backend/dist/web');
 function watchLivereload(): Plugin | false {
   if (!process.env.LIVERELOAD) return false;
   const server = livereload.createServer({ exts: ['html', 'js', 'css'] });
-  server.watch(outDir);
+  // `build.emptyOutDir` (below) deletes outDir on every rebuild before
+  // rewriting it, and this chokidar watcher (from server.watch) is pointed
+  // at that same directory — an unhandled 'error' event from that race (e.g.
+  // ENOENT on a path that briefly doesn't exist) crashes the whole `vite
+  // build --watch` process by default, since EventEmitter throws when an
+  // 'error' has no listener. Swallow it instead: a missed reload signal is
+  // harmless, an entire dead watch process is not.
+  server.watch(outDir).on('error', () => {});
   return {
     name: 'watch-livereload',
     transformIndexHtml(html) {

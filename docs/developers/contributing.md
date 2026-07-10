@@ -36,9 +36,20 @@ Feature suggestions are welcome. Please open an issue and describe:
 5. Ensure the project still builds and runs correctly.
 6. Open a pull request with a clear description of what changed and why.
 
-Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, web app + shared API client (`packages/api-client`, both with their own Vitest suites), mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly and a full Docker image build. All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in both `en` and `nl` locales for any UI string changes.
+Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, web app + shared API client (`packages/api-client`, both with their own Vitest suites), mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly, a full Docker image build, and an API breaking-change check (see [Breaking changes](#breaking-changes) below). All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in both `en` and `nl` locales for any UI string changes.
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, ...) for commit and PR titles — [release-please](https://github.com/googleapis/release-please) reads them to generate the changelog and version bump automatically, so a clear prefix helps your change show up correctly in the next release.
+
+### Breaking changes
+
+If your change is **breaking** — an existing deployment would need manual action when upgrading (an API endpoint or response changes incompatibly, a startup env var becomes required, a default changes in a way that alters behavior) — you must mark it in conventional-commit form, in the commit message or the PR title:
+
+- append `!` to the type: `feat!: require TRUST_PROXY behind a reverse proxy`, or
+- add a footer explaining the migration: `BREAKING CHANGE: media tokens issued before this release are invalidated; clients must request a new one.`
+
+This marker is what drives the release automation: release-please adds the commit to a dedicated **⚠ BREAKING CHANGES** section in `CHANGELOG.md` and the GitHub Release, applies the corresponding version bump, and the AI-rewritten release notes only warn self-hosting admins about changes marked this way — an unmarked breaking change ships silently as an ordinary entry. This applies to AI coding agents too: if you use Claude or a similar assistant to write commits, make sure it marks breaking changes the same way (the repo's `CLAUDE.md` instructs it to).
+
+CI backs this up for the API surface: when a PR changes `docs/openapi/famlin.yaml` in a way [oasdiff](https://github.com/oasdiff/oasdiff) classifies as breaking, the `API breaking-change check` job fails unless a commit in the PR or the PR title carries a breaking marker. Breaking changes outside the API spec (env vars, deploy steps) can't be detected automatically — marking those is on you.
 
 ## Releases
 

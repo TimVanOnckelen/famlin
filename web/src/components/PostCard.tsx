@@ -212,7 +212,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             <div className="post-milestone-title">{post.content}</div>
           )}
           {!isMilestone && post.content && (
-            <p className={`post-content${hasPhotos ? ' post-caption' : ''}`}>{post.content}</p>
+            <p className="post-content">{post.content}</p>
           )}
           {hasPhotos && (
             <div className="post-meta">
