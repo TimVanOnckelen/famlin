@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.11](https://github.com/TimVanOnckelen/famlin/compare/v0.1.10...v0.1.11) (2026-07-10)
+
+
+### Bug Fixes
+
+* remove redundant environment key from production submit configuration ([c495e15](https://github.com/TimVanOnckelen/famlin/commit/c495e156141e8d747bc39fc341c3bedd089e5834))
+* remove redundant service account key path from production configuration ([aab6eaa](https://github.com/TimVanOnckelen/famlin/commit/aab6eaa280c6a9d7e85b606591f3b8a8d08a0467))
+
 ## [0.1.10](https://github.com/TimVanOnckelen/famlin/compare/v0.1.9...v0.1.10) (2026-07-10)
 
 
