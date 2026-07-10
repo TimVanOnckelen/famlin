@@ -43,7 +43,7 @@ export const emailChannel: NotificationChannel = {
   },
 
   async send({ recipients, message, settings }) {
-    const transporter = await createTransporter();
+    const transporter = await createTransporter(settings);
     if (!transporter) return;
 
     const t = i18n.getFixedT(settings.defaultLanguage);
