@@ -313,10 +313,13 @@ function PhotoActionsBar({
       const destination = new File(Paths.cache, filename);
       if (destination.exists) destination.delete();
       const file = await File.downloadFileAsync(downloadUrl, destination);
-      await MediaLibrary.saveToLibraryAsync(file.uri);
+      // Class-based API — the legacy saveToLibraryAsync throws at runtime
+      // on SDK 57.
+      await MediaLibrary.Asset.create(file.uri);
       file.delete();
       Alert.alert(t('imageViewer.downloadSuccess'));
-    } catch {
+    } catch (err) {
+      console.warn('ImageViewer: saving photo failed:', err);
       Alert.alert(t('common.error'), t('imageViewer.downloadError'));
     } finally {
       setDownloading(false);
