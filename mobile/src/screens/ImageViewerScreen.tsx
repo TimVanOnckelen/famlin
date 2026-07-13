@@ -27,9 +27,19 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { ReactionPicker } from '@/components/ReactionPicker';
 import { isVideoUrl } from '@/utils/media';
-import { Comment } from '@/types';
-import { fetchComments, createComment, deleteComment } from '@famlin/api-client';
+import { Comment, Post, ReactionType } from '@/types';
+import {
+  fetchComments,
+  createComment,
+  deleteComment,
+  fetchPost,
+  reactToPost,
+  toggleFavoritePost,
+} from '@famlin/api-client';
+import { REACTION_EMOJI } from '@/constants/reactions';
+import { patchPostInCaches } from '@/utils/postCache';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -105,18 +115,160 @@ function ImagePage({
   );
 }
 
+// Per-photo metadata for viewers opened over mixed sources (the photos
+// tab): entries line up with `urls` by index. Photos belonging to a post
+// carry that post's id plus their raw asset path so the action bar and
+// per-photo comments work; album assets carry neither — there is no
+// backend object to like, favorite, or comment on.
+interface ViewerItem {
+  postId?: string;
+  assetUrl?: string;
+}
+
+function PhotoActionsBar({
+  postId,
+  canComment,
+  onOpenComments,
+}: {
+  postId: string;
+  canComment: boolean;
+  onOpenComments: () => void;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+
+  const { data: post } = useQuery({
+    queryKey: ['post', postId],
+    queryFn: () => fetchPost(postId),
+  });
+
+  // Same optimistic patch PostCard applies, so the feed/detail caches stay
+  // in sync with what the viewer shows.
+  const likeMutation = useMutation({
+    mutationFn: (type: ReactionType) => reactToPost(postId, type),
+    onMutate: async (type) => {
+      if (!post) return;
+      await queryClient.cancelQueries({ queryKey: ['posts'] });
+      await queryClient.cancelQueries({ queryKey: ['post', postId] });
+
+      const nextReaction = post.myReaction === type ? null : type;
+      const patch = (p: Post) => {
+        const reactions = { ...p.reactions };
+        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
+        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
+        return {
+          ...p,
+          myReaction: nextReaction,
+          reactions,
+          likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
+          likedByMe: nextReaction !== null,
+        };
+      };
+
+      patchPostInCaches(queryClient, postId, patch);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+    },
+  });
+
+  const favoriteMutation = useMutation({
+    mutationFn: () => toggleFavoritePost(postId),
+    onMutate: async () => {
+      if (!post) return;
+      await queryClient.cancelQueries({ queryKey: ['posts'] });
+      await queryClient.cancelQueries({ queryKey: ['post', postId] });
+
+      const nextFavorited = !post.favoritedByMe;
+      patchPostInCaches(queryClient, postId, (p: Post) => ({ ...p, favoritedByMe: nextFavorited }));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+  });
+
+  if (!post) return null;
+
+  return (
+    <>
+      <View style={styles.actionBar}>
+        <TouchableOpacity
+          style={styles.actionBarButton}
+          onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
+          onLongPress={() => setReactionPickerOpen(true)}
+          disabled={likeMutation.isPending}
+          hitSlop={8}
+          accessibilityLabel={t('imageViewer.likeButton')}
+          accessibilityState={{ selected: !!post.myReaction }}
+        >
+          {post.myReaction ? (
+            <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
+          ) : (
+            <Icon name="heart" size={22} color={colors.white} />
+          )}
+          {post.likeCount > 0 && <Text style={styles.actionBarCount}>{post.likeCount}</Text>}
+        </TouchableOpacity>
+
+        {canComment && (
+          <TouchableOpacity
+            style={styles.actionBarButton}
+            onPress={onOpenComments}
+            hitSlop={8}
+            accessibilityLabel={t('imageViewer.commentsButton')}
+          >
+            <Icon name="message-circle" size={22} color={colors.white} />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.actionBarButton}
+          onPress={() => favoriteMutation.mutate()}
+          disabled={favoriteMutation.isPending}
+          hitSlop={8}
+          accessibilityLabel={t('imageViewer.favoriteButton')}
+          accessibilityState={{ selected: !!post.favoritedByMe }}
+        >
+          <Icon
+            name="bookmark"
+            size={22}
+            color={post.favoritedByMe ? colors.primary : colors.white}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <ReactionPicker
+        visible={reactionPickerOpen}
+        onSelect={(type) => {
+          setReactionPickerOpen(false);
+          likeMutation.mutate(type);
+        }}
+        onClose={() => setReactionPickerOpen(false)}
+      />
+    </>
+  );
+}
+
 export function ImageViewerScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { urls, initialIndex = 0, postId, assetUrls } = route.params;
+  const { urls, initialIndex = 0, postId, assetUrls, items } = route.params;
   const { width, height } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [commentsVisible, setCommentsVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const currentAssetUrl: string | undefined = assetUrls?.[currentIndex];
-  const canComment = !!postId && !!currentAssetUrl;
+  // Post-context callers (PostCard, PostDetail) pass one postId + parallel
+  // assetUrls; the photos tab passes per-index `items` instead, since its
+  // grid mixes photos from different posts and albums.
+  const currentItem: ViewerItem | undefined = items?.[currentIndex];
+  const currentPostId: string | undefined = items ? currentItem?.postId : postId;
+  const currentAssetUrl: string | undefined = items ? currentItem?.assetUrl : assetUrls?.[currentIndex];
+  const canComment = !!currentPostId && !!currentAssetUrl;
 
   const translateY = useRef(new Animated.Value(0)).current;
   const backdropOpacity = translateY.interpolate({
@@ -192,18 +344,7 @@ export function ImageViewerScreen() {
                 {currentIndex + 1} / {urls.length}
               </Text>
             )}
-            {canComment ? (
-              <TouchableOpacity
-                onPress={() => setCommentsVisible(true)}
-                style={styles.closeButton}
-                hitSlop={16}
-                accessibilityLabel={t('imageViewer.commentsButton')}
-              >
-                <Icon name="message-circle" size={22} color={colors.white} />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.placeholder} />
-            )}
+            <View style={styles.placeholder} />
           </View>
 
           <ScrollView
@@ -237,11 +378,22 @@ export function ImageViewerScreen() {
             )}
           </ScrollView>
 
+          {currentPostId && (
+            // Remount per post so the bar never briefly shows the previous
+            // post's counts while swiping across posts in the photos tab.
+            <PhotoActionsBar
+              key={currentPostId}
+              postId={currentPostId}
+              canComment={canComment}
+              onOpenComments={() => setCommentsVisible(true)}
+            />
+          )}
+
           {canComment && (
             <PhotoCommentsSheet
               visible={commentsVisible}
               onClose={() => setCommentsVisible(false)}
-              postId={postId}
+              postId={currentPostId!}
               assetUrl={currentAssetUrl!}
             />
           )}
@@ -443,6 +595,28 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  actionBarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 44,
+    justifyContent: 'center',
+  },
+  actionBarCount: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.white,
+  },
+  reactionEmoji: {
+    fontSize: 20,
   },
 });
 

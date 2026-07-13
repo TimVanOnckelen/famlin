@@ -243,6 +243,8 @@
     "videoAccessibilityLabel": "Video {{index}} van {{total}}",
     "commentsButton": "Reacties",
     "commentsTitle": "Reacties",
-    "noComments": "Nog geen reacties op deze foto"
+    "noComments": "Nog geen reacties op deze foto",
+    "likeButton": "Vind ik leuk",
+    "favoriteButton": "Favoriet"
   }
 }

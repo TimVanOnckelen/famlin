@@ -131,10 +131,17 @@ export function PhotosScreen() {
     const urls = allPhotos.map((p) =>
       getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl)
     );
+    // Per-photo metadata: photos that came from a post carry its id plus
+    // their raw /uploads/... path, which enables the viewer's like/comment/
+    // favorite bar for them; album assets have no post to act on.
+    const items = allPhotos.map((p) =>
+      p.postId ? { postId: p.postId, assetUrl: p.originalUrl } : {}
+    );
     const initialIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
     navigation.navigate('ImageViewer', {
       urls,
+      items,
       initialIndex: initialIndex >= 0 ? initialIndex : 0,
     });
   }

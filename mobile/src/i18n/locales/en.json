@@ -243,6 +243,8 @@
     "videoAccessibilityLabel": "Video {{index}} of {{total}}",
     "commentsButton": "Comments",
     "commentsTitle": "Comments",
-    "noComments": "No comments on this photo yet"
+    "noComments": "No comments on this photo yet",
+    "likeButton": "Like",
+    "favoriteButton": "Favorite"
   }
 }
