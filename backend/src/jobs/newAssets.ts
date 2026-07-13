@@ -116,9 +116,7 @@ export async function runNewAssetsJob(now = new Date()): Promise<void> {
       // subscriber turns this into the same 'new_post' notifications a
       // human-authored post would trigger.
       emitDomainEvent('post.created', {
-        postId: post.id,
-        groupId: link.groupId,
-        groupName: link.group.name,
+        posts: [{ postId: post.id, groupId: link.groupId, groupName: link.group.name }],
         authorId: author.id,
         authorName: author.name,
         content: post.content,

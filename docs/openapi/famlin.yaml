@@ -436,7 +436,9 @@ paths:
         Newest first, cursor-paginated. The feed is a filter over your groups:
         `groupIds` selects a subset, the legacy `groupId` selects one, and
         neither means every group you belong to. Requesting a group you're not
-        a member of is a `403`.
+        a member of is a `403`. A post shared with several of your groups (see
+        `sharedWithGroups` on `POST /api/posts`) is deduplicated — you see it
+        once, not once per shared group.
       parameters:
         - name: groupIds
           in: query
@@ -470,15 +472,40 @@ paths:
         or Immich proxy paths for an album linked to **this** post's group —
         arbitrary URLs are rejected. `latitude` and `longitude` must be
         provided together.
+
+        Pass `groupIds` instead of `groupId` to **cross-post**: with 2 or more
+        target groups, the server creates one linked copy of the post per
+        group. For the author it behaves as a single post — editing or
+        deleting it edits/deletes every copy — but comments, reactions, and
+        favorites stay scoped to each group's own copy, and other members can
+        never tell it was cross-posted. Every target group must be one you
+        belong to, or the whole request is rejected with no post created.
+        Photos sourced from a linked media album (Immich/local) are copied
+        server-side into Famlin's own upload storage at post time so every
+        target group can see them without gaining access to the source
+        album; direct uploads are shared as-is.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [groupId]
               properties:
-                groupId: { type: string }
+                groupId:
+                  type: string
+                  description: |
+                    The group to post in. Required unless `groupIds` is given.
+                groupIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items: { type: string }
+                  description: |
+                    One or more groups to post in — an alternative to
+                    `groupId`. A single id behaves like `groupId`; 2 or more
+                    ids cross-post (see above). Every id must be a group you
+                    belong to.
+                  example: [cmb1ghi, cmb1jkl]
                 content:
                   type: string
                   maxLength: 5000
@@ -1841,6 +1868,20 @@ components:
             $ref: '#/components/schemas/PostPerson'
           description: Admin-mapped media people recognized in this post's photos, empty if none matched.
         favoritedByMe: { type: boolean }
+        sharedWithGroups:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+          description: |
+            Present only in responses to the post's **author**, only when the
+            post was cross-posted (created with 2+ `groupIds`). Lists every
+            group the post was shared with, including this response's own
+            `group`. Other members never see this field or otherwise learn a
+            post was cross-posted — each group's copy looks like an ordinary,
+            single-group post to them.
 
     PostsPage:
       type: object

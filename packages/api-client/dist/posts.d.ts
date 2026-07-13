@@ -19,6 +19,7 @@ export declare function searchPosts(params: SearchPostsParams): Promise<PostsPag
 export declare function fetchFavorites(cursor?: string): Promise<PostsPage>;
 export interface CreatePostBody {
     groupId: string;
+    groupIds?: string[];
     content?: string;
     type: 'UPDATE' | 'MILESTONE';
     milestoneTag?: string;

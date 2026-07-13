@@ -33,7 +33,8 @@
     "peopleInPost": "Personen in dit bericht",
     "empty": "Nog geen berichten — deel de eerste update met je familie!",
     "loadMore": "Toon meer",
-    "loadFailed": "De feed kon niet geladen worden."
+    "loadFailed": "De feed kon niet geladen worden.",
+    "sharedWith": "Gedeeld met {{names}}"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -49,6 +50,7 @@
   "newPost": {
     "title": "Nieuw bericht",
     "group": "Groep",
+    "groupHint": "Kies één of meer families om dit bericht mee te delen.",
     "typeLabel": "Berichttype",
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Mijlpaal",

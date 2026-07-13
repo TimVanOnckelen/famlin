@@ -66,6 +66,10 @@ export interface Post {
   recentReactors?: { id: string; name: string; avatarUrl?: string | null }[];
   favoritedByMe: boolean;
   people?: PostPerson[];
+  // Only present when the viewer is the post's author and the post was
+  // cross-posted to several groups: every group it was shared with (including
+  // this one). Other members never learn a post was cross-posted.
+  sharedWithGroups?: { id: string; name: string }[];
 }
 
 export interface Comment {

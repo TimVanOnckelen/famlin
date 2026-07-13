@@ -49,7 +49,8 @@
     "apiTokenNotFound": "API token not found",
     "mediaPersonLinkNotFound": "Person mapping not found",
     "mediaProviderLacksPeople": "This media source doesn't support recognizing people",
-    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person"
+    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person",
+    "crossPostAssetCopyFailed": "Could not copy a linked photo for sharing. Please try again."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

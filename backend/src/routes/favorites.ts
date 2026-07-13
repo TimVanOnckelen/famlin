@@ -3,7 +3,7 @@ import { prisma } from '../db.js';
 import { isGroupMember } from '../services/groups.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { paginationQuerySchema } from '../types.js';
-import { shapePostsWithPeople } from '../services/posts.js';
+import { shapePostsWithPeople, dedupeByCrossPostId } from '../services/posts.js';
 import { getT } from '../i18n/index.js';
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
@@ -77,11 +77,13 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
 
     const { items, nextCursor } = paginate(favorites, take);
 
+    // Within-page only (no cursor lookup, unlike GET /api/posts) — the
+    // Favorite cursor is on Favorite.id, not Post.id, so a cross-post
+    // straddling a page boundary here is a rarer, lower-stakes edge case.
+    const deduped = dedupeByCrossPostId(items.map(({ post }) => post));
+
     return {
-      items: await shapePostsWithPeople(
-        items.map(({ post }) => post),
-        request.user!.id
-      ),
+      items: await shapePostsWithPeople(deduped, request.user!.id),
       nextCursor,
     };
   });

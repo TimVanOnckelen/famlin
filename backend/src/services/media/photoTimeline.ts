@@ -19,6 +19,12 @@ export interface PhotoItem {
   linkId?: string;
   assetId?: string;
   postId?: string;
+  // For an album asset that a post embeds (picked via the linked-album
+  // picker): the exact media-proxy URL stored in that post's
+  // uploadedAssetUrls. Clients need the verbatim string to pin comments to
+  // the photo (Comment.assetUrl matches by exact value). Only set together
+  // with postId on source: 'album' items.
+  postAssetUrl?: string;
 }
 
 // --- Per-album asset listing cache -----------------------------------------

@@ -34,5 +34,6 @@ The **Content** page gives admins cross-group visibility into posts and comments
 - Switch between the **Posts** and **Comments** tabs, and narrow the list with the filter bar: a text search over the content, a group filter, and an author filter (combine them freely; **Clear filters** resets everything).
 - The posts tab also shows each post's comment/like counts and marks milestone posts; the comments tab shows a snippet of the post each comment was left on.
 - **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
+- **Cross-posted content is moderated per group.** When a member shares a post with several of their groups at once, each group gets its own independent copy. Deleting one group's copy from the Content page only removes that copy — it doesn't touch the copies in the post's other groups.
 
 There's no bulk action or audit log.

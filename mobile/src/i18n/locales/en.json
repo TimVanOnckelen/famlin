@@ -96,7 +96,8 @@
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
-    "peopleInPost": "People recognized in this post"
+    "peopleInPost": "People recognized in this post",
+    "sharedWithGroups": "Shared with {{names}}"
   },
   "search": {
     "title": "Search {{group}}",
@@ -115,6 +116,8 @@
     "postButton": "Post",
     "loading": "Loading...",
     "groupLabel": "Group",
+    "groupsLabel": "Share with",
+    "multipleGroupsSelected": "{{count}} groups selected",
     "contentPlaceholder": "Write something for the family...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",

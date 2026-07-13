@@ -292,4 +292,30 @@ export const localProvider: MediaProvider = {
       throw new MediaProviderError('local', 'unreachable');
     }
   },
+
+  // Same bytes as streamAsset(), as a plain stream instead of a FastifyReply
+  // write — see the MediaProvider.readAsset doc comment for why this exists
+  // (copyAsset.ts).
+  async readAsset(externalAlbumId: string, assetId: string, variant: MediaAssetVariant) {
+    const fileName = decodeLocalAssetId(assetId);
+    if (!fileName || !IMAGE_EXTENSIONS.has(fileExt(fileName))) {
+      throw new MediaProviderError('local', 'unreachable');
+    }
+    const dir = await resolveAlbumDir(externalAlbumId);
+    const filePath = path.join(dir, fileName);
+
+    try {
+      if (variant === 'original') {
+        return {
+          stream: fs.createReadStream(filePath),
+          contentType: CONTENT_TYPES[fileExt(fileName)] ?? 'application/octet-stream',
+        };
+      }
+      const rendition = await ensureRendition(externalAlbumId, fileName, filePath, variant);
+      return { stream: fs.createReadStream(rendition), contentType: 'image/jpeg' };
+    } catch (err) {
+      if (err instanceof MediaProviderError) throw err;
+      throw new MediaProviderError('local', 'unreachable');
+    }
+  },
 };

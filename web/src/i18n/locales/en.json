@@ -33,7 +33,8 @@
     "peopleInPost": "People in this post",
     "empty": "No posts yet — share the first update with your family!",
     "loadMore": "Show more",
-    "loadFailed": "The feed couldn't be loaded."
+    "loadFailed": "The feed couldn't be loaded.",
+    "sharedWith": "Shared with {{names}}"
   },
   "comments": {
     "placeholder": "Write a comment…",
@@ -49,6 +50,7 @@
   "newPost": {
     "title": "New post",
     "group": "Group",
+    "groupHint": "Choose one or more families to share this post with.",
     "typeLabel": "Post type",
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Milestone",

@@ -49,7 +49,8 @@
     "apiTokenNotFound": "API-token niet gevonden",
     "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",
     "mediaProviderLacksPeople": "Deze mediabron ondersteunt geen persoonsherkenning",
-    "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon"
+    "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon",
+    "crossPostAssetCopyFailed": "Kon een gekoppelde foto niet kopiëren om te delen. Probeer het opnieuw."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

@@ -52,6 +52,48 @@
   box-shadow: 0 0 0 3px var(--fam-primary-tint);
 }
 
+/* ── Group multi-select chips (mirrors the feed's family filter) ───────── */
+
+.field-hint {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: -4px;
+}
+
+.group-select-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.group-select-chips .filter-chip {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.group-select-chips .filter-chip:hover {
+  background: var(--fam-primary-tint);
+}
+
+.group-select-chips .filter-chip-active {
+  background: var(--fam-primary);
+  border-color: var(--fam-primary);
+  color: white;
+}
+
+.group-select-chips .filter-chip-active:hover {
+  background: var(--fam-primary);
+}
+
 /* ── Type chips (styleguide "Inputs & chips") ───────────────────────────── */
 
 .type-chips {

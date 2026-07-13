@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { randomUUID } from 'crypto';
 import { prisma } from '../db.js';
 import {
   createPostBodySchema,
@@ -9,9 +10,10 @@ import {
 } from '../types.js';
 import { emitDomainEvent } from '../events.js';
 import { isGroupMember, getUserGroupIds } from '../services/groups.js';
-import { shapePost, shapePostsWithPeople } from '../services/posts.js';
+import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
+import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js';
 import { getT } from '../i18n/index.js';
 
 // A post's uploadedAssetUrls can include media proxy URLs (see
@@ -79,15 +81,32 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return { items: [], nextCursor: null };
     }
 
+    // A cross-post's sibling rows share createdAt, so createdAt alone isn't a
+    // stable order/cursor key — id breaks the tie deterministically for both
+    // the page order and the "leading duplicate" check below.
     const posts = await prisma.post.findMany({
       where: { groupId: { in: effectiveGroupIds } },
       include: postInclude(request.user!.id),
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
     });
 
     const { items, nextCursor } = paginate(posts, take);
-    return { items: await shapePostsWithPeople(items, request.user!.id), nextCursor };
+
+    // A cursor can land in the middle of a cross-post's sibling group (they
+    // share createdAt) — drop any of THIS page's leading rows that share the
+    // cursor post's crossPostId, since those siblings were already shown on
+    // the previous page.
+    let deduped = items;
+    if (cursor) {
+      const cursorPost = await prisma.post.findUnique({ where: { id: cursor }, select: { crossPostId: true } });
+      if (cursorPost?.crossPostId) {
+        deduped = dropLeadingCrossPostSiblings(deduped, cursorPost.crossPostId);
+      }
+    }
+    deduped = dedupeByCrossPostId(deduped);
+
+    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor };
   });
 
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
@@ -164,44 +183,117 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const t = getT(request);
     const body = createPostBodySchema.parse(request.body);
 
-    if (!(await isGroupMember(body.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
+    // Cross-posting: `groupIds` (1–20) fans one write out into one Post row
+    // per target group, all sharing a crossPostId — the legacy single
+    // `groupId` shape still works unchanged (targets.length === 1 below).
+    const targets = [...new Set(body.groupIds ?? [body.groupId!])];
+
+    for (const groupId of targets) {
+      if (!(await isGroupMember(groupId, request.user!.id))) {
+        return reply.status(403).send({ error: t('errors.notGroupMember') });
+      }
     }
 
-    if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, body.groupId))) {
-      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
-    }
+    if (targets.length === 1) {
+      const groupId = targets[0];
 
-    const post = await prisma.post.create({
-      data: {
+      if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, groupId))) {
+        return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
+      }
+
+      const post = await prisma.post.create({
+        data: {
+          authorId: request.user!.id,
+          groupId,
+          content: body.content,
+          type: body.type,
+          milestoneTag: body.milestoneTag,
+          uploadedAssetUrls: body.uploadedAssetUrls || [],
+          latitude: body.latitude,
+          longitude: body.longitude,
+          locationName: body.locationName,
+        },
+        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      });
+
+      // Handlers run fire-and-forget (see events.ts), so fanning out
+      // push/email to the group can't hold the response or fail post
+      // creation.
+      emitDomainEvent('post.created', {
+        posts: [{ postId: post.id, groupId: post.group.id, groupName: post.group.name }],
         authorId: request.user!.id,
-        groupId: body.groupId,
-        content: body.content,
-        type: body.type,
-        milestoneTag: body.milestoneTag,
-        uploadedAssetUrls: body.uploadedAssetUrls || [],
-        latitude: body.latitude,
-        longitude: body.longitude,
-        locationName: body.locationName,
-      },
-      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
-    });
+        authorName: post.author.name,
+        content: post.content,
+      });
 
-    // Handlers run fire-and-forget (see events.ts), so fanning out push/email
-    // to the group can't hold the response or fail post creation.
+      // people: [] unenriched — a freshly created post can't wait on an
+      // Immich person-tag crawl before the client sees its own post; the
+      // next feed fetch will carry real tags for it.
+      return { ...shapePost(post, request.user!.id), people: [] };
+    }
+
+    // Cross-post: a linked-album asset is only readable through the
+    // MediaAlbumLink it came from, which belongs to exactly one group — copy
+    // each such asset's bytes into a plain /uploads/ file (readable by every
+    // target group) before fanning out. mediaUrlsBelongToGroup's per-group
+    // check doesn't apply here: copyMediaAssetsToUploads does the equivalent
+    // authorization check against every target group instead.
+    let assetUrls = body.uploadedAssetUrls ?? [];
+    const mediaUrls = assetUrls.filter((url) => parseMediaAssetPath(url) !== null);
+    if (mediaUrls.length > 0) {
+      try {
+        const copied = await copyMediaAssetsToUploads(mediaUrls, targets);
+        assetUrls = assetUrls.map((url) => copied.get(url) ?? url);
+      } catch (err) {
+        if (err instanceof CrossPostAssetCopyError) {
+          return reply.status(err.code === 'forbidden' ? 400 : 502).send({ error: t('errors.crossPostAssetCopyFailed') });
+        }
+        throw err;
+      }
+    }
+
+    const crossPostId = randomUUID();
+    // One shared Date so every sibling's createdAt matches exactly (the feed
+    // dedup logic relies on siblings sorting adjacently).
+    const createdAt = new Date();
+
+    const createdPosts = await prisma.$transaction(
+      targets.map((groupId) =>
+        prisma.post.create({
+          data: {
+            authorId: request.user!.id,
+            groupId,
+            content: body.content,
+            type: body.type,
+            milestoneTag: body.milestoneTag,
+            uploadedAssetUrls: assetUrls,
+            latitude: body.latitude,
+            longitude: body.longitude,
+            locationName: body.locationName,
+            crossPostId,
+            createdAt,
+          },
+          include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+        })
+      )
+    );
+
     emitDomainEvent('post.created', {
-      postId: post.id,
-      groupId: post.group.id,
-      groupName: post.group.name,
+      posts: createdPosts.map((p) => ({ postId: p.id, groupId: p.group.id, groupName: p.group.name })),
       authorId: request.user!.id,
-      authorName: post.author.name,
-      content: post.content,
+      authorName: createdPosts[0].author.name,
+      content: createdPosts[0].content,
     });
 
-    // people: [] unenriched — a freshly created post can't wait on an Immich
-    // person-tag crawl before the client sees its own post; the next feed
-    // fetch will carry real tags for it.
-    return { ...shapePost(post, request.user!.id), people: [] };
+    // The response mirrors the single-group shape (first target group's
+    // post), plus sharedWithGroups — this only ever appears for the author,
+    // which the creator always is (see the privacy rule on shapePost).
+    const first = createdPosts[0];
+    return {
+      ...shapePost(first, request.user!.id),
+      people: [],
+      sharedWithGroups: createdPosts.map((p) => ({ id: p.group.id, name: p.group.name })),
+    };
   });
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -223,6 +315,56 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // removed member's old posts stay visible but they can't keep editing them.
     if (!(await isGroupMember(post.groupId, request.user!.id))) {
       return reply.status(403).send({ error: t('errors.notGroupMember') });
+    }
+
+    if (post.crossPostId) {
+      // Cross-posted: every sibling shares identical content, so an edit
+      // applies to all of them at once. A linked-album asset in the edit
+      // must be authorized against every sibling's group, not just this
+      // row's own — mirrors the copy step in POST / above.
+      const siblingGroupIds = (
+        await prisma.post.findMany({ where: { crossPostId: post.crossPostId }, select: { groupId: true } })
+      ).map((s) => s.groupId);
+
+      let uploadedAssetUrls = body.uploadedAssetUrls;
+      if (uploadedAssetUrls) {
+        const mediaUrls = uploadedAssetUrls.filter((url) => parseMediaAssetPath(url) !== null);
+        if (mediaUrls.length > 0) {
+          try {
+            const copied = await copyMediaAssetsToUploads(mediaUrls, siblingGroupIds);
+            uploadedAssetUrls = uploadedAssetUrls.map((url) => copied.get(url) ?? url);
+          } catch (err) {
+            if (err instanceof CrossPostAssetCopyError) {
+              return reply.status(err.code === 'forbidden' ? 400 : 502).send({ error: t('errors.crossPostAssetCopyFailed') });
+            }
+            throw err;
+          }
+        }
+      }
+
+      await prisma.post.updateMany({
+        where: { crossPostId: post.crossPostId, authorId: request.user!.id },
+        data: {
+          content: body.content,
+          milestoneTag: body.milestoneTag,
+          editedAt: new Date(),
+          ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
+          ...(uploadedAssetUrls ? { uploadedAssetUrls } : {}),
+        },
+      });
+
+      const current = await prisma.post.findUnique({
+        where: { id },
+        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      });
+      const [shaped] = await attachSharedWithGroups(
+        [shapePost(current!, request.user!.id)],
+        [current!],
+        request.user!.id
+      );
+      // Same reasoning as the non-cross-post branch below — don't make an
+      // edit wait on Immich.
+      return { ...shaped, people: [] };
     }
 
     const updated = await prisma.post.update({
@@ -254,7 +396,16 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
     }
 
-    await prisma.post.delete({ where: { id } });
+    // Only the author's OWN delete fans out to every cross-posted sibling.
+    // An admin moderating content (post.authorId !== request.user!.id, only
+    // reachable via the isAdmin bypass above) always stays single-row and
+    // group-scoped — an admin may not even be a member of a sibling's other
+    // groups, and moderation is deliberately per-group (see admin.ts).
+    if (post.crossPostId && post.authorId === request.user!.id) {
+      await prisma.post.deleteMany({ where: { crossPostId: post.crossPostId, authorId: request.user!.id } });
+    } else {
+      await prisma.post.delete({ where: { id } });
+    }
 
     return { success: true };
   });

@@ -94,6 +94,18 @@ export interface MediaProvider {
     reply: FastifyReply,
     rangeHeader?: string
   ): Promise<void>;
+  // Same rendition streamAsset() proxies to a FastifyReply, but returned as a
+  // plain readable stream instead — used by services/media/copyAsset.ts to
+  // pull a linked-album asset's bytes into a server-local /uploads/ file
+  // (cross-posting: a group without the source album linked still needs to
+  // display the asset). No Range support needed here since the whole file is
+  // read once and written straight to disk, not served incrementally to a
+  // player.
+  readAsset(
+    externalAlbumId: string,
+    assetId: string,
+    variant: MediaAssetVariant
+  ): Promise<{ stream: NodeJS.ReadableStream; contentType?: string }>;
   // Optional capabilities — not every provider can recognize people. Routes
   // must check for the method's presence and respond 400 (translated) rather
   // than assume every provider implements it (see admin.ts /media/:provider/people

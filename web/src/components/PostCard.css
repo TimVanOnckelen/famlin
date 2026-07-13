@@ -262,6 +262,17 @@
   white-space: nowrap;
 }
 
+/* Author-only hint that a post was cross-posted to several families. */
+.post-shared-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-bottom: 10px;
+}
+
 /* ── People chips ──────────────────────────────────────────────────────── */
 
 .post-people {

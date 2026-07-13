@@ -103,8 +103,15 @@ model Post {
   likes           Like[]
   favorites       Favorite[]
   notifications   Notification[]
+  // Shared by every sibling row of one cross-post (see the "cross-posting"
+  // feature: one Post row per target group, all created together with this
+  // same id) — null for an ordinary single-group post. Never exposed in any
+  // API response (see shapePost in services/posts.ts): a non-author must
+  // never be able to tell a post was cross-posted.
+  crossPostId     String?
 
   @@index([groupId, createdAt])
+  @@index([crossPostId])
 }
 
 enum PostType {

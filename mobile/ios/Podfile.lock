@@ -192,6 +192,8 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (57.0.0):
     - ExpoModulesCore
+  - ExpoImage (57.0.0):
+    - ExpoModulesCore
   - ExpoImagePicker (57.0.1):
     - ExpoModulesCore
   - ExpoKeepAwake (57.0.0):
@@ -2316,6 +2318,7 @@ DEPENDENCIES:
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)
   - ExpoFont (from `../node_modules/expo-font/ios/ExpoFont.podspec`)
+  - ExpoImage (from `../node_modules/expo-image/ios/ExpoImage.podspec`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
@@ -2445,6 +2448,8 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/expo-file-system/ios/ExpoFileSystem.podspec"
   ExpoFont:
     :podspec: "../node_modules/expo-font/ios/ExpoFont.podspec"
+  ExpoImage:
+    :podspec: "../node_modules/expo-image/ios/ExpoImage.podspec"
   ExpoImagePicker:
     :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
@@ -2655,6 +2660,7 @@ SPEC CHECKSUMS:
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae
   ExpoFont: 35fd7ad72f697d3a9656545909972d8b9f60d5da
+  ExpoImage: 65b2a2279aab4791eb242156a4bd9b891fab8d12
   ExpoImagePicker: 0afefebdfe3aacd2281535eada9d59345afa3118
   ExpoKeepAwake: 8a96e2075b75641001f55393d7e6600a5b808f09
   ExpoLinking: db6d7a9e9348cca9ada7c39127ab30963deddba3

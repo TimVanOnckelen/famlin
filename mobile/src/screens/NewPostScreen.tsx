@@ -28,6 +28,7 @@ import { uploadMedia, getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
+import { buildGroupSelectionPayload, toggleGroupSelection } from '@/utils/newPost';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
 
@@ -49,7 +50,11 @@ export function NewPostScreen() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isCustomTag, setIsCustomTag] = useState(false);
   const [customTagText, setCustomTagText] = useState('');
-  const [groupId, setGroupId] = useState<string | null>(null);
+  // Multi-select: which groups this post goes to. The first entry is the
+  // "primary" group (also what the media/album picker is scoped to); more
+  // than one selected turns the submit into a cross-post. At least one is
+  // always required — see toggleGroupSelection.
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
@@ -62,23 +67,27 @@ export function NewPostScreen() {
     queryFn: fetchGroups,
   });
 
+  // The linked-album media picker targets a single group — when several are
+  // selected, drive it from the first one chosen.
+  const primaryGroupId = selectedGroupIds[0] ?? null;
+
   const { data: mediaAlbums, isError: mediaAlbumsErrored } = useQuery({
-    queryKey: ['media-albums', groupId],
-    queryFn: () => getGroupMediaAlbums(groupId!),
-    enabled: !!groupId,
+    queryKey: ['media-albums', primaryGroupId],
+    queryFn: () => getGroupMediaAlbums(primaryGroupId!),
+    enabled: !!primaryGroupId,
   });
 
   React.useEffect(() => {
-    if (groups && groups.length > 0 && !groupId) {
-      setGroupId(groups[0].id);
+    if (groups && groups.length > 0 && selectedGroupIds.length === 0) {
+      setSelectedGroupIds([groups[0].id]);
     }
   }, [groups]);
 
   const createPostMutation = useMutation({
     mutationFn: () => {
-      if (!groupId) throw new Error(t('newPost.alerts.noGroupSelected'));
+      if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'));
       return createPost({
-        groupId,
+        ...buildGroupSelectionPayload(selectedGroupIds),
         content,
         type: isMilestone ? 'MILESTONE' : 'UPDATE',
         milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
@@ -97,7 +106,8 @@ export function NewPostScreen() {
     },
   });
 
-  const canSubmit = content.trim().length > 0 || uploadedAssetUrls.length > 0;
+  const canSubmit =
+    selectedGroupIds.length > 0 && (content.trim().length > 0 || uploadedAssetUrls.length > 0);
 
   async function pickImagesFromDevice() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -173,31 +183,32 @@ export function NewPostScreen() {
           <View>
             <Text style={styles.authorName}>{user?.name}</Text>
             <Text style={styles.groupName}>
-              {groups?.find((g: Group) => g.id === groupId)?.name || t('newPost.loading')}
+              {selectedGroupIds.length > 1
+                ? t('newPost.multipleGroupsSelected', { count: selectedGroupIds.length })
+                : groups?.find((g: Group) => g.id === primaryGroupId)?.name || t('newPost.loading')}
             </Text>
           </View>
         </View>
 
         {groups && groups.length > 1 && (
           <View style={styles.groupSelector}>
-            <Text style={styles.sectionLabel}>{t('newPost.groupLabel')}</Text>
+            <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {groups.map((group: Group) => (
-                <TouchableOpacity
-                  key={group.id}
-                  style={[styles.groupChip, group.id === groupId && styles.groupChipActive]}
-                  onPress={() => setGroupId(group.id)}
-                >
-                  <Text
-                    style={[
-                      styles.groupChipText,
-                      group.id === groupId && styles.groupChipTextActive,
-                    ]}
+              {groups.map((group: Group) => {
+                const isActive = selectedGroupIds.includes(group.id);
+                return (
+                  <TouchableOpacity
+                    key={group.id}
+                    style={[styles.groupChip, isActive && styles.groupChipActive]}
+                    onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
+                    accessibilityState={{ selected: isActive }}
                   >
-                    {group.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
+                      {group.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -374,10 +385,10 @@ export function NewPostScreen() {
         }}
       />
 
-      {groupId && (
+      {primaryGroupId && (
         <MediaPickerModal
           visible={showMediaPicker}
-          groupId={groupId}
+          groupId={primaryGroupId}
           onCancel={() => setShowMediaPicker(false)}
           onConfirm={handleMediaConfirm}
         />
@@ -464,7 +475,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 100,
-    backgroundColor: colors.bg,
+    // Matches the FeedScreen family-filter chips for a consistent look.
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: 8,

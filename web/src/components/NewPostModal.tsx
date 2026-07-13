@@ -36,7 +36,10 @@ export function NewPostModal({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [groupId, setGroupId] = useState(defaultGroupId ?? groups[0]?.id ?? '');
+  const initialGroupId = defaultGroupId ?? groups[0]?.id ?? '';
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(
+    initialGroupId ? [initialGroupId] : []
+  );
   const [type, setType] = useState<'UPDATE' | 'MILESTONE'>('UPDATE');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -58,13 +61,18 @@ export function NewPostModal({
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // "Choose from albums" only appears when the selected group actually has
+  // The linked-album picker targets a single group; when cross-posting to
+  // several, drive it off the first one picked — the server copies
+  // linked-album photos so every group ends up able to see them.
+  const primaryGroupId = selectedGroupIds[0] ?? '';
+
+  // "Choose from albums" only appears when the primary group actually has
   // linked albums (from any media source) — same behavior as the mobile
   // composer.
   const mediaAlbumsQuery = useQuery({
-    queryKey: ['media-albums', groupId],
-    queryFn: () => getGroupMediaAlbums(groupId),
-    enabled: !!groupId,
+    queryKey: ['media-albums', primaryGroupId],
+    queryFn: () => getGroupMediaAlbums(primaryGroupId),
+    enabled: !!primaryGroupId,
   });
   const hasLinkedAlbums = (mediaAlbumsQuery.data?.length ?? 0) > 0;
 
@@ -75,7 +83,10 @@ export function NewPostModal({
       // original rendition instead (mirrors mobile's MediaPickerModal).
       const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl));
       return createPost({
-        groupId,
+        groupId: primaryGroupId,
+        // Omit groupIds entirely for a single group so older servers that
+        // don't know about cross-posting behave identically.
+        groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
         content: content.trim() || undefined,
         type,
         uploadedAssetUrls: [...uploadedUrls, ...mediaUrls],
@@ -92,6 +103,10 @@ export function NewPostModal({
     if (canSubmit) submitMutation.mutate();
   }
 
+  function toggleGroup(id: string) {
+    setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
+  }
+
   function addFiles(list: FileList | null) {
     if (!list) return;
     setFiles((prev) => [...prev, ...Array.from(list)]);
@@ -100,7 +115,7 @@ export function NewPostModal({
   }
 
   const canSubmit =
-    !!groupId &&
+    selectedGroupIds.length > 0 &&
     (content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0) &&
     !submitMutation.isPending;
 
@@ -110,16 +125,23 @@ export function NewPostModal({
         <h2 className="modal-title">{t('newPost.title')}</h2>
 
         {groups.length > 1 && (
-          <label className="field">
+          <div className="field">
             <span className="field-label">{t('newPost.group')}</span>
-            <select className="field-input" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <span className="field-hint">{t('newPost.groupHint')}</span>
+            <div className="group-select-chips" role="group" aria-label={t('newPost.group')}>
               {groups.map((group) => (
-                <option key={group.id} value={group.id}>
+                <button
+                  key={group.id}
+                  type="button"
+                  className={`filter-chip${selectedGroupIds.includes(group.id) ? ' filter-chip-active' : ''}`}
+                  onClick={() => toggleGroup(group.id)}
+                  aria-pressed={selectedGroupIds.includes(group.id)}
+                >
                   {group.name}
-                </option>
+                </button>
               ))}
-            </select>
-          </label>
+            </div>
+          </div>
         )}
 
         <div className="type-chips" role="radiogroup" aria-label={t('newPost.typeLabel')}>
@@ -229,7 +251,7 @@ export function NewPostModal({
 
       {mediaPickerOpen && (
         <MediaPickerModal
-          groupId={groupId}
+          groupId={primaryGroupId}
           onConfirm={(assets) => {
             // Merge without duplicating an asset that was already picked.
             setMediaAssets((prev) => [

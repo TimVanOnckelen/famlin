@@ -102,4 +102,23 @@ describe('PostCard', () => {
     const { container } = renderWithQueryClient(<PostCard post={makePost({ people: [] })} />);
     expect(container.querySelector('.post-people')).not.toBeInTheDocument();
   });
+
+  it('shows the shared-with indicator when the post was cross-posted', () => {
+    renderWithQueryClient(
+      <PostCard
+        post={makePost({
+          sharedWithGroups: [
+            { id: 'group-1', name: 'Familie de Vries' },
+            { id: 'group-2', name: 'Grandparents' },
+          ],
+        })}
+      />
+    );
+    expect(screen.getByText('Shared with Familie de Vries, Grandparents')).toBeInTheDocument();
+  });
+
+  it('does not show the shared-with indicator when sharedWithGroups is absent', () => {
+    const { container } = renderWithQueryClient(<PostCard post={makePost()} />);
+    expect(container.querySelector('.post-shared-indicator')).not.toBeInTheDocument();
+  });
 });
