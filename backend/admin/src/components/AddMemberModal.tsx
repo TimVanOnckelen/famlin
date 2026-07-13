@@ -209,11 +209,12 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
             <label>
               {t('users.form.password')}
               <input
-                type="text"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
               />
             </label>
             <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
