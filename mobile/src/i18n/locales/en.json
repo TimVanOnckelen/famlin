@@ -96,7 +96,8 @@
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
-    "peopleInPost": "People recognized in this post"
+    "peopleInPost": "People recognized in this post",
+    "sharedWithGroups": "Shared with {{names}}"
   },
   "search": {
     "title": "Search {{group}}",
@@ -115,6 +116,8 @@
     "postButton": "Post",
     "loading": "Loading...",
     "groupLabel": "Group",
+    "groupsLabel": "Share with",
+    "multipleGroupsSelected": "{{count}} groups selected",
     "contentPlaceholder": "Write something for the family...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
@@ -243,6 +246,12 @@
     "videoAccessibilityLabel": "Video {{index}} of {{total}}",
     "commentsButton": "Comments",
     "commentsTitle": "Comments",
-    "noComments": "No comments on this photo yet"
+    "noComments": "No comments on this photo yet",
+    "likeButton": "Like",
+    "favoriteButton": "Favorite",
+    "downloadButton": "Save to device",
+    "downloadSuccess": "Saved to your photo library",
+    "downloadError": "Could not save this photo",
+    "downloadPermissionDenied": "Famlin needs permission to save photos to your library"
   }
 }

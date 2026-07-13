@@ -243,6 +243,20 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           !!post.content && <Text style={styles.postContent}>{post.content}</Text>
         )}
 
+        {/* Author-only: present when this post was cross-posted to more than
+            one family — the server only includes it for the viewer who
+            authored the post. */}
+        {!!post.sharedWithGroups && post.sharedWithGroups.length > 1 && (
+          <View style={styles.sharedWithRow}>
+            <Icon name="share-2" size={12} color={colors.textMuted} />
+            <Text style={styles.sharedWithText} numberOfLines={1}>
+              {t('feed.sharedWithGroups', {
+                names: post.sharedWithGroups.map((g) => g.name).join(', '),
+              })}
+            </Text>
+          </View>
+        )}
+
         {hasPhotos && (
           <View style={styles.metaRow}>
             <Text style={styles.postTime}>
@@ -469,6 +483,18 @@ const styles = StyleSheet.create({
     color: colors.textTitle,
     marginBottom: 6,
     letterSpacing: -0.3,
+  },
+  sharedWithRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+  },
+  sharedWithText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
+    flexShrink: 1,
   },
   actionsRow: {
     flexDirection: 'row',

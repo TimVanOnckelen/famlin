@@ -254,6 +254,27 @@ async function getAlbumAssetPeopleUncached(externalAlbumId: string): Promise<Map
   return bulk;
 }
 
+// Shared by streamAsset() and readAsset() below — the actual GET against
+// Immich for one asset rendition. `rangeHeader` is only ever set by
+// streamAsset (native video players need 206/Content-Range, see its own
+// comment); readAsset always fetches the whole body since it's writing a
+// complete file to disk, not serving a player incrementally.
+async function fetchAssetFromImmich(
+  assetId: string,
+  variant: MediaAssetVariant,
+  rangeHeader?: string
+): Promise<Response> {
+  const creds = await requireImmichSettings();
+  const path = variant === 'original' ? `/assets/${assetId}/original` : `/assets/${assetId}/thumbnail?size=${variant}`;
+  // Override the default JSON Accept header — this response is binary image
+  // data, not a JSON payload.
+  const headers: Record<string, string> = { Accept: '*/*' };
+  if (rangeHeader) headers.Range = rangeHeader;
+  const res = await immichFetch(path, creds, { headers });
+  if (!res.body) throw new MediaProviderError('immich', 'unreachable');
+  return res;
+}
+
 export const immichProvider: MediaProvider = {
   id: 'immich',
 
@@ -357,19 +378,7 @@ export const immichProvider: MediaProvider = {
     reply: FastifyReply,
     rangeHeader?: string
   ) {
-    const creds = await requireImmichSettings();
-    const path =
-      variant === 'original' ? `/assets/${assetId}/original` : `/assets/${assetId}/thumbnail?size=${variant}`;
-    // Override the default JSON Accept header — this response is binary image
-    // data, not a JSON payload. The client's Range header must be forwarded:
-    // native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via
-    // byte-range requests and refuse to play when the server ignores them —
-    // web <video> tolerates a full-body 200, so dropping Range only breaks
-    // video on mobile.
-    const headers: Record<string, string> = { Accept: '*/*' };
-    if (rangeHeader) headers.Range = rangeHeader;
-    const res = await immichFetch(path, creds, { headers });
-    if (!res.body) throw new MediaProviderError('immich', 'unreachable');
+    const res = await fetchAssetFromImmich(assetId, variant, rangeHeader);
 
     // Relay the status (206 for a satisfied Range) and range/caching headers
     // so a partial response stays partial for the player.
@@ -387,6 +396,16 @@ export const immichProvider: MediaProvider = {
     }
 
     return reply.send(Readable.fromWeb(res.body as import('stream/web').ReadableStream));
+  },
+
+  // Same bytes as streamAsset(), minus the reply/Range plumbing — see the
+  // MediaProvider.readAsset doc comment for why this exists (copyAsset.ts).
+  async readAsset(_externalAlbumId: string, assetId: string, variant: MediaAssetVariant) {
+    const res = await fetchAssetFromImmich(assetId, variant);
+    return {
+      stream: Readable.fromWeb(res.body as import('stream/web').ReadableStream),
+      contentType: res.headers.get('content-type') || undefined,
+    };
   },
 
   // Immich-only capability (see the optional methods on MediaProvider) — the

@@ -93,14 +93,23 @@ function requireLatLngTogether(data: { latitude?: number; longitude?: number }) 
 
 export const createPostBodySchema = z
   .object({
-    groupId: z.string(),
+    // Legacy single-group shape — still accepted unchanged so existing
+    // clients keep working. `groupIds` (cross-posting: one Post row per
+    // target group, see routes/posts.ts) is the newer, general shape; the
+    // refine below requires at least one of the two.
+    groupId: z.string().optional(),
+    groupIds: z.array(z.string()).min(1).max(20).optional(),
     content: z.string().max(5000).optional(),
     type: z.enum(['UPDATE', 'MILESTONE']).default('UPDATE'),
     milestoneTag: z.string().max(50).optional(),
     uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .merge(locationFieldsSchema)
-  .refine(requireLatLngTogether, { message: 'latitude and longitude must be provided together', path: ['latitude'] });
+  .refine(requireLatLngTogether, { message: 'latitude and longitude must be provided together', path: ['latitude'] })
+  .refine((data) => !!data.groupId || (data.groupIds && data.groupIds.length > 0), {
+    message: 'groupId or groupIds is required',
+    path: ['groupId'],
+  });
 
 export const createCommentBodySchema = z
   .object({
@@ -136,6 +145,10 @@ export const updatePostBodySchema = z
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     locationName: z.string().max(200).nullable().optional(),
+    // Present so a cross-posted edit can rewrite a linked-album asset via
+    // copyMediaAssetsToUploads (see routes/posts.ts PATCH /:id) — no client
+    // sends this on a plain edit today, but it's the same shape as create's.
+    uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
     message: 'latitude and longitude must be provided together',
@@ -200,6 +213,7 @@ export const registerBodySchema = z.object({
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(100),
   isAdmin: z.boolean().optional(),
+  groupIds: z.array(z.string().min(1)).optional(),
 });
 
 export const setupBodySchema = z.object({

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "114612877890",
+    "project_id": "famlin",
+    "storage_bucket": "famlin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114612877890:android:514bc45749948ef8470bdb",
+        "android_client_info": {
+          "package_name": "be.xeweb.famlin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABcIhvGCrBnCXwMT6qAk-kIgDpWH9h1Zo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

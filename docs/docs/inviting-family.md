@@ -6,8 +6,8 @@ sidebar_position: 4
 
 There's no public sign-up page — family members join through an invite link an admin generates per group. This is also how you add someone whose email isn't on the [**Allowed email addresses**](./admin-configuration#first-login) list: a valid invite bypasses that check.
 
-1. In `/admin` → **Groups**, select the group you want to invite someone to, or click **New group** to create one first.
-2. Under **Invites**, optionally enter the invitee's email — this restricts the link to that exact address — and pick an expiry (7 days, 30 days, or never expires). Click **Generate link**, then **Copy** it.
+1. In `/admin`, click **Add member** — either from the **Users** page, or from a group's detail pane on the **Groups** page (which preselects that group; click **New group** first if it doesn't exist yet).
+2. In the **Invite** tab (the default mode), pick the group if it isn't already preselected, optionally enter the invitee's email — this restricts the link to that exact address — and pick an expiry (7 days, 30 days, or never expires). Click **Generate link**, then **Copy** it.
 3. Send the link to the person however you'd normally reach them (text, chat, email). The link points at your own server, e.g. `https://famlin.yourdomain.com/invite/<token>`.
 
 ## What happens when they open it

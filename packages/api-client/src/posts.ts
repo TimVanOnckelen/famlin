@@ -50,6 +50,11 @@ export async function fetchFavorites(cursor?: string): Promise<PostsPage> {
 
 export interface CreatePostBody {
   groupId: string;
+  // Cross-post targets: when set (2+ groups), the server creates one post per
+  // group that behaves as a single post for the author (shared edit/delete),
+  // while comments and reactions stay scoped to each group. groupId is still
+  // required for older servers that don't know groupIds.
+  groupIds?: string[];
   content?: string;
   type: 'UPDATE' | 'MILESTONE';
   milestoneTag?: string;

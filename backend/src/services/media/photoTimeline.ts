@@ -19,6 +19,12 @@ export interface PhotoItem {
   linkId?: string;
   assetId?: string;
   postId?: string;
+  // For an album asset that a post embeds (picked via the linked-album
+  // picker): the exact media-proxy URL stored in that post's
+  // uploadedAssetUrls. Clients need the verbatim string to pin comments to
+  // the photo (Comment.assetUrl matches by exact value). Only set together
+  // with postId on source: 'album' items.
+  postAssetUrl?: string;
 }
 
 // --- Per-album asset listing cache -----------------------------------------
@@ -32,18 +38,24 @@ export interface PhotoItem {
 // reusing immich.ts's cache since that one is Immich-specific and keyed
 // differently (ids-only, not full summaries) — this needs to work for every
 // provider.
+//
+// Stale-while-revalidate: an expired entry is served as-is while a single
+// background refresh replaces it, so only the very first request for an
+// album ever waits on the provider crawl — new assets show up one page-load
+// after the TTL instead of making that page-load slow.
 interface AlbumAssetsCacheEntry {
   assets: MediaAssetSummary[];
   expiresAt: number;
 }
 const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000;
 const albumAssetsCache = new Map<string, AlbumAssetsCacheEntry>();
+const albumAssetsRefreshing = new Set<string>();
 
-async function listAlbumAssetsCached(provider: string, externalAlbumId: string): Promise<MediaAssetSummary[]> {
-  const key = `${provider}:${externalAlbumId}`;
-  const cached = albumAssetsCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.assets;
-
+async function fetchAndCacheAlbumAssets(
+  key: string,
+  provider: string,
+  externalAlbumId: string
+): Promise<MediaAssetSummary[]> {
   const mediaProvider = getMediaProvider(provider);
   if (!mediaProvider) return [];
 
@@ -52,11 +64,31 @@ async function listAlbumAssetsCached(provider: string, externalAlbumId: string):
   return assets;
 }
 
+async function listAlbumAssetsCached(provider: string, externalAlbumId: string): Promise<MediaAssetSummary[]> {
+  const key = `${provider}:${externalAlbumId}`;
+  const cached = albumAssetsCache.get(key);
+  if (cached) {
+    if (cached.expiresAt <= Date.now() && !albumAssetsRefreshing.has(key)) {
+      albumAssetsRefreshing.add(key);
+      fetchAndCacheAlbumAssets(key, provider, externalAlbumId)
+        .catch((err) => {
+          // Keep serving the stale entry; the next request retries.
+          console.warn(`photoTimeline: background refresh failed for ${key}:`, err);
+        })
+        .finally(() => albumAssetsRefreshing.delete(key));
+    }
+    return cached.assets;
+  }
+
+  return fetchAndCacheAlbumAssets(key, provider, externalAlbumId);
+}
+
 // Test-only escape hatch, mirrors __clearPersonTagCacheForTests — lets a test
 // force a fresh crawl instead of waiting out the 60s TTL or leaking a stale
 // entry into another test file.
 export function __clearPhotoTimelineCacheForTests(): void {
   albumAssetsCache.clear();
+  albumAssetsRefreshing.clear();
 }
 
 // --- Keyset cursor -----------------------------------------------------
@@ -137,6 +169,23 @@ export async function getGroupPhotoTimeline(
     }),
   ]);
 
+  // Posts that embed a provider asset via its media-proxy URL (picked from
+  // the linked-album picker). Maps `${linkId}:${assetId}` to the embedding
+  // post and the verbatim stored URL, so the album item below can carry its
+  // post context — that's what lets clients offer like/comment/favorite on
+  // an album photo that was posted. First post wins if several embed the
+  // same asset.
+  const postByProxyAsset = new Map<string, { postId: string; assetUrl: string }>();
+  const MEDIA_PROXY_URL_RE = /^\/api\/(?:media|immich)\/assets\/([^/]+)\/([^/]+)\//;
+  for (const post of posts) {
+    for (const url of post.uploadedAssetUrls) {
+      const match = MEDIA_PROXY_URL_RE.exec(url);
+      if (!match) continue;
+      const key = `${match[1]}:${match[2]}`;
+      if (!postByProxyAsset.has(key)) postByProxyAsset.set(key, { postId: post.id, assetUrl: url });
+    }
+  }
+
   const items: PhotoItem[] = [];
 
   // Album side — per-link fail-soft: a failing provider/album (network
@@ -167,6 +216,7 @@ export async function getGroupPhotoTimeline(
         for (const asset of assets) {
           if (personAssetIds && !personAssetIds.has(asset.id)) continue;
           const takenAt = asset.takenAt ?? asset.addedAt ?? new Date(0).toISOString();
+          const postRef = postByProxyAsset.get(`${link.id}:${asset.id}`);
           items.push({
             id: `album:${link.id}:${asset.id}`,
             source: 'album',
@@ -180,6 +230,7 @@ export async function getGroupPhotoTimeline(
             albumName: link.albumName,
             linkId: link.id,
             assetId: asset.id,
+            ...(postRef ? { postId: postRef.postId, postAssetUrl: postRef.assetUrl } : {}),
           });
         }
       } catch (err) {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
-import { buildTestApp, createUser, authHeader } from './helpers.js';
+import { buildTestApp, createUser, createGroup, authHeader } from './helpers.js';
 
 // A fresh app per test avoids the /login, /oidc, and /register rate limits
 // (10 requests / 15 minutes, keyed by IP) bleeding across unrelated tests —
@@ -213,6 +213,66 @@ describe('auth routes', () => {
       });
 
       expect(res.statusCode).toBe(409);
+    });
+
+    it('creates memberships for the given groupIds', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const groupA = await createGroup();
+      const groupB = await createGroup();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        headers: authHeader(admin),
+        payload: {
+          email: 'with-groups@example.com',
+          name: 'New',
+          password: 'password1234',
+          groupIds: [groupA.id, groupB.id],
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const userId = res.json().user.id;
+      const memberships = await prisma.groupMember.findMany({ where: { userId } });
+      expect(memberships.map((m) => m.groupId).sort()).toEqual([groupA.id, groupB.id].sort());
+    });
+
+    it('rejects an unknown groupId and creates no user', async () => {
+      const admin = await createUser({ isAdmin: true });
+      const group = await createGroup();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        headers: authHeader(admin),
+        payload: {
+          email: 'bad-group@example.com',
+          name: 'New',
+          password: 'password1234',
+          groupIds: [group.id, 'nonexistent-group-id'],
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+      const created = await prisma.user.findUnique({ where: { email: 'bad-group@example.com' } });
+      expect(created).toBeNull();
+    });
+
+    it('creates a user with no memberships when groupIds is omitted', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        headers: authHeader(admin),
+        payload: { email: 'no-groups@example.com', name: 'New', password: 'password1234' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const userId = res.json().user.id;
+      const memberships = await prisma.groupMember.findMany({ where: { userId } });
+      expect(memberships).toHaveLength(0);
     });
   });
 

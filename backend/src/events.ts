@@ -11,9 +11,12 @@
 
 export interface DomainEvents {
   'post.created': {
-    postId: string;
-    groupId: string;
-    groupName: string;
+    // One entry per Post row the write created — a single-group post emits
+    // one, a cross-post (see routes/posts.ts's POST / fan-out) emits one per
+    // target group, all sharing the rest of this payload. Lets the
+    // notifications subscriber notify a recipient who's in several target
+    // groups exactly once instead of once per group.
+    posts: Array<{ postId: string; groupId: string; groupName: string }>;
     authorId: string;
     authorName: string;
     content: string | null;

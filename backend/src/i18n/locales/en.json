@@ -11,6 +11,7 @@
     "unauthorized": "Unauthorized",
     "groupIdRequired": "groupId is required",
     "notGroupMember": "Not a member of this group",
+    "unknownGroup": "One or more groups don't exist",
     "postNotFound": "Post not found",
     "notAuthorized": "Not authorized",
     "commentNotFound": "Comment not found",
@@ -48,7 +49,8 @@
     "apiTokenNotFound": "API token not found",
     "mediaPersonLinkNotFound": "Person mapping not found",
     "mediaProviderLacksPeople": "This media source doesn't support recognizing people",
-    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person"
+    "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person",
+    "crossPostAssetCopyFailed": "Could not copy a linked photo for sharing. Please try again."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

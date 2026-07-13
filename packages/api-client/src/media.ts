@@ -49,6 +49,10 @@ export interface PhotoItem {
   linkId?: string;
   assetId?: string;
   postId?: string;
+  // Album asset embedded by a post: the verbatim media-proxy URL stored in
+  // that post's uploadedAssetUrls (what Comment.assetUrl pinning matches
+  // against). Only set together with postId on source: 'album' items.
+  postAssetUrl?: string;
 }
 
 export interface PhotoTimelinePage {

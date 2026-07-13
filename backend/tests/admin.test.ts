@@ -32,6 +32,9 @@ function makeFakeProvider(id: string, overrides: Partial<MediaProvider> = {}): M
     async streamAsset() {
       // unused by these tests
     },
+    async readAsset() {
+      throw new Error('unused by these tests');
+    },
     ...overrides,
   };
 }

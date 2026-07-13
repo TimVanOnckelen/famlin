@@ -41,7 +41,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "api-reference/get-server-info",
-          label: "Get the server version",
+          label: "Get the server version and app update-gating info",
           className: "api-method get",
         },
         {

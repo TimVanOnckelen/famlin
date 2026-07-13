@@ -32,6 +32,16 @@ const DUMMY_PASSWORD_HASH = await bcrypt.hash(crypto.randomUUID(), 12);
 // any other lock in the app.
 const SETUP_ADVISORY_LOCK_KEY = 4_827_193n;
 
+// The oldest mobile app version this server still supports. Mobile clients
+// compare their own build version against this and show a blocking
+// "update required" screen when they're older. Bump this ONLY when the
+// server genuinely drops compatibility with older clients (e.g. a breaking
+// API change an old client can't cope with), and mark that commit as a
+// breaking change (`feat!:` / `BREAKING CHANGE:` footer) per repo convention
+// — bumping it is itself a breaking change for anyone still running an
+// older app build.
+const MIN_APP_VERSION = '0.1.0';
+
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
   no_email: 'errors.oidcAccountNoEmail',
@@ -359,7 +369,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.adminRequired') });
     }
 
-    const { email, name, password, isAdmin } = registerBodySchema.parse(request.body);
+    const { email, name, password, isAdmin, groupIds } = registerBodySchema.parse(request.body);
     const normalizedEmail = email.toLowerCase().trim();
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -367,15 +377,36 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(409).send({ error: t('errors.userAlreadyExists') });
     }
 
+    const uniqueGroupIds = groupIds && groupIds.length > 0 ? [...new Set(groupIds)] : [];
+    if (uniqueGroupIds.length > 0) {
+      const foundGroups = await prisma.group.findMany({
+        where: { id: { in: uniqueGroupIds } },
+        select: { id: true },
+      });
+      if (foundGroups.length !== uniqueGroupIds.length) {
+        return reply.status(400).send({ error: t('errors.unknownGroup') });
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        name,
-        passwordHash,
-        isAdmin: isAdmin || false,
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name,
+          passwordHash,
+          isAdmin: isAdmin || false,
+        },
+      });
+
+      if (uniqueGroupIds.length > 0) {
+        await tx.groupMember.createMany({
+          data: uniqueGroupIds.map((groupId) => ({ groupId, userId: created.id })),
+        });
+      }
+
+      return created;
     });
 
     return {
@@ -488,8 +519,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Public: lets clients (e.g. the mobile app's profile screen) display
-  // which server version they're connected to.
+  // which server version they're connected to, and lets a mobile client
+  // gate itself behind a blocking "update required" screen when its own
+  // build is older than minAppVersion — appStoreUrl/playStoreUrl (already
+  // public on the invite landing page) let that screen link straight to
+  // the right store for this deployment.
   fastify.get('/server-info', async () => {
-    return { version: pkg.version };
+    const settings = await getAllSettings();
+    return {
+      version: pkg.version,
+      minAppVersion: MIN_APP_VERSION,
+      appStoreUrl: settings.appStoreUrl || null,
+      playStoreUrl: settings.playStoreUrl || null,
+    };
   });
 }

@@ -96,7 +96,8 @@
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
-    "peopleInPost": "Personen herkend in dit bericht"
+    "peopleInPost": "Personen herkend in dit bericht",
+    "sharedWithGroups": "Gedeeld met {{names}}"
   },
   "search": {
     "title": "Zoeken in {{group}}",
@@ -115,6 +116,8 @@
     "postButton": "Plaatsen",
     "loading": "Laden...",
     "groupLabel": "Groep",
+    "groupsLabel": "Delen met",
+    "multipleGroupsSelected": "{{count}} groepen geselecteerd",
     "contentPlaceholder": "Schrijf iets voor de familie...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
@@ -243,6 +246,12 @@
     "videoAccessibilityLabel": "Video {{index}} van {{total}}",
     "commentsButton": "Reacties",
     "commentsTitle": "Reacties",
-    "noComments": "Nog geen reacties op deze foto"
+    "noComments": "Nog geen reacties op deze foto",
+    "likeButton": "Vind ik leuk",
+    "favoriteButton": "Favoriet",
+    "downloadButton": "Opslaan op toestel",
+    "downloadSuccess": "Opgeslagen in je fotobibliotheek",
+    "downloadError": "Kon deze foto niet opslaan",
+    "downloadPermissionDenied": "Famlin heeft toestemming nodig om foto's op te slaan"
   }
 }

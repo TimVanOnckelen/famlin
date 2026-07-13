@@ -38,6 +38,27 @@ If you pinned `FAMLIN_VERSION` in `.env` (see below), bump it before pulling so 
 
 If you're [building from source](#building-from-source-instead) instead of running the pre-built image, update with `git pull && docker compose up -d --build` instead.
 
+## Staying up to date
+
+The admin dashboard (`/admin`) checks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the running server's version and shows a banner — "A new version is available" with a link to that release's notes — whenever a newer version has shipped than the one you're running. No configuration needed; it's a one-shot, fail-soft check (no notice at all if GitHub is unreachable or rate-limited).
+
+If you'd rather be notified outside the admin UI, "Watch" the repository's releases on GitHub (**Watch → Custom → Releases** on the [repo page](https://github.com/timvanonckelen/famlin)) to get an email/notification per release.
+
+### Automating updates with Watchtower
+
+For a fully hands-off setup, [Watchtower](https://containrrr.dev/watchtower/) can pull and restart `famlin-backend` whenever a new image is published. Scope it to just that container so your database and other services aren't touched:
+
+```yaml title="docker-compose.yml"
+watchtower:
+  image: containrrr/watchtower
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  command: --interval 3600 famlin-backend
+  restart: unless-stopped
+```
+
+Since schema migrations run automatically on start (see above), an unattended update also means unattended migrations. That's usually fine, but a breaking change would apply itself before you've had a chance to read the release notes — if you'd rather review [breaking changes](https://github.com/timvanonckelen/famlin/releases) first, stick to the manual `pull`/`up -d` flow above, or pin `FAMLIN_VERSION` and bump it deliberately instead of running Watchtower against `latest`.
+
 ## Pinning a version
 
 `docker-compose.yml` runs the pre-built image published to `ghcr.io/timvanonckelen/famlin` on every tagged release (e.g. `ghcr.io/timvanonckelen/famlin:1.2.0`, plus a rolling `latest`). By default it tracks `latest`; set `FAMLIN_VERSION` in `.env` to pin a specific version instead, so updates are a deliberate, reviewed step:

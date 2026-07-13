@@ -37,7 +37,11 @@ export declare function fetchNotificationConfig(): Promise<{
     pushEnabled: boolean;
     emailEnabled: boolean;
 }>;
-export declare function fetchServerInfo(): Promise<{
+export interface ServerInfo {
     version: string;
-}>;
+    minAppVersion?: string;
+    appStoreUrl?: string | null;
+    playStoreUrl?: string | null;
+}
+export declare function fetchServerInfo(): Promise<ServerInfo>;
 export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;

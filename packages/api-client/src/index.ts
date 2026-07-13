@@ -17,7 +17,7 @@ export {
   setUnauthorizedHandler,
 } from './client';
 
-export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody } from './auth';
+export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo } from './auth';
 export {
   fetchOidcConfig,
   loginWithOidc,
@@ -30,6 +30,8 @@ export {
   fetchServerInfo,
   changePassword,
 } from './auth';
+
+export { compareVersions } from './version';
 
 export {
   generateRandomString,

@@ -4,6 +4,7 @@ import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, M
 import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
+import { AddMemberModal } from './AddMemberModal';
 
 export function GroupsPage() {
   const { t } = useTranslation();
@@ -17,10 +18,8 @@ export function GroupsPage() {
   const [showAddExisting, setShowAddExisting] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [invitesLoading, setInvitesLoading] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteExpiry, setInviteExpiry] = useState<'7' | '30' | 'never'>('7');
-  const [generatingInvite, setGeneratingInvite] = useState(false);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const [showAddMember, setShowAddMember] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [mediaLinks, setMediaLinks] = useState<MediaAlbumLink[]>([]);
@@ -107,7 +106,6 @@ export function GroupsPage() {
   useEffect(() => {
     setNewMemberId('');
     setShowAddExisting(false);
-    setInviteEmail('');
     setSelectedAlbumId('');
     if (selectedId) {
       loadMembers(selectedId);
@@ -166,25 +164,6 @@ export function GroupsPage() {
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error');
       alert(t('groups.removeMemberError', { error: message }));
-    }
-  };
-
-  const handleGenerateInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedGroup) return;
-    setGeneratingInvite(true);
-    try {
-      await api.createGroupInvite(selectedGroup.id, {
-        email: inviteEmail.trim() || undefined,
-        expiresInDays: inviteExpiry === 'never' ? undefined : Number(inviteExpiry),
-      });
-      setInviteEmail('');
-      loadInvites(selectedGroup.id);
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('groups.invites.generateError', { error: message }));
-    } finally {
-      setGeneratingInvite(false);
     }
   };
 
@@ -318,29 +297,11 @@ export function GroupsPage() {
 
                 <div className="md-section-header">
                   <h4>{t('groups.invites.title')}</h4>
+                  <button type="button" className="link-button" onClick={() => setShowAddMember(true)}>
+                    {t('members.addMember')}
+                  </button>
                 </div>
                 <p className="hint">{t('groups.invites.hint')}</p>
-                <form className="md-add-member" onSubmit={handleGenerateInvite}>
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder={t('groups.invites.emailPlaceholder')}
-                    aria-label={t('groups.invites.emailLabel')}
-                  />
-                  <select
-                    value={inviteExpiry}
-                    onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}
-                    aria-label={t('groups.invites.expiresLabel')}
-                  >
-                    <option value="7">{t('groups.invites.expires7Days')}</option>
-                    <option value="30">{t('groups.invites.expires30Days')}</option>
-                    <option value="never">{t('groups.invites.expiresNever')}</option>
-                  </select>
-                  <button type="submit" disabled={generatingInvite}>
-                    {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
-                  </button>
-                </form>
 
                 {invitesLoading ? (
                   <div className="loading">{t('common.loading')}</div>
@@ -560,6 +521,18 @@ export function GroupsPage() {
           group={formGroup}
           onClose={() => setFormGroup(null)}
           onSubmit={handleSubmitForm}
+        />
+      )}
+
+      {showAddMember && selectedGroup && (
+        <AddMemberModal
+          defaultGroupId={selectedGroup.id}
+          onClose={() => setShowAddMember(false)}
+          onCreated={() => {
+            loadInvites(selectedGroup.id);
+            loadMembers(selectedGroup.id);
+            loadGroups();
+          }}
         />
       )}
     </>

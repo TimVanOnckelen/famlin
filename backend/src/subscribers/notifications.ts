@@ -1,6 +1,6 @@
 import { onDomainEvent } from '../events.js';
 import { prisma } from '../db.js';
-import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
+import { notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
@@ -17,13 +17,40 @@ export function registerNotificationSubscriber(): void {
   registered = true;
 
   onDomainEvent('post.created', async (event) => {
-    await notifyGroup({
-      type: 'new_post',
-      groupId: event.groupId,
-      senderId: event.authorId,
-      postId: event.postId,
-      params: { author: event.authorName, group: event.groupName, excerpt: excerptText(event.content) },
+    // Cross-posting fans one write out into several sibling Posts (one per
+    // target group) — a member of more than one target group must still get
+    // exactly one notification, not one per group they're in. Every member
+    // of every target group is a candidate; each is assigned to the FIRST
+    // event-post (in emission order) whose group they belong to, then
+    // notified once via that post's id/group name.
+    const groupIds = event.posts.map((p) => p.groupId);
+    const memberships = await prisma.groupMember.findMany({
+      where: { groupId: { in: groupIds }, userId: { not: event.authorId } },
+      select: { groupId: true, userId: true },
     });
+    const groupIdsByUserId = new Map<string, Set<string>>();
+    for (const m of memberships) {
+      const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
+      set.add(m.groupId);
+      groupIdsByUserId.set(m.userId, set);
+    }
+
+    const assigned = new Set<string>();
+    for (const post of event.posts) {
+      const recipientIds = [...groupIdsByUserId.entries()]
+        .filter(([userId, groups]) => !assigned.has(userId) && groups.has(post.groupId))
+        .map(([userId]) => userId);
+      if (recipientIds.length === 0) continue;
+      recipientIds.forEach((id) => assigned.add(id));
+
+      await notifyUsers({
+        type: 'new_post',
+        userIds: recipientIds,
+        senderId: event.authorId,
+        postId: post.postId,
+        params: { author: event.authorName, group: post.groupName, excerpt: excerptText(event.content) },
+      });
+    }
   });
 
   onDomainEvent('comment.created', async (event) => {

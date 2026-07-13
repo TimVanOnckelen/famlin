@@ -127,8 +127,26 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     const providerIds = [...new Set(links.map((l) => l.provider))];
     if (providerIds.length === 0) return [];
 
-    const people = await prisma.mediaPersonLink.findMany({ where: { provider: { in: providerIds } } });
-    return people.map((p) => ({
+    const people = await prisma.mediaPersonLink.findMany({
+      where: { provider: { in: providerIds } },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Collapse to one entry per (provider, label): the same real person can
+    // be mapped once per Immich library owner, all sharing a label — that's
+    // the cross-owner merge mechanism (see resolvePersonFilterForAlbum in
+    // personFilter.ts). Prefer the row with a userId (mirrors the tie-break in
+    // personTags.ts's attachPeopleToPosts), otherwise keep the earliest-created
+    // row. The chosen externalPersonId still works as `?personId=` for every
+    // sibling row, since the person filter is label-aware within a provider.
+    const byProviderLabel = new Map<string, (typeof people)[number]>();
+    for (const p of people) {
+      const key = `${p.provider}::${p.label}`;
+      const existing = byProviderLabel.get(key);
+      if (!existing || (!existing.userId && p.userId)) byProviderLabel.set(key, p);
+    }
+
+    return [...byProviderLabel.values()].map((p) => ({
       id: p.externalPersonId,
       provider: p.provider,
       label: p.label,

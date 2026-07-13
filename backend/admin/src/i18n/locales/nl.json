@@ -9,6 +9,7 @@
     "edit": "Bewerk",
     "remove": "Verwijder",
     "close": "Sluiten",
+    "done": "Klaar",
     "error": "Fout",
     "unknown": "Onbekend",
     "appName": "Famlin",
@@ -54,6 +55,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "updateAvailable": {
+      "title": "Nieuwe versie beschikbaar: {{version}}",
+      "currentVersion": "Je server draait versie {{version}}.",
+      "viewReleaseNotes": "Bekijk de release notes"
+    },
     "stats": {
       "users": "Gebruikers",
       "usersSub_one": "{{count}} admin",
@@ -313,7 +319,19 @@
       "userMappingHint": "Indien ingesteld, zullen foto's van deze persoon getagd worden met zijn of haar Famlin-profiel. Laat leeg om alleen de weergavenaam te tonen.",
       "saveError": "Toewijzing opslaan mislukt: {{error}}",
       "removeConfirm": "Toewijzing verwijderen voor \"{{name}}\"?",
-      "removeError": "Toewijzing verwijderen mislukt: {{error}}"
+      "removeError": "Toewijzing verwijderen mislukt: {{error}}",
+      "mergeHint": "Dit label bestaat al — deze persoon wordt samengevoegd met \"{{label}}\".",
+      "linkedPersons": "{{count}} gekoppelde personen"
     }
+  },
+  "members": {
+    "addMember": "Lid toevoegen",
+    "modeInvite": "Uitnodigen",
+    "modeCreate": "Aanmaken met wachtwoord",
+    "groupLabel": "Groep",
+    "selectGroup": "Selecteer een groep…",
+    "groupsLabel": "Groepen (optioneel)",
+    "inviteSentHint": "Er is een uitnodigingsmail verstuurd naar {{email}}. Je kan de link hieronder ook delen.",
+    "createError": "Gebruiker aanmaken mislukt: {{error}}"
   }
 }

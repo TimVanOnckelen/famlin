@@ -13,6 +13,11 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
 
 const groups = [{ id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z' }];
 
+const multiGroups = [
+  { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 'group-2', name: 'Grandparents', createdAt: '2026-01-01T00:00:00Z' },
+];
+
 const mediaAssets = [
   {
     assetId: 'a1',
@@ -85,5 +90,53 @@ describe('NewPostModal', () => {
     expect(postButton).toBeDisabled();
     await user.type(screen.getByPlaceholderText(/Share an update/), 'Hello');
     expect(postButton).toBeEnabled();
+  });
+
+  it('sends groupIds (cross-posting) when more than one group is selected', async () => {
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
+    );
+    await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
+    await user.click(screen.getByRole('button', { name: 'Grandparents' }));
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith({
+      groupId: 'group-1',
+      groupIds: ['group-1', 'group-2'],
+      content: 'Hello everyone',
+      type: 'UPDATE',
+      uploadedAssetUrls: [],
+    });
+  });
+
+  it('omits groupIds when only one group ends up selected', async () => {
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
+    );
+    await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith({
+      groupId: 'group-1',
+      groupIds: undefined,
+      content: 'Hello everyone',
+      type: 'UPDATE',
+      uploadedAssetUrls: [],
+    });
+  });
+
+  it('disables Post once every group has been deselected', async () => {
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
+    );
+    await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
+    const postButton = screen.getByRole('button', { name: 'Post' });
+    expect(postButton).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Familie de Vries' }));
+    expect(postButton).toBeDisabled();
   });
 });

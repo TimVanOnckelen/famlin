@@ -33,6 +33,9 @@ function makeFakeProvider(id: string, overrides: Partial<MediaProvider> = {}): M
     async streamAsset() {
       // unused by these tests
     },
+    async readAsset() {
+      throw new Error('unused by these tests');
+    },
     ...overrides,
   };
 }
@@ -111,6 +114,43 @@ describe('member-facing media people endpoints', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual([
         { id: personLink.externalPersonId, provider: 'local', label: 'Aunt May', userId: mappedUser.id },
+      ]);
+    });
+
+    it('collapses two MediaPersonLink rows sharing a provider + label into one entry, preferring the one with a userId', async () => {
+      // The cross-owner merge mechanism this feature exists for: the same
+      // real person recognized separately in two Immich library owners'
+      // accounts, mapped by an admin to the same label. The picker must show
+      // "Emma" once, not twice.
+      const member = await createUser();
+      const mappedUser = await createUser({ name: 'Emma' });
+      const group = await createGroupWithMember(member);
+      await prisma.mediaAlbumLink.create({
+        data: { groupId: group.id, provider: 'local', externalAlbumId: 'dedup-album', albumName: 'Album' },
+      });
+      // Unlinked row created first...
+      await prisma.mediaPersonLink.create({
+        data: { provider: 'local', externalPersonId: 'emma-lib-a', label: 'Emma' },
+      });
+      // ...linked row created second — should still win as the representative.
+      const linkedPersonLink = await prisma.mediaPersonLink.create({
+        data: { provider: 'local', externalPersonId: 'emma-lib-b', label: 'Emma', userId: mappedUser.id },
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/media/people?groupId=${group.id}`,
+        headers: authHeader(member),
+      });
+      expect(res.statusCode).toBe(200);
+      // Filter to this test's label: the endpoint is provider-scoped (not
+      // group-scoped) by design, so people mapped under `local` by earlier
+      // tests in this file are also present in the response.
+      const emmaEntries = (res.json() as Array<{ id: string; provider: string; label: string; userId: string | null }>).filter(
+        (p) => p.label === 'Emma'
+      );
+      expect(emmaEntries).toEqual([
+        { id: linkedPersonLink.externalPersonId, provider: 'local', label: 'Emma', userId: mappedUser.id },
       ]);
     });
   });

@@ -9,6 +9,7 @@
     "edit": "Edit",
     "remove": "Remove",
     "close": "Close",
+    "done": "Done",
     "error": "Error",
     "unknown": "Unknown",
     "appName": "Famlin",
@@ -54,6 +55,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "updateAvailable": {
+      "title": "A new version is available: {{version}}",
+      "currentVersion": "Your server is running version {{version}}.",
+      "viewReleaseNotes": "View release notes"
+    },
     "stats": {
       "users": "Users",
       "usersSub_one": "{{count}} admin",
@@ -313,7 +319,19 @@
       "userMappingHint": "If set, this person's photos will be tagged with their Famlin profile. Leave empty to show the display name only.",
       "saveError": "Could not save mapping: {{error}}",
       "removeConfirm": "Remove mapping for \"{{name}}\"?",
-      "removeError": "Could not remove mapping: {{error}}"
+      "removeError": "Could not remove mapping: {{error}}",
+      "mergeHint": "This label already exists — this person will be merged with \"{{label}}\".",
+      "linkedPersons": "{{count}} linked persons"
     }
+  },
+  "members": {
+    "addMember": "Add member",
+    "modeInvite": "Invite",
+    "modeCreate": "Create with password",
+    "groupLabel": "Group",
+    "selectGroup": "Select a group…",
+    "groupsLabel": "Groups (optional)",
+    "inviteSentHint": "An invite email was sent to {{email}}. You can also share the link below.",
+    "createError": "Could not create user: {{error}}"
   }
 }

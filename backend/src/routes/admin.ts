@@ -469,7 +469,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // Content moderation: cross-group visibility into posts/comments so an
   // admin can review them without being a member of every group. Deleting
   // reuses DELETE /api/posts/:id and /api/comments/:id (already allow an
-  // admin to remove any post/comment) — that removal is permanent.
+  // admin to remove any post/comment) — that removal is permanent. A
+  // cross-posted post's admin delete stays single-row even though an
+  // author's own delete fans out to every sibling — moderation is
+  // deliberately per-group (see the isAdmin branch in posts.ts's DELETE).
   fastify.get('/content/posts', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 

@@ -23,7 +23,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#006e94"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {
@@ -36,6 +37,13 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#006e94"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Allow Famlin to save photos to your library.",
+          "isAccessMediaLocationEnabled": false
         }
       ]
     ]

@@ -63,6 +63,10 @@ export interface Post {
     }[];
     favoritedByMe: boolean;
     people?: PostPerson[];
+    sharedWithGroups?: {
+        id: string;
+        name: string;
+    }[];
 }
 export interface Comment {
     id: string;

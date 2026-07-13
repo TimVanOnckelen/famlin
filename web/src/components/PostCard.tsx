@@ -115,6 +115,14 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   // When the feed spans several families, label each post with its group.
   const groupChip = showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>;
 
+  // Only present (and only ever sent to the author) when the post was
+  // cross-posted to more than one family — never derive this for posts
+  // without the field, since other members never learn a post was shared.
+  const sharedWithNames =
+    post.sharedWithGroups && post.sharedWithGroups.length > 1
+      ? post.sharedWithGroups.map((g) => g.name).join(', ')
+      : null;
+
   // The styleguide's photo-first rule: with a photo, the photo leads —
   // edge-to-edge hero with the author chip (and milestone title) on top of it.
   const heroUrl = hasPhotos ? getUploadUrl(post.uploadedAssetUrls[0]) : null;
@@ -226,6 +234,18 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
               {post.people.map((person) => (
                 <PersonChip key={person.id} person={person} />
               ))}
+            </div>
+          )}
+
+          {sharedWithNames && (
+            <div className="post-shared-indicator" title={t('feed.sharedWith', { names: sharedWithNames })}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M18 8a3 3 0 10-2.83-4H15a3 3 0 000 6 2.97 2.97 0 001.5-.4l-6.32 3.7a3 3 0 100 3.4l6.32 3.7A2.97 2.97 0 0015 20a3 3 0 103-3.1v-.1a3 3 0 00-1.5.4L10.18 13.5a3 3 0 000-3l6.32-3.7c.44.26.95.4 1.5.4z"
+                  fill="currentColor"
+                />
+              </svg>
+              {t('feed.sharedWith', { names: sharedWithNames })}
             </div>
           )}
 

@@ -99,6 +99,38 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
     }
   };
 
+  interface MappedGroup {
+    key: string;
+    label: string;
+    user: MediaPersonLink['user'];
+    links: MediaPersonLink[];
+  }
+
+  const mappedGroups: MappedGroup[] = (() => {
+    const map = new Map<string, MappedGroup>();
+    for (const link of peopleLinks) {
+      const key = `${link.provider}::${link.label}`;
+      const group = map.get(key);
+      if (group) {
+        group.links.push(link);
+        if (!group.user && link.user) group.user = link.user;
+      } else {
+        map.set(key, { key, label: link.label, user: link.user, links: [link] });
+      }
+    }
+    return Array.from(map.values());
+  })();
+
+  const distinctLabels = Array.from(
+    new Set(peopleLinks.filter((l) => l.provider === 'immich').map((l) => l.label))
+  ).sort((a, b) => a.localeCompare(b));
+
+  const mergeCandidate = selectedPerson
+    ? peopleLinks.find(
+        (l) => l.provider === 'immich' && l.label === personLabel.trim() && l.externalPersonId !== selectedPerson.id
+      )
+    : undefined;
+
   const mappedPersonIds = new Set(peopleLinks.map((l) => l.externalPersonId));
   const unmappedPeople = people
     .filter((p) => !mappedPersonIds.has(p.id))
@@ -145,39 +177,91 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
             </span>
           </h5>
           <ul className="member-cards">
-            {peopleLinks.map((link) => {
-              const person = people.find((p) => p.id === link.externalPersonId);
+            {mappedGroups.map((group) => {
+              if (group.links.length === 1) {
+                // Single link — looks like a plain mapped-person card, same as before grouping existed.
+                const link = group.links[0];
+                const person = people.find((p) => p.id === link.externalPersonId);
+                return (
+                  <li key={group.key} className="member-card">
+                    {person?.thumbnailDataUri && (
+                      <img
+                        src={person.thumbnailDataUri}
+                        alt={link.label}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: 'var(--r-sm)',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    )}
+                    <span className="member-card-info">
+                      <span className="member-card-name">
+                        {link.label}
+                        {link.user && <span className="badge" style={{ marginLeft: '0.5rem' }}>{link.user.name}</span>}
+                      </span>
+                      {link.user && (
+                        <span className="member-card-sub">{link.user.email}</span>
+                      )}
+                    </span>
+                    <button
+                      className="icon-button danger"
+                      title={t('common.remove')}
+                      aria-label={t('common.remove')}
+                      onClick={() => handleRemoveMapping(link)}
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  </li>
+                );
+              }
+
+              // Multiple provider-persons share this label — merged everywhere member-facing.
               return (
-                <li key={link.id} className="member-card">
-                  {person?.thumbnailDataUri && (
-                    <img
-                      src={person.thumbnailDataUri}
-                      alt={link.label}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: 'var(--r-sm)',
-                        objectFit: 'cover',
-                      }}
-                    />
-                  )}
+                <li key={group.key} className="member-card person-merge-card">
                   <span className="member-card-info">
                     <span className="member-card-name">
-                      {link.label}
-                      {link.user && <span className="badge" style={{ marginLeft: '0.5rem' }}>{link.user.name}</span>}
+                      {group.label}
+                      {group.user && <span className="badge" style={{ marginLeft: '0.5rem' }}>{group.user.name}</span>}
+                      <span
+                        className="badge"
+                        style={{ marginLeft: '0.5rem' }}
+                        title={t('media.peopleMapping.linkedPersons', { count: group.links.length })}
+                        aria-label={t('media.peopleMapping.linkedPersons', { count: group.links.length })}
+                      >
+                        {group.links.length}
+                      </span>
                     </span>
-                    {link.user && (
-                      <span className="member-card-sub">{link.user.email}</span>
-                    )}
+                    {group.user && <span className="member-card-sub">{group.user.email}</span>}
+                    <ul className="person-link-rows">
+                      {group.links.map((link) => {
+                        const person = people.find((p) => p.id === link.externalPersonId);
+                        return (
+                          <li key={link.id} className="person-link-row">
+                            {person?.thumbnailDataUri ? (
+                              <img src={person.thumbnailDataUri} alt="" className="person-link-thumb" />
+                            ) : (
+                              <span className="person-link-thumb person-link-placeholder">
+                                <Icon name="users" size={14} />
+                              </span>
+                            )}
+                            <span className="person-link-name">
+                              {person?.name || t('media.peopleMapping.unnamed')}
+                            </span>
+                            <button
+                              className="icon-button danger"
+                              title={t('common.remove')}
+                              aria-label={t('common.remove')}
+                              onClick={() => handleRemoveMapping(link)}
+                            >
+                              <Icon name="x" size={12} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </span>
-                  <button
-                    className="icon-button danger"
-                    title={t('common.remove')}
-                    aria-label={t('common.remove')}
-                    onClick={() => handleRemoveMapping(link)}
-                  >
-                    <Icon name="x" size={14} />
-                  </button>
                 </li>
               );
             })}
@@ -223,10 +307,21 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                           handleSaveMapping();
                         }
                       }}
+                      list="person-label-options"
                       required
                       autoFocus
                     />
                   </label>
+                  <datalist id="person-label-options">
+                    {distinctLabels.map((label) => (
+                      <option key={label} value={label} />
+                    ))}
+                  </datalist>
+                  {mergeCandidate && (
+                    <p className="hint" style={{ marginTop: '-0.25rem' }}>
+                      {t('media.peopleMapping.mergeHint', { label: mergeCandidate.label })}
+                    </p>
+                  )}
                   <label>
                     {t('media.peopleMapping.familyMember')}
                     <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
