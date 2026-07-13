@@ -4,7 +4,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  ActivityIndicator,
   Text,
   Modal,
   TextInput,
@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { Image } from 'expo-image';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 import { colors } from '@/constants/colors';
@@ -65,6 +66,41 @@ function VideoPage({
         nativeControls
         accessibilityLabel={accessibilityLabel}
       />
+    </View>
+  );
+}
+
+function ImagePage({
+  url,
+  width,
+  accessibilityLabel,
+}: {
+  url: string;
+  width: number;
+  accessibilityLabel: string;
+}) {
+  const [loading, setLoading] = useState(true);
+
+  return (
+    <View style={[styles.page, { width }]}>
+      <Image
+        // cacheKey strips the rotating ?token= (see PhotosScreen) so a
+        // token refresh doesn't invalidate already-downloaded previews.
+        source={{ uri: url, cacheKey: url.split('?')[0] }}
+        style={styles.image}
+        contentFit="contain"
+        transition={100}
+        onLoadStart={() => setLoading(true)}
+        onLoad={() => setLoading(false)}
+        onError={() => setLoading(false)}
+        accessible
+        accessibilityLabel={accessibilityLabel}
+      />
+      {loading && (
+        <View style={styles.pageLoader} pointerEvents="none">
+          <ActivityIndicator size="large" color={colors.white} />
+        </View>
+      )}
     </View>
   );
 }
@@ -191,15 +227,12 @@ export function ImageViewerScreen() {
                   accessibilityLabel={t('imageViewer.videoAccessibilityLabel', { index: index + 1, total: urls.length })}
                 />
               ) : (
-                <View key={`${url}-${index}`} style={[styles.page, { width }]}>
-                  <Image
-                    source={{ uri: url }}
-                    style={styles.image}
-                    resizeMode="contain"
-                    accessible
-                    accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
-                  />
-                </View>
+                <ImagePage
+                  key={`${url}-${index}`}
+                  url={url}
+                  width={width}
+                  accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
+                />
               )
             )}
           </ScrollView>
@@ -405,6 +438,11 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  pageLoader: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
