@@ -4,6 +4,7 @@ import { api, User, Group } from '../api/client';
 import { ApiError } from '../api/client';
 import i18n from '../i18n';
 import { Icon } from './Icon';
+import { AddMemberModal } from './AddMemberModal';
 
 export function UsersPage() {
   const { t } = useTranslation();
@@ -12,11 +13,7 @@ export function UsersPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newIsAdmin, setNewIsAdmin] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
   const [managingUser, setManagingUser] = useState<User | null>(null);
 
   const load = () => {
@@ -48,26 +45,6 @@ export function UsersPage() {
   useEffect(() => {
     load();
   }, []);
-
-  const resetCreateForm = () => {
-    setNewName('');
-    setNewEmail('');
-    setNewPassword('');
-    setNewIsAdmin(false);
-    setShowCreateForm(false);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await api.register({
-      email: newEmail,
-      name: newName,
-      password: newPassword,
-      isAdmin: newIsAdmin,
-    });
-    resetCreateForm();
-    load();
-  };
 
   const toggleAdmin = async (user: User) => {
     await api.updateUser(user.id, { isAdmin: !user.isAdmin });
@@ -127,57 +104,8 @@ export function UsersPage() {
     <>
       <div className="page-header">
         <h2>{t('users.title')}</h2>
-        <button onClick={() => setShowCreateForm(!showCreateForm)}>
-          {showCreateForm ? t('common.cancel') : t('users.newUser')}
-        </button>
+        <button onClick={() => setShowAddMember(true)}>{t('members.addMember')}</button>
       </div>
-
-      {showCreateForm && (
-        <div className="card">
-          <h3>{t('users.createUser')}</h3>
-          <form onSubmit={handleCreate}>
-            <div className="row">
-              <label style={{ flex: 1 }}>
-                {t('users.form.name')}
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  required
-                />
-              </label>
-              <label style={{ flex: 1 }}>
-                {t('users.form.email')}
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  required
-                />
-              </label>
-              <label style={{ flex: 1 }}>
-                {t('users.form.password')}
-                <input
-                  type="text"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={8}
-                />
-              </label>
-              <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  type="checkbox"
-                  checked={newIsAdmin}
-                  onChange={(e) => setNewIsAdmin(e.target.checked)}
-                />
-                {t('users.form.admin')}
-              </label>
-              <button type="submit">{t('users.createUser')}</button>
-            </div>
-          </form>
-        </div>
-      )}
 
       <div className="card">
         {users.length === 0 ? (
@@ -293,6 +221,10 @@ export function UsersPage() {
           onClose={() => setManagingUser(null)}
           onChanged={load}
         />
+      )}
+
+      {showAddMember && (
+        <AddMemberModal onClose={() => setShowAddMember(false)} onCreated={load} />
       )}
     </>
   );

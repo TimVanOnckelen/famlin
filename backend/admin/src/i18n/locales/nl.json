@@ -9,6 +9,7 @@
     "edit": "Bewerk",
     "remove": "Verwijder",
     "close": "Sluiten",
+    "done": "Klaar",
     "error": "Fout",
     "unknown": "Onbekend",
     "appName": "Famlin",
@@ -315,5 +316,15 @@
       "removeConfirm": "Toewijzing verwijderen voor \"{{name}}\"?",
       "removeError": "Toewijzing verwijderen mislukt: {{error}}"
     }
+  },
+  "members": {
+    "addMember": "Lid toevoegen",
+    "modeInvite": "Uitnodigen",
+    "modeCreate": "Aanmaken met wachtwoord",
+    "groupLabel": "Groep",
+    "selectGroup": "Selecteer een groep…",
+    "groupsLabel": "Groepen (optioneel)",
+    "inviteSentHint": "Er is een uitnodigingsmail verstuurd naar {{email}}. Je kan de link hieronder ook delen.",
+    "createError": "Gebruiker aanmaken mislukt: {{error}}"
   }
 }

@@ -207,7 +207,7 @@ export const api = {
   updateSettings: (data: Partial<ServerSettings>) =>
     request<ServerSettings>('/api/admin/settings', { method: 'PATCH', body: data }),
 
-  register: (data: { email: string; name: string; password: string; isAdmin?: boolean }) =>
+  register: (data: { email: string; name: string; password: string; isAdmin?: boolean; groupIds?: string[] }) =>
     request<{ user: User }>('/api/auth/register', {
       method: 'POST',
       body: data,

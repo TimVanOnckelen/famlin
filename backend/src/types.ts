@@ -200,6 +200,7 @@ export const registerBodySchema = z.object({
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(100),
   isAdmin: z.boolean().optional(),
+  groupIds: z.array(z.string().min(1)).optional(),
 });
 
 export const setupBodySchema = z.object({

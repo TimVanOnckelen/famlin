@@ -10,7 +10,7 @@ Day-to-day admin tasks all live under `/admin`, alongside the initial setup cove
 
 The **Users** page lists every account, their group memberships, and whether they're an admin.
 
-- **Create a user directly** — click **New user** and fill in name, email, and a password (8+ characters). Useful for an account that won't sign up itself via OIDC or an invite link.
+- **Add a member** — click **Add member** to open the same modal used from the Groups page (see below). It defaults to **Invite** mode (pick a group, optional email, expiry); switch to **Create with password** to set up an account directly — name, email, password (8+ characters), an admin checkbox, and which groups to add them to — for family members without email/OIDC. Useful for an account that won't sign up itself via OIDC or an invite link.
 - **Toggle admin access** — click the shield icon on a user's row. Admins can reach every page under `/admin`, so keep this limited to people you trust. You can't remove admin access from the last remaining admin — Famlin blocks that so you can't accidentally lock everyone out.
 - **Reset a password** — click the key icon, enter a new password (8+ characters), and share it with the user directly. There's no self-service/email-based reset flow yet. Resetting a password immediately signs that account out everywhere else it was logged in.
 - **Manage group membership** — click the people icon to open a modal listing every group with add/remove buttons. This is the same membership data as the Groups page, just scoped to one user.
@@ -23,8 +23,9 @@ The **Groups** page is a two-pane view: pick a group on the left, manage it on t
 
 - **Create / edit / delete a group** — **New group** at the top, or **Edit**/**Delete** on the selected group. A group just has a name and description; deleting one removes its posts and comments along with it (unlike posts/comments, a deleted group can't be restored).
 - **Add an existing user to the group** — pick them from the dropdown next to **Add member** in the detail pane (the same action as "manage group membership" on the Users page).
+- **Add a new member to the group** — click **Add member** in the detail pane to open the same modal as on the Users page, preselected to this group; see [Inviting family members](./inviting-family) for the invite flow it defaults to.
 - **Remove a member** — the ✕ icon on their row. Removing someone from a group does **not** delete their existing posts/comments in that group — those stay visible to the remaining members (a deliberate choice, not a bug).
-- **Invites** — further down the same page; see [Inviting family members](./inviting-family) for that flow.
+- **Invites** — further down the same page (status, copy link, revoke); see [Inviting family members](./inviting-family) for that flow.
 
 ## Content moderation
 

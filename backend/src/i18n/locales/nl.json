@@ -11,6 +11,7 @@
     "unauthorized": "Niet geautoriseerd",
     "groupIdRequired": "groupId is verplicht",
     "notGroupMember": "Geen lid van deze groep",
+    "unknownGroup": "Een of meer groepen bestaan niet",
     "postNotFound": "Bericht niet gevonden",
     "notAuthorized": "Niet geautoriseerd",
     "commentNotFound": "Reactie niet gevonden",

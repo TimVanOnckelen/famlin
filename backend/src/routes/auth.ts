@@ -359,7 +359,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.adminRequired') });
     }
 
-    const { email, name, password, isAdmin } = registerBodySchema.parse(request.body);
+    const { email, name, password, isAdmin, groupIds } = registerBodySchema.parse(request.body);
     const normalizedEmail = email.toLowerCase().trim();
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -367,15 +367,36 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(409).send({ error: t('errors.userAlreadyExists') });
     }
 
+    const uniqueGroupIds = groupIds && groupIds.length > 0 ? [...new Set(groupIds)] : [];
+    if (uniqueGroupIds.length > 0) {
+      const foundGroups = await prisma.group.findMany({
+        where: { id: { in: uniqueGroupIds } },
+        select: { id: true },
+      });
+      if (foundGroups.length !== uniqueGroupIds.length) {
+        return reply.status(400).send({ error: t('errors.unknownGroup') });
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        name,
-        passwordHash,
-        isAdmin: isAdmin || false,
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name,
+          passwordHash,
+          isAdmin: isAdmin || false,
+        },
+      });
+
+      if (uniqueGroupIds.length > 0) {
+        await tx.groupMember.createMany({
+          data: uniqueGroupIds.map((groupId) => ({ groupId, userId: created.id })),
+        });
+      }
+
+      return created;
     });
 
     return {

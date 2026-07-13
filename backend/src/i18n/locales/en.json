@@ -11,6 +11,7 @@
     "unauthorized": "Unauthorized",
     "groupIdRequired": "groupId is required",
     "notGroupMember": "Not a member of this group",
+    "unknownGroup": "One or more groups don't exist",
     "postNotFound": "Post not found",
     "notAuthorized": "Not authorized",
     "commentNotFound": "Comment not found",

@@ -9,6 +9,7 @@
     "edit": "Edit",
     "remove": "Remove",
     "close": "Close",
+    "done": "Done",
     "error": "Error",
     "unknown": "Unknown",
     "appName": "Famlin",
@@ -315,5 +316,15 @@
       "removeConfirm": "Remove mapping for \"{{name}}\"?",
       "removeError": "Could not remove mapping: {{error}}"
     }
+  },
+  "members": {
+    "addMember": "Add member",
+    "modeInvite": "Invite",
+    "modeCreate": "Create with password",
+    "groupLabel": "Group",
+    "selectGroup": "Select a group…",
+    "groupsLabel": "Groups (optional)",
+    "inviteSentHint": "An invite email was sent to {{email}}. You can also share the link below.",
+    "createError": "Could not create user: {{error}}"
   }
 }
