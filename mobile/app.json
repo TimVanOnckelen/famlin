@@ -23,7 +23,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#006e94"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {
