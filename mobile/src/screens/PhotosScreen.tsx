@@ -10,8 +10,8 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   SectionList,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -214,7 +214,11 @@ export function PhotosScreen() {
       )}
 
       {/* Photo grid */}
-      {hasGroups ? (
+      {!groupsLoaded ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : hasGroups ? (
         <SectionList
           sections={sectionListData}
           keyExtractor={(item, index) => `row-${index}`}
@@ -228,8 +232,16 @@ export function PhotosScreen() {
                   activeOpacity={0.7}
                 >
                   <Image
-                    source={{ uri: getUploadUrl(photo.thumbnailUrl) }}
+                    // cacheKey pins the disk cache to the asset path — the
+                    // full URL carries the rotating ?token=, which would
+                    // otherwise invalidate every cached thumbnail on each
+                    // media-token refresh.
+                    source={{ uri: getUploadUrl(photo.thumbnailUrl), cacheKey: photo.thumbnailUrl }}
                     style={styles.photo}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={100}
+                    recyclingKey={photo.id}
                   />
                   {photo.type === 'VIDEO' && (
                     <View style={styles.playIconOverlay} pointerEvents="none">
@@ -260,10 +272,9 @@ export function PhotosScreen() {
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
-            !groupsLoaded || (isLoading && !allPhotos.length) ? null : !hasGroups ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>{t('feed.noGroupsTitle')}</Text>
-                <Text style={styles.emptyStateSubtext}>{t('feed.noGroupsSubtitle')}</Text>
+            isLoading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             ) : (
               <View style={styles.emptyState}>
@@ -280,7 +291,12 @@ export function PhotosScreen() {
             ) : null
           }
         />
-      ) : null}
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>{t('feed.noGroupsTitle')}</Text>
+          <Text style={styles.emptyStateSubtext}>{t('feed.noGroupsSubtitle')}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -423,5 +439,10 @@ const styles = StyleSheet.create({
   loadingFooter: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  loadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
 });

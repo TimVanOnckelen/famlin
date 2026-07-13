@@ -20,10 +20,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@famlin/api-client": "file:../packages/api-client",
     "@expo-google-fonts/nunito": "^0.2.3",
     "@expo/metro-runtime": "~57.0.2",
     "@expo/vector-icons": "^15.0.3",
+    "@famlin/api-client": "file:../packages/api-client",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^6.6.0",
     "@react-navigation/native": "^6.1.17",
@@ -37,6 +37,7 @@
     "expo-dev-client": "~57.0.4",
     "expo-device": "~57.0.0",
     "expo-font": "~57.0.0",
+    "expo-image": "~57.0.0",
     "expo-image-picker": "~57.0.1",
     "expo-linking": "~57.0.1",
     "expo-localization": "~57.0.0",
