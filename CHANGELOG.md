@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.2.0](https://github.com/TimVanOnckelen/famlin/compare/v0.1.12...v0.2.0) (2026-07-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* The `createPost` API now requires `groupIds` for cross-posting; ensure your client handles this new parameter.
+
+### Features
+
+* add ExpoMediaLibrary support in Podfile and project configuration ([94e26cd](https://github.com/TimVanOnckelen/famlin/commit/94e26cdaa9fcc8824d933edc29554f0773ab481d))
+* add google services configuration for Firebase integration ([0702266](https://github.com/TimVanOnckelen/famlin/commit/07022660b62f0ab858dbcb56dccf8a8253e0c9ba))
+* add server info endpoint and version comparison utility ([032f65a](https://github.com/TimVanOnckelen/famlin/commit/032f65a3655582ba517b528e53794d7e9c0ba9ca))
+* add update notification banner and version check in the admin dashboard ([7bc1538](https://github.com/TimVanOnckelen/famlin/commit/7bc15382640962c3749582220adf18cad9f33cb0))
+* **admin:** unify member onboarding into a shared Add member modal ([4841ca4](https://github.com/TimVanOnckelen/famlin/commit/4841ca4c6fd7692a8530140b743de2e69ec4f7c5))
+* **backend:** link timeline album photos to the post that embeds them ([4ba6141](https://github.com/TimVanOnckelen/famlin/commit/4ba6141b21a845ba5f45e68eca869f02a038d435))
+* implement cross-posting functionality for posts ([f2dfd43](https://github.com/TimVanOnckelen/famlin/commit/f2dfd43bb957b28cc5845a8368f03d262d4f1be3))
+* merge same-label media people across library owners ([3296323](https://github.com/TimVanOnckelen/famlin/commit/32963232d9f98fe07d144814f22b6cd2f29c39d0))
+* **mobile:** like, comment, and favorite from the image viewer ([f06f199](https://github.com/TimVanOnckelen/famlin/commit/f06f199242edf27759a6004ed2ef6307d07f9f63))
+* **mobile:** pinch-to-zoom and download in the image viewer, actions for posted album photos ([33a20d9](https://github.com/TimVanOnckelen/famlin/commit/33a20d9bd7d7a588007e6e1464b10ced5c09eb95))
+
+
+### Bug Fixes
+
+* **mobile:** add loading feedback to photos screen and cache thumbnails with expo-image ([8f4e737](https://github.com/TimVanOnckelen/famlin/commit/8f4e7372482bb7c7f985564edb9f93e9bb0d06c1))
+* **mobile:** make saving photos from the viewer work on iOS ([82e9cdf](https://github.com/TimVanOnckelen/famlin/commit/82e9cdfe38288466951072ffeb66427156076b4d))
+* **mobile:** show a loading spinner for full-size photos in the image viewer ([3b4df8e](https://github.com/TimVanOnckelen/famlin/commit/3b4df8ef84c25a0e854f828a413a3c5ba46e3ff9))
+
+
+### Performance Improvements
+
+* **backend:** serve stale album cache while refreshing photo timeline in background ([e1e2f22](https://github.com/TimVanOnckelen/famlin/commit/e1e2f226496d06921b64182d5b522beee925869d))
+
 ## [0.1.12](https://github.com/TimVanOnckelen/famlin/compare/v0.1.11...v0.1.12) (2026-07-10)
 
 
