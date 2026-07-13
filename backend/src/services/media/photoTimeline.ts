@@ -32,18 +32,24 @@ export interface PhotoItem {
 // reusing immich.ts's cache since that one is Immich-specific and keyed
 // differently (ids-only, not full summaries) — this needs to work for every
 // provider.
+//
+// Stale-while-revalidate: an expired entry is served as-is while a single
+// background refresh replaces it, so only the very first request for an
+// album ever waits on the provider crawl — new assets show up one page-load
+// after the TTL instead of making that page-load slow.
 interface AlbumAssetsCacheEntry {
   assets: MediaAssetSummary[];
   expiresAt: number;
 }
 const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000;
 const albumAssetsCache = new Map<string, AlbumAssetsCacheEntry>();
+const albumAssetsRefreshing = new Set<string>();
 
-async function listAlbumAssetsCached(provider: string, externalAlbumId: string): Promise<MediaAssetSummary[]> {
-  const key = `${provider}:${externalAlbumId}`;
-  const cached = albumAssetsCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.assets;
-
+async function fetchAndCacheAlbumAssets(
+  key: string,
+  provider: string,
+  externalAlbumId: string
+): Promise<MediaAssetSummary[]> {
   const mediaProvider = getMediaProvider(provider);
   if (!mediaProvider) return [];
 
@@ -52,11 +58,31 @@ async function listAlbumAssetsCached(provider: string, externalAlbumId: string):
   return assets;
 }
 
+async function listAlbumAssetsCached(provider: string, externalAlbumId: string): Promise<MediaAssetSummary[]> {
+  const key = `${provider}:${externalAlbumId}`;
+  const cached = albumAssetsCache.get(key);
+  if (cached) {
+    if (cached.expiresAt <= Date.now() && !albumAssetsRefreshing.has(key)) {
+      albumAssetsRefreshing.add(key);
+      fetchAndCacheAlbumAssets(key, provider, externalAlbumId)
+        .catch((err) => {
+          // Keep serving the stale entry; the next request retries.
+          console.warn(`photoTimeline: background refresh failed for ${key}:`, err);
+        })
+        .finally(() => albumAssetsRefreshing.delete(key));
+    }
+    return cached.assets;
+  }
+
+  return fetchAndCacheAlbumAssets(key, provider, externalAlbumId);
+}
+
 // Test-only escape hatch, mirrors __clearPersonTagCacheForTests — lets a test
 // force a fresh crawl instead of waiting out the 60s TTL or leaking a stale
 // entry into another test file.
 export function __clearPhotoTimelineCacheForTests(): void {
   albumAssetsCache.clear();
+  albumAssetsRefreshing.clear();
 }
 
 // --- Keyset cursor -----------------------------------------------------
