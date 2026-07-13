@@ -87,7 +87,18 @@ export async function fetchNotificationConfig(): Promise<{ pushEnabled: boolean;
   return response.data;
 }
 
-export async function fetchServerInfo(): Promise<{ version: string }> {
+// minAppVersion/appStoreUrl/playStoreUrl are optional so a client talking to
+// an older server (that only ever returned `version`) still parses the
+// response — see compareVersions() in ./version for how mobile is meant to
+// use minAppVersion to gate a blocking "update required" screen.
+export interface ServerInfo {
+  version: string;
+  minAppVersion?: string;
+  appStoreUrl?: string | null;
+  playStoreUrl?: string | null;
+}
+
+export async function fetchServerInfo(): Promise<ServerInfo> {
   const response = await api.get('/auth/server-info');
   return response.data;
 }

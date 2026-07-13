@@ -14,6 +14,7 @@ import {
   NewAssetMode,
   MediaPerson,
   MediaPersonLink,
+  ServerInfo,
 } from '../types';
 
 export type {
@@ -32,6 +33,7 @@ export type {
   NewAssetMode,
   MediaPerson,
   MediaPersonLink,
+  ServerInfo,
 };
 
 export class ApiError extends Error {
@@ -127,6 +129,10 @@ export const api = {
   getMe: () => request<User>('/api/auth/me'),
 
   getStats: () => request<DashboardStats>('/api/admin/stats'),
+
+  // Public endpoint (no auth required) — used by the dashboard's
+  // update-available notice.
+  getServerInfo: () => request<ServerInfo>('/api/auth/server-info'),
 
   getUsers: (params: { cursor?: string } = {}) => {
     const query = new URLSearchParams();

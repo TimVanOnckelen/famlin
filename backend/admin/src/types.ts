@@ -164,3 +164,10 @@ export interface DashboardStats {
   }[];
   topGroups: { id: string; name: string; postCount: number }[];
 }
+
+// Public endpoint (GET /api/auth/server-info) — no auth required. Only
+// `version` is used today; `minAppVersion`/store URLs may be added by the
+// backend but aren't consumed here.
+export interface ServerInfo {
+  version: string;
+}

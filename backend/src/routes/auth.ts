@@ -32,6 +32,16 @@ const DUMMY_PASSWORD_HASH = await bcrypt.hash(crypto.randomUUID(), 12);
 // any other lock in the app.
 const SETUP_ADVISORY_LOCK_KEY = 4_827_193n;
 
+// The oldest mobile app version this server still supports. Mobile clients
+// compare their own build version against this and show a blocking
+// "update required" screen when they're older. Bump this ONLY when the
+// server genuinely drops compatibility with older clients (e.g. a breaking
+// API change an old client can't cope with), and mark that commit as a
+// breaking change (`feat!:` / `BREAKING CHANGE:` footer) per repo convention
+// — bumping it is itself a breaking change for anyone still running an
+// older app build.
+const MIN_APP_VERSION = '0.1.0';
+
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
   no_email: 'errors.oidcAccountNoEmail',
@@ -509,8 +519,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Public: lets clients (e.g. the mobile app's profile screen) display
-  // which server version they're connected to.
+  // which server version they're connected to, and lets a mobile client
+  // gate itself behind a blocking "update required" screen when its own
+  // build is older than minAppVersion — appStoreUrl/playStoreUrl (already
+  // public on the invite landing page) let that screen link straight to
+  // the right store for this deployment.
   fastify.get('/server-info', async () => {
-    return { version: pkg.version };
+    const settings = await getAllSettings();
+    return {
+      version: pkg.version,
+      minAppVersion: MIN_APP_VERSION,
+      appStoreUrl: settings.appStoreUrl || null,
+      playStoreUrl: settings.playStoreUrl || null,
+    };
   });
 }
