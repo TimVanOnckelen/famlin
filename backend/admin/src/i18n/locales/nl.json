@@ -314,7 +314,9 @@
       "userMappingHint": "Indien ingesteld, zullen foto's van deze persoon getagd worden met zijn of haar Famlin-profiel. Laat leeg om alleen de weergavenaam te tonen.",
       "saveError": "Toewijzing opslaan mislukt: {{error}}",
       "removeConfirm": "Toewijzing verwijderen voor \"{{name}}\"?",
-      "removeError": "Toewijzing verwijderen mislukt: {{error}}"
+      "removeError": "Toewijzing verwijderen mislukt: {{error}}",
+      "mergeHint": "Dit label bestaat al — deze persoon wordt samengevoegd met \"{{label}}\".",
+      "linkedPersons": "{{count}} gekoppelde personen"
     }
   },
   "members": {

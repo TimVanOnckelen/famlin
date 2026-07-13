@@ -1322,8 +1322,12 @@ paths:
       tags: [Media]
       summary: List people mapped to a group
       description: |
-        Returns all explicitly-mapped people visible to members of the group.
-        Face data and source IDs are never exposed to family unless an admin
+        Returns all explicitly-mapped people visible to members of the group,
+        deduplicated per (provider, label) pair. When an admin maps multiple
+        provider-side persons to the same label (e.g., the same child recognized
+        in two different parents' photo libraries), the list shows one entry with
+        a representative id; filtering by that id matches all same-provider same-label
+        mappings. Face data and source IDs are never exposed to family unless an admin
         has mapped them with a `label` and optionally linked them to a user.
       parameters:
         - name: groupId
@@ -1334,8 +1338,10 @@ paths:
       responses:
         '200':
           description: |
-            List of people mapped by an admin for this group,
-            each with their display label and optional user link.
+            List of people mapped by an admin for this group, deduplicated
+            per (provider, label) pair. Each entry has a display label and
+            optional user link; multiple provider-side persons sharing the
+            same label appear as a single entry.
           content:
             application/json:
               schema:

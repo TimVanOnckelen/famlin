@@ -1318,6 +1318,56 @@ h3 {
   white-space: nowrap;
 }
 
+.person-merge-card {
+  align-items: flex-start;
+}
+
+.person-link-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.person-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.person-link-thumb {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.person-link-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fam-primary-tint);
+  color: var(--text-secondary);
+}
+
+.person-link-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .people-show-more {
   margin-top: 0.85rem;
 }

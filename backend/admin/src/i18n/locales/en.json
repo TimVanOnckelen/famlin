@@ -314,7 +314,9 @@
       "userMappingHint": "If set, this person's photos will be tagged with their Famlin profile. Leave empty to show the display name only.",
       "saveError": "Could not save mapping: {{error}}",
       "removeConfirm": "Remove mapping for \"{{name}}\"?",
-      "removeError": "Could not remove mapping: {{error}}"
+      "removeError": "Could not remove mapping: {{error}}",
+      "mergeHint": "This label already exists — this person will be merged with \"{{label}}\".",
+      "linkedPersons": "{{count}} linked persons"
     }
   },
   "members": {
