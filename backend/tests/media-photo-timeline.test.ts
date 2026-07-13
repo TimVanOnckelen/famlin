@@ -145,7 +145,7 @@ describe('GET /api/media/groups/:groupId/photos', () => {
 
     // Simulates a post whose photo was picked from the linked-album picker —
     // the URL shape routes/media.ts's asset proxy generates.
-    await createPost({
+    const post = await createPost({
       groupId: group.id,
       authorId: member.id,
       uploadedAssetUrls: [`/api/media/assets/${link.id}/asset-a/thumbnail.jpg`],
@@ -157,9 +157,42 @@ describe('GET /api/media/groups/:groupId/photos', () => {
       headers: authHeader(member),
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json() as { items: Array<{ id: string }> };
+    const body = res.json() as { items: Array<{ id: string; postId?: string; postAssetUrl?: string }> };
     expect(body.items).toHaveLength(1);
     expect(body.items[0].id).toBe(`album:${link.id}:asset-a`);
+    // The album item carries the embedding post's context, so clients can
+    // offer like/comment/favorite on it.
+    expect(body.items[0]).toMatchObject({
+      postId: post.id,
+      postAssetUrl: `/api/media/assets/${link.id}/asset-a/thumbnail.jpg`,
+    });
+  });
+
+  it('leaves album assets no post embeds without post context', async () => {
+    const member = await createUser();
+    const group = await createGroupWithMember(member);
+
+    __registerMediaProviderForTests(
+      makeFakeProvider(FAKE_PROVIDER_ID, {
+        async listAlbumAssets() {
+          return [asset('asset-solo', '2024-05-01T00:00:00.000Z')];
+        },
+      })
+    );
+    const link = await prisma.mediaAlbumLink.create({
+      data: { groupId: group.id, provider: FAKE_PROVIDER_ID, externalAlbumId: 'solo-album', albumName: 'Solo' },
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/media/groups/${group.id}/photos`,
+      headers: authHeader(member),
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { items: Array<{ id: string; postId?: string; postAssetUrl?: string }> };
+    expect(body.items[0].id).toBe(`album:${link.id}:asset-solo`);
+    expect(body.items[0].postId).toBeUndefined();
+    expect(body.items[0].postAssetUrl).toBeUndefined();
   });
 
   it('paginates with a keyset cursor, returning disjoint pages that end with a null cursor', async () => {

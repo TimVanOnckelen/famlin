@@ -169,6 +169,23 @@ export async function getGroupPhotoTimeline(
     }),
   ]);
 
+  // Posts that embed a provider asset via its media-proxy URL (picked from
+  // the linked-album picker). Maps `${linkId}:${assetId}` to the embedding
+  // post and the verbatim stored URL, so the album item below can carry its
+  // post context — that's what lets clients offer like/comment/favorite on
+  // an album photo that was posted. First post wins if several embed the
+  // same asset.
+  const postByProxyAsset = new Map<string, { postId: string; assetUrl: string }>();
+  const MEDIA_PROXY_URL_RE = /^\/api\/(?:media|immich)\/assets\/([^/]+)\/([^/]+)\//;
+  for (const post of posts) {
+    for (const url of post.uploadedAssetUrls) {
+      const match = MEDIA_PROXY_URL_RE.exec(url);
+      if (!match) continue;
+      const key = `${match[1]}:${match[2]}`;
+      if (!postByProxyAsset.has(key)) postByProxyAsset.set(key, { postId: post.id, assetUrl: url });
+    }
+  }
+
   const items: PhotoItem[] = [];
 
   // Album side — per-link fail-soft: a failing provider/album (network
@@ -199,6 +216,7 @@ export async function getGroupPhotoTimeline(
         for (const asset of assets) {
           if (personAssetIds && !personAssetIds.has(asset.id)) continue;
           const takenAt = asset.takenAt ?? asset.addedAt ?? new Date(0).toISOString();
+          const postRef = postByProxyAsset.get(`${link.id}:${asset.id}`);
           items.push({
             id: `album:${link.id}:${asset.id}`,
             source: 'album',
@@ -212,6 +230,7 @@ export async function getGroupPhotoTimeline(
             albumName: link.albumName,
             linkId: link.id,
             assetId: asset.id,
+            ...(postRef ? { postId: postRef.postId, postAssetUrl: postRef.assetUrl } : {}),
           });
         }
       } catch (err) {

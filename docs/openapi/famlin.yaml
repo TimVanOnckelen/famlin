@@ -2028,7 +2028,17 @@ components:
         postId:
           type: string
           nullable: true
-          description: Post id when source is 'post'; null otherwise.
+          description: >-
+            Post id when source is 'post', or — for source 'album' — the id of
+            a post that embeds this asset via its media-proxy URL; null when no
+            post references the photo.
+        postAssetUrl:
+          type: string
+          nullable: true
+          description: >-
+            Only on source 'album' items that a post embeds: the verbatim
+            media-proxy URL stored in that post's uploadedAssetUrls, usable as
+            the assetUrl when pinning comments to this photo. Null otherwise.
 
     PhotoTimelinePage:
       type: object

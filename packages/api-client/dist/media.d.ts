@@ -33,6 +33,7 @@ export interface PhotoItem {
     linkId?: string;
     assetId?: string;
     postId?: string;
+    postAssetUrl?: string;
 }
 export interface PhotoTimelinePage {
     items: PhotoItem[];
