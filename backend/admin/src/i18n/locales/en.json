@@ -55,6 +55,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "updateAvailable": {
+      "title": "A new version is available: {{version}}",
+      "currentVersion": "Your server is running version {{version}}.",
+      "viewReleaseNotes": "View release notes"
+    },
     "stats": {
       "users": "Users",
       "usersSub_one": "{{count}} admin",

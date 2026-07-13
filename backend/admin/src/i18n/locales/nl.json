@@ -55,6 +55,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "updateAvailable": {
+      "title": "Nieuwe versie beschikbaar: {{version}}",
+      "currentVersion": "Je server draait versie {{version}}.",
+      "viewReleaseNotes": "Bekijk de release notes"
+    },
     "stats": {
       "users": "Gebruikers",
       "usersSub_one": "{{count}} admin",

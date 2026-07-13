@@ -171,6 +171,45 @@ body {
   margin-top: 1.5rem;
 }
 
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--fam-primary-tint);
+  border-color: var(--fam-primary-tint);
+  margin-bottom: 1.5rem;
+}
+
+.update-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+}
+
+.update-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.update-banner-text strong {
+  color: var(--fam-text-title);
+}
+
+.update-banner-link {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

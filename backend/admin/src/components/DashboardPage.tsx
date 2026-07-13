@@ -3,18 +3,60 @@ import { useTranslation } from 'react-i18next';
 import { api, DashboardStats } from '../api/client';
 import { Icon, IconName } from './Icon';
 import i18n from '../i18n';
+import { compareVersions } from '../utils/version';
+
+const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/timvanonckelen/famlin/releases/latest';
+
+interface UpdateInfo {
+  currentVersion: string;
+  latestVersion: string;
+  releaseUrl: string;
+}
 
 export function DashboardPage() {
   const { t } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
     api
       .getStats()
       .then(setStats)
       .finally(() => setLoading(false));
+  }, []);
+
+  // Fail-soft, one-shot check — never blocks the dashboard, never retries,
+  // and renders nothing at all if anything goes wrong (network error, GitHub
+  // rate limiting, a malformed response, ...).
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [serverInfo, releaseRes] = await Promise.all([
+          api.getServerInfo(),
+          fetch(GITHUB_LATEST_RELEASE_URL),
+        ]);
+
+        if (!releaseRes.ok) return;
+        const release = await releaseRes.json();
+        const latestVersion = release?.tag_name;
+        const releaseUrl = release?.html_url;
+        if (typeof latestVersion !== 'string' || typeof releaseUrl !== 'string') return;
+
+        if (!cancelled && compareVersions(latestVersion, serverInfo.version) > 0) {
+          setUpdateInfo({ currentVersion: serverInfo.version, latestVersion, releaseUrl });
+        }
+      } catch {
+        // Network error, CORS/rate-limit failure, etc. — no notice, no retry.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading || !stats) return <div className="loading">{t('common.loading')}</div>;
@@ -27,6 +69,30 @@ export function DashboardPage() {
       <div className="page-header">
         <h2>{t('dashboard.title')}</h2>
       </div>
+
+      {updateInfo && (
+        <div className="card update-banner">
+          <span className="update-banner-icon">
+            <Icon name="bell" size={18} />
+          </span>
+          <div className="update-banner-text">
+            <strong>
+              {t('dashboard.updateAvailable.title', { version: updateInfo.latestVersion })}
+            </strong>
+            <span className="hint" style={{ marginTop: 0 }}>
+              {t('dashboard.updateAvailable.currentVersion', { version: updateInfo.currentVersion })}
+            </span>
+          </div>
+          <a
+            className="update-banner-link"
+            href={updateInfo.releaseUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('dashboard.updateAvailable.viewReleaseNotes')}
+          </a>
+        </div>
+      )}
 
       <div className="stat-grid">
         <StatTile
