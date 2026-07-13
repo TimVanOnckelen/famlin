@@ -37,6 +37,13 @@
           "icon": "./assets/notification-icon.png",
           "color": "#006e94"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Allow Famlin to save photos to your library.",
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ]
   }

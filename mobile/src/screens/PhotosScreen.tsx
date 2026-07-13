@@ -131,12 +131,14 @@ export function PhotosScreen() {
     const urls = allPhotos.map((p) =>
       getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl)
     );
-    // Per-photo metadata: photos that came from a post carry its id plus
-    // their raw /uploads/... path, which enables the viewer's like/comment/
-    // favorite bar for them; album assets have no post to act on.
-    const items = allPhotos.map((p) =>
-      p.postId ? { postId: p.postId, assetUrl: p.originalUrl } : {}
-    );
+    // Per-photo metadata: photos that belong to a post (direct uploads, or
+    // album assets a post embeds — postAssetUrl) enable the viewer's
+    // like/comment/favorite bar; downloadUrl points at the original
+    // rendition since the pager itself shows the smaller preview.
+    const items = allPhotos.map((p) => ({
+      ...(p.postId ? { postId: p.postId, assetUrl: p.postAssetUrl ?? p.originalUrl } : {}),
+      downloadUrl: getUploadUrl(p.originalUrl),
+    }));
     const initialIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
     navigation.navigate('ImageViewer', {

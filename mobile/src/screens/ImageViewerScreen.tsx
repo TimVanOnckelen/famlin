@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Image } from 'expo-image';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import * as MediaLibrary from 'expo-media-library';
+import { File, Paths } from 'expo-file-system';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
@@ -80,32 +82,176 @@ function VideoPage({
   );
 }
 
+const MAX_ZOOM_SCALE = 4;
+const DOUBLE_TAP_SCALE = 2.5;
+const DOUBLE_TAP_WINDOW_MS = 300;
+
+// Pinch-to-zoom / pan / double-tap image page built on core PanResponder +
+// Animated (no gesture-handler/reanimated dependency). Interplay with the
+// surrounding pager: at scale 1 single-finger drags are deliberately ceded
+// to the horizontal ScrollView (onPanResponderTerminationRequest) so paging
+// keeps working; once zoomed the parent disables paging and the swipe-down
+// dismiss (via onZoomChange), so drags pan the photo instead.
 function ImagePage({
   url,
   width,
+  isActive,
   accessibilityLabel,
+  onZoomChange,
 }: {
   url: string;
   width: number;
+  isActive: boolean;
   accessibilityLabel: string;
+  onZoomChange: (zoomed: boolean) => void;
 }) {
   const [loading, setLoading] = useState(true);
 
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  // Live gesture bookkeeping — refs, not state, so the PanResponder callbacks
+  // (created once) always see current values without re-renders per frame.
+  const z = useRef({
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    pinchBase: null as number | null,
+    panStart: null as { dx: number; dy: number; tx: number; ty: number } | null,
+    moved: false,
+    lastTapAt: 0,
+    pageHeight: 0,
+  }).current;
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
+
+  function clampPan(s: number, value: number, size: number) {
+    const max = Math.max(0, (size * (s - 1)) / 2);
+    return Math.min(max, Math.max(-max, value));
+  }
+
+  function apply(nextScale: number, nextTx: number, nextTy: number) {
+    const wasZoomed = z.scale > 1;
+    z.scale = nextScale;
+    z.tx = clampPan(nextScale, nextTx, width);
+    z.ty = clampPan(nextScale, nextTy, z.pageHeight || width);
+    scale.setValue(z.scale);
+    translateX.setValue(z.tx);
+    translateY.setValue(z.ty);
+    const isZoomed = z.scale > 1;
+    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed);
+  }
+
+  function animateTo(nextScale: number) {
+    const wasZoomed = z.scale > 1;
+    z.scale = nextScale;
+    z.tx = clampPan(nextScale, z.tx, width);
+    z.ty = clampPan(nextScale, z.ty, z.pageHeight || width);
+    Animated.parallel([
+      Animated.timing(scale, { toValue: z.scale, duration: 200, useNativeDriver: false }),
+      Animated.timing(translateX, { toValue: z.tx, duration: 200, useNativeDriver: false }),
+      Animated.timing(translateY, { toValue: z.ty, duration: 200, useNativeDriver: false }),
+    ]).start();
+    const isZoomed = z.scale > 1;
+    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed);
+  }
+
+  const responder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) =>
+        evt.nativeEvent.touches.length >= 2 ||
+        (z.scale > 1 && (Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2)),
+      // At scale 1, let the paging ScrollView steal single-finger drags.
+      onPanResponderTerminationRequest: () => z.scale <= 1,
+      onPanResponderGrant: () => {
+        z.pinchBase = null;
+        z.panStart = null;
+        z.moved = false;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const touches = evt.nativeEvent.touches;
+        if (touches.length >= 2) {
+          z.moved = true;
+          z.panStart = null;
+          const dist = Math.hypot(
+            touches[0].pageX - touches[1].pageX,
+            touches[0].pageY - touches[1].pageY
+          );
+          if (dist <= 0) return;
+          // pinchBase = finger distance per unit of scale, captured at pinch
+          // start, so scale tracks the fingers relative to where they began.
+          if (z.pinchBase === null) z.pinchBase = dist / z.scale;
+          const next = Math.min(MAX_ZOOM_SCALE, Math.max(1, dist / z.pinchBase));
+          apply(next, z.tx, z.ty);
+        } else if (z.scale > 1) {
+          z.pinchBase = null;
+          if (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4) z.moved = true;
+          if (!z.panStart) {
+            z.panStart = { dx: gestureState.dx, dy: gestureState.dy, tx: z.tx, ty: z.ty };
+          }
+          apply(
+            z.scale,
+            z.panStart.tx + (gestureState.dx - z.panStart.dx),
+            z.panStart.ty + (gestureState.dy - z.panStart.dy)
+          );
+        }
+      },
+      onPanResponderRelease: () => {
+        z.pinchBase = null;
+        z.panStart = null;
+        if (!z.moved) {
+          const now = Date.now();
+          if (now - z.lastTapAt < DOUBLE_TAP_WINDOW_MS) {
+            z.lastTapAt = 0;
+            animateTo(z.scale > 1 ? 1 : DOUBLE_TAP_SCALE);
+          } else {
+            z.lastTapAt = now;
+          }
+        } else if (z.scale < 1.05) {
+          // Pinched back to (almost) fit — snap clean so paging re-enables.
+          animateTo(1);
+        }
+      },
+      onPanResponderTerminate: () => {
+        z.pinchBase = null;
+        z.panStart = null;
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    // Swiping away resets the zoom, so returning to this photo starts fitted.
+    if (!isActive && z.scale > 1) {
+      z.tx = 0;
+      z.ty = 0;
+      animateTo(1);
+    }
+  }, [isActive]);
+
   return (
-    <View style={[styles.page, { width }]}>
-      <Image
-        // cacheKey strips the rotating ?token= (see PhotosScreen) so a
-        // token refresh doesn't invalidate already-downloaded previews.
-        source={{ uri: url, cacheKey: url.split('?')[0] }}
-        style={styles.image}
-        contentFit="contain"
-        transition={100}
-        onLoadStart={() => setLoading(true)}
-        onLoad={() => setLoading(false)}
-        onError={() => setLoading(false)}
-        accessible
-        accessibilityLabel={accessibilityLabel}
-      />
+    <View
+      style={[styles.page, { width }]}
+      onLayout={(e) => {
+        z.pageHeight = e.nativeEvent.layout.height;
+      }}
+      {...responder.panHandlers}
+    >
+      <Animated.View style={[styles.zoomContainer, { transform: [{ translateX }, { translateY }, { scale }] }]}>
+        <Image
+          // cacheKey strips the rotating ?token= (see PhotosScreen) so a
+          // token refresh doesn't invalidate already-downloaded previews.
+          source={{ uri: url, cacheKey: url.split('?')[0] }}
+          style={styles.image}
+          contentFit="contain"
+          transition={100}
+          onLoadStart={() => setLoading(true)}
+          onLoad={() => setLoading(false)}
+          onError={() => setLoading(false)}
+          accessible
+          accessibilityLabel={accessibilityLabel}
+        />
+      </Animated.View>
       {loading && (
         <View style={styles.pageLoader} pointerEvents="none">
           <ActivityIndicator size="large" color={colors.white} />
@@ -123,30 +269,64 @@ function ImagePage({
 interface ViewerItem {
   postId?: string;
   assetUrl?: string;
+  // Absolute URL of the rendition worth saving to the device (the original,
+  // not the preview shown in the pager). Falls back to the displayed URL.
+  downloadUrl?: string;
 }
 
 function PhotoActionsBar({
   postId,
   canComment,
+  downloadUrl,
   onOpenComments,
 }: {
-  postId: string;
+  postId?: string;
   canComment: boolean;
+  downloadUrl: string;
   onOpenComments: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
+  // Album photos without a post still get the bar (download only).
   const { data: post } = useQuery({
     queryKey: ['post', postId],
-    queryFn: () => fetchPost(postId),
+    queryFn: () => fetchPost(postId!),
+    enabled: !!postId,
   });
+
+  async function handleDownload() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      // writeOnly: add-to-library is all we need — avoids the scarier
+      // full-library read permission prompt on iOS.
+      const permission = await MediaLibrary.requestPermissionsAsync(true);
+      if (!permission.granted) {
+        Alert.alert(t('common.error'), t('imageViewer.downloadPermissionDenied'));
+        return;
+      }
+      const cleanPath = downloadUrl.split('?')[0];
+      const filename = cleanPath.substring(cleanPath.lastIndexOf('/') + 1) || 'photo.jpg';
+      const destination = new File(Paths.cache, filename);
+      if (destination.exists) destination.delete();
+      const file = await File.downloadFileAsync(downloadUrl, destination);
+      await MediaLibrary.saveToLibraryAsync(file.uri);
+      file.delete();
+      Alert.alert(t('imageViewer.downloadSuccess'));
+    } catch {
+      Alert.alert(t('common.error'), t('imageViewer.downloadError'));
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   // Same optimistic patch PostCard applies, so the feed/detail caches stay
   // in sync with what the viewer shows.
   const likeMutation = useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(postId, type),
+    mutationFn: (type: ReactionType) => reactToPost(postId!, type),
     onMutate: async (type) => {
       if (!post) return;
       await queryClient.cancelQueries({ queryKey: ['posts'] });
@@ -166,7 +346,7 @@ function PhotoActionsBar({
         };
       };
 
-      patchPostInCaches(queryClient, postId, patch);
+      patchPostInCaches(queryClient, postId!, patch);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -175,14 +355,14 @@ function PhotoActionsBar({
   });
 
   const favoriteMutation = useMutation({
-    mutationFn: () => toggleFavoritePost(postId),
+    mutationFn: () => toggleFavoritePost(postId!),
     onMutate: async () => {
       if (!post) return;
       await queryClient.cancelQueries({ queryKey: ['posts'] });
       await queryClient.cancelQueries({ queryKey: ['post', postId] });
 
       const nextFavorited = !post.favoritedByMe;
-      patchPostInCaches(queryClient, postId, (p: Post) => ({ ...p, favoritedByMe: nextFavorited }));
+      patchPostInCaches(queryClient, postId!, (p: Post) => ({ ...p, favoritedByMe: nextFavorited }));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -191,52 +371,68 @@ function PhotoActionsBar({
     },
   });
 
-  if (!post) return null;
-
   return (
     <>
       <View style={styles.actionBar}>
-        <TouchableOpacity
-          style={styles.actionBarButton}
-          onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
-          onLongPress={() => setReactionPickerOpen(true)}
-          disabled={likeMutation.isPending}
-          hitSlop={8}
-          accessibilityLabel={t('imageViewer.likeButton')}
-          accessibilityState={{ selected: !!post.myReaction }}
-        >
-          {post.myReaction ? (
-            <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
-          ) : (
-            <Icon name="heart" size={22} color={colors.white} />
-          )}
-          {post.likeCount > 0 && <Text style={styles.actionBarCount}>{post.likeCount}</Text>}
-        </TouchableOpacity>
+        {post && (
+          <>
+            <TouchableOpacity
+              style={styles.actionBarButton}
+              onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
+              onLongPress={() => setReactionPickerOpen(true)}
+              disabled={likeMutation.isPending}
+              hitSlop={8}
+              accessibilityLabel={t('imageViewer.likeButton')}
+              accessibilityState={{ selected: !!post.myReaction }}
+            >
+              {post.myReaction ? (
+                <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
+              ) : (
+                <Icon name="heart" size={22} color={colors.white} />
+              )}
+              {post.likeCount > 0 && <Text style={styles.actionBarCount}>{post.likeCount}</Text>}
+            </TouchableOpacity>
 
-        {canComment && (
-          <TouchableOpacity
-            style={styles.actionBarButton}
-            onPress={onOpenComments}
-            hitSlop={8}
-            accessibilityLabel={t('imageViewer.commentsButton')}
-          >
-            <Icon name="message-circle" size={22} color={colors.white} />
-          </TouchableOpacity>
+            {canComment && (
+              <TouchableOpacity
+                style={styles.actionBarButton}
+                onPress={onOpenComments}
+                hitSlop={8}
+                accessibilityLabel={t('imageViewer.commentsButton')}
+              >
+                <Icon name="message-circle" size={22} color={colors.white} />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.actionBarButton}
+              onPress={() => favoriteMutation.mutate()}
+              disabled={favoriteMutation.isPending}
+              hitSlop={8}
+              accessibilityLabel={t('imageViewer.favoriteButton')}
+              accessibilityState={{ selected: !!post.favoritedByMe }}
+            >
+              <Icon
+                name="bookmark"
+                size={22}
+                color={post.favoritedByMe ? colors.primary : colors.white}
+              />
+            </TouchableOpacity>
+          </>
         )}
 
         <TouchableOpacity
           style={styles.actionBarButton}
-          onPress={() => favoriteMutation.mutate()}
-          disabled={favoriteMutation.isPending}
+          onPress={handleDownload}
+          disabled={downloading}
           hitSlop={8}
-          accessibilityLabel={t('imageViewer.favoriteButton')}
-          accessibilityState={{ selected: !!post.favoritedByMe }}
+          accessibilityLabel={t('imageViewer.downloadButton')}
         >
-          <Icon
-            name="bookmark"
-            size={22}
-            color={post.favoritedByMe ? colors.primary : colors.white}
-          />
+          {downloading ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Icon name="download" size={22} color={colors.white} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -269,6 +465,17 @@ export function ImageViewerScreen() {
   const currentPostId: string | undefined = items ? currentItem?.postId : postId;
   const currentAssetUrl: string | undefined = items ? currentItem?.assetUrl : assetUrls?.[currentIndex];
   const canComment = !!currentPostId && !!currentAssetUrl;
+  const currentDownloadUrl: string = currentItem?.downloadUrl ?? urls[currentIndex];
+
+  // While a photo is zoomed, paging and the swipe-down dismiss are disabled
+  // so drags pan the photo instead. State drives scrollEnabled; the ref is
+  // read inside the PanResponder callbacks (created once).
+  const [isZoomed, setIsZoomed] = useState(false);
+  const isZoomedRef = useRef(false);
+  function handleZoomChange(zoomed: boolean) {
+    isZoomedRef.current = zoomed;
+    setIsZoomed(zoomed);
+  }
 
   const translateY = useRef(new Animated.Value(0)).current;
   const backdropOpacity = translateY.interpolate({
@@ -280,7 +487,12 @@ export function ImageViewerScreen() {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
-        Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        // Single-finger only, and never while zoomed: two-finger pinches and
+        // pans of a zoomed photo must reach the ImagePage underneath.
+        gestureState.numberActiveTouches === 1 &&
+        !isZoomedRef.current &&
+        Math.abs(gestureState.dy) > 10 &&
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
       onPanResponderMove: (_evt, gestureState) => {
         if (gestureState.dy > 0) {
           translateY.setValue(gestureState.dy);
@@ -356,6 +568,7 @@ export function ImageViewerScreen() {
             decelerationRate="fast"
             scrollEventThrottle={16}
             onScroll={handleScroll}
+            scrollEnabled={!isZoomed}
             style={styles.scrollView}
           >
             {urls.map((url: string, index: number) =>
@@ -372,22 +585,24 @@ export function ImageViewerScreen() {
                   key={`${url}-${index}`}
                   url={url}
                   width={width}
+                  isActive={index === currentIndex}
+                  onZoomChange={handleZoomChange}
                   accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
                 />
               )
             )}
           </ScrollView>
 
-          {currentPostId && (
-            // Remount per post so the bar never briefly shows the previous
-            // post's counts while swiping across posts in the photos tab.
-            <PhotoActionsBar
-              key={currentPostId}
-              postId={currentPostId}
-              canComment={canComment}
-              onOpenComments={() => setCommentsVisible(true)}
-            />
-          )}
+          {/* Remount per post so the bar never briefly shows the previous
+              post's counts while swiping across posts in the photos tab.
+              Without a post it still renders (download-only). */}
+          <PhotoActionsBar
+            key={currentPostId ?? 'no-post'}
+            postId={currentPostId}
+            canComment={canComment}
+            downloadUrl={currentDownloadUrl}
+            onOpenComments={() => setCommentsVisible(true)}
+          />
 
           {canComment && (
             <PhotoCommentsSheet
@@ -588,6 +803,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   image: {
+    width: '100%',
+    height: '100%',
+  },
+  zoomContainer: {
     width: '100%',
     height: '100%',
   },

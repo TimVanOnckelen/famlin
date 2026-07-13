@@ -248,6 +248,10 @@
     "commentsTitle": "Comments",
     "noComments": "No comments on this photo yet",
     "likeButton": "Like",
-    "favoriteButton": "Favorite"
+    "favoriteButton": "Favorite",
+    "downloadButton": "Save to device",
+    "downloadSuccess": "Saved to your photo library",
+    "downloadError": "Could not save this photo",
+    "downloadPermissionDenied": "Famlin needs permission to save photos to your library"
   }
 }

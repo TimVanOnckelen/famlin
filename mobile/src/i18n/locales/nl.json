@@ -248,6 +248,10 @@
     "commentsTitle": "Reacties",
     "noComments": "Nog geen reacties op deze foto",
     "likeButton": "Vind ik leuk",
-    "favoriteButton": "Favoriet"
+    "favoriteButton": "Favoriet",
+    "downloadButton": "Opslaan op toestel",
+    "downloadSuccess": "Opgeslagen in je fotobibliotheek",
+    "downloadError": "Kon deze foto niet opslaan",
+    "downloadPermissionDenied": "Famlin heeft toestemming nodig om foto's op te slaan"
   }
 }
