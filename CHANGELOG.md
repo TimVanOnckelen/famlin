@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.2](https://github.com/TimVanOnckelen/famlin/compare/v0.2.1...v0.2.2) (2026-07-14)
+
+
+### Features
+
+* update app version and build number for iOS and Android, adjust EAS configuration ([8e8510c](https://github.com/TimVanOnckelen/famlin/commit/8e8510c26788ebbe60794b6f734c28828c12934d))
+* update app version and build number for iOS and Android, adjust… ([4ff73d9](https://github.com/TimVanOnckelen/famlin/commit/4ff73d95602a058961cd4ec2ad148a78e9e6d54c))
+
+
+### Bug Fixes
+
+* ensure local node_modules for api-client to resolve dependencies ([f71b853](https://github.com/TimVanOnckelen/famlin/commit/f71b85397c32f670235705fb75275009ef3b858e))
+* ensure local node_modules for api-client to resolve dependencies ([58ef724](https://github.com/TimVanOnckelen/famlin/commit/58ef7248e1f76eb7f1b6c7379e8b46387f667a65))
+
 ## [0.2.1](https://github.com/TimVanOnckelen/famlin/compare/v0.2.0...v0.2.1) (2026-07-14)
 
 
