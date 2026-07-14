@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { compareVersions } from '@famlin/api-client';
 import { api, DashboardStats } from '../api/client';
 import { Icon, IconName } from './Icon';
 import i18n from '../i18n';
-import { compareVersions } from '../utils/version';
+import { avatarColor, initials } from '../avatar';
 
 const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/timvanonckelen/famlin/releases/latest';
 
@@ -255,22 +256,4 @@ function StatTile({ icon, label, value, sub }: StatTileProps) {
       {sub && <span className="stat-tile-sub">{sub}</span>}
     </div>
   );
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function avatarColor(name: string) {
-  const palette = ['#006e94', '#318ea2', '#187191', '#005480', '#ed835e'];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return palette[Math.abs(hash) % palette.length];
 }

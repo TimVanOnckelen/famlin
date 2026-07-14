@@ -17,6 +17,13 @@ RUN npm ci
 COPY backend/prisma ./prisma
 RUN npx prisma generate
 
+# The admin UI depends on the shared api-client via file:../../packages/api-client
+# (see backend/admin/package.json). /app holds backend/, so that path resolves to
+# /packages/api-client — copy it there for the `npm ci` that `npm run build` runs
+# inside admin/. Its committed dist/ is used as-is (same pattern as mobile's
+# file: dependency; no build step needed).
+COPY packages /packages
+
 # Copy source and build (backend + admin UI -> dist/, dist/admin)
 COPY backend/ ./
 RUN npm run build

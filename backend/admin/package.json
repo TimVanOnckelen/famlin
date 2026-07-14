@@ -17,6 +17,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@famlin/api-client": "file:../../packages/api-client",
+    "@tanstack/react-query": "^5.48.0",
+    "axios": "^1.7.2",
     "i18next": "^26.3.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
