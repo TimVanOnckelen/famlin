@@ -22,7 +22,17 @@ RUN npx prisma generate
 # /packages/api-client — copy it there for the `npm ci` that `npm run build` runs
 # inside admin/. Its committed dist/ is used as-is (same pattern as mobile's
 # file: dependency; no build step needed).
+#
+# /packages/api-client has no lockfile of its own (it normally relies on the
+# root workspace's), and sits outside admin's node_modules tree entirely, so
+# without its own node_modules here, admin's `vite build` can't resolve the
+# runtime deps its compiled dist/*.js files `require()` (axios, at least) —
+# Rollup silently leaves those as unresolved external imports instead of
+# failing the build, which breaks the shipped bundle at runtime in the
+# browser ("Failed to resolve module specifier axios") rather than at build
+# time. Give it its own node_modules so those resolve locally.
 COPY packages /packages
+RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund
 
 # Copy source and build (backend + admin UI -> dist/, dist/admin)
 COPY backend/ ./
