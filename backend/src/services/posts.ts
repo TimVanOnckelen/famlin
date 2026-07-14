@@ -3,6 +3,27 @@ import { prisma } from '../db.js';
 import { summarizeReactions } from './reactions.js';
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js';
 
+// Shared Prisma include shape for fetching a post as a member should see it —
+// used by every post-returning endpoint (feed, detail, search, on-this-day,
+// create, update, interactions, favorites) so the author/group/counts/likes/
+// favorites relations aren't hand-repeated at every call site.
+export const postInclude = (userId: string) => ({
+  author: { select: { id: true, name: true, avatarUrl: true } },
+  // The feed can span several groups (see the groupIds filter on GET /), so
+  // clients need the group's name on each post to label where it belongs.
+  group: { select: { id: true, name: true } },
+  _count: { select: { comments: true, likes: true } },
+  // All reaction rows (not just this user's) so the response can show a
+  // per-emoji breakdown, not just a total — see services/reactions.ts.
+  // Ordered most-recent-first and carrying the reactor's identity so
+  // shapePost can expose recentReactors ("who reacted, not just a count").
+  likes: {
+    select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+    orderBy: { createdAt: 'desc' as const },
+  },
+  favorites: { where: { userId }, select: { id: true } },
+});
+
 // Shared response shape for a post — used everywhere a post (list, detail,
 // create, update, favorites) is returned to a member, so the
 // commentCount/likeCount/likedByMe/favoritedByMe/reactions mapping isn't

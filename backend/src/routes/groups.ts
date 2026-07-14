@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { isGroupMember } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
 import { getT } from '../i18n/index.js';
 
 // Member-facing, read-only group endpoints. All group mutations (create/update/
@@ -42,9 +42,7 @@ export default async function groupRoutes(fastify: FastifyInstance) {
   fastify.get('/:id/members', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    if (!(await isGroupMember(id, request.user!.id))) {
-      return reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, id)) return;
 
     const members = await prisma.groupMember.findMany({
       where: { groupId: id },

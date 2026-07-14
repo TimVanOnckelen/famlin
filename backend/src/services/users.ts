@@ -1,3 +1,17 @@
+import bcrypt from 'bcryptjs';
+
+// Bcrypt cost factor for every password hash the app creates (login setup,
+// registration, invite acceptance, password reset/change) — one constant so
+// tuning it is a one-line change instead of a grep-and-replace.
+const SALT_ROUNDS = 12;
+
+// Shared password hashing helper — every place the app turns a plaintext
+// password into a stored hash routes through this rather than calling
+// bcrypt.hash directly, so the cost factor stays consistent everywhere.
+export async function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, SALT_ROUNDS);
+}
+
 // Fields safe to hand back to the user themselves — never includes
 // passwordHash or tokenVersion. Shared by every route that returns "the
 // current user" after login/register/invite acceptance.

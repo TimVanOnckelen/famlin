@@ -9,8 +9,9 @@ import {
   parseMediaAssetPath,
 } from '../types.js';
 import { emitDomainEvent } from '../events.js';
-import { isGroupMember, getUserGroupIds } from '../services/groups.js';
-import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings } from '../services/posts.js';
+import { getUserGroupIds } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
+import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings, postInclude } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js';
@@ -30,23 +31,6 @@ async function mediaUrlsBelongToGroup(urls: string[] | undefined, groupId: strin
   const links = await prisma.mediaAlbumLink.findMany({ where: { id: { in: linkIds } } });
   return links.length === linkIds.length && links.every((link) => link.groupId === groupId);
 }
-
-const postInclude = (userId: string) => ({
-  author: { select: { id: true, name: true, avatarUrl: true } },
-  // The feed can span several groups (see the groupIds filter on GET /), so
-  // clients need the group's name on each post to label where it belongs.
-  group: { select: { id: true, name: true } },
-  _count: { select: { comments: true, likes: true } },
-  // All reaction rows (not just this user's) so the response can show a
-  // per-emoji breakdown, not just a total — see services/reactions.ts.
-  // Ordered most-recent-first and carrying the reactor's identity so
-  // shapePost can expose recentReactors ("who reacted, not just a count").
-  likes: {
-    select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
-    orderBy: { createdAt: 'desc' as const },
-  },
-  favorites: { where: { userId }, select: { id: true } },
-});
 
 export default async function postRoutes(fastify: FastifyInstance) {
   // The feed is a filter over the user's groups: `groupIds` (comma-separated)
@@ -112,12 +96,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
   // dynamic :id param route.
   fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
     const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query);
 
-    if (!(await isGroupMember(groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, groupId)) return;
 
     const posts = await prisma.post.findMany({
       where: {
@@ -141,9 +122,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const { groupId } = request.query as { groupId?: string };
     if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
 
-    if (!(await isGroupMember(groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, groupId)) return;
 
     const posts = await getOnThisDayPosts(groupId);
     if (posts.length === 0) return { items: [] };
@@ -164,16 +143,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     const post = await prisma.post.findUnique({
       where: { id },
-      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      include: postInclude(request.user!.id),
     });
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     const [shaped] = await shapePostsWithPeople([post], request.user!.id);
     return shaped;
@@ -189,9 +166,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const targets = [...new Set(body.groupIds ?? [body.groupId!])];
 
     for (const groupId of targets) {
-      if (!(await isGroupMember(groupId, request.user!.id))) {
-        return reply.status(403).send({ error: t('errors.notGroupMember') });
-      }
+      if (await requireGroupMember(request, reply, groupId)) return;
     }
 
     if (targets.length === 1) {
@@ -213,7 +188,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
           longitude: body.longitude,
           locationName: body.locationName,
         },
-        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+        include: postInclude(request.user!.id),
       });
 
       // Handlers run fire-and-forget (see events.ts), so fanning out
@@ -273,7 +248,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
             crossPostId,
             createdAt,
           },
-          include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+          include: postInclude(request.user!.id),
         })
       )
     );
@@ -313,9 +288,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     // Editing writes into the group, so it requires *current* membership — a
     // removed member's old posts stay visible but they can't keep editing them.
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     if (post.crossPostId) {
       // Cross-posted: every sibling shares identical content, so an edit
@@ -355,7 +328,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
       const current = await prisma.post.findUnique({
         where: { id },
-        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+        include: postInclude(request.user!.id),
       });
       const [shaped] = await attachSharedWithGroups(
         [shapePost(current!, request.user!.id)],
@@ -375,7 +348,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         editedAt: new Date(),
         ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
       },
-      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      include: postInclude(request.user!.id),
     });
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.

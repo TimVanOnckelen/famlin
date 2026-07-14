@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { isGroupMember } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { paginationQuerySchema } from '../types.js';
-import { shapePostsWithPeople, dedupeByCrossPostId } from '../services/posts.js';
+import { shapePostsWithPeople, dedupeByCrossPostId, postInclude } from '../services/posts.js';
 import { getT } from '../i18n/index.js';
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
@@ -17,9 +17,7 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     const existing = await prisma.favorite.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
@@ -55,20 +53,7 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
       },
       include: {
         post: {
-          include: {
-            author: { select: { id: true, name: true, avatarUrl: true } },
-            group: { select: { id: true, name: true } },
-            _count: { select: { comments: true, likes: true } },
-            likes: {
-              select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
-              orderBy: { createdAt: 'desc' as const },
-            },
-            // Every row here is already this user's own favorite (the outer
-            // query is scoped to userId), so this relation only exists to let
-            // shapePost compute favoritedByMe the same way every other
-            // post-returning endpoint does — it's always exactly one row.
-            favorites: { where: { userId: request.user!.id }, select: { id: true } },
-          },
+          include: postInclude(request.user!.id),
         },
       },
       orderBy: { createdAt: 'desc' },

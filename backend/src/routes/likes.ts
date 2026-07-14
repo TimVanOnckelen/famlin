@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { emitDomainEvent } from '../events.js';
-import { isGroupMember } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
 import { getT } from '../i18n/index.js';
 import { reactionBodySchema } from '../types.js';
 import { reactionCounts } from '../services/reactions.js';
@@ -21,9 +21,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     const existing = await prisma.like.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
@@ -79,9 +77,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
     }
 
-    if (!(await isGroupMember(comment.post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, comment.post.groupId)) return;
 
     const existing = await prisma.like.findUnique({
       where: { commentId_userId: { commentId, userId: request.user!.id } },

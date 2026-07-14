@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { invalidateSessionCache } from '../plugins/auth.js';
+import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getAllSettings, updateSettings } from '../services/settings.js';
 import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
@@ -92,17 +92,6 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 // map it to a 404 instead of letting it fall through to a generic 500.
 function isRecordNotFound(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2025';
-}
-
-// Returns true (and sends a 403) when the caller is not an admin. Callers MUST
-// `return` when this returns true, otherwise the handler keeps executing after
-// the 403 is sent and the mutation still runs.
-function requireAdmin(request: any, reply: any): boolean {
-  if (!request.user?.isAdmin) {
-    reply.status(403).send({ error: getT(request)('errors.adminRequired') });
-    return true;
-  }
-  return false;
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {

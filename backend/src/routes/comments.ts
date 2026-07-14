@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { createCommentBodySchema, updateCommentBodySchema } from '../types.js';
 import { emitDomainEvent } from '../events.js';
-import { isGroupMember } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
 
@@ -18,9 +18,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     const comments = await prisma.comment.findMany({
       where: {
@@ -52,9 +50,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     let assetUrl = body.assetUrl;
 
@@ -82,6 +78,8 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { likes: true } },
+        likes: { select: { type: true, userId: true } },
       },
     });
 
@@ -102,7 +100,11 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       mentionedUserIds: body.mentionedUserIds ?? [],
     });
 
-    return { ...comment, likeCount: 0, likedByMe: false, myReaction: null, reactions: {} };
+    // A brand new comment has no likes yet, so this is the same shape as the
+    // hand-built { likeCount: 0, likedByMe: false, myReaction: null,
+    // reactions: {} } object it replaces — just routed through the same
+    // shapeComment every other comment-returning endpoint uses.
+    return shapeComment(comment, request.user!.id);
   });
 
   fastify.patch('/comments/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -124,9 +126,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     }
 
     // Editing writes into the group, so it requires *current* membership.
-    if (!(await isGroupMember(comment.post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, comment.post.groupId)) return;
 
     const updated = await prisma.comment.update({
       where: { id },
