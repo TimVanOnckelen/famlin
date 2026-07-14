@@ -512,6 +512,18 @@ paths:
         server-side into Famlin's own upload storage at post time so every
         target group can see them without gaining access to the source
         album; direct uploads are shared as-is.
+
+        Every target group's `allowedPostTypes` (see `Group`) must include
+        the requested `type` — for a cross-post, **all** target groups must
+        allow it, or the whole request is rejected with no post created.
+
+        `type: "POLL"` creates a poll: `content` is the poll's question
+        (required, non-empty) and `typeData` carries `{ options, closesAt? }`
+        — 2 to 10 options, each 1-100 characters. The server assigns each
+        option a stable id; options can't be added, removed, or edited after
+        creation. `closesAt` is optional and API-only (no composer support
+        yet) — once it passes, the poll stops accepting votes. Polls may also
+        carry `uploadedAssetUrls` like any other post.
       requestBody:
         required: true
         content:
@@ -539,8 +551,19 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE]
+                  enum: [UPDATE, MILESTONE, POLL]
                   default: UPDATE
+                  description: A server may support additional types beyond these three.
+                typeData:
+                  type: object
+                  description: |
+                    Type-specific creation payload; rejected (`400`) if sent
+                    for a type that doesn't accept one (`UPDATE`/`MILESTONE`
+                    today). For `POLL`: `{ options: [{ text }], closesAt? }`.
+                  example:
+                    options:
+                      - { text: Pizza }
+                      - { text: Tacos }
                 milestoneTag:
                   type: string
                   maxLength: 50
@@ -569,11 +592,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          description: |
+            Invalid request body (see `details`), or a post-type-specific
+            problem: an unrecognized `type`, `typeData` that doesn't match
+            the type's own schema (or was sent for a type that doesn't accept
+            one), or — for a poll — an empty question.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      details:
+                        type: object
+                        description: Zod field errors, present only for body-shape problems.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/NotGroupMember'
+          description: |
+            Not a member of a target group, or a target group's
+            `allowedPostTypes` doesn't include the requested `type` (for a
+            cross-post, every target group must allow it).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/posts/search:
     get:
@@ -741,6 +785,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{postId}/interactions:
+    post:
+      operationId: interactWithPost
+      tags: [Posts]
+      summary: Post-type-specific interaction
+      description: |
+        A generic, per-user action whose meaning depends on the post's
+        `type` — poll voting today, more later as new types are registered.
+        `key`/`value` are opaque here; the post's own type decides what's
+        valid. No notification is sent for an interaction.
+
+        For a `POLL` post: `key: "vote"`, `value: { optionId }`. Voting your
+        current option again **removes** your vote (unvote); voting a
+        different option **switches** it. Votes are public to group members
+        (not anonymous) and results are visible whether or not you've voted.
+        Voting after `closesAt` has passed is rejected.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key:
+                  type: string
+                  maxLength: 50
+                  example: vote
+                value:
+                  description: Shape depends on `key` — for `vote`, `{ optionId }`.
+                  example: { optionId: opt_1 }
+      responses:
+        '200':
+          description: The post, fully re-shaped (including `poll`) with your interaction applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: |
+            The post's type doesn't support interactions, `key`/`value`
+            wasn't valid for it, or — for a poll — an unknown `optionId` or a
+            closed poll.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -1793,6 +1896,15 @@ components:
           type: string
           format: date-time
           description: When *you* joined this group.
+        allowedPostTypes:
+          type: array
+          items: { type: string }
+          example: [UPDATE, MILESTONE, POLL]
+          description: |
+            Post types you can create in this group (see `Post`'s `type`).
+            Always the resolved, effective list — never empty. A group an
+            admin hasn't restricted returns every type the server currently
+            supports, including ones added after the group was created.
 
     GroupMember:
       type: object
@@ -1853,7 +1965,39 @@ components:
           example: First day of school!
         type:
           type: string
-          enum: [UPDATE, MILESTONE]
+          enum: [UPDATE, MILESTONE, POLL]
+          description: |
+            An open-ended discriminator — a server may register additional
+            types beyond these three (see `PostTypeHandler` in the developer
+            docs); treat an unrecognized value as a plain update. `content`
+            stays the universal human-readable field for every type (a
+            poll's question, for instance); type-specific configuration
+            lives in `typeData` instead.
+        typeData:
+          type: object
+          nullable: true
+          description: |
+            Type-specific configuration, `null` for `UPDATE`/`MILESTONE`. For
+            `POLL`: `{ options: [{ id, text }], closesAt }` — the stored
+            options (immutable after creation) and optional ISO 8601 close
+            time. Not present on the response to `POST /api/posts` or
+            `PATCH /api/posts/{id}` beyond what you sent — read the poll's
+            live vote tallies from `poll` below instead.
+          example:
+            options:
+              - { id: opt_1, text: Pizza }
+              - { id: opt_2, text: Tacos }
+            closesAt: null
+        poll:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostPoll'
+          description: |
+            Present only when `type` is `POLL` — the enriched, read-time view
+            (vote counts, voters, your own vote). Computed on every read, so
+            it's absent from `POST /api/posts` and `PATCH /api/posts/{id}`
+            responses (fetch the post again, e.g. via `GET /api/posts/{id}`,
+            to see it) — the same precedent as `people` below.
         milestoneTag:
           type: string
           nullable: true
@@ -1922,6 +2066,43 @@ components:
           type: string
           nullable: true
           description: Pass back as `?cursor=` for the next page; `null` on the last page.
+
+    PostPoll:
+      type: object
+      description: |
+        The enriched, read-time view of a `POLL` post's `typeData` — computed
+        fresh on every read, never stored as-is. Options and vote counts are
+        visible to every group member whether or not they've voted; votes are
+        not anonymous (see `voters` on each option).
+      properties:
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionResult'
+        totalVotes: { type: integer }
+        myVoteOptionId:
+          type: string
+          nullable: true
+          description: The option id you voted for, or `null` if you haven't voted.
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+        closed:
+          type: boolean
+          description: '`true` once `closesAt` has passed. Voting a closed poll is rejected.'
+
+    PollOptionResult:
+      type: object
+      properties:
+        id: { type: string }
+        text: { type: string }
+        voteCount: { type: integer }
+        voters:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: Everyone who voted for this option, oldest vote first.
 
     Comment:
       type: object

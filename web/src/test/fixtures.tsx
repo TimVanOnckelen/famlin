@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Post, Comment, User } from '@famlin/api-client';
+import { Post, PostPoll, Comment, User } from '@famlin/api-client';
 
 export function makePost(overrides: Partial<Post> = {}): Post {
   return {
@@ -26,6 +26,20 @@ export function makePost(overrides: Partial<Post> = {}): Post {
     reactions: {},
     favoritedByMe: false,
     people: [],
+    ...overrides,
+  };
+}
+
+export function makePoll(overrides: Partial<PostPoll> = {}): PostPoll {
+  return {
+    options: [
+      { id: 'opt-1', text: 'Pizza', voteCount: 2, voters: [{ id: 'user-2', name: 'Sophie', avatarUrl: null }] },
+      { id: 'opt-2', text: 'Sushi', voteCount: 1, voters: [{ id: 'user-3', name: 'Emma', avatarUrl: null }] },
+    ],
+    totalVotes: 3,
+    myVoteOptionId: null,
+    closesAt: null,
+    closed: false,
     ...overrides,
   };
 }

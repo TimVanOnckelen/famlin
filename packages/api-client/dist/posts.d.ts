@@ -1,4 +1,4 @@
-import { Post, ReactionType } from './types';
+import { Post, PollCreateData, PostType, ReactionType } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -21,7 +21,8 @@ export interface CreatePostBody {
     groupId: string;
     groupIds?: string[];
     content?: string;
-    type: 'UPDATE' | 'MILESTONE';
+    type: PostType;
+    typeData?: PollCreateData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
     latitude?: number;
@@ -39,3 +40,5 @@ export declare function reactToPost(postId: string, type: ReactionType): Promise
 export declare function toggleFavoritePost(postId: string): Promise<{
     favorited: boolean;
 }>;
+export declare function interactWithPost(postId: string, key: string, value?: unknown): Promise<Post>;
+export declare function votePoll(postId: string, optionId: string): Promise<Post>;

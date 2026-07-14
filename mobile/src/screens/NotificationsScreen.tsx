@@ -13,7 +13,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { EmptyState } from '@/components/EmptyState';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@famlin/api-client';
 import { formatDateTime } from '@/i18n/utils';
 
@@ -52,16 +53,15 @@ export function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={18} color={colors.primary} />
-          <Text style={styles.backButtonText}>{t('common.back')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
-        <TouchableOpacity onPress={() => markAllRead.mutate()}>
-          <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title={t('notifications.title')}
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity onPress={() => markAllRead.mutate()}>
+            <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
+          </TouchableOpacity>
+        }
+      />
 
       <FlatList
         data={notifications || []}
@@ -90,9 +90,7 @@ export function NotificationsScreen() {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
-          </View>
+          <EmptyState title={t('notifications.empty')} titleStyle={styles.emptyText} />
         }
       />
     </SafeAreaView>
@@ -103,33 +101,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-  },
-  header: {
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.primary,
-  },
-  headerTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.textTitle,
   },
   markAllText: {
     fontFamily: 'Nunito_600SemiBold',
@@ -179,10 +150,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 6,
   },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
+  // Notifications' empty text is deliberately smaller/muted than the shared
+  // EmptyState default.
   emptyText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,

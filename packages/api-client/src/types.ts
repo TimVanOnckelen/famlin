@@ -10,6 +10,32 @@ export interface PostPerson {
   userAvatarUrl: string | null;
 }
 
+// An open string discriminator — 'UPDATE'/'MILESTONE'/'POLL' are the types
+// the server ships today, but the `(string & {})` branch keeps this widen-able
+// (custom types added server-side) without TS narrowing string literals away.
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | (string & {});
+
+export interface PollOptionResult {
+  id: string;
+  text: string;
+  voteCount: number;
+  voters: { id: string; name: string; avatarUrl?: string | null }[];
+}
+
+export interface PostPoll {
+  options: PollOptionResult[];
+  totalVotes: number;
+  myVoteOptionId: string | null;
+  closesAt: string | null;
+  closed: boolean;
+}
+
+// The shape a client sends as `typeData` when creating a POLL post.
+export interface PollCreateData {
+  options: { text: string }[];
+  closesAt?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -32,6 +58,10 @@ export interface Group {
   description?: string | null;
   createdAt: string;
   joinedAt?: string;
+  // Effective list of post type ids members may create in this group,
+  // already resolved by the server (never an "empty means all" sentinel).
+  // Missing = older server that predates the setting → all types allowed.
+  allowedPostTypes?: string[];
 }
 
 export interface Post {
@@ -48,7 +78,14 @@ export interface Post {
     name: string;
   } | null;
   content?: string | null;
-  type: 'UPDATE' | 'MILESTONE';
+  type: PostType;
+  // Handler-owned config for custom post types (e.g. poll options); null/absent
+  // for UPDATE/MILESTONE. Raw stored form — see `poll` below for the enriched
+  // per-viewer view of it.
+  typeData?: unknown;
+  // Present only when type === 'POLL' (or another future poll-like type the
+  // server enriches this way); the aggregated, per-viewer poll view.
+  poll?: PostPoll;
   milestoneTag?: string | null;
   uploadedAssetUrls: string[];
   createdAt: string;

@@ -1,0 +1,1 @@
+ALTER TABLE "Group" ADD COLUMN "allowedPostTypes" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

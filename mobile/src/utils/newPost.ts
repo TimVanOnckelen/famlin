@@ -26,3 +26,34 @@ export function toggleGroupSelection(current: string[], groupId: string): string
   }
   return [...current, groupId];
 }
+
+// Which post types the composer may offer for the current group selection:
+// the INTERSECTION of every selected group's server-resolved
+// `allowedPostTypes` list, filtered to (and ordered by) the types this app
+// build actually knows how to compose (`knownTypes`). A group with the field
+// missing — an older server, or group data not loaded yet — counts as
+// allowing everything (backward compat: absence means the server predates the
+// setting, so nothing is restricted). Cross-posting therefore only offers
+// types every target group accepts, matching the server's per-target-group
+// enforcement of POST /api/posts.
+export function resolveOfferedPostTypes(
+  knownTypes: readonly string[],
+  groups: ReadonlyArray<{ id: string; allowedPostTypes?: string[] }> | undefined,
+  selectedGroupIds: readonly string[]
+): string[] {
+  const constraints = selectedGroupIds
+    .map((groupId) => groups?.find((group) => group.id === groupId)?.allowedPostTypes)
+    .filter((allowed): allowed is string[] => Array.isArray(allowed));
+
+  return knownTypes.filter((type) => constraints.every((allowed) => allowed.includes(type)));
+}
+
+// Keeps the composer's selected type valid after the offered set changes
+// (e.g. the user added a target group that doesn't allow polls): the current
+// type is kept if still offered, otherwise falls back to the first offered
+// type, or null when the intersection is empty (composer must disable submit
+// and show a notice in that state).
+export function reconcilePostTypeSelection(current: string, offered: readonly string[]): string | null {
+  if (offered.includes(current)) return current;
+  return offered[0] ?? null;
+}

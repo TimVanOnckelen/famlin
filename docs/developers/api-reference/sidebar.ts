@@ -158,6 +158,12 @@ const sidebar: SidebarsConfig = {
           label: "Delete a post",
           className: "api-method delete",
         },
+        {
+          type: "doc",
+          id: "api-reference/interact-with-post",
+          label: "Post-type-specific interaction",
+          className: "api-method post",
+        },
       ],
     },
     {
@@ -492,6 +498,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/postspage",
           label: "PostsPage",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/postpoll",
+          label: "PostPoll",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/polloptionresult",
+          label: "PollOptionResult",
           className: "schema",
         },
         {

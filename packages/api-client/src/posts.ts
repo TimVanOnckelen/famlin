@@ -1,5 +1,5 @@
 import { api } from './client';
-import { Post, ReactionType } from './types';
+import { Post, PollCreateData, PostType, ReactionType } from './types';
 
 export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
@@ -56,7 +56,10 @@ export interface CreatePostBody {
   // required for older servers that don't know groupIds.
   groupIds?: string[];
   content?: string;
-  type: 'UPDATE' | 'MILESTONE';
+  type: PostType;
+  // Handler-owned config for custom post types, e.g. poll options
+  // ({ options: [{ text }], closesAt? }); absent/undefined for UPDATE/MILESTONE.
+  typeData?: PollCreateData | Record<string, unknown>;
   milestoneTag?: string;
   uploadedAssetUrls: string[];
   latitude?: number;
@@ -94,4 +97,18 @@ export async function reactToPost(postId: string, type: ReactionType): Promise<R
 export async function toggleFavoritePost(postId: string): Promise<{ favorited: boolean }> {
   const response = await api.post<{ favorited: boolean }>(`/posts/${postId}/favorite`);
   return response.data;
+}
+
+// Generic per-post-type interaction endpoint (e.g. poll voting). Returns the
+// full shaped + enriched post so callers can refresh their cache in one round
+// trip — see votePoll() below for the poll-specific convenience wrapper.
+export async function interactWithPost(postId: string, key: string, value?: unknown): Promise<Post> {
+  const response = await api.post<Post>(`/posts/${postId}/interactions`, { key, value });
+  return response.data;
+}
+
+// Voting the same option again unvotes; voting a different option switches —
+// mirrors reaction semantics. See PostTypeHandler.interact on the backend.
+export async function votePoll(postId: string, optionId: string): Promise<Post> {
+  return interactWithPost(postId, 'vote', { optionId });
 }

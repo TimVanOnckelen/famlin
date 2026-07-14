@@ -130,7 +130,10 @@
     "newGroup": "Nieuwe groep",
     "form": {
       "name": "Naam",
-      "description": "Beschrijving"
+      "description": "Beschrijving",
+      "allowedPostTypes": "Toegestane berichttypes",
+      "allowedPostTypesHint": "Als alle vakjes zijn aangevinkt, worden later toegevoegde berichttypes automatisch toegestaan.",
+      "allowedPostTypesError": "Selecteer minstens één berichttype."
     },
     "save": "Opslaan",
     "add": "Toevoegen",
@@ -333,5 +336,10 @@
     "groupsLabel": "Groepen (optioneel)",
     "inviteSentHint": "Er is een uitnodigingsmail verstuurd naar {{email}}. Je kan de link hieronder ook delen.",
     "createError": "Gebruiker aanmaken mislukt: {{error}}"
+  },
+  "postTypes": {
+    "UPDATE": "Update",
+    "MILESTONE": "Mijlpaal",
+    "POLL": "Poll"
   }
 }

@@ -54,8 +54,14 @@
     "typeLabel": "Berichttype",
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Mijlpaal",
+    "typePoll": "📊 Peiling",
+    "noAllowedTypes": "De geselecteerde families hebben geen enkel berichttype gemeen — wijzig de selectie om te kunnen plaatsen.",
     "placeholder": "Deel een update met je familie…",
     "milestonePlaceholder": "Wat is de mijlpaal? (bijv. Emma wordt 5! 🎉)",
+    "pollPlaceholder": "Stel een vraag…",
+    "pollOptionPlaceholder": "Optie {{number}}",
+    "addOption": "Optie toevoegen",
+    "removeOption": "Optie verwijderen",
     "addPhotos": "Foto's toevoegen",
     "addFromAlbums": "Kies uit albums",
     "removePhoto": "Foto verwijderen",
@@ -144,5 +150,13 @@
     "loadFailed": "Foto's konden niet geladen worden.",
     "shareToFeed": "Delen op feed",
     "viewPost": "Bericht bekijken"
+  },
+  "poll": {
+    "votes_one": "{{count}} stem",
+    "votes_other": "{{count}} stemmen",
+    "totalVotes_one": "{{count}} stem in totaal",
+    "totalVotes_other": "{{count}} stemmen in totaal",
+    "closed": "Peiling gesloten",
+    "yourVote": "Jouw stem"
   }
 }

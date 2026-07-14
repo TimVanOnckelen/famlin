@@ -53,7 +53,19 @@ export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from './uploads';
 
-export type { ReactionType, User, Group, Post, PostPerson, Comment, Notification } from './types';
+export type {
+  ReactionType,
+  User,
+  Group,
+  Post,
+  PostPerson,
+  PostType,
+  PollOptionResult,
+  PostPoll,
+  PollCreateData,
+  Comment,
+  Notification,
+} from './types';
 export { REACTION_TYPES } from './types';
 
 export { patchPostInCaches } from './postCache';
@@ -73,6 +85,8 @@ export {
   deletePost,
   reactToPost,
   toggleFavoritePost,
+  interactWithPost,
+  votePoll,
 } from './posts';
 
 export type { CreateCommentBody } from './comments';

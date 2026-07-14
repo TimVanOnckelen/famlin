@@ -14,13 +14,15 @@ import {
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 
 import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
+import { EmptyState } from '@/components/EmptyState';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { PhotoItem } from '@/types';
 import { fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
 import { getUploadUrl } from '@/api/uploads';
@@ -58,29 +60,16 @@ export function PhotosScreen() {
   });
 
   // Load photo timeline for the active group
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
+  const { query, items: allPhotos, onEndReached } = useCursorPagination({
     queryKey: ['photo-timeline', activeGroupId, selectedPersonId],
-    queryFn: ({ pageParam }: { pageParam?: string }) =>
+    queryFn: (cursor) =>
       getGroupPhotoTimeline(activeGroupId!, {
-        cursor: pageParam,
+        cursor,
         personId: selectedPersonId || undefined,
       }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!activeGroupId,
   });
-
-  const allPhotos = useMemo(() => {
-    return data?.pages.flatMap((page) => page.items) || [];
-  }, [data]);
+  const { isLoading, isRefetching, refetch, isFetchingNextPage } = query;
 
   // Section photos by month
   const sections = useMemo(() => {
@@ -278,7 +267,7 @@ export function PhotosScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
           }
-          onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+          onEndReached={onEndReached}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             isLoading ? (
@@ -286,10 +275,7 @@ export function PhotosScreen() {
                 <ActivityIndicator size="large" color={colors.primary} />
               </View>
             ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>{t('photos.emptyTitle')}</Text>
-                <Text style={styles.emptyStateSubtext}>{t('photos.emptySubtitle')}</Text>
-              </View>
+              <EmptyState title={t('photos.emptyTitle')} subtitle={t('photos.emptySubtitle')} />
             )
           }
           ListFooterComponent={
@@ -301,10 +287,7 @@ export function PhotosScreen() {
           }
         />
       ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>{t('feed.noGroupsTitle')}</Text>
-          <Text style={styles.emptyStateSubtext}>{t('feed.noGroupsSubtitle')}</Text>
-        </View>
+        <EmptyState title={t('feed.noGroupsTitle')} subtitle={t('feed.noGroupsSubtitle')} />
       )}
     </SafeAreaView>
   );
@@ -428,22 +411,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 15,
     color: colors.textTitle,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: colors.textTitle,
-  },
-  emptyStateSubtext: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 6,
   },
   loadingFooter: {
     paddingVertical: 20,

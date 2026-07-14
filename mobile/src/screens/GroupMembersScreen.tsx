@@ -1,19 +1,14 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { EmptyState } from '@/components/EmptyState';
 import { fetchGroupMembers } from '@famlin/api-client';
 
 export function GroupMembersScreen() {
@@ -29,16 +24,7 @@ export function GroupMembersScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={18} color={colors.primary} />
-          <Text style={styles.backButtonText}>{t('common.back')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {groupName}
-        </Text>
-        <View style={styles.headerRight} />
-      </View>
+      <ScreenHeader title={groupName} onBack={() => navigation.goBack()} centered />
 
       <FlatList
         data={members || []}
@@ -65,13 +51,7 @@ export function GroupMembersScreen() {
             </Text>
           </View>
         )}
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>{t('groupMembers.empty')}</Text>
-            </View>
-          ) : null
-        }
+        ListEmptyComponent={!isLoading ? <EmptyState title={t('groupMembers.empty')} /> : null}
       />
     </SafeAreaView>
   );
@@ -81,39 +61,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-  },
-  header: {
-    backgroundColor: colors.white,
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-    width: 90,
-  },
-  backButtonText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.primary,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.textTitle,
-  },
-  headerRight: {
-    width: 90,
   },
   list: {
     padding: 16,
@@ -155,15 +102,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'right',
     maxWidth: 90,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: colors.textTitle,
   },
 });

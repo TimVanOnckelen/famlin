@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Switch,
   Alert,
   Image,
   ActivityIndicator,
@@ -21,16 +20,25 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { Group } from '@/types';
+import { Group, PostType } from '@/types';
 import { fetchGroups, createPost, getGroupMediaAlbums } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
-import { uploadMedia, getUploadUrl } from '@/api/uploads';
+import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
-import { buildGroupSelectionPayload, toggleGroupSelection } from '@/utils/newPost';
+import {
+  buildGroupSelectionPayload,
+  toggleGroupSelection,
+  resolveOfferedPostTypes,
+  reconcilePostTypeSelection,
+} from '@/utils/newPost';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL'] as const;
+const MIN_POLL_OPTIONS = 2;
+const MAX_POLL_OPTIONS = 10;
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
   const player = useVideoPlayer({ uri }, (p) => {
@@ -46,17 +54,20 @@ export function NewPostScreen() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [content, setContent] = useState('');
-  const [isMilestone, setIsMilestone] = useState(false);
+  const [postType, setPostType] = useState<PostType>('UPDATE');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isCustomTag, setIsCustomTag] = useState(false);
   const [customTagText, setCustomTagText] = useState('');
+  // Poll composer state: option text inputs, starting at the minimum of 2.
+  // Only non-empty ones are sent (see createPostMutation below).
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const isMilestone = postType === 'MILESTONE';
   // Multi-select: which groups this post goes to. The first entry is the
   // "primary" group (also what the media/album picker is scoped to); more
   // than one selected turns the submit into a cross-post. At least one is
   // always required — see toggleGroupSelection.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [location, setLocation] = useState<PickedLocation | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -83,14 +94,34 @@ export function NewPostScreen() {
     }
   }, [groups]);
 
+  // Only the post types EVERY selected target group allows are offered —
+  // the server enforces each group's allowedPostTypes on POST /api/posts,
+  // so the segmented control must not offer a type a target group rejects.
+  // An empty intersection (possible when cross-posting to groups with
+  // disjoint allow-lists) disables submit with a notice instead.
+  const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds);
+  const noOfferedPostTypes = offeredPostTypes.length === 0;
+
+  // When the group selection changes and the current type is no longer
+  // offered, snap to the first offered type (UPDATE in practice).
+  React.useEffect(() => {
+    const reconciled = reconcilePostTypeSelection(postType, offeredPostTypes);
+    if (reconciled !== null && reconciled !== postType) {
+      setPostType(reconciled);
+    }
+  }, [offeredPostTypes.join(','), postType]);
+
+  const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
+
   const createPostMutation = useMutation({
     mutationFn: () => {
       if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'));
       return createPost({
         ...buildGroupSelectionPayload(selectedGroupIds),
         content,
-        type: isMilestone ? 'MILESTONE' : 'UPDATE',
+        type: postType,
         milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
+        typeData: postType === 'POLL' ? { options: nonEmptyPollOptions.map((text) => ({ text })) } : undefined,
         uploadedAssetUrls,
         latitude: location?.latitude,
         longitude: location?.longitude,
@@ -107,47 +138,44 @@ export function NewPostScreen() {
   });
 
   const canSubmit =
-    selectedGroupIds.length > 0 && (content.trim().length > 0 || uploadedAssetUrls.length > 0);
+    selectedGroupIds.length > 0 &&
+    !noOfferedPostTypes &&
+    offeredPostTypes.includes(postType) &&
+    (postType === 'POLL'
+      ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
+      : content.trim().length > 0 || uploadedAssetUrls.length > 0);
 
-  async function pickImagesFromDevice() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
-      return;
-    }
+  function addPollOption() {
+    setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']));
+  }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+  function removePollOption(index: number) {
+    setPollOptions((prev) => (prev.length <= MIN_POLL_OPTIONS ? prev : prev.filter((_, i) => i !== index)));
+  }
+
+  function updatePollOption(index: number, text: string) {
+    setPollOptions((prev) => prev.map((option, i) => (i === index ? text : option)));
+  }
+
+  const { pick: pickDeviceMedia, uploading } = usePickAndUploadMedia({
+    pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       selectionLimit: 10,
       quality: 0.8,
       videoMaxDuration: 120,
-    });
+    },
+    includeIndexInName: true,
+    // Show the picked assets (with an uploading overlay) while the upload
+    // is in flight.
+    onPicked: setPendingAssets,
+    onError: (err) => console.error('Upload error:', err),
+  });
 
-    if (result.canceled) return;
-
-    const files = result.assets.map((asset, index) => {
-      const isVideo = asset.type === 'video';
-      return {
-        uri: asset.uri,
-        name: asset.fileName || `${isVideo ? 'video' : 'photo'}-${index}.${isVideo ? 'mp4' : 'jpg'}`,
-        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
-      };
-    });
-
-    setPendingAssets(files.map((file) => ({ uri: file.uri, isVideo: file.type.startsWith('video') })));
-
-    try {
-      setUploading(true);
-      const urls = await uploadMedia(files);
-      setUploadedAssetUrls((prev) => [...prev, ...urls]);
-    } catch (err: any) {
-      console.error('Upload error:', err);
-      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
-    } finally {
-      setUploading(false);
-      setPendingAssets([]);
-    }
+  async function pickImagesFromDevice() {
+    const result = await pickDeviceMedia();
+    if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls]);
+    setPendingAssets([]);
   }
 
   function removeUploadedAsset(url: string) {
@@ -215,7 +243,7 @@ export function NewPostScreen() {
 
         <TextInput
           style={styles.textInput}
-          placeholder={t('newPost.contentPlaceholder')}
+          placeholder={postType === 'POLL' ? t('poll.questionPlaceholder') : t('newPost.contentPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={content}
@@ -315,20 +343,69 @@ export function NewPostScreen() {
 
         <View style={styles.divider} />
 
-        <View style={styles.milestoneRow}>
-          <View>
-            <Text style={styles.milestoneTitle}>{t('newPost.milestoneTitle')}</Text>
-            <Text style={styles.milestoneSubtitle}>{t('newPost.milestoneSubtitle')}</Text>
+        {noOfferedPostTypes ? (
+          // Cross-post target groups with disjoint allow-lists: nothing can
+          // be composed for this combination — tell the user why submit is
+          // disabled instead of showing an empty control.
+          <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
+        ) : (
+          <View style={styles.segmentedControl}>
+            {offeredPostTypes.map((option) => {
+              const active = postType === option;
+              return (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
+                  onPress={() => setPostType(option)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.segmentButtonText, active && styles.segmentButtonTextActive]}>
+                    {t(`newPost.postType.${option.toLowerCase()}`)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <Switch
-            value={isMilestone}
-            onValueChange={setIsMilestone}
-            trackColor={{ false: colors.border, true: colors.milestone }}
-            thumbColor={colors.white}
-          />
-        </View>
+        )}
 
-        {isMilestone && (
+        {postType === 'POLL' && offeredPostTypes.includes('POLL') && (
+          <View style={styles.pollOptionsContainer}>
+            {pollOptions.map((optionText, index) => (
+              <View key={index} style={styles.pollOptionRow}>
+                <TextInput
+                  style={styles.pollOptionInput}
+                  placeholder={t('poll.optionPlaceholder', { number: index + 1 })}
+                  placeholderTextColor={colors.textMuted}
+                  value={optionText}
+                  onChangeText={(text) => updatePollOption(index, text)}
+                  maxLength={100}
+                />
+                {pollOptions.length > MIN_POLL_OPTIONS && (
+                  <TouchableOpacity
+                    style={styles.pollOptionRemoveButton}
+                    onPress={() => removePollOption(index)}
+                    accessibilityLabel={t('poll.removeOption')}
+                  >
+                    <Icon name="x" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            {pollOptions.length < MAX_POLL_OPTIONS && (
+              <TouchableOpacity style={styles.pollAddOptionButton} onPress={addPollOption}>
+                <Icon name="plus" size={16} color={colors.primary} />
+                <Text style={styles.pollAddOptionText}>{t('poll.addOption')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {isMilestone && offeredPostTypes.includes('MILESTONE') && (
+          <Text style={styles.milestoneSubtitle}>{t('newPost.milestoneSubtitle')}</Text>
+        )}
+
+        {isMilestone && offeredPostTypes.includes('MILESTONE') && (
           <View style={styles.tagList}>
             {MILESTONE_TAG_KEYS.map((tagKey) => {
               const tag = t(`newPost.milestoneTags.${tagKey}`);
@@ -362,7 +439,7 @@ export function NewPostScreen() {
           </View>
         )}
 
-        {isMilestone && isCustomTag && (
+        {isMilestone && offeredPostTypes.includes('MILESTONE') && isCustomTag && (
           <TextInput
             style={styles.customTagInput}
             placeholder={t('newPost.milestoneTags.customPlaceholder')}
@@ -581,16 +658,84 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border,
   },
-  milestoneRow: {
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: colors.bg,
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+  },
+  noPostTypesNotice: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.textMuted,
+    backgroundColor: colors.bg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 9,
+    alignItems: 'center',
+  },
+  segmentButtonActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  segmentButtonText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  segmentButtonTextActive: {
+    fontFamily: 'Nunito_700Bold',
+    color: colors.primary,
+  },
+  pollOptionsContainer: {
+    gap: 8,
+  },
+  pollOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 2,
+    gap: 8,
   },
-  milestoneTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
+  pollOptionInput: {
+    flex: 1,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
     color: colors.textTitle,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  pollOptionRemoveButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pollAddOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  pollAddOptionText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: colors.primary,
   },
   milestoneSubtitle: {
     fontFamily: 'Nunito_600SemiBold',

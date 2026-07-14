@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
@@ -12,12 +11,12 @@ import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
+import { postTypeRenderers } from '@/components/postTypes';
 import { Post, PostPerson, ReactionType } from '@/types';
-import { reactToPost, toggleFavoritePost } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
-import { patchPostInCaches } from '@/utils/postCache';
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
 
 const AVATAR_COLORS = ['#006e94', '#318ea2', '#4b8b5a', '#005480', '#ed835e'];
 
@@ -67,63 +66,20 @@ function PersonChip({ person }: { person: PostPerson }) {
 export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
 
-  const likeMutation = useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(post.id, type),
-    onMutate: async (type) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      await queryClient.cancelQueries({ queryKey: ['post', post.id] });
-
-      const nextReaction = post.myReaction === type ? null : type;
-      const patch = (p: Post) => {
-        const reactions = { ...p.reactions };
-        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
-        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
-        return {
-          ...p,
-          myReaction: nextReaction,
-          reactions,
-          likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
-          likedByMe: nextReaction !== null,
-        };
-      };
-
-      patchPostInCaches(queryClient, post.id, patch);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', post.id] });
-    },
-  });
+  const likeMutation = useReactToPost(post);
 
   function selectReaction(type: ReactionType) {
     setReactionPickerOpen(false);
     likeMutation.mutate(type);
   }
 
-  const favoriteMutation = useMutation({
-    mutationFn: () => toggleFavoritePost(post.id),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      await queryClient.cancelQueries({ queryKey: ['post', post.id] });
-
-      const nextFavorited = !post.favoritedByMe;
-      const patch = (p: Post) => ({ ...p, favoritedByMe: nextFavorited });
-
-      patchPostInCaches(queryClient, post.id, patch);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', post.id] });
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
+  const favoriteMutation = useToggleFavorite(post);
 
   function openFullscreen(index: number) {
     navigation.navigate('ImageViewer', {
@@ -140,6 +96,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
 
   const hasPhotos = allPhotoUrls.length > 0;
   const reactors = post.recentReactors ?? [];
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
   // Which family this post belongs to — shown when the surrounding list
   // spans several (multi-group feed, favorites).
   const groupTag = showGroup && post.group && (
@@ -242,6 +199,12 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         ) : (
           !!post.content && <Text style={styles.postContent}>{post.content}</Text>
         )}
+
+        {/* Registry entry for post.type (e.g. POLL) — renders below the
+            content above, which for a poll is already the question, so this
+            must not repeat it. Unregistered/unknown types render nothing
+            extra here, which is the required forward-compat fallback. */}
+        {TypeCardBody && <TypeCardBody post={post} />}
 
         {/* Author-only: present when this post was cross-posted to more than
             one family — the server only includes it for the viewer who

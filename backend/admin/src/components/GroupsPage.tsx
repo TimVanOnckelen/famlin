@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User, NewAssetMode } from '../api/client';
+import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User, NewAssetMode, PostTypeInfo } from '../api/client';
 import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
@@ -118,7 +118,7 @@ export function GroupsPage() {
     }
   }, [selectedId]);
 
-  const handleSubmitForm = async (values: { name: string; description: string }) => {
+  const handleSubmitForm = async (values: { name: string; description: string; allowedPostTypes: string[] }) => {
     if (formGroup && formGroup.id) {
       await api.updateGroup(formGroup.id, values);
     } else {
@@ -542,7 +542,7 @@ export function GroupsPage() {
 interface GroupFormModalProps {
   group: Group;
   onClose: () => void;
-  onSubmit: (values: { name: string; description: string }) => Promise<void>;
+  onSubmit: (values: { name: string; description: string; allowedPostTypes: string[] }) => Promise<void>;
 }
 
 function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
@@ -552,11 +552,52 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
   const [description, setDescription] = useState(group.description || '');
   const [saving, setSaving] = useState(false);
 
+  const [postTypes, setPostTypes] = useState<PostTypeInfo[]>([]);
+  const [loadingPostTypes, setLoadingPostTypes] = useState(true);
+  const [checkedTypes, setCheckedTypes] = useState<Set<string>>(new Set());
+  // Guards against re-seeding checkedTypes if this effect somehow re-ran —
+  // the initial checked set is derived once from the group's stored value.
+  const initializedTypes = useRef(false);
+
+  useEffect(() => {
+    api
+      .getPostTypes()
+      .then(({ items }) => {
+        setPostTypes(items);
+        if (!initializedTypes.current) {
+          initializedTypes.current = true;
+          const stored = group.allowedPostTypes;
+          // Empty/absent stored array = "all allowed" (default), same
+          // convention as allowedEmails — every box starts checked.
+          setCheckedTypes(
+            !stored || stored.length === 0 ? new Set(items.map((pt) => pt.id)) : new Set(stored)
+          );
+        }
+      })
+      .finally(() => setLoadingPostTypes(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleType = (id: string) => {
+    setCheckedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const noTypesSelected = checkedTypes.size === 0;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (noTypesSelected) return;
     setSaving(true);
     try {
-      await onSubmit({ name: name.trim(), description: description.trim() });
+      // All boxes checked persists as [] so post types registered later are
+      // automatically allowed; a partial selection persists the explicit list.
+      const allowedPostTypes = checkedTypes.size === postTypes.length ? [] : Array.from(checkedTypes);
+      await onSubmit({ name: name.trim(), description: description.trim(), allowedPostTypes });
     } finally {
       setSaving(false);
     }
@@ -575,11 +616,38 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
             {t('groups.form.description')}
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
+
+          <div>
+            <span className="hint" style={{ marginTop: 0 }}>
+              {t('groups.form.allowedPostTypes')}
+            </span>
+            {loadingPostTypes ? (
+              <div className="loading">{t('common.loading')}</div>
+            ) : (
+              <ul className="membership-list">
+                {postTypes.map((pt) => (
+                  <li key={pt.id} className="membership-row">
+                    <span>{t(`postTypes.${pt.id}`, { defaultValue: pt.id })}</span>
+                    <input
+                      type="checkbox"
+                      checked={checkedTypes.has(pt.id)}
+                      onChange={() => toggleType(pt.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="hint">{t('groups.form.allowedPostTypesHint')}</p>
+            {noTypesSelected && !loadingPostTypes && (
+              <div className="error">{t('groups.form.allowedPostTypesError')}</div>
+            )}
+          </div>
+
           <div className="modal-actions">
             <button type="button" className="secondary" onClick={onClose}>
               {t('common.cancel')}
             </button>
-            <button type="submit" disabled={saving || !name.trim()}>
+            <button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
               {isEdit ? t('groups.save') : t('groups.add')}
             </button>
           </div>

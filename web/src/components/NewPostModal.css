@@ -126,6 +126,65 @@
   font-weight: 700;
 }
 
+.type-chip-poll-active {
+  border: 2px solid var(--fam-accent);
+  background: #fdeae2;
+  color: #a8492a;
+  font-weight: 700;
+}
+
+/* ── Poll options editor ─────────────────────────────────────────────────── */
+
+.poll-options-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-option-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poll-option-input {
+  flex: 1;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  padding: 10px 14px;
+  font-size: 15px;
+  color: var(--fam-text-title);
+}
+
+.poll-option-input:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
+
+.poll-option-remove {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--fam-bg);
+  color: var(--fam-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.poll-option-remove:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.poll-add-option {
+  align-self: flex-start;
+}
+
 /* ── Photo previews ─────────────────────────────────────────────────────── */
 
 .photo-previews {

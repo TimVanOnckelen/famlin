@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { requireGroupMember } from '../plugins/auth.js';
+import { resolveAllowedPostTypes } from '../services/postTypes/registry.js';
 import { getT } from '../i18n/index.js';
 
 // Member-facing, read-only group endpoints. All group mutations (create/update/
@@ -15,8 +16,14 @@ export default async function groupRoutes(fastify: FastifyInstance) {
       orderBy: { group: { name: 'asc' } },
     });
 
+    // allowedPostTypes goes out RESOLVED (never empty — an empty stored
+    // array means "all registered types"), so clients can drive their
+    // composer's type picker without knowing the registry or the
+    // empty-means-all convention. The raw stored array is admin-only
+    // (routes/admin.ts).
     return memberships.map((m) => ({
       ...m.group,
+      allowedPostTypes: resolveAllowedPostTypes(m.group),
       joinedAt: m.joinedAt,
     }));
   });
@@ -33,8 +40,10 @@ export default async function groupRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
     }
 
+    // Same resolved-list rule as GET / above.
     return {
       ...membership.group,
+      allowedPostTypes: resolveAllowedPostTypes(membership.group),
       joinedAt: membership.joinedAt,
     };
   });

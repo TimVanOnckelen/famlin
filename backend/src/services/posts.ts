@@ -2,6 +2,7 @@ import type { ReactionType } from '@prisma/client';
 import { prisma } from '../db.js';
 import { summarizeReactions } from './reactions.js';
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js';
+import { getPostTypeHandler } from './postTypes/registry.js';
 
 // Shared Prisma include shape for fetching a post as a member should see it —
 // used by every post-returning endpoint (feed, detail, search, on-this-day,
@@ -127,17 +128,47 @@ export async function attachSharedWithGroups<
   });
 }
 
+// Batches each post type's own enrichment (e.g. poll vote aggregation) across
+// a whole page — groups by `type` and calls that type's enrichPosts() once
+// per group (one query per type per page, not per post; see the
+// PostTypeHandler.enrichPosts contract in services/postTypes/types.ts).
+// Mutates the given posts in place, same as the handler contract.
+//
+// Fail-soft only applies to provider-ish enrichment (people/Immich, see
+// attachPeopleToPosts) — a plain DB error out of a handler's own query here
+// is allowed to propagate to the global error handler like any other route
+// failure, since (unlike an external media provider) PostInteraction is this
+// service's own database, not routine external flakiness.
+async function enrichPostTypes(shapedPosts: Array<Record<string, any> & { id: string; type: string }>, viewerId: string): Promise<void> {
+  const postsByType = new Map<string, Array<Record<string, any> & { id: string; type: string }>>();
+  for (const post of shapedPosts) {
+    const list = postsByType.get(post.type);
+    if (list) list.push(post);
+    else postsByType.set(post.type, [post]);
+  }
+
+  for (const [type, posts] of postsByType) {
+    const handler = getPostTypeHandler(type);
+    if (!handler?.enrichPosts) continue;
+    await handler.enrichPosts(posts, viewerId);
+  }
+}
+
 // The one seam every member-facing post-returning endpoint (feed, single
 // post, search, on-this-day, favorites) routes through to get a uniform
-// `people` field — batches the person-tag lookup (and its Immich round
-// trips) across the whole page instead of once per post. Not used by
-// POST/PATCH's own response: creating/editing a post returns `people: []`
-// untouched rather than waiting on a media provider (see routes/posts.ts).
+// `people` field (and, for posts of a custom type like POLL, that type's own
+// enriched view — see enrichPostTypes above) — batches the person-tag lookup
+// (and its Immich round trips) across the whole page instead of once per
+// post. Not used by POST/PATCH's own response: creating/editing a post
+// returns `people: []` untouched (and no type-specific enrichment either)
+// rather than waiting on a media provider (see routes/posts.ts) — a brand
+// new post has no votes/interactions yet anyway.
 export async function shapePostsWithPeople<
-  T extends Parameters<typeof shapePost>[0] & { id: string; authorId: string; uploadedAssetUrls: string[] }
+  T extends Parameters<typeof shapePost>[0] & { id: string; authorId: string; uploadedAssetUrls: string[]; type: string }
 >(posts: T[], userId: string): Promise<(ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]> {
   const shaped = posts.map((post) => shapePost(post, userId));
   const peopleByPostId = await attachPeopleToPosts(shaped);
   const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }));
+  await enrichPostTypes(withPeople, userId);
   return attachSharedWithGroups(withPeople, posts, userId);
 }

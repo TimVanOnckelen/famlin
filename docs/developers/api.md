@@ -105,6 +105,30 @@ curl -X POST "$FAMLIN_URL/api/posts" \
   -d "{\"groupId\": \"cmb1ghi...\", \"content\": \"Beach day ☀️\", \"uploadedAssetUrls\": [\"$URLS\"]}"
 ```
 
+## Recipe: create a poll and vote on it
+
+`type: "POLL"` creates a poll instead of a plain update: `content` is the question, and `typeData.options` is 2-10 choices (each 1-100 characters). Voting is a separate call to [`POST /api/posts/{postId}/interactions`](./api-reference/interact-with-post) with `key: "vote"`:
+
+```bash
+POST_ID=$(curl -s -X POST "$FAMLIN_URL/api/posts" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"groupId": "cmb1ghi...", "type": "POLL", "content": "Pizza or tacos tonight?", "typeData": {"options": [{"text": "Pizza"}, {"text": "Tacos"}]}}' \
+  | jq -r '.id')
+
+# Grab an option id from typeData.options (assigned by the server at creation)
+OPTION_ID=$(curl -s -H "Authorization: Bearer $FAMLIN_TOKEN" "$FAMLIN_URL/api/posts/$POST_ID" \
+  | jq -r '.typeData.options[0].id')
+
+# Vote — the response is the full post, with the live tally in `poll`
+curl -X POST "$FAMLIN_URL/api/posts/$POST_ID/interactions" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"key\": \"vote\", \"value\": {\"optionId\": \"$OPTION_ID\"}}"
+```
+
+Sending the same `{"key": "vote", "value": {"optionId": "..."}}` again **removes** your vote; sending a different `optionId` **switches** it — the same toggle-or-switch behavior as reactions. Votes are public to group members (not anonymous), and everyone can see the tally whether or not they've voted yet.
+
 ## Recipe: a photo-frame script
 
 Fetch the newest photo across your groups and download it — the skeleton of a digital photo frame:

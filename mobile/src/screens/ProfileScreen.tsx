@@ -12,7 +12,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
 import { updateMe, changePassword, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
-import { uploadMedia } from '@/api/uploads';
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 import { setLanguage } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
 
@@ -21,7 +21,6 @@ export function ProfileScreen() {
   const { user, logout, serverUrl, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [avatarUploading, setAvatarUploading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -86,38 +85,20 @@ export function ProfileScreen() {
     updatePassword.mutate();
   }
 
-  async function pickAvatar() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
+  const { pick: pickAvatarMedia, uploading: avatarUploading } = usePickAndUploadMedia({
+    pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
-    });
+    },
+    fileNamePrefix: 'avatar',
+  });
 
-    if (result.canceled) return;
-
-    const asset = result.assets[0];
-    try {
-      setAvatarUploading(true);
-      const [url] = await uploadMedia([
-        {
-          uri: asset.uri,
-          name: asset.fileName || 'avatar.jpg',
-          type: asset.mimeType || 'image/jpeg',
-        },
-      ]);
-      updateAvatar.mutate(url);
-    } catch (err: any) {
-      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
-    } finally {
-      setAvatarUploading(false);
-    }
+  async function pickAvatar() {
+    const result = await pickAvatarMedia();
+    if (!result) return;
+    updateAvatar.mutate(result.urls[0]);
   }
 
   const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey: keyof NotificationPrefs }[] = [

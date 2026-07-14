@@ -10,13 +10,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
+import { EmptyState } from '@/components/EmptyState';
+import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { Group } from '@/types';
 import { fetchGroups, fetchUnreadNotificationCount, fetchOnThisDay, fetchPosts } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
@@ -64,24 +66,12 @@ export function FeedScreen() {
     enabled: !!singleActiveGroup,
   });
 
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
+  const { query, items: posts, onEndReached } = useCursorPagination({
     queryKey: ['posts', [...selectedGroupIds].sort().join(',') || 'all'],
-    queryFn: ({ pageParam }: { pageParam?: string }) =>
-      fetchPosts({ groupIds: selectedGroupIds, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    queryFn: (cursor) => fetchPosts({ groupIds: selectedGroupIds, cursor }),
     enabled: hasGroups,
   });
-
-  const posts = data?.pages.flatMap((page) => page.items);
+  const { isLoading, isRefetching, refetch } = query;
 
   // Search is still a per-group feature (the backend search endpoint requires
   // one group) — use the narrowed family, or fall back to the first one, the
@@ -184,14 +174,14 @@ export function FeedScreen() {
       )}
 
       <FlatList
-        data={hasGroups ? posts || [] : []}
+        data={hasGroups ? posts : []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.feedList}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         renderItem={({ item }) => <PostCard post={item} showGroup={effectiveGroupIds.length > 1} />}
-        onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+        onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={
           hasGroups && onThisDay && onThisDay.length > 0 ? (
@@ -214,15 +204,9 @@ export function FeedScreen() {
         }
         ListEmptyComponent={
           !groupsLoaded || (isLoading && hasGroups) ? null : !hasGroups ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>{t('feed.noGroupsTitle')}</Text>
-              <Text style={styles.emptyStateSubtext}>{t('feed.noGroupsSubtitle')}</Text>
-            </View>
+            <EmptyState title={t('feed.noGroupsTitle')} subtitle={t('feed.noGroupsSubtitle')} />
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>{t('feed.emptyTitle')}</Text>
-              <Text style={styles.emptyStateSubtext}>{t('feed.emptySubtitle')}</Text>
-            </View>
+            <EmptyState title={t('feed.emptyTitle')} subtitle={t('feed.emptySubtitle')} />
           )
         }
       />
@@ -329,22 +313,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyStateText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 16,
-    color: colors.textTitle,
-  },
-  emptyStateSubtext: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 6,
   },
   onThisDayBanner: {
     flexDirection: 'row',
