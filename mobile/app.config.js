@@ -2,6 +2,7 @@ export default ({ config }) => ({
   ...config,
   name: "Famlin",
   slug: "famlin",
+  owner: "thexeroxs-team",
   version: config.version,
   orientation: "default",
   icon: "./assets/icon.png",
