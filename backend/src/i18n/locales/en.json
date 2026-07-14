@@ -50,7 +50,14 @@
     "mediaPersonLinkNotFound": "Person mapping not found",
     "mediaProviderLacksPeople": "This media source doesn't support recognizing people",
     "mediaProviderLacksPersonFilter": "This media source doesn't support filtering by person",
-    "crossPostAssetCopyFailed": "Could not copy a linked photo for sharing. Please try again."
+    "crossPostAssetCopyFailed": "Could not copy a linked photo for sharing. Please try again.",
+    "unknownPostType": "Unknown post type",
+    "invalidPostTypeData": "Invalid data for this post type",
+    "invalidInteraction": "Invalid interaction",
+    "pollClosed": "This poll is closed",
+    "invalidPollOption": "Invalid poll option",
+    "pollQuestionRequired": "A poll needs a question",
+    "postTypeNotAllowed": "This post type is not allowed in this group"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

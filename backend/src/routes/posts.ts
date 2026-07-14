@@ -1,19 +1,23 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import {
   createPostBodySchema,
   updatePostBodySchema,
   paginationQuerySchema,
   searchPostsQuerySchema,
+  postInteractionBodySchema,
   parseMediaAssetPath,
 } from '../types.js';
 import { emitDomainEvent } from '../events.js';
-import { isGroupMember, getUserGroupIds } from '../services/groups.js';
-import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings } from '../services/posts.js';
+import { getUserGroupIds } from '../services/groups.js';
+import { requireGroupMember } from '../plugins/auth.js';
+import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings, postInclude } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js';
+import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js';
 import { getT } from '../i18n/index.js';
 
 // A post's uploadedAssetUrls can include media proxy URLs (see
@@ -31,22 +35,14 @@ async function mediaUrlsBelongToGroup(urls: string[] | undefined, groupId: strin
   return links.length === linkIds.length && links.every((link) => link.groupId === groupId);
 }
 
-const postInclude = (userId: string) => ({
-  author: { select: { id: true, name: true, avatarUrl: true } },
-  // The feed can span several groups (see the groupIds filter on GET /), so
-  // clients need the group's name on each post to label where it belongs.
-  group: { select: { id: true, name: true } },
-  _count: { select: { comments: true, likes: true } },
-  // All reaction rows (not just this user's) so the response can show a
-  // per-emoji breakdown, not just a total — see services/reactions.ts.
-  // Ordered most-recent-first and carrying the reactor's identity so
-  // shapePost can expose recentReactors ("who reacted, not just a count").
-  likes: {
-    select: { type: true, userId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
-    orderBy: { createdAt: 'desc' as const },
-  },
-  favorites: { where: { userId }, select: { id: true } },
-});
+// Prisma's Json input type doesn't accept a plain JS `null` for a nullable
+// Json column (it's ambiguous with "field not provided") — it needs the
+// Prisma.JsonNull sentinel instead. persistedTypeData is null for
+// UPDATE/MILESTONE and an object for POLL; this is the one place that
+// distinction gets bridged into what prisma.post.create expects.
+function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  return value === null || value === undefined ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
 
 export default async function postRoutes(fastify: FastifyInstance) {
   // The feed is a filter over the user's groups: `groupIds` (comma-separated)
@@ -112,12 +108,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
   // dynamic :id param route.
   fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
     const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query);
 
-    if (!(await isGroupMember(groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, groupId)) return;
 
     const posts = await prisma.post.findMany({
       where: {
@@ -141,9 +134,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const { groupId } = request.query as { groupId?: string };
     if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
 
-    if (!(await isGroupMember(groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, groupId)) return;
 
     const posts = await getOnThisDayPosts(groupId);
     if (posts.length === 0) return { items: [] };
@@ -164,16 +155,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     const post = await prisma.post.findUnique({
       where: { id },
-      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      include: postInclude(request.user!.id),
     });
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     const [shaped] = await shapePostsWithPeople([post], request.user!.id);
     return shaped;
@@ -189,10 +178,56 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const targets = [...new Set(body.groupIds ?? [body.groupId!])];
 
     for (const groupId of targets) {
-      if (!(await isGroupMember(groupId, request.user!.id))) {
-        return reply.status(403).send({ error: t('errors.notGroupMember') });
-      }
+      if (await requireGroupMember(request, reply, groupId)) return;
     }
+
+    // Custom post types (services/postTypes/registry.ts): look up the
+    // handler for the requested type, validate/transform its typeData if it
+    // sends any, and persist the SAME resulting typeData onto every sibling
+    // row below (single-group and cross-post branches both use it) — a
+    // poll's option ids are shared across siblings, which is fine and
+    // intended (see the spec this was built from).
+    const postTypeHandler = getPostTypeHandler(body.type);
+    if (!postTypeHandler) {
+      return reply.status(400).send({ error: t('errors.unknownPostType') });
+    }
+
+    // EVERY target group must allow this post type (Group.allowedPostTypes,
+    // resolved so an empty array means "all types") — checked before any row
+    // is created, so a cross-post where even one target group disallows the
+    // type creates zero sibling rows. Creation-time only: existing posts of
+    // a later-disallowed type stay visible.
+    const targetGroups = await prisma.group.findMany({
+      where: { id: { in: targets } },
+      select: { allowedPostTypes: true },
+    });
+    if (targetGroups.some((group) => !resolveAllowedPostTypes(group).includes(body.type))) {
+      return reply.status(403).send({ error: t('errors.postTypeNotAllowed') });
+    }
+
+    let parsedTypeData: unknown;
+    if (postTypeHandler.typeDataSchema) {
+      const result = postTypeHandler.typeDataSchema.safeParse(body.typeData);
+      if (!result.success) {
+        return reply.status(400).send({ error: t('errors.invalidPostTypeData') });
+      }
+      parsedTypeData = result.data;
+    } else if (body.typeData !== undefined) {
+      // A type with no typeDataSchema (UPDATE, MILESTONE) accepts no
+      // typeData at all.
+      return reply.status(400).send({ error: t('errors.invalidPostTypeData') });
+    }
+
+    try {
+      await postTypeHandler.validateCreate?.({ content: body.content, typeData: parsedTypeData });
+    } catch (err) {
+      if (err instanceof PostTypeError) {
+        return reply.status(400).send({ error: t(`errors.${err.code}`) });
+      }
+      throw err;
+    }
+
+    const persistedTypeData = postTypeHandler.transformCreate?.(parsedTypeData) ?? parsedTypeData ?? null;
 
     if (targets.length === 1) {
       const groupId = targets[0];
@@ -207,13 +242,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
           groupId,
           content: body.content,
           type: body.type,
+          typeData: toJsonInput(persistedTypeData),
           milestoneTag: body.milestoneTag,
           uploadedAssetUrls: body.uploadedAssetUrls || [],
           latitude: body.latitude,
           longitude: body.longitude,
           locationName: body.locationName,
         },
-        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+        include: postInclude(request.user!.id),
       });
 
       // Handlers run fire-and-forget (see events.ts), so fanning out
@@ -265,6 +301,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
             groupId,
             content: body.content,
             type: body.type,
+            typeData: toJsonInput(persistedTypeData),
             milestoneTag: body.milestoneTag,
             uploadedAssetUrls: assetUrls,
             latitude: body.latitude,
@@ -273,7 +310,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
             crossPostId,
             createdAt,
           },
-          include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+          include: postInclude(request.user!.id),
         })
       )
     );
@@ -313,9 +350,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     // Editing writes into the group, so it requires *current* membership — a
     // removed member's old posts stay visible but they can't keep editing them.
-    if (!(await isGroupMember(post.groupId, request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
-    }
+    if (await requireGroupMember(request, reply, post.groupId)) return;
 
     if (post.crossPostId) {
       // Cross-posted: every sibling shares identical content, so an edit
@@ -355,7 +390,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
       const current = await prisma.post.findUnique({
         where: { id },
-        include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+        include: postInclude(request.user!.id),
       });
       const [shaped] = await attachSharedWithGroups(
         [shapePost(current!, request.user!.id)],
@@ -375,7 +410,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         editedAt: new Date(),
         ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
       },
-      include: { ...postInclude(request.user!.id), group: { select: { id: true, name: true } } },
+      include: postInclude(request.user!.id),
     });
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.
@@ -408,5 +443,47 @@ export default async function postRoutes(fastify: FastifyInstance) {
     }
 
     return { success: true };
+  });
+
+  // A post-type-specific action — poll voting today, RSVPs etc. later (see
+  // services/postTypes/). No domain event is emitted here (deliberate: no
+  // vote notifications in v1). Cross-posted siblings are intentionally NOT
+  // fanned out — a vote only ever applies to the one sibling row the caller
+  // can see, unlike author PATCH/DELETE above.
+  fastify.post('/:postId/interactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { postId } = request.params as { postId: string };
+    const { key, value } = postInteractionBodySchema.parse(request.body);
+
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+
+    if (!post) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
+    if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    const postTypeHandler = getPostTypeHandler(post.type);
+    if (!postTypeHandler?.interact) {
+      return reply.status(400).send({ error: t('errors.invalidInteraction') });
+    }
+
+    try {
+      await postTypeHandler.interact({ post: { id: post.id, typeData: post.typeData }, userId: request.user!.id, key, value });
+    } catch (err) {
+      if (err instanceof PostTypeError) {
+        return reply.status(400).send({ error: t(`errors.${err.code}`) });
+      }
+      throw err;
+    }
+
+    // Full shaped + enriched post (same shape as GET /:id) so the client can
+    // refresh its view of the post in one round trip.
+    const updated = await prisma.post.findUnique({
+      where: { id: postId },
+      include: postInclude(request.user!.id),
+    });
+    const [shaped] = await shapePostsWithPeople([updated!], request.user!.id);
+    return shaped;
   });
 }

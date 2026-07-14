@@ -1,0 +1,36 @@
+---
+id: postpoll
+title: "PostPoll"
+description: "The enriched, read-time view of a `POLL` post's `typeData` — computed"
+sidebar_label: "PostPoll"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"options":[{"id":"string","text":"string","voteCount":0,"voters":[{"id":"string","name":"string","avatarUrl":"string"}]}],"totalVotes":0,"myVoteOptionId":"string","closesAt":"2024-07-29T15:51:28.071Z","closed":true}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostPoll"}
+>
+</Heading>
+
+
+
+The enriched, read-time view of a `POLL` post's `typeData` — computed
+fresh on every read, never stored as-is. Options and vote counts are
+visible to every group member whether or not they've voted; votes are
+not anonymous (see `voters` on each option).
+
+
+<Schema
+  {...require("./postpoll.Schema.json")}
+>
+  
+</Schema>
+            

@@ -3,22 +3,39 @@
   "extends": ["config:recommended"],
   "timezone": "Europe/Brussels",
   "schedule": ["before 6am on monday"],
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "prConcurrentLimit": 10,
   "packageRules": [
     {
+      "matchFileNames": ["package.json", "web/**", "packages/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "web workspace (minor & patch)"
+    },
+    {
       "matchFileNames": ["backend/package.json"],
-      "groupName": "backend dependencies"
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "backend (minor & patch)"
     },
     {
-      "matchFileNames": ["backend/admin/package.json"],
-      "groupName": "admin dependencies"
+      "matchFileNames": ["backend/admin/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "admin UI (minor & patch)"
     },
     {
-      "matchFileNames": ["mobile/package.json"],
-      "groupName": "mobile dependencies"
+      "matchFileNames": ["docs/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "docs site (minor & patch)"
     },
     {
-      "matchFileNames": ["docs/package.json"],
-      "groupName": "docs dependencies"
+      "description": "Expo pins packages to the SDK version and upgrades are done deliberately with `npx expo install`, so no npm version-update PRs for mobile (vulnerability alerts still get PRs)",
+      "matchFileNames": ["mobile/**"],
+      "matchManagers": ["npm"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
     }
   ],
   "lockFileMaintenance": {

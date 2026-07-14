@@ -15,6 +15,7 @@ import {
   MediaPerson,
   MediaPersonLink,
   ServerInfo,
+  PostTypeInfo,
 } from '../types';
 
 export type {
@@ -34,6 +35,7 @@ export type {
   MediaPerson,
   MediaPersonLink,
   ServerInfo,
+  PostTypeInfo,
 };
 
 export class ApiError extends Error {
@@ -162,11 +164,15 @@ export const api = {
 
   getGroups: () => request<Group[]>('/api/admin/groups'),
 
-  createGroup: (data: { name: string; description?: string }) =>
+  createGroup: (data: { name: string; description?: string; allowedPostTypes?: string[] }) =>
     request<Group>('/api/admin/groups', { method: 'POST', body: data }),
 
-  updateGroup: (id: string, data: { name: string; description?: string }) =>
+  updateGroup: (id: string, data: { name: string; description?: string; allowedPostTypes?: string[] }) =>
     request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
+
+  // Registry of post types (e.g. UPDATE, MILESTONE, POLL) — used by the group
+  // form's "Allowed post types" fieldset.
+  getPostTypes: () => request<{ items: PostTypeInfo[] }>('/api/admin/post-types'),
 
   deleteGroup: (id: string) =>
     request<void>(`/api/admin/groups/${id}`, { method: 'DELETE' }),

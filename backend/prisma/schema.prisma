@@ -36,6 +36,7 @@ model User {
   usedInvites       Invite[]       @relation("InviteUsedBy")
   apiTokens         ApiToken[]
   mediaPersonLinks  MediaPersonLink[]
+  postInteractions  PostInteraction[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -65,6 +66,14 @@ model Group {
   id          String   @id @default(cuid())
   name        String
   description String?
+  // Post types members may create in this group, by PostTypeHandler id
+  // (services/postTypes/registry.ts). Empty = all registered types allowed
+  // (same convention as the allowedEmails setting) — member-facing responses
+  // resolve it through resolveAllowedPostTypes() so clients never see an
+  // empty list; only admin responses expose the raw stored array. Enforced
+  // at creation time only: existing posts of a later-disallowed type stay
+  // visible.
+  allowedPostTypes String[] @default([])
   createdAt   DateTime @default(now())
   members     GroupMember[]
   posts       Post[]
@@ -91,7 +100,18 @@ model Post {
   groupId         String
   group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   content         String?
-  type            PostType @default(UPDATE)
+  // Open string discriminator (was the closed PostType enum: UPDATE /
+  // MILESTONE) so new post types (POLL, and whatever comes after it) can be
+  // added without a migration — see services/postTypes/registry.ts, the
+  // PostTypeHandler registry that owns per-type validation. Never renamed
+  // once a deployment has posts of that type.
+  type            String   @default("UPDATE")
+  // Handler-owned, type-specific config (e.g. a poll's options/closesAt) —
+  // null for UPDATE/MILESTONE. Validated/transformed by the type's
+  // PostTypeHandler at create time, immutable afterward. `content` stays the
+  // universal human-readable field (a poll's question), so search,
+  // notification previews, and old clients keep working unmodified.
+  typeData        Json?
   milestoneTag    String?
   uploadedAssetUrls String[]
   createdAt       DateTime @default(now())
@@ -109,14 +129,37 @@ model Post {
   // API response (see shapePost in services/posts.ts): a non-author must
   // never be able to tell a post was cross-posted.
   crossPostId     String?
+  // Per-user state for this post's type (poll votes today; RSVPs, etc.
+  // later) — a generic, handler-owned table rather than one column per
+  // feature. Never included in postInclude (routes/posts.ts) or serialized
+  // directly; each PostTypeHandler owns reading/writing its own `key`
+  // namespace (see services/postTypes/poll.ts).
+  interactions    PostInteraction[]
 
   @@index([groupId, createdAt])
   @@index([crossPostId])
 }
 
-enum PostType {
-  UPDATE
-  MILESTONE
+// Generic per-user state against a post, owned by that post's
+// PostTypeHandler (see services/postTypes/) rather than a dedicated table per
+// feature — a poll vote today (`key: "vote"`, `value: { optionId }`), future
+// RSVPs/acknowledgements reusing the same shape. `key` namespaces different
+// interaction kinds a single post type might have; the unique constraint is
+// one row per (post, user, key) so "vote" is naturally one-per-user, with the
+// handler switching the existing row's value instead of adding a second one
+// (mirrors Like's one-reaction-per-user-per-post model).
+model PostInteraction {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId, key])
+  @@index([postId, key])
 }
 
 model Comment {

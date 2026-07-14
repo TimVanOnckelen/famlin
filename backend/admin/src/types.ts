@@ -27,6 +27,15 @@ export interface Group {
   description: string | null;
   createdAt: string;
   memberCount?: number;
+  // Raw stored list of post-type ids members may create in this group.
+  // Empty (or absent, for groups fetched before this field existed) means
+  // "all registered types allowed" — see PostTypeInfo / resolveAllowedPostTypes.
+  allowedPostTypes?: string[];
+}
+
+// A registered post type, as reported by GET /api/admin/post-types.
+export interface PostTypeInfo {
+  id: string;
 }
 
 // A user as returned by the group-members endpoint, carrying the join date.

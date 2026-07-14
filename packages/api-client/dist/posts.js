@@ -10,6 +10,8 @@ exports.updatePost = updatePost;
 exports.deletePost = deletePost;
 exports.reactToPost = reactToPost;
 exports.toggleFavoritePost = toggleFavoritePost;
+exports.interactWithPost = interactWithPost;
+exports.votePoll = votePoll;
 const client_1 = require("./client");
 async function fetchPosts(params = {}) {
     const response = await client_1.api.get('/posts', {
@@ -54,4 +56,16 @@ async function reactToPost(postId, type) {
 async function toggleFavoritePost(postId) {
     const response = await client_1.api.post(`/posts/${postId}/favorite`);
     return response.data;
+}
+// Generic per-post-type interaction endpoint (e.g. poll voting). Returns the
+// full shaped + enriched post so callers can refresh their cache in one round
+// trip — see votePoll() below for the poll-specific convenience wrapper.
+async function interactWithPost(postId, key, value) {
+    const response = await client_1.api.post(`/posts/${postId}/interactions`, { key, value });
+    return response.data;
+}
+// Voting the same option again unvotes; voting a different option switches —
+// mirrors reaction semantics. See PostTypeHandler.interact on the backend.
+async function votePoll(postId, optionId) {
+    return interactWithPost(postId, 'vote', { optionId });
 }

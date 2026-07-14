@@ -31,19 +31,11 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { ReactionPicker } from '@/components/ReactionPicker';
 import { isVideoUrl } from '@/utils/media';
-import { Comment, Post, ReactionType } from '@/types';
-import {
-  fetchComments,
-  createComment,
-  deleteComment,
-  fetchPost,
-  reactToPost,
-  toggleFavoritePost,
-} from '@famlin/api-client';
+import { fetchComments, createComment, deleteComment, fetchPost } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
-import { patchPostInCaches } from '@/utils/postCache';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
 
 function VideoPage({
   url,
@@ -286,7 +278,6 @@ function PhotoActionsBar({
   onOpenComments: () => void;
 }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -327,52 +318,11 @@ function PhotoActionsBar({
   }
 
   // Same optimistic patch PostCard applies, so the feed/detail caches stay
-  // in sync with what the viewer shows.
-  const likeMutation = useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(postId!, type),
-    onMutate: async (type) => {
-      if (!post) return;
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      await queryClient.cancelQueries({ queryKey: ['post', postId] });
-
-      const nextReaction = post.myReaction === type ? null : type;
-      const patch = (p: Post) => {
-        const reactions = { ...p.reactions };
-        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
-        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
-        return {
-          ...p,
-          myReaction: nextReaction,
-          reactions,
-          likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
-          likedByMe: nextReaction !== null,
-        };
-      };
-
-      patchPostInCaches(queryClient, postId!, patch);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-    },
-  });
-
-  const favoriteMutation = useMutation({
-    mutationFn: () => toggleFavoritePost(postId!),
-    onMutate: async () => {
-      if (!post) return;
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      await queryClient.cancelQueries({ queryKey: ['post', postId] });
-
-      const nextFavorited = !post.favoritedByMe;
-      patchPostInCaches(queryClient, postId!, (p: Post) => ({ ...p, favoritedByMe: nextFavorited }));
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
+  // in sync with what the viewer shows. `post` is guaranteed loaded by the
+  // time these are actually invoked, since the buttons below only render
+  // once `post` is truthy.
+  const likeMutation = useReactToPost(post!);
+  const favoriteMutation = useToggleFavorite(post!);
 
   return (
     <>

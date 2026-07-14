@@ -50,7 +50,14 @@
     "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",
     "mediaProviderLacksPeople": "Deze mediabron ondersteunt geen persoonsherkenning",
     "mediaProviderLacksPersonFilter": "Deze mediabron ondersteunt geen filteren op persoon",
-    "crossPostAssetCopyFailed": "Kon een gekoppelde foto niet kopiëren om te delen. Probeer het opnieuw."
+    "crossPostAssetCopyFailed": "Kon een gekoppelde foto niet kopiëren om te delen. Probeer het opnieuw.",
+    "unknownPostType": "Onbekend berichttype",
+    "invalidPostTypeData": "Ongeldige gegevens voor dit berichttype",
+    "invalidInteraction": "Ongeldige interactie",
+    "pollClosed": "Deze peiling is gesloten",
+    "invalidPollOption": "Ongeldige peilingsoptie",
+    "pollQuestionRequired": "Een peiling heeft een vraag nodig",
+    "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

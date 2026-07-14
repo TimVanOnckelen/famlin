@@ -25,14 +25,14 @@ import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
-import { Post, Comment, ReactionType } from '@/types';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { postTypeRenderers } from '@/components/postTypes';
+import { Comment, ReactionType } from '@/types';
 import {
   fetchPost,
   fetchComments,
   fetchGroupMembers,
   GroupMember,
-  reactToPost,
-  toggleFavoritePost,
   createComment,
   reactToComment,
   updatePost,
@@ -41,9 +41,11 @@ import {
   deleteComment,
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
-import { getUploadUrl, uploadMedia } from '@/api/uploads';
+import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 
 // Matches a trailing "@partial-name" at the end of the text being typed —
 // deliberately only the end, not anywhere in the string, since that's the
@@ -67,7 +69,6 @@ export function PostDetailScreen() {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
   const [commentAttachment, setCommentAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
-  const [attachmentUploading, setAttachmentUploading] = useState(false);
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
@@ -85,22 +86,13 @@ export function PostDetailScreen() {
     enabled: !!post?.groupId,
   });
 
-  const likeMutation = useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(postId, type),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-  });
-
-  const favoriteMutation = useMutation({
-    mutationFn: () => toggleFavoritePost(postId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
+  // Shared optimistic mutations — same intent as the previous local
+  // invalidate-only variants, but the caches now update immediately like
+  // they do from PostCard / the image viewer. The action buttons only render
+  // once `post` is loaded (the screen returns null until then), so the
+  // non-null assertion never bites at mutate time.
+  const likeMutation = useReactToPost(post!);
+  const favoriteMutation = useToggleFavorite(post!);
 
   const commentMutation = useMutation({
     mutationFn: ({
@@ -210,40 +202,24 @@ export function PostDetailScreen() {
     });
   }
 
-  async function pickCommentAttachment() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
+  const { pick: pickAttachmentMedia, uploading: attachmentUploading } = usePickAndUploadMedia({
+    pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.8,
       videoMaxDuration: 120,
-    });
-    if (result.canceled) return;
+    },
+    // Show the local preview (with the uploading overlay) while the upload
+    // is in flight; clear it again if the upload fails.
+    onPicked: ([asset]) => setCommentAttachment({ uri: asset.uri, isVideo: asset.isVideo }),
+    onError: () => setCommentAttachment(null),
+  });
 
-    const asset = result.assets[0];
-    const isVideo = asset.type === 'video';
-    setCommentAttachment({ uri: asset.uri, isVideo });
-
-    try {
-      setAttachmentUploading(true);
-      const [uploadedUrl] = await uploadMedia([
-        {
-          uri: asset.uri,
-          name: asset.fileName || `${isVideo ? 'video' : 'photo'}.${isVideo ? 'mp4' : 'jpg'}`,
-          type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
-        },
-      ]);
-      setCommentAttachment({ uri: asset.uri, isVideo, uploadedUrl });
-    } catch (err: any) {
-      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'));
-      setCommentAttachment(null);
-    } finally {
-      setAttachmentUploading(false);
-    }
+  async function pickCommentAttachment() {
+    const result = await pickAttachmentMedia();
+    if (!result) return;
+    const [asset] = result.assets;
+    const [uploadedUrl] = result.urls;
+    setCommentAttachment({ uri: asset.uri, isVideo: asset.isVideo, uploadedUrl });
   }
 
   function handleCommentTextChange(text: string) {
@@ -273,6 +249,7 @@ export function PostDetailScreen() {
   const fullscreenUrls = allPhotoUrls;
   const hasPhotos = allPhotoUrls.length > 0;
   const reactors = post.recentReactors ?? [];
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
 
   function openFullscreen(index: number) {
     navigation.navigate('ImageViewer', {
@@ -312,16 +289,7 @@ export function PostDetailScreen() {
       style={styles.container}
       edges={hasPhotos ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
     >
-      {!hasPhotos && (
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Icon name="arrow-left" size={18} color={colors.primary} />
-            <Text style={styles.backButtonText}>{t('common.back')}</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('postDetail.title')}</Text>
-          <View style={styles.headerRight} />
-        </View>
-      )}
+      {!hasPhotos && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -424,6 +392,12 @@ export function PostDetailScreen() {
               ) : (
                 !!post.content && <Text style={styles.postContent}>{post.content}</Text>
               )}
+
+              {/* Registry entry for post.type (e.g. POLL) — renders below the
+                  content above, which for a poll is already the question, so
+                  this must not repeat it. Hidden while editing the post's own
+                  content, same as the content Text above. */}
+              {!isEditingPost && TypeCardBody && <TypeCardBody post={post} />}
 
               {post.latitude != null && post.longitude != null && (
                 <PostLocationPreview latitude={post.latitude} longitude={post.longitude} locationName={post.locationName} />
@@ -780,35 +754,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  header: {
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.primary,
-  },
-  headerTitle: {
-    fontFamily: 'Nunito_700Bold',
-    fontSize: 17,
-    color: colors.textTitle,
-  },
-  headerRight: {
-    width: 70,
   },
   postContainer: {
     padding: 14,

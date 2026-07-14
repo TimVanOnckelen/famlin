@@ -5,6 +5,11 @@
 # Famlin
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/TimVanOnckelen/famlin/ci.yml?branch=main&label=CI)](https://github.com/TimVanOnckelen/famlin/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/TimVanOnckelen/famlin)](https://github.com/TimVanOnckelen/famlin/releases)
+[![Docker image](https://img.shields.io/badge/ghcr.io-timvanonckelen%2Ffamlin-2496ED?logo=docker&logoColor=white)](https://github.com/TimVanOnckelen/famlin/pkgs/container/famlin)
+[![Last commit](https://img.shields.io/github/last-commit/TimVanOnckelen/famlin)](https://github.com/TimVanOnckelen/famlin/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/TimVanOnckelen/famlin?style=flat)](https://github.com/TimVanOnckelen/famlin/stargazers)
 
 > ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
 

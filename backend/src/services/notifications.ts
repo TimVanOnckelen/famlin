@@ -9,6 +9,11 @@ export type { NotifyType, Recipient } from './notificationChannels/types.js';
 // notification), so they don't have to know channels moved.
 export { createTransporter } from './notificationChannels/email.js';
 
+// No real user has this id, so notifyGroup's sender-exclusion filter never
+// excludes anyone — used by system-generated notifications (on-this-day,
+// new-media-assets) that aren't "from" any group member.
+export const SYSTEM_SENDER_ID = '__system__';
+
 const EXCERPT_MAX_LENGTH = 80;
 
 // Trims a post/comment body down to a short quote for notification text.

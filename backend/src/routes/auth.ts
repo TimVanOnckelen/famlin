@@ -3,13 +3,13 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import pkg from '../../package.json' with { type: 'json' };
 import { prisma } from '../db.js';
-import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache } from '../plugins/auth.js';
+import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getOidcSettings, getAllSettings } from '../services/settings.js';
 import { getValidInvite, consumeInvite } from '../services/invites.js';
 import { completeOidcLogin } from '../services/oidcLogin.js';
 import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
 import { getT } from '../i18n/index.js';
-import { sanitizeUser } from '../services/users.js';
+import { sanitizeUser, hashPassword } from '../services/users.js';
 import {
   loginBodySchema,
   oidcExchangeBodySchema,
@@ -25,7 +25,7 @@ import {
 // Never a valid bcrypt match — used so a login with an unknown email still
 // pays the cost of a bcrypt.compare, instead of returning immediately, so
 // timing doesn't reveal whether the email exists.
-const DUMMY_PASSWORD_HASH = await bcrypt.hash(crypto.randomUUID(), 12);
+const DUMMY_PASSWORD_HASH = await hashPassword(crypto.randomUUID());
 
 // Arbitrary fixed key for a Postgres advisory lock — only used to serialize
 // concurrent POST /setup calls against each other (see below), unrelated to
@@ -135,7 +135,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const t = getT(request);
       const { email, name, password } = setupBodySchema.parse(request.body);
       const normalizedEmail = email.toLowerCase().trim();
-      const passwordHash = await bcrypt.hash(password, 12);
+      const passwordHash = await hashPassword(password);
 
       const user = await prisma.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`;
@@ -365,9 +365,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/register', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
 
-    if (!request.user!.isAdmin) {
-      return reply.status(403).send({ error: t('errors.adminRequired') });
-    }
+    if (requireAdmin(request, reply)) return;
 
     const { email, name, password, isAdmin, groupIds } = registerBodySchema.parse(request.body);
     const normalizedEmail = email.toLowerCase().trim();
@@ -388,7 +386,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await hashPassword(password);
 
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
@@ -432,7 +430,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: t('errors.currentPasswordIncorrect') });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await hashPassword(newPassword);
     // Bumping tokenVersion invalidates every token issued before this
     // change, including on any other device the account is signed into.
     await prisma.user.update({
@@ -448,14 +446,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/reset-password/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
 
-    if (!request.user!.isAdmin) {
-      return reply.status(403).send({ error: t('errors.adminRequired') });
-    }
+    if (requireAdmin(request, reply)) return;
 
     const { id } = request.params as { id: string };
     const { newPassword } = resetPasswordBodySchema.parse(request.body);
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await hashPassword(newPassword);
 
     try {
       const user = await prisma.user.update({

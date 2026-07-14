@@ -16,6 +16,7 @@ import { Avatar } from '@/components/Avatar';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
+import { postTypeRenderers } from '@/components/postTypes';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
@@ -70,6 +71,10 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
   const hasPhotos = post.uploadedAssetUrls.length > 0;
+  // Unknown/absent types fall back to the plain rendering below (required
+  // forward-compat behavior); milestone stays its own hardcoded branch and is
+  // never looked up here.
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -228,6 +233,8 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
               {groupChip}
             </div>
           )}
+
+          {TypeCardBody && <TypeCardBody post={post} />}
 
           {post.people && post.people.length > 0 && (
             <div className="post-people" aria-label={t('feed.peopleInPost')}>

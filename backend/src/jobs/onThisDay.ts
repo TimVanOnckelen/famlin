@@ -1,10 +1,5 @@
 import { getAllOnThisDayPosts } from '../services/onThisDay.js';
-import { notifyGroup, excerptText } from '../services/notifications.js';
-
-// No real user has this id, so notifyGroup's sender-exclusion filter never
-// excludes anyone — this is a system-generated notification, not one "from"
-// a group member (and it's never persisted, notify() only stores userId/type).
-const SYSTEM_SENDER_ID = '__system__';
+import { notifyGroup, excerptText, SYSTEM_SENDER_ID } from '../services/notifications.js';
 
 // Runs once a day (see registerCronJobs in server.ts): finds every post
 // created on today's month/day in a past year and notifies each post's group.

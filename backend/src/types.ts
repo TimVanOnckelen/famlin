@@ -72,9 +72,17 @@ export const oidcMobileHandoffBodySchema = z.object({
   code: z.string(),
 });
 
+// allowedPostTypes stays a loose string array here — each id is validated
+// against the PostTypeHandler registry in routes/admin.ts instead, so the
+// admin gets the specific errors.unknownPostType message rather than a
+// generic zod validationFailed. Empty array (or omitted on create) = all
+// types allowed, same convention as allowedEmails.
+const allowedPostTypesSchema = z.array(z.string().min(1).max(30)).max(50);
+
 export const createGroupBodySchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
+  allowedPostTypes: allowedPostTypesSchema.optional(),
 });
 
 export const groupMemberBodySchema = z.object({
@@ -100,8 +108,16 @@ export const createPostBodySchema = z
     groupId: z.string().optional(),
     groupIds: z.array(z.string()).min(1).max(20).optional(),
     content: z.string().max(5000).optional(),
-    type: z.enum(['UPDATE', 'MILESTONE']).default('UPDATE'),
+    // An open string discriminator (was a closed 'UPDATE'|'MILESTONE' enum) —
+    // routes/posts.ts looks it up in the PostTypeHandler registry
+    // (services/postTypes/registry.ts) and 400s on an unregistered id.
+    type: z.string().max(30).default('UPDATE'),
     milestoneTag: z.string().max(50).optional(),
+    // Handler-owned, type-specific config (e.g. a poll's options/closesAt) —
+    // validated against the matching PostTypeHandler's own typeDataSchema in
+    // routes/posts.ts, not here (this schema can't know which shape a given
+    // type expects).
+    typeData: z.unknown().optional(),
     uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .merge(locationFieldsSchema)
@@ -136,6 +152,15 @@ export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 
 
 export const reactionBodySchema = z.object({
   type: reactionTypeSchema.default('LIKE'),
+});
+
+// POST /api/posts/:postId/interactions — a post-type-specific action (poll
+// voting today; RSVPs etc. later). `key`/`value` are opaque here on purpose:
+// the matching PostTypeHandler (services/postTypes/registry.ts) is what
+// knows what a valid key/value pair looks like for its own type.
+export const postInteractionBodySchema = z.object({
+  key: z.string().min(1).max(50),
+  value: z.unknown().optional(),
 });
 
 export const updatePostBodySchema = z
@@ -200,6 +225,8 @@ export const adminUpdateUserBodySchema = notificationPrefsSchema.extend({
 export const adminUpdateGroupBodySchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional().nullable(),
+  // Explicit empty array = back to "all types allowed"; omitted = unchanged.
+  allowedPostTypes: allowedPostTypesSchema.optional(),
 });
 
 export const passwordLoginBodySchema = z.object({

@@ -1,10 +1,9 @@
 import { FastifyInstance } from 'fastify';
-import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
 import { createUserToken } from '../plugins/auth.js';
 import { getT } from '../i18n/index.js';
 import { getValidInvite, consumeInvite, inviteFailureResponse } from '../services/invites.js';
-import { sanitizeUser } from '../services/users.js';
+import { sanitizeUser, hashPassword } from '../services/users.js';
 import { inviteRegisterBodySchema } from '../types.js';
 
 export default async function inviteRoutes(fastify: FastifyInstance) {
@@ -55,7 +54,7 @@ export default async function inviteRoutes(fastify: FastifyInstance) {
         return reply.status(409).send({ error: t('errors.userAlreadyExists') });
       }
 
-      const passwordHash = await bcrypt.hash(body.password, 12);
+      const passwordHash = await hashPassword(body.password);
       const user = await prisma.user.create({
         data: { email, name: body.name, passwordHash },
       });

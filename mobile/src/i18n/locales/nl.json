@@ -123,6 +123,12 @@
     "addPhotoSubtitle": "Kies uit galerij",
     "addAlbumPhotoTitle": "Albumfoto's",
     "addAlbumPhotoSubtitle": "Kies uit een gedeeld album",
+    "postType": {
+      "update": "Update",
+      "milestone": "Mijlpaal",
+      "poll": "Poll"
+    },
+    "noPostTypesForSelection": "Deze families hebben geen gemeenschappelijk berichttype — wijzig de geselecteerde families om te kunnen plaatsen.",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
     "alerts": {
@@ -148,6 +154,19 @@
       "namePlaceholder": "Bijv. huis van oma",
       "tapHint": "Tik op de kaart om de pin te plaatsen"
     }
+  },
+  "poll": {
+    "questionPlaceholder": "Stel een vraag...",
+    "optionPlaceholder": "Optie {{number}}",
+    "addOption": "Optie toevoegen",
+    "removeOption": "Optie verwijderen",
+    "vote": "Stemmen",
+    "myVote": "Jouw stem",
+    "votes_one": "{{count}} stem",
+    "votes_other": "{{count}} stemmen",
+    "totalVotes_one": "{{count}} stem in totaal",
+    "totalVotes_other": "{{count}} stemmen in totaal",
+    "closed": "Poll gesloten"
   },
   "mediaPicker": {
     "title": "Foto's kiezen",

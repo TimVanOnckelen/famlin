@@ -54,8 +54,14 @@
     "typeLabel": "Post type",
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Milestone",
+    "typePoll": "📊 Poll",
+    "noAllowedTypes": "The selected families don't have any post type in common — change the selection to post.",
     "placeholder": "Share an update with your family…",
     "milestonePlaceholder": "What's the milestone? (e.g. Emma turns 5! 🎉)",
+    "pollPlaceholder": "Ask a question…",
+    "pollOptionPlaceholder": "Option {{number}}",
+    "addOption": "Add option",
+    "removeOption": "Remove option",
     "addPhotos": "Add photos",
     "addFromAlbums": "Choose from albums",
     "removePhoto": "Remove photo",
@@ -144,5 +150,13 @@
     "loadFailed": "Photos couldn't be loaded.",
     "shareToFeed": "Share to feed",
     "viewPost": "View post"
+  },
+  "poll": {
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "totalVotes_one": "{{count}} vote total",
+    "totalVotes_other": "{{count}} votes total",
+    "closed": "Poll closed",
+    "yourVote": "Your vote"
   }
 }

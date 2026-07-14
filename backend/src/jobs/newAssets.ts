@@ -1,15 +1,10 @@
 import { prisma } from '../db.js';
 import { getMediaProvider } from '../services/media/registry.js';
-import { notifyGroup } from '../services/notifications.js';
+import { notifyGroup, SYSTEM_SENDER_ID } from '../services/notifications.js';
 import { getAllSettings } from '../services/settings.js';
 import { emitDomainEvent } from '../events.js';
 import i18n from '../i18n/index.js';
 import type { MediaAssetSummary } from '../services/media/types.js';
-
-// No real user has this id, so notifyGroup's sender-exclusion filter never
-// excludes anyone — this is a system-generated notification, not one "from"
-// a group member (mirrors jobs/onThisDay.ts).
-const SYSTEM_SENDER_ID = '__system__';
 
 // A post created in AUTO mode embeds at most this many of the new assets —
 // mirrors the 20-asset cap createPostBodySchema enforces on a normal post,

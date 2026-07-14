@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin } from '@famlin/api-client';
 import { AppIcon } from './Logo';
 import { api, OidcConfig, User } from '../api/client';
-import { generateCodeChallenge, generateRandomString, getOidcRedirectUri } from '../oidcPkce';
 
 interface LoginPageProps {
   onLogin: (user: User) => void;
 }
 
-const VERIFIER_KEY = 'famlin_oidc_verifier';
-const STATE_KEY = 'famlin_oidc_state';
-const CONFIG_KEY = 'famlin_oidc_config';
+// Must stay exactly this URL — deployments have it registered as the
+// redirect_uri with their OIDC provider.
+function getOidcRedirectUri(): string {
+  return new URL('/admin/', window.location.origin).toString();
+}
 
 export function LoginPage({ onLogin }: LoginPageProps) {
   const { t } = useTranslation();
@@ -28,65 +30,44 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       .catch(() => setOidcConfig(null));
   }, []);
 
+  // Finish an SSO round-trip: the provider redirected back to us with
+  // ?code=&state= — exchange it for a session (shared with web's LoginPage,
+  // see packages/api-client/src/oidcBrowser.ts).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
+    const providerError = params.get('error');
+
+    // The provider redirected back without a code (user denied consent, or
+    // the authorization failed upstream) — abort the stored round trip and
+    // tell the user, instead of silently landing back on the form.
+    if (providerError) {
+      clearBrowserOidcLogin();
+      window.history.replaceState({}, '', window.location.pathname);
+      setError(t('login.ssoLoginFailed'));
+      return;
+    }
     if (!code) return;
 
     const finishSsoLogin = async () => {
       setIsSsoLoading(true);
       try {
-        const storedState = sessionStorage.getItem(STATE_KEY);
-        const verifier = sessionStorage.getItem(VERIFIER_KEY);
-        const configJson = sessionStorage.getItem(CONFIG_KEY);
-        if (!storedState || !verifier || !configJson || state !== storedState) {
-          throw new Error(t('login.ssoLoginFailed'));
-        }
-        const config = JSON.parse(configJson) as OidcConfig;
-
-        let result: { token: string; user: User };
-        if (config.usesClientSecret) {
-          // Providers that require a client secret (e.g. Google) reject a
-          // secretless PKCE exchange from the browser — hand the code to the
-          // backend instead, which holds the secret and does the exchange.
-          result = await api.exchangeOidcCode(code, getOidcRedirectUri(), verifier);
-        } else {
-          const tokenRes = await fetch(config.tokenEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code,
-              redirect_uri: getOidcRedirectUri(),
-              client_id: config.clientId,
-              code_verifier: verifier,
-            }),
-          });
-          if (!tokenRes.ok) {
-            throw new Error(t('login.ssoLoginFailed'));
-          }
-          const tokenData = await tokenRes.json();
-          if (!tokenData.id_token) {
-            throw new Error(t('login.ssoLoginFailed'));
-          }
-          result = await api.loginWithOidc(tokenData.id_token);
-        }
-
+        const result = await completeBrowserOidcLogin(code, state, getOidcRedirectUri());
         localStorage.setItem('famlin_admin_token', result.token);
-        onLogin(result.user);
+        onLogin(result.user as User);
       } catch (err: any) {
-        setError(err.message || t('login.ssoLoginFailed'));
+        // err.message is an untranslated slug from the shared helper — show
+        // the backend's translated error when there is one, else the generic.
+        setError(err.response?.data?.error || t('login.ssoLoginFailed'));
       } finally {
-        sessionStorage.removeItem(VERIFIER_KEY);
-        sessionStorage.removeItem(STATE_KEY);
-        sessionStorage.removeItem(CONFIG_KEY);
         window.history.replaceState({}, '', window.location.pathname);
         setIsSsoLoading(false);
       }
     };
 
     finishSsoLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSsoLogin = async () => {
@@ -95,28 +76,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsSsoLoading(true);
     setError(null);
     try {
-      const verifier = generateRandomString();
-      const challenge = await generateCodeChallenge(verifier);
-      const state = generateRandomString(32);
-
-      sessionStorage.setItem(VERIFIER_KEY, verifier);
-      sessionStorage.setItem(STATE_KEY, state);
-      sessionStorage.setItem(CONFIG_KEY, JSON.stringify(oidcConfig));
-
-      const url = new URL(oidcConfig.authorizationEndpoint);
-      url.search = new URLSearchParams({
-        response_type: 'code',
-        client_id: oidcConfig.clientId,
-        redirect_uri: getOidcRedirectUri(),
-        scope: oidcConfig.scopes,
-        code_challenge: challenge,
-        code_challenge_method: 'S256',
-        state,
-      }).toString();
-
-      window.location.assign(url.toString());
-    } catch (err: any) {
-      setError(err.message || t('login.ssoLoginFailed'));
+      const url = await startBrowserOidcLogin(oidcConfig, getOidcRedirectUri());
+      window.location.assign(url);
+    } catch {
+      setError(t('login.ssoLoginFailed'));
       setIsSsoLoading(false);
     }
   };

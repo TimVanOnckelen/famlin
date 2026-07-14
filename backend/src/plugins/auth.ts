@@ -6,6 +6,8 @@ import { config } from '../config.js';
 import { prisma } from '../db.js';
 import { getOidcSettings, isEmailAllowed } from '../services/settings.js';
 import { API_TOKEN_PREFIX, verifyApiToken } from '../services/apiTokens.js';
+import { isGroupMember } from '../services/groups.js';
+import { getT } from '../i18n/index.js';
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user: {
@@ -247,6 +249,27 @@ export async function authenticateMediaRequest(request: FastifyRequest): Promise
   }
 
   return null;
+}
+
+// Returns true (and sends a 403) when the caller is not an admin. Callers MUST
+// `return` when this returns true, otherwise the handler keeps executing after
+// the 403 is sent and the mutation still runs.
+export function requireAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
+  if (!request.user?.isAdmin) {
+    reply.status(403).send({ error: getT(request)('errors.adminRequired') });
+    return true;
+  }
+  return false;
+}
+
+// Returns true (and sends a 403) when the caller isn't a member of groupId.
+// Same contract as requireAdmin: callers MUST `return` when this returns true.
+export async function requireGroupMember(request: FastifyRequest, reply: FastifyReply, groupId: string): Promise<boolean> {
+  if (!(await isGroupMember(groupId, request.user!.id))) {
+    reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
+    return true;
+  }
+  return false;
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {

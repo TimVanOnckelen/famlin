@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { invalidateSessionCache } from '../plugins/auth.js';
+import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getAllSettings, updateSettings } from '../services/settings.js';
 import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
@@ -28,6 +28,7 @@ import {
   updateMediaAlbumLinkBodySchema,
   createMediaPersonLinkBodySchema,
 } from '../types.js';
+import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
 import { getT } from '../i18n/index.js';
 
 // Builds the invite link's origin from the request that reached us, since
@@ -92,17 +93,6 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 // map it to a 404 instead of letting it fall through to a generic 500.
 function isRecordNotFound(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2025';
-}
-
-// Returns true (and sends a 403) when the caller is not an admin. Callers MUST
-// `return` when this returns true, otherwise the handler keeps executing after
-// the 403 is sent and the mutation still runs.
-function requireAdmin(request: any, reply: any): boolean {
-  if (!request.user?.isAdmin) {
-    reply.status(403).send({ error: getT(request)('errors.adminRequired') });
-    return true;
-  }
-  return false;
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {
@@ -277,7 +267,34 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // The registered post types, for the admin UI's "allowed post types"
+  // checkboxes in the group form — the registry is compile-time
+  // (services/postTypes/registry.ts), so this list is static per server
+  // version.
+  fastify.get('/post-types', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    return { items: listPostTypeHandlers().map((handler) => ({ id: handler.id })) };
+  });
+
+  // Every id in an admin-supplied allowedPostTypes list must be a registered
+  // post type — an unknown id would silently never match anything (empty ≠
+  // unknown: an empty array deliberately means "all allowed"). Returns true
+  // after sending the 400, mirroring requireAdmin's return-and-bail contract.
+  function rejectUnknownPostTypes(allowedPostTypes: string[] | undefined, request: any, reply: any): boolean {
+    if (allowedPostTypes?.some((id) => !getPostTypeHandler(id))) {
+      reply.status(400).send({ error: getT(request)('errors.unknownPostType') });
+      return true;
+    }
+    return false;
+  }
+
   // Groups
+  //
+  // Admin group responses carry the RAW stored allowedPostTypes (an empty
+  // array means "all allowed"), unlike the member-facing routes/groups.ts,
+  // which resolve it — the admin UI needs to distinguish "all" from an
+  // explicit list to render its checkboxes.
   fastify.get('/groups', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
@@ -296,10 +313,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return;
 
     const body = createGroupBodySchema.parse(request.body);
+    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return;
+
     const group = await prisma.group.create({
       data: {
         name: body.name,
         description: body.description,
+        allowedPostTypes: body.allowedPostTypes ?? [],
       },
     });
 
@@ -311,6 +331,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const { id } = request.params as { id: string };
     const body = adminUpdateGroupBodySchema.parse(request.body);
+    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return;
 
     try {
       const group = await prisma.group.update({
@@ -318,6 +339,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         data: {
           name: body.name,
           description: body.description,
+          // Omitted = unchanged; an explicit [] resets to "all allowed".
+          ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
         },
       });
       return group;

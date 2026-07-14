@@ -130,7 +130,10 @@
     "newGroup": "New group",
     "form": {
       "name": "Name",
-      "description": "Description"
+      "description": "Description",
+      "allowedPostTypes": "Allowed post types",
+      "allowedPostTypesHint": "When every box is checked, post types added later are allowed automatically.",
+      "allowedPostTypesError": "Select at least one post type."
     },
     "save": "Save",
     "add": "Add",
@@ -333,5 +336,10 @@
     "groupsLabel": "Groups (optional)",
     "inviteSentHint": "An invite email was sent to {{email}}. You can also share the link below.",
     "createError": "Could not create user: {{error}}"
+  },
+  "postTypes": {
+    "UPDATE": "Update",
+    "MILESTONE": "Milestone",
+    "POLL": "Poll"
   }
 }

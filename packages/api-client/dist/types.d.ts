@@ -8,6 +8,30 @@ export interface PostPerson {
     userName: string | null;
     userAvatarUrl: string | null;
 }
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | (string & {});
+export interface PollOptionResult {
+    id: string;
+    text: string;
+    voteCount: number;
+    voters: {
+        id: string;
+        name: string;
+        avatarUrl?: string | null;
+    }[];
+}
+export interface PostPoll {
+    options: PollOptionResult[];
+    totalVotes: number;
+    myVoteOptionId: string | null;
+    closesAt: string | null;
+    closed: boolean;
+}
+export interface PollCreateData {
+    options: {
+        text: string;
+    }[];
+    closesAt?: string;
+}
 export interface User {
     id: string;
     email: string;
@@ -28,6 +52,7 @@ export interface Group {
     description?: string | null;
     createdAt: string;
     joinedAt?: string;
+    allowedPostTypes?: string[];
 }
 export interface Post {
     id: string;
@@ -43,7 +68,9 @@ export interface Post {
         name: string;
     } | null;
     content?: string | null;
-    type: 'UPDATE' | 'MILESTONE';
+    type: PostType;
+    typeData?: unknown;
+    poll?: PostPoll;
     milestoneTag?: string | null;
     uploadedAssetUrls: string[];
     createdAt: string;

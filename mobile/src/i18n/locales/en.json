@@ -123,6 +123,12 @@
     "addPhotoSubtitle": "Choose from gallery",
     "addAlbumPhotoTitle": "Album photos",
     "addAlbumPhotoSubtitle": "Choose from a shared album",
+    "postType": {
+      "update": "Update",
+      "milestone": "Milestone",
+      "poll": "Poll"
+    },
+    "noPostTypesForSelection": "These families don't share any post type — change the selected families to post.",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
     "alerts": {
@@ -148,6 +154,19 @@
       "namePlaceholder": "E.g. Grandma's house",
       "tapHint": "Tap the map to place the pin"
     }
+  },
+  "poll": {
+    "questionPlaceholder": "Ask a question...",
+    "optionPlaceholder": "Option {{number}}",
+    "addOption": "Add option",
+    "removeOption": "Remove option",
+    "vote": "Vote",
+    "myVote": "Your vote",
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "totalVotes_one": "{{count}} vote total",
+    "totalVotes_other": "{{count}} votes total",
+    "closed": "Poll closed"
   },
   "mediaPicker": {
     "title": "Choose photos",

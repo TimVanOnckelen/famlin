@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["key"],"properties":{"key":{"type":"string","maxLength":50,"example":"vote"},"value":{"description":"Shape depends on `key` — for `vote`, `{ optionId }`.","example":{"optionId":"opt_1"}}}}}}}}
