@@ -1,3 +1,31 @@
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function getExpoMajorVersion() {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(__dirname, "node_modules/expo/package.json"), "utf8")
+    );
+    return parseInt(pkg.version.split(".")[0], 10);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Derive an integer Android versionCode from the marketing version and the
+ * installed Expo SDK major version. This matches the scheme release-please's
+ * Expo updater uses, so the versionCode always increases with each release
+ * without having to maintain it by hand in app.json.
+ */
+function versionCodeFromVersion(version) {
+  const [major, minor, patch] = version.split(".").map((n) => parseInt(n, 10));
+  return getExpoMajorVersion() * 10000000 + major * 10000 + minor * 100 + patch;
+}
+
 export default ({ config }) => ({
   ...config,
   name: "Famlin",
@@ -19,7 +47,7 @@ export default ({ config }) => ({
   },
   android: {
     package: "be.xeweb.famlin",
-    versionCode: config.android?.versionCode,
+    versionCode: versionCodeFromVersion(config.version),
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#006e94",
