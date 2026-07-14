@@ -26,6 +26,11 @@
         },
         {
           "type": "json",
+          "path": "mobile/app.json",
+          "jsonpath": "$.expo.ios.buildNumber"
+        },
+        {
+          "type": "json",
           "path": "backend/admin/package.json",
           "jsonpath": "$.version"
         },
