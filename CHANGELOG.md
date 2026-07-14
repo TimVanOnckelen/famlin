@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/TimVanOnckelen/famlin/compare/v0.2.0...v0.2.1) (2026-07-14)
+
+
+### Features
+
+* add poll functionality with voting and results display ([5c142d2](https://github.com/TimVanOnckelen/famlin/commit/5c142d25d780a92324e6a76803d2baeaebcbe0fe))
+
+
+### Bug Fixes
+
+* handle push notification errors and update app config for FCM support ([ee19139](https://github.com/TimVanOnckelen/famlin/commit/ee191395b1aad575d1e1ccf41bd6eae2a01ba2f2))
+* pin EAS project owner in mobile app config ([3ddeb3c](https://github.com/TimVanOnckelen/famlin/commit/3ddeb3c6118d643bfbcd8345f82373e7c1950f7d))
+
 ## [0.2.0](https://github.com/TimVanOnckelen/famlin/compare/v0.1.12...v0.2.0) (2026-07-13)
 
 
