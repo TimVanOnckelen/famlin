@@ -59,6 +59,14 @@ export const pushChannel: NotificationChannel = {
             : null))
           .filter((token): token is string => token !== null);
 
+        for (const [i, ticket] of tickets.entries()) {
+          if (ticket.status === 'error' && ticket.details?.error !== 'DeviceNotRegistered') {
+            console.error(
+              `Push ticket error (${ticket.details?.error ?? 'unknown'}) for token ${validTokens[cursor + i].token}: ${ticket.message}`,
+            );
+          }
+        }
+
         if (staleTokens.length > 0) {
           await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } });
         }

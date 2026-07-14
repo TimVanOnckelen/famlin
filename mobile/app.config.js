@@ -23,6 +23,8 @@ export default ({ config }) => ({
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#006e94",
     },
+    googleServicesFile:
+      config.android?.googleServicesFile ?? "./google-services.json",
   },
   web: {
     favicon: "./assets/favicon.png",
@@ -54,6 +56,13 @@ export default ({ config }) => ({
       {
         locationWhenInUsePermission:
           "Famlin gebruikt je locatie om aan te geven waar een bericht is gemaakt.",
+      },
+    ],
+    [
+      "expo-media-library",
+      {
+        savePhotosPermission: "Allow Famlin to save photos to your library.",
+        isAccessMediaLocationEnabled: false,
       },
     ],
     "expo-font",
