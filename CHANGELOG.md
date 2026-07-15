@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.2](https://github.com/TimVanOnckelen/famlin/compare/v0.3.1...v0.3.2) (2026-07-15)
+
+
+### Features
+
+* rate-limit password change/reset and invite preview endpoints ([3ac2003](https://github.com/TimVanOnckelen/famlin/commit/3ac2003d75bc2d0db58399f18990254e2aad98d2))
+
+
+### Bug Fixes
+
+* dedupe cross-posted posts in search and on-this-day results ([4429968](https://github.com/TimVanOnckelen/famlin/commit/4429968d4e669d5dc96c55f854556384b34a54ff))
+* make reaction and poll-vote toggles safe under concurrent requests ([81afd11](https://github.com/TimVanOnckelen/famlin/commit/81afd11edce2e172e9e6361d906e7bece5c0d0b6))
+* **mobile:** stop committing the generated iOS native project ([0a279bb](https://github.com/TimVanOnckelen/famlin/commit/0a279bbad0fd41dd929d6ba46416832c50fa5ab4))
+* translate remaining hardcoded backend error messages ([dde1a90](https://github.com/TimVanOnckelen/famlin/commit/dde1a908bbc841a8b6db55bfed7d7cde216be197))
+
 ## [0.3.1](https://github.com/TimVanOnckelen/famlin/compare/v0.3.0...v0.3.1) (2026-07-15)
 
 
