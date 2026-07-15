@@ -210,6 +210,8 @@ paths:
         Immediately invalidates every existing session token for the account.
         Personal access tokens deliberately stay valid — revoke those
         individually if needed.
+
+        Rate-limited to 10 attempts per 15 minutes per IP.
       requestBody:
         required: true
         content:
@@ -234,6 +236,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /api/auth/server-info:
     get:
@@ -1659,6 +1663,9 @@ paths:
       tags: [Invites]
       summary: Preview an invite
       security: []
+      description: |
+        Rate-limited to 30 attempts per 15 minutes per IP (token enumeration
+        protection).
       parameters:
         - name: token
           in: path
@@ -1671,6 +1678,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvitePreview'
+        '429':
+          $ref: '#/components/responses/RateLimited'
 
   /api/invites/{token}/register:
     post:
