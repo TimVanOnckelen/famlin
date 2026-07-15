@@ -35,7 +35,8 @@
     "pushLog": "Pushmeldingenlogboek",
     "serverSettings": "Serverinstellingen",
     "logout": "Uitloggen",
-    "language": "Taal"
+    "language": "Taal",
+    "version": "Versie {{version}}"
   },
   "login": {
     "title": "Famlin Admin",

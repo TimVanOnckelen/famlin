@@ -35,7 +35,8 @@
     "pushLog": "Push notification log",
     "serverSettings": "Server settings",
     "logout": "Log out",
-    "language": "Language"
+    "language": "Language",
+    "version": "Version {{version}}"
   },
   "login": {
     "title": "Famlin Admin",

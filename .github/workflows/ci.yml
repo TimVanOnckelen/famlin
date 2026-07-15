@@ -10,6 +10,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mobile:
+              - 'mobile/**'
+              - 'packages/api-client/**'
+              - 'package.json'
+              - 'package-lock.json'
+
   backend:
     name: Backend
     runs-on: ubuntu-latest
@@ -34,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
@@ -60,9 +79,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-          cache-dependency-path: backend/admin/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/admin/package-lock.json
+      # admin depends on @famlin/api-client via file:../../packages/api-client.
+      # That package's own dependencies (axios, etc.) are only installed by
+      # the root workspace install — see the same pattern in the mobile job
+      # below — so it must run before admin's install, here and on any fresh
+      # checkout.
+      - name: Install workspace dependencies (builds @famlin/api-client)
+        run: npm ci
       - name: Install dependencies
         working-directory: backend/admin
         run: npm ci
@@ -75,12 +103,14 @@ jobs:
 
   mobile:
     name: Mobile
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -120,7 +150,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install workspace dependencies
@@ -147,7 +177,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: docs/package-lock.json
       - name: Install dependencies

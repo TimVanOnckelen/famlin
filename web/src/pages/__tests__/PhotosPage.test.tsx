@@ -12,7 +12,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
 }));
 
 // Mock IntersectionObserver for tests
-global.IntersectionObserver = class IntersectionObserver {
+globalThis.IntersectionObserver = class IntersectionObserver {
   constructor() {}
   observe() {}
   disconnect() {}
