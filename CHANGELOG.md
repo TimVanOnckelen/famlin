@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/TimVanOnckelen/famlin/compare/v0.3.0...v0.3.1) (2026-07-15)
+
+
+### Features
+
+* add version display in layout component and update translations ([998bb0d](https://github.com/TimVanOnckelen/famlin/commit/998bb0d2045b5770ee6a985e38ebdc3e07a14c3a))
+
 ## [0.3.0](https://github.com/TimVanOnckelen/famlin/compare/v0.2.2...v0.3.0) (2026-07-15)
 
 
