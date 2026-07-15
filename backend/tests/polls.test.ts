@@ -253,6 +253,51 @@ describe('custom post types + polls', () => {
       expect(rows).toHaveLength(0);
     });
 
+    // Regression for a read-then-write race: two concurrent identical votes
+    // (double-tap / client retry) both see "no existing vote" and both try
+    // to create a PostInteraction row — without the upsert-based fix, the
+    // loser hit the postId_userId_key unique constraint (P2002) and
+    // surfaced as a 500 instead of an idempotent success.
+    //
+    // The two requests aren't guaranteed to interleave at exactly the same
+    // point (real DB round-trip timing varies under load) — a "clean" race
+    // (both read null before either writes) always ends with the vote cast,
+    // but a request that reads only after the other's write has landed sees
+    // unvote-on-same-option semantics fire instead, which is correct, not a
+    // bug. So the assertion that actually pins the regression is "never a
+    // 500, never a duplicate PostInteraction row" — not one specific final
+    // vote state.
+    it('handles a concurrent double-tap vote without a 500', async () => {
+      const author = await createUser();
+      const voter = await createUser();
+      const group = await createGroupWithMember(author);
+      await addMember(group.id, voter.id);
+      const poll = await createPoll(app, author, group.id);
+      const [cats] = poll.typeData.options;
+
+      const [first, second] = await Promise.all([
+        app.inject({
+          method: 'POST',
+          url: `/api/posts/${poll.id}/interactions`,
+          headers: authHeader(voter),
+          payload: { key: 'vote', value: { optionId: cats.id } },
+        }),
+        app.inject({
+          method: 'POST',
+          url: `/api/posts/${poll.id}/interactions`,
+          headers: authHeader(voter),
+          payload: { key: 'vote', value: { optionId: cats.id } },
+        }),
+      ]);
+
+      expect(first.statusCode).toBe(200);
+      expect(second.statusCode).toBe(200);
+
+      const rows = await prisma.postInteraction.findMany({ where: { postId: poll.id, userId: voter.id } });
+      expect(rows.length).toBeLessThanOrEqual(1);
+      if (rows.length === 1) expect((rows[0].value as any).optionId).toBe(cats.id);
+    });
+
     it('rejects a non-member voting, and a non-member cannot see the poll', async () => {
       const author = await createUser();
       const outsider = await createUser();

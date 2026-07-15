@@ -5,6 +5,7 @@ import { requireGroupMember } from '../plugins/auth.js';
 import { getT } from '../i18n/index.js';
 import { reactionBodySchema } from '../types.js';
 import { reactionCounts } from '../services/reactions.js';
+import { isRecordNotFound } from '../utils/prismaErrors.js';
 
 export default async function likeRoutes(fastify: FastifyInstance) {
   fastify.post('/posts/:postId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -30,17 +31,27 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     let myReaction: string | null;
 
     if (existing && existing.type === type) {
-      // Tapping the same reaction again removes it.
-      await prisma.like.delete({ where: { id: existing.id } });
+      // Tapping the same reaction again removes it. A concurrent duplicate
+      // tap (double-tap/client retry) may have already deleted this exact
+      // row — P2025 in that case is still the idempotent "removed" outcome
+      // this tap should see, not a 500.
+      try {
+        await prisma.like.delete({ where: { id: existing.id } });
+      } catch (err) {
+        if (!isRecordNotFound(err)) throw err;
+      }
       myReaction = null;
-    } else if (existing) {
-      // Switching reactions updates the existing row instead of adding a
-      // second one — the postId_userId unique constraint is still one
-      // reaction per user per post.
-      await prisma.like.update({ where: { id: existing.id }, data: { type } });
-      myReaction = type;
     } else {
-      await prisma.like.create({ data: { postId, userId: request.user!.id, type } });
+      // No existing reaction, or switching to a different one — both are
+      // upsert-shaped. Using upsert (rather than a separate update/create
+      // branch) keeps this atomic under a concurrent double-tap/create race:
+      // two requests that both read `existing` as null can no longer both
+      // attempt a `create` and have the loser throw P2002.
+      await prisma.like.upsert({
+        where: { postId_userId: { postId, userId: request.user!.id } },
+        create: { postId, userId: request.user!.id, type },
+        update: { type },
+      });
       myReaction = type;
     }
 
@@ -86,13 +97,22 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     let myReaction: string | null;
 
     if (existing && existing.type === type) {
-      await prisma.like.delete({ where: { id: existing.id } });
+      // See the postId_userId branch above for why P2025 here is idempotent
+      // success rather than an error.
+      try {
+        await prisma.like.delete({ where: { id: existing.id } });
+      } catch (err) {
+        if (!isRecordNotFound(err)) throw err;
+      }
       myReaction = null;
-    } else if (existing) {
-      await prisma.like.update({ where: { id: existing.id }, data: { type } });
-      myReaction = type;
     } else {
-      await prisma.like.create({ data: { commentId, userId: request.user!.id, type } });
+      // See the postId_userId branch above for why upsert (not
+      // update-or-create) is what closes the create/create race.
+      await prisma.like.upsert({
+        where: { commentId_userId: { commentId, userId: request.user!.id } },
+        create: { commentId, userId: request.user!.id, type },
+        update: { type },
+      });
       myReaction = type;
     }
 
