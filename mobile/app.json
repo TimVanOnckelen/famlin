@@ -2,7 +2,7 @@
   "expo": {
     "name": "Famlin",
     "slug": "famlin",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "be.xeweb.famlin",
-      "buildNumber": "0.3.0",
+      "buildNumber": "0.3.1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
