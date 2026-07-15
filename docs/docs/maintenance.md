@@ -76,12 +76,12 @@ If you'd rather build the backend image yourself (e.g. you're running a fork, or
 ```yaml title="docker-compose.yml"
 famlin-backend:
   build:
-    context: ./backend
-    dockerfile: Dockerfile
+    context: .
+    dockerfile: backend/Dockerfile
   # remove the `image:` line
 ```
 
-You'll need the `backend/` directory (including `Dockerfile`) alongside your compose file for this. Update with `git pull && docker compose up -d --build`.
+The build context must be the **repository root**, not `backend/` — the image also bundles the member-facing web app (`web/` and `packages/`), which live outside `backend/`. You'll need a full checkout of the repository alongside your compose file for this. Update with `git pull && docker compose up -d --build`.
 
 ## Using an external database
 
