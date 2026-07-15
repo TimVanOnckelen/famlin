@@ -3,9 +3,14 @@
 // too — so each test needs a fresh instance of both (vi.resetModules() +
 // dynamic import) and must re-register the fake adapter after every reset.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { StorageAdapter } from '../storage';
 
 describe('client', () => {
-  let fakeAdapter: { getItem: ReturnType<typeof vi.fn>; setItem: ReturnType<typeof vi.fn>; removeItem: ReturnType<typeof vi.fn> };
+  let fakeAdapter: {
+    getItem: ReturnType<typeof vi.fn<StorageAdapter['getItem']>>;
+    setItem: ReturnType<typeof vi.fn<StorageAdapter['setItem']>>;
+    removeItem: ReturnType<typeof vi.fn<StorageAdapter['removeItem']>>;
+  };
 
   beforeEach(async () => {
     vi.resetModules();

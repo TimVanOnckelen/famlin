@@ -44,12 +44,70 @@ jobs:
     with:
       tag_name: ${{ needs.release-please.outputs.tag_name }}
 
-  # Same GITHUB_TOKEN suppression applies to mobile-build.yml's `on: release`
-  # trigger, so the store build+submit is chained here too. `secrets: inherit`
-  # passes the EXPO/App Store/Play Store secrets the build needs.
-  build-mobile:
+  # Every release bumps mobile/package.json's `version` and mobile/app.json's
+  # `version`/`buildNumber` via release-please's extra-files config (single
+  # monorepo version), so those two files always show as "changed" between
+  # tags even when no real mobile code changed. This job diffs against the
+  # previous tag and ignores changes to just those version/buildNumber
+  # fields, so a backend- or web-only release doesn't trigger a real EAS
+  # store build + submission.
+  mobile-changed:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for meaningful mobile changes since the previous release
+        id: check
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found — building mobile to be safe."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$PREV_TAG" HEAD -- mobile packages/api-client)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No files under mobile/ or packages/api-client/ changed since $PREV_TAG."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          MEANINGFUL=false
+          while IFS= read -r f; do
+            case "$f" in
+              mobile/package.json|mobile/app.json)
+                REST=$(git diff "$PREV_TAG" HEAD -- "$f" \
+                  | grep -E '^[+-]' \
+                  | grep -v -E '^(\+\+\+|---)' \
+                  | grep -v -E '"(version|buildNumber)":' || true)
+                if [ -n "$REST" ]; then
+                  echo "$f changed beyond version/buildNumber — meaningful."
+                  MEANINGFUL=true
+                fi
+                ;;
+              *)
+                echo "$f changed — meaningful."
+                MEANINGFUL=true
+                ;;
+            esac
+          done <<< "$CHANGED_FILES"
+
+          echo "changed=$MEANINGFUL" >> "$GITHUB_OUTPUT"
+
+  # Same GITHUB_TOKEN suppression applies to mobile-build.yml's `on: release`
+  # trigger, so the store build+submit is chained here too. `secrets: inherit`
+  # passes the EXPO/App Store/Play Store secrets the build needs. Gated on
+  # mobile-changed so a release with no meaningful mobile change doesn't
+  # trigger a real store submission.
+  build-mobile:
+    needs: [release-please, mobile-changed]
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.mobile-changed.outputs.changed == 'true' }}
     permissions:
       contents: read
     secrets: inherit
