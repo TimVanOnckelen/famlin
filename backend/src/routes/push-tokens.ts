@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { pushTokenBodySchema } from '../types.js';
+import { getT } from '../i18n/index.js';
 
 export default async function pushTokenRoutes(fastify: FastifyInstance) {
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -21,7 +22,7 @@ export default async function pushTokenRoutes(fastify: FastifyInstance) {
       return { success: true };
     } catch (err) {
       fastify.log.error(err);
-      return reply.status(500).send({ error: 'Failed to register push token' });
+      return reply.status(500).send({ error: getT(request)('errors.failedToRegisterPushToken') });
     }
   });
 
