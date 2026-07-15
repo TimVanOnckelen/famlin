@@ -36,6 +36,11 @@ export interface ChannelSendArgs {
   // null for event types with no associated post (currently only
   // new_media_assets, which is scoped to an album/group instead).
   postId: string | null;
+  // Set only when an admin triggered this send manually (the "resend push"
+  // content-moderation action) — omitted/undefined for every organic,
+  // event-triggered send. Only the push channel acts on this (see
+  // PushDeliveryLog); other channels ignore it.
+  triggeredByAdminId?: string | null;
 }
 
 // A delivery mechanism for notifications. The in-app Notification row is NOT

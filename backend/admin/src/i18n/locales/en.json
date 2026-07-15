@@ -32,6 +32,7 @@
     "users": "Users",
     "groups": "Groups",
     "content": "Content",
+    "pushLog": "Push notification log",
     "serverSettings": "Server settings",
     "logout": "Log out",
     "language": "Language"
@@ -239,7 +240,34 @@
     "deleteConfirm": "Are you sure you want to remove this?",
     "noPosts": "No posts found.",
     "noComments": "No comments found.",
-    "noResults": "Nothing matches your filters."
+    "noResults": "Nothing matches your filters.",
+    "retriggerPush": "Resend push notification",
+    "retriggerPushResult": "Push notification resent: {{successCount}} delivered, {{failureCount}} failed, out of {{tokenCount}} device(s) ({{recipientCount}} eligible recipient(s)).",
+    "retriggerPushError": "Couldn't resend the push notification: {{error}}"
+  },
+  "pushLog": {
+    "title": "Push notification log",
+    "noLogs": "No push notifications have been sent yet.",
+    "noPost": "(not tied to a post)",
+    "system": "System",
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "post": "Post",
+      "recipients": "Recipients",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "triggeredBy": "Triggered by"
+    },
+    "types": {
+      "new_post": "New post",
+      "new_comment": "New comment",
+      "new_like_post": "Reaction on post",
+      "new_like_comment": "Reaction on comment",
+      "mention": "Mention",
+      "on_this_day": "On this day",
+      "new_media_assets": "New photos"
+    }
   },
   "serverSettings": {
     "title": "Server settings",

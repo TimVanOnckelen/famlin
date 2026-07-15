@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getAllSettings, updateSettings } from '../services/settings.js';
 import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
+import { resendPostPush, PushNotificationError } from '../services/notifications.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import {
   testImmichConnection,
@@ -558,6 +559,54 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     });
 
     return paginate(comments, take);
+  });
+
+  // Lets an admin manually resend a post's push notification (e.g. a member
+  // missed it because their device was offline when it first fired) — see
+  // resendPostPush() in services/notifications.ts. Push-only: doesn't touch
+  // email or re-create the in-app Notification row.
+  fastify.post('/content/posts/:id/retrigger-push', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+
+    try {
+      const result = await resendPostPush(id, request.user!.id);
+      if (!result) {
+        reply.status(404).send({ error: t('errors.postNotFound') });
+        return;
+      }
+      reply.send(result);
+    } catch (err) {
+      if (err instanceof PushNotificationError) {
+        reply.status(400).send({ error: t(`errors.${err.code}`) });
+        return;
+      }
+      throw err;
+    }
+  });
+
+  // Delivery log for push-notification send attempts — organic (post
+  // created, comment created, ...) and admin-triggered ("resend push")
+  // alike. One row per Expo API call, written by sendPush() in
+  // services/notificationChannels/push.ts.
+  fastify.get('/push-log', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const { postId } = request.query as { postId?: string };
+    const { cursor, take } = paginationQuerySchema.parse(request.query);
+
+    const logs = await prisma.pushDeliveryLog.findMany({
+      where: postId ? { postId } : {},
+      orderBy: { createdAt: 'desc' },
+      ...paginationArgs({ cursor, take }),
+      include: {
+        post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
+        triggeredByAdmin: { select: { id: true, name: true } },
+      },
+    });
+
+    return paginate(logs, take);
   });
 
   // Server settings (stored in DB, editable by admin)

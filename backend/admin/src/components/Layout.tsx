@@ -37,6 +37,7 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/users">{t('layout.users')}</NavLink>
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
+          <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>
         <div className="user">

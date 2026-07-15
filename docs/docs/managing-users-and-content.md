@@ -35,6 +35,11 @@ The **Content** page gives admins cross-group visibility into posts and comments
 - Switch between the **Posts** and **Comments** tabs, and narrow the list with the filter bar: a text search over the content, a group filter, and an author filter (combine them freely; **Clear filters** resets everything).
 - The posts tab also shows each post's comment/like counts and marks milestone posts; the comments tab shows a snippet of the post each comment was left on.
 - **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
+- **Resend push notification** (bell icon, posts only) re-delivers a post's push notification to the group — useful if a member's device was offline or missed it the first time. It only resends the push itself; it doesn't send another email or add a duplicate entry to anyone's in-app notification history.
 - **Cross-posted content is moderated per group.** When a member shares a post with several of their groups at once, each group gets its own independent copy. Deleting one group's copy from the Content page only removes that copy — it doesn't touch the copies in the post's other groups.
 
-There's no bulk action or audit log.
+There's no bulk delete action.
+
+## Push notification log
+
+The **Push notification log** page lists every push-notification send attempt — both automatic (a new post, comment, reaction, ...) and manually resent from the Content page — newest first. Each row shows when it was sent, the notification type, which post it was for (if any), how many people were eligible, how many devices were actually reached, how many failed, and who triggered it ("System" for automatic sends, otherwise the admin who clicked resend).

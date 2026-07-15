@@ -32,6 +32,7 @@
     "users": "Gebruikers",
     "groups": "Groepen",
     "content": "Inhoud",
+    "pushLog": "Pushmeldingenlogboek",
     "serverSettings": "Serverinstellingen",
     "logout": "Uitloggen",
     "language": "Taal"
@@ -239,7 +240,34 @@
     "deleteConfirm": "Weet je zeker dat je dit wilt verwijderen?",
     "noPosts": "Geen berichten gevonden.",
     "noComments": "Geen reacties gevonden.",
-    "noResults": "Niets gevonden met deze filters."
+    "noResults": "Niets gevonden met deze filters.",
+    "retriggerPush": "Pushmelding opnieuw versturen",
+    "retriggerPushResult": "Pushmelding opnieuw verstuurd: {{successCount}} afgeleverd, {{failureCount}} mislukt, van {{tokenCount}} toestel(len) ({{recipientCount}} in aanmerking komende ontvanger(s)).",
+    "retriggerPushError": "Pushmelding opnieuw versturen mislukt: {{error}}"
+  },
+  "pushLog": {
+    "title": "Pushmeldingenlogboek",
+    "noLogs": "Er zijn nog geen pushmeldingen verstuurd.",
+    "noPost": "(niet gekoppeld aan een bericht)",
+    "system": "Systeem",
+    "table": {
+      "date": "Datum",
+      "type": "Type",
+      "post": "Bericht",
+      "recipients": "Ontvangers",
+      "delivered": "Afgeleverd",
+      "failed": "Mislukt",
+      "triggeredBy": "Geactiveerd door"
+    },
+    "types": {
+      "new_post": "Nieuw bericht",
+      "new_comment": "Nieuwe reactie",
+      "new_like_post": "Reactie op bericht",
+      "new_like_comment": "Reactie op reactie",
+      "mention": "Vermelding",
+      "on_this_day": "Op deze dag",
+      "new_media_assets": "Nieuwe foto's"
+    }
   },
   "serverSettings": {
     "title": "Serverinstellingen",
