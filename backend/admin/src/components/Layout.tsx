@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Logo } from './Logo';
 import { User } from '../types';
+import { api } from '../api/client';
 import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '../i18n';
 
 interface LayoutProps {
@@ -11,6 +13,16 @@ interface LayoutProps {
 
 export function Layout({ user, children }: LayoutProps) {
   const { t, i18n: i18nInstance } = useTranslation();
+  const [version, setVersion] = useState<string | null>(null);
+
+  // Fail-soft, one-shot — a failed fetch just means no version line, same as
+  // DashboardPage's update-check.
+  useEffect(() => {
+    api
+      .getServerInfo()
+      .then((info) => setVersion(info.version))
+      .catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('famlin_admin_token');
@@ -60,6 +72,11 @@ export function Layout({ user, children }: LayoutProps) {
           <button className="secondary" onClick={handleLogout}>
             {t('layout.logout')}
           </button>
+          {version && (
+            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>
+              {t('layout.version', { version })}
+            </div>
+          )}
         </div>
       </aside>
       <main className="main">{children}</main>
