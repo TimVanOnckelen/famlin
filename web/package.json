@@ -10,7 +10,8 @@
     "watch": "LIVERELOAD=1 vite build --watch",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@famlin/api-client": "*",

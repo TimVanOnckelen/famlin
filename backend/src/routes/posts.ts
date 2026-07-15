@@ -107,6 +107,15 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
   // dynamic :id param route.
+  //
+  // Both endpoints below are scoped to a single groupId, and cross-post
+  // creation (POST / above) creates at most one Post row per distinct target
+  // group — so a given crossPostId can never appear twice within one group's
+  // results, and dedupeByCrossPostId is a defensive no-op here today (unlike
+  // GET / and GET /favorites, which span every group a member belongs to and
+  // genuinely need it). Kept anyway so a future change that lets either
+  // endpoint span multiple groups doesn't silently reopen the duplicate-post
+  // privacy leak GET / already guards against.
   fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query);
 
@@ -126,7 +135,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
     });
 
     const { items, nextCursor } = paginate(posts, take);
-    return { items: await shapePostsWithPeople(items, request.user!.id), nextCursor };
+    const deduped = dedupeByCrossPostId(items);
+    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor };
   });
 
   fastify.get('/on-this-day', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -145,8 +155,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
     });
     const byId = new Map(full.map((p) => [p.id, p]));
     const ordered = posts.map((p) => byId.get(p.id)).filter((p): p is NonNullable<typeof p> => !!p);
+    const deduped = dedupeByCrossPostId(ordered);
 
-    return { items: await shapePostsWithPeople(ordered, request.user!.id) };
+    return { items: await shapePostsWithPeople(deduped, request.user!.id) };
   });
 
   fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `npx tsc --noEmit` passes in every package I touched
+- [ ] `npx tsc --noEmit` and `npm run lint` pass in every package I touched
 - [ ] Added/updated i18n keys in both `en` and `nl` locales (if UI strings changed)
 - [ ] Updated relevant docs (see the [Documentation table](../CLAUDE.md#documentation) in CLAUDE.md)
 - [ ] Tested manually (describe how below)

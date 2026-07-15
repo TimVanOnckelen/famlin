@@ -78,7 +78,7 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 | `413` | Uploaded file too large |
 | `429` | Rate limited |
 
-**Rate limits:** 300 requests/minute per IP overall; `POST /api/uploads` is additionally limited to 60 uploads per 10 minutes, and login endpoints to 10 attempts per 15 minutes. `429` responses include standard `retry-after` headers.
+**Rate limits:** 300 requests/minute per IP overall; `POST /api/uploads` is additionally limited to 60 uploads per 10 minutes, login/setup/OIDC/password-change/invite-registration endpoints to 10 attempts per 15 minutes, and the invite-preview endpoint (`GET /api/invites/{token}`) to 30 attempts per 15 minutes. `429` responses include standard `retry-after` headers.
 
 **Pagination:** list endpoints that can grow large ([`GET /api/posts`](./api-reference/list-posts), [`/api/posts/search`](./api-reference/search-posts), [`/api/favorites`](./api-reference/list-favorites)) take `?cursor=` and `?take=` (default 30, max 100) and return:
 

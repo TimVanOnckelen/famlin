@@ -17,7 +17,8 @@
     "ios": "expo run:ios",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.2.3",
@@ -67,6 +68,8 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.10",
     "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^9.39.0",
+    "eslint-config-expo": "^57.0.0",
     "jest": "^29.7.0",
     "jest-expo": "^57.0.1",
     "react-test-renderer": "^19.2.3",

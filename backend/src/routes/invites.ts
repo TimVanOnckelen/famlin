@@ -9,22 +9,29 @@ import { inviteRegisterBodySchema } from '../types.js';
 export default async function inviteRoutes(fastify: FastifyInstance) {
   // Public: lets a client preview an invite before the user logs in or
   // registers (group name, who invited them, whether it's still usable).
-  fastify.get('/:token', async (request) => {
-    const { token } = request.params as { token: string };
-    const { invite, reason } = await getValidInvite(token);
+  // Rate limited (token enumeration protection) — looser than
+  // POST /:token/register since this is just a read-only preview, not an
+  // account-creation surface, but still capped for real.
+  fastify.get(
+    '/:token',
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    async (request) => {
+      const { token } = request.params as { token: string };
+      const { invite, reason } = await getValidInvite(token);
 
-    if (!invite) {
-      return { status: 'not_found' };
+      if (!invite) {
+        return { status: 'not_found' };
+      }
+
+      return {
+        status: reason ?? 'valid',
+        groupName: invite.group.name,
+        groupDescription: invite.group.description,
+        inviterName: invite.createdBy?.name ?? null,
+        email: invite.email,
+      };
     }
-
-    return {
-      status: reason ?? 'valid',
-      groupName: invite.group.name,
-      groupDescription: invite.group.description,
-      inviterName: invite.createdBy?.name ?? null,
-      email: invite.email,
-    };
-  });
+  );
 
   // Public: self-service local account creation for someone who doesn't
   // have one yet — the invite itself is the authorization, bypassing the

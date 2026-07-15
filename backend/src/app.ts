@@ -139,7 +139,7 @@ export async function buildApp() {
     // keep reading family media.
     if (await authenticateMediaRequest(request)) return;
 
-    return reply.status(401).send({ error: 'Unauthorized' });
+    return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
   });
 
   await fastify.register(staticPlugin, {
@@ -237,7 +237,7 @@ export async function buildApp() {
     ) {
       return reply.sendFile('index.html', webDir);
     }
-    return reply.status(404).send({ error: 'Not found' });
+    return reply.status(404).send({ error: getT(request)('errors.notFound') });
   });
 
   fastify.get('/health', async () => ({ status: 'ok' }));

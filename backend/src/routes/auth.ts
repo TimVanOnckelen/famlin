@@ -413,62 +413,79 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Change own password
-  fastify.post('/change-password', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { currentPassword, newPassword } = changePasswordBodySchema.parse(request.body);
+  fastify.post(
+    '/change-password',
+    {
+      preHandler: [fastify.authenticate],
+      config: { rateLimit: { max: 10, timeWindow: '15 minutes' } },
+    },
+    async (request, reply) => {
+      const t = getT(request);
+      const { currentPassword, newPassword } = changePasswordBodySchema.parse(request.body);
 
-    const user = await prisma.user.findUnique({
-      where: { id: request.user!.id },
-    });
+      const user = await prisma.user.findUnique({
+        where: { id: request.user!.id },
+      });
 
-    if (!user || !user.passwordHash) {
-      return reply.status(400).send({ error: t('errors.noLocalPasswordSet') });
-    }
+      if (!user || !user.passwordHash) {
+        return reply.status(400).send({ error: t('errors.noLocalPasswordSet') });
+      }
 
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!valid) {
-      return reply.status(401).send({ error: t('errors.currentPasswordIncorrect') });
-    }
+      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!valid) {
+        return reply.status(401).send({ error: t('errors.currentPasswordIncorrect') });
+      }
 
-    const passwordHash = await hashPassword(newPassword);
-    // Bumping tokenVersion invalidates every token issued before this
-    // change, including on any other device the account is signed into.
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash, tokenVersion: { increment: 1 } },
-    });
-    invalidateSessionCache(user.id);
-
-    return { success: true };
-  });
-
-  // Admin reset/set user password
-  fastify.post('/reset-password/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-
-    if (requireAdmin(request, reply)) return;
-
-    const { id } = request.params as { id: string };
-    const { newPassword } = resetPasswordBodySchema.parse(request.body);
-
-    const passwordHash = await hashPassword(newPassword);
-
-    try {
-      const user = await prisma.user.update({
-        where: { id },
+      const passwordHash = await hashPassword(newPassword);
+      // Bumping tokenVersion invalidates every token issued before this
+      // change, including on any other device the account is signed into.
+      await prisma.user.update({
+        where: { id: user.id },
         data: { passwordHash, tokenVersion: { increment: 1 } },
       });
-      invalidateSessionCache(id);
+      invalidateSessionCache(user.id);
 
-      return { success: true, user: sanitizeUser(user) };
-    } catch (err: any) {
-      // Prisma "record not found" on update.
-      if (err?.code === 'P2025') {
-        return reply.status(404).send({ error: t('errors.userNotFound') });
-      }
-      throw err;
+      return { success: true };
     }
-  });
+  );
+
+  // Admin reset/set user password. Rate limited looser than /login (this is
+  // admin-only, gated by requireAdmin below, not a public guessing surface)
+  // but still capped for real so a compromised admin session/token can't be
+  // used to hammer password resets across every user account.
+  fastify.post(
+    '/reset-password/:id',
+    {
+      preHandler: [fastify.authenticate],
+      config: { rateLimit: { max: 30, timeWindow: '15 minutes' } },
+    },
+    async (request, reply) => {
+      const t = getT(request);
+
+      if (requireAdmin(request, reply)) return;
+
+      const { id } = request.params as { id: string };
+      const { newPassword } = resetPasswordBodySchema.parse(request.body);
+
+      const passwordHash = await hashPassword(newPassword);
+
+      try {
+        const user = await prisma.user.update({
+          where: { id },
+          data: { passwordHash, tokenVersion: { increment: 1 } },
+        });
+        invalidateSessionCache(id);
+
+        return { success: true, user: sanitizeUser(user) };
+      } catch (err: any) {
+        // Prisma "record not found" on update.
+        if (err?.code === 'P2025') {
+          return reply.status(404).send({ error: t('errors.userNotFound') });
+        }
+        throw err;
+      }
+    }
+  );
 
   fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);

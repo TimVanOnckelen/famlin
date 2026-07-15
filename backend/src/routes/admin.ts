@@ -5,6 +5,7 @@ import { getAllSettings, updateSettings } from '../services/settings.js';
 import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
 import { resendPostPush, PushNotificationError } from '../services/notifications.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
+import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js';
 import {
   testImmichConnection,
 } from '../services/media/immich.js';
@@ -88,12 +89,6 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 
   const adminCount = await prisma.user.count({ where: { isAdmin: true } });
   return adminCount <= 1;
-}
-
-// Prisma raises P2025 when an update/delete targets a row that doesn't exist —
-// map it to a 404 instead of letting it fall through to a generic 500.
-function isRecordNotFound(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2025';
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {
@@ -346,7 +341,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       });
       return group;
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Group not found' });
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
       throw err;
     }
   });
@@ -360,7 +355,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       await prisma.group.delete({ where: { id } });
       return { success: true };
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Group not found' });
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
       throw err;
     }
   });
@@ -398,8 +393,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       });
     } catch (err: any) {
       // Unique constraint: the user is already a member of this group.
-      if (err?.code === 'P2002') {
-        return reply.status(409).send({ error: 'User is already a member of this group' });
+      if (isUniqueConstraintViolation(err)) {
+        return reply.status(409).send({ error: getT(request)('errors.userAlreadyMember') });
       }
       throw err;
     }
@@ -418,7 +413,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       });
       return { success: true };
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Member not found' });
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.memberNotFound') });
       throw err;
     }
   });
@@ -449,7 +444,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const group = await prisma.group.findUnique({ where: { id }, select: { name: true } });
     if (!group) {
-      return reply.status(404).send({ error: 'Group not found' });
+      return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
     }
 
     const invite = await prisma.invite.create({
@@ -485,7 +480,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       await prisma.invite.delete({ where: { id } });
       return { success: true };
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: 'Invite not found' });
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.inviteNotFound') });
       throw err;
     }
   });
@@ -706,7 +701,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return link;
     } catch (err: any) {
       // Unique constraint: this album is already linked to this group.
-      if (err?.code === 'P2002') {
+      if (isUniqueConstraintViolation(err)) {
         return reply.status(409).send({ error: t('errors.mediaAlbumAlreadyLinked') });
       }
       throw err;

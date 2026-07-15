@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { updateNotificationBodySchema } from '../types.js';
+import { getT } from '../i18n/index.js';
 
 export default async function notificationRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request) => {
@@ -36,7 +37,7 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
     const notification = await prisma.notification.findUnique({ where: { id } });
 
     if (!notification || notification.userId !== request.user!.id) {
-      return reply.status(404).send({ error: 'Notification not found' });
+      return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') });
     }
 
     const updated = await prisma.notification.update({

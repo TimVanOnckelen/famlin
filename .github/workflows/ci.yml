@@ -29,6 +29,51 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            backend/admin/package-lock.json
+            mobile/package-lock.json
+      # web + packages/api-client are root workspace members. This also
+      # builds @famlin/api-client, which backend/admin's and mobile's
+      # installs below need for their `file:` dependency — see the same
+      # ordering note on the admin/mobile jobs further down.
+      - name: Install workspace dependencies (builds @famlin/api-client)
+        run: npm ci
+      - name: Lint shared API client
+        working-directory: packages/api-client
+        run: npm run lint
+      - name: Lint web app
+        working-directory: web
+        run: npm run lint
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Lint backend
+        working-directory: backend
+        run: npm run lint
+      - name: Install admin dependencies
+        working-directory: backend/admin
+        run: npm ci
+      - name: Lint admin UI
+        working-directory: backend/admin
+        run: npm run lint
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+      - name: Lint mobile app
+        working-directory: mobile
+        run: npm run lint
+
   backend:
     name: Backend
     runs-on: ubuntu-latest

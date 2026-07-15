@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
 import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js';
@@ -232,5 +233,118 @@ describe('cross-posting', () => {
 
     const authorRows = await prisma.notification.findMany({ where: { userId: author.id, type: 'new_post' } });
     expect(authorRows).toHaveLength(0);
+  });
+
+  // GET /api/posts/search and GET /api/posts/on-this-day are single-group
+  // endpoints (?groupId=), and cross-post creation (POST / above) creates at
+  // most one Post row per target group, so a crossPostId can never repeat
+  // within one group's results today — dedupeByCrossPostId there is
+  // defensive. These two pairs of tests cover both the realistic path (a
+  // real cross-post, once per group it targets) and, by inserting sibling
+  // rows directly, the hypothetical a future change could reintroduce
+  // (two rows sharing a crossPostId landing in the SAME group's results).
+  it('shows a cross-posted post exactly once in search, for each group it targets', async () => {
+    const author = await createUser();
+    const memberBoth = await createUser();
+    const groupA = await createGroupWithMember(author);
+    const groupB = await createGroupWithMember(author);
+    await addMember(groupA.id, memberBoth.id);
+    await addMember(groupB.id, memberBoth.id);
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'searchable cross post text' },
+    });
+    expect(create.statusCode).toBe(200);
+
+    for (const group of [groupA, groupB]) {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/posts/search?groupId=${group.id}&q=searchable`,
+        headers: authHeader(memberBoth),
+      });
+      expect(res.statusCode).toBe(200);
+      const items = res.json().items.filter((p: { content: string }) => p.content === 'searchable cross post text');
+      expect(items).toHaveLength(1);
+    }
+  });
+
+  it('dedupes search results if a group ever holds two rows sharing a crossPostId', async () => {
+    const author = await createUser();
+    const group = await createGroupWithMember(author);
+    const crossPostId = randomUUID();
+    const createdAt = new Date();
+
+    await prisma.post.createMany({
+      data: [
+        { authorId: author.id, groupId: group.id, content: 'duplicate sibling search text', crossPostId, createdAt },
+        { authorId: author.id, groupId: group.id, content: 'duplicate sibling search text', crossPostId, createdAt },
+      ],
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts/search?groupId=${group.id}&q=duplicate%20sibling`,
+      headers: authHeader(author),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().items).toHaveLength(1);
+  });
+
+  it('shows a cross-posted post exactly once in on-this-day, for each group it targets', async () => {
+    const author = await createUser();
+    const memberBoth = await createUser();
+    const groupA = await createGroupWithMember(author);
+    const groupB = await createGroupWithMember(author);
+    await addMember(groupA.id, memberBoth.id);
+    await addMember(groupB.id, memberBoth.id);
+
+    const lastYear = new Date();
+    lastYear.setFullYear(lastYear.getFullYear() - 1);
+
+    const crossPostId = randomUUID();
+    await prisma.post.createMany({
+      data: [
+        { authorId: author.id, groupId: groupA.id, content: 'on this day cross post', crossPostId, createdAt: lastYear },
+        { authorId: author.id, groupId: groupB.id, content: 'on this day cross post', crossPostId, createdAt: lastYear },
+      ],
+    });
+
+    for (const group of [groupA, groupB]) {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/posts/on-this-day?groupId=${group.id}`,
+        headers: authHeader(memberBoth),
+      });
+      expect(res.statusCode).toBe(200);
+      const items = res.json().items.filter((p: { content: string }) => p.content === 'on this day cross post');
+      expect(items).toHaveLength(1);
+    }
+  });
+
+  it('dedupes on-this-day results if a group ever holds two rows sharing a crossPostId', async () => {
+    const author = await createUser();
+    const group = await createGroupWithMember(author);
+    const crossPostId = randomUUID();
+    const lastYear = new Date();
+    lastYear.setFullYear(lastYear.getFullYear() - 1);
+
+    await prisma.post.createMany({
+      data: [
+        { authorId: author.id, groupId: group.id, content: 'duplicate sibling on this day', crossPostId, createdAt: lastYear },
+        { authorId: author.id, groupId: group.id, content: 'duplicate sibling on this day', crossPostId, createdAt: lastYear },
+      ],
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts/on-this-day?groupId=${group.id}`,
+      headers: authHeader(author),
+    });
+    expect(res.statusCode).toBe(200);
+    const items = res.json().items.filter((p: { content: string }) => p.content === 'duplicate sibling on this day');
+    expect(items).toHaveLength(1);
   });
 });

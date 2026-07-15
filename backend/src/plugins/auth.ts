@@ -277,7 +277,7 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     try {
       const authHeader = request.headers.authorization;
       if (!authHeader?.startsWith('Bearer ')) {
-        return reply.status(401).send({ error: 'Missing or invalid authorization header' });
+        return reply.status(401).send({ error: getT(request)('errors.missingOrInvalidAuthHeader') });
       }
 
       const token = authHeader.slice(7);
@@ -288,7 +288,7 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       if (token.startsWith(API_TOKEN_PREFIX)) {
         const user = await verifyApiToken(token);
         if (!user) {
-          return reply.status(401).send({ error: 'Unauthorized' });
+          return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
         }
         request.user = user;
         request.authMethod = 'api-token';
@@ -303,20 +303,20 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       });
 
       if (!user) {
-        return reply.status(401).send({ error: 'User not found' });
+        return reply.status(401).send({ error: getT(request)('errors.userNotFound') });
       }
 
       // Lets a password change/reset or an admin-forced sign-out invalidate
       // every token issued before it, without needing a token blocklist.
       if (user.tokenVersion !== decoded.tokenVersion) {
-        return reply.status(401).send({ error: 'Session expired' });
+        return reply.status(401).send({ error: getT(request)('errors.sessionExpired') });
       }
 
       const { tokenVersion, ...publicUser } = user;
       request.user = publicUser;
       request.authMethod = 'session';
     } catch (err) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
     }
   });
 };

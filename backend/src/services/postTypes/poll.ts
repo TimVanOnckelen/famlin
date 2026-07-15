@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../db.js';
 import { PostTypeError } from './types.js';
 import type { PostTypeHandler } from './types.js';
+import { isRecordNotFound } from '../../utils/prismaErrors.js';
 
 // Client-sent typeData shape at create time (routes/posts.ts POST /). The
 // question itself lives in `content` — not here — so search, notification
@@ -93,15 +94,27 @@ export const pollHandler: PostTypeHandler = {
     const existingOptionId = (existing?.value as VoteValue | undefined)?.optionId;
 
     if (existing && existingOptionId === value.optionId) {
-      // Tapping the same option again removes the vote (unvote).
-      await prisma.postInteraction.delete({ where: { id: existing.id } });
-    } else if (existing) {
-      // Switching: update the existing row instead of delete+create, keeping
-      // the one-row-per-user-per-post invariant (@@unique postId_userId_key)
-      // intact throughout.
-      await prisma.postInteraction.update({ where: { id: existing.id }, data: { value: value as unknown as Prisma.InputJsonValue } });
+      // Tapping the same option again removes the vote (unvote). A
+      // concurrent duplicate tap may have already deleted this exact row —
+      // P2025 in that case is still the idempotent "unvoted" outcome this
+      // request should see, not a 500.
+      try {
+        await prisma.postInteraction.delete({ where: { id: existing.id } });
+      } catch (err) {
+        if (!isRecordNotFound(err)) throw err;
+      }
     } else {
-      await prisma.postInteraction.create({ data: { postId: post.id, userId, key: 'vote', value: value as unknown as Prisma.InputJsonValue } });
+      // No existing vote, or switching to a different option — both are
+      // upsert-shaped, keeping the one-row-per-user-per-post invariant
+      // (@@unique postId_userId_key) intact even under a concurrent
+      // double-tap/create race (two requests that both read `existing` as
+      // null can no longer both attempt a `create` and have the loser throw
+      // P2002).
+      await prisma.postInteraction.upsert({
+        where: { postId_userId_key: { postId: post.id, userId, key: 'vote' } },
+        create: { postId: post.id, userId, key: 'vote', value: value as unknown as Prisma.InputJsonValue },
+        update: { value: value as unknown as Prisma.InputJsonValue },
+      });
     }
   },
 

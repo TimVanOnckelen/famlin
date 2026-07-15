@@ -22,7 +22,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
-    "test:docker": "sh scripts/test-in-docker.sh"
+    "test:docker": "sh scripts/test-in-docker.sh",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
@@ -45,14 +46,18 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.8",
     "@types/nodemailer": "^6.4.15",
+    "eslint": "^9.39.0",
+    "globals": "^16.5.0",
     "nodemon": "^3.1.14",
     "prisma": "^5.15.1",
     "tsx": "^4.22.4",
     "typescript": "^5.5.2",
+    "typescript-eslint": "^8.46.0",
     "vitest": "^4.1.10"
   },
   "prisma": {
