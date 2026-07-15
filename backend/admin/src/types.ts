@@ -152,6 +152,25 @@ export interface ModerationComment {
   post: { id: string; content: string | null; group: { id: string; name: string } };
 }
 
+export interface PostPushResendResult {
+  recipientCount: number;
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+}
+
+export interface PushDeliveryLog {
+  id: string;
+  notifyType: string;
+  recipientCount: number;
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+  createdAt: string;
+  post: { id: string; content: string | null; group: { id: string; name: string } } | null;
+  triggeredByAdmin: { id: string; name: string } | null;
+}
+
 export interface DashboardStats {
   counts: {
     users: number;

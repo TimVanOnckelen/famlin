@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, Group, ModerationComment, ModerationPost, User } from '../api/client';
+import { api, ApiError, Group, ModerationComment, ModerationPost, User } from '../api/client';
 import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
@@ -132,6 +132,16 @@ export function ContentPage() {
     load();
   };
 
+  const handleRetriggerPush = async (post: ModerationPost) => {
+    try {
+      const result = await api.retriggerPostPush(post.id);
+      alert(t('content.retriggerPushResult', { ...result }));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : t('common.error');
+      alert(t('content.retriggerPushError', { error: message }));
+    }
+  };
+
   const handleDeleteComment = async (comment: ModerationComment) => {
     if (!confirm(t('content.deleteConfirm'))) return;
     await api.deleteComment(comment.id);
@@ -258,6 +268,14 @@ export function ContentPage() {
                         <DateCell iso={post.createdAt} />
                       </td>
                       <td className="actions">
+                        <button
+                          className="icon-button"
+                          title={t('content.retriggerPush')}
+                          aria-label={t('content.retriggerPush')}
+                          onClick={() => handleRetriggerPush(post)}
+                        >
+                          <Icon name="bell" size={15} />
+                        </button>
                         <button
                           className="icon-button danger"
                           title={t('common.delete')}

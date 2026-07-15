@@ -17,6 +17,7 @@
     "commentNotFound": "Reactie niet gevonden",
     "notificationNotFound": "Melding niet gevonden",
     "failedToRegisterPushToken": "Push-token registreren mislukt",
+    "pushNotificationsDisabled": "Pushmeldingen zijn uitgeschakeld op deze server",
     "cannotDeleteYourself": "Je kunt jezelf niet verwijderen",
     "oidcNotConfigured": "OIDC-login is niet geconfigureerd",
     "invalidOidcToken": "Ongeldig OIDC-token",

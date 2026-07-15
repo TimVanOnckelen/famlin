@@ -17,6 +17,7 @@
     "commentNotFound": "Comment not found",
     "notificationNotFound": "Notification not found",
     "failedToRegisterPushToken": "Failed to register push token",
+    "pushNotificationsDisabled": "Push notifications are disabled on this server",
     "cannotDeleteYourself": "Cannot delete yourself",
     "oidcNotConfigured": "OIDC login is not configured",
     "invalidOidcToken": "Invalid OIDC token",

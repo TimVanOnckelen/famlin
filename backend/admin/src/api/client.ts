@@ -16,6 +16,8 @@ import {
   MediaPersonLink,
   ServerInfo,
   PostTypeInfo,
+  PostPushResendResult,
+  PushDeliveryLog,
 } from '../types';
 
 export type {
@@ -36,6 +38,8 @@ export type {
   MediaPersonLink,
   ServerInfo,
   PostTypeInfo,
+  PostPushResendResult,
+  PushDeliveryLog,
 };
 
 export class ApiError extends Error {
@@ -76,9 +80,14 @@ function getToken() {
 
 async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
   const method = options?.method || 'GET';
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+
+  // Only set Content-Type when there's an actual body to send — Fastify's
+  // default JSON body parser rejects an empty body when this header is
+  // present (a POST with no body, e.g. retriggerPostPush below).
+  if (options?.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const token = getToken();
   if (token) {
@@ -88,7 +97,7 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
   const res = await fetch(path, {
     method,
     headers,
-    body: options?.body ? JSON.stringify(options.body) : undefined,
+    body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
   if (!res.ok) {
@@ -213,6 +222,17 @@ export const api = {
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
 
   deleteComment: (id: string) => request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
+
+  retriggerPostPush: (id: string) =>
+    request<PostPushResendResult>(`/api/admin/content/posts/${id}/retrigger-push`, { method: 'POST' }),
+
+  getPushLog: (params: { postId?: string; cursor?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.postId) query.set('postId', params.postId);
+    if (params.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return request<Page<PushDeliveryLog>>(`/api/admin/push-log${qs ? `?${qs}` : ''}`);
+  },
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
 

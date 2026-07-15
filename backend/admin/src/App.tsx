@@ -8,6 +8,7 @@ import { DashboardPage } from './components/DashboardPage';
 import { UsersPage } from './components/UsersPage';
 import { GroupsPage } from './components/GroupsPage';
 import { ContentPage } from './components/ContentPage';
+import { PushLogPage } from './components/PushLogPage';
 import { ServerSettingsPage } from './components/ServerSettingsPage';
 import { api, User } from './api/client';
 
@@ -77,6 +78,7 @@ function App() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/content" element={<ContentPage />} />
+        <Route path="/push-log" element={<PushLogPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

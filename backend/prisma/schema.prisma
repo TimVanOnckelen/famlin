@@ -37,6 +37,7 @@ model User {
   apiTokens         ApiToken[]
   mediaPersonLinks  MediaPersonLink[]
   postInteractions  PostInteraction[]
+  triggeredPushLogs PushDeliveryLog[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -135,6 +136,7 @@ model Post {
   // directly; each PostTypeHandler owns reading/writing its own `key`
   // namespace (see services/postTypes/poll.ts).
   interactions    PostInteraction[]
+  pushDeliveryLogs PushDeliveryLog[]
 
   @@index([groupId, createdAt])
   @@index([crossPostId])
@@ -247,6 +249,31 @@ model Notification {
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
+}
+
+// Delivery telemetry for one push-notification send attempt (one Expo API
+// call) — covers both organic sends (post.created, comment.created, ...) and
+// an admin's manual "resend push" for a post. Distinct from Notification
+// (the in-app history a recipient sees, one row per recipient): this is one
+// row per send() call, written by sendPush() in
+// services/notificationChannels/push.ts.
+model PushDeliveryLog {
+  id                 String   @id @default(cuid())
+  postId             String?
+  post               Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  notifyType         String
+  recipientCount     Int
+  tokenCount         Int
+  successCount       Int
+  failureCount       Int
+  // Set only when an admin triggered this via "resend push" — null for every
+  // organic, event-triggered send.
+  triggeredByAdminId String?
+  triggeredByAdmin   User?    @relation(fields: [triggeredByAdminId], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([createdAt])
 }
 
 // Links one external media album to a Famlin group, so group members can

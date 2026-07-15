@@ -2,6 +2,7 @@ import { prisma } from '../db.js';
 import { getAllSettings } from './settings.js';
 import i18n from '../i18n/index.js';
 import { notificationChannels } from './notificationChannels/index.js';
+import { pushChannel, sendPush } from './notificationChannels/push.js';
 import type { NotifyType, Recipient } from './notificationChannels/types.js';
 
 export type { NotifyType, Recipient } from './notificationChannels/types.js';
@@ -193,4 +194,93 @@ export async function notifyUsers(options: {
 }) {
   const { userIds, ...rest } = options;
   await notify({ ...rest, recipientIds: userIds });
+}
+
+// Thrown for expected, user-facing push-send failures so routes can map them
+// to a translated message instead of leaking internals (same pattern as
+// PostTypeError in services/postTypes/types.ts). `code` is an i18n error key
+// suffix and always maps to HTTP 400.
+export class PushNotificationError extends Error {
+  constructor(public code: string, message?: string) {
+    super(message ?? code);
+    this.name = 'PushNotificationError';
+  }
+}
+
+export interface PostPushResendResult {
+  recipientCount: number;
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+}
+
+// Admin-only manual resend of a post's "new post" push notification — e.g. a
+// member missed it because their device was offline when it first fired.
+// Deliberately push-only: it doesn't touch email and doesn't re-create the
+// in-app Notification row (already written by the original post.created
+// event), only re-delivers the OS-level push. Returns null if the post
+// doesn't exist, so the caller can 404.
+export async function resendPostPush(
+  postId: string,
+  triggeredByAdminId: string
+): Promise<PostPushResendResult | null> {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: {
+      id: true,
+      content: true,
+      authorId: true,
+      groupId: true,
+      author: { select: { name: true } },
+      group: { select: { name: true } },
+    },
+  });
+  if (!post) return null;
+
+  const settings = await getAllSettings();
+  if (!settings.pushNotificationsEnabled) {
+    throw new PushNotificationError('pushNotificationsDisabled');
+  }
+
+  const members = await prisma.groupMember.findMany({
+    where: { groupId: post.groupId, userId: { not: post.authorId } },
+    select: { userId: true },
+  });
+  if (members.length === 0) {
+    return { recipientCount: 0, tokenCount: 0, successCount: 0, failureCount: 0 };
+  }
+
+  const recipients: Recipient[] = await prisma.user.findMany({
+    where: { id: { in: members.map((m) => m.userId) } },
+    select: {
+      id: true,
+      email: true,
+      emailOnNewPost: true,
+      emailOnNewComment: true,
+      emailOnNewLike: true,
+      pushOnNewPost: true,
+      pushOnNewComment: true,
+      pushOnNewLike: true,
+    },
+  });
+
+  const wanted = recipients.filter((r) => pushChannel.wants(r, 'new_post'));
+  if (wanted.length === 0) {
+    return { recipientCount: recipients.length, tokenCount: 0, successCount: 0, failureCount: 0 };
+  }
+
+  const params = { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) };
+  const t = i18n.getFixedT(settings.defaultLanguage);
+  const message = t(resolveMessageKey('new_post', params), params);
+
+  const result = await sendPush({
+    type: 'new_post',
+    recipients: wanted,
+    message,
+    settings,
+    postId: post.id,
+    triggeredByAdminId,
+  });
+
+  return { recipientCount: recipients.length, ...result };
 }
