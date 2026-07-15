@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/TimVanOnckelen/famlin/compare/v0.2.2...v0.3.0) (2026-07-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Admins must ensure the new PushDeliveryLog table is created in the database by running the latest migration.
+
+### Features
+
+* add push notification log and resend functionality ([d821fa1](https://github.com/TimVanOnckelen/famlin/commit/d821fa1fcddb6f9e44c38da10cf81228dd7d4127))
+* add push notification log and resend functionality ([ff3aedc](https://github.com/TimVanOnckelen/famlin/commit/ff3aedccd49374c4630c99ced8a047bed18fbf51))
+
 ## [0.2.2](https://github.com/TimVanOnckelen/famlin/compare/v0.2.1...v0.2.2) (2026-07-14)
 
 
