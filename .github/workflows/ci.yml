@@ -81,7 +81,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend/admin/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/admin/package-lock.json
+      # admin depends on @famlin/api-client via file:../../packages/api-client.
+      # That package's own dependencies (axios, etc.) are only installed by
+      # the root workspace install — see the same pattern in the mobile job
+      # below — so it must run before admin's install, here and on any fresh
+      # checkout.
+      - name: Install workspace dependencies (builds @famlin/api-client)
+        run: npm ci
       - name: Install dependencies
         working-directory: backend/admin
         run: npm ci
