@@ -8,16 +8,20 @@ permissions:
   contents: write
   pull-requests: write
 
-# Serialize runs on main so two rapid pushes can't race the release PR or
-# double-publish an image. Don't cancel in-flight runs — a partial image
-# push is worse than waiting.
-concurrency:
-  group: release-please-${{ github.ref }}
-  cancel-in-progress: false
+# Concurrency is scoped per job below, NOT workflow-wide. A workflow-level
+# group would queue entire runs behind the multi-hour mobile store build, and
+# GitHub keeps only one pending run per group — so a push merged during a
+# build could be superseded entirely, leaving the release PR (and its version
+# bump) stale until the next push to main.
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # Serialize the release step itself so two rapid pushes can't race the
+    # release PR. This job finishes in seconds, so queuing here is harmless.
+    concurrency:
+      group: release-please-${{ github.ref }}
+      cancel-in-progress: false
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -37,6 +41,12 @@ jobs:
   publish-docker:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    # Serialize image pushes so two releases can't interleave writes to the
+    # rolling `latest` tag. Don't cancel in-flight pushes — a partial image
+    # push is worse than waiting.
+    concurrency:
+      group: docker-publish
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: write
@@ -108,6 +118,12 @@ jobs:
   build-mobile:
     needs: [release-please, mobile-changed]
     if: ${{ needs.release-please.outputs.release_created == 'true' && needs.mobile-changed.outputs.changed == 'true' }}
+    # One store build at a time. If a newer release queues while an older
+    # build is still pending, the older pending one is superseded — the
+    # newest version is what should reach the stores anyway.
+    concurrency:
+      group: mobile-store-build
+      cancel-in-progress: false
     permissions:
       contents: read
     secrets: inherit
