@@ -62,8 +62,8 @@ export function ChatPage({
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const chatGroups = (groupsQuery.data ?? []).filter((group) => group.chitchatEnabled);
-  // Skip the picker straight to the chat when there's exactly one option.
-  const activeGroupId = selectedGroupId ?? (chatGroups.length === 1 ? chatGroups[0].id : null);
+  // Default to the first family rather than making the user pick.
+  const activeGroupId = selectedGroupId ?? (chatGroups.length > 0 ? chatGroups[0].id : null);
   const activeGroup = chatGroups.find((group) => group.id === activeGroupId) ?? null;
 
   const unreadQuery = useQuery({
