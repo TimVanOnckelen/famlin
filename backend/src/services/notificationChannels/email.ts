@@ -5,7 +5,10 @@ import type { NotificationChannel, NotifyType, Recipient } from './types.js';
 
 // Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
 // reuse the closest existing preference column, see the note there.
-const EMAIL_PREF_FIELD: Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment' | 'emailOnNewLike'> = {
+// Partial (not every NotifyType) because new_chat_message is deliberately
+// push-only — chat is chattier than posts/comments, so it never emails
+// regardless of preference (see wants() below).
+const EMAIL_PREF_FIELD: Partial<Record<NotifyType, 'emailOnNewPost' | 'emailOnNewComment' | 'emailOnNewLike'>> = {
   new_post: 'emailOnNewPost',
   new_comment: 'emailOnNewComment',
   new_like_post: 'emailOnNewLike',
@@ -40,7 +43,8 @@ export const emailChannel: NotificationChannel = {
   },
 
   wants(recipient: Recipient, type: NotifyType) {
-    return recipient[EMAIL_PREF_FIELD[type]];
+    const field = EMAIL_PREF_FIELD[type];
+    return field ? recipient[field] : false;
   },
 
   async send({ recipients, message, settings }) {

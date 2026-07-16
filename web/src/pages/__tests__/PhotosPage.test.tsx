@@ -20,8 +20,8 @@ globalThis.IntersectionObserver = class IntersectionObserver {
 } as any;
 
 const groups = [
-  { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z' },
-  { id: 'group-2', name: 'Neefjes', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
+  { id: 'group-2', name: 'Neefjes', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
 ];
 
 const people = [

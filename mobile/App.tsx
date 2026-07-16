@@ -22,6 +22,8 @@ import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
+import { ChatScreen } from '@/screens/ChatScreen';
+import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
@@ -32,7 +34,17 @@ import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
 import { ensureFreshMediaToken } from '@/api/uploads';
 
 const Stack = createNativeStackNavigator();
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Serve cache for recently-fetched data instead of refetching on every
+      // remount/invalidation trigger (the library default is staleTime: 0).
+      // Pull-to-refresh (refetch()), refetchInterval polls, and mutation
+      // invalidations all still fetch unconditionally.
+      staleTime: 30_000,
+    },
+  },
+});
 
 // Must run before any @famlin/api-client call that touches storage
 // (initApiBaseUrl/loadToken below, or any request through the shared axios
@@ -210,6 +222,22 @@ function AppContent() {
             <Stack.Screen
               name="Search"
               component={SearchScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="ChatGroupPicker"
+              component={ChatGroupPickerScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',

@@ -584,7 +584,7 @@ function PhotoCommentsSheet({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [commentText, setCommentText] = useState('');
 
   const { data: comments, isLoading } = useQuery({

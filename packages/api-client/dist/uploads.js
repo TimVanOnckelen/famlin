@@ -4,19 +4,35 @@ exports.getUploadUrl = getUploadUrl;
 exports.refreshMediaToken = refreshMediaToken;
 exports.ensureFreshMediaToken = ensureFreshMediaToken;
 const client_1 = require("./client");
+// Extensions the backend may have generated a `-thumbnail.jpg` sibling for
+// (see backend/src/services/uploadVariants.ts) — .gif and video extensions
+// never get one. Uploads made before that feature shipped also won't have
+// one even if their extension is in this set; callers should fall back to
+// the plain (non-variant) URL on a load error for that case.
+const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+function toThumbnailPath(path) {
+    const dotIndex = path.lastIndexOf('.');
+    const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : '';
+    if (!THUMBNAIL_ELIGIBLE_EXTENSIONS.has(ext))
+        return path;
+    return `${path.slice(0, dotIndex)}-thumbnail.jpg`;
+}
 // Uploaded photos/videos require a media token (see backend app.ts's
 // /uploads onRequest hook) — append the cached one as a query param so
 // <Image>/<Video> sources, which can't attach custom headers, can still
-// authenticate the GET.
-function getUploadUrl(path) {
+// authenticate the GET. Pass variant: 'thumbnail' for small grid/list tiles;
+// leave it unset everywhere else — the plain path already serves a
+// backend-compressed display copy for new uploads (see uploadVariants.ts).
+function getUploadUrl(path, variant) {
+    const resolvedPath = variant === 'thumbnail' ? toThumbnailPath(path) : path;
     const serverUrl = (0, client_1.getCurrentServerUrl)();
     // No server URL yet (pre-init) — return the raw path rather than a
     // "nullundefined"-style string; the caller has nothing usable to load yet.
     if (!serverUrl)
-        return path;
+        return resolvedPath;
     const token = (0, client_1.getCurrentMediaToken)();
     const query = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${serverUrl}${path}${query}`;
+    return `${serverUrl}${resolvedPath}${query}`;
 }
 let mediaTokenFetchedAt = null;
 const MEDIA_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,14 +19,19 @@ import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { Group } from '@/types';
-import { fetchGroups, fetchUnreadNotificationCount, fetchOnThisDay, fetchPosts } from '@famlin/api-client';
-import { useAuthStore } from '@/stores/authStore';
+import { Group, Post } from '@/types';
+import {
+  fetchGroups,
+  fetchUnreadNotificationCount,
+  fetchOnThisDay,
+  fetchPosts,
+} from '@famlin/api-client';
+
+const postKeyExtractor = (item: Post) => item.id;
 
 export function FeedScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const { user } = useAuthStore();
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
@@ -77,6 +82,14 @@ export function FeedScreen() {
   // one group) — use the narrowed family, or fall back to the first one, the
   // same default the single-select feed had.
   const searchGroup = singleActiveGroup ?? groups?.[0];
+
+  // Stable renderItem so PostCard's React.memo isn't defeated by a new
+  // closure identity on every FeedScreen render.
+  const showGroupTag = effectiveGroupIds.length > 1;
+  const renderPost = useCallback(
+    ({ item }: { item: Post }) => <PostCard post={item} showGroup={showGroupTag} />,
+    [showGroupTag]
+  );
 
   function openMembers() {
     if (!singleActiveGroup) return;
@@ -175,14 +188,23 @@ export function FeedScreen() {
 
       <FlatList
         data={hasGroups ? posts : []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={postKeyExtractor}
         contentContainerStyle={styles.feedList}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
-        renderItem={({ item }) => <PostCard post={item} showGroup={effectiveGroupIds.length > 1} />}
+        renderItem={renderPost}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
+        // Post cards are heavy (hero image, potentially a map WebView or a
+        // video player) — keep far fewer off-screen items mounted than the
+        // default windowSize of 21 screens. Same tuning family as
+        // PhotosScreen's grid.
+        removeClippedSubviews
+        initialNumToRender={5}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        updateCellsBatchingPeriod={50}
         ListHeaderComponent={
           hasGroups && onThisDay && onThisDay.length > 0 ? (
             <TouchableOpacity

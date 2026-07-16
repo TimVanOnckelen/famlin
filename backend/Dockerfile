@@ -6,8 +6,10 @@ FROM node:22-alpine AS base
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
+# (services/uploadVariants.ts) — needed here too because the dev overlay
+# (docker-compose.override.yml) runs this `base` stage.
+RUN apk add --no-cache openssl ffmpeg
 
 # Install dependencies
 COPY backend/package.json backend/package-lock.json* ./
@@ -59,11 +61,23 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
+# (services/uploadVariants.ts).
+RUN apk add --no-cache openssl ffmpeg
 
 COPY backend/package.json backend/package-lock.json* ./
-RUN npm ci --omit=dev
+# vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
+# camera format) — sharp's own prebuilt binaries deliberately ship without it
+# (patent-encumbered HEVC decoder). Installing build tooling as a named
+# virtual package lets `npm ci` compile sharp against the system libvips
+# instead of downloading its no-HEIF prebuilt binary; deleting just that
+# virtual group afterward keeps the compiled addon working (it dynamically
+# links against the vips/vips-heif runtime libs, which stay installed) without
+# leaving compilers in the final image.
+RUN apk add --no-cache vips vips-heif
+RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-dev \
+    && npm ci --omit=dev \
+    && apk del .build-deps
 
 COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /app/dist ./dist

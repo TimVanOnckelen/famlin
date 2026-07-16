@@ -19,6 +19,7 @@ import postRoutes from './routes/posts.js';
 import commentRoutes from './routes/comments.js';
 import likeRoutes from './routes/likes.js';
 import favoriteRoutes from './routes/favorites.js';
+import chatRoutes from './routes/chat.js';
 import pushTokenRoutes from './routes/push-tokens.js';
 import apiTokenRoutes from './routes/api-tokens.js';
 import notificationRoutes from './routes/notifications.js';
@@ -80,6 +81,11 @@ export async function buildApp() {
 
   const uploadsDir = path.join(process.cwd(), 'uploads');
   await fs.mkdir(uploadsDir, { recursive: true });
+  // Holds the true, uncompressed original of a converted upload (see
+  // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
+  // /uploads/originals/ block in the onRequest hook below. Nested inside
+  // uploadsDir so it's covered by the same persistent volume mount.
+  await fs.mkdir(path.join(uploadsDir, 'originals'), { recursive: true });
 
   await fastify.register(helmet, {
     contentSecurityPolicy: {
@@ -133,6 +139,13 @@ export async function buildApp() {
   fastify.addHook('onRequest', async (request, reply) => {
     if (!request.raw.url?.startsWith('/uploads/')) return;
 
+    // The true, uncompressed original of a converted upload lives here (see
+    // routes/uploads.ts) purely for a possible future "download original"
+    // feature — it's never served today, regardless of auth.
+    if (request.raw.url.startsWith('/uploads/originals/')) {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+    }
+
     // Signature/expiry alone isn't enough — authenticateMediaRequest also
     // confirms the token still maps to an active user at its issued
     // tokenVersion, so a deactivated user or a pre-password-reset token can't
@@ -156,6 +169,7 @@ export async function buildApp() {
   await fastify.register(commentRoutes, { prefix: '/api' });
   await fastify.register(likeRoutes, { prefix: '/api' });
   await fastify.register(favoriteRoutes, { prefix: '/api' });
+  await fastify.register(chatRoutes, { prefix: '/api/chat' });
   await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' });
   await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' });
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' });

@@ -21,6 +21,8 @@ export type { FetchPostsParams, PostsPage, SearchPostsParams, CreatePostBody, Re
 export { fetchPosts, fetchPost, fetchOnThisDay, searchPosts, fetchFavorites, createPost, updatePost, deletePost, reactToPost, toggleFavoritePost, interactWithPost, votePoll, } from './posts';
 export type { CreateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
+export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
+export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts, } from './chat';
 export { fetchNotifications, fetchUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, } from './notifications';
 export { registerPushToken, unregisterPushToken } from './pushTokens';
 export type { ApiToken, CreatedApiToken } from './apiTokens';

@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"content":{"type":"string","maxLength":2000},"attachmentUrl":{"type":"string","description":"An `/uploads/...` path from the upload endpoint."}}}}}}}

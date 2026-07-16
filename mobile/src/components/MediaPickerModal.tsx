@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
-  Image,
   FlatList,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +17,41 @@ import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { getUploadUrl } from '@/api/uploads';
 import { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, MediaAsset, MediaGroupAlbum, MediaPerson } from '@/api/media';
+
+const AssetThumb = React.memo(function AssetThumb({
+  asset,
+  size,
+  isSelected,
+  onPress,
+}: {
+  asset: MediaAsset;
+  size: number;
+  isSelected: boolean;
+  onPress: (assetId: string) => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.thumbWrapper, { width: size, height: size }]}
+      onPress={() => onPress(asset.assetId)}
+    >
+      <Image
+        source={{ uri: getUploadUrl(asset.thumbnailUrl), cacheKey: asset.thumbnailUrl }}
+        style={styles.thumb}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        recyclingKey={asset.assetId}
+      />
+      {asset.type === 'VIDEO' && (
+        <View style={styles.videoBadge} pointerEvents="none">
+          <Icon name="play" size={12} color={colors.white} />
+        </View>
+      )}
+      <View style={[styles.checkCircle, isSelected && styles.checkCircleActive]}>
+        {isSelected && <Icon name="check" size={12} color={colors.white} />}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 interface MediaPickerModalProps {
   visible: boolean;
@@ -75,14 +110,33 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
       .finally(() => setLoading(false));
   }, [selectedLinkId, selectedPersonId]);
 
-  function toggle(assetId: string) {
+  const toggle = useCallback((assetId: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(assetId)) next.delete(assetId);
       else next.add(assetId);
       return next;
     });
-  }
+  }, []);
+
+  const renderAsset = useCallback(
+    ({ item }: { item: MediaAsset }) => (
+      <AssetThumb asset={item} size={thumbSize} isSelected={selected.has(item.assetId)} onPress={toggle} />
+    ),
+    [thumbSize, selected, toggle]
+  );
+
+  // Uniform numColumns grid: row height is fixed and known up front, so
+  // getItemLayout can skip on-the-fly measurement entirely (unlike
+  // PhotosScreen's SectionList, which also has variable-height section
+  // headers and isn't safe to hardcode the same way).
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<MediaAsset> | null | undefined, index: number) => {
+      const rowHeight = thumbSize + 4;
+      return { length: rowHeight, offset: rowHeight * Math.floor(index / columns), index };
+    },
+    [thumbSize, columns]
+  );
 
   function handleConfirm() {
     const chosen = (assets ?? []).filter((a) => selected.has(a.assetId));
@@ -171,30 +225,18 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
               keyExtractor={(item) => item.assetId}
               contentContainerStyle={styles.grid}
               columnWrapperStyle={styles.gridRow}
+              renderItem={renderAsset}
+              getItemLayout={getItemLayout}
+              removeClippedSubviews
+              initialNumToRender={12}
+              maxToRenderPerBatch={9}
+              windowSize={7}
+              updateCellsBatchingPeriod={50}
               ListEmptyComponent={
                 <View style={styles.centered}>
                   <Text style={styles.emptyText}>{t('mediaPicker.noAssets')}</Text>
                 </View>
               }
-              renderItem={({ item }) => {
-                const isSelected = selected.has(item.assetId);
-                return (
-                  <TouchableOpacity
-                    style={[styles.thumbWrapper, { width: thumbSize, height: thumbSize }]}
-                    onPress={() => toggle(item.assetId)}
-                  >
-                    <Image source={{ uri: getUploadUrl(item.thumbnailUrl) }} style={styles.thumb} />
-                    {item.type === 'VIDEO' && (
-                      <View style={styles.videoBadge} pointerEvents="none">
-                        <Icon name="play" size={12} color={colors.white} />
-                      </View>
-                    )}
-                    <View style={[styles.checkCircle, isSelected && styles.checkCircleActive]}>
-                      {isSelected && <Icon name="check" size={12} color={colors.white} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
             />
           </>
         )}

@@ -73,7 +73,11 @@ function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean 
             {isVideoUrl(comment.attachmentUrl) ? (
               <video src={getUploadUrl(comment.attachmentUrl)} muted preload="metadata" />
             ) : (
-              <ShimmerImage src={getUploadUrl(comment.attachmentUrl)} loading="lazy" />
+              <ShimmerImage
+                src={getUploadUrl(comment.attachmentUrl, 'thumbnail')}
+                fallbackSrc={getUploadUrl(comment.attachmentUrl)}
+                loading="lazy"
+              />
             )}
           </button>
         )}

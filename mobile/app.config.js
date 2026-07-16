@@ -66,6 +66,19 @@ export default ({ config }) => ({
   },
   plugins: [
     [
+      "expo-build-properties",
+      {
+        android: {
+          // R8 minification — expo-build-properties' key is
+          // enableMinifyInReleaseBuilds (there is no
+          // enableProguardInReleaseBuilds option; an unknown key is
+          // silently ignored at prebuild).
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+        },
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/splash.png",

@@ -62,6 +62,8 @@ export interface Group {
   // already resolved by the server (never an "empty means all" sentinel).
   // Missing = older server that predates the setting → all types allowed.
   allowedPostTypes?: string[];
+  // Whether chat is enabled for this group.
+  chitchatEnabled: boolean;
 }
 
 export interface Post {

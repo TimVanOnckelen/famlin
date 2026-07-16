@@ -158,5 +158,24 @@
     "totalVotes_other": "{{count}} stemmen in totaal",
     "closed": "Peiling gesloten",
     "yourVote": "Jouw stem"
+  },
+  "chat": {
+    "title": "Groepschat",
+    "backToFeed": "Terug naar de feed",
+    "groupListLabel": "Chats",
+    "noChatGroups": "Chat is nog niet ingeschakeld voor één van je families.",
+    "empty": "Nog geen berichten — zeg hallo!",
+    "loadFailed": "Berichten konden niet geladen worden.",
+    "loadOlder": "Oudere berichten laden",
+    "memberCount_one": "{{count}} lid",
+    "memberCount_other": "{{count}} leden",
+    "placeholder": "Typ een berichtje…",
+    "send": "Versturen",
+    "addAttachment": "Voeg een foto of video toe",
+    "removeAttachment": "Bijlage verwijderen",
+    "viewAttachment": "Bijlage bekijken",
+    "sendFailed": "Je bericht kon niet verstuurd worden. Probeer opnieuw.",
+    "today": "Vandaag",
+    "yesterday": "Gisteren"
   }
 }

@@ -11,7 +11,11 @@ export type NotifyType =
   | 'on_this_day'
   // A MANUAL-mode MediaAlbumLink picked up new assets (src/jobs/newAssets.ts)
   // — not tied to any Post, unlike every other type here.
-  | 'new_media_assets';
+  | 'new_media_assets'
+  // A USER chat message in a group's chitchat (routes/chat.ts) — push-only,
+  // see pushOnChitchat below (deliberately no email preference, chat is
+  // chattier than posts/comments).
+  | 'new_chat_message';
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().
@@ -24,6 +28,7 @@ export interface Recipient {
   pushOnNewPost: boolean;
   pushOnNewComment: boolean;
   pushOnNewLike: boolean;
+  pushOnChitchat: boolean;
 }
 
 export interface ChannelSendArgs {

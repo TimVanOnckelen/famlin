@@ -58,6 +58,7 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   mention: 'notifications.mention',
   on_this_day: 'notifications.onThisDay',
   new_media_assets: 'notifications.newMediaAssets',
+  new_chat_message: 'notifications.newChatMessage',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
@@ -108,6 +109,7 @@ async function notify(options: NotifyOptions) {
       pushOnNewPost: true,
       pushOnNewComment: true,
       pushOnNewLike: true,
+      pushOnChitchat: true,
     },
   });
   if (recipients.length === 0) return;
@@ -261,6 +263,7 @@ export async function resendPostPush(
       pushOnNewPost: true,
       pushOnNewComment: true,
       pushOnNewLike: true,
+      pushOnChitchat: true,
     },
   });
 

@@ -135,7 +135,9 @@
       "description": "Beschrijving",
       "allowedPostTypes": "Toegestane berichttypes",
       "allowedPostTypesHint": "Als alle vakjes zijn aangevinkt, worden later toegevoegde berichttypes automatisch toegestaan.",
-      "allowedPostTypesError": "Selecteer minstens één berichttype."
+      "allowedPostTypesError": "Selecteer minstens één berichttype.",
+      "chitchatEnabled": "Groepschat inschakelen",
+      "chitchatEnabledHint": "Laat leden chatten met de hele groep in één gedeeld gesprek."
     },
     "save": "Opslaan",
     "add": "Toevoegen",

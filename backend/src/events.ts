@@ -20,6 +20,12 @@ export interface DomainEvents {
     authorId: string;
     authorName: string;
     content: string | null;
+    // Shared by every sibling post a single create call produces (same
+    // convention as `content` above) — lets the notifications subscriber
+    // auto-post a SYSTEM_MILESTONE chitchat message per target group without
+    // re-fetching the post.
+    type: string;
+    milestoneTag: string | null;
   };
   'comment.created': {
     commentId: string;
@@ -49,6 +55,17 @@ export interface DomainEvents {
     reactorId: string;
     reactorName: string;
     reactionType: string;
+  };
+  'chat.created': {
+    messageId: string;
+    groupId: string;
+    groupName: string;
+    authorId: string;
+    authorName: string;
+    content: string | null;
+    hasAttachment: boolean;
+    kind: string;
+    refPostId: string | null;
   };
 }
 

@@ -158,5 +158,24 @@
     "totalVotes_other": "{{count}} votes total",
     "closed": "Poll closed",
     "yourVote": "Your vote"
+  },
+  "chat": {
+    "title": "Chitchat",
+    "backToFeed": "Back to the feed",
+    "groupListLabel": "Chats",
+    "noChatGroups": "Chat isn't enabled for any of your families yet.",
+    "empty": "No messages yet — say hi!",
+    "loadFailed": "Messages couldn't be loaded.",
+    "loadOlder": "Load older messages",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "addAttachment": "Attach a photo or video",
+    "removeAttachment": "Remove attachment",
+    "viewAttachment": "View attachment",
+    "sendFailed": "Your message couldn't be sent. Try again.",
+    "today": "Today",
+    "yesterday": "Yesterday"
   }
 }

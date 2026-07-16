@@ -6,12 +6,13 @@ import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { PhotosPage } from '@/pages/PhotosPage';
+import { ChatPage } from '@/pages/ChatPage';
 
 export default function App() {
   const { user, setAuth, clearSession, loadToken, isLoading, logout } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
-  // No client-side routing yet — the profile and photos pages are simple view switches.
-  const [view, setView] = useState<'feed' | 'profile' | 'photos'>('feed');
+  // No client-side routing yet — the profile, photos, and chat pages are simple view switches.
+  const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat'>('feed');
 
   // A session ending on the profile view (logout or 401) shouldn't land the
   // next login on the profile page.
@@ -63,11 +64,16 @@ export default function App() {
     return <PhotosPage user={user} onOpenProfile={() => setView('profile')} onLogout={() => logout()} />;
   }
 
+  if (view === 'chat') {
+    return <ChatPage user={user} onBack={() => setView('feed')} />;
+  }
+
   return (
     <FeedPage
       user={user}
       onOpenProfile={() => setView('profile')}
       onOpenPhotos={() => setView('photos')}
+      onOpenChat={() => setView('chat')}
       onLogout={() => logout()}
     />
   );

@@ -19,6 +19,8 @@
     "postNotFound": "Post not found",
     "notAuthorized": "Not authorized",
     "commentNotFound": "Comment not found",
+    "chitchatDisabled": "Chitchat is not enabled for this group",
+    "chatMessageNotFound": "Chat message not found",
     "notificationNotFound": "Notification not found",
     "failedToRegisterPushToken": "Failed to register push token",
     "pushNotificationsDisabled": "Push notifications are disabled on this server",
@@ -79,9 +81,14 @@
     "onThisDayMedia_other": "A memory from {{group}} — {{author}}'s post from {{count}} years ago",
     "newMediaAssets_one": "{{count}} new photo was added to \"{{album}}\" in {{group}}",
     "newMediaAssets_other": "{{count}} new photos were added to \"{{album}}\" in {{group}}",
+    "newChatMessage": "{{author}} sent a message in {{group}} chat: \"{{excerpt}}\"",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app."
+  },
+  "chat": {
+    "systemMilestoneMessage": "🎂 {{author}} shared a milestone: {{milestoneTag}}",
+    "systemMilestoneMessageGeneric": "🎂 {{author}} shared a milestone"
   },
   "media": {
     "newAssetsPostContent_one": "📸 {{count}} new photo in {{album}}",

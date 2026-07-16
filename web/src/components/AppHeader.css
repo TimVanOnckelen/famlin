@@ -46,6 +46,37 @@
   font-size: 15px;
 }
 
+.header-icon-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter 0.15s ease;
+}
+
+.header-icon-btn:hover {
+  filter: brightness(0.97);
+}
+
+.header-icon-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fam-accent);
+  border: 2px solid var(--fam-surface);
+}
+
 .user-menu {
   position: relative;
 }

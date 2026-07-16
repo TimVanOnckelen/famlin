@@ -246,6 +246,46 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Chat",
+      link: {
+        type: "doc",
+        id: "api-reference/chat",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-chat-messages",
+          label: "List a group's chat messages",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-chat-message",
+          label: "Send a chat message",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-chat-message",
+          label: "Delete a chat message",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/mark-chat-read",
+          label: "Mark the chat as read up to now",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-chat-unread-counts",
+          label: "Get unread message counts per group",
+          className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Notifications",
       link: {
         type: "doc",
@@ -516,6 +556,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/comment",
           label: "Comment",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/chatmessage",
+          label: "ChatMessage",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/chatmessagespage",
+          label: "ChatMessagesPage",
           className: "schema",
         },
         {

@@ -83,6 +83,7 @@ export const createGroupBodySchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
   allowedPostTypes: allowedPostTypesSchema.optional(),
+  chitchatEnabled: z.boolean().optional(),
 });
 
 export const groupMemberBodySchema = z.object({
@@ -148,6 +149,19 @@ export const createCommentBodySchema = z
     path: ['content'],
   });
 
+// POST /api/chat/groups/:groupId/messages — mirrors createCommentBodySchema's
+// "at least one of content/attachmentUrl" shape (a chat message can be
+// photo/video-only too).
+export const createChatMessageBodySchema = z
+  .object({
+    content: z.string().max(2000).optional(),
+    attachmentUrl: uploadPathSchema.optional(),
+  })
+  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+    message: 'content or attachmentUrl is required',
+    path: ['content'],
+  });
+
 export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE']);
 
 export const reactionBodySchema = z.object({
@@ -206,6 +220,7 @@ export const notificationPrefsSchema = z.object({
   pushOnNewPost: z.boolean().optional(),
   pushOnNewComment: z.boolean().optional(),
   pushOnNewLike: z.boolean().optional(),
+  pushOnChitchat: z.boolean().optional(),
 });
 
 // Clients always upload the photo first and pass back the resulting
@@ -227,6 +242,9 @@ export const adminUpdateGroupBodySchema = z.object({
   description: z.string().max(500).optional().nullable(),
   // Explicit empty array = back to "all types allowed"; omitted = unchanged.
   allowedPostTypes: allowedPostTypesSchema.optional(),
+  // Omitted = unchanged (plain boolean, no reset-to-default convention needed
+  // like allowedPostTypes' empty-array case).
+  chitchatEnabled: z.boolean().optional(),
 });
 
 export const passwordLoginBodySchema = z.object({

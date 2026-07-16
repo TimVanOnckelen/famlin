@@ -68,6 +68,7 @@ const userSelect = {
   pushOnNewPost: true,
   pushOnNewComment: true,
   pushOnNewLike: true,
+  pushOnChitchat: true,
   createdAt: true,
 } as const;
 
@@ -316,6 +317,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         name: body.name,
         description: body.description,
         allowedPostTypes: body.allowedPostTypes ?? [],
+        chitchatEnabled: body.chitchatEnabled ?? false,
       },
     });
 
@@ -337,6 +339,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           description: body.description,
           // Omitted = unchanged; an explicit [] resets to "all allowed".
           ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
+          ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
         },
       });
       return group;

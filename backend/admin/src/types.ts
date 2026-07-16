@@ -31,6 +31,7 @@ export interface Group {
   // Empty (or absent, for groups fetched before this field existed) means
   // "all registered types allowed" — see PostTypeInfo / resolveAllowedPostTypes.
   allowedPostTypes?: string[];
+  chitchatEnabled?: boolean;
 }
 
 // A registered post type, as reported by GET /api/admin/post-types.

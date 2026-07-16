@@ -173,10 +173,10 @@ export const api = {
 
   getGroups: () => request<Group[]>('/api/admin/groups'),
 
-  createGroup: (data: { name: string; description?: string; allowedPostTypes?: string[] }) =>
+  createGroup: (data: { name: string; description?: string; allowedPostTypes?: string[]; chitchatEnabled?: boolean }) =>
     request<Group>('/api/admin/groups', { method: 'POST', body: data }),
 
-  updateGroup: (id: string, data: { name: string; description?: string; allowedPostTypes?: string[] }) =>
+  updateGroup: (id: string, data: { name: string; description?: string; allowedPostTypes?: string[]; chitchatEnabled?: boolean }) =>
     request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
 
   // Registry of post types (e.g. UPDATE, MILESTONE, POLL) — used by the group

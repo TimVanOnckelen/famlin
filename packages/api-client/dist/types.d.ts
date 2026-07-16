@@ -53,6 +53,7 @@ export interface Group {
     createdAt: string;
     joinedAt?: string;
     allowedPostTypes?: string[];
+    chitchatEnabled: boolean;
 }
 export interface Post {
     id: string;

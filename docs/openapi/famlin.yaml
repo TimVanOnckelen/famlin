@@ -62,6 +62,11 @@ tags:
       different one switches it.
   - name: Favorites
     description: Personal bookmarks on posts, visible only to you.
+  - name: Chat
+    description: |
+      Per-group chat (off by default, toggled by admins). A single central chat
+      per group — not 1-on-1 messaging. When a milestone post is created in a
+      group with chat enabled, a system message is auto-posted in the chat.
   - name: Notifications
     description: Your in-app notification history.
   - name: Uploads & media
@@ -189,6 +194,7 @@ paths:
                 pushOnNewPost: { type: boolean }
                 pushOnNewComment: { type: boolean }
                 pushOnNewLike: { type: boolean }
+                pushOnChitchat: { type: boolean }
       responses:
         '200':
           description: Updated user
@@ -1123,6 +1129,166 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/chat/groups/{groupId}/messages:
+    get:
+      operationId: listChatMessages
+      tags: [Chat]
+      summary: List a group's chat messages
+      description: |
+        Newest first, cursor-paginated. Requires the group to have chitchat
+        enabled.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of chat messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagesPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not a member of the group, or the group has chat disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createChatMessage
+      tags: [Chat]
+      summary: Send a chat message
+      description: |
+        `content` and `attachmentUrl` are both optional but at least one is
+        required. `attachmentUrl` must be a path returned by the upload
+        endpoint (`/uploads/...`); arbitrary URLs are rejected.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 2000
+                attachmentUrl:
+                  type: string
+                  description: An `/uploads/...` path from the upload endpoint.
+      responses:
+        '200':
+          description: The created message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+        '400':
+          description: Neither content nor attachmentUrl provided.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not a member of the group, or the group has chat disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/messages/{id}:
+    delete:
+      operationId: deleteChatMessage
+      tags: [Chat]
+      summary: Delete a chat message
+      description: |
+        Permanent. Only the author (or an admin) can delete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not the author or an admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/chat/groups/{groupId}/read:
+    post:
+      operationId: markChatRead
+      tags: [Chat]
+      summary: Mark the chat as read up to now
+      description: |
+        Updates your read position for this group's chat. Use this to track
+        which messages you've seen and compute unread counts.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Read position updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not a member of the group.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/unread-counts:
+    get:
+      operationId: getChatUnreadCounts
+      tags: [Chat]
+      summary: Get unread message counts per group
+      description: |
+        Returns unread counts for the groups you belong to. Groups with no
+        unread messages don't appear in the response.
+      responses:
+        '200':
+          description: Unread message counts, keyed by group id.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                description: Map of groupId to unread count; absent keys have zero unread.
+                example:
+                  grp_abc: 5
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/notifications:
     get:
       operationId: listNotifications
@@ -1891,6 +2057,9 @@ components:
         pushOnNewPost: { type: boolean }
         pushOnNewComment: { type: boolean }
         pushOnNewLike: { type: boolean }
+        pushOnChitchat:
+          type: boolean
+          description: Push notifications for new chat messages (email variant not supported).
 
     Group:
       type: object
@@ -1914,6 +2083,9 @@ components:
             Always the resolved, effective list — never empty. A group an
             admin hasn't restricted returns every type the server currently
             supports, including ones added after the group was created.
+        chitchatEnabled:
+          type: boolean
+          description: Whether this group has chat enabled (off by default, admin-controlled).
 
     GroupMember:
       type: object
@@ -2148,6 +2320,63 @@ components:
             - $ref: '#/components/schemas/ReactionType'
         reactions:
           $ref: '#/components/schemas/ReactionCounts'
+
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        authorId: { type: string }
+        author:
+          $ref: '#/components/schemas/UserSummary'
+        kind:
+          type: string
+          enum: [USER, SYSTEM_MILESTONE]
+          description: |
+            `USER` for member-sent messages; `SYSTEM_MILESTONE` for
+            auto-generated messages when a milestone post is created in a group
+            with chat enabled.
+        content:
+          type: string
+          nullable: true
+          description: The message text; `null` for attachment-only messages.
+        attachmentUrl:
+          type: string
+          nullable: true
+          description: |
+            A photo/video path (`/uploads/...`); `null` if the message
+            carries no attachment.
+        refPostId:
+          type: string
+          nullable: true
+          description: |
+            For `SYSTEM_MILESTONE` messages, the milestone post this message
+            was triggered by; `null` otherwise.
+        createdAt: { type: string, format: date-time }
+        editedAt:
+          type: string
+          format: date-time
+          nullable: true
+        readBy:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: |
+            Members who have marked the chat read at or after this message.
+            Derived read-time from per-user read positions, not a per-message
+            receipt list.
+
+    ChatMessagesPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as `?cursor=` for the next page; `null` on the last page.
 
     ApiToken:
       type: object

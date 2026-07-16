@@ -271,6 +271,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
         authorId: request.user!.id,
         authorName: post.author.name,
         content: post.content,
+        type: post.type,
+        milestoneTag: post.milestoneTag,
       });
 
       // people: [] unenriched — a freshly created post can't wait on an
@@ -331,6 +333,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       authorId: request.user!.id,
       authorName: createdPosts[0].author.name,
       content: createdPosts[0].content,
+      type: createdPosts[0].type,
+      milestoneTag: createdPosts[0].milestoneTag,
     });
 
     // The response mirrors the single-group shape (first target group's
