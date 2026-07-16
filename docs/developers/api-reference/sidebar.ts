@@ -216,6 +216,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/list-post-reactions",
+          label: "List who reacted to a post, and with what",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/react-to-comment",
           label: "React to a comment",
           className: "api-method post",
@@ -496,6 +502,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/reactionresult",
           label: "ReactionResult",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/postreactor",
+          label: "PostReactor",
           className: "schema",
         },
         {

@@ -183,6 +183,67 @@ describe('creating, listing, and deleting messages', () => {
   });
 });
 
+describe('replying to a message', () => {
+  it('creates a message replying to another and round-trips the replyTo excerpt', async () => {
+    const original = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'original message to reply to' },
+    });
+    expect(original.statusCode).toBe(200);
+    const originalId = original.json().id;
+
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'a reply', replyToMessageId: originalId },
+    });
+    expect(reply.statusCode).toBe(200);
+    const replyBody = reply.json();
+    expect(replyBody.replyToMessageId).toBe(originalId);
+    expect(replyBody.replyTo).toMatchObject({
+      id: originalId,
+      authorId: memberA.id,
+      authorName: memberA.name,
+      kind: 'USER',
+      content: 'original message to reply to',
+      attachmentUrl: null,
+    });
+  });
+
+  it('returns 404 when replyToMessageId does not exist', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'replying to nothing', replyToMessageId: `nonexistent-${runId}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: expect.any(String) });
+  });
+
+  it('returns 404 when replyToMessageId points at a message in a different group', async () => {
+    const otherGroupMessage = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${unreadGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'a message in a different group' },
+    });
+    expect(otherGroupMessage.statusCode).toBe(200);
+    const otherGroupMessageId = otherGroupMessage.json().id;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'cross-group reply attempt', replyToMessageId: otherGroupMessageId },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
 describe('read receipts and unread counts', () => {
   it('marks a group read for one member while another member still sees it unread', async () => {
     const create = await app.inject({

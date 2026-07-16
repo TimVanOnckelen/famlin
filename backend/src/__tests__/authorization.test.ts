@@ -202,6 +202,56 @@ describe('deleted post regressions', () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it('404s listing reactions on the deleted post', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postId}/reactions`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
+describe('post reactions listing', () => {
+  let postId: string;
+
+  beforeAll(async () => {
+    const post = await prisma.post.create({
+      data: { authorId: memberA.id, groupId: groupAId, content: 'react to me' },
+    });
+    postId = post.id;
+
+    await app.inject({
+      method: 'POST',
+      url: `/api/posts/${postId}/like`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { type: 'LOVE' },
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.post.deleteMany({ where: { id: postId } });
+  });
+
+  it('returns every reactor with their reaction type', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postId}/reactions`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ items: [{ id: memberA.id, name: memberA.name, avatarUrl: null, type: 'LOVE' }] });
+  });
+
+  it('blocks a non-member from listing reactions', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postId}/reactions`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
 });
 
 describe('session invalidation', () => {

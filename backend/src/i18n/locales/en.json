@@ -21,6 +21,7 @@
     "commentNotFound": "Comment not found",
     "chitchatDisabled": "Chitchat is not enabled for this group",
     "chatMessageNotFound": "Chat message not found",
+    "replyToMessageNotFound": "Message being replied to was not found",
     "notificationNotFound": "Notification not found",
     "failedToRegisterPushToken": "Failed to register push token",
     "pushNotificationsDisabled": "Push notifications are disabled on this server",

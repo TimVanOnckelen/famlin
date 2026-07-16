@@ -1,4 +1,4 @@
-import { Post, PollCreateData, PostType, ReactionType } from './types';
+import { Post, PollCreateData, PostReactor, PostType, ReactionType } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -37,6 +37,7 @@ export interface ReactionResult {
     counts: Partial<Record<ReactionType, number>>;
 }
 export declare function reactToPost(postId: string, type: ReactionType): Promise<ReactionResult>;
+export declare function fetchPostReactions(postId: string): Promise<PostReactor[]>;
 export declare function toggleFavoritePost(postId: string): Promise<{
     favorited: boolean;
 }>;

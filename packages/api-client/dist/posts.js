@@ -9,6 +9,7 @@ exports.createPost = createPost;
 exports.updatePost = updatePost;
 exports.deletePost = deletePost;
 exports.reactToPost = reactToPost;
+exports.fetchPostReactions = fetchPostReactions;
 exports.toggleFavoritePost = toggleFavoritePost;
 exports.interactWithPost = interactWithPost;
 exports.votePoll = votePoll;
@@ -52,6 +53,12 @@ async function deletePost(postId) {
 async function reactToPost(postId, type) {
     const response = await client_1.api.post(`/posts/${postId}/like`, { type });
     return response.data;
+}
+// Every reactor and which emoji they left, newest first — used by the "who
+// reacted with what" view, as opposed to Post.recentReactors (top 3, no type).
+async function fetchPostReactions(postId) {
+    const response = await client_1.api.get(`/posts/${postId}/reactions`);
+    return response.data.items;
 }
 async function toggleFavoritePost(postId) {
     const response = await client_1.api.post(`/posts/${postId}/favorite`);

@@ -23,6 +23,7 @@ import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
+import { ReactionsModal } from '@/components/ReactionsModal';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -66,6 +67,7 @@ export function PostDetailScreen() {
   const [editPostContent, setEditPostContent] = useState('');
   const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false);
   const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
+  const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
   const [commentAttachment, setCommentAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
@@ -435,7 +437,9 @@ export function PostDetailScreen() {
               </Text>
                 </TouchableOpacity>
                 <Text style={styles.commentCount}>{t('postDetail.comments', { count: post.commentCount })}</Text>
-                {reactors.length > 0 && <ReactorStack reactors={reactors} />}
+                {reactors.length > 0 && (
+                  <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
+                )}
                 <TouchableOpacity
                   style={styles.favoriteButton}
                   onPress={() => favoriteMutation.mutate()}
@@ -569,6 +573,10 @@ export function PostDetailScreen() {
           setReactionPickerCommentId(null);
         }}
         onClose={() => setReactionPickerCommentId(null)}
+      />
+      <ReactionsModal
+        postId={reactionsModalOpen ? postId : null}
+        onClose={() => setReactionsModalOpen(false)}
       />
     </SafeAreaView>
   );

@@ -9,6 +9,7 @@ import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
+import { ReactionsModal } from '@/components/ReactionsModal';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
 import { postTypeRenderers } from '@/components/postTypes';
@@ -81,6 +82,7 @@ export const PostCard = React.memo(function PostCard({
   const navigation = useNavigation<any>();
   const isMilestone = post.type === 'MILESTONE';
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+  const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
@@ -287,7 +289,7 @@ export const PostCard = React.memo(function PostCard({
         </TouchableOpacity>
         {reactors.length > 0 && (
           <View style={styles.reactorArea}>
-            <ReactorStack reactors={reactors} />
+            <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
           </View>
         )}
       </View>
@@ -296,6 +298,10 @@ export const PostCard = React.memo(function PostCard({
         visible={reactionPickerOpen}
         onSelect={selectReaction}
         onClose={() => setReactionPickerOpen(false)}
+      />
+      <ReactionsModal
+        postId={reactionsModalOpen ? post.id : null}
+        onClose={() => setReactionsModalOpen(false)}
       />
     </View>
   );

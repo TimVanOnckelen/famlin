@@ -218,6 +218,9 @@ model ChatMessage {
   attachmentUrl String?
   refPostId     String?
   refPost       Post?    @relation(fields: [refPostId], references: [id], onDelete: SetNull)
+  replyToMessageId String?
+  replyToMessage   ChatMessage?  @relation("ChatMessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies          ChatMessage[] @relation("ChatMessageReplies")
   createdAt     DateTime @default(now())
   editedAt      DateTime?
 

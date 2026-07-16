@@ -156,6 +156,7 @@ export const createChatMessageBodySchema = z
   .object({
     content: z.string().max(2000).optional(),
     attachmentUrl: uploadPathSchema.optional(),
+    replyToMessageId: z.string().optional(),
   })
   .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
     message: 'content or attachmentUrl is required',

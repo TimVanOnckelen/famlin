@@ -207,6 +207,9 @@
       "deleteFailed": "Could not delete"
     }
   },
+  "reactions": {
+    "title": "Reactions"
+  },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",

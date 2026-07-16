@@ -8,6 +8,27 @@ import { reactionCounts } from '../services/reactions.js';
 import { isRecordNotFound } from '../utils/prismaErrors.js';
 
 export default async function likeRoutes(fastify: FastifyInstance) {
+  fastify.get('/posts/:postId/reactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const { postId } = request.params as { postId: string };
+
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true } });
+
+    if (!post) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
+    if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    const likes = await prisma.like.findMany({
+      where: { postId },
+      select: { type: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { items: likes.map((like) => ({ ...like.user, type: like.type })) };
+  });
+
   fastify.post('/posts/:postId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { postId } = request.params as { postId: string };

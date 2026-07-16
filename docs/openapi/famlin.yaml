@@ -1049,6 +1049,39 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/posts/{postId}/reactions:
+    get:
+      operationId: listPostReactions
+      tags: [Reactions]
+      summary: List who reacted to a post, and with what
+      description: |
+        The full reactor list, newest first — unlike `Post.recentReactors`
+        (capped at 3, no `type`), this is every reactor plus which emoji they
+        left.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Every reactor and their reaction type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostReactor'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/comments/{commentId}/like:
     post:
       operationId: reactToComment
@@ -2028,6 +2061,16 @@ components:
           description: Your reaction after the toggle (`null` when it was removed).
         counts:
           $ref: '#/components/schemas/ReactionCounts'
+
+    PostReactor:
+      type: object
+      description: One reactor's identity plus which emoji they left.
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          properties:
+            type:
+              $ref: '#/components/schemas/ReactionType'
 
     UserSummary:
       type: object

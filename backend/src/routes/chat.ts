@@ -9,6 +9,16 @@ import { getT } from '../i18n/index.js';
 
 const chatMessageInclude = {
   author: { select: { id: true, name: true, avatarUrl: true } },
+  replyToMessage: {
+    select: {
+      id: true,
+      authorId: true,
+      author: { select: { id: true, name: true } },
+      kind: true,
+      content: true,
+      attachmentUrl: true,
+    },
+  },
 };
 
 export default async function chatRoutes(fastify: FastifyInstance) {
@@ -61,6 +71,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.chitchatDisabled') });
     }
 
+    if (body.replyToMessageId) {
+      const replyToMessage = await prisma.chatMessage.findUnique({ where: { id: body.replyToMessageId } });
+      if (!replyToMessage || replyToMessage.groupId !== groupId) {
+        return reply.status(404).send({ error: t('errors.replyToMessageNotFound') });
+      }
+    }
+
     const message = await prisma.chatMessage.create({
       data: {
         groupId,
@@ -68,6 +85,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         kind: 'USER',
         content: body.content?.trim(),
         attachmentUrl: body.attachmentUrl,
+        replyToMessageId: body.replyToMessageId,
       },
       include: chatMessageInclude,
     });

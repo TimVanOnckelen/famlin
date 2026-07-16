@@ -207,6 +207,9 @@
       "deleteFailed": "Verwijderen mislukt"
     }
   },
+  "reactions": {
+    "title": "Wie reageerde"
+  },
   "notifications": {
     "title": "Meldingen",
     "markAllRead": "Alles gelezen",

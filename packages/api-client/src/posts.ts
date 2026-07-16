@@ -1,5 +1,5 @@
 import { api } from './client';
-import { Post, PollCreateData, PostType, ReactionType } from './types';
+import { Post, PollCreateData, PostReactor, PostType, ReactionType } from './types';
 
 export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
@@ -92,6 +92,13 @@ export interface ReactionResult {
 export async function reactToPost(postId: string, type: ReactionType): Promise<ReactionResult> {
   const response = await api.post<ReactionResult>(`/posts/${postId}/like`, { type });
   return response.data;
+}
+
+// Every reactor and which emoji they left, newest first — used by the "who
+// reacted with what" view, as opposed to Post.recentReactors (top 3, no type).
+export async function fetchPostReactions(postId: string): Promise<PostReactor[]> {
+  const response = await api.get<{ items: PostReactor[] }>(`/posts/${postId}/reactions`);
+  return response.data.items;
 }
 
 export async function toggleFavoritePost(postId: string): Promise<{ favorited: boolean }> {

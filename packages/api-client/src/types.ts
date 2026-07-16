@@ -1,6 +1,16 @@
 export const REACTION_TYPES = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'] as const;
 export type ReactionType = (typeof REACTION_TYPES)[number];
 
+// One reactor's identity plus which reaction they left — the full list a
+// post's reactions can be broken down into, as opposed to Post.recentReactors
+// (top 3, no type) below.
+export interface PostReactor {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  type: ReactionType;
+}
+
 export interface PostPerson {
   id: string;
   provider: string;

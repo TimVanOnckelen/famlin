@@ -21,6 +21,7 @@
     "commentNotFound": "Reactie niet gevonden",
     "chitchatDisabled": "Chitchat is niet ingeschakeld voor deze groep",
     "chatMessageNotFound": "Chatbericht niet gevonden",
+    "replyToMessageNotFound": "Bericht waarop wordt gereageerd werd niet gevonden",
     "notificationNotFound": "Melding niet gevonden",
     "failedToRegisterPushToken": "Push-token registreren mislukt",
     "pushNotificationsDisabled": "Pushmeldingen zijn uitgeschakeld op deze server",
