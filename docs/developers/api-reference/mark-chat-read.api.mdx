@@ -1,0 +1,71 @@
+---
+id: mark-chat-read
+title: "Mark the chat as read up to now"
+description: "Updates your read position for this group's chat. Use this to track"
+sidebar_label: "Mark the chat as read up to now"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVtuO2zYQ/ZWBXmIvFGl7eTKKAk6xRbdo2mA3i6CwjYiSxhazFKmQlL2KYaAf0S/sl3SG1K6dddunAn3ok2WK5Mw5M+eM9onp0Aovjb6uk1nSCnv/XSP8DYo6SRMvNi6ZLRJeSlZpUqOrrOx4O22+62rh0cFgeguWTkBnnOSXsDYWfCMdbKzpuxcOKrohgzuHcdkb8FZU90u9a2TVQIvOiU2868UWwSFqELqGyrRd7xF6HQJUptfeZUtNyXXCihY9Wk5xn2j6Q0mFgNecvOQcO+Eberb4sZcWCaK3PaaJqxpsRTLbJ37o+JjzVupNcjiseLPrjHbo+P2Xl5f88znym8/A9oEHDlkZ7VF7PiC6TskqMJt/cHxqfx7VlB+w8ozFch28jDFdX1VEyMnG0hiFglHjg2g7hRHI4UA1kp7/JrfjocOBV7++/OI87dfSOUKZgtRboWSdAj50TEsKhiu4NfdIHNMCgZBC/XuI0Fpjz+l+3lE/9K3QL7nSolSYco9op5hc2EpBrYNQzAlm51/+JPSmp5YpoKHtaGFSoC7yQqtimiVMwbHmizH+6sjWVVh45Oqrc65+Nh4E9WVb0t1mHWKH3sr+F6zQTtJWY9gUqNFD7iylWZKLTuYs5zzQ4fL9KLlDbqNrOLTbR1X2VtGZxvvOzfJ8LVoldTb2cEbiPgP7K5uJ2Wn4PuyFGjtlhpbZZm06rHor/RAuL1FYtPOe81qsTl/fcgUiyaebnpjmhJLRBoK+wqazZOZA1aKiCgUiqIuM656caVJEJO+Jk/dZlhUpqyZUhFLmguywBGqNKQlrqQX5GSmPrOLHd29hbU0LxZtfbt9C4FJQarkyG6mLDF4Z3wDlQie0Dzc58jXYiWG21AWjMFZ+Cu02g1cha/gmJPVtwbbIhZN6bQLWsaojk/M31wSQKxPBEVOWaX0O+oq2DI/0x1qyTxjCEM375opSp9vIlLnFCkZRwB+//X7Ml9/Sn6U267WsyEqgNaVUGDx95MZB7zCDd5IRw+IvmV5N8hq3qFg1juNMl5pGBFRCQ9lLVcfhw/0iSZKbOMociI2Q2vn4lmol1UBDKIIhmpZ6rhSMKgaC5CqKUEM5wMVFaOdR+a6R3cXFDB5jGq2GOOoCEGo1wvh0j44O4WASQpLKp+FkSQD0hhCl4RgRQwWmqNpwYancNNV4WfilJqARega3iLC4Y8cOxBKn53SEScsdxI4dbSgNGW15gaiIIXfGsrWPwgsDlBqFhU3Wwr0yTs/XNP9DMBY4CBexEh00sLXZPe+V/dEJ/+uvgVHYHh983imqPgMM7rMfnWtBXi3ZvPljJo0fCo4eZsdPhmBgZCMNOx4d2O9L4fDOqsOBlz/2pAy2GpKRsJLdOPhQLR0/k1euhXL4DyRNbkb7ncLf5TwuCj2wWoXq+R893uNw8nlzWNHW6PEhhfg2ToGTc2fTiU3yydjZg8gx/gQH6oN9
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Mark the chat as read up to now"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/chat/groups/{groupId}/read"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Updates your read position for this group's chat. Use this to track
+which messages you've seen and compute unread counts.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./mark-chat-read.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./mark-chat-read.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./mark-chat-read.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      
