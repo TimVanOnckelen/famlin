@@ -66,6 +66,15 @@ export default ({ config }) => ({
   },
   plugins: [
     [
+      "expo-build-properties",
+      {
+        android: {
+          enableProguardInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+        },
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/splash.png",
