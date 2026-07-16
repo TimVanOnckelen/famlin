@@ -229,7 +229,11 @@
     "placeholder": "Bericht...",
     "addAttachment": "Voeg een foto of video toe",
     "readBy": "Gezien",
-    "sendFailed": "Bericht kon niet worden verzonden"
+    "sendFailed": "Bericht kon niet worden verzonden",
+    "replyingTo": "Aan het antwoorden op {{name}}",
+    "cancelReply": "Antwoord annuleren",
+    "attachmentPhoto": "📷 Foto",
+    "attachmentVideo": "🎥 Video"
   },
   "photos": {
     "title": "Foto's",

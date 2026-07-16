@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
@@ -33,6 +35,7 @@ import {
 } from '@famlin/api-client';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
+import { isVideoUrl } from '@/utils/media';
 import { useAuthStore } from '@/stores/authStore';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
@@ -41,6 +44,12 @@ import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 // 30s notification poll, so refetch more often, but only while this screen
 // is actually focused (see the useFocusEffect below).
 const CHAT_POLL_INTERVAL_MS = 6000;
+
+// WhatsApp-style swipe-to-reply tuning: cap how far the bubble can be dragged
+// and how far past that cap counts as a deliberate "reply" gesture rather
+// than an accidental nudge.
+const MAX_SWIPE_TRANSLATION = 60;
+const SWIPE_REPLY_THRESHOLD_RATIO = 0.35;
 
 export function ChatScreen() {
   const { t } = useTranslation();
@@ -51,6 +60,8 @@ export function ChatScreen() {
   const user = useAuthStore((state) => state.user);
   const [text, setText] = useState('');
   const [attachment, setAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  const flatListRef = useRef<FlatList<ChatMessage>>(null);
 
   // Group name/member count reuse whatever the app already fetches for group
   // info rather than rebuilding it: the groups list (same ['groups'] cache
@@ -94,10 +105,12 @@ export function ChatScreen() {
   );
 
   const sendMutation = useMutation({
-    mutationFn: (body: { content?: string; attachmentUrl?: string }) => sendChatMessage(groupId, body),
+    mutationFn: (body: { content?: string; attachmentUrl?: string; replyToMessageId?: string }) =>
+      sendChatMessage(groupId, body),
     onSuccess: () => {
       setText('');
       setAttachment(null);
+      setReplyTarget(null);
       queryClient.invalidateQueries({ queryKey: ['chatMessages', groupId] });
     },
     onError: (err: any) => {
@@ -127,7 +140,36 @@ export function ChatScreen() {
   function handleSend() {
     const trimmed = text.trim();
     if (!trimmed && !attachment?.uploadedUrl) return;
-    sendMutation.mutate({ content: trimmed || undefined, attachmentUrl: attachment?.uploadedUrl });
+    sendMutation.mutate({
+      content: trimmed || undefined,
+      attachmentUrl: attachment?.uploadedUrl,
+      replyToMessageId: replyTarget?.id,
+    });
+  }
+
+  function handleSwipeToReply(message: ChatMessage) {
+    setReplyTarget(message);
+  }
+
+  // Best-effort "jump to the original message" — only ever looks at what's
+  // already loaded (no fetch-more-pages-until-found; out of scope for v1).
+  function handleJumpToOriginal(messageId: string) {
+    const index = messages.findIndex((m) => m.id === messageId);
+    if (index === -1) return;
+    try {
+      flatListRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
+    } catch {
+      // scrollToIndex can throw synchronously when the target row hasn't been
+      // measured yet — the async failure path is handled by
+      // onScrollToIndexFailed below.
+    }
+  }
+
+  // Inverted list + variable-height rows means scrollToIndex can't always
+  // resolve a target's offset up front. Best-effort fallback to the
+  // approximate offset instead of letting it throw.
+  function handleScrollToIndexFailed(info: { index: number; averageItemLength: number }) {
+    flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
   }
 
   // The read receipt only ever decorates the current user's single most
@@ -172,12 +214,14 @@ export function ChatScreen() {
           </View>
         ) : (
           <FlatList
+            ref={flatListRef}
             data={messages}
             inverted
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
+            onScrollToIndexFailed={handleScrollToIndexFailed}
             renderItem={({ item }) => (
               <ChatMessageRow
                 message={item}
@@ -189,6 +233,8 @@ export function ChatScreen() {
                 onPressMilestone={() => {
                   if (item.refPostId) navigation.navigate('PostDetail', { postId: item.refPostId });
                 }}
+                onSwipeToReply={handleSwipeToReply}
+                onPressReplyQuote={handleJumpToOriginal}
               />
             )}
             ListFooterComponent={
@@ -196,6 +242,30 @@ export function ChatScreen() {
             }
             ListEmptyComponent={<EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />}
           />
+        )}
+
+        {replyTarget && (
+          <View style={styles.replyPreviewRow}>
+            <View style={styles.replyPreviewBar} />
+            <View style={styles.replyPreviewTextWrap}>
+              <Text style={styles.replyPreviewAuthor} numberOfLines={1}>
+                {t('chat.replyingTo', { name: replyTarget.author.name })}
+              </Text>
+              <Text style={styles.replyPreviewSnippet} numberOfLines={1}>
+                {replyTarget.content ??
+                  (replyTarget.attachmentUrl && isVideoUrl(replyTarget.attachmentUrl)
+                    ? t('chat.attachmentVideo')
+                    : t('chat.attachmentPhoto'))}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.replyPreviewCancel}
+              onPress={() => setReplyTarget(null)}
+              accessibilityLabel={t('chat.cancelReply')}
+            >
+              <Icon name="x" size={14} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
         )}
 
         {attachment && (
@@ -254,14 +324,31 @@ function ChatMessageRow({
   showReadReceipt,
   onPressAttachment,
   onPressMilestone,
+  onSwipeToReply,
+  onPressReplyQuote,
 }: {
   message: ChatMessage;
   isOwn: boolean;
   showReadReceipt: boolean;
   onPressAttachment: () => void;
   onPressMilestone: () => void;
+  onSwipeToReply: (message: ChatMessage) => void;
+  onPressReplyQuote: (messageId: string) => void;
 }) {
   const { t } = useTranslation();
+
+  // Hooks must run unconditionally on every render — the SYSTEM_MILESTONE
+  // early return below happens before any of this is used, but `kind` is
+  // invariant for a given message id, so the branch a row instance takes
+  // never actually changes across its lifetime.
+  const translateX = useSharedValue(0);
+
+  const bubbleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+  const replyIconAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: Math.min(Math.abs(translateX.value) / (MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO), 1),
+  }));
 
   if (message.kind === 'SYSTEM_MILESTONE') {
     return (
@@ -278,41 +365,103 @@ function ChatMessageRow({
     );
   }
 
+  // Own messages sit at the right edge, so they swipe left to reveal the
+  // reply icon where the bubble used to be; other people's messages swipe
+  // right, revealing the icon just past their avatar — matching WhatsApp.
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-10, 10])
+    .onUpdate((event) => {
+      translateX.value = isOwn
+        ? Math.max(-MAX_SWIPE_TRANSLATION, Math.min(0, event.translationX))
+        : Math.max(0, Math.min(MAX_SWIPE_TRANSLATION, event.translationX));
+    })
+    .onEnd(() => {
+      if (Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
+        runOnJS(onSwipeToReply)(message);
+      }
+      translateX.value = withSpring(0);
+    });
+
+  const replyToAttachmentLabel = (attachmentUrl: string) =>
+    isVideoUrl(attachmentUrl) ? t('chat.attachmentVideo') : t('chat.attachmentPhoto');
+
   return (
     <View style={[styles.messageRow, isOwn ? styles.messageRowOwn : styles.messageRowOther]}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.replyIconWrapper,
+          isOwn ? styles.replyIconWrapperOwn : styles.replyIconWrapperOther,
+          replyIconAnimatedStyle,
+        ]}
+      >
+        <Icon name="corner-up-left" size={16} color={colors.primary} />
+      </Animated.View>
       {!isOwn && <Avatar name={message.author.name} avatarUrl={message.author.avatarUrl} size={32} />}
-      <View style={[styles.bubbleColumn, isOwn ? styles.bubbleColumnOwn : styles.bubbleColumnOther]}>
-        {!isOwn && <Text style={styles.messageAuthor}>{message.author.name}</Text>}
-        <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-          {!!message.attachmentUrl && (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={onPressAttachment}
-              accessibilityLabel={t('postDetail.viewAttachment')}
-            >
-              <MediaThumbnail
-                url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
-                fallbackUrl={getUploadUrl(message.attachmentUrl)}
-                style={styles.attachmentImage}
-              />
-            </TouchableOpacity>
-          )}
-          {!!message.content && (
-            <Text style={[styles.messageText, isOwn ? styles.messageTextOwn : styles.messageTextOther]}>
-              {message.content}
-            </Text>
-          )}
-        </View>
-        <Text style={[styles.messageTime, isOwn ? styles.messageTimeOwn : styles.messageTimeOther]}>
-          {formatRelativeDate(message.createdAt)}
-        </Text>
-        {showReadReceipt && (
-          <View style={styles.readReceiptRow}>
-            <ReactorStack reactors={message.readBy} />
-            <Text style={styles.readReceiptLabel}>{t('chat.readBy')}</Text>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View
+          style={[styles.bubbleColumn, isOwn ? styles.bubbleColumnOwn : styles.bubbleColumnOther, bubbleAnimatedStyle]}
+        >
+          {!isOwn && <Text style={styles.messageAuthor}>{message.author.name}</Text>}
+          <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+            {!!message.replyTo && (
+              <TouchableOpacity
+                style={styles.replyQuote}
+                activeOpacity={0.7}
+                onPress={() => onPressReplyQuote(message.replyTo!.id)}
+              >
+                <View style={[styles.replyQuoteBar, isOwn ? styles.replyQuoteBarOwn : styles.replyQuoteBarOther]} />
+                <View style={styles.replyQuoteTextWrap}>
+                  <Text
+                    style={[styles.replyQuoteAuthor, isOwn ? styles.replyQuoteAuthorOwn : styles.replyQuoteAuthorOther]}
+                    numberOfLines={1}
+                  >
+                    {message.replyTo.authorName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.replyQuoteSnippet,
+                      isOwn ? styles.replyQuoteSnippetOwn : styles.replyQuoteSnippetOther,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {message.replyTo.content ??
+                      (message.replyTo.attachmentUrl ? replyToAttachmentLabel(message.replyTo.attachmentUrl) : '')}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            {!!message.attachmentUrl && (
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={onPressAttachment}
+                accessibilityLabel={t('postDetail.viewAttachment')}
+              >
+                <MediaThumbnail
+                  url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(message.attachmentUrl)}
+                  style={styles.attachmentImage}
+                />
+              </TouchableOpacity>
+            )}
+            {!!message.content && (
+              <Text style={[styles.messageText, isOwn ? styles.messageTextOwn : styles.messageTextOther]}>
+                {message.content}
+              </Text>
+            )}
           </View>
-        )}
-      </View>
+          <Text style={[styles.messageTime, isOwn ? styles.messageTimeOwn : styles.messageTimeOther]}>
+            {formatRelativeDate(message.createdAt)}
+          </Text>
+          {showReadReceipt && (
+            <View style={styles.readReceiptRow}>
+              <ReactorStack reactors={message.readBy} />
+              <Text style={styles.readReceiptLabel}>{t('chat.readBy')}</Text>
+            </View>
+          )}
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
@@ -387,9 +536,27 @@ const styles = StyleSheet.create({
     color: colors.milestoneText,
   },
   messageRow: {
+    position: 'relative',
     flexDirection: 'row',
     gap: 8,
     marginBottom: 12,
+  },
+  replyIconWrapper: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primaryTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  replyIconWrapperOwn: {
+    right: 0,
+  },
+  replyIconWrapperOther: {
+    left: 40, // avatar size (32) + row gap (8) — sits where the bubble starts
   },
   messageRowOwn: {
     justifyContent: 'flex-end',
@@ -439,6 +606,47 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 6,
   },
+  replyQuote: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  replyQuoteBar: {
+    width: 3,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  replyQuoteBarOwn: {
+    backgroundColor: colors.white,
+  },
+  replyQuoteBarOther: {
+    backgroundColor: colors.primary,
+  },
+  replyQuoteTextWrap: {
+    flex: 1,
+  },
+  replyQuoteAuthor: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+  },
+  replyQuoteAuthorOwn: {
+    color: colors.white,
+  },
+  replyQuoteAuthorOther: {
+    color: colors.primary,
+  },
+  replyQuoteSnippet: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  replyQuoteSnippetOwn: {
+    color: 'rgba(255,255,255,0.85)',
+  },
+  replyQuoteSnippetOther: {
+    color: colors.textMuted,
+  },
   messageText: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 15,
@@ -473,6 +681,41 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 11,
     color: colors.textMuted,
+  },
+  replyPreviewRow: {
+    backgroundColor: colors.white,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  replyPreviewBar: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
+  replyPreviewTextWrap: {
+    flex: 1,
+  },
+  replyPreviewAuthor: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: colors.primary,
+  },
+  replyPreviewSnippet: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  replyPreviewCancel: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   attachmentPreviewRow: {
     backgroundColor: colors.white,

@@ -229,7 +229,11 @@
     "placeholder": "Message...",
     "addAttachment": "Attach a photo or video",
     "readBy": "Seen",
-    "sendFailed": "Message could not be sent"
+    "sendFailed": "Message could not be sent",
+    "replyingTo": "Replying to {{name}}",
+    "cancelReply": "Cancel reply",
+    "attachmentPhoto": "📷 Photo",
+    "attachmentVideo": "🎥 Video"
   },
   "photos": {
     "title": "Photos",
