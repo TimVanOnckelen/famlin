@@ -10,12 +10,18 @@ import './ShimmerImage.css';
 // placeholder area is clickable too.
 export function ShimmerImage({
   src,
+  fallbackSrc,
   alt = '',
   className,
   loading,
   onClick,
 }: {
   src: string;
+  // Retried once if `src` fails to load — for a `?variant=thumbnail`-style
+  // URL (see getUploadUrl in @famlin/api-client) that 404s because the
+  // upload predates thumbnail generation, or the source format couldn't be
+  // resized server-side.
+  fallbackSrc?: string;
   alt?: string;
   className?: string;
   loading?: 'lazy' | 'eager';
@@ -24,21 +30,29 @@ export function ShimmerImage({
   // Track which src finished loading (not a boolean) so a src change — the
   // Lightbox reuses one instance while navigating — re-shows the shimmer.
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
-  const loaded = loadedSrc === src;
+  const [fellBack, setFellBack] = useState(false);
+  const effectiveSrc = fellBack && fallbackSrc ? fallbackSrc : src;
+  const loaded = loadedSrc === effectiveSrc;
 
   return (
     <span className={`shimmer-frame${loaded ? ' shimmer-frame-loaded' : ''}`} onClick={onClick}>
       <img
-        src={src}
+        src={effectiveSrc}
         alt={alt}
         className={className}
         loading={loading}
         // A cached image can already be complete before onLoad is attached.
         ref={(el) => {
-          if (el?.complete) setLoadedSrc(src);
+          if (el?.complete) setLoadedSrc(effectiveSrc);
         }}
-        onLoad={() => setLoadedSrc(src)}
-        onError={() => setLoadedSrc(src)}
+        onLoad={() => setLoadedSrc(effectiveSrc)}
+        onError={() => {
+          if (fallbackSrc && effectiveSrc !== fallbackSrc) {
+            setFellBack(true);
+          } else {
+            setLoadedSrc(effectiveSrc);
+          }
+        }}
       />
     </span>
   );

@@ -417,7 +417,11 @@ function ChatBubble({
             {isVideoUrl(message.attachmentUrl) ? (
               <video src={getUploadUrl(message.attachmentUrl)} muted preload="metadata" />
             ) : (
-              <ShimmerImage src={getUploadUrl(message.attachmentUrl)} loading="lazy" />
+              <ShimmerImage
+                src={getUploadUrl(message.attachmentUrl, 'thumbnail')}
+                fallbackSrc={getUploadUrl(message.attachmentUrl)}
+                loading="lazy"
+              />
             )}
             {message.content && <span className="chat-bubble-attachment-caption">{message.content}</span>}
           </button>

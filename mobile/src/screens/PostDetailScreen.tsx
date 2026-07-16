@@ -246,6 +246,7 @@ export function PostDetailScreen() {
   const isMilestone = post.type === 'MILESTONE';
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url));
+  const allPhotoThumbUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url, 'thumbnail'));
   const fullscreenUrls = allPhotoUrls;
   const hasPhotos = allPhotoUrls.length > 0;
   const reactors = post.recentReactors ?? [];
@@ -412,7 +413,7 @@ export function PostDetailScreen() {
                       style={styles.photoWrapper}
                       onPress={() => openFullscreen(index + 1)}
                     >
-                      <MediaThumbnail url={url} style={styles.photoImage} />
+                      <MediaThumbnail url={allPhotoThumbUrls[index + 1]} fallbackUrl={url} style={styles.photoImage} />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -715,7 +716,11 @@ function CommentBody({
             navigation.navigate('ImageViewer', { urls: [getUploadUrl(comment.attachmentUrl!)], initialIndex: 0 })
           }
         >
-          <MediaThumbnail url={getUploadUrl(comment.attachmentUrl)} style={styles.commentAttachmentImage} />
+          <MediaThumbnail
+            url={getUploadUrl(comment.attachmentUrl, 'thumbnail')}
+            fallbackUrl={getUploadUrl(comment.attachmentUrl)}
+            style={styles.commentAttachmentImage}
+          />
         </TouchableOpacity>
       )}
       <View style={styles.commentMetaRow}>

@@ -193,7 +193,11 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 {isVideoUrl(assetUrl) ? (
                   <video src={getUploadUrl(assetUrl)} preload="metadata" />
                 ) : (
-                  <ShimmerImage src={getUploadUrl(assetUrl)} loading="lazy" />
+                  <ShimmerImage
+                    src={getUploadUrl(assetUrl, 'thumbnail')}
+                    fallbackSrc={getUploadUrl(assetUrl)}
+                    loading="lazy"
+                  />
                 )}
                 {i === 2 && extraAssets.length > 3 && (
                   <span className="post-thumb-more">+{extraAssets.length - 3}</span>

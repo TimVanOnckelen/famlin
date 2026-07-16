@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { createMediaToken } from '../plugins/auth.js';
 import { prisma } from '../db.js';
 import { getT } from '../i18n/index.js';
+import { isConvertibleImage, generateUploadVariants } from '../services/uploadVariants.js';
 
 const uploadsDir = path.join(process.cwd(), 'uploads');
 
@@ -37,20 +38,59 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
               await cleanup();
               return reply.status(400).send({ error: t('errors.unsupportedFileType', { ext: ext || 'unknown' }) });
             }
-            const filename = `${randomUUID()}${ext}`;
-            const filepath = path.join(uploadsDir, filename);
+            const uuid = randomUUID();
 
-            // Record the path before writing so a mid-stream failure (client
-            // abort, disk error) still gets cleaned up by the catch below.
-            writtenPaths.push(filepath);
-            await pipeline(part.file, (await fs.open(filepath, 'w')).createWriteStream());
+            if (isConvertibleImage(ext)) {
+              // The true original is kept for a possible future "download
+              // original" feature but is never served (see the /uploads/
+              // onRequest hook in app.ts) — everything else derives from it.
+              const originalPath = path.join(uploadsDir, 'originals', `${uuid}${ext}`);
 
-            if (part.file.truncated) {
-              await cleanup();
-              return reply.status(413).send({ error: t('errors.fileTooLarge') });
+              // Record the path before writing so a mid-stream failure (client
+              // abort, disk error) still gets cleaned up by the catch below.
+              writtenPaths.push(originalPath);
+              await pipeline(part.file, (await fs.open(originalPath, 'w')).createWriteStream());
+
+              if (part.file.truncated) {
+                await cleanup();
+                return reply.status(413).send({ error: t('errors.fileTooLarge') });
+              }
+
+              const displayFilename = `${uuid}.jpg`;
+              const displayPath = path.join(uploadsDir, displayFilename);
+              const thumbnailPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
+
+              try {
+                await generateUploadVariants(originalPath, displayPath, thumbnailPath);
+                writtenPaths.push(displayPath, thumbnailPath);
+                uploadedUrls.push(`/uploads/${displayFilename}`);
+              } catch {
+                // sharp couldn't decode this file (corrupt/unsupported) — fall
+                // back to serving the raw upload as-is, exactly like before
+                // this feature existed, instead of stranding it unreachably
+                // in originals/.
+                await fs.unlink(displayPath).catch(() => {});
+                await fs.unlink(thumbnailPath).catch(() => {});
+                const fallbackFilename = `${uuid}${ext}`;
+                const fallbackPath = path.join(uploadsDir, fallbackFilename);
+                await fs.rename(originalPath, fallbackPath);
+                writtenPaths[writtenPaths.indexOf(originalPath)] = fallbackPath;
+                uploadedUrls.push(`/uploads/${fallbackFilename}`);
+              }
+            } else {
+              const filename = `${uuid}${ext}`;
+              const filepath = path.join(uploadsDir, filename);
+
+              writtenPaths.push(filepath);
+              await pipeline(part.file, (await fs.open(filepath, 'w')).createWriteStream());
+
+              if (part.file.truncated) {
+                await cleanup();
+                return reply.status(413).send({ error: t('errors.fileTooLarge') });
+              }
+
+              uploadedUrls.push(`/uploads/${filename}`);
             }
-
-            uploadedUrls.push(`/uploads/${filename}`);
           }
         }
       } catch (err) {

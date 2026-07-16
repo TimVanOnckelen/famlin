@@ -290,7 +290,11 @@ function ChatMessageRow({
               onPress={onPressAttachment}
               accessibilityLabel={t('postDetail.viewAttachment')}
             >
-              <MediaThumbnail url={getUploadUrl(message.attachmentUrl)} style={styles.attachmentImage} />
+              <MediaThumbnail
+                url={getUploadUrl(message.attachmentUrl, 'thumbnail')}
+                fallbackUrl={getUploadUrl(message.attachmentUrl)}
+                style={styles.attachmentImage}
+              />
             </TouchableOpacity>
           )}
           {!!message.content && (

@@ -81,6 +81,11 @@ export async function buildApp() {
 
   const uploadsDir = path.join(process.cwd(), 'uploads');
   await fs.mkdir(uploadsDir, { recursive: true });
+  // Holds the true, uncompressed original of a converted upload (see
+  // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
+  // /uploads/originals/ block in the onRequest hook below. Nested inside
+  // uploadsDir so it's covered by the same persistent volume mount.
+  await fs.mkdir(path.join(uploadsDir, 'originals'), { recursive: true });
 
   await fastify.register(helmet, {
     contentSecurityPolicy: {
@@ -133,6 +138,13 @@ export async function buildApp() {
   // routes/uploads.ts) before @fastify/static serves the file below.
   fastify.addHook('onRequest', async (request, reply) => {
     if (!request.raw.url?.startsWith('/uploads/')) return;
+
+    // The true, uncompressed original of a converted upload lives here (see
+    // routes/uploads.ts) purely for a possible future "download original"
+    // feature — it's never served today, regardless of auth.
+    if (request.raw.url.startsWith('/uploads/originals/')) {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+    }
 
     // Signature/expiry alone isn't enough — authenticateMediaRequest also
     // confirms the token still maps to an active user at its issued

@@ -47,6 +47,39 @@ describe('uploads', () => {
       const { getUploadUrl } = await import('../uploads');
       expect(getUploadUrl('/uploads/abc.jpg')).toBe('http://example.com/uploads/abc.jpg');
     });
+
+    it('rewrites to a -thumbnail.jpg sibling when variant is "thumbnail" and the extension is a convertible image type', async () => {
+      const client = await import('../client');
+      (client.getCurrentServerUrl as any).mockReturnValue('http://example.com');
+      (client.getCurrentMediaToken as any).mockReturnValue('tok123');
+
+      const { getUploadUrl } = await import('../uploads');
+      expect(getUploadUrl('/uploads/abc.jpg', 'thumbnail')).toBe(
+        'http://example.com/uploads/abc-thumbnail.jpg?token=tok123'
+      );
+      expect(getUploadUrl('/uploads/abc.HEIC', 'thumbnail')).toBe(
+        'http://example.com/uploads/abc-thumbnail.jpg?token=tok123'
+      );
+    });
+
+    it('leaves gif and video paths unchanged even when variant is "thumbnail"', async () => {
+      const client = await import('../client');
+      (client.getCurrentServerUrl as any).mockReturnValue('http://example.com');
+      (client.getCurrentMediaToken as any).mockReturnValue('tok123');
+
+      const { getUploadUrl } = await import('../uploads');
+      expect(getUploadUrl('/uploads/abc.gif', 'thumbnail')).toBe('http://example.com/uploads/abc.gif?token=tok123');
+      expect(getUploadUrl('/uploads/abc.mp4', 'thumbnail')).toBe('http://example.com/uploads/abc.mp4?token=tok123');
+    });
+
+    it('returns the plain path when no variant is passed, unchanged from before', async () => {
+      const client = await import('../client');
+      (client.getCurrentServerUrl as any).mockReturnValue('http://example.com');
+      (client.getCurrentMediaToken as any).mockReturnValue('tok123');
+
+      const { getUploadUrl } = await import('../uploads');
+      expect(getUploadUrl('/uploads/abc.jpg')).toBe('http://example.com/uploads/abc.jpg?token=tok123');
+    });
   });
 
   describe('refreshMediaToken', () => {
