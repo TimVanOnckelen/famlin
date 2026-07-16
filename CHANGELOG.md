@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0](https://github.com/TimVanOnckelen/famlin/compare/v0.3.2...v0.4.0) (2026-07-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Existing uploads will not have thumbnails generated retroactively; only new uploads will benefit from this feature.
+
+### Features
+
+* add API documentation for chat message operations ([7770774](https://github.com/TimVanOnckelen/famlin/commit/7770774dc8790039bef3184e9054c68872f30b1c))
+* add chat functionality with message fetching, sending, and deletion ([cc599d1](https://github.com/TimVanOnckelen/famlin/commit/cc599d1b6d6bf5b74078cece81c904d8c0bc4ca4))
+* add expo-build-properties dependency and enable Proguard and resource shrinking for Android ([c611ff0](https://github.com/TimVanOnckelen/famlin/commit/c611ff0f38e8e1ba4f53f06224455e36db974190))
+* add image upload variants and thumbnail generation ([2e524be](https://github.com/TimVanOnckelen/famlin/commit/2e524be7269f8a2ae2372698d6fdbbaff672eb2b))
+* add video poster generation for uploads and enhance MediaThumbnail component ([9f922b7](https://github.com/TimVanOnckelen/famlin/commit/9f922b7af55a13c87ba1e7cdcf0f285bb9be8c39))
+* enhance performance and caching for images and avatars, update auth store usage ([0558a1f](https://github.com/TimVanOnckelen/famlin/commit/0558a1f7d3444b8fe12ab3d5911cf2209598978f))
+* optimize MediaPickerModal and PhotosScreen with memoization and callbacks ([ae1cd27](https://github.com/TimVanOnckelen/famlin/commit/ae1cd272621b2debe45a35eec772b298b028370b))
+
+
+### Bug Fixes
+
+* default to the first family group in chat when multiple options are available ([938a2c4](https://github.com/TimVanOnckelen/famlin/commit/938a2c4a2f67f04df3e49e51a2751b098cdb0331))
+
 ## [0.3.2](https://github.com/TimVanOnckelen/famlin/compare/v0.3.1...v0.3.2) (2026-07-15)
 
 
