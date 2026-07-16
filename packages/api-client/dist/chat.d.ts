@@ -12,6 +12,15 @@ export interface ChatMessage {
     content: string | null;
     attachmentUrl: string | null;
     refPostId: string | null;
+    replyToMessageId: string | null;
+    replyTo: {
+        id: string;
+        authorId: string;
+        authorName: string;
+        kind: ChatMessageKind;
+        content: string | null;
+        attachmentUrl: string | null;
+    } | null;
     createdAt: string;
     editedAt: string | null;
     readBy: {
@@ -28,6 +37,7 @@ export declare function fetchChatMessages(groupId: string, cursor?: string): Pro
 export interface CreateChatMessageBody {
     content?: string;
     attachmentUrl?: string;
+    replyToMessageId?: string;
 }
 export declare function sendChatMessage(groupId: string, data: CreateChatMessageBody): Promise<ChatMessage>;
 export declare function deleteChatMessage(messageId: string): Promise<void>;

@@ -1199,7 +1199,8 @@ paths:
       description: |
         `content` and `attachmentUrl` are both optional but at least one is
         required. `attachmentUrl` must be a path returned by the upload
-        endpoint (`/uploads/...`); arbitrary URLs are rejected.
+        endpoint (`/uploads/...`); arbitrary URLs are rejected. `replyToMessageId`
+        is optional and must reference an existing message in the same group.
       parameters:
         - name: groupId
           in: path
@@ -1218,6 +1219,12 @@ paths:
                 attachmentUrl:
                   type: string
                   description: An `/uploads/...` path from the upload endpoint.
+                replyToMessageId:
+                  type: string
+                  description: |
+                    The id of an existing message in this group to reply to.
+                    Must belong to the same group; unknown or cross-group ids
+                    are rejected with 404.
       responses:
         '200':
           description: The created message
@@ -1235,6 +1242,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: Not a member of the group, or the group has chat disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: |
+            The group doesn't exist, or replyToMessageId doesn't reference a
+            message in this group.
           content:
             application/json:
               schema:
@@ -2395,6 +2410,34 @@ components:
           description: |
             For `SYSTEM_MILESTONE` messages, the milestone post this message
             was triggered by; `null` otherwise.
+        replyToMessageId:
+          type: string
+          nullable: true
+          description: |
+            The id of the message this one replies to, if any; `null`
+            otherwise. Set to `null` if the replied-to message is later
+            deleted.
+        replyTo:
+          nullable: true
+          description: |
+            A lightweight preview of the message being replied to, computed
+            read-time; `null` if this message isn't a reply (or the replied-to
+            message was deleted).
+          allOf:
+            - type: object
+              properties:
+                id: { type: string }
+                authorId: { type: string }
+                authorName: { type: string }
+                kind:
+                  type: string
+                  enum: [USER, SYSTEM_MILESTONE]
+                content:
+                  type: string
+                  description: A short excerpt of the replied-to message's content.
+                attachmentUrl:
+                  type: string
+                  nullable: true
         createdAt: { type: string, format: date-time }
         editedAt:
           type: string
