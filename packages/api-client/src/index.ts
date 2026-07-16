@@ -92,6 +92,15 @@ export {
 export type { CreateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
 
+export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
+export {
+  fetchChatMessages,
+  sendChatMessage,
+  deleteChatMessage,
+  markChatRead,
+  fetchChatUnreadCounts,
+} from './chat';
+
 export {
   fetchNotifications,
   fetchUnreadNotificationCount,

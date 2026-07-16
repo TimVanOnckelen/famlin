@@ -20,7 +20,12 @@ import { PostCard } from '@/components/PostCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { Group } from '@/types';
-import { fetchGroups, fetchUnreadNotificationCount, fetchOnThisDay, fetchPosts } from '@famlin/api-client';
+import {
+  fetchGroups,
+  fetchUnreadNotificationCount,
+  fetchOnThisDay,
+  fetchPosts,
+} from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 
 export function FeedScreen() {

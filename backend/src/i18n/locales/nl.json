@@ -19,6 +19,8 @@
     "postNotFound": "Bericht niet gevonden",
     "notAuthorized": "Niet geautoriseerd",
     "commentNotFound": "Reactie niet gevonden",
+    "chitchatDisabled": "Chitchat is niet ingeschakeld voor deze groep",
+    "chatMessageNotFound": "Chatbericht niet gevonden",
     "notificationNotFound": "Melding niet gevonden",
     "failedToRegisterPushToken": "Push-token registreren mislukt",
     "pushNotificationsDisabled": "Pushmeldingen zijn uitgeschakeld op deze server",
@@ -79,9 +81,14 @@
     "onThisDayMedia_other": "Een herinnering uit {{group}} — het bericht van {{author}} van {{count}} jaar geleden",
     "newMediaAssets_one": "{{count}} nieuwe foto toegevoegd aan \"{{album}}\" in {{group}}",
     "newMediaAssets_other": "{{count}} nieuwe foto's toegevoegd aan \"{{album}}\" in {{group}}",
+    "newChatMessage": "{{author}} heeft een bericht gestuurd in de chat van {{group}}: \"{{excerpt}}\"",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."
+  },
+  "chat": {
+    "systemMilestoneMessage": "🎂 {{author}} deelde een mijlpaal: {{milestoneTag}}",
+    "systemMilestoneMessageGeneric": "🎂 {{author}} deelde een mijlpaal"
   },
   "media": {
     "newAssetsPostContent_one": "📸 {{count}} nieuwe foto in {{album}}",

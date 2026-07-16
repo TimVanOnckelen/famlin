@@ -11,11 +11,11 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   createPost: vi.fn(),
 }));
 
-const groups = [{ id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z' }];
+const groups = [{ id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false }];
 
 const multiGroups = [
-  { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z' },
-  { id: 'group-2', name: 'Grandparents', createdAt: '2026-01-01T00:00:00Z' },
+  { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
+  { id: 'group-2', name: 'Grandparents', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
 ];
 
 const mediaAssets = [
@@ -234,7 +234,7 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z',
+          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'POLL'],
         },
       ];
@@ -253,13 +253,13 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z',
+          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'POLL'],
         },
         {
           id: 'group-2',
           name: 'Grandparents',
-          createdAt: '2026-01-01T00:00:00Z',
+          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'MILESTONE'],
         },
       ];
@@ -294,13 +294,13 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z',
+          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
           allowedPostTypes: ['POLL'],
         },
         {
           id: 'group-2',
           name: 'Grandparents',
-          createdAt: '2026-01-01T00:00:00Z',
+          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
           allowedPostTypes: ['MILESTONE'],
         },
       ];

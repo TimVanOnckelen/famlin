@@ -217,6 +217,17 @@
     "emptyTitle": "Nog geen favorieten.",
     "emptySubtitle": "Tik op het bladwijzer-icoon bij een bericht om het hier te bewaren."
   },
+  "chat": {
+    "pickerTitle": "Groepschat",
+    "pickerEmptyTitle": "Nog geen groepschats",
+    "pickerEmptySubtitle": "Vraag je familiebeheerder om chat in te schakelen voor een groep.",
+    "emptyTitle": "Nog geen berichten",
+    "emptySubtitle": "Zeg hallo om het gesprek te starten!",
+    "placeholder": "Bericht...",
+    "addAttachment": "Voeg een foto of video toe",
+    "readBy": "Gezien",
+    "sendFailed": "Bericht kon niet worden verzonden"
+  },
   "photos": {
     "title": "Foto's",
     "emptyTitle": "Nog geen foto's.",
@@ -258,7 +269,8 @@
   "tabs": {
     "feed": "Feed",
     "photos": "Foto's",
-    "profile": "Profiel"
+    "profile": "Profiel",
+    "chat": "Chat"
   },
   "imageViewer": {
     "photoAccessibilityLabel": "Foto {{index}} van {{total}}",

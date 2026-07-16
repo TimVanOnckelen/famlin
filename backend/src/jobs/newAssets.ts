@@ -115,6 +115,8 @@ export async function runNewAssetsJob(now = new Date()): Promise<void> {
         authorId: author.id,
         authorName: author.name,
         content: post.content,
+        type: post.type,
+        milestoneTag: post.milestoneTag,
       });
 
       await prisma.mediaAlbumLink.update({ where: { id: link.id }, data: { newAssetsCheckedAt: now } });

@@ -1,6 +1,8 @@
 import { onDomainEvent } from '../events.js';
 import { prisma } from '../db.js';
-import { notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
+import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
+import { getAllSettings } from '../services/settings.js';
+import i18n from '../i18n/index.js';
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
@@ -50,6 +52,39 @@ export function registerNotificationSubscriber(): void {
         postId: post.postId,
         params: { author: event.authorName, group: post.groupName, excerpt: excerptText(event.content) },
       });
+    }
+
+    // A milestone post in a chitchat-enabled group also drops a system
+    // message into that group's chat (deep-linking back to the post via
+    // refPostId) — inserted directly, no chat.created event, so it doesn't
+    // trigger a second (redundant) notification on top of the new_post one
+    // above.
+    if (event.type === 'MILESTONE') {
+      const chitchatGroups = await prisma.group.findMany({
+        where: { id: { in: groupIds }, chitchatEnabled: true },
+        select: { id: true },
+      });
+      if (chitchatGroups.length > 0) {
+        const chitchatGroupIds = new Set(chitchatGroups.map((g) => g.id));
+        const settings = await getAllSettings();
+        const t = i18n.getFixedT(settings.defaultLanguage);
+        const label = event.milestoneTag || excerptText(event.content);
+        const content = label
+          ? t('chat.systemMilestoneMessage', { author: event.authorName, milestoneTag: label })
+          : t('chat.systemMilestoneMessageGeneric', { author: event.authorName });
+
+        await prisma.chatMessage.createMany({
+          data: event.posts
+            .filter((post) => chitchatGroupIds.has(post.groupId))
+            .map((post) => ({
+              groupId: post.groupId,
+              authorId: event.authorId,
+              kind: 'SYSTEM_MILESTONE',
+              content,
+              refPostId: post.postId,
+            })),
+        });
+      }
     }
   });
 
@@ -126,6 +161,28 @@ export function registerNotificationSubscriber(): void {
         group: event.groupName,
         excerpt: excerptText(event.targetContent),
         emoji: reactionEmoji(event.reactionType),
+      },
+    });
+  });
+
+  onDomainEvent('chat.created', async (event) => {
+    // The one central group chat notifies every OTHER member of the group
+    // (notifyGroup already excludes the sender) — mirrors new_post's
+    // whole-group scope, not comment.created's thread-participants-only one.
+    // SYSTEM_MILESTONE messages are inserted directly by the post.created
+    // handler above and never emit chat.created, so this only ever sees USER
+    // messages — but the guard stays here too as a second line of defense
+    // against ever double-notifying a milestone post.
+    if (event.kind !== 'USER') return;
+
+    await notifyGroup({
+      type: 'new_chat_message',
+      groupId: event.groupId,
+      senderId: event.authorId,
+      params: {
+        author: event.authorName,
+        group: event.groupName,
+        excerpt: excerptText(event.content, event.hasAttachment ? '📷' : ''),
       },
     });
   });

@@ -135,7 +135,9 @@
       "description": "Description",
       "allowedPostTypes": "Allowed post types",
       "allowedPostTypesHint": "When every box is checked, post types added later are allowed automatically.",
-      "allowedPostTypesError": "Select at least one post type."
+      "allowedPostTypesError": "Select at least one post type.",
+      "chitchatEnabled": "Enable group chat",
+      "chitchatEnabledHint": "Lets members chat with the whole group in one shared conversation."
     },
     "save": "Save",
     "add": "Add",

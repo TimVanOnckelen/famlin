@@ -15,7 +15,7 @@ export interface PushSendResult {
 // closest existing preference column (comment activity / new post activity)
 // rather than adding more boolean columns + admin UI toggles for an
 // MVP-scale feature set.
-const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike'> = {
+const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat'> = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
   new_like_post: 'pushOnNewLike',
@@ -23,6 +23,7 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
   mention: 'pushOnNewComment',
   on_this_day: 'pushOnNewPost',
   new_media_assets: 'pushOnNewPost',
+  new_chat_message: 'pushOnChitchat',
 };
 
 // The actual send, plus its PushDeliveryLog write — shared by the organic

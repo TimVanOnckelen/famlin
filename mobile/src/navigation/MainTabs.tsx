@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { FeedScreen } from '@/screens/FeedScreen';
@@ -9,6 +10,8 @@ import { PhotosScreen } from '@/screens/PhotosScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { Icon } from '@/components/Icon';
 import { colors } from '@/constants/colors';
+import { Group } from '@/types';
+import { fetchGroups, fetchChatUnreadCounts } from '@famlin/api-client';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,8 +23,19 @@ function PhotosIcon({ color }: { color: string }) {
   return <Icon name="grid" size={22} color={color} />;
 }
 
+function ChatIcon({ color }: { color: string }) {
+  return <Icon name="message-square" size={22} color={color} />;
+}
+
 function ProfileIcon({ color }: { color: string }) {
   return <Icon name="user" size={22} color={color} />;
+}
+
+// The Chat tab never actually navigates here — its tabPress listener always
+// preventDefault()s and redirects to the Chat/ChatGroupPicker stack screens
+// (see openChat() below) — but Tab.Screen requires a component prop.
+function NoopScreen() {
+  return null;
 }
 
 // The new-post FAB is shown while one of these tabs is focused — creating a
@@ -32,6 +46,29 @@ export function MainTabs() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState('Feed');
+
+  // Shares the ['groups']/['chat-unread'] cache FeedScreen already populates.
+  const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
+  const { data: chatUnreadCounts } = useQuery({
+    queryKey: ['chat-unread'],
+    queryFn: fetchChatUnreadCounts,
+    refetchInterval: 30000,
+  });
+  const chatGroups = (groups ?? []).filter((g: Group) => g.chitchatEnabled);
+  const chatUnreadTotal = Object.values(chatUnreadCounts ?? {}).reduce((sum, count) => sum + count, 0);
+
+  // The chat tab has no screen of its own inside this navigator — Chat/
+  // ChatGroupPicker are sibling stack screens (see App.tsx), same precedent
+  // as FeedScreen's own openChat(): a single chat-enabled group jumps
+  // straight in, more than one goes through the picker.
+  function openChat() {
+    if (chatGroups.length === 0) return;
+    if (chatGroups.length === 1) {
+      navigation.navigate('Chat', { groupId: chatGroups[0].id, groupName: chatGroups[0].name });
+      return;
+    }
+    navigation.navigate('ChatGroupPicker');
+  }
 
   return (
     <View style={styles.container}>
@@ -68,6 +105,23 @@ export function MainTabs() {
             tabBarLabel: t('tabs.photos'),
           }}
         />
+        {chatGroups.length > 0 && (
+          <Tab.Screen
+            name="Chat"
+            component={NoopScreen}
+            options={{
+              tabBarIcon: ({ color }) => <ChatIcon color={color} />,
+              tabBarLabel: t('tabs.chat'),
+              tabBarBadge: chatUnreadTotal > 0 ? (chatUnreadTotal > 9 ? '9+' : chatUnreadTotal) : undefined,
+            }}
+            listeners={{
+              tabPress: (e) => {
+                e.preventDefault();
+                openChat();
+              },
+            }}
+          />
+        )}
         <Tab.Screen
           name="Profile"
           component={ProfileScreen}

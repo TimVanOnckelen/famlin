@@ -38,6 +38,9 @@ model User {
   mediaPersonLinks  MediaPersonLink[]
   postInteractions  PostInteraction[]
   triggeredPushLogs PushDeliveryLog[]
+  pushOnChitchat    Boolean           @default(true)
+  chatMessages      ChatMessage[]
+  chatReads         ChatRead[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -75,11 +78,18 @@ model Group {
   // at creation time only: existing posts of a later-disallowed type stay
   // visible.
   allowedPostTypes String[] @default([])
+  // Whether this group's single central chat ("chitchat") is turned on —
+  // off by default, an admin opt-in per group (see routes/admin.ts group
+  // create/update). Member-facing chat routes 403 with
+  // errors.chitchatDisabled while this is false.
+  chitchatEnabled Boolean @default(false)
   createdAt   DateTime @default(now())
   members     GroupMember[]
   posts       Post[]
   invites     Invite[]
   mediaAlbumLinks MediaAlbumLink[]
+  chatMessages    ChatMessage[]
+  chatReads       ChatRead[]
 }
 
 model GroupMember {
@@ -124,6 +134,9 @@ model Post {
   likes           Like[]
   favorites       Favorite[]
   notifications   Notification[]
+  // System chat messages (kind: SYSTEM_MILESTONE) that deep-link back to this
+  // post — see ChatMessage.refPostId below.
+  chatMessages    ChatMessage[]
   // Shared by every sibling row of one cross-post (see the "cross-posting"
   // feature: one Post row per target group, all created together with this
   // same id) — null for an ordinary single-group post. Never exposed in any
@@ -186,6 +199,44 @@ model Comment {
   likes     Like[]
 
   @@index([postId, createdAt])
+}
+
+// A message in a group's single central chat ("chitchat"). USER messages are
+// authored directly; SYSTEM_MILESTONE messages are auto-generated when a
+// milestone post is created in a group with chitchatEnabled — authorId is the
+// milestone post's author, refPostId links back to it so the client can
+// deep-link. kind is an open string discriminator, same convention as
+// Post.type — never rename a persisted value.
+model ChatMessage {
+  id            String   @id @default(cuid())
+  groupId       String
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind          String   @default("USER")
+  content       String?
+  attachmentUrl String?
+  refPostId     String?
+  refPost       Post?    @relation(fields: [refPostId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  editedAt      DateTime?
+
+  @@index([groupId, createdAt])
+}
+
+// One row per (group, user) — the timestamp of that user's last chat read.
+// Read-by / unread-count are computed from this rather than a per-message
+// receipt table: a message is "read by" every member whose lastReadAt is
+// >= that message's createdAt.
+model ChatRead {
+  id         String   @id @default(cuid())
+  groupId    String
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime @default(now())
+
+  @@unique([groupId, userId])
 }
 
 // Reacts to a post or a comment (exactly one of postId/commentId is set).

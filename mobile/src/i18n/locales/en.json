@@ -217,6 +217,17 @@
     "emptyTitle": "No favorites yet.",
     "emptySubtitle": "Tap the bookmark icon on a post to save it here."
   },
+  "chat": {
+    "pickerTitle": "Group chat",
+    "pickerEmptyTitle": "No group chats yet",
+    "pickerEmptySubtitle": "Ask your family admin to enable chat for a group.",
+    "emptyTitle": "No messages yet",
+    "emptySubtitle": "Say hello to start the conversation!",
+    "placeholder": "Message...",
+    "addAttachment": "Attach a photo or video",
+    "readBy": "Seen",
+    "sendFailed": "Message could not be sent"
+  },
   "photos": {
     "title": "Photos",
     "emptyTitle": "No photos yet.",
@@ -258,7 +269,8 @@
   "tabs": {
     "feed": "Feed",
     "photos": "Photos",
-    "profile": "Profile"
+    "profile": "Profile",
+    "chat": "Chat"
   },
   "imageViewer": {
     "photoAccessibilityLabel": "Photo {{index}} of {{total}}",

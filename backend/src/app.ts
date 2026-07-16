@@ -19,6 +19,7 @@ import postRoutes from './routes/posts.js';
 import commentRoutes from './routes/comments.js';
 import likeRoutes from './routes/likes.js';
 import favoriteRoutes from './routes/favorites.js';
+import chatRoutes from './routes/chat.js';
 import pushTokenRoutes from './routes/push-tokens.js';
 import apiTokenRoutes from './routes/api-tokens.js';
 import notificationRoutes from './routes/notifications.js';
@@ -156,6 +157,7 @@ export async function buildApp() {
   await fastify.register(commentRoutes, { prefix: '/api' });
   await fastify.register(likeRoutes, { prefix: '/api' });
   await fastify.register(favoriteRoutes, { prefix: '/api' });
+  await fastify.register(chatRoutes, { prefix: '/api/chat' });
   await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' });
   await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' });
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' });

@@ -22,6 +22,8 @@ import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
+import { ChatScreen } from '@/screens/ChatScreen';
+import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
@@ -210,6 +212,22 @@ function AppContent() {
             <Stack.Screen
               name="Search"
               component={SearchScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="ChatGroupPicker"
+              component={ChatGroupPickerScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',
