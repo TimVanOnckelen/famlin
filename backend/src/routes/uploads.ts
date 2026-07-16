@@ -6,7 +6,12 @@ import { randomUUID } from 'crypto';
 import { createMediaToken } from '../plugins/auth.js';
 import { prisma } from '../db.js';
 import { getT } from '../i18n/index.js';
-import { isConvertibleImage, generateUploadVariants } from '../services/uploadVariants.js';
+import {
+  isConvertibleImage,
+  isPosterableVideo,
+  generateUploadVariants,
+  generateVideoPoster,
+} from '../services/uploadVariants.js';
 
 const uploadsDir = path.join(process.cwd(), 'uploads');
 
@@ -90,6 +95,20 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
               }
 
               uploadedUrls.push(`/uploads/${filename}`);
+
+              // Best-effort poster frame for video grid/list tiles. A missing
+              // poster (ffmpeg absent, undecodable video) just means clients
+              // fall back to rendering the video itself, as before this
+              // feature existed — never a failed upload.
+              if (isPosterableVideo(ext)) {
+                const posterPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
+                try {
+                  await generateVideoPoster(filepath, posterPath);
+                  writtenPaths.push(posterPath);
+                } catch {
+                  await fs.unlink(posterPath).catch(() => {});
+                }
+              }
             }
           }
         }

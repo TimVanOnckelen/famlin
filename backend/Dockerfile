@@ -6,8 +6,10 @@ FROM node:22-alpine AS base
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
+# (services/uploadVariants.ts) — needed here too because the dev overlay
+# (docker-compose.override.yml) runs this `base` stage.
+RUN apk add --no-cache openssl ffmpeg
 
 # Install dependencies
 COPY backend/package.json backend/package-lock.json* ./
@@ -59,8 +61,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
+# (services/uploadVariants.ts).
+RUN apk add --no-cache openssl ffmpeg
 
 COPY backend/package.json backend/package-lock.json* ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
