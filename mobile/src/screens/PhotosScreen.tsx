@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,57 @@ import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { PhotoItem } from '@/types';
 import { fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
 import { getUploadUrl } from '@/api/uploads';
+
+const PhotoRow = React.memo(function PhotoRow({
+  row,
+  photoSize,
+  columns,
+  onPress,
+}: {
+  row: PhotoItem[];
+  photoSize: number;
+  columns: number;
+  onPress: (photo: PhotoItem) => void;
+}) {
+  return (
+    <View style={styles.gridRow}>
+      {row.map((photo) => (
+        <TouchableOpacity
+          key={photo.id}
+          style={[styles.photoWrapper, { width: photoSize, height: photoSize }]}
+          onPress={() => onPress(photo)}
+          activeOpacity={0.7}
+        >
+          <Image
+            // cacheKey pins the disk cache to the asset path — the
+            // full URL carries the rotating ?token=, which would
+            // otherwise invalidate every cached thumbnail on each
+            // media-token refresh.
+            source={{ uri: getUploadUrl(photo.thumbnailUrl), cacheKey: photo.thumbnailUrl }}
+            style={styles.photo}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={100}
+            recyclingKey={photo.id}
+          />
+          {photo.type === 'VIDEO' && (
+            <View style={styles.playIconOverlay} pointerEvents="none">
+              <Icon name="play" size={24} color={colors.white} />
+            </View>
+          )}
+        </TouchableOpacity>
+      ))}
+      {/* Fill empty spaces in the last row */}
+      {row.length < columns &&
+        Array.from({ length: columns - row.length }).map((_, idx) => (
+          <View
+            key={`empty-${idx}`}
+            style={[styles.photoWrapper, { width: photoSize, height: photoSize }]}
+          />
+        ))}
+    </View>
+  );
+});
 
 export function PhotosScreen() {
   const { t } = useTranslation();
@@ -109,33 +160,54 @@ export function PhotosScreen() {
     });
   }, [sections]);
 
-  function handlePhotoTap(photo: PhotoItem) {
-    // Match PostCard's ImageViewer contract: every URL must be absolute and
-    // carry the media token (getUploadUrl), since <Image>/<Video> requests
-    // bypass axios entirely. Videos need the original rendition (real video
-    // extension, so ImageViewerScreen's isVideoUrl() routes them to the
-    // native player); images get the preview jpg — the original can be a
-    // huge/HEIC file <Image> may not render (same split MediaPickerModal
-    // makes when attaching assets to a post).
-    const urls = allPhotos.map((p) =>
-      getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl)
-    );
-    // Per-photo metadata: photos that belong to a post (direct uploads, or
-    // album assets a post embeds — postAssetUrl) enable the viewer's
-    // like/comment/favorite bar; downloadUrl points at the original
-    // rendition since the pager itself shows the smaller preview.
-    const items = allPhotos.map((p) => ({
-      ...(p.postId ? { postId: p.postId, assetUrl: p.postAssetUrl ?? p.originalUrl } : {}),
-      downloadUrl: getUploadUrl(p.originalUrl),
-    }));
-    const initialIndex = allPhotos.findIndex((p) => p.id === photo.id);
+  const handlePhotoTap = useCallback(
+    (photo: PhotoItem) => {
+      // Match PostCard's ImageViewer contract: every URL must be absolute and
+      // carry the media token (getUploadUrl), since <Image>/<Video> requests
+      // bypass axios entirely. Videos need the original rendition (real video
+      // extension, so ImageViewerScreen's isVideoUrl() routes them to the
+      // native player); images get the preview jpg — the original can be a
+      // huge/HEIC file <Image> may not render (same split MediaPickerModal
+      // makes when attaching assets to a post).
+      const urls = allPhotos.map((p) =>
+        getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl)
+      );
+      // Per-photo metadata: photos that belong to a post (direct uploads, or
+      // album assets a post embeds — postAssetUrl) enable the viewer's
+      // like/comment/favorite bar; downloadUrl points at the original
+      // rendition since the pager itself shows the smaller preview.
+      const items = allPhotos.map((p) => ({
+        ...(p.postId ? { postId: p.postId, assetUrl: p.postAssetUrl ?? p.originalUrl } : {}),
+        downloadUrl: getUploadUrl(p.originalUrl),
+      }));
+      const initialIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
-    navigation.navigate('ImageViewer', {
-      urls,
-      items,
-      initialIndex: initialIndex >= 0 ? initialIndex : 0,
-    });
-  }
+      navigation.navigate('ImageViewer', {
+        urls,
+        items,
+        initialIndex: initialIndex >= 0 ? initialIndex : 0,
+      });
+    },
+    [allPhotos, navigation]
+  );
+
+  const renderRow = useCallback(
+    ({ item: row }: { item: PhotoItem[] }) => (
+      <PhotoRow row={row} photoSize={photoSize} columns={columns} onPress={handlePhotoTap} />
+    ),
+    [photoSize, columns, handlePhotoTap]
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section: { title } }: { section: { title: string } }) => (
+      <View style={styles.monthHeader}>
+        <Text style={styles.monthHeaderText}>{title}</Text>
+      </View>
+    ),
+    []
+  );
+
+  const rowKeyExtractor = useCallback((item: PhotoItem[]) => item[0].id, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -219,50 +291,14 @@ export function PhotosScreen() {
       ) : hasGroups ? (
         <SectionList
           sections={sectionListData}
-          keyExtractor={(item, index) => `row-${index}`}
-          renderItem={({ item: row }) => (
-            <View style={styles.gridRow}>
-              {row.map((photo, idx) => (
-                <TouchableOpacity
-                  key={photo.id}
-                  style={[styles.photoWrapper, { width: photoSize, height: photoSize }]}
-                  onPress={() => handlePhotoTap(photo)}
-                  activeOpacity={0.7}
-                >
-                  <Image
-                    // cacheKey pins the disk cache to the asset path — the
-                    // full URL carries the rotating ?token=, which would
-                    // otherwise invalidate every cached thumbnail on each
-                    // media-token refresh.
-                    source={{ uri: getUploadUrl(photo.thumbnailUrl), cacheKey: photo.thumbnailUrl }}
-                    style={styles.photo}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={100}
-                    recyclingKey={photo.id}
-                  />
-                  {photo.type === 'VIDEO' && (
-                    <View style={styles.playIconOverlay} pointerEvents="none">
-                      <Icon name="play" size={24} color={colors.white} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-              {/* Fill empty spaces in the last row */}
-              {row.length < columns &&
-                Array.from({ length: columns - row.length }).map((_, idx) => (
-                  <View
-                    key={`empty-${idx}`}
-                    style={[styles.photoWrapper, { width: photoSize, height: photoSize }]}
-                  />
-                ))}
-            </View>
-          )}
-          renderSectionHeader={({ section: { title } }) => (
-            <View style={styles.monthHeader}>
-              <Text style={styles.monthHeaderText}>{title}</Text>
-            </View>
-          )}
+          keyExtractor={rowKeyExtractor}
+          renderItem={renderRow}
+          renderSectionHeader={renderSectionHeader}
+          removeClippedSubviews
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={7}
+          updateCellsBatchingPeriod={50}
           contentContainerStyle={styles.gridContainer}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
