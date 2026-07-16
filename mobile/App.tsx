@@ -34,7 +34,17 @@ import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
 import { ensureFreshMediaToken } from '@/api/uploads';
 
 const Stack = createNativeStackNavigator();
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Serve cache for recently-fetched data instead of refetching on every
+      // remount/invalidation trigger (the library default is staleTime: 0).
+      // Pull-to-refresh (refetch()), refetchInterval polls, and mutation
+      // invalidations all still fetch unconditionally.
+      staleTime: 30_000,
+    },
+  },
+});
 
 // Must run before any @famlin/api-client call that touches storage
 // (initApiBaseUrl/loadToken below, or any request through the shared axios

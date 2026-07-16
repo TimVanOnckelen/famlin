@@ -19,4 +19,15 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
+// Defer module evaluation until first require instead of executing every
+// imported module during bundle startup — a large cold-start win on
+// low-end Android, where JS-thread module init dominates launch time.
+// (Expo's default leaves this off.)
+config.transformer.getTransformOptions = async () => ({
+  transform: {
+    experimentalImportSupport: true,
+    inlineRequires: true,
+  },
+});
+
 module.exports = config;

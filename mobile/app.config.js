@@ -69,7 +69,11 @@ export default ({ config }) => ({
       "expo-build-properties",
       {
         android: {
-          enableProguardInReleaseBuilds: true,
+          // R8 minification — expo-build-properties' key is
+          // enableMinifyInReleaseBuilds (there is no
+          // enableProguardInReleaseBuilds option; an unknown key is
+          // silently ignored at prebuild).
+          enableMinifyInReleaseBuilds: true,
           enableShrinkResourcesInReleaseBuilds: true,
         },
       },

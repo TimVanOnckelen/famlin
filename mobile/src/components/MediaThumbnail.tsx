@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Image, View, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
+import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { Icon } from '@/components/Icon';
@@ -45,11 +46,19 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
   }
 
   const effectiveUrl = fellBack && fallbackUrl ? fallbackUrl : url;
+  // The full URL carries the rotating ?token= — pin the cache to the stable
+  // part so a media-token refresh doesn't invalidate every cached image
+  // (same trick as PhotosScreen's grid).
+  const cacheKey = effectiveUrl.split('?')[0];
 
   return (
     <Image
-      source={{ uri: effectiveUrl }}
+      source={{ uri: effectiveUrl, cacheKey }}
       style={style as StyleProp<ImageStyle>}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      transition={100}
+      recyclingKey={cacheKey}
       onError={() => {
         if (fallbackUrl && effectiveUrl !== fallbackUrl) setFellBack(true);
       }}

@@ -46,7 +46,8 @@ function normalizeServerUrl(url: string): string {
 
 export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
   const { t } = useTranslation();
-  const { user, setAuth } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const [mode, setMode] = useState<Mode>('loading');
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [errorMessage, setErrorMessage] = useState('');

@@ -52,7 +52,7 @@ export function NewPostScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState<PostType>('UPDATE');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);

@@ -59,7 +59,7 @@ export function PostDetailScreen() {
   const route = useRoute<any>();
   const { postId } = route.params;
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const [isEditingPost, setIsEditingPost] = useState(false);

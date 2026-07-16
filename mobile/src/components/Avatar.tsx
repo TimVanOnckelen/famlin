@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { getUploadUrl } from '@/api/uploads';
 import { colors } from '@/constants/colors';
 
@@ -29,11 +30,31 @@ function getAvatarColor(name: string) {
 }
 
 export function Avatar({ name, avatarUrl, size = 44 }: AvatarProps) {
+  // Retried without the variant if the thumbnail 404s — for avatar uploads
+  // that predate server-side thumbnail generation.
+  const [fellBack, setFellBack] = useState(false);
   const dimensionStyle = { width: size, height: size, borderRadius: size / 2 };
 
   if (avatarUrl) {
-    const uri = avatarUrl.startsWith('http') ? avatarUrl : getUploadUrl(avatarUrl);
-    return <Image source={{ uri }} style={[styles.image, dimensionStyle]} />;
+    const isExternal = avatarUrl.startsWith('http');
+    // Avatars render at 22–48px, so the 400px thumbnail variant is plenty.
+    const uri = isExternal
+      ? avatarUrl
+      : getUploadUrl(avatarUrl, fellBack ? undefined : 'thumbnail');
+    return (
+      <Image
+        // cacheKey drops the rotating ?token= so a media-token refresh
+        // doesn't invalidate every cached avatar.
+        source={{ uri, cacheKey: uri.split('?')[0] }}
+        style={[styles.image, dimensionStyle]}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        recyclingKey={avatarUrl}
+        onError={() => {
+          if (!isExternal && !fellBack) setFellBack(true);
+        }}
+      />
+    );
   }
 
   return (

@@ -48,7 +48,7 @@ export function ChatScreen() {
   const route = useRoute<any>();
   const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string };
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [text, setText] = useState('');
   const [attachment, setAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
 

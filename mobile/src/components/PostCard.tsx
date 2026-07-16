@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
@@ -37,10 +37,14 @@ function PersonChip({ person }: { person: PostPerson }) {
   const avatarUrl = person.userAvatarUrl;
 
   if (avatarUrl) {
-    const uri = avatarUrl.startsWith('http') ? avatarUrl : getUploadUrl(avatarUrl);
+    const isExternal = avatarUrl.startsWith('http');
     return (
       <View style={styles.personChip}>
-        <Image source={{ uri }} style={styles.personAvatar} />
+        <MediaThumbnail
+          url={isExternal ? avatarUrl : getUploadUrl(avatarUrl, 'thumbnail')}
+          fallbackUrl={isExternal ? undefined : getUploadUrl(avatarUrl)}
+          style={styles.personAvatar}
+        />
         <Text style={styles.personLabel} numberOfLines={1}>
           {person.label}
         </Text>
@@ -63,7 +67,16 @@ function PersonChip({ person }: { person: PostPerson }) {
   );
 }
 
-export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
+// Memoized so a cache patch from a like/favorite tap (patchPostInCaches
+// keeps unaffected posts' identity) only re-renders the affected card, not
+// every mounted card in the list.
+export const PostCard = React.memo(function PostCard({
+  post,
+  showGroup = false,
+}: {
+  post: Post;
+  showGroup?: boolean;
+}) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const isMilestone = post.type === 'MILESTONE';
@@ -286,7 +299,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   postCard: {
