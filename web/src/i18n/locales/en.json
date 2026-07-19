@@ -177,5 +177,11 @@
     "sendFailed": "Your message couldn't be sent. Try again.",
     "today": "Today",
     "yesterday": "Yesterday"
+  },
+  "tabs": {
+    "feed": "Feed",
+    "photos": "Photos",
+    "profile": "Profile",
+    "chat": "Chat"
   }
 }

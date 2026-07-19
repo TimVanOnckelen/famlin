@@ -57,15 +57,38 @@ export default function App() {
   }
 
   if (view === 'profile') {
-    return <ProfilePage user={user} onBack={() => setView('feed')} onLogout={() => logout()} />;
+    return (
+      <ProfilePage
+        user={user}
+        onBack={() => setView('feed')}
+        onOpenPhotos={() => setView('photos')}
+        onOpenChat={() => setView('chat')}
+        onLogout={() => logout()}
+      />
+    );
   }
 
   if (view === 'photos') {
-    return <PhotosPage user={user} onOpenProfile={() => setView('profile')} onLogout={() => logout()} />;
+    return (
+      <PhotosPage
+        user={user}
+        onOpenFeed={() => setView('feed')}
+        onOpenChat={() => setView('chat')}
+        onOpenProfile={() => setView('profile')}
+        onLogout={() => logout()}
+      />
+    );
   }
 
   if (view === 'chat') {
-    return <ChatPage user={user} onBack={() => setView('feed')} />;
+    return (
+      <ChatPage
+        user={user}
+        onBack={() => setView('feed')}
+        onOpenPhotos={() => setView('photos')}
+        onOpenProfile={() => setView('profile')}
+      />
+    );
   }
 
   return (

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { fetchGroups, fetchPosts, User } from '@famlin/api-client';
 import { AppHeader } from '@/components/AppHeader';
+import { BottomNav } from '@/components/BottomNav';
 import { PostCard } from '@/components/PostCard';
 import { NewPostModal } from '@/components/NewPostModal';
 import { ApiTokensModal } from '@/components/ApiTokensModal';
@@ -129,6 +130,15 @@ export function FeedPage({
           </button>
         )}
       </main>
+
+      <BottomNav
+        active="feed"
+        onFeed={() => {}}
+        onPhotos={onOpenPhotos}
+        onChat={onOpenChat}
+        onProfile={onOpenProfile}
+        onNewPost={() => setComposerOpen(true)}
+      />
 
       {composerOpen && (
         <NewPostModal

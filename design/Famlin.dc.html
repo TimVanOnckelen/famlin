@@ -27,6 +27,441 @@
   </style>
 </helmet>
 
+<section class="dv-turn" id="t6">
+  <div class="dv-thd">
+    <a class="dv-tid" href="#t6">6</a>
+    <span class="dv-tname">Nieuw posttype · Reisvolger (TRIP) — kaart, tijdlijn, inchecken, aanmaken, afsluiten, notificaties</span>
+  </div>
+  <div class="dv-opts">
+
+    <!-- ══════ 6a FEED — ACTIEVE REIS ══════ -->
+    <div class="dv-opt" id="6a">
+      <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a> Feedkaart · actieve reis</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:oklch(96% 0.013 58);font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:white;padding:74px 16px 13px;border-bottom:1px solid oklch(91% 0.01 55);display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:27px;font-weight:900;color:oklch(62% 0.14 35);letter-spacing:-0.5px;">Famlin</div>
+            <button style="width:44px;height:44px;border-radius:22px;background:oklch(95% 0.05 35);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+              <svg width="20" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" style="stroke:oklch(62% 0.14 35);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/><path d="M13.73 21a2 2 0 01-3.46 0" style="stroke:oklch(62% 0.14 35);stroke-width:2;stroke-linecap:round;"/></svg>
+            </button>
+          </div>
+          <div style="padding:14px 12px;display:flex;flex-direction:column;gap:16px;padding-bottom:110px;">
+
+            <!-- TRIP kaart — actief -->
+            <div style="border-radius:22px;overflow:hidden;background:linear-gradient(165deg,oklch(97% 0.015 220),oklch(93% 0.03 220));border:1.5px solid oklch(85% 0.05 220);box-shadow:0 2px 6px rgba(0,0,0,0.06),0 10px 26px oklch(55% 0.13 220 / 0.16);">
+              <div style="position:relative;">
+                <image-slot id="trip-hero-1" shape="rect" placeholder="laatste check-in foto · Bologna" style="display:block;width:100%;height:230px;"></image-slot>
+                <div style="position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:6px;background:oklch(55% 0.13 220);padding:6px 14px;border-radius:100px;box-shadow:0 2px 10px rgba(0,0,0,0.2);">
+                  <span style="font-size:13px;">🧳</span>
+                  <span style="font-size:12.5px;font-weight:800;color:white;letter-spacing:0.2px;">Dag 4 · onderweg</span>
+                </div>
+                <div style="position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:17px;background:oklch(70% 0.13 15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;box-shadow:0 2px 8px rgba(0,0,0,0.2);">EM</div>
+              </div>
+              <div style="padding:13px 16px 14px;">
+                <div style="font-size:18px;font-weight:900;color:oklch(22% 0.025 35);letter-spacing:-0.3px;">Roadtrip Italië</div>
+                <div style="font-size:14px;font-weight:700;color:oklch(38% 0.1 220);margin-top:2px;">→ Toscane &amp; Emilia-Romagna</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:14.5px;color:oklch(30% 0.02 35);">
+                  <span>📍</span><span>Laatste stop: <strong>Bologna</strong> · 14:20</span>
+                </div>
+                <div style="font-size:13px;color:oklch(52% 0.02 35);margin-top:2px;">4 stops tot nu toe · Emma</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:12px;border-top:1px solid oklch(85% 0.04 220);padding-top:10px;">
+                  <button style="display:flex;align-items:center;gap:7px;border:none;background:oklch(93% 0.03 220);padding:7px 15px;border-radius:100px;font-size:14px;font-weight:700;color:oklch(38% 0.1 220);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+                    16
+                  </button>
+                  <button style="border:none;background:none;font-size:14px;color:oklch(45% 0.06 220);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;padding:6px 4px;margin-left:auto;font-weight:600;">Volg de reis →</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:white;border-radius:22px;padding:15px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05),0 6px 20px rgba(0,0,0,0.06);opacity:0.9;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+                <div style="width:40px;height:40px;border-radius:20px;background:oklch(70% 0.1 330);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;flex-shrink:0;">MA</div>
+                <div><div style="font-size:15px;font-weight:800;color:oklch(22% 0.025 35);line-height:1.2;">Mama</div><div style="font-size:12.5px;color:oklch(65% 0.015 35);">Maandag</div></div>
+              </div>
+              <div style="font-size:17px;color:oklch(22% 0.025 35);line-height:1.55;">Zondag zo'n heerlijk familiediner gehad. Iedereen aanwezig — zo fijn! 💛</div>
+            </div>
+
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6b FEED — AFGESLOTEN REIS ══════ -->
+    <div class="dv-opt" id="6b">
+      <div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a> Feedkaart · afgesloten reis (album)</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:oklch(96% 0.013 58);font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:white;padding:74px 16px 13px;border-bottom:1px solid oklch(91% 0.01 55);display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:27px;font-weight:900;color:oklch(62% 0.14 35);letter-spacing:-0.5px;">Famlin</div>
+          </div>
+          <div style="padding:14px 12px;display:flex;flex-direction:column;gap:16px;">
+
+            <div style="border-radius:22px;overflow:hidden;background:white;border:1.5px solid oklch(90% 0.015 220);box-shadow:0 1px 3px rgba(0,0,0,0.05),0 6px 20px rgba(0,0,0,0.06);">
+              <div style="display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:2px;height:190px;">
+                <image-slot id="trip-closed-1" shape="rect" placeholder="cover · Firenze" style="display:block;width:100%;height:100%;grid-row:1/3;"></image-slot>
+                <image-slot id="trip-closed-2" shape="rect" placeholder="Siena" style="display:block;width:100%;height:100%;"></image-slot>
+                <div style="position:relative;">
+                  <image-slot id="trip-closed-3" shape="rect" placeholder="Verona" style="display:block;width:100%;height:100%;"></image-slot>
+                  <div style="position:absolute;inset:0;background:rgba(20,20,25,0.5);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;">+140</div>
+                </div>
+              </div>
+              <div style="padding:13px 16px 14px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="display:inline-flex;align-items:center;gap:5px;border:1.5px solid oklch(80% 0.04 220);padding:3px 11px;border-radius:100px;font-size:11px;font-weight:800;color:oklch(45% 0.06 220);">🧳 REIS · AFGESLOTEN</span>
+                </div>
+                <div style="font-size:18px;font-weight:900;color:oklch(22% 0.025 35);letter-spacing:-0.3px;margin-top:8px;">Roadtrip Italië</div>
+                <div style="font-size:14px;color:oklch(52% 0.02 35);margin-top:2px;">12 dagen · 8 stops · 143 foto's</div>
+                <div style="font-size:13px;color:oklch(52% 0.02 35);margin-top:2px;">Emma · 3 t/m 14 juli</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:12px;border-top:1px solid oklch(93% 0.01 55);padding-top:10px;">
+                  <button style="display:flex;align-items:center;gap:7px;border:none;background:oklch(96% 0.03 35);padding:7px 15px;border-radius:100px;font-size:14px;font-weight:700;color:oklch(52% 0.13 35);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+                    41
+                  </button>
+                  <button style="border:none;background:none;font-size:14px;color:oklch(58% 0.02 35);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;padding:6px 4px;margin-left:auto;font-weight:600;">Bekijk het dagboek →</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6c TRIP DETAIL — ACTIEF ══════ -->
+    <div class="dv-opt" id="6c">
+      <div class="dv-olabel"><a class="dv-oid" href="#6c">6c</a> Reisdetail · actief, tijdlijn nieuwste-eerst</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);padding:74px 16px 13px;display:flex;align-items:center;">
+            <button style="display:flex;align-items:center;gap:5px;border:none;background:none;color:oklch(62% 0.14 35);font-size:17px;font-weight:700;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">
+              <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" style="stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;"/></svg>Terug
+            </button>
+          </div>
+
+          <div style="position:relative;">
+            <image-slot id="trip-detail-cover" shape="rect" placeholder="cover · Toscaanse heuvels" style="display:block;width:100%;height:190px;"></image-slot>
+          </div>
+          <div style="margin:-28px 12px 0;background:white;border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,0.1);padding:16px;position:relative;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <span style="display:inline-flex;align-items:center;gap:5px;background:oklch(55% 0.13 220);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:800;color:white;">🧳 ACTIEF · DAG 4</span>
+            </div>
+            <div style="font-size:22px;font-weight:900;color:oklch(22% 0.025 35);letter-spacing:-0.3px;">Roadtrip Italië</div>
+            <div style="font-size:14.5px;font-weight:700;color:oklch(38% 0.1 220);margin-top:2px;">→ Toscane &amp; Emilia-Romagna</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+              <div style="width:30px;height:30px;border-radius:15px;background:oklch(70% 0.13 15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;flex-shrink:0;">EM</div>
+              <div style="font-size:14px;color:oklch(45% 0.02 35);">Emma · sinds 3 juli</div>
+            </div>
+          </div>
+
+          <!-- Reacties op de reis als geheel — apart van check-ins -->
+          <div style="margin:14px 12px 0;background:oklch(97% 0.01 55);border-radius:14px;padding:12px 14px;">
+            <button style="display:flex;align-items:center;justify-content:space-between;width:100%;border:none;background:none;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;padding:0;">
+              <span style="font-size:13.5px;font-weight:700;color:oklch(45% 0.02 35);">💬 Reacties op de reis · 2</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5l5-5" style="stroke:oklch(55% 0.02 35);stroke-width:2;stroke-linecap:round;"/></svg>
+            </button>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <div style="width:28px;height:28px;border-radius:14px;background:oklch(90% 0.04 220);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👨‍🦳</div>
+              <div style="font-size:14px;color:oklch(30% 0.02 35);line-height:1.4;"><strong>Opa Jan</strong> · Wat een prachtige route, geniet ervan! ☀️</div>
+            </div>
+          </div>
+
+          <!-- Check-in CTA (alleen auteur) -->
+          <div style="margin:14px 12px 0;">
+            <button style="width:100%;height:48px;border:none;border-radius:100px;background:oklch(55% 0.13 220);color:white;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;box-shadow:0 4px 14px oklch(55% 0.13 220 / 0.35);">+ Check-in</button>
+          </div>
+
+          <!-- Tijdlijn -->
+          <div style="padding:18px 16px 40px;">
+            <div style="font-size:12px;font-weight:700;color:oklch(55% 0.02 35);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Tijdlijn · nieuwste eerst</div>
+
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(55% 0.13 220);box-shadow:0 0 0 3px oklch(93% 0.03 220);flex-shrink:0;"></div>
+                <div style="width:2px;flex:1;background:oklch(90% 0.02 220);margin-top:4px;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:22px;">
+                <div style="font-size:13px;font-weight:700;color:oklch(38% 0.1 220);">Dag 4 · 14:20</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Bologna</div>
+                <div style="font-size:15px;color:oklch(28% 0.02 35);line-height:1.5;margin-top:4px;">Lunch gedaan bij een klein tortellini-tentje. Beste pasta tot nu toe! 🍝</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+                  <image-slot id="ci-4-1" shape="rounded" radius="10" placeholder="tortellini" style="display:block;width:100%;height:90px;"></image-slot>
+                  <image-slot id="ci-4-2" shape="rounded" radius="10" placeholder="piazza Bologna" style="display:block;width:100%;height:90px;"></image-slot>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <span style="font-size:13.5px;color:oklch(52% 0.02 35);">❤️ 6</span>
+                  <button style="border:none;background:none;font-size:13.5px;color:oklch(52% 0.02 35);cursor:pointer;font-weight:600;font-family:'Nunito',system-ui,sans-serif;padding:0;">2 reacties</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(70% 0.08 220);box-shadow:0 0 0 3px oklch(93% 0.03 220);flex-shrink:0;"></div>
+                <div style="width:2px;flex:1;background:oklch(90% 0.02 220);margin-top:4px;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:22px;">
+                <div style="font-size:13px;font-weight:700;color:oklch(45% 0.06 220);">Dag 4 · 09:45</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Vertrek uit Firenze</div>
+                <div style="font-size:15px;color:oklch(28% 0.02 35);line-height:1.5;margin-top:4px;">Op naar Bologna, eerst nog getankt.</div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <span style="font-size:13.5px;color:oklch(52% 0.02 35);">❤️ 3</span>
+                  <button style="border:none;background:none;font-size:13.5px;color:oklch(52% 0.02 35);cursor:pointer;font-weight:600;font-family:'Nunito',system-ui,sans-serif;padding:0;">0 reacties</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(70% 0.08 220);box-shadow:0 0 0 3px oklch(93% 0.03 220);flex-shrink:0;"></div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:oklch(45% 0.06 220);">Dag 3 · 20:10</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Firenze</div>
+                <div style="font-size:15px;color:oklch(28% 0.02 35);line-height:1.5;margin-top:4px;">Zonsondergang bij de Piazzale Michelangelo. Adembenemend uitzicht.</div>
+                <image-slot id="ci-3-1" shape="rounded" radius="10" placeholder="zonsondergang Firenze" style="display:block;width:100%;height:130px;margin-top:8px;"></image-slot>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <span style="font-size:13.5px;color:oklch(52% 0.02 35);">❤️ 11</span>
+                  <button style="border:none;background:none;font-size:13.5px;color:oklch(52% 0.02 35);cursor:pointer;font-weight:600;font-family:'Nunito',system-ui,sans-serif;padding:0;">4 reacties</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6d TRIP DETAIL — AFGESLOTEN ══════ -->
+    <div class="dv-opt" id="6d">
+      <div class="dv-olabel"><a class="dv-oid" href="#6d">6d</a> Reisdetail · afgesloten, tijdlijn oudste-eerst</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);padding:74px 16px 13px;display:flex;align-items:center;">
+            <button style="display:flex;align-items:center;gap:5px;border:none;background:none;color:oklch(62% 0.14 35);font-size:17px;font-weight:700;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">
+              <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" style="stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;"/></svg>Terug
+            </button>
+          </div>
+          <image-slot id="trip-closed-cover" shape="rect" placeholder="cover · reisoverzicht" style="display:block;width:100%;height:190px;filter:saturate(0.85);"></image-slot>
+          <div style="margin:-28px 12px 0;background:white;border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,0.1);padding:16px;">
+            <span style="display:inline-flex;align-items:center;gap:5px;border:1.5px solid oklch(80% 0.04 220);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:800;color:oklch(45% 0.06 220);">🧳 AFGESLOTEN</span>
+            <div style="font-size:22px;font-weight:900;color:oklch(22% 0.025 35);letter-spacing:-0.3px;margin-top:8px;">Roadtrip Italië</div>
+            <div style="font-size:14.5px;font-weight:700;color:oklch(38% 0.1 220);margin-top:2px;">Toscane &amp; Emilia-Romagna · Emma</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;border-top:1px solid oklch(93% 0.01 55);padding-top:12px;">
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:oklch(22% 0.025 35);">8</div><div style="font-size:11.5px;color:oklch(55% 0.02 35);">stops</div></div>
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:oklch(22% 0.025 35);">143</div><div style="font-size:11.5px;color:oklch(55% 0.02 35);">foto's</div></div>
+              <div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:oklch(22% 0.025 35);">12</div><div style="font-size:11.5px;color:oklch(55% 0.02 35);">dagen</div></div>
+            </div>
+          </div>
+
+          <div style="padding:18px 16px 40px;">
+            <div style="font-size:12px;font-weight:700;color:oklch(55% 0.02 35);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Dagboek · oudste eerst</div>
+
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(80% 0.02 220);flex-shrink:0;"></div>
+                <div style="width:2px;flex:1;background:oklch(90% 0.02 220);margin-top:4px;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:20px;">
+                <div style="font-size:13px;font-weight:700;color:oklch(55% 0.03 220);">Dag 1 · 3 juli</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Vertrek — Amsterdam</div>
+                <div style="font-size:15px;color:oklch(28% 0.02 35);line-height:1.5;margin-top:4px;">De koffers zitten in de auto, op naar Italië! 🚗</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(80% 0.02 220);flex-shrink:0;"></div>
+                <div style="width:2px;flex:1;background:oklch(90% 0.02 220);margin-top:4px;"></div>
+              </div>
+              <div style="flex:1;padding-bottom:20px;">
+                <div style="font-size:13px;font-weight:700;color:oklch(55% 0.03 220);">Dag 3 · 5 juli</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Firenze</div>
+                <image-slot id="ci-closed-1" shape="rounded" radius="10" placeholder="zonsondergang Firenze" style="display:block;width:100%;height:110px;margin-top:6px;"></image-slot>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;">
+              <div style="width:14px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px;">
+                <div style="width:14px;height:14px;border-radius:7px;background:oklch(55% 0.13 220);flex-shrink:0;"></div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:oklch(38% 0.1 220);">Dag 12 · 14 juli</div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.025 35);margin-top:2px;">Thuis — Amsterdam</div>
+                <div style="font-size:15px;color:oklch(28% 0.02 35);line-height:1.5;margin-top:4px;">Moe maar voldaan terug. Wat een reis! 💛</div>
+              </div>
+            </div>
+            <div style="margin-top:18px;padding:12px 14px;background:oklch(97% 0.01 55);border-radius:12px;font-size:13px;color:oklch(52% 0.02 35);text-align:center;">Reis afgesloten door Emma · 14 juli</div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6e TRIP DETAIL — LEEG ══════ -->
+    <div class="dv-opt" id="6e">
+      <div class="dv-olabel"><a class="dv-oid" href="#6e">6e</a> Reisdetail · net gestart, leeg</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;min-height:874px;display:flex;flex-direction:column;">
+          <div style="position:sticky;top:0;z-index:5;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);padding:74px 16px 13px;display:flex;align-items:center;">
+            <button style="display:flex;align-items:center;gap:5px;border:none;background:none;color:oklch(62% 0.14 35);font-size:17px;font-weight:700;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">
+              <svg width="10" height="17" viewBox="0 0 10 17" fill="none"><path d="M9 1.5L1.5 8.5L9 15.5" style="stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;"/></svg>Terug
+            </button>
+          </div>
+          <image-slot id="trip-empty-cover" shape="rect" placeholder="cover foto" style="display:block;width:100%;height:190px;"></image-slot>
+          <div style="margin:-28px 12px 0;background:white;border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,0.1);padding:16px;">
+            <span style="display:inline-flex;align-items:center;gap:5px;background:oklch(55% 0.13 220);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:800;color:white;">🧳 ACTIEF · DAG 1</span>
+            <div style="font-size:22px;font-weight:900;color:oklch(22% 0.025 35);letter-spacing:-0.3px;margin-top:8px;">Roadtrip Italië</div>
+            <div style="font-size:14.5px;font-weight:700;color:oklch(38% 0.1 220);margin-top:2px;">→ Toscane &amp; Emilia-Romagna · Emma</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;gap:16px;">
+            <div style="width:64px;height:64px;border-radius:32px;background:oklch(94% 0.03 220);display:flex;align-items:center;justify-content:center;font-size:28px;">🧳</div>
+            <div style="font-size:17px;font-weight:800;color:oklch(28% 0.03 35);">De reis is begonnen…</div>
+            <div style="font-size:15px;color:oklch(52% 0.02 35);line-height:1.5;">Nog geen check-ins. Zodra Emma onderweg is, verschijnen de eerste stops hier.</div>
+            <button style="height:48px;padding:0 28px;border:none;border-radius:100px;background:oklch(55% 0.13 220);color:white;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;box-shadow:0 4px 14px oklch(55% 0.13 220 / 0.35);margin-top:4px;">+ Check-in</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6f CHECK-IN COMPOSER ══════ -->
+    <div class="dv-opt" id="6f">
+      <div class="dv-olabel"><a class="dv-oid" href="#6f">6f</a> Check-in toevoegen · snel, onderweg</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:white;padding:74px 16px 13px;border-bottom:1px solid oklch(91% 0.01 55);display:flex;align-items:center;justify-content:space-between;">
+            <button style="border:none;background:none;font-size:17px;font-weight:600;color:oklch(62% 0.14 35);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">Annuleren</button>
+            <div style="font-size:17px;font-weight:700;color:oklch(22% 0.025 35);">Check-in</div>
+            <button style="border:none;background:oklch(55% 0.13 220);color:white;font-size:15px;font-weight:700;padding:8px 18px;border-radius:100px;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:36px;">Inchecken</button>
+          </div>
+          <div style="padding:18px 16px;display:flex;flex-direction:column;gap:16px;">
+            <div style="font-size:13px;font-weight:700;color:oklch(38% 0.1 220);">Roadtrip Italië · Dag 4</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:oklch(52% 0.02 35);margin-bottom:6px;">Waar ben je? *</div>
+              <div style="display:flex;align-items:center;gap:10px;background:oklch(97% 0.015 220);border:1.5px solid oklch(85% 0.05 220);border-radius:16px;padding:13px 16px;">
+                <span style="font-size:17px;">📍</span>
+                <span style="font-size:18px;font-weight:700;color:oklch(22% 0.025 35);">Bologna</span>
+              </div>
+            </div>
+            <div style="font-size:17px;color:oklch(72% 0.015 35);line-height:1.6;min-height:64px;border-bottom:1px solid oklch(93% 0.01 55);padding-bottom:14px;">Vertel iets over deze stop (optioneel)...</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <image-slot id="ci-compose-1" shape="rounded" radius="14" placeholder="foto 1" style="display:block;width:100%;height:100px;"></image-slot>
+              <button style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed oklch(80% 0.05 220);background:oklch(97% 0.01 220);border-radius:14px;height:100px;cursor:pointer;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" style="stroke:oklch(55% 0.13 220);stroke-width:2.3;stroke-linecap:round;"/></svg>
+                <span style="font-size:12.5px;font-weight:700;color:oklch(38% 0.1 220);">Foto / video</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6g NIEUW BERICHT — TYPE REIS ══════ -->
+    <div class="dv-opt" id="6g">
+      <div class="dv-olabel"><a class="dv-oid" href="#6g">6g</a> Nieuw bericht · type Reis aanmaken</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;">
+          <div style="position:sticky;top:0;z-index:5;background:white;padding:74px 16px 13px;border-bottom:1px solid oklch(91% 0.01 55);display:flex;align-items:center;justify-content:space-between;">
+            <button style="border:none;background:none;font-size:17px;font-weight:600;color:oklch(62% 0.14 35);cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">Annuleren</button>
+            <div style="font-size:17px;font-weight:700;color:oklch(22% 0.025 35);">Nieuw bericht</div>
+            <button style="border:none;background:oklch(55% 0.13 220);color:white;font-size:15px;font-weight:700;padding:8px 18px;border-radius:100px;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:36px;">Starten</button>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:16px;padding-bottom:44px;">
+
+            <button style="display:flex;align-items:center;gap:10px;align-self:flex-start;background:oklch(93% 0.03 220);border:1.5px solid oklch(80% 0.05 220);border-radius:100px;padding:9px 16px 9px 10px;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;min-height:44px;">
+              <div style="width:28px;height:28px;border-radius:14px;background:oklch(55% 0.13 220);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🧳</div>
+              <span style="font-size:15px;font-weight:800;color:oklch(38% 0.1 220);">Reis</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5l5-5" style="stroke:oklch(38% 0.1 220);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+            </button>
+            <div style="font-size:12.5px;color:oklch(62% 0.02 35);margin-top:-10px;">Je houdt de reis daarna bij via check-ins op de reisdetailpagina</div>
+
+            <div>
+              <div style="font-size:13px;font-weight:700;color:oklch(52% 0.02 35);margin-bottom:6px;">Titel *</div>
+              <div style="background:oklch(97% 0.01 55);border:1.5px solid oklch(91% 0.01 55);border-radius:14px;padding:12px 15px;font-size:17px;font-weight:700;color:oklch(22% 0.025 35);">Roadtrip Italië</div>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:oklch(52% 0.02 35);margin-bottom:6px;">Bestemming</div>
+              <div style="background:oklch(97% 0.01 55);border:1.5px solid oklch(91% 0.01 55);border-radius:14px;padding:12px 15px;font-size:16px;color:oklch(30% 0.02 35);">Toscane &amp; Emilia-Romagna, Italië</div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:oklch(52% 0.02 35);margin-bottom:6px;">Startdatum *</div>
+                <div style="background:oklch(97% 0.01 55);border:1.5px solid oklch(91% 0.01 55);border-radius:14px;padding:12px 15px;font-size:16px;color:oklch(22% 0.025 35);">3 juli 2026</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:oklch(52% 0.02 35);margin-bottom:6px;">Einddatum</div>
+                <div style="background:oklch(97% 0.01 55);border:1.5px solid oklch(91% 0.01 55);border-radius:14px;padding:12px 15px;font-size:16px;color:oklch(60% 0.015 35);">optioneel</div>
+              </div>
+            </div>
+            <div style="height:1px;background:oklch(91% 0.01 55);"></div>
+            <button style="display:flex;align-items:center;gap:12px;border:1.5px dashed oklch(80% 0.05 220);background:oklch(97% 0.01 220);border-radius:14px;padding:12px 16px;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;width:100%;box-sizing:border-box;">
+              <div style="width:38px;height:38px;border-radius:19px;background:oklch(55% 0.13 220);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" style="stroke:white;stroke-width:2.5;stroke-linecap:round;"/></svg>
+              </div>
+              <div style="text-align:left;">
+                <div style="font-size:15px;font-weight:700;color:oklch(22% 0.025 35);">Coverfoto toevoegen</div>
+                <div style="font-size:13px;color:oklch(65% 0.015 35);">Optioneel — je kunt deze ook later instellen</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6h REIS AFSLUITEN ══════ -->
+    <div class="dv-opt" id="6h">
+      <div class="dv-olabel"><a class="dv-oid" href="#6h">6h</a> Reis afsluiten · bevestiging</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="background:white;font-family:'Nunito',system-ui,sans-serif;position:relative;min-height:874px;">
+          <div style="position:sticky;top:0;z-index:5;background:rgba(255,255,255,0.92);padding:74px 16px 13px;"></div>
+          <image-slot id="trip-close-cover" shape="rect" placeholder="cover" style="display:block;width:100%;height:170px;filter:brightness(0.7);"></image-slot>
+          <div style="position:absolute;inset:0;top:230px;background:rgba(15,20,25,0.5);display:flex;align-items:flex-end;">
+            <div style="width:100%;background:white;border-radius:22px 22px 0 0;padding:24px 20px 40px;box-sizing:border-box;">
+              <div style="width:36px;height:5px;border-radius:3px;background:oklch(88% 0.01 55);margin:0 auto 18px;"></div>
+              <div style="font-size:20px;font-weight:900;color:oklch(22% 0.025 35);text-align:center;">Reis afsluiten?</div>
+              <div style="font-size:15px;color:oklch(45% 0.02 35);line-height:1.55;text-align:center;margin-top:8px;">"Roadtrip Italië" wordt een afgesloten dagboek — de tijdlijn keert om (oudste stop eerst) en er kunnen geen nieuwe check-ins meer bij. Je kunt dit niet ongedaan maken.</div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+                <button style="height:50px;border:none;border-radius:100px;background:oklch(55% 0.13 220);color:white;font-size:15.5px;font-weight:800;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;">Reis afsluiten</button>
+                <button style="height:50px;border:1.5px solid oklch(88% 0.01 55);border-radius:100px;background:white;color:oklch(45% 0.02 35);font-size:15.5px;font-weight:700;cursor:pointer;font-family:'Nunito',system-ui,sans-serif;">Nog even niet</button>
+              </div>
+              <div style="font-size:12.5px;color:oklch(60% 0.015 35);text-align:center;margin-top:14px;">Sluit automatisch af op de einddatum, als je die instelt.</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══════ 6i NOTIFICATIES ══════ -->
+    <div class="dv-opt" id="6i">
+      <div class="dv-olabel"><a class="dv-oid" href="#6i">6i</a> Notificaties · copy &amp; groepering</div>
+      <div style="width:340px;background:oklch(20% 0.02 240);border-radius:32px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;display:flex;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:800;color:#0f222a;">Famlin</span><span style="font-size:11.5px;color:#7a7a7a;">nu</span></div>
+            <div style="font-size:13.5px;color:#1a1a1a;line-height:1.4;margin-top:2px;">Emma is een reis begonnen: Roadtrip Italië 🧳</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;display:flex;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:800;color:#0f222a;">Famlin</span><span style="font-size:11.5px;color:#7a7a7a;">14:22</span></div>
+            <div style="font-size:13.5px;color:#1a1a1a;line-height:1.4;margin-top:2px;">Emma heeft ingecheckt in Bologna</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;display:flex;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);flex-shrink:0;position:relative;">
+            <div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:8px;background:oklch(55% 0.13 220);color:white;font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;">3</div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:800;color:#0f222a;">Famlin</span><span style="font-size:11.5px;color:#7a7a7a;">19:05</span></div>
+            <div style="font-size:13.5px;color:#1a1a1a;line-height:1.4;margin-top:2px;">Emma heeft vandaag 3 keer ingecheckt · laatste stop: Verona</div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,0.5);text-align:center;padding:6px 4px 2px;line-height:1.5;">Meerdere check-ins op één dag bundelen tot 1 melding — voorkomt spam bij drukke reisdagen.</div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Probeer: "maak <a class="dv-oid" href="#6c">6c</a> ook voor web" · "toon de reactie-thread uitgeklapt in <a class="dv-oid" href="#6c">6c</a>" · "ontwerp de web-versie van de tijdlijn"</p>
+</section>
+
 <section class="dv-turn" id="t5">
   <div class="dv-thd">
     <a class="dv-tid" href="#t5">5</a>

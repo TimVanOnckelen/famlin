@@ -15,6 +15,7 @@ import {
   User,
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
+import { BottomNav } from '@/components/BottomNav';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { Lightbox } from '@/components/Lightbox';
 import { formatRelativeDate } from '@/utils/time';
@@ -39,13 +40,18 @@ function dateKey(iso: string): string {
 // to the message panel, since the web app has no group-scoped URL routing.
 // No onLogout here — unlike ProfilePage this page has no user menu / logout
 // affordance of its own; onBack (mirroring ProfilePage's own back-button
-// shell) is the only navigation callback it needs.
+// shell) plus the small-screen BottomNav's Photos/Profile tabs are the only
+// navigation callbacks it needs.
 export function ChatPage({
   user,
   onBack,
+  onOpenPhotos,
+  onOpenProfile,
 }: {
   user: User;
   onBack: () => void;
+  onOpenPhotos?: () => void;
+  onOpenProfile?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -385,6 +391,13 @@ export function ChatPage({
           </div>
         )}
       </main>
+
+      <BottomNav
+        active="chat"
+        onFeed={onBack}
+        onPhotos={onOpenPhotos}
+        onProfile={onOpenProfile ?? (() => {})}
+      />
 
       {lightboxUrl && <Lightbox assetUrls={[lightboxUrl]} initialIndex={0} onClose={() => setLightboxUrl(null)} />}
     </div>

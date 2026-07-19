@@ -1,0 +1,79 @@
+/* Hidden by default — only takes over on small screens, where it replaces
+   desktop navigation (header dropdown / photos-page-only header icons) with
+   the app's own bottom tab bar. */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--fam-surface);
+    border-top: 1px solid var(--fam-border);
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 60px;
+  min-height: 44px;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: var(--fam-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.bottom-nav-item-active {
+  color: var(--fam-primary);
+}
+
+.bottom-nav-icon-wrap {
+  position: relative;
+  display: flex;
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fam-accent);
+  border: 2px solid var(--fam-surface);
+}
+
+/* Floating "+" — overlaps the top of the bar, offset toward the right, same
+   placement mobile's FAB uses relative to its tab bar. */
+.bottom-nav-fab {
+  position: absolute;
+  right: 18px;
+  top: -22px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--fam-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 110, 148, 0.4);
+}

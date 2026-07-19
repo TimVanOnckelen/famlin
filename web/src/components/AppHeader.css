@@ -77,6 +77,15 @@
   border: 2px solid var(--fam-surface);
 }
 
+/* On small screens BottomNav takes over both of these (its own Chat tab and
+   floating "+"), so the header can stay a slim top bar. */
+@media (max-width: 720px) {
+  .btn-new-post,
+  .header-icon-btn {
+    display: none;
+  }
+}
+
 .user-menu {
   position: relative;
 }

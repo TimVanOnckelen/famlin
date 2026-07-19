@@ -10,6 +10,7 @@ import {
   User,
 } from '@famlin/api-client';
 import { AppHeader } from '@/components/AppHeader';
+import { BottomNav } from '@/components/BottomNav';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { NewPostModal } from '@/components/NewPostModal';
@@ -17,10 +18,14 @@ import './PhotosPage.css';
 
 export function PhotosPage({
   user,
+  onOpenFeed,
+  onOpenChat,
   onOpenProfile,
   onLogout,
 }: {
   user: User;
+  onOpenFeed?: () => void;
+  onOpenChat?: () => void;
   onOpenProfile: () => void;
   onLogout: () => void;
 }) {
@@ -214,6 +219,18 @@ export function PhotosPage({
 
         <div ref={sentinelRef} className="photos-sentinel" />
       </main>
+
+      <BottomNav
+        active="photos"
+        onFeed={onOpenFeed ?? (() => {})}
+        onChat={onOpenChat}
+        onProfile={onOpenProfile}
+        onNewPost={() => {
+          setComposerGroupId(activeGroupId);
+          setComposerAsset(null);
+          setComposerOpen(true);
+        }}
+      />
 
       {lightboxOpen && (
         <Lightbox

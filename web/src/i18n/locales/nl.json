@@ -177,5 +177,11 @@
     "sendFailed": "Je bericht kon niet verstuurd worden. Probeer opnieuw.",
     "today": "Vandaag",
     "yesterday": "Gisteren"
+  },
+  "tabs": {
+    "feed": "Feed",
+    "photos": "Foto's",
+    "profile": "Profiel",
+    "chat": "Chat"
   }
 }

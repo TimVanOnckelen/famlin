@@ -11,6 +11,7 @@ import {
   User,
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
+import { BottomNav } from '@/components/BottomNav';
 import { useAuthStore } from '@/stores/authStore';
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n';
 import './ProfilePage.css';
@@ -22,10 +23,14 @@ import './ProfilePage.css';
 export function ProfilePage({
   user,
   onBack,
+  onOpenPhotos,
+  onOpenChat,
   onLogout,
 }: {
   user: User;
   onBack: () => void;
+  onOpenPhotos?: () => void;
+  onOpenChat?: () => void;
   onLogout: () => void;
 }) {
   const { t, i18n: i18nInstance } = useTranslation();
@@ -312,6 +317,8 @@ export function ProfilePage({
           {t('common.logout')}
         </button>
       </main>
+
+      <BottomNav active="profile" onFeed={onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={() => {}} />
     </div>
   );
 }

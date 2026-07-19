@@ -11,6 +11,13 @@
   gap: 16px;
 }
 
+/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
+@media (max-width: 720px) {
+  .profile-column {
+    padding-bottom: 112px;
+  }
+}
+
 .profile-back {
   align-self: flex-start;
   display: inline-flex;

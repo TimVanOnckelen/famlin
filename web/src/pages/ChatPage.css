@@ -472,6 +472,11 @@
 }
 
 @media (max-width: 720px) {
+  /* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
+  .chat-column {
+    padding-bottom: 100px;
+  }
+
   .chat-layout {
     flex-direction: column;
   }
