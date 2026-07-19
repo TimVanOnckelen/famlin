@@ -3,8 +3,6 @@ import {
   toggleGroupSelection,
   resolveOfferedPostTypes,
   reconcilePostTypeSelection,
-  isMultiGroupAllowedForType,
-  reconcileGroupSelectionForType,
 } from '@/utils/newPost';
 
 describe('buildGroupSelectionPayload', () => {
@@ -112,31 +110,5 @@ describe('reconcilePostTypeSelection', () => {
 
   it('returns null when nothing is offered (empty intersection)', () => {
     expect(reconcilePostTypeSelection('UPDATE', [])).toBeNull();
-  });
-});
-
-describe('isMultiGroupAllowedForType', () => {
-  it('disallows multi-group selection for TRIP (server rejects cross-posted trips)', () => {
-    expect(isMultiGroupAllowedForType('TRIP')).toBe(false);
-  });
-
-  it('allows multi-group selection for every other known type', () => {
-    expect(isMultiGroupAllowedForType('UPDATE')).toBe(true);
-    expect(isMultiGroupAllowedForType('MILESTONE')).toBe(true);
-    expect(isMultiGroupAllowedForType('POLL')).toBe(true);
-  });
-});
-
-describe('reconcileGroupSelectionForType', () => {
-  it('collapses to the first-selected group when switching to TRIP with several selected', () => {
-    expect(reconcileGroupSelectionForType(['g2', 'g1', 'g3'], 'TRIP')).toEqual(['g2']);
-  });
-
-  it('leaves a single-group selection untouched for TRIP', () => {
-    expect(reconcileGroupSelectionForType(['g1'], 'TRIP')).toEqual(['g1']);
-  });
-
-  it('leaves a multi-group selection untouched for a type that allows it', () => {
-    expect(reconcileGroupSelectionForType(['g1', 'g2'], 'POLL')).toEqual(['g1', 'g2']);
   });
 });

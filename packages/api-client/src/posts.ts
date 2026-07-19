@@ -59,9 +59,9 @@ export interface CreatePostBody {
   type: PostType;
   // Handler-owned config for custom post types, e.g. poll options
   // ({ options: [{ text }], closesAt? }) or a trip's title/destination/dates;
-  // absent/undefined for UPDATE/MILESTONE. Cross-posting (groupIds with more
-  // than one entry) is rejected by the server for TRIP posts — callers must
-  // not offer multi-group selection when type is 'TRIP'.
+  // absent/undefined for UPDATE/MILESTONE. TRIP posts cross-post like every
+  // other type (groupIds 1–20), with each travelerUserId required to be a
+  // member of every target group.
   typeData?: PollCreateData | TripTypeData | Record<string, unknown>;
   milestoneTag?: string;
   uploadedAssetUrls: string[];

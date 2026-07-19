@@ -192,7 +192,6 @@
       "dateHint": "Format: YYYY-MM-DD",
       "coverPhotoTitle": "Add cover photo",
       "coverPhotoSubtitle": "Optional — you can also set this later",
-      "multiGroupNotice": "Trips can only be shared with one family",
       "travelersLabel": "Travel companions",
       "travelersSubtitle": "Optional — they can check in too",
       "travelersSelected_one": "{{count}} travel companion",

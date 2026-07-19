@@ -76,6 +76,7 @@ export interface TripCheckinMetadata {
     kind: 'trip_checkin';
     place: string;
     photoUrls: string[];
+    checkinId: string;
 }
 export interface User {
     id: string;

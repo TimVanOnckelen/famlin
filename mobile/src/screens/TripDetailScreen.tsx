@@ -292,7 +292,7 @@ export function TripDetailScreen() {
 
       <TravelerPickerModal
         visible={travelerPickerOpen}
-        groupId={post.groupId}
+        groupIds={(post.sharedWithGroups ?? [{ id: post.groupId }]).map((group) => group.id)}
         excludeUserId={post.authorId}
         initialSelectedIds={travelers.map((traveler) => traveler.id)}
         submitting={setTravelersMutation.isPending}

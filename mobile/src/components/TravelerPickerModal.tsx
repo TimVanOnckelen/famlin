@@ -9,20 +9,23 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { fetchGroupMembers, GroupMember } from '@famlin/api-client';
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
 
 // The server caps a trip at 20 co-travelers (author excluded).
 const MAX_TRAVELERS = 20;
 
 interface TravelerPickerModalProps {
   visible: boolean;
-  groupId: string;
+  // Every group the trip targets — for a cross-posted trip only members of
+  // ALL of them are valid co-travelers, so the list shown is the
+  // intersection of their member lists (the server rejects anyone else with
+  // errors.tripTravelerNotMember).
+  groupIds: string[];
   // Never listed: the trip author is implicitly a traveler and must not be
   // sent in travelerUserIds (composer passes the logged-in user, trip detail
   // passes the post author — the same person in both flows today).
@@ -33,14 +36,14 @@ interface TravelerPickerModalProps {
   onConfirm: (userIds: string[]) => void;
 }
 
-// Multi-select of a group's members, used for a trip's co-travelers — both
-// by the new-post composer (selection kept local until the post is created)
-// and by the trip detail screen's "edit travel companions" action (which
-// calls setTripTravelers on confirm). Follows the LocationPickerModal /
-// MediaPickerModal visible/onCancel/onConfirm modal shape.
+// Multi-select of the target groups' shared members, used for a trip's
+// co-travelers — both by the new-post composer (selection kept local until
+// the post is created) and by the trip detail screen's "edit travel
+// companions" action (which calls setTripTravelers on confirm). Follows the
+// LocationPickerModal / MediaPickerModal visible/onCancel/onConfirm shape.
 export function TravelerPickerModal({
   visible,
-  groupId,
+  groupIds,
   excludeUserId,
   initialSelectedIds,
   submitting = false,
@@ -55,13 +58,9 @@ export function TravelerPickerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  const { data: members, isLoading, isError } = useQuery<GroupMember[]>({
-    queryKey: ['groupMembers', groupId],
-    queryFn: () => fetchGroupMembers(groupId),
-    enabled: visible && !!groupId,
-  });
+  const { members, isLoading, isError } = useGroupMembersIntersection(groupIds, visible);
 
-  const candidates = (members || []).filter((m) => m.id !== excludeUserId);
+  const candidates = members.filter((m) => m.id !== excludeUserId);
 
   function toggle(userId: string) {
     setSelected((prev) => {

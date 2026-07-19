@@ -57,7 +57,9 @@ export interface TripTypeData {
   endDate?: string;
   coverPhotoUrl?: string;
   // Co-travelers: group members (max 20) who may also check in on this trip.
-  // The author is implicitly a traveler and must NOT be included here.
+  // The author is implicitly a traveler and must NOT be included here. When
+  // the trip is cross-posted, every id must be a member of EVERY target
+  // group (server rejects with errors.tripTravelerNotMember otherwise).
   travelerUserIds?: string[];
 }
 
@@ -108,6 +110,10 @@ export interface TripCheckinMetadata {
   kind: 'trip_checkin';
   place: string;
   photoUrls: string[];
+  // Stable id shared across the sibling copies a cross-posted trip's
+  // check-in fans out to (one Comment per target group) — lets clients
+  // correlate the same check-in across groups.
+  checkinId: string;
 }
 
 export interface User {

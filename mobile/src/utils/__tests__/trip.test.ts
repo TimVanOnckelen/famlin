@@ -40,7 +40,7 @@ describe('splitTripComments', () => {
     const checkin = makeComment({
       id: 'ci-1',
       createdAt: '2026-07-06T14:20:00.000Z',
-      metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [] },
+      metadata: { kind: 'trip_checkin', checkinId: 'chk-1', place: 'Bologna', photoUrls: [] },
     });
     const { checkins, tripComments } = splitTripComments([checkin], startDate);
 
@@ -62,7 +62,7 @@ describe('splitTripComments', () => {
     const checkin = makeComment({
       id: 'ci-1',
       createdAt: '2026-07-06T14:20:00.000Z',
-      metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [] },
+      metadata: { kind: 'trip_checkin', checkinId: 'chk-1', place: 'Bologna', photoUrls: [] },
     });
     const reply = makeComment({ id: 'reply-1', parentId: 'ci-1', content: 'Looks amazing!' });
     const { checkins, tripComments } = splitTripComments([checkin, reply], startDate);

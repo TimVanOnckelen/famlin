@@ -34,9 +34,8 @@ import {
   toggleGroupSelection,
   resolveOfferedPostTypes,
   reconcilePostTypeSelection,
-  isMultiGroupAllowedForType,
-  reconcileGroupSelectionForType,
 } from '@/utils/newPost';
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
 const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP'] as const;
@@ -153,20 +152,28 @@ export function NewPostScreen() {
     }
   }, [offeredPostTypes.join(','), postType]);
 
-  // TRIP posts can't be cross-posted — switching to TRIP with several
-  // groups already selected collapses that down to just the primary one.
-  React.useEffect(() => {
-    setSelectedGroupIds((prev) => reconcileGroupSelectionForType(prev, postType));
-  }, [postType]);
-
-  // Picked co-travelers belong to the primary group's member list — switching
-  // family invalidates them (they may not be members of the new one).
-  React.useEffect(() => {
-    setTripTravelerIds([]);
-  }, [primaryGroupId]);
-
   const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
   const isTrip = postType === 'TRIP';
+
+  // Valid trip co-travelers = members of EVERY selected group (the server
+  // enforces this per target group on a cross-posted trip). Shares the
+  // ['groupMembers', ...] caches with the picker modal.
+  const { members: travelerCandidates, loaded: travelerCandidatesLoaded } = useGroupMembersIntersection(
+    selectedGroupIds,
+    isTrip
+  );
+  const travelerCandidateIdsKey = travelerCandidates.map((member) => member.id).join(',');
+
+  // When the group selection changes, previously picked co-travelers may no
+  // longer be in the intersection — drop them (only once every member list
+  // has loaded, so an in-flight fetch can't wrongly clear the selection).
+  React.useEffect(() => {
+    if (!isTrip || !travelerCandidatesLoaded) return;
+    setTripTravelerIds((prev) => {
+      const next = prev.filter((id) => travelerCandidates.some((member) => member.id === id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [isTrip, travelerCandidatesLoaded, travelerCandidateIdsKey]);
   const tripStartDateValid = TRIP_DATE_REGEX.test(tripStartDate);
   const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate);
 
@@ -329,12 +336,6 @@ export function NewPostScreen() {
                     style={styles.typeRow}
                     onPress={() => {
                       setPostType(option);
-                      // Applied directly here too (not just the [postType]
-                      // effect below) — re-tapping the same already-selected
-                      // type wouldn't otherwise re-run that effect, and this
-                      // chooser step's own group chips allow multi-select
-                      // regardless of type.
-                      setSelectedGroupIds((prev) => reconcileGroupSelectionForType(prev, option));
                       setComposerStep('compose');
                     }}
                   >
@@ -431,13 +432,7 @@ export function NewPostScreen() {
                   <TouchableOpacity
                     key={group.id}
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
-                    onPress={() =>
-                      // TRIP can't be cross-posted: picking another family
-                      // replaces the selection instead of adding to it.
-                      setSelectedGroupIds((prev) =>
-                        isTrip ? [group.id] : toggleGroupSelection(prev, group.id)
-                      )
-                    }
+                    onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
                     accessibilityState={{ selected: isActive }}
                   >
                     <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
@@ -447,7 +442,6 @@ export function NewPostScreen() {
                 );
               })}
             </ScrollView>
-            {isTrip && <Text style={styles.typeChipHint}>{t('newPost.trip.multiGroupNotice')}</Text>}
           </View>
         )}
 
@@ -758,10 +752,10 @@ export function NewPostScreen() {
         />
       )}
 
-      {primaryGroupId && (
+      {selectedGroupIds.length > 0 && (
         <TravelerPickerModal
           visible={showTravelerPicker}
-          groupId={primaryGroupId}
+          groupIds={selectedGroupIds}
           excludeUserId={user?.id}
           initialSelectedIds={tripTravelerIds}
           onCancel={() => setShowTravelerPicker(false)}
