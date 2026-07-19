@@ -1,0 +1,37 @@
+---
+id: posttrip
+title: "PostTrip"
+description: "The enriched, read-time view of a `TRIP` post's `typeData` — computed"
+sidebar_label: "PostTrip"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"title":"string","destination":"string","startDate":"2026-08-01","endDate":"2026-08-14","coverPhotoUrl":"string","travelers":[{"id":"string","name":"string","avatarUrl":"string"}],"closed":true,"closedAt":"2024-07-29T15:51:28.071Z","dayNumber":0,"durationDays":0,"stopCount":0,"photoCount":0,"latestCheckin":{"commentId":"string","place":"string","createdAt":"2024-07-29T15:51:28.071Z"},"collagePhotoUrls":["string"]}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostTrip"}
+>
+</Heading>
+
+
+
+The enriched, read-time view of a `TRIP` post's `typeData` — computed
+fresh on every read, never stored as-is. A trip's check-ins are its
+`Comment` rows with `metadata.kind: "trip_checkin"` (see `Comment`
+below); this object aggregates them rather than requiring a second
+fetch.
+
+
+<Schema
+  {...require("./posttrip.Schema.json")}
+>
+  
+</Schema>
+            

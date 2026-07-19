@@ -534,6 +534,19 @@ paths:
         creation. `closesAt` is optional and API-only (no composer support
         yet) — once it passes, the poll stops accepting votes. Polls may also
         carry `uploadedAssetUrls` like any other post.
+
+        `type: "TRIP"` creates a living travel journal: `typeData` carries
+        `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
+        — `title` (1-120 chars) and `startDate` (`YYYY-MM-DD`) are required;
+        `destination` (≤160 chars), `endDate` (`YYYY-MM-DD`, must not be
+        before `startDate`), `coverPhotoUrl` (an uploaded `/uploads/...`
+        path), and `travelerUserIds` (up to 20 other group members who may
+        also check in — the author is always an implicit traveler and is
+        stripped if included) are all optional. A trip can't be cross-posted
+        — passing 2+ `groupIds` with `type: "TRIP"` is rejected with no post
+        created. Check-ins, closing the trip, and changing its travelers all
+        happen afterward via `POST /api/posts/{postId}/interactions` (see
+        below).
       requestBody:
         required: true
         content:
@@ -561,15 +574,17 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP]
                   default: UPDATE
-                  description: A server may support additional types beyond these three.
+                  description: A server may support additional types beyond these four.
                 typeData:
                   type: object
                   description: |
                     Type-specific creation payload; rejected (`400`) if sent
                     for a type that doesn't accept one (`UPDATE`/`MILESTONE`
                     today). For `POLL`: `{ options: [{ text }], closesAt? }`.
+                    For `TRIP`: `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
+                    (see the `TRIP` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -606,7 +621,10 @@ paths:
             Invalid request body (see `details`), or a post-type-specific
             problem: an unrecognized `type`, `typeData` that doesn't match
             the type's own schema (or was sent for a type that doesn't accept
-            one), or — for a poll — an empty question.
+            one), — for a poll — an empty question, or — for a trip — 2+
+            `groupIds` (trips can't be cross-posted), `endDate` before
+            `startDate`, or a `travelerUserIds` entry that isn't a current
+            member of the target group.
           content:
             application/json:
               schema:
@@ -805,15 +823,34 @@ paths:
       summary: Post-type-specific interaction
       description: |
         A generic, per-user action whose meaning depends on the post's
-        `type` — poll voting today, more later as new types are registered.
-        `key`/`value` are opaque here; the post's own type decides what's
-        valid. No notification is sent for an interaction.
+        `type` — poll voting and trip check-ins today, more later as new
+        types are registered. `key`/`value` are opaque here; the post's own
+        type decides what's valid. This endpoint itself emits no
+        notification — a handler that wants one sends it itself (a trip
+        check-in does, see below).
 
         For a `POLL` post: `key: "vote"`, `value: { optionId }`. Voting your
         current option again **removes** your vote (unvote); voting a
         different option **switches** it. Votes are public to group members
         (not anonymous) and results are visible whether or not you've voted.
         Voting after `closesAt` has passed is rejected.
+
+        For a `TRIP` post, three keys are supported:
+
+        - `key: "checkin"`, `value: { place, text?, photoUrls? }` — adds a
+          journal entry (`place` 1-80 chars, `text` up to 2000 chars,
+          `photoUrls` up to 10 uploaded `/uploads/...` paths). Only the
+          trip's author or one of its `travelerUserIds` may check in, and
+          only while the trip is open. Notifies the rest of the group with a
+          push-only `trip_checkin` notification (same-day check-ins from the
+          same author are bundled into one notification).
+        - `key: "close"`, no `value` — closes the trip early. Author only,
+          and only once (a trip also auto-closes once its `endDate` has
+          fully elapsed).
+        - `key: "setTravelers"`, `value: { userIds }` — replaces the trip's
+          co-traveler list wholesale (up to 20 ids; the author is always an
+          implicit traveler). Author only, and only while the trip is open;
+          every id must be a current member of the trip's group.
       parameters:
         - name: postId
           in: path
@@ -832,11 +869,14 @@ paths:
                   maxLength: 50
                   example: vote
                 value:
-                  description: Shape depends on `key` — for `vote`, `{ optionId }`.
+                  description: |
+                    Shape depends on `key` — for `vote`, `{ optionId }`; for
+                    a trip's `checkin`, `{ place, text?, photoUrls? }`; for
+                    `setTravelers`, `{ userIds }`; omitted for `close`.
                   example: { optionId: opt_1 }
       responses:
         '200':
-          description: The post, fully re-shaped (including `poll`) with your interaction applied.
+          description: The post, fully re-shaped (including `poll`/`trip`) with your interaction applied.
           content:
             application/json:
               schema:
@@ -844,8 +884,10 @@ paths:
         '400':
           description: |
             The post's type doesn't support interactions, `key`/`value`
-            wasn't valid for it, or — for a poll — an unknown `optionId` or a
-            closed poll.
+            wasn't valid for it, — for a poll — an unknown `optionId` or a
+            closed poll, or — for a trip — you're not the author/a traveler
+            for that action, the trip is closed, or (for `setTravelers`) a
+            `userIds` entry isn't a current member of the trip's group.
           content:
             application/json:
               schema:
@@ -2135,7 +2177,7 @@ components:
         allowedPostTypes:
           type: array
           items: { type: string }
-          example: [UPDATE, MILESTONE, POLL]
+          example: [UPDATE, MILESTONE, POLL, TRIP]
           description: |
             Post types you can create in this group (see `Post`'s `type`).
             Always the resolved, effective list — never empty. A group an
@@ -2204,14 +2246,15 @@ components:
           example: First day of school!
         type:
           type: string
-          enum: [UPDATE, MILESTONE, POLL]
+          enum: [UPDATE, MILESTONE, POLL, TRIP]
           description: |
             An open-ended discriminator — a server may register additional
-            types beyond these three (see `PostTypeHandler` in the developer
+            types beyond these four (see `PostTypeHandler` in the developer
             docs); treat an unrecognized value as a plain update. `content`
             stays the universal human-readable field for every type (a
-            poll's question, for instance); type-specific configuration
-            lives in `typeData` instead.
+            poll's question, for instance — a `TRIP` post's `content` is
+            plain free text, its own identity lives in `typeData`/`trip`
+            instead); type-specific configuration lives in `typeData`.
         typeData:
           type: object
           nullable: true
@@ -2219,9 +2262,15 @@ components:
             Type-specific configuration, `null` for `UPDATE`/`MILESTONE`. For
             `POLL`: `{ options: [{ id, text }], closesAt }` — the stored
             options (immutable after creation) and optional ISO 8601 close
-            time. Not present on the response to `POST /api/posts` or
-            `PATCH /api/posts/{id}` beyond what you sent — read the poll's
-            live vote tallies from `poll` below instead.
+            time. For `TRIP`: `{ title, destination, startDate, endDate, coverPhotoUrl, travelerUserIds, closedAt, closedByUserId }`
+            — `closedAt`/`closedByUserId` (both `null` until the trip is
+            closed) and `travelerUserIds` are the only parts of a trip's
+            `typeData` that change after creation, written by the `close`
+            and `setTravelers` interactions respectively; every other field
+            is immutable, same as a poll's options. Not present on the
+            response to `POST /api/posts` or `PATCH /api/posts/{id}` beyond
+            what you sent — read the poll's live vote tallies from `poll`,
+            or a trip's live aggregates from `trip`, below instead.
           example:
             options:
               - { id: opt_1, text: Pizza }
@@ -2237,6 +2286,16 @@ components:
             it's absent from `POST /api/posts` and `PATCH /api/posts/{id}`
             responses (fetch the post again, e.g. via `GET /api/posts/{id}`,
             to see it) — the same precedent as `people` below.
+        trip:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostTrip'
+          description: |
+            Present only when `type` is `TRIP` — the enriched, read-time view
+            of the trip (day counter, stop/photo counts, latest check-in,
+            a small photo collage, resolved travelers). Computed on every
+            read, so — like `poll` — it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
           nullable: true
@@ -2343,6 +2402,77 @@ components:
             $ref: '#/components/schemas/UserSummary'
           description: Everyone who voted for this option, oldest vote first.
 
+    PostTrip:
+      type: object
+      description: |
+        The enriched, read-time view of a `TRIP` post's `typeData` — computed
+        fresh on every read, never stored as-is. A trip's check-ins are its
+        `Comment` rows with `metadata.kind: "trip_checkin"` (see `Comment`
+        below); this object aggregates them rather than requiring a second
+        fetch.
+      properties:
+        title: { type: string }
+        destination:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          example: '2026-08-01'
+          description: Plain `YYYY-MM-DD`, no time component.
+        endDate:
+          type: string
+          nullable: true
+          example: '2026-08-14'
+        coverPhotoUrl:
+          type: string
+          nullable: true
+        travelers:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: |
+            Co-travelers who may also check in, resolved from
+            `typeData.travelerUserIds` — never includes the post's own
+            author, who is an implicit traveler shown separately via
+            `author`.
+        closed:
+          type: boolean
+          description: |
+            `true` once the trip was explicitly closed (`close` interaction)
+            or its `endDate`'s day has fully elapsed (auto-close) — either
+            way, `checkin`/`close`/`setTravelers` are then rejected.
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the trip was explicitly closed; `null` if it's still open or only auto-closed by `endDate`.
+        dayNumber:
+          type: integer
+          nullable: true
+          description: Which day of the trip today is (1-based), or `null` once `closed`.
+        durationDays:
+          type: integer
+          nullable: true
+          description: Total trip length in days, or `null` while still open with no `endDate`.
+        stopCount:
+          type: integer
+          description: Total number of check-ins.
+        photoCount:
+          type: integer
+          description: Total number of photos across every check-in.
+        latestCheckin:
+          type: object
+          nullable: true
+          properties:
+            commentId: { type: string }
+            place: { type: string }
+            createdAt: { type: string, format: date-time }
+        collagePhotoUrls:
+          type: array
+          items: { type: string }
+          maxItems: 3
+          description: Up to the 3 most recent check-in photos, newest first.
+
     Comment:
       type: object
       properties:
@@ -2362,6 +2492,16 @@ components:
           description: >-
             A photo/video the commenter uploaded as part of this comment itself
             (`null` if the comment has none) — distinct from `assetUrl` above.
+        metadata:
+          type: object
+          nullable: true
+          description: |
+            Handler-owned payload for a comment a post-type handler created
+            on your behalf rather than one you wrote yourself — `null` for
+            every ordinary comment. Today this is only a `TRIP` post's
+            check-in: `{ kind: "trip_checkin", place, photoUrls }`. You can
+            never send this field yourself when creating a comment.
+          example: { kind: trip_checkin, place: 'Lisbon, Portugal', photoUrls: [] }
         parentId:
           type: string
           nullable: true
@@ -2500,7 +2640,7 @@ components:
         id: { type: string }
         type:
           type: string
-          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, or `on_this_day`.'
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, or `trip_checkin`.'
         message: { type: string }
         relatedPostId:
           type: string
