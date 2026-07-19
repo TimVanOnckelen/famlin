@@ -540,13 +540,15 @@ paths:
         — `title` (1-120 chars) and `startDate` (`YYYY-MM-DD`) are required;
         `destination` (≤160 chars), `endDate` (`YYYY-MM-DD`, must not be
         before `startDate`), `coverPhotoUrl` (an uploaded `/uploads/...`
-        path), and `travelerUserIds` (up to 20 other group members who may
-        also check in — the author is always an implicit traveler and is
-        stripped if included) are all optional. A trip can't be cross-posted
-        — passing 2+ `groupIds` with `type: "TRIP"` is rejected with no post
-        created. Check-ins, closing the trip, and changing its travelers all
-        happen afterward via `POST /api/posts/{postId}/interactions` (see
-        below).
+        path), and `travelerUserIds` (up to 20 other members who may also
+        check in — the author is always an implicit traveler and is
+        stripped if included) are all optional. Trips cross-post like any
+        other type, and a cross-posted trip stays **one** journal: check-ins,
+        closing, and traveler changes apply to every group's copy. Because of
+        that, every `travelerUserIds` entry must be a current member of
+        **every** target group. Check-ins, closing the trip, and changing its
+        travelers all happen after creation via
+        `POST /api/posts/{postId}/interactions` (see below).
       requestBody:
         required: true
         content:
@@ -621,10 +623,9 @@ paths:
             Invalid request body (see `details`), or a post-type-specific
             problem: an unrecognized `type`, `typeData` that doesn't match
             the type's own schema (or was sent for a type that doesn't accept
-            one), — for a poll — an empty question, or — for a trip — 2+
-            `groupIds` (trips can't be cross-posted), `endDate` before
-            `startDate`, or a `travelerUserIds` entry that isn't a current
-            member of the target group.
+            one), — for a poll — an empty question, or — for a trip —
+            `endDate` before `startDate`, or a `travelerUserIds` entry that
+            isn't a current member of every target group.
           content:
             application/json:
               schema:
@@ -835,22 +836,29 @@ paths:
         (not anonymous) and results are visible whether or not you've voted.
         Voting after `closesAt` has passed is rejected.
 
-        For a `TRIP` post, three keys are supported:
+        For a `TRIP` post, three keys are supported. A cross-posted trip
+        stays one journal — each of these applies to every sibling group's
+        copy, not just the one addressed by `postId`:
 
         - `key: "checkin"`, `value: { place, text?, photoUrls? }` — adds a
           journal entry (`place` 1-80 chars, `text` up to 2000 chars,
           `photoUrls` up to 10 uploaded `/uploads/...` paths). Only the
           trip's author or one of its `travelerUserIds` may check in, and
-          only while the trip is open. Notifies the rest of the group with a
-          push-only `trip_checkin` notification (same-day check-ins from the
-          same author are bundled into one notification).
-        - `key: "close"`, no `value` — closes the trip early. Author only,
-          and only once (a trip also auto-closes once its `endDate` has
-          fully elapsed).
+          only while the trip is open. On a cross-posted trip the entry is
+          stored as one comment copy per sibling post, all sharing the same
+          `metadata.checkinId` (see `Comment`); the author deleting one copy
+          deletes them all. Notifies the rest of each group with a push-only
+          `trip_checkin` notification — same-day check-ins from the same
+          author are bundled into one, and a member of several sibling
+          groups is notified exactly once.
+        - `key: "close"`, no `value` — closes the trip early, on every
+          sibling copy atomically. Author only, and only once (a trip also
+          auto-closes once its `endDate` has fully elapsed).
         - `key: "setTravelers"`, `value: { userIds }` — replaces the trip's
           co-traveler list wholesale (up to 20 ids; the author is always an
-          implicit traveler). Author only, and only while the trip is open;
-          every id must be a current member of the trip's group.
+          implicit traveler) on every sibling copy atomically. Author only,
+          and only while the trip is open; every id must be a current member
+          of every sibling group.
       parameters:
         - name: postId
           in: path
@@ -887,7 +895,7 @@ paths:
             wasn't valid for it, — for a poll — an unknown `optionId` or a
             closed poll, or — for a trip — you're not the author/a traveler
             for that action, the trip is closed, or (for `setTravelers`) a
-            `userIds` entry isn't a current member of the trip's group.
+            `userIds` entry isn't a current member of every sibling group.
           content:
             application/json:
               schema:
@@ -1031,7 +1039,12 @@ paths:
       operationId: deleteComment
       tags: [Comments]
       summary: Delete a comment
-      description: Permanent. Only the author (or an admin) can delete.
+      description: |
+        Permanent. Only the author (or an admin) can delete. When the
+        **author** deletes a trip check-in on a cross-posted trip, every
+        sibling group's copy of that check-in (same `metadata.checkinId`) is
+        deleted with it; an admin deleting someone else's check-in removes
+        only that one group's copy.
       parameters:
         - name: id
           in: path
@@ -2499,9 +2512,12 @@ components:
             Handler-owned payload for a comment a post-type handler created
             on your behalf rather than one you wrote yourself — `null` for
             every ordinary comment. Today this is only a `TRIP` post's
-            check-in: `{ kind: "trip_checkin", place, photoUrls }`. You can
-            never send this field yourself when creating a comment.
-          example: { kind: trip_checkin, place: 'Lisbon, Portugal', photoUrls: [] }
+            check-in: `{ kind: "trip_checkin", checkinId, place, photoUrls }`
+            — `checkinId` is shared by every comment copy one check-in
+            creates (one per cross-post sibling group; a single-group trip's
+            lone copy carries it too). You can never send this field
+            yourself when creating a comment.
+          example: { kind: trip_checkin, checkinId: 8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d, place: 'Lisbon, Portugal', photoUrls: [] }
         parentId:
           type: string
           nullable: true

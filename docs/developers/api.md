@@ -131,7 +131,7 @@ Sending the same `{"key": "vote", "value": {"optionId": "..."}}` again **removes
 
 ## Recipe: start a trip and check in
 
-`type: "TRIP"` creates a living travel journal instead of a plain update: `typeData` carries `{title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds?}` — only `title` and `startDate` (`YYYY-MM-DD`) are required. A trip can't be cross-posted (one `groupId` only), and the author is always an implicit traveler alongside anyone listed in `travelerUserIds`.
+`type: "TRIP"` creates a living travel journal instead of a plain update: `typeData` carries `{title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds?}` — only `title` and `startDate` (`YYYY-MM-DD`) are required. The author is always an implicit traveler alongside anyone listed in `travelerUserIds`. Trips cross-post like any other type (pass `groupIds`), but stay **one** journal: check-ins, closing, and traveler changes apply to every group's copy, so every `travelerUserIds` entry must be a member of every target group.
 
 ```bash
 TRIP_ID=$(curl -s -X POST "$FAMLIN_URL/api/posts" \
@@ -155,7 +155,7 @@ curl -X POST "$FAMLIN_URL/api/posts/$TRIP_ID/interactions" \
   -d '{"key": "close"}'
 ```
 
-Each check-in is stored as an ordinary comment under the hood (so it can be liked and replied to), but it doesn't trigger a `new_comment` notification — instead the group gets a push-only `trip_checkin` notification, with multiple same-day check-ins from the same author bundled into one. Fetch the post (`GET /api/posts/{id}`) to read its live aggregates — day counter, stop/photo counts, latest check-in, a small photo collage — from the `trip` field.
+Each check-in is stored as an ordinary comment under the hood (so it can be liked and replied to), but it doesn't trigger a `new_comment` notification — instead the group gets a push-only `trip_checkin` notification, with multiple same-day check-ins from the same author bundled into one (and, on a cross-posted trip, members of several target groups notified only once). On a cross-posted trip each group gets its own copy of the check-in comment, all sharing the same `metadata.checkinId` — deleting your check-in in one group deletes it everywhere. Fetch the post (`GET /api/posts/{id}`) to read its live aggregates — day counter, stop/photo counts, latest check-in, a small photo collage — from the `trip` field.
 
 ## Recipe: a photo-frame script
 
