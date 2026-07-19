@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,6 +20,52 @@ import { postTypeRenderers } from '@/components/postTypes';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
+
+// Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
+// the stacked pair's second tile showing "+N" once more photos exist than fit.
+// Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
+function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: (index: number) => void }) {
+  const tile = (assetUrl: string, index: number, overlay?: ReactNode) => (
+    <button key={assetUrl} className="post-collage-tile" onClick={() => onSelect(index)}>
+      {isVideoUrl(assetUrl) ? (
+        <video src={getUploadUrl(assetUrl)} preload="metadata" />
+      ) : (
+        <ShimmerImage
+          src={getUploadUrl(assetUrl, 'thumbnail')}
+          fallbackSrc={getUploadUrl(assetUrl)}
+          loading="lazy"
+        />
+      )}
+      {overlay}
+    </button>
+  );
+
+  if (assetUrls.length === 2) {
+    return (
+      <div className="post-collage post-collage-2">
+        {assetUrls.map((assetUrl, i) => tile(assetUrl, i))}
+      </div>
+    );
+  }
+
+  const stackUrls = assetUrls.slice(1, 3);
+  const extraCount = assetUrls.length - 3;
+
+  return (
+    <div className="post-collage post-collage-3plus">
+      <div className="post-collage-main">{tile(assetUrls[0], 0)}</div>
+      {stackUrls.map((assetUrl, i) =>
+        tile(
+          assetUrl,
+          i + 1,
+          i === stackUrls.length - 1 && extraCount > 0 ? (
+            <span className="post-collage-more">+{extraCount}</span>
+          ) : undefined
+        )
+      )}
+    </div>
+  );
+}
 
 function PersonChip({ person }: { person: PostPerson }) {
   // Use the user's avatar/name if mapped to an account, otherwise use label
@@ -131,8 +177,7 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   // The styleguide's photo-first rule: with a photo, the photo leads —
   // edge-to-edge hero with the author chip (and milestone title) on top of it.
   const heroUrl = hasPhotos ? getUploadUrl(post.uploadedAssetUrls[0]) : null;
-  const extraAssets = post.uploadedAssetUrls.slice(1);
-  const visibleExtra = extraAssets.slice(0, 3);
+  const isCollage = post.uploadedAssetUrls.length > 1;
 
   const favoriteButton = (
     <button
@@ -160,7 +205,9 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       <div className={`post-card-inner${isMilestone && !hasPhotos ? ' post-card-milestone' : ''}`}>
         {hasPhotos && heroUrl && (
           <div className="post-hero">
-            {isVideoUrl(post.uploadedAssetUrls[0]) ? (
+            {isCollage ? (
+              <PhotoCollage assetUrls={post.uploadedAssetUrls} onSelect={setLightboxIndex} />
+            ) : isVideoUrl(post.uploadedAssetUrls[0]) ? (
               <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
             ) : (
               <ShimmerImage
@@ -177,33 +224,24 @@ export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             {isMilestone && (
               <span className="milestone-badge milestone-badge-overlay">{t('feed.milestoneBadge')}</span>
             )}
-            {favoriteButton}
+            <div className="post-hero-top-right">
+              {isCollage && (
+                <span className="post-photo-count-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="white" strokeWidth="2" />
+                    <circle cx="8.5" cy="10" r="1.5" fill="white" />
+                    <path d="M21 15l-5-5-9 9" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  {post.uploadedAssetUrls.length}
+                </span>
+              )}
+              {favoriteButton}
+            </div>
             {isMilestone && post.content && (
               <div className="post-hero-scrim">
                 <div className="post-hero-title">{post.content}</div>
               </div>
             )}
-          </div>
-        )}
-
-        {visibleExtra.length > 0 && (
-          <div className="post-thumbs">
-            {visibleExtra.map((assetUrl, i) => (
-              <button key={assetUrl} className="post-thumb" onClick={() => setLightboxIndex(i + 1)}>
-                {isVideoUrl(assetUrl) ? (
-                  <video src={getUploadUrl(assetUrl)} preload="metadata" />
-                ) : (
-                  <ShimmerImage
-                    src={getUploadUrl(assetUrl, 'thumbnail')}
-                    fallbackSrc={getUploadUrl(assetUrl)}
-                    loading="lazy"
-                  />
-                )}
-                {i === 2 && extraAssets.length > 3 && (
-                  <span className="post-thumb-more">+{extraAssets.length - 3}</span>
-                )}
-              </button>
-            ))}
           </div>
         )}
 

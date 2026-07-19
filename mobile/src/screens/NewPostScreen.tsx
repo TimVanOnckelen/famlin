@@ -40,6 +40,26 @@ const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL'] as const;
 const MIN_POLL_OPTIONS = 2;
 const MAX_POLL_OPTIONS = 10;
 
+// Icon/accent used by the "what do you want to share?" type-chooser step.
+const POST_TYPE_ICON: Record<string, string> = {
+  UPDATE: '📝',
+  MILESTONE: '🎂',
+  POLL: '🗳️',
+};
+const POST_TYPE_ICON_BG: Record<string, string> = {
+  UPDATE: colors.updateBg,
+  MILESTONE: colors.milestoneBg,
+  POLL: colors.primaryTint,
+};
+
+// Colors for the swappable type chip at the top of the compose step — one
+// palette per type, echoing the type-chooser row it was picked from.
+const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg: string; text: string }> = {
+  UPDATE: { bg: colors.updateBg, border: '#f0c3ac', iconBg: colors.accent, text: '#8a3f22' },
+  MILESTONE: { bg: colors.milestoneBg, border: colors.milestoneDivider, iconBg: colors.milestone, text: colors.milestoneText },
+  POLL: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
+};
+
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
   const player = useVideoPlayer({ uri }, (p) => {
     p.muted = true;
@@ -55,6 +75,9 @@ export function NewPostScreen() {
   const user = useAuthStore((state) => state.user);
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState<PostType>('UPDATE');
+  // Which post type to share is chosen up front, on its own step, before the
+  // rest of the composer (content, media, type-specific fields) is shown.
+  const [composerStep, setComposerStep] = useState<'type' | 'compose'>('type');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isCustomTag, setIsCustomTag] = useState(false);
   const [customTagText, setCustomTagText] = useState('');
@@ -189,6 +212,90 @@ export function NewPostScreen() {
 
   const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }));
 
+  // Step 1: pick who to share with and what kind of post to make, as a
+  // separate screen of large, unambiguous tap targets — before showing any
+  // of the compose form below. Selecting a type here just pre-fills
+  // `postType` and advances the step; changing your mind afterwards still
+  // works via the segmented control further down in the compose step.
+  if (composerStep === 'type') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.cancelButton}>{t('common.cancel')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('newPost.title')}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView style={styles.form} contentContainerStyle={styles.chooserContent}>
+          {groups && groups.length > 1 && (
+            <View style={styles.groupSelector}>
+              <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
+              <View style={styles.chooserGroupChips}>
+                {groups.map((group: Group) => {
+                  const isActive = selectedGroupIds.includes(group.id);
+                  return (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[styles.groupChip, isActive && styles.groupChipActive]}
+                      onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
+                      accessibilityState={{ selected: isActive }}
+                    >
+                      <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
+                        {group.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.chooserTypeSection}>
+            <Text style={styles.chooserSectionTitle}>{t('newPost.chooserTitle')}</Text>
+
+            {noOfferedPostTypes ? (
+              <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
+            ) : (
+              <View style={styles.typeList}>
+                {offeredPostTypes.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.typeRow}
+                    onPress={() => {
+                      setPostType(option);
+                      setComposerStep('compose');
+                    }}
+                  >
+                    <View style={[styles.typeRowIcon, { backgroundColor: POST_TYPE_ICON_BG[option] }]}>
+                      <Text style={styles.typeRowEmoji}>{POST_TYPE_ICON[option]}</Text>
+                    </View>
+                    <View style={styles.typeRowText}>
+                      <Text style={styles.typeRowTitle}>{t(`newPost.postType.${option.toLowerCase()}`)}</Text>
+                      <Text style={styles.typeRowSubtitle}>
+                        {t(`newPost.postTypeSubtitle.${option.toLowerCase()}`)}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const chipStyle = POST_TYPE_CHIP_STYLE[postType] ?? POST_TYPE_CHIP_STYLE.UPDATE;
+  const contentPlaceholder =
+    postType === 'POLL'
+      ? t('poll.questionPlaceholder')
+      : isMilestone
+        ? t('newPost.milestoneContentPlaceholder')
+        : t('newPost.contentPlaceholder');
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -206,6 +313,32 @@ export function NewPostScreen() {
       </View>
 
       <ScrollView style={styles.form} contentContainerStyle={styles.formContent}>
+        {/* Swappable type chip: tapping it returns to the type-chooser step
+            (postType and everything already typed is preserved). Its colors
+            and icon reflect whichever type is currently selected. */}
+        <View>
+          <TouchableOpacity
+            style={[styles.typeChip, { backgroundColor: chipStyle.bg, borderColor: chipStyle.border }]}
+            onPress={() => setComposerStep('type')}
+          >
+            <View style={[styles.typeChipIcon, { backgroundColor: chipStyle.iconBg }]}>
+              <Text style={styles.typeChipEmoji}>{POST_TYPE_ICON[postType]}</Text>
+            </View>
+            <Text style={[styles.typeChipLabel, { color: chipStyle.text }]}>
+              {t(`newPost.postType.${postType.toLowerCase()}`)}
+            </Text>
+            <Icon name="chevron-down" size={14} color={chipStyle.text} />
+          </TouchableOpacity>
+          {noOfferedPostTypes ? (
+            // Cross-post target groups with disjoint allow-lists: nothing can
+            // be composed for this combination — tell the user why submit is
+            // disabled instead of leaving it a mystery.
+            <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
+          ) : (
+            <Text style={styles.typeChipHint}>{t('newPost.changeTypeHint')}</Text>
+          )}
+        </View>
+
         <View style={styles.authorRow}>
           <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={48} />
           <View>
@@ -243,7 +376,7 @@ export function NewPostScreen() {
 
         <TextInput
           style={styles.textInput}
-          placeholder={postType === 'POLL' ? t('poll.questionPlaceholder') : t('newPost.contentPlaceholder')}
+          placeholder={contentPlaceholder}
           placeholderTextColor={colors.textMuted}
           multiline
           value={content}
@@ -251,124 +384,8 @@ export function NewPostScreen() {
           autoFocus
         />
 
-        {(allAssets.length > 0 || pendingAssets.length > 0) && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedAssets}>
-            {allAssets.map((asset) => {
-              const isVideo = isVideoUrl(asset.url);
-              return (
-                <View key={asset.url} style={styles.selectedAsset}>
-                  {isVideo ? (
-                    <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
-                  ) : (
-                    <Image
-                      source={{ uri: getUploadUrl(asset.url) }}
-                      style={styles.selectedAssetImage}
-                    />
-                  )}
-                  {isVideo && (
-                    <View style={styles.videoBadge} pointerEvents="none">
-                      <Icon name="play" size={14} color={colors.white} />
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={styles.removeAssetButton}
-                    onPress={() => removeUploadedAsset(asset.url)}
-                  >
-                    <Icon name="x" size={12} color={colors.white} />
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-            {pendingAssets.map((asset, index) => (
-              <View key={`pending-${index}`} style={styles.selectedAsset}>
-                {asset.isVideo ? (
-                  <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
-                ) : (
-                  <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
-                )}
-                <View style={styles.uploadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        )}
-
-        <TouchableOpacity style={styles.addPhotoButton} onPress={pickImagesFromDevice} disabled={uploading}>
-          <View style={styles.addPhotoIcon}>
-            <Icon name="smartphone" size={18} color={colors.white} />
-          </View>
-          <View>
-            <Text style={styles.addPhotoTitle}>{t('newPost.addPhotoTitle')}</Text>
-            <Text style={styles.addPhotoSubtitle}>{t('newPost.addPhotoSubtitle')}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
-          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowMediaPicker(true)}>
-            <View style={styles.addPhotoIcon}>
-              <Icon name="image" size={18} color={colors.white} />
-            </View>
-            <View>
-              <Text style={styles.addPhotoTitle}>{t('newPost.addAlbumPhotoTitle')}</Text>
-              <Text style={styles.addPhotoSubtitle}>{t('newPost.addAlbumPhotoSubtitle')}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {location ? (
-          <View style={styles.locationChip}>
-            <Icon name="map-pin" size={16} color={colors.primary} />
-            <Text style={styles.locationChipText} numberOfLines={1}>
-              {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
-            </Text>
-            <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
-              <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setLocation(null)}>
-              <Icon name="x" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.addPhotoButton} onPress={() => setShowLocationPicker(true)}>
-            <View style={styles.addPhotoIcon}>
-              <Icon name="map-pin" size={18} color={colors.white} />
-            </View>
-            <View>
-              <Text style={styles.addPhotoTitle}>{t('newPost.location.addTitle')}</Text>
-              <Text style={styles.addPhotoSubtitle}>{t('newPost.location.addSubtitle')}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.divider} />
-
-        {noOfferedPostTypes ? (
-          // Cross-post target groups with disjoint allow-lists: nothing can
-          // be composed for this combination — tell the user why submit is
-          // disabled instead of showing an empty control.
-          <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
-        ) : (
-          <View style={styles.segmentedControl}>
-            {offeredPostTypes.map((option) => {
-              const active = postType === option;
-              return (
-                <TouchableOpacity
-                  key={option}
-                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
-                  onPress={() => setPostType(option)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                >
-                  <Text style={[styles.segmentButtonText, active && styles.segmentButtonTextActive]}>
-                    {t(`newPost.postType.${option.toLowerCase()}`)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
+        {/* Type-specific fields sit right under the content field, matching
+            whichever post type the chip above says is selected. */}
         {postType === 'POLL' && offeredPostTypes.includes('POLL') && (
           <View style={styles.pollOptionsContainer}>
             {pollOptions.map((optionText, index) => (
@@ -402,54 +419,143 @@ export function NewPostScreen() {
         )}
 
         {isMilestone && offeredPostTypes.includes('MILESTONE') && (
-          <Text style={styles.milestoneSubtitle}>{t('newPost.milestoneSubtitle')}</Text>
-        )}
-
-        {isMilestone && offeredPostTypes.includes('MILESTONE') && (
-          <View style={styles.tagList}>
-            {MILESTONE_TAG_KEYS.map((tagKey) => {
-              const tag = t(`newPost.milestoneTags.${tagKey}`);
-              const active = !isCustomTag && selectedTag === tag;
-              return (
-                <TouchableOpacity
-                  key={tagKey}
-                  style={[styles.tagChip, active && styles.tagChipActive]}
-                  onPress={() => {
-                    setIsCustomTag(false);
-                    setSelectedTag(tag);
-                  }}
-                >
-                  <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
-                    {tag}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity
-              style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
-              onPress={() => {
-                setIsCustomTag(true);
-                setSelectedTag(null);
-              }}
-            >
-              <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
-                {t('newPost.milestoneTags.custom')}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.milestoneFields}>
+            <Text style={styles.sectionLabel}>{t('newPost.milestoneSubtitle')}</Text>
+            <View style={styles.tagList}>
+              {MILESTONE_TAG_KEYS.map((tagKey) => {
+                const tag = t(`newPost.milestoneTags.${tagKey}`);
+                const active = !isCustomTag && selectedTag === tag;
+                return (
+                  <TouchableOpacity
+                    key={tagKey}
+                    style={[styles.tagChip, active && styles.tagChipActive]}
+                    onPress={() => {
+                      setIsCustomTag(false);
+                      setSelectedTag(tag);
+                    }}
+                  >
+                    <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
+                      {tag}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
+                onPress={() => {
+                  setIsCustomTag(true);
+                  setSelectedTag(null);
+                }}
+              >
+                <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
+                  {t('newPost.milestoneTags.custom')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {isCustomTag && (
+              <TextInput
+                style={styles.customTagInput}
+                placeholder={t('newPost.milestoneTags.customPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={customTagText}
+                onChangeText={setCustomTagText}
+                maxLength={50}
+                autoFocus
+              />
+            )}
           </View>
         )}
 
-        {isMilestone && offeredPostTypes.includes('MILESTONE') && isCustomTag && (
-          <TextInput
-            style={styles.customTagInput}
-            placeholder={t('newPost.milestoneTags.customPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            value={customTagText}
-            onChangeText={setCustomTagText}
-            maxLength={50}
-            autoFocus
-          />
-        )}
+        <View style={styles.divider} />
+
+        {/* Attachments: a compact, growable pill row instead of stacked
+            cards, plus a thumbnail strip for whatever's already added. */}
+        <View style={styles.attachSection}>
+          <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
+
+          {(allAssets.length > 0 || pendingAssets.length > 0) && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedAssets}>
+              {allAssets.map((asset) => {
+                const isVideo = isVideoUrl(asset.url);
+                return (
+                  <View key={asset.url} style={styles.selectedAsset}>
+                    {isVideo ? (
+                      <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
+                    ) : (
+                      <Image
+                        source={{ uri: getUploadUrl(asset.url) }}
+                        style={styles.selectedAssetImage}
+                      />
+                    )}
+                    {isVideo && (
+                      <View style={styles.videoBadge} pointerEvents="none">
+                        <Icon name="play" size={14} color={colors.white} />
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      style={styles.removeAssetButton}
+                      onPress={() => removeUploadedAsset(asset.url)}
+                    >
+                      <Icon name="x" size={12} color={colors.white} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+              {pendingAssets.map((asset, index) => (
+                <View key={`pending-${index}`} style={styles.selectedAsset}>
+                  {asset.isVideo ? (
+                    <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
+                  ) : (
+                    <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
+                  )}
+                  <View style={styles.uploadingOverlay}>
+                    <ActivityIndicator size="small" color={colors.white} />
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          <View style={styles.attachPillRow}>
+            <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
+              <View style={styles.attachPillIcon}>
+                <Icon name="smartphone" size={13} color={colors.white} />
+              </View>
+              <Text style={styles.attachPillLabel}>{t('newPost.addPhotoTitle')}</Text>
+            </TouchableOpacity>
+
+            {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
+              <TouchableOpacity style={styles.attachPill} onPress={() => setShowMediaPicker(true)}>
+                <View style={styles.attachPillIcon}>
+                  <Icon name="image" size={13} color={colors.white} />
+                </View>
+                <Text style={styles.attachPillLabel}>{t('newPost.addAlbumPhotoTitle')}</Text>
+              </TouchableOpacity>
+            )}
+
+            {location ? (
+              <View style={styles.locationChip}>
+                <Icon name="map-pin" size={16} color={colors.primary} />
+                <Text style={styles.locationChipText} numberOfLines={1}>
+                  {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+                </Text>
+                <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
+                  <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setLocation(null)}>
+                  <Icon name="x" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.attachPill} onPress={() => setShowLocationPicker(true)}>
+                <View style={styles.attachPillIcon}>
+                  <Icon name="map-pin" size={13} color={colors.white} />
+                </View>
+                <Text style={styles.attachPillLabel}>{t('newPost.location.addTitle')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </ScrollView>
 
       <LocationPickerModal
@@ -489,6 +595,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerSpacer: {
+    width: 76,
+  },
   cancelButton: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 17,
@@ -523,6 +632,63 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 44,
     gap: 16,
+  },
+  chooserContent: {
+    padding: 16,
+    paddingBottom: 44,
+    gap: 22,
+  },
+  chooserGroupChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chooserTypeSection: {
+    gap: 12,
+  },
+  chooserSectionTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 18,
+    color: colors.textTitle,
+  },
+  typeList: {
+    gap: 10,
+  },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 76,
+  },
+  typeRowIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeRowEmoji: {
+    fontSize: 22,
+  },
+  typeRowText: {
+    flex: 1,
+  },
+  typeRowTitle: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 16.5,
+    color: colors.textTitle,
+  },
+  typeRowSubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13.5,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   authorRow: {
     flexDirection: 'row',
@@ -624,46 +790,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addPhotoButton: {
+  typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 10,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    backgroundColor: colors.bg,
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 100,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    paddingLeft: 10,
+    minHeight: 44,
   },
-  addPhotoIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primary,
+  typeChipIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addPhotoTitle: {
-    fontFamily: 'Nunito_700Bold',
+  typeChipEmoji: {
+    fontSize: 14,
+  },
+  typeChipLabel: {
+    fontFamily: 'Nunito_800ExtraBold',
     fontSize: 15,
-    color: colors.textTitle,
   },
-  addPhotoSubtitle: {
+  typeChipHint: {
     fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
+    fontSize: 12.5,
     color: colors.textMuted,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: colors.bg,
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
+    marginTop: 6,
   },
   noPostTypesNotice: {
     fontFamily: 'Nunito_600SemiBold',
@@ -673,29 +830,45 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    marginTop: 10,
   },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 9,
-    borderRadius: 9,
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  attachSection: {
+    gap: 10,
+  },
+  attachPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  attachPill: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingLeft: 10,
+    minHeight: 44,
   },
-  segmentButtonActive: {
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
+  attachPillIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  segmentButtonText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  segmentButtonTextActive: {
+  attachPillLabel: {
     fontFamily: 'Nunito_700Bold',
-    color: colors.primary,
+    fontSize: 14,
+    color: colors.textTitle,
   },
   pollOptionsContainer: {
     gap: 8,
@@ -737,11 +910,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
   },
-  milestoneSubtitle: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
+  milestoneFields: {
+    gap: 10,
   },
   tagList: {
     flexDirection: 'row',

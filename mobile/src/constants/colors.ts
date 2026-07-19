@@ -4,6 +4,7 @@ export const colors = {
   primaryLight: '#318ea2',
   primaryTint: '#daf3fe',
   accent: '#ed835e',
+  updateBg: '#fbe2d4',
   milestone: '#eeb154',
   milestoneBg: '#fff3dd',
   milestoneText: '#5c3d0a',

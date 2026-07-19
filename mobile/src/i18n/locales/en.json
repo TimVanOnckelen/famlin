@@ -119,15 +119,24 @@
     "groupsLabel": "Share with",
     "multipleGroupsSelected": "{{count}} groups selected",
     "contentPlaceholder": "Write something for the family...",
+    "milestoneContentPlaceholder": "Tell the story of this milestone...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
     "addAlbumPhotoTitle": "Album photos",
     "addAlbumPhotoSubtitle": "Choose from a shared album",
+    "attachLabel": "Add",
+    "changeTypeHint": "Tap to change the type — each type has its own fields below",
     "postType": {
       "update": "Update",
       "milestone": "Milestone",
       "poll": "Poll"
     },
+    "postTypeSubtitle": {
+      "update": "Share a moment, photo or video",
+      "milestone": "Birthday, birth, anniversary",
+      "poll": "Ask the family a question"
+    },
+    "chooserTitle": "What do you want to share?",
     "noPostTypesForSelection": "These families don't share any post type — change the selected families to post.",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",

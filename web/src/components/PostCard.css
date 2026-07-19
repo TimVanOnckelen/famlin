@@ -171,50 +171,94 @@
   margin: 0;
 }
 
-/* ── Extra photo thumbnails ─────────────────────────────────────────────── */
+/* ── Multi-photo collage (design 5a): one large tile + a stacked pair,
+   the pair's last tile showing "+N" once more photos exist than fit. Exactly
+   two photos fall back to a plain 50/50 split (no third tile to stack). ── */
 
-.post-thumbs {
-  display: flex;
-  gap: 6px;
-  padding: 6px 14px 0;
+.post-collage {
+  display: grid;
+  gap: 2px;
+  height: 280px;
 }
 
-.post-thumb {
+.post-collage-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.post-collage-3plus {
+  grid-template-columns: 1.5fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.post-collage-main {
+  grid-row: 1 / 3;
+}
+
+.post-collage-main .post-collage-tile {
+  height: 100%;
+}
+
+.post-collage-tile {
   position: relative;
-  flex: 1;
-  max-width: 33%;
-  aspect-ratio: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
   border: none;
   padding: 0;
-  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   background: var(--fam-primary-tint);
 }
 
-.post-thumb img,
-.post-thumb video {
+.post-collage-tile img,
+.post-collage-tile video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.post-thumb .shimmer-frame {
+.post-collage-tile .shimmer-frame {
   width: 100%;
   height: 100%;
 }
 
-.post-thumb-more {
+.post-collage-more {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(20, 10, 5, 0.5);
   color: white;
   font-size: 20px;
   font-weight: 800;
+}
+
+/* ── Photo-count badge (camera icon + total), stacked above the favorite
+   button in the hero's top-right corner. ── */
+
+.post-hero-top-right {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.post-photo-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  border-radius: var(--r-pill);
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: white;
 }
 
 /* ── Author row / content ───────────────────────────────────────────────── */
@@ -519,9 +563,6 @@
 }
 
 .favorite-btn-overlay {
-  position: absolute;
-  right: 10px;
-  top: 10px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(4px);
 }

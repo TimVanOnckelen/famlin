@@ -119,15 +119,24 @@
     "groupsLabel": "Delen met",
     "multipleGroupsSelected": "{{count}} groepen geselecteerd",
     "contentPlaceholder": "Schrijf iets voor de familie...",
+    "milestoneContentPlaceholder": "Vertel over deze mijlpaal...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
     "addAlbumPhotoTitle": "Albumfoto's",
     "addAlbumPhotoSubtitle": "Kies uit een gedeeld album",
+    "attachLabel": "Toevoegen",
+    "changeTypeHint": "Tik om het type te wijzigen — elk type heeft zijn eigen velden hieronder",
     "postType": {
       "update": "Update",
       "milestone": "Mijlpaal",
       "poll": "Poll"
     },
+    "postTypeSubtitle": {
+      "update": "Deel een moment, foto of video",
+      "milestone": "Verjaardag, geboorte, jubileum",
+      "poll": "Stel de familie een vraag"
+    },
+    "chooserTitle": "Wat wil je delen?",
     "noPostTypesForSelection": "Deze families hebben geen gemeenschappelijk berichttype — wijzig de geselecteerde families om te kunnen plaatsen.",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
