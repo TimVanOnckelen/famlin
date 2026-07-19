@@ -1,0 +1,201 @@
+/* Trip feed card (postTypes/TripFeedCard) — a distinct "postcard" treatment
+   from the regular post-card-inner: a teal tint/border for the active
+   variant, a plain surface for the closed (diary) variant, reusing
+   post-card/post-card-inner's masonry positioning + shadow/radius. */
+
+.trip-card-inner {
+  border-color: var(--fam-trip-border);
+}
+
+.trip-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Active hero ────────────────────────────────────────────────────────── */
+
+.trip-card-hero {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: var(--fam-trip-tint);
+  text-align: left;
+}
+
+.trip-card-hero-media {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.trip-card-hero-placeholder {
+  width: 100%;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  background: var(--fam-trip-tint);
+}
+
+.trip-card-hero-badge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+}
+
+.trip-card-hero-author {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+/* ── Closed collage (2×2 grid + overflow tile) ─────────────────────────── */
+
+.trip-card-collage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  height: 240px;
+  width: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: var(--fam-trip-tint);
+}
+
+.trip-card-collage-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.trip-card-collage-tile img,
+.trip-card-collage-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.trip-card-collage-tile .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.trip-card-collage-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 10, 5, 0.55);
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+
+.trip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 13px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.trip-badge-active {
+  background: var(--fam-trip);
+  color: white;
+}
+
+.trip-badge-closed {
+  border: 1.5px solid var(--fam-trip-border);
+  color: var(--fam-trip-dark);
+  background: transparent;
+}
+
+.trip-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Text ───────────────────────────────────────────────────────────────── */
+
+.trip-card-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: var(--fam-text-title);
+  margin: 4px 0 0;
+}
+
+.trip-card-title-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-card-destination {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-trip-dark);
+}
+
+.trip-card-last-stop {
+  font-size: 14.5px;
+  color: var(--fam-text-body);
+  margin-top: 3px;
+}
+
+.trip-card-muted {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Actions row (reaction picker + CTA) ───────────────────────────────── */
+
+.trip-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--fam-trip-border);
+  padding-top: 10px;
+}
+
+.trip-card-cta {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--fam-trip-dark);
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.trip-card-cta:hover {
+  text-decoration: underline;
+}

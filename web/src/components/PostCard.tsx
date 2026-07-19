@@ -17,6 +17,7 @@ import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { postTypeRenderers } from '@/components/postTypes';
+import { TripFeedCard } from '@/components/postTypes/TripFeedCard';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
@@ -112,7 +113,29 @@ function PersonChip({ person }: { person: PostPerson }) {
   );
 }
 
-export function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
+export function PostCard({
+  post,
+  showGroup = false,
+  onOpenTrip,
+}: {
+  post: Post;
+  showGroup?: boolean;
+  onOpenTrip?: (postId: string) => void;
+}) {
+  // TRIP posts get a wholesale-different card (different hero source, no
+  // inline comments, a "follow/view diary" CTA instead of a comment button)
+  // — delegate before any of the generic hero/comments rendering below runs,
+  // the same precedent as mobile's PostCard. Check-in comments must never
+  // surface in a generic inline comment list, which this branch guarantees
+  // simply by never mounting CommentsSection for a TRIP post.
+  if (post.type === 'TRIP') {
+    return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />;
+  }
+
+  return <DefaultPostCard post={post} showGroup={showGroup} />;
+}
+
+function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';

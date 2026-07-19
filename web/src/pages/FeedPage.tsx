@@ -14,12 +14,14 @@ export function FeedPage({
   onOpenProfile,
   onOpenPhotos,
   onOpenChat,
+  onOpenTrip,
   onLogout,
 }: {
   user: User;
   onOpenProfile: () => void;
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
+  onOpenTrip?: (postId: string) => void;
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
@@ -115,7 +117,7 @@ export function FeedPage({
         {posts.length > 0 && (
           <div className="feed-grid">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} showGroup={showGroupOnCards} />
+              <PostCard key={post.id} post={post} showGroup={showGroupOnCards} onOpenTrip={onOpenTrip} />
             ))}
           </div>
         )}

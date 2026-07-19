@@ -1,0 +1,372 @@
+/* Trip detail page — desktop-widened editorial layout (design t6, screens
+   6c/6d): a wider column than the feed's masonry cards so the check-in
+   timeline reads comfortably at desktop widths. */
+
+.trip-detail-shell {
+  min-height: 100vh;
+}
+
+.trip-detail-column {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 720px) {
+  .trip-detail-column {
+    padding-bottom: 112px;
+  }
+}
+
+.trip-detail-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.trip-detail-hint {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
+/* ── Cover + header card ────────────────────────────────────────────────── */
+
+.trip-detail-cover {
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--fam-trip-tint);
+}
+
+.trip-detail-cover-media {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.trip-detail-cover-placeholder {
+  width: 100%;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+}
+
+.trip-detail-header {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trip-detail-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  color: var(--fam-text-title);
+  margin: 8px 0 0;
+}
+
+.trip-detail-destination {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-trip-dark);
+}
+
+.trip-detail-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+.trip-detail-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.trip-detail-stat-number {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--fam-text-title);
+}
+
+.trip-detail-stat-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+}
+
+.trip-detail-travelers {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.trip-detail-travelers-stack {
+  display: flex;
+}
+
+.trip-detail-traveler-face {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--fam-surface);
+  margin-left: -8px;
+}
+
+.trip-detail-traveler-face:first-child {
+  margin-left: 0;
+}
+
+.trip-detail-travelers-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Trip-level comments ("Reacties op de reis") ───────────────────────── */
+
+.trip-detail-comments-section {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px 22px;
+}
+
+.trip-detail-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin: 0 0 12px;
+}
+
+/* ── Timeline ───────────────────────────────────────────────────────────── */
+
+.trip-detail-timeline-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--fam-text-muted);
+  padding-left: 4px;
+}
+
+.trip-detail-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-timeline-row {
+  display: flex;
+  gap: 16px;
+}
+
+.trip-timeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.trip-timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--fam-trip);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.trip-timeline-line {
+  flex: 1;
+  width: 2px;
+  background: var(--fam-trip-border);
+  margin-top: 4px;
+}
+
+.trip-timeline-content {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 26px;
+}
+
+.trip-timeline-day-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--fam-trip-dark);
+  letter-spacing: 0.2px;
+}
+
+.trip-timeline-place {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin-top: 2px;
+}
+
+.trip-timeline-author-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.trip-timeline-author-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+}
+
+.trip-timeline-text {
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--fam-text-body);
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.trip-timeline-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 10px;
+  max-width: 420px;
+}
+
+.trip-timeline-photos-single {
+  grid-template-columns: minmax(0, 220px);
+}
+
+.trip-timeline-photo-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  background: var(--fam-bg);
+}
+
+.trip-timeline-photo-tile img,
+.trip-timeline-photo-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.trip-timeline-photo-tile .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.trip-timeline-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.trip-timeline-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trip-timeline-reply {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14.5px;
+  color: var(--fam-text-body);
+}
+
+.trip-timeline-reply-author {
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.trip-timeline-reply-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trip-timeline-reply-form .comment-input {
+  flex: 1;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+
+.trip-detail-empty {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.trip-detail-empty-icon {
+  font-size: 40px;
+  margin-bottom: 6px;
+}
+
+.trip-detail-empty-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.trip-detail-empty-description {
+  font-size: 14.5px;
+  color: var(--fam-text-muted);
+  max-width: 340px;
+}
+
+/* ── Closing line ───────────────────────────────────────────────────────── */
+
+.trip-detail-closing-line {
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  padding: 8px 0 4px;
+}

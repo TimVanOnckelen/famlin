@@ -34,7 +34,20 @@
     "empty": "No posts yet — share the first update with your family!",
     "loadMore": "Show more",
     "loadFailed": "The feed couldn't be loaded.",
-    "sharedWith": "Shared with {{names}}"
+    "sharedWith": "Shared with {{names}}",
+    "trip": {
+      "activeBadge": "🧳 Day {{day}} · on the go",
+      "lastStopLabel": "Last stop:",
+      "stopsSoFar_one": "{{count}} stop so far · {{author}}",
+      "stopsSoFar_other": "{{count}} stops so far · {{author}}",
+      "followCta": "Follow the trip →",
+      "closedBadge": "🧳 TRIP · CLOSED",
+      "closedStats": "{{days}} days · {{stops}} stops · {{photos}} photos",
+      "authorDateRange": "{{author}} · {{range}}",
+      "dateRangeSameMonth": "{{startDay}} to {{endDay}} {{month}}",
+      "dateRangeDifferentMonth": "{{start}} to {{end}}",
+      "viewDiaryCta": "View the diary →"
+    }
   },
   "comments": {
     "placeholder": "Write a comment…",
@@ -183,5 +196,32 @@
     "photos": "Photos",
     "profile": "Profile",
     "chat": "Chat"
+  },
+  "trip": {
+    "detail": {
+      "backToFeed": "Back to the feed",
+      "activeBadge": "🧳 ACTIVE · DAY {{day}}",
+      "closedBadge": "🧳 CLOSED",
+      "sinceLabel": "{{author}} · since {{date}}",
+      "statsStops": "stops",
+      "statsPhotos": "photos",
+      "statsDays": "days",
+      "travelersRowLabel": "Travel companions",
+      "travelersWith": "With {{names}}",
+      "tripCommentsSectionTitle_one": "💬 Trip comments · {{count}}",
+      "tripCommentsSectionTitle_other": "💬 Trip comments · {{count}}",
+      "timelineLabelActive": "Timeline · newest first",
+      "timelineLabelClosed": "Diary · oldest first",
+      "dayTimeLabel": "Day {{day}} · {{time}}",
+      "dayDateLabel": "Day {{day}} · {{date}}",
+      "likesLabel": "❤️ {{count}}",
+      "replyAction": "Reply",
+      "replyPlaceholder": "Write a reply…",
+      "commentsCountButton_one": "{{count}} reply",
+      "commentsCountButton_other": "{{count}} replies",
+      "closingLine": "Trip closed by {{author}} · {{date}}",
+      "emptyTitle": "The trip has begun…",
+      "emptyDescription": "No check-ins yet. Once {{name}} is on the way, the first stops will appear here."
+    }
   }
 }
