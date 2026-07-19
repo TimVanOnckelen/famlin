@@ -64,7 +64,11 @@ export interface PostTypeHandler {
    * (trip.ts's checkin -> comment.created) does.
    */
   interact?(args: {
-    post: { id: string; typeData: unknown; authorId: string; groupId: string; groupName: string };
+    // crossPostId lets a handler fan an interaction's effects out to the
+    // post's cross-post siblings (trip.ts's checkin/close/setTravelers) —
+    // it is internal plumbing and must NEVER be serialized into a response
+    // (same privacy rule as shapePost's destructuring, see services/posts.ts).
+    post: { id: string; typeData: unknown; authorId: string; groupId: string; groupName: string; crossPostId: string | null };
     userId: string;
     key: string;
     value: unknown;

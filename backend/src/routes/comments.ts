@@ -148,7 +148,10 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request);
     const { id } = request.params as { id: string };
 
-    const comment = await prisma.comment.findUnique({ where: { id } });
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      include: { post: { select: { crossPostId: true } } },
+    });
 
     if (!comment) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
@@ -158,7 +161,32 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
     }
 
-    await prisma.comment.delete({ where: { id } });
+    // A TRIP check-in on a cross-posted trip exists as one Comment copy per
+    // sibling post, all sharing metadata.checkinId (services/postTypes/
+    // trip.ts). When the AUTHOR deletes their check-in, remove every copy —
+    // mirroring how an author's post DELETE fans out to siblings
+    // (routes/posts.ts). An admin moderating someone else's check-in stays
+    // per-group (single row), consistent with admin post moderation.
+    const metadata = comment.metadata as { kind?: unknown; checkinId?: unknown } | null;
+    if (
+      comment.authorId === request.user!.id &&
+      metadata?.kind === 'trip_checkin' &&
+      typeof metadata.checkinId === 'string' &&
+      comment.post.crossPostId
+    ) {
+      const siblingIds = (
+        await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
+      ).map((p) => p.id);
+      await prisma.comment.deleteMany({
+        where: {
+          postId: { in: siblingIds },
+          authorId: comment.authorId,
+          metadata: { path: ['checkinId'], equals: metadata.checkinId },
+        },
+      });
+    } else {
+      await prisma.comment.delete({ where: { id } });
+    }
 
     return { success: true };
   });

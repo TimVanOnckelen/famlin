@@ -99,6 +99,10 @@ export function registerNotificationSubscriber(): void {
       const place = (event.metadata as { place: string }).place;
       const startOfTodayUtc = new Date();
       startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+      // Per check-in AUTHOR (not per trip) — a co-traveler's bundling count
+      // is independent of the trip author's. Counted on the event's own
+      // post; a cross-posted trip's sibling copies are created in lockstep,
+      // so every sibling carries the same per-author count.
       const countToday = await prisma.comment.count({
         where: {
           postId: event.postId,
@@ -108,16 +112,44 @@ export function registerNotificationSubscriber(): void {
         },
       });
 
-      await notifyGroup({
-        type: 'trip_checkin',
-        groupId: event.groupId,
-        senderId: event.authorId,
-        postId: event.postId,
-        // count drives i18next pluralization (tripCheckin_one/_other, see
-        // the locale files) — 1 = this author's first check-in today for
-        // this trip, 2+ = "checked in N times today, last stop: {place}".
-        params: { author: event.authorName, group: event.groupName, place, count: countToday },
+      // A cross-posted trip's check-in carries one target per sibling
+      // Comment copy — a member of several sibling groups must be notified
+      // exactly once, so each candidate is assigned to the FIRST target (in
+      // emission order) whose group they belong to. Mirrors the post.created
+      // handler above.
+      const targets = event.checkinTargets ?? [
+        { commentId: event.commentId, postId: event.postId, groupId: event.groupId, groupName: event.groupName },
+      ];
+      const memberships = await prisma.groupMember.findMany({
+        where: { groupId: { in: targets.map((t) => t.groupId) }, userId: { not: event.authorId } },
+        select: { groupId: true, userId: true },
       });
+      const groupIdsByUserId = new Map<string, Set<string>>();
+      for (const m of memberships) {
+        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
+        set.add(m.groupId);
+        groupIdsByUserId.set(m.userId, set);
+      }
+
+      const assigned = new Set<string>();
+      for (const target of targets) {
+        const recipientIds = [...groupIdsByUserId.entries()]
+          .filter(([userId, groups]) => !assigned.has(userId) && groups.has(target.groupId))
+          .map(([userId]) => userId);
+        if (recipientIds.length === 0) continue;
+        recipientIds.forEach((id) => assigned.add(id));
+
+        await notifyUsers({
+          type: 'trip_checkin',
+          userIds: recipientIds,
+          senderId: event.authorId,
+          postId: target.postId,
+          // count drives i18next pluralization (tripCheckin_one/_other, see
+          // the locale files) — 1 = this author's first check-in today for
+          // this trip, 2+ = "checked in N times today, last stop: {place}".
+          params: { author: event.authorName, group: target.groupName, place, count: countToday },
+        });
+      }
       return;
     }
 

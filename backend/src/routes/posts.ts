@@ -470,10 +470,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // etc. later (see services/postTypes/). This route itself emits no domain
   // event (deliberate: no vote notifications in v1) — a handler that DOES
   // want one emits it itself from inside interact() (trip.ts's checkin emits
-  // comment.created). Cross-posted siblings are intentionally NOT fanned
-  // out — an interaction only ever applies to the one sibling row the caller
-  // can see, unlike author PATCH/DELETE above (moot for TRIP, which rejects
-  // cross-posting at create time).
+  // comment.created). This route does not fan out to cross-posted siblings
+  // itself — a poll vote only ever applies to the one sibling row the caller
+  // can see — but a handler whose interaction semantically spans siblings
+  // (trip.ts's checkin/close/setTravelers) fans out internally via the
+  // crossPostId it receives.
   fastify.post('/:postId/interactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { postId } = request.params as { postId: string };
@@ -494,7 +495,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     try {
       await postTypeHandler.interact({
-        post: { id: post.id, typeData: post.typeData, authorId: post.authorId, groupId: post.groupId, groupName: post.group.name },
+        post: {
+          id: post.id,
+          typeData: post.typeData,
+          authorId: post.authorId,
+          groupId: post.groupId,
+          groupName: post.group.name,
+          crossPostId: post.crossPostId,
+        },
         userId: request.user!.id,
         key,
         value,

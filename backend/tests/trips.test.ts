@@ -128,26 +128,6 @@ describe('TRIP posts', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('rejects cross-posting a trip to more than one group', async () => {
-      const author = await createUser();
-      const groupA = await createGroupWithMember(author);
-      const groupB = await createGroupWithMember(author);
-
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/posts',
-        headers: authHeader(author),
-        payload: {
-          groupIds: [groupA.id, groupB.id],
-          content: 'Shared trip',
-          type: 'TRIP',
-          typeData: { title: 'Shared trip', startDate: isoDate(0) },
-        },
-      });
-      expect(res.statusCode).toBe(400);
-      expect(res.json().error).toBe("A trip can't be shared to more than one family at once");
-      expect(await prisma.post.count({ where: { content: 'Shared trip' } })).toBe(0);
-    });
   });
 
   describe('check-in interaction', () => {
@@ -174,7 +154,12 @@ describe('TRIP posts', () => {
       const comment = await prisma.comment.findFirstOrThrow({ where: { postId: trip.id } });
       expect(comment.authorId).toBe(author.id);
       expect(comment.content).toBe('Arrived!');
-      expect(comment.metadata).toEqual({ kind: 'trip_checkin', place: 'Geneva', photoUrls: [photo] });
+      expect(comment.metadata).toEqual({
+        kind: 'trip_checkin',
+        checkinId: expect.any(String),
+        place: 'Geneva',
+        photoUrls: [photo],
+      });
     });
 
     it('allows a check-in with no text (place only)', async () => {
@@ -618,6 +603,249 @@ describe('TRIP posts', () => {
       expect(notifications).toHaveLength(2);
       expect(notifications[0].message).toBe(`${author.name} checked in at First stop`);
       expect(notifications[1].message).toBe(`${author.name} checked in 2 times today · last stop: Second stop`);
+    });
+  });
+
+  describe('cross-posted trips', () => {
+    async function createCrossTrip(
+      author: { id: string; email: string; name: string; isAdmin: boolean },
+      groupIds: string[],
+      travelerUserIds?: string[]
+    ) {
+      return app.inject({
+        method: 'POST',
+        url: '/api/posts',
+        headers: authHeader(author),
+        payload: {
+          groupIds,
+          content: 'Cross trip!',
+          type: 'TRIP',
+          typeData: { title: 'Cross trip', startDate: isoDate(0), travelerUserIds },
+        },
+      });
+    }
+
+    async function getSiblings(groupAId: string, groupBId: string) {
+      const a = await prisma.post.findFirstOrThrow({ where: { groupId: groupAId, type: 'TRIP' } });
+      const b = await prisma.post.findFirstOrThrow({ where: { groupId: groupBId, type: 'TRIP' } });
+      return { a, b };
+    }
+
+    it('creates one sibling per target group sharing crossPostId and identical typeData', async () => {
+      const author = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+
+      const res = await createCrossTrip(author, [groupA.id, groupB.id]);
+      expect(res.statusCode).toBe(200);
+      expect(res.json().sharedWithGroups).toHaveLength(2);
+
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+      expect(a.crossPostId).not.toBeNull();
+      expect(a.crossPostId).toBe(b.crossPostId);
+      expect(a.typeData).toEqual(b.typeData);
+    });
+
+    it('rejects a traveler who is a member of only one target group', async () => {
+      const author = await createUser();
+      const traveler = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await addMember(groupA.id, traveler.id); // NOT in groupB
+
+      const res = await createCrossTrip(author, [groupA.id, groupB.id], [traveler.id]);
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('Every traveler must be a member of this group');
+      // Scoped to this test's own groups — truncation is per-file, so other
+      // tests' cross-trips (same content) exist alongside.
+      expect(await prisma.post.count({ where: { groupId: { in: [groupA.id, groupB.id] } } })).toBe(0);
+
+      // A traveler in BOTH groups is fine.
+      await addMember(groupB.id, traveler.id);
+      const ok = await createCrossTrip(author, [groupA.id, groupB.id], [traveler.id]);
+      expect(ok.statusCode).toBe(200);
+      expect(ok.json().typeData.travelerUserIds).toEqual([traveler.id]);
+    });
+
+    it('fans a check-in out to every sibling with a shared checkinId, enriching both consistently', async () => {
+      const author = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+      const photo = assetPath();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Both groups', photoUrls: [photo] } },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().trip.stopCount).toBe(1);
+
+      const copyA = await prisma.comment.findFirstOrThrow({ where: { postId: a.id } });
+      const copyB = await prisma.comment.findFirstOrThrow({ where: { postId: b.id } });
+      expect((copyA.metadata as any).checkinId).toBeDefined();
+      expect((copyA.metadata as any).checkinId).toBe((copyB.metadata as any).checkinId);
+      expect((copyB.metadata as any).place).toBe('Both groups');
+
+      const getB = await app.inject({ method: 'GET', url: `/api/posts/${b.id}`, headers: authHeader(author) });
+      expect(getB.statusCode).toBe(200);
+      expect(getB.json().trip.stopCount).toBe(1);
+      expect(getB.json().trip.photoCount).toBe(1);
+      expect(getB.json().trip.collagePhotoUrls).toEqual([photo]);
+      expect(getB.json().trip.latestCheckin.commentId).toBe(copyB.id);
+    });
+
+    it('notifies a member of both sibling groups exactly once per check-in', async () => {
+      const author = await createUser();
+      const both = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await addMember(groupA.id, both.id);
+      await addMember(groupB.id, both.id);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a } = await getSiblings(groupA.id, groupB.id);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Dedupe town' } },
+      });
+      expect(res.statusCode).toBe(200);
+
+      const notifications = await prisma.notification.findMany({ where: { userId: both.id, type: 'trip_checkin' } });
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].message).toContain('Dedupe town');
+    });
+
+    it('fans close out to every sibling', async () => {
+      const author = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'close' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().trip.closed).toBe(true);
+
+      const rowB = await prisma.post.findUniqueOrThrow({ where: { id: b.id } });
+      expect((rowB.typeData as any).closedAt).not.toBeNull();
+      expect((rowB.typeData as any).closedByUserId).toBe(author.id);
+
+      // And a check-in via the OTHER sibling is now rejected too.
+      const checkin = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${b.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Too late' } },
+      });
+      expect(checkin.statusCode).toBe(400);
+      expect(checkin.json().error).toBe('This trip is closed');
+    });
+
+    it('fans setTravelers out to every sibling and requires membership in all sibling groups', async () => {
+      const author = await createUser();
+      const traveler = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await addMember(groupA.id, traveler.id); // only in A at first
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+
+      const rejected = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'setTravelers', value: { userIds: [traveler.id] } },
+      });
+      expect(rejected.statusCode).toBe(400);
+      expect(rejected.json().error).toBe('Every traveler must be a member of this group');
+
+      await addMember(groupB.id, traveler.id);
+      const ok = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'setTravelers', value: { userIds: [traveler.id] } },
+      });
+      expect(ok.statusCode).toBe(200);
+
+      const rowB = await prisma.post.findUniqueOrThrow({ where: { id: b.id } });
+      expect((rowB.typeData as any).travelerUserIds).toEqual([traveler.id]);
+
+      // The new traveler can check in via EITHER sibling.
+      const checkin = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${b.id}/interactions`,
+        headers: authHeader(traveler),
+        payload: { key: 'checkin', value: { place: 'Via sibling B' } },
+      });
+      expect(checkin.statusCode).toBe(200);
+    });
+
+    it('author deleting a check-in removes every sibling copy; admin moderation removes one', async () => {
+      const author = await createUser();
+      const admin = await createUser({ isAdmin: true });
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+
+      // First check-in: author deletes their own copy — all copies go.
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'To be deleted by author' } },
+      });
+      const authorCopy = await prisma.comment.findFirstOrThrow({ where: { postId: a.id } });
+      const del = await app.inject({
+        method: 'DELETE',
+        url: `/api/comments/${authorCopy.id}`,
+        headers: authHeader(author),
+      });
+      expect(del.statusCode).toBe(200);
+      expect(await prisma.comment.count({ where: { postId: { in: [a.id, b.id] } } })).toBe(0);
+
+      // Second check-in: an ADMIN (not the author) deletes one copy — the
+      // sibling copy stays (per-group moderation, like admin post deletes).
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Moderated' } },
+      });
+      const moderatedCopy = await prisma.comment.findFirstOrThrow({ where: { postId: a.id } });
+      const adminDel = await app.inject({
+        method: 'DELETE',
+        url: `/api/comments/${moderatedCopy.id}`,
+        headers: authHeader(admin),
+      });
+      expect(adminDel.statusCode).toBe(200);
+      expect(await prisma.comment.count({ where: { postId: a.id } })).toBe(0);
+      expect(await prisma.comment.count({ where: { postId: b.id } })).toBe(1);
+    });
+
+    it('shows a cross-posted trip once in the feed for a member of both groups', async () => {
+      const author = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+
+      const feed = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) });
+      expect(feed.statusCode).toBe(200);
+      const trips = feed.json().items.filter((p: any) => p.type === 'TRIP');
+      expect(trips).toHaveLength(1);
+      expect(trips[0].trip.title).toBe('Cross trip');
     });
   });
 });

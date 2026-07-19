@@ -67,7 +67,6 @@
     "invalidPollOption": "Invalid poll option",
     "pollQuestionRequired": "A poll needs a question",
     "postTypeNotAllowed": "This post type is not allowed in this group",
-    "tripNoCrossPost": "A trip can't be shared to more than one family at once",
     "tripNotAuthor": "Only the trip's author can do this",
     "tripNotTraveler": "Only the trip's travelers can check in",
     "tripTravelerNotMember": "Every traveler must be a member of this group",

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../db.js';
@@ -22,7 +23,7 @@ const tripTypeDataSchema = z.object({
   // Co-travelers: other group members who may also check in. The author is
   // implicitly a traveler and never stored in this list (stripped at
   // create/setTravelers time); each id is validated to be a current member
-  // of the target group.
+  // of every target group.
   travelerUserIds: z.array(z.string().min(1)).max(20).optional(),
 });
 
@@ -54,6 +55,11 @@ interface PersistedTripTypeData {
 // in src/types.ts).
 interface TripCheckinMetadata {
   kind: 'trip_checkin';
+  // Shared by every Comment copy one check-in creates (one per cross-post
+  // sibling; a single-group trip has exactly one copy but still carries the
+  // id, for uniformity) — it's what lets the author's DELETE of one copy
+  // remove the others too (see routes/comments.ts).
+  checkinId: string;
   place: string;
   photoUrls: string[];
 }
@@ -75,20 +81,52 @@ function normalizeTravelerIds(ids: string[], authorId: string): string[] {
   return [...new Set(ids)].filter((id) => id !== authorId);
 }
 
-// Every proposed traveler must be a CURRENT member of the trip's group —
-// checked when the list is written (create/setTravelers), not on every
-// check-in: a traveler later removed from the group loses feed access
-// anyway, and re-validating the stored list per check-in would silently
-// change past behavior.
-async function assertTravelersAreMembers(userIds: string[], groupId: string): Promise<void> {
+// Every proposed traveler must be a CURRENT member of EVERY target group —
+// a co-traveler's check-ins land in all cross-post sibling groups, and
+// members must never create content in a group they don't belong to.
+// Checked when the list is written (create/setTravelers), not on every
+// check-in: a traveler later removed from a group loses feed access anyway,
+// and re-validating the stored list per check-in would silently change past
+// behavior.
+async function assertTravelersAreMembers(userIds: string[], groupIds: string[]): Promise<void> {
   if (userIds.length === 0) return;
-  const members = await prisma.groupMember.findMany({
-    where: { groupId, userId: { in: userIds } },
-    select: { userId: true },
+  const memberships = await prisma.groupMember.findMany({
+    where: { groupId: { in: groupIds }, userId: { in: userIds } },
+    select: { groupId: true, userId: true },
   });
-  if (members.length !== userIds.length) {
+  const groupsByUserId = new Map<string, Set<string>>();
+  for (const m of memberships) {
+    const set = groupsByUserId.get(m.userId) ?? new Set<string>();
+    set.add(m.groupId);
+    groupsByUserId.set(m.userId, set);
+  }
+  const everyUserInEveryGroup = userIds.every((userId) => {
+    const groups = groupsByUserId.get(userId);
+    return !!groups && groupIds.every((groupId) => groups.has(groupId));
+  });
+  if (!everyUserInEveryGroup) {
     throw new PostTypeError('tripTravelerNotMember');
   }
+}
+
+// The post ids/groups one trip interaction spans: the post itself for a
+// single-group trip, every sibling sharing its crossPostId for a
+// cross-posted one. Includes the invoked post.
+async function getTripSiblings(post: {
+  id: string;
+  groupId: string;
+  groupName: string;
+  crossPostId: string | null;
+}): Promise<Array<{ id: string; groupId: string; groupName: string }>> {
+  if (!post.crossPostId) {
+    return [{ id: post.id, groupId: post.groupId, groupName: post.groupName }];
+  }
+  const siblings = await prisma.post.findMany({
+    where: { crossPostId: post.crossPostId },
+    select: { id: true, groupId: true, group: { select: { name: true } } },
+    orderBy: { id: 'asc' },
+  });
+  return siblings.map((s) => ({ id: s.id, groupId: s.groupId, groupName: s.group.name }));
 }
 
 function isTripCheckinMetadata(value: unknown): value is TripCheckinMetadata {
@@ -138,23 +176,17 @@ export const tripHandler: PostTypeHandler = {
   typeDataSchema: tripTypeDataSchema,
 
   async validateCreate({ typeData, authorId, targetGroupIds }) {
-    // A trip is a single, ongoing thread of check-ins — cross-posting would
-    // fork that thread into per-group siblings with independent check-ins,
-    // which breaks the "one living journal" model this type is built on.
-    if (targetGroupIds.length > 1) {
-      throw new PostTypeError('tripNoCrossPost');
-    }
-
     const parsed = typeData as z.infer<typeof tripTypeDataSchema>;
     if (parsed.endDate && parsed.endDate < parsed.startDate) {
       throw new PostTypeError('invalidPostTypeData');
     }
 
-    // Co-travelers must be current members of the (single) target group.
+    // Co-travelers must be current members of EVERY target group (a
+    // cross-posted trip fans their check-ins out to all sibling groups).
     // The author id is stripped before checking — the route already
-    // verified the author's own membership.
+    // verified the author's own membership in every target.
     const travelerIds = normalizeTravelerIds(parsed.travelerUserIds ?? [], authorId);
-    await assertTravelersAreMembers(travelerIds, targetGroupIds[0]);
+    await assertTravelersAreMembers(travelerIds, targetGroupIds);
   },
 
   transformCreate(typeData, { authorId }): PersistedTripTypeData {
@@ -196,37 +228,58 @@ export const tripHandler: PostTypeHandler = {
         throw new PostTypeError('invalidInteraction');
       }
       const { place, text, photoUrls } = parsed.data;
-      const metadata: TripCheckinMetadata = { kind: 'trip_checkin', place, photoUrls: photoUrls ?? [] };
+      // One shared checkinId across every copy (single-group trips get it
+      // too, for uniformity) — see TripCheckinMetadata and the author
+      // delete fan-out in routes/comments.ts.
+      const metadata: TripCheckinMetadata = { kind: 'trip_checkin', checkinId: randomUUID(), place, photoUrls: photoUrls ?? [] };
 
-      const comment = await prisma.comment.create({
-        data: {
-          postId: post.id,
-          authorId: userId,
-          content: text ?? '',
-          metadata: metadata as unknown as Prisma.InputJsonValue,
-        },
-        include: { author: { select: { name: true } } },
-      });
+      // A cross-posted trip stores one Comment copy per sibling post (same
+      // content/metadata), created atomically — comments are group-scoped
+      // (they hang off one Post row), so each sibling group needs its own
+      // copy to see the check-in, mirroring how cross-posted posts
+      // themselves are per-group rows.
+      const siblings = await getTripSiblings(post);
+      const created = await prisma.$transaction(
+        siblings.map((sibling) =>
+          prisma.comment.create({
+            data: {
+              postId: sibling.id,
+              authorId: userId,
+              content: text ?? '',
+              metadata: metadata as unknown as Prisma.InputJsonValue,
+            },
+            include: { author: { select: { name: true } } },
+          })
+        )
+      );
+      const invokedIndex = siblings.findIndex((sibling) => sibling.id === post.id);
+      const primary = created[invokedIndex] ?? created[0];
 
-      // A check-in rides the existing comment.created event so the
-      // notifications subscriber can recognize it (via metadata.kind) and
-      // notify with `trip_checkin` instead of the normal `new_comment` — see
-      // src/subscribers/notifications.ts. Fire-and-forget like every other
-      // domain event emission (src/events.ts); the request already committed
-      // the comment write above.
+      // ONE comment.created event for the whole check-in, carrying every
+      // copy via checkinTargets (mirrors post.created's `posts` array) so
+      // the notifications subscriber can notify a member of several sibling
+      // groups exactly once — see src/subscribers/notifications.ts.
+      // Fire-and-forget like every other domain event emission
+      // (src/events.ts); the transaction above already committed.
       emitDomainEvent('comment.created', {
-        commentId: comment.id,
+        commentId: primary.id,
         postId: post.id,
         postAuthorId: post.authorId,
         groupId: post.groupId,
         groupName: post.groupName,
         authorId: userId,
-        authorName: comment.author.name,
-        content: comment.content,
+        authorName: primary.author.name,
+        content: primary.content,
         hasAttachment: metadata.photoUrls.length > 0,
         parentId: null,
         mentionedUserIds: [],
-        metadata: comment.metadata,
+        metadata: primary.metadata,
+        checkinTargets: siblings.map((sibling, i) => ({
+          commentId: created[i].id,
+          postId: sibling.id,
+          groupId: sibling.groupId,
+          groupName: sibling.groupName,
+        })),
       });
       return;
     }
@@ -242,10 +295,14 @@ export const tripHandler: PostTypeHandler = {
       // Deliberate exception to "typeData is immutable after create" (see
       // the contract note in ./types.ts) — TRIP is the one type whose own
       // handler owns further writes to its typeData, since closing a trip is
-      // part of its lifecycle, not an edit to the post's content.
+      // part of its lifecycle, not an edit to the post's content. Fans out
+      // to every cross-post sibling in one statement (siblings always share
+      // identical typeData — created together, and every mutation goes
+      // through this same fan-out) — the `{crossPostId, authorId}` where
+      // mirrors author PATCH/DELETE in routes/posts.ts.
       const updated: PersistedTripTypeData = { ...typeData, closedAt: new Date().toISOString(), closedByUserId: userId };
-      await prisma.post.update({
-        where: { id: post.id },
+      await prisma.post.updateMany({
+        where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
         data: { typeData: updated as unknown as Prisma.InputJsonValue },
       });
       return;
@@ -265,13 +322,18 @@ export const tripHandler: PostTypeHandler = {
       }
 
       const travelerIds = normalizeTravelerIds(parsed.data.userIds, post.authorId);
-      await assertTravelersAreMembers(travelerIds, post.groupId);
+      // Against EVERY sibling's group — a traveler checks into all of them.
+      const siblings = await getTripSiblings(post);
+      await assertTravelersAreMembers(
+        travelerIds,
+        siblings.map((sibling) => sibling.groupId)
+      );
 
       // Replaces the stored list wholesale — same "handler owns its own
-      // typeData" exception as `close` above.
+      // typeData" exception and sibling fan-out as `close` above.
       const updated: PersistedTripTypeData = { ...typeData, travelerUserIds: travelerIds };
-      await prisma.post.update({
-        where: { id: post.id },
+      await prisma.post.updateMany({
+        where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
         data: { typeData: updated as unknown as Prisma.InputJsonValue },
       });
       return;
