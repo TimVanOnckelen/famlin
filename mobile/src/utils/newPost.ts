@@ -57,3 +57,17 @@ export function reconcilePostTypeSelection(current: string, offered: readonly st
   if (offered.includes(current)) return current;
   return offered[0] ?? null;
 }
+
+// The server rejects cross-posting (groupIds with more than one entry) for
+// TRIP posts — the composer must not offer multi-group selection for it.
+export function isMultiGroupAllowedForType(type: string): boolean {
+  return type !== 'TRIP';
+}
+
+// Keeps the group selection valid after the type changes: switching to a
+// type that doesn't allow multi-group (TRIP) collapses the selection down to
+// just the first-selected (primary) group; any other type leaves it as-is.
+export function reconcileGroupSelectionForType(selectedGroupIds: string[], type: string): string[] {
+  if (isMultiGroupAllowedForType(type) || selectedGroupIds.length <= 1) return selectedGroupIds;
+  return [selectedGroupIds[0]];
+}

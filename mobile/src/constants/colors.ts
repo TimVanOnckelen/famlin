@@ -9,6 +9,12 @@ export const colors = {
   milestoneBg: '#fff3dd',
   milestoneText: '#5c3d0a',
   milestoneDivider: '#eccf94',
+  // TRIP post type accent (design's oklch(55% 0.13 220) badge/gradient blue).
+  trip: '#1f7fa3',
+  tripDark: '#1a6484',
+  tripBg: '#eef7fb',
+  tripTint: '#dcf0f7',
+  tripBorder: '#bfe1ec',
   bg: '#edf7fb',
   surface: '#ffffff',
   border: '#d9e3e7',

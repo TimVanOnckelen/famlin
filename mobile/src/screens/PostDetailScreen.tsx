@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -76,6 +76,16 @@ export function PostDetailScreen() {
     queryKey: ['post', postId],
     queryFn: () => fetchPost(postId),
   });
+
+  // TRIP posts have their own detail screen (cover/timeline/check-ins) —
+  // any navigation that lands here for one instead (a notification, a chat
+  // milestone reference, a deep link) gets redirected rather than rendering
+  // this screen's generic UPDATE/MILESTONE/POLL layout for it.
+  useEffect(() => {
+    if (post?.type === 'TRIP') {
+      navigation.replace('TripDetail', { postId });
+    }
+  }, [post?.type, postId]);
 
   const { data: comments, refetch } = useQuery({
     queryKey: ['comments', postId],

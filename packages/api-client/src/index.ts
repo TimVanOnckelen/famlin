@@ -64,6 +64,11 @@ export type {
   PollOptionResult,
   PostPoll,
   PollCreateData,
+  TripTypeData,
+  TripTraveler,
+  TripLatestCheckin,
+  TripEnrichment,
+  TripCheckinMetadata,
   Comment,
   Notification,
 } from './types';
@@ -74,7 +79,14 @@ export { patchPostInCaches } from './postCache';
 export type { GroupMember } from './groups';
 export { fetchGroups, fetchGroupMembers } from './groups';
 
-export type { FetchPostsParams, PostsPage, SearchPostsParams, CreatePostBody, ReactionResult } from './posts';
+export type {
+  FetchPostsParams,
+  PostsPage,
+  SearchPostsParams,
+  CreatePostBody,
+  ReactionResult,
+  CheckInTripBody,
+} from './posts';
 export {
   fetchPosts,
   fetchPost,
@@ -89,6 +101,9 @@ export {
   toggleFavoritePost,
   interactWithPost,
   votePoll,
+  checkInTrip,
+  closeTrip,
+  setTripTravelers,
 } from './posts';
 
 export type { CreateCommentBody } from './comments';

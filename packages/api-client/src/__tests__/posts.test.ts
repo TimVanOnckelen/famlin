@@ -59,4 +59,69 @@ describe('posts', () => {
       expect(result).toBe(fakePost);
     });
   });
+
+  describe('checkInTrip', () => {
+    it('delegates to interactWithPost with key "checkin" and the check-in body', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-4', type: 'TRIP' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { checkInTrip } = await import('../posts');
+      const result = await checkInTrip('post-4', { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] });
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-4/interactions', {
+        key: 'checkin',
+        value: { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] },
+      });
+      expect(result).toBe(fakePost);
+    });
+  });
+
+  describe('closeTrip', () => {
+    it('delegates to interactWithPost with key "close" and no value', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-5', type: 'TRIP' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { closeTrip } = await import('../posts');
+      const result = await closeTrip('post-5');
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-5/interactions', {
+        key: 'close',
+        value: undefined,
+      });
+      expect(result).toBe(fakePost);
+    });
+  });
+
+  describe('setTripTravelers', () => {
+    it('delegates to interactWithPost with key "setTravelers" and { userIds }', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-6', type: 'TRIP' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { setTripTravelers } = await import('../posts');
+      const result = await setTripTravelers('post-6', ['u1', 'u2']);
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-6/interactions', {
+        key: 'setTravelers',
+        value: { userIds: ['u1', 'u2'] },
+      });
+      expect(result).toBe(fakePost);
+    });
+
+    it('sends an empty list to clear all co-travelers', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-7', type: 'TRIP' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { setTripTravelers } = await import('../posts');
+      await setTripTravelers('post-7', []);
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-7/interactions', {
+        key: 'setTravelers',
+        value: { userIds: [] },
+      });
+    });
+  });
 });

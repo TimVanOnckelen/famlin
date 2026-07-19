@@ -28,28 +28,36 @@ import { isVideoUrl } from '@/utils/media';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
+import { TravelerPickerModal } from '@/components/TravelerPickerModal';
 import {
   buildGroupSelectionPayload,
   toggleGroupSelection,
   resolveOfferedPostTypes,
   reconcilePostTypeSelection,
+  isMultiGroupAllowedForType,
+  reconcileGroupSelectionForType,
 } from '@/utils/newPost';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
-const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL'] as const;
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP'] as const;
 const MIN_POLL_OPTIONS = 2;
 const MAX_POLL_OPTIONS = 10;
+// 'YYYY-MM-DD' — matches the backend contract's typeData.startDate/endDate
+// shape exactly (no time component).
+const TRIP_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 // Icon/accent used by the "what do you want to share?" type-chooser step.
 const POST_TYPE_ICON: Record<string, string> = {
   UPDATE: '📝',
   MILESTONE: '🎂',
   POLL: '🗳️',
+  TRIP: '🧳',
 };
 const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
   MILESTONE: colors.milestoneBg,
   POLL: colors.primaryTint,
+  TRIP: colors.tripTint,
 };
 
 // Colors for the swappable type chip at the top of the compose step — one
@@ -58,6 +66,7 @@ const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg:
   UPDATE: { bg: colors.updateBg, border: '#f0c3ac', iconBg: colors.accent, text: '#8a3f22' },
   MILESTONE: { bg: colors.milestoneBg, border: colors.milestoneDivider, iconBg: colors.milestone, text: colors.milestoneText },
   POLL: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
+  TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
 };
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
@@ -84,6 +93,16 @@ export function NewPostScreen() {
   // Poll composer state: option text inputs, starting at the minimum of 2.
   // Only non-empty ones are sent (see createPostMutation below).
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  // Trip composer state (design 6g) — dates are plain 'YYYY-MM-DD' text,
+  // there's no date-picker dependency in this app yet.
+  const [tripTitle, setTripTitle] = useState('');
+  const [tripDestination, setTripDestination] = useState('');
+  const [tripStartDate, setTripStartDate] = useState('');
+  const [tripEndDate, setTripEndDate] = useState('');
+  const [tripCoverPhotoUrl, setTripCoverPhotoUrl] = useState<string | null>(null);
+  // Co-travelers: group members (besides the author) who may also check in.
+  const [tripTravelerIds, setTripTravelerIds] = useState<string[]>([]);
+  const [showTravelerPicker, setShowTravelerPicker] = useState(false);
   const isMilestone = postType === 'MILESTONE';
   // Multi-select: which groups this post goes to. The first entry is the
   // "primary" group (also what the media/album picker is scoped to); more
@@ -134,21 +153,47 @@ export function NewPostScreen() {
     }
   }, [offeredPostTypes.join(','), postType]);
 
+  // TRIP posts can't be cross-posted — switching to TRIP with several
+  // groups already selected collapses that down to just the primary one.
+  React.useEffect(() => {
+    setSelectedGroupIds((prev) => reconcileGroupSelectionForType(prev, postType));
+  }, [postType]);
+
+  // Picked co-travelers belong to the primary group's member list — switching
+  // family invalidates them (they may not be members of the new one).
+  React.useEffect(() => {
+    setTripTravelerIds([]);
+  }, [primaryGroupId]);
+
   const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
+  const isTrip = postType === 'TRIP';
+  const tripStartDateValid = TRIP_DATE_REGEX.test(tripStartDate);
+  const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate);
 
   const createPostMutation = useMutation({
     mutationFn: () => {
       if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'));
       return createPost({
         ...buildGroupSelectionPayload(selectedGroupIds),
-        content,
+        content: isTrip ? undefined : content,
         type: postType,
         milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
-        typeData: postType === 'POLL' ? { options: nonEmptyPollOptions.map((text) => ({ text })) } : undefined,
-        uploadedAssetUrls,
-        latitude: location?.latitude,
-        longitude: location?.longitude,
-        locationName: location?.locationName,
+        typeData: isTrip
+          ? {
+              title: tripTitle.trim(),
+              destination: tripDestination.trim() || undefined,
+              startDate: tripStartDate,
+              endDate: tripEndDate || undefined,
+              coverPhotoUrl: tripCoverPhotoUrl || undefined,
+              travelerUserIds: tripTravelerIds.length > 0 ? tripTravelerIds : undefined,
+            }
+          : postType === 'POLL'
+            ? { options: nonEmptyPollOptions.map((text) => ({ text })) }
+            : undefined,
+        uploadedAssetUrls: isTrip ? [] : uploadedAssetUrls,
+        latitude: isTrip ? undefined : location?.latitude,
+        longitude: isTrip ? undefined : location?.longitude,
+        locationName: isTrip ? undefined : location?.locationName,
       });
     },
     onSuccess: () => {
@@ -164,9 +209,11 @@ export function NewPostScreen() {
     selectedGroupIds.length > 0 &&
     !noOfferedPostTypes &&
     offeredPostTypes.includes(postType) &&
-    (postType === 'POLL'
-      ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
-      : content.trim().length > 0 || uploadedAssetUrls.length > 0);
+    (isTrip
+      ? tripTitle.trim().length > 0 && tripStartDateValid && tripEndDateValid
+      : postType === 'POLL'
+        ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
+        : content.trim().length > 0 || uploadedAssetUrls.length > 0);
 
   function addPollOption() {
     setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']));
@@ -211,6 +258,23 @@ export function NewPostScreen() {
   }
 
   const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }));
+
+  // Trip's cover photo is a single optional image, separate from the
+  // multi-photo attach flow above — reuses the same pick-then-upload hook
+  // with single-selection options.
+  const { pick: pickTripCoverMedia, uploading: tripCoverUploading } = usePickAndUploadMedia({
+    pickerOptions: {
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: false,
+      quality: 0.8,
+    },
+    onError: (err) => console.error('Cover photo upload error:', err),
+  });
+
+  async function pickTripCoverPhoto() {
+    const result = await pickTripCoverMedia();
+    if (result && result.urls[0]) setTripCoverPhotoUrl(result.urls[0]);
+  }
 
   // Step 1: pick who to share with and what kind of post to make, as a
   // separate screen of large, unambiguous tap targets — before showing any
@@ -265,6 +329,12 @@ export function NewPostScreen() {
                     style={styles.typeRow}
                     onPress={() => {
                       setPostType(option);
+                      // Applied directly here too (not just the [postType]
+                      // effect below) — re-tapping the same already-selected
+                      // type wouldn't otherwise re-run that effect, and this
+                      // chooser step's own group chips allow multi-select
+                      // regardless of type.
+                      setSelectedGroupIds((prev) => reconcileGroupSelectionForType(prev, option));
                       setComposerStep('compose');
                     }}
                   >
@@ -361,7 +431,13 @@ export function NewPostScreen() {
                   <TouchableOpacity
                     key={group.id}
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
-                    onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
+                    onPress={() =>
+                      // TRIP can't be cross-posted: picking another family
+                      // replaces the selection instead of adding to it.
+                      setSelectedGroupIds((prev) =>
+                        isTrip ? [group.id] : toggleGroupSelection(prev, group.id)
+                      )
+                    }
                     accessibilityState={{ selected: isActive }}
                   >
                     <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
@@ -371,21 +447,122 @@ export function NewPostScreen() {
                 );
               })}
             </ScrollView>
+            {isTrip && <Text style={styles.typeChipHint}>{t('newPost.trip.multiGroupNotice')}</Text>}
           </View>
         )}
 
-        <TextInput
-          style={styles.textInput}
-          placeholder={contentPlaceholder}
-          placeholderTextColor={colors.textMuted}
-          multiline
-          value={content}
-          onChangeText={setContent}
-          autoFocus
-        />
+        {!isTrip && (
+          <TextInput
+            style={styles.textInput}
+            placeholder={contentPlaceholder}
+            placeholderTextColor={colors.textMuted}
+            multiline
+            value={content}
+            onChangeText={setContent}
+            autoFocus
+          />
+        )}
 
         {/* Type-specific fields sit right under the content field, matching
             whichever post type the chip above says is selected. */}
+        {isTrip && offeredPostTypes.includes('TRIP') && (
+          <View style={styles.tripFields}>
+            <Text style={styles.tripHelperText}>{t('newPost.trip.helper')}</Text>
+
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.trip.titleLabel')} *</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('newPost.trip.titlePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={tripTitle}
+                onChangeText={setTripTitle}
+                maxLength={120}
+                autoFocus
+              />
+            </View>
+
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.trip.destinationLabel')}</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('newPost.trip.destinationPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={tripDestination}
+                onChangeText={setTripDestination}
+                maxLength={160}
+              />
+            </View>
+
+            <View style={styles.tripDateRow}>
+              <View style={styles.tripDateField}>
+                <Text style={styles.sectionLabel}>{t('newPost.trip.startDateLabel')} *</Text>
+                <TextInput
+                  style={[styles.tripInput, tripStartDate.length > 0 && !tripStartDateValid && styles.tripInputInvalid]}
+                  placeholder={t('newPost.trip.datePlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  value={tripStartDate}
+                  onChangeText={setTripStartDate}
+                  maxLength={10}
+                />
+              </View>
+              <View style={styles.tripDateField}>
+                <Text style={styles.sectionLabel}>{t('newPost.trip.endDateLabel')}</Text>
+                <TextInput
+                  style={[styles.tripInput, tripEndDate.length > 0 && !tripEndDateValid && styles.tripInputInvalid]}
+                  placeholder={t('newPost.trip.endDateOptional')}
+                  placeholderTextColor={colors.textMuted}
+                  value={tripEndDate}
+                  onChangeText={setTripEndDate}
+                  maxLength={10}
+                />
+              </View>
+            </View>
+            <Text style={styles.tripDateHint}>{t('newPost.trip.dateHint')}</Text>
+
+            {tripCoverPhotoUrl ? (
+              <View style={styles.tripCoverPreviewWrap}>
+                <Image source={{ uri: getUploadUrl(tripCoverPhotoUrl) }} style={styles.tripCoverPreview} />
+                <TouchableOpacity style={styles.tripCoverRemoveButton} onPress={() => setTripCoverPhotoUrl(null)}>
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.tripCoverButton}
+                onPress={pickTripCoverPhoto}
+                disabled={tripCoverUploading}
+              >
+                <View style={styles.tripCoverButtonIcon}>
+                  {tripCoverUploading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Icon name="plus" size={18} color={colors.white} />
+                  )}
+                </View>
+                <View style={styles.tripCoverButtonText}>
+                  <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.coverPhotoTitle')}</Text>
+                  <Text style={styles.tripCoverButtonSubtitle}>{t('newPost.trip.coverPhotoSubtitle')}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.tripCoverButton} onPress={() => setShowTravelerPicker(true)}>
+              <View style={styles.tripCoverButtonIcon}>
+                <Icon name="users" size={16} color={colors.white} />
+              </View>
+              <View style={styles.tripCoverButtonText}>
+                <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.travelersLabel')}</Text>
+                <Text style={styles.tripCoverButtonSubtitle}>
+                  {tripTravelerIds.length > 0
+                    ? t('newPost.trip.travelersSelected', { count: tripTravelerIds.length })
+                    : t('newPost.trip.travelersSubtitle')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {postType === 'POLL' && offeredPostTypes.includes('POLL') && (
           <View style={styles.pollOptionsContainer}>
             {pollOptions.map((optionText, index) => (
@@ -466,10 +643,13 @@ export function NewPostScreen() {
           </View>
         )}
 
-        <View style={styles.divider} />
+        {!isTrip && <View style={styles.divider} />}
 
         {/* Attachments: a compact, growable pill row instead of stacked
-            cards, plus a thumbnail strip for whatever's already added. */}
+            cards, plus a thumbnail strip for whatever's already added. Not
+            shown for TRIP — its only photo is the optional cover above,
+            handled by the trip fields block. */}
+        {!isTrip && (
         <View style={styles.attachSection}>
           <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
 
@@ -556,6 +736,7 @@ export function NewPostScreen() {
             )}
           </View>
         </View>
+        )}
       </ScrollView>
 
       <LocationPickerModal
@@ -574,6 +755,20 @@ export function NewPostScreen() {
           groupId={primaryGroupId}
           onCancel={() => setShowMediaPicker(false)}
           onConfirm={handleMediaConfirm}
+        />
+      )}
+
+      {primaryGroupId && (
+        <TravelerPickerModal
+          visible={showTravelerPicker}
+          groupId={primaryGroupId}
+          excludeUserId={user?.id}
+          initialSelectedIds={tripTravelerIds}
+          onCancel={() => setShowTravelerPicker(false)}
+          onConfirm={(userIds) => {
+            setTripTravelerIds(userIds);
+            setShowTravelerPicker(false);
+          }}
         />
       )}
     </SafeAreaView>
@@ -971,5 +1166,97 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 13,
     color: colors.primary,
+  },
+  tripFields: {
+    gap: 14,
+  },
+  tripHelperText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12.5,
+    color: colors.textMuted,
+    marginTop: -6,
+  },
+  tripInput: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+    color: colors.textTitle,
+    backgroundColor: colors.bg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+  },
+  tripInputInvalid: {
+    borderColor: colors.accent,
+  },
+  tripDateRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  tripDateField: {
+    flex: 1,
+  },
+  tripDateHint: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: -8,
+  },
+  tripCoverButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.tripBorder,
+    backgroundColor: colors.tripBg,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  tripCoverButtonIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.trip,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripCoverButtonText: {
+    flex: 1,
+  },
+  tripCoverButtonTitle: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.textTitle,
+  },
+  tripCoverButtonSubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  tripCoverPreviewWrap: {
+    width: 140,
+    height: 100,
+    borderRadius: 14,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  tripCoverPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  tripCoverRemoveButton: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

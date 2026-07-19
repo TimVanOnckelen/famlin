@@ -14,7 +14,7 @@ export interface PostPerson {
     userName: string | null;
     userAvatarUrl: string | null;
 }
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | (string & {});
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | (string & {});
 export interface PollOptionResult {
     id: string;
     text: string;
@@ -37,6 +37,45 @@ export interface PollCreateData {
         text: string;
     }[];
     closesAt?: string;
+}
+export interface TripTypeData {
+    title: string;
+    destination?: string;
+    startDate: string;
+    endDate?: string;
+    coverPhotoUrl?: string;
+    travelerUserIds?: string[];
+}
+export interface TripTraveler {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+}
+export interface TripLatestCheckin {
+    commentId: string;
+    place: string;
+    createdAt: string;
+}
+export interface TripEnrichment {
+    title: string;
+    destination: string | null;
+    startDate: string;
+    endDate: string | null;
+    coverPhotoUrl: string | null;
+    closed: boolean;
+    closedAt: string | null;
+    dayNumber: number | null;
+    durationDays: number | null;
+    stopCount: number;
+    photoCount: number;
+    latestCheckin: TripLatestCheckin | null;
+    collagePhotoUrls: string[];
+    travelers: TripTraveler[];
+}
+export interface TripCheckinMetadata {
+    kind: 'trip_checkin';
+    place: string;
+    photoUrls: string[];
 }
 export interface User {
     id: string;
@@ -78,6 +117,7 @@ export interface Post {
     type: PostType;
     typeData?: unknown;
     poll?: PostPoll;
+    trip?: TripEnrichment;
     milestoneTag?: string | null;
     uploadedAssetUrls: string[];
     createdAt: string;
@@ -117,6 +157,7 @@ export interface Comment {
     parentId?: string | null;
     assetUrl?: string | null;
     attachmentUrl?: string | null;
+    metadata?: TripCheckinMetadata | null;
     likeCount: number;
     likedByMe: boolean;
     myReaction: ReactionType | null;

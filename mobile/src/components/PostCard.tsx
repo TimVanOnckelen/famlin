@@ -13,6 +13,7 @@ import { ReactionsModal } from '@/components/ReactionsModal';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
 import { postTypeRenderers } from '@/components/postTypes';
+import { TripCard } from '@/components/TripCard';
 import { Post, PostPerson, ReactionType } from '@/types';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
@@ -139,6 +140,16 @@ export const PostCard = React.memo(function PostCard({
   const isMilestone = post.type === 'MILESTONE';
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
+
+  // TRIP posts get a wholesale different card layout (gradient frame, its
+  // own hero source, a follow/diary CTA instead of the usual comment
+  // button) — bail out to the dedicated component before any of the
+  // UPDATE/MILESTONE-shaped rendering below runs. Hooks above this line
+  // (useState) still run unconditionally either way, keeping hook order
+  // stable across renders.
+  if (post.type === 'TRIP') {
+    return <TripCard post={post} showGroup={showGroup} />;
+  }
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;

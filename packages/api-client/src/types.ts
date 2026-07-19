@@ -20,10 +20,11 @@ export interface PostPerson {
   userAvatarUrl: string | null;
 }
 
-// An open string discriminator — 'UPDATE'/'MILESTONE'/'POLL' are the types
-// the server ships today, but the `(string & {})` branch keeps this widen-able
-// (custom types added server-side) without TS narrowing string literals away.
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | (string & {});
+// An open string discriminator — 'UPDATE'/'MILESTONE'/'POLL'/'TRIP' are the
+// types the server ships today, but the `(string & {})` branch keeps this
+// widen-able (custom types added server-side) without TS narrowing string
+// literals away.
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | (string & {});
 
 export interface PollOptionResult {
   id: string;
@@ -44,6 +45,69 @@ export interface PostPoll {
 export interface PollCreateData {
   options: { text: string }[];
   closesAt?: string;
+}
+
+// The shape a client sends as `typeData` when creating a TRIP post. Dates are
+// plain 'YYYY-MM-DD' strings (no time component) — see `dayNumber`/
+// `durationDays` on TripEnrichment for the derived-day-count view of them.
+export interface TripTypeData {
+  title: string;
+  destination?: string;
+  startDate: string;
+  endDate?: string;
+  coverPhotoUrl?: string;
+  // Co-travelers: group members (max 20) who may also check in on this trip.
+  // The author is implicitly a traveler and must NOT be included here.
+  travelerUserIds?: string[];
+}
+
+// A co-traveler on a trip, as enriched into TripEnrichment.travelers.
+export interface TripTraveler {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
+// The most recent check-in on an active trip, surfaced on the feed card
+// ("Last stop: Bologna · 14:20") without fetching the whole comment list.
+export interface TripLatestCheckin {
+  commentId: string;
+  place: string;
+  createdAt: string;
+}
+
+// Present only when type === 'TRIP' — the read-time-enriched, per-post view
+// computed from the trip's typeData plus its check-in comments (see
+// Comment.metadata below for how a check-in is represented as a comment).
+export interface TripEnrichment {
+  title: string;
+  destination: string | null;
+  startDate: string;
+  endDate: string | null;
+  coverPhotoUrl: string | null;
+  closed: boolean;
+  closedAt: string | null;
+  // Set only while the trip is active (1-based, derived from startDate).
+  dayNumber: number | null;
+  // Set only once the trip is closed.
+  durationDays: number | null;
+  stopCount: number;
+  photoCount: number;
+  latestCheckin: TripLatestCheckin | null;
+  // Up to 3 photo URLs, newest first — the closed-trip feed card's collage.
+  collagePhotoUrls: string[];
+  // Co-travelers the author designated (author excluded) — they may check in
+  // too; check-in permission is author OR listed here. See setTripTravelers.
+  travelers: TripTraveler[];
+}
+
+// A trip check-in is a Comment whose `metadata.kind` is 'trip_checkin' (see
+// Comment.metadata below) — this is the shape of that metadata, not a
+// standalone entity with its own fetch/create endpoints.
+export interface TripCheckinMetadata {
+  kind: 'trip_checkin';
+  place: string;
+  photoUrls: string[];
 }
 
 export interface User {
@@ -98,6 +162,8 @@ export interface Post {
   // Present only when type === 'POLL' (or another future poll-like type the
   // server enriches this way); the aggregated, per-viewer poll view.
   poll?: PostPoll;
+  // Present only when type === 'TRIP' — see TripEnrichment.
+  trip?: TripEnrichment;
   milestoneTag?: string | null;
   uploadedAssetUrls: string[];
   createdAt: string;
@@ -141,6 +207,11 @@ export interface Comment {
   // distinct from assetUrl above, which instead points at an existing asset
   // on the post.
   attachmentUrl?: string | null;
+  // Set when this comment is really a TRIP check-in (kind 'trip_checkin')
+  // rather than a regular comment — null/absent for every ordinary comment.
+  // See TripCheckinMetadata; clients split a post's comment list on this
+  // field to build the trip timeline vs. the "reacties op de reis" section.
+  metadata?: TripCheckinMetadata | null;
   likeCount: number;
   likedByMe: boolean;
   myReaction: ReactionType | null;

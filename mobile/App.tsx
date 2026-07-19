@@ -18,6 +18,7 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { InviteScreen } from '@/screens/InviteScreen';
 import { MainTabs } from '@/navigation/MainTabs';
 import { PostDetailScreen } from '@/screens/PostDetailScreen';
+import { TripDetailScreen } from '@/screens/TripDetailScreen';
 import { NewPostScreen } from '@/screens/NewPostScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
@@ -183,6 +184,14 @@ function AppContent() {
             <Stack.Screen
               name="PostDetail"
               component={PostDetailScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="TripDetail"
+              component={TripDetailScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',
