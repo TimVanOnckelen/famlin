@@ -15,7 +15,12 @@ export type NotifyType =
   // A USER chat message in a group's chitchat (routes/chat.ts) — push-only,
   // see pushOnChitchat below (deliberately no email preference, chat is
   // chattier than posts/comments).
-  | 'new_chat_message';
+  | 'new_chat_message'
+  // A TRIP post check-in (services/postTypes/trip.ts's `checkin` interaction)
+  // — push-only, reuses pushOnNewPost (see PUSH_PREF_FIELD in push.ts). Fires
+  // instead of new_comment for a check-in comment (Comment.metadata.kind ===
+  // 'trip_checkin'), see src/subscribers/notifications.ts.
+  | 'trip_checkin';
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().

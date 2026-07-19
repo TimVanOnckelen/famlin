@@ -191,6 +191,15 @@ model Comment {
   // assetUrl, which instead points at an existing asset on the post.
   attachmentUrl String?
   content   String
+  // Handler-owned, type-specific payload for a comment created BY a post-type
+  // handler rather than the plain comments route — e.g. a TRIP post's
+  // check-ins (services/postTypes/trip.ts): {kind: 'trip_checkin', place,
+  // photoUrls}. null for every ordinary comment. The public POST
+  // /api/posts/:postId/comments route never accepts this from a client (see
+  // createCommentBodySchema) — only a post-type handler writes it, so
+  // metadata.kind is a trustworthy discriminator for "this comment is really
+  // a type-specific interaction, not user-authored prose."
+  metadata  Json?
   createdAt DateTime  @default(now())
   editedAt  DateTime?
   parentId  String?

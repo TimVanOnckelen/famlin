@@ -66,7 +66,12 @@
     "pollClosed": "This poll is closed",
     "invalidPollOption": "Invalid poll option",
     "pollQuestionRequired": "A poll needs a question",
-    "postTypeNotAllowed": "This post type is not allowed in this group"
+    "postTypeNotAllowed": "This post type is not allowed in this group",
+    "tripNoCrossPost": "A trip can't be shared to more than one family at once",
+    "tripNotAuthor": "Only the trip's author can do this",
+    "tripNotTraveler": "Only the trip's travelers can check in",
+    "tripTravelerNotMember": "Every traveler must be a member of this group",
+    "tripClosed": "This trip is closed"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -83,6 +88,8 @@
     "newMediaAssets_one": "{{count}} new photo was added to \"{{album}}\" in {{group}}",
     "newMediaAssets_other": "{{count}} new photos were added to \"{{album}}\" in {{group}}",
     "newChatMessage": "{{author}} sent a message in {{group}} chat: \"{{excerpt}}\"",
+    "tripCheckin_one": "{{author}} checked in at {{place}}",
+    "tripCheckin_other": "{{author}} checked in {{count}} times today · last stop: {{place}}",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app."

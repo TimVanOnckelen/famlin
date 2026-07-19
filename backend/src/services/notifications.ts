@@ -59,6 +59,10 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   on_this_day: 'notifications.onThisDay',
   new_media_assets: 'notifications.newMediaAssets',
   new_chat_message: 'notifications.newChatMessage',
+  // count-pluralized (_one/_other) — see notifications.tripCheckin_one/_other
+  // in the locale files and src/subscribers/notifications.ts, which computes
+  // `count` (today's check-in count for this author on this trip).
+  trip_checkin: 'notifications.tripCheckin',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with

@@ -89,6 +89,38 @@ export function registerNotificationSubscriber(): void {
   });
 
   onDomainEvent('comment.created', async (event) => {
+    // A TRIP check-in (services/postTypes/trip.ts's `checkin` interaction)
+    // is stored as a Comment for reuse of the comment infrastructure, but it
+    // isn't a conversational reply — it concerns the WHOLE group (like
+    // new_post/new_chat_message), not just thread participants, and it must
+    // never also fire the generic new_comment notification below. Push-only
+    // (no email), same precedent as new_chat_message.
+    if (event.metadata && typeof event.metadata === 'object' && (event.metadata as { kind?: unknown }).kind === 'trip_checkin') {
+      const place = (event.metadata as { place: string }).place;
+      const startOfTodayUtc = new Date();
+      startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+      const countToday = await prisma.comment.count({
+        where: {
+          postId: event.postId,
+          authorId: event.authorId,
+          metadata: { path: ['kind'], equals: 'trip_checkin' },
+          createdAt: { gte: startOfTodayUtc },
+        },
+      });
+
+      await notifyGroup({
+        type: 'trip_checkin',
+        groupId: event.groupId,
+        senderId: event.authorId,
+        postId: event.postId,
+        // count drives i18next pluralization (tripCheckin_one/_other, see
+        // the locale files) — 1 = this author's first check-in today for
+        // this trip, 2+ = "checked in N times today, last stop: {place}".
+        params: { author: event.authorName, group: event.groupName, place, count: countToday },
+      });
+      return;
+    }
+
     // Only the post's author and people already participating in this
     // thread are relevant to a new comment — not the whole group.
     const priorParticipants = await prisma.comment.findMany({

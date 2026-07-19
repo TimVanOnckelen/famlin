@@ -66,7 +66,12 @@
     "pollClosed": "Deze peiling is gesloten",
     "invalidPollOption": "Ongeldige peilingsoptie",
     "pollQuestionRequired": "Een peiling heeft een vraag nodig",
-    "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep"
+    "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep",
+    "tripNoCrossPost": "Een reis kan niet met meer dan één familie tegelijk worden gedeeld",
+    "tripNotAuthor": "Alleen de auteur van de reis kan dit doen",
+    "tripNotTraveler": "Alleen de reizigers van deze reis kunnen inchecken",
+    "tripTravelerNotMember": "Elke reiziger moet lid zijn van deze groep",
+    "tripClosed": "Deze reis is afgesloten"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -83,6 +88,8 @@
     "newMediaAssets_one": "{{count}} nieuwe foto toegevoegd aan \"{{album}}\" in {{group}}",
     "newMediaAssets_other": "{{count}} nieuwe foto's toegevoegd aan \"{{album}}\" in {{group}}",
     "newChatMessage": "{{author}} heeft een bericht gestuurd in de chat van {{group}}: \"{{excerpt}}\"",
+    "tripCheckin_one": "{{author}} heeft ingecheckt in {{place}}",
+    "tripCheckin_other": "{{author}} heeft vandaag {{count}} keer ingecheckt · laatste stop: {{place}}",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."

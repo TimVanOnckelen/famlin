@@ -98,6 +98,9 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       hasAttachment: !!comment.attachmentUrl,
       parentId: comment.parentId,
       mentionedUserIds: body.mentionedUserIds ?? [],
+      // Always null here — the public route's body schema doesn't accept a
+      // client-sent metadata field (see createCommentBodySchema in types.ts).
+      metadata: comment.metadata,
     });
 
     // A brand new comment has no likes yet, so this is the same shape as the
