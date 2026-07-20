@@ -18,7 +18,7 @@ afterAll(async () => {
 });
 
 describe('GET /api/auth/server-info', () => {
-  it('returns the app version, minAppVersion, and store links without auth', async () => {
+  it('returns the app version, minAppVersion, store links, and read-only flag without auth', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/auth/server-info' });
 
     expect(res.statusCode).toBe(200);
@@ -27,6 +27,8 @@ describe('GET /api/auth/server-info', () => {
     expect(typeof body.minAppVersion).toBe('string');
     expect(body).toHaveProperty('appStoreUrl');
     expect(body).toHaveProperty('playStoreUrl');
+    expect(body).toHaveProperty('readOnly');
+    expect(typeof body.readOnly).toBe('boolean');
     // appStoreUrl has no default (no single iOS listing) — null when unset.
     expect(body.appStoreUrl === null || typeof body.appStoreUrl === 'string').toBe(true);
     // playStoreUrl defaults to the official pre-built Android app.

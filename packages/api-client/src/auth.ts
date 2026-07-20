@@ -96,6 +96,7 @@ export interface ServerInfo {
   minAppVersion?: string;
   appStoreUrl?: string | null;
   playStoreUrl?: string | null;
+  readOnly?: boolean;
 }
 
 export async function fetchServerInfo(): Promise<ServerInfo> {

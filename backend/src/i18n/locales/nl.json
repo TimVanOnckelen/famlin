@@ -71,7 +71,8 @@
     "tripNotTraveler": "Alleen de reizigers van deze reis kunnen inchecken",
     "tripTravelerNotMember": "Elke reiziger moet lid zijn van deze groep",
     "tripClosed": "Deze reis is afgesloten",
-    "tripNotStarted": "Deze reis is nog niet begonnen"
+    "tripNotStarted": "Deze reis is nog niet begonnen",
+    "readOnly": "Deze demo is alleen-lezen. Je kunt rondkijken, maar niet plaatsen, reageren of wijzigingen maken."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

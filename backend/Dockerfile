@@ -40,6 +40,13 @@ RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund
 COPY backend/ ./
 RUN npm run build
 
+# Compile the Prisma seed script so the production image can run it without
+# tsx (which is a devDependency). Used by docker-compose.demo.yml to populate
+# the demo instance on first start.
+RUN npx tsc prisma/seed.ts --outDir dist/prisma \
+    --module NodeNext --moduleResolution NodeNext --target ES2022 \
+    --esModuleInterop --strict --skipLibCheck --resolveJsonModule
+
 # Build the member-facing web app in its own stage: it's an npm-workspace
 # member at the repo root together with packages/api-client, so it installs
 # from the root lockfile, not backend's. Its vite outDir is
@@ -82,6 +89,7 @@ RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-d
 COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
 
 # Create uploads directory with proper permissions and run as the

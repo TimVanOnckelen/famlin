@@ -290,6 +290,13 @@ paths:
                       null if the admin explicitly cleared it. Defaults to the
                       official pre-built Android app when never configured.
                     example: https://play.google.com/store/apps/details?id=be.xeweb.famlin
+                  readOnly:
+                    type: boolean
+                    description: >-
+                      Whether the server is running in read-only/demo mode.
+                      When true, clients can browse but cannot post, comment,
+                      upload, or make other modifications.
+                    example: false
 
   /api/auth/notification-config:
     get:

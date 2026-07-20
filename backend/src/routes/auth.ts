@@ -10,6 +10,7 @@ import { completeOidcLogin } from '../services/oidcLogin.js';
 import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
 import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
+import { config } from '../config.js';
 import {
   loginBodySchema,
   oidcExchangeBodySchema,
@@ -544,6 +545,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       minAppVersion: MIN_APP_VERSION,
       appStoreUrl: settings.appStoreUrl || null,
       playStoreUrl: settings.playStoreUrl || null,
+      readOnly: config.READ_ONLY,
     };
   });
 }

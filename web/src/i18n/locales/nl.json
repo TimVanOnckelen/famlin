@@ -197,6 +197,9 @@
     "profile": "Profiel",
     "chat": "Chat"
   },
+  "demo": {
+    "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
+  },
   "trip": {
     "detail": {
       "backToFeed": "Terug naar de feed",

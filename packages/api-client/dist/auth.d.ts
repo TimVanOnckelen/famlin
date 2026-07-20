@@ -42,6 +42,7 @@ export interface ServerInfo {
     minAppVersion?: string;
     appStoreUrl?: string | null;
     playStoreUrl?: string | null;
+    readOnly?: boolean;
 }
 export declare function fetchServerInfo(): Promise<ServerInfo>;
 export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;
