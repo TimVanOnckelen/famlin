@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.5.0](https://github.com/TimVanOnckelen/famlin/compare/v0.4.0...v0.5.0) (2026-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* Admins must ensure they have the necessary permissions to access the new export functionality.
+* The API now requires `replyToMessageId` for replies, and the response structure for chat messages has been modified.
+
+### Features
+
+* add bottom navigation for small screens and enhance page navigation ([f39ee2e](https://github.com/TimVanOnckelen/famlin/commit/f39ee2eaa1bc5a897c6db5ec2b9dffc3a8174dcb))
+* add data export functionality for admins ([ec1339d](https://github.com/TimVanOnckelen/famlin/commit/ec1339dc9099df25c6b6d389ec36889836a0a46d))
+* add reactions modal and API for listing post reactions ([1014a19](https://github.com/TimVanOnckelen/famlin/commit/1014a19221e8999c7f4a117cdb0b07e1568f288d))
+* add read-only trip journal view to web app ([459c67f](https://github.com/TimVanOnckelen/famlin/commit/459c67fb1c271c445df7b96c97ec7a87bac78e36))
+* add reply functionality to chat messages ([6f9ec56](https://github.com/TimVanOnckelen/famlin/commit/6f9ec56552b68e4b4c9aa60a25f8e46d1ecc5549))
+* add reply functionality to chat messages with swipe gesture support ([75a0cd4](https://github.com/TimVanOnckelen/famlin/commit/75a0cd45a8de7e7a0c88da7c159d3c86ab336ca8))
+* add trip journal UI to mobile app and shared api-client ([d436ad1](https://github.com/TimVanOnckelen/famlin/commit/d436ad1503450349066560e8f0647cc764e38625))
+* add TRIP post type with check-ins, co-travelers and push notifications ([d7d32a3](https://github.com/TimVanOnckelen/famlin/commit/d7d32a38b3b9ac5bb658cae5b744d79caa06f9c6))
+* allow cross-posting trips from the mobile composer ([9ac159d](https://github.com/TimVanOnckelen/famlin/commit/9ac159d58307f60a373f38700bb0c25d6d17527e))
+* implement multi-photo collage in PostCard component ([207bad0](https://github.com/TimVanOnckelen/famlin/commit/207bad0a306aee908565cfff8d8cde87a78a0805))
+* support cross-posting trips to multiple groups ([2e9b952](https://github.com/TimVanOnckelen/famlin/commit/2e9b9529d20e4194d835c75a561e40757c879c31))
+* update react-hooks rules to include immutability warnings for Reanimated ([60587ae](https://github.com/TimVanOnckelen/famlin/commit/60587ae343c33a8b659cc1dcf0f2f98137602b5c))
+
+
+### Bug Fixes
+
+* improve touch handling for image zoom and pan interactions ([78f4fe5](https://github.com/TimVanOnckelen/famlin/commit/78f4fe5db7be94daa2698a520cf3a3933e3ddb3e))
+
 ## [0.4.0](https://github.com/TimVanOnckelen/famlin/compare/v0.3.2...v0.4.0) (2026-07-16)
 
 
