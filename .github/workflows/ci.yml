@@ -177,6 +177,15 @@ jobs:
       - name: Check native peer dependencies are direct
         working-directory: mobile
         run: node scripts/check-native-peer-deps.mjs
+      # Expo SDK precompiles native frameworks (RNReanimated etc.) against the
+      # exact versions in expo/bundledNativeModules.json. A manually bumped
+      # native dep (e.g. react-native-worklets 0.10.2 vs the expected 0.10.0)
+      # builds from source instead, producing mixed precompiled/source linkage
+      # that only crashes at launch on real EAS/TestFlight builds — never in
+      # dev, tsc, or Jest. `expo install --check` exits non-zero on any drift.
+      - name: Check dependency versions match the Expo SDK
+        working-directory: mobile
+        run: npx expo install --check
       - name: Typecheck
         working-directory: mobile
         run: npx tsc --noEmit
