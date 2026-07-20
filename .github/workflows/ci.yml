@@ -169,6 +169,14 @@ jobs:
       - name: Install dependencies
         working-directory: mobile
         run: npm ci
+      # tsc/Jest/Metro all pass when a native module is only transitively
+      # installed (npm auto-installs peer deps), but RN autolinking only links
+      # native code for *direct* dependencies — the app then aborts at launch
+      # with dyld "Library not loaded" (the RNWorklets/Reanimated 4 incident
+      # this guards against).
+      - name: Check native peer dependencies are direct
+        working-directory: mobile
+        run: node scripts/check-native-peer-deps.mjs
       - name: Typecheck
         working-directory: mobile
         run: npx tsc --noEmit
