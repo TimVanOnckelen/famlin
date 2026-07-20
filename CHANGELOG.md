@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/TimVanOnckelen/famlin/compare/v0.5.1...v0.6.0) (2026-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* Admins must set the `READ_ONLY` environment variable to "true" for demo instances to enable this feature.
+
+### Features
+
+* add read-only mode for demo instances ([ee177d0](https://github.com/TimVanOnckelen/famlin/commit/ee177d09a1fa8e56510af64b38ea01cacc19e7fe))
+
+
+### Bug Fixes
+
+* add react-native-worklets as a direct mobile dependency ([ac1ee7d](https://github.com/TimVanOnckelen/famlin/commit/ac1ee7d0252dc57a83a6db3e74234d230f170d59))
+
 ## [0.5.1](https://github.com/TimVanOnckelen/famlin/compare/v0.5.0...v0.5.1) (2026-07-20)
 
 
