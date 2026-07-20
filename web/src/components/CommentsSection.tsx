@@ -101,7 +101,21 @@ function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean 
   );
 }
 
-export function CommentsSection({ post }: { post: Post }) {
+export function CommentsSection({
+  post,
+  filterComments,
+}: {
+  post: Post;
+  // Applied to the fetched list before splitting it into top-level/replies —
+  // used by TripDetailPage's "Reacties op de reis" section to hide check-in
+  // comments (metadata.kind === 'trip_checkin') from that section: their
+  // replies stay in the same query-cache array but, once the check-in itself
+  // is filtered out of `comments`, never get looked up by repliesFor below
+  // (it's only called for what's left in topLevel), so they're excluded too
+  // without any extra filtering. Omitted = show everything, unchanged from
+  // before this prop existed.
+  filterComments?: (comments: Comment[]) => Comment[];
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
@@ -153,7 +167,8 @@ export function CommentsSection({ post }: { post: Post }) {
   }
 
   // Order: top-level comments chronologically, each followed by its replies.
-  const comments = commentsQuery.data ?? [];
+  const rawComments = commentsQuery.data ?? [];
+  const comments = filterComments ? filterComments(rawComments) : rawComments;
   const topLevel = comments.filter((c) => !c.parentId);
   const repliesFor = (parentId: string) => comments.filter((c) => c.parentId === parentId);
 

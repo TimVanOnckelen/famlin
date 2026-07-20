@@ -97,7 +97,21 @@
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
     "peopleInPost": "Personen herkend in dit bericht",
-    "sharedWithGroups": "Gedeeld met {{names}}"
+    "sharedWithGroups": "Gedeeld met {{names}}",
+    "trip": {
+      "activeBadge": "🧳 Dag {{day}} · onderweg",
+      "lastStopLabel": "Laatste stop:",
+      "stopsSoFar_one": "{{count}} stop tot nu toe · {{author}}",
+      "stopsSoFar_other": "{{count}} stops tot nu toe · {{author}}",
+      "followCta": "Volg de reis →",
+      "closedBadge": "🧳 REIS · AFGESLOTEN",
+      "closedStats": "{{days}} dagen · {{stops}} stops · {{photos}} foto's",
+      "authorDateRange": "{{author}} · {{range}}",
+      "dateRangeSameMonth": "{{startDay}} t/m {{endDay}} {{month}}",
+      "dateRangeDifferentMonth": "{{start}} tot {{end}}",
+      "viewDiaryCta": "Bekijk het dagboek →",
+      "morePhotosOverlay": "+{{count}}"
+    }
   },
   "search": {
     "title": "Zoeken in {{group}}",
@@ -119,15 +133,26 @@
     "groupsLabel": "Delen met",
     "multipleGroupsSelected": "{{count}} groepen geselecteerd",
     "contentPlaceholder": "Schrijf iets voor de familie...",
+    "milestoneContentPlaceholder": "Vertel over deze mijlpaal...",
     "addPhotoTitle": "Foto's & video's",
     "addPhotoSubtitle": "Kies uit galerij",
     "addAlbumPhotoTitle": "Albumfoto's",
     "addAlbumPhotoSubtitle": "Kies uit een gedeeld album",
+    "attachLabel": "Toevoegen",
+    "changeTypeHint": "Tik om het type te wijzigen — elk type heeft zijn eigen velden hieronder",
     "postType": {
       "update": "Update",
       "milestone": "Mijlpaal",
-      "poll": "Poll"
+      "poll": "Poll",
+      "trip": "Reis"
     },
+    "postTypeSubtitle": {
+      "update": "Deel een moment, foto of video",
+      "milestone": "Verjaardag, geboorte, jubileum",
+      "poll": "Stel de familie een vraag",
+      "trip": "Volg een reis met check-ins"
+    },
+    "chooserTitle": "Wat wil je delen?",
     "noPostTypesForSelection": "Deze families hebben geen gemeenschappelijk berichttype — wijzig de geselecteerde families om te kunnen plaatsen.",
     "milestoneTitle": "🎂 Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
@@ -153,6 +178,24 @@
       "nameLabel": "Locatienaam",
       "namePlaceholder": "Bijv. huis van oma",
       "tapHint": "Tik op de kaart om de pin te plaatsen"
+    },
+    "trip": {
+      "helper": "Je houdt de reis daarna bij via check-ins op de reisdetailpagina",
+      "titleLabel": "Titel",
+      "titlePlaceholder": "Bijv. Roadtrip Italië",
+      "destinationLabel": "Bestemming",
+      "destinationPlaceholder": "Bijv. Toscane & Emilia-Romagna, Italië",
+      "startDateLabel": "Startdatum",
+      "endDateLabel": "Einddatum",
+      "endDateOptional": "optioneel",
+      "datePlaceholder": "JJJJ-MM-DD",
+      "dateHint": "Notatie: JJJJ-MM-DD",
+      "coverPhotoTitle": "Coverfoto toevoegen",
+      "coverPhotoSubtitle": "Optioneel — je kunt deze ook later instellen",
+      "travelersLabel": "Reisgenoten",
+      "travelersSubtitle": "Optioneel — zij kunnen ook inchecken",
+      "travelersSelected_one": "{{count}} reisgenoot",
+      "travelersSelected_other": "{{count}} reisgenoten"
     }
   },
   "poll": {
@@ -207,6 +250,9 @@
       "deleteFailed": "Verwijderen mislukt"
     }
   },
+  "reactions": {
+    "title": "Wie reageerde"
+  },
   "notifications": {
     "title": "Meldingen",
     "markAllRead": "Alles gelezen",
@@ -226,7 +272,11 @@
     "placeholder": "Bericht...",
     "addAttachment": "Voeg een foto of video toe",
     "readBy": "Gezien",
-    "sendFailed": "Bericht kon niet worden verzonden"
+    "sendFailed": "Bericht kon niet worden verzonden",
+    "replyingTo": "Aan het antwoorden op {{name}}",
+    "cancelReply": "Antwoord annuleren",
+    "attachmentPhoto": "📷 Foto",
+    "attachmentVideo": "🎥 Video"
   },
   "photos": {
     "title": "Foto's",
@@ -284,5 +334,66 @@
     "downloadSuccess": "Opgeslagen in je fotobibliotheek",
     "downloadError": "Kon deze foto niet opslaan",
     "downloadPermissionDenied": "Famlin heeft toestemming nodig om foto's op te slaan"
+  },
+  "trip": {
+    "detail": {
+      "activeBadge": "🧳 ACTIEF · DAG {{day}}",
+      "closedBadge": "🧳 AFGESLOTEN",
+      "sinceLabel": "{{author}} · sinds {{date}}",
+      "statsStops": "stops",
+      "statsPhotos": "foto's",
+      "statsDays": "dagen",
+      "tripCommentsSectionTitle_one": "💬 Reacties op de reis · {{count}}",
+      "tripCommentsSectionTitle_other": "💬 Reacties op de reis · {{count}}",
+      "addCheckinButton": "+ Check-in",
+      "timelineLabelActive": "Tijdlijn · nieuwste eerst",
+      "timelineLabelClosed": "Dagboek · oudste eerst",
+      "dayTimeLabel": "Dag {{day}} · {{time}}",
+      "dayDateLabel": "Dag {{day}} · {{date}}",
+      "likesLabel": "❤️ {{count}}",
+      "commentsCountButton_one": "{{count}} reactie",
+      "commentsCountButton_other": "{{count}} reacties",
+      "closingLine": "Reis afgesloten door {{author}} · {{date}}",
+      "emptyTitle": "De reis is begonnen…",
+      "emptyDescription": "Nog geen check-ins. Zodra {{name}} onderweg is, verschijnen de eerste stops hier.",
+      "menuButtonLabel": "Reisopties",
+      "closeTripMenuItem": "Reis afsluiten",
+      "viewPhotos": "Bekijk foto's",
+      "editTravelersMenuItem": "Reisgenoten bewerken",
+      "travelersWith": "Met {{names}}",
+      "travelersRowLabel": "Reisgenoten"
+    },
+    "checkin": {
+      "headerTitle": "Check-in",
+      "submitButton": "Inchecken",
+      "contextLine": "{{title}} · Dag {{day}}",
+      "placeLabel": "Waar ben je? *",
+      "placePlaceholder": "Bijv. Bologna",
+      "textPlaceholder": "Vertel iets over deze stop (optioneel)...",
+      "addPhotoLabel": "Foto / video",
+      "alerts": {
+        "failed": "Inchecken mislukt"
+      }
+    },
+    "close": {
+      "title": "Reis afsluiten?",
+      "description": "“{{title}}” wordt een afgesloten dagboek — de tijdlijn keert om (oudste stop eerst) en er kunnen geen nieuwe check-ins meer bij. Je kunt dit niet ongedaan maken.",
+      "confirmButton": "Reis afsluiten",
+      "cancelButton": "Nog even niet",
+      "footnote": "Sluit automatisch af op de einddatum, als je die instelt.",
+      "alerts": {
+        "failed": "Reis kon niet worden afgesloten"
+      }
+    },
+    "travelers": {
+      "pickerTitle": "Reisgenoten",
+      "pickerHint": "Zij kunnen ook inchecken op deze reis",
+      "save": "Opslaan",
+      "noMembers": "Geen andere leden in deze familie",
+      "loadError": "Ledenlijst kon niet worden geladen",
+      "alerts": {
+        "failed": "Reisgenoten konden niet worden opgeslagen"
+      }
+    }
   }
 }

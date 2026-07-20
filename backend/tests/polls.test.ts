@@ -485,7 +485,7 @@ describe('custom post types + polls', () => {
       const list = await app.inject({ method: 'GET', url: '/api/groups', headers: authHeader(member) });
       expect(list.statusCode).toBe(200);
       const byId = new Map(list.json().map((g: any) => [g.id, g]));
-      expect((byId.get(openGroup.id) as any).allowedPostTypes).toEqual(['UPDATE', 'MILESTONE', 'POLL']);
+      expect((byId.get(openGroup.id) as any).allowedPostTypes).toEqual(['UPDATE', 'MILESTONE', 'POLL', 'TRIP']);
       expect((byId.get(restrictedGroup.id) as any).allowedPostTypes).toEqual(['UPDATE']);
 
       const detail = await app.inject({ method: 'GET', url: `/api/groups/${restrictedGroup.id}`, headers: authHeader(member) });
@@ -558,7 +558,7 @@ describe('custom post types + polls', () => {
 
       const res = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(admin) });
       expect(res.statusCode).toBe(200);
-      expect(res.json().items).toEqual([{ id: 'UPDATE' }, { id: 'MILESTONE' }, { id: 'POLL' }]);
+      expect(res.json().items).toEqual([{ id: 'UPDATE' }, { id: 'MILESTONE' }, { id: 'POLL' }, { id: 'TRIP' }]);
 
       const denied = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(member) });
       expect(denied.statusCode).toBe(403);

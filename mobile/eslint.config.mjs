@@ -54,12 +54,17 @@ export default defineConfig([
     // setState-in-effect, one impure Date.now() call, one hook called from a
     // callback). Downgraded to warn rather than editing source here — see
     // https://react.dev/reference/eslint-plugin-react-hooks for follow-up.
+    // react-hooks/immutability also false-positives on Reanimated's
+    // useSharedValue `.value =` assignment inside worklets (ChatScreen.tsx's
+    // swipe-to-reply gesture) — that's a documented, idiomatic Reanimated
+    // API, not a mutation bug, and the rule doesn't know about it.
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       'react-hooks/refs': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/purity': 'warn',
       'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/immutability': 'warn',
     },
   },
 ]);

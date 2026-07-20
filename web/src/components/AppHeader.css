@@ -77,6 +77,18 @@
   border: 2px solid var(--fam-surface);
 }
 
+/* On small screens BottomNav takes over both of these (its own Chat tab and
+   floating "+"), so the header can stay a slim top bar. The extra
+   .app-header-actions ancestor in the selector outranks the global .btn
+   rule's specificity (equal specificity would otherwise leave the winner to
+   stylesheet-injection order, which isn't reliable). */
+@media (max-width: 720px) {
+  .app-header-actions .btn-new-post,
+  .app-header-actions .header-icon-btn {
+    display: none;
+  }
+}
+
 .user-menu {
   position: relative;
 }

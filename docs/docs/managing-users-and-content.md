@@ -22,7 +22,7 @@ The **Users** page lists every account, their group memberships, and whether the
 The **Groups** page is a two-pane view: pick a group on the left, manage it on the right.
 
 - **Create / edit / delete a group** — **New group** at the top, or **Edit**/**Delete** on the selected group. A group just has a name and description; deleting one removes its posts and comments along with it (unlike posts/comments, a deleted group can't be restored).
-- **Choose which post types the group allows** — the group form's **Allowed post types** section has one checkbox per post type the server supports (plain updates, milestones, polls, and any added later). Leave every box checked (the default) to allow all of them, including types added in a future update — you don't need to come back and re-check anything after an upgrade. Uncheck a type to hide it from that group's post composer; at least one type must stay checked. Existing posts of a type you later uncheck aren't affected — they stay visible, only creating new ones of that type is blocked.
+- **Choose which post types the group allows** — the group form's **Allowed post types** section has one checkbox per post type the server supports (plain updates, milestones, polls, trip journals, and any added later). Leave every box checked (the default) to allow all of them, including types added in a future update — you don't need to come back and re-check anything after an upgrade. Uncheck a type to hide it from that group's post composer; at least one type must stay checked. Existing posts of a type you later uncheck aren't affected — they stay visible, only creating new ones of that type is blocked.
 - **Enable or disable group chat** — the group form has a **Chat** toggle (off by default). When enabled, members can send messages in a shared group chat, pin photos/videos to messages, and see which members have read the latest messages. Chat is not end-to-end encrypted. When a milestone post is created in a group with chat on, a system message is automatically posted in the chat to announce it. Members control their own push-notification preference for chat messages from their profile settings.
 - **Add an existing user to the group** — pick them from the dropdown next to **Add member** in the detail pane (the same action as "manage group membership" on the Users page).
 - **Add a new member to the group** — click **Add member** in the detail pane to open the same modal as on the Users page, preselected to this group; see [Inviting family members](./inviting-family) for the invite flow it defaults to.
@@ -44,3 +44,16 @@ There's no bulk delete action.
 ## Push notification log
 
 The **Push notification log** page lists every push-notification send attempt — both automatic (a new post, comment, reaction, ...) and manually resent from the Content page — newest first. Each row shows when it was sent, the notification type, which post it was for (if any), how many people were eligible, how many devices were actually reached, how many failed, and who triggered it ("System" for automatic sends, otherwise the admin who clicked resend).
+
+## Data export
+
+The **Server settings** page's general section has a **Data export** card with a single **Download export** button. It downloads a zip containing:
+
+- All posts, comments, reactions, and favorites, across every group.
+- All chat messages.
+- The member list (names, emails, avatars, admin status) and group membership.
+- Every uploaded photo and video, including the original, unresized files.
+
+It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, invite links, push tokens, or API tokens. It's a portable copy of your family's content, not a way to clone or migrate a whole server deployment.
+
+There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.

@@ -1,0 +1,72 @@
+---
+id: list-post-reactions
+title: "List who reacted to a post, and with what"
+description: "The full reactor list, newest first — unlike `Post.recentReactors`"
+sidebar_label: "List who reacted to a post, and with what"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVsFuGzcQ/RViL7WNjZQ2OQlFAaV1m7QuHNhOjcIystTurMSES25IrmRFENCP6Bf2S/qGXMly5DaXHgrEMCSRHJJv3gzfzDqzLTkZlDWvqmyUaeXDa+vDBcmSJ32WZ0HOfDa6ye7nbvOsIl861fIY267mJOpOa+HYxjrB5+TC0JJ8ELVy+Pzrjz9FZ7R6T6LgKwaOSjLpJut8MTFHpWxbqoQM4hk2W1GEVUvFcS7CXHmBf1qQW+0uaXXnxXKuyrmgxr5TMKPVxGiqw2BigLyVTjYUyDH+dWYwANgWl8PZPFMMvZVhjt+OPnTKETgIrqM88+WcGpmN1hljgJ0PTplZttncsrFvwQN5Xv/m6VP+ekjI6QOg0lSMTbk0AxMRT82z0poAEvgA+K5VGUMxfOf5lPUhCjt9R2Vg1xwHLqiEQQVq/J6ZdE6u2MNP5nfbH6I9N7TF+hV4roBIhdXj/IpIL46QWp/XkdfPYKseYTHvg/HIglzIIN0bpw9XsQtJJqeaUpg2MAdSHmZvPLnLrmmkW+GUz4FKq4fnk+kazvWzV7+cYnh2/ht/vRy/HOPr+vwan5fjH/D5/fjiNL2DWnYaAdxu2eLZvpYrvmET02a7tHtg1vEK/+XZ86dfH6bRr8p7AMuFMgupVZULums5TXNhOZkW9j3eS4kJDpnU/11GkXNA9whDDwG+7BppniB3Ko4KHqqTxmsZgGqhJCeMKMZlSW14cibNrJMzKsQc5uTEUUGmGBZGF8eDjCm4f4M3/f17pJ3GiS1Xzw65+t12QjqCbgQhRUPNFHfYOmnHzNmu/WLYeX7IzgV527ky0VPbzlRfBBuwRAGYW65tM4rQWe9H2VC2asiVwA/XqSBshm6v6EFNFtu60bEWZfMQWj8aDmvZaGUGdCebVtOgtM2Bp0hFpN7SiB+jraio1XbVMNWsA57KzkFg4+FTQtK6cceobm73ly+Z/sTwvtGOZgaU9ZWKx8noAMxYIFSIqNRCgl3vRYBqGFCaPHkLRt4OBoMiZyGJ4QBkjsaSpgJ5cQytmRgpUO88l66fr69E7WyDMn5+eSUikxLQhtrOlCkG4oUN8/gUPTyOJ3mIvVjK1WhiCvbCOvUx5tpIvIioxbcR1HcFF26OmjK1jb72Ie2ZHL9+BQc5Msk5MOWY1k+dTvW335RiydJp4UMShItTQMdpaEk4vwr2oog9yg4vr2IwMbauVQl1FY2dKk2xnPfceNF5GohrxR6Lm0eZvj0aVmhcND8Zz/ccT8wKYlVKI6ad0pVYbfNF4T3OUjvmhZxJZdA4xVXESukVqnNyBjRNzBgNV/+EuTnypeXuaboSJydR73oR9HPVnpyMxPZOa3RsTarkCFINPu7OMUkrvTiKV+KJH8edUzhgZvAo37YzCDBuRZuGwCLcrCmYlmFi4GhyfSAuicTNGy5ikVhwekgH9Ag9EtKCi1jSoDwiWvAEqEhXLq3jatc/PB8zJY/dHHSFc6Xv787Qe6JtsamlwY5gERu268/hYC0B9NOsWd8L4v+1o+2ffqC7MGw18oMp6FKvlJTtBlKussQLC9lo1+66/f59jlk2Xq+n0hO6rc2Gpz90gMNChEcmnUqtFlSqUp5/Q0ZrqT39C3FHF70yH4t/wrttUg23qOhrOh7h53ta3bfnm1tYJvWPCNJiqg972w7qFivoTvJ/Or2CmvwNPfGBOQ==
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"List who reacted to a post, and with what"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/posts/{postId}/reactions"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+The full reactor list, newest first — unlike `Post.recentReactors`
+(capped at 3, no `type`), this is every reactor plus which emoji they
+left.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./list-post-reactions.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./list-post-reactions.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./list-post-reactions.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

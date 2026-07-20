@@ -73,6 +73,13 @@
   }
 }
 
+/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
+@media (max-width: 720px) {
+  .photos-column {
+    padding-bottom: 112px;
+  }
+}
+
 /* ── Photo tile ─────────────────────────────────────────────────────────── */
 
 .photo-tile {

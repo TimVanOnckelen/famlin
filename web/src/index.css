@@ -7,6 +7,12 @@
   --fam-primary-tint: #daf3fe;
   --fam-accent: #ed835e;
   --fam-milestone: #eeb154;
+  /* TRIP post type accent — mirrors mobile's colors.trip* palette
+     (mobile/src/constants/colors.ts), design/Famlin.dc.html section t6. */
+  --fam-trip: #1f7fa3;
+  --fam-trip-dark: #1a6484;
+  --fam-trip-tint: #dcf0f7;
+  --fam-trip-border: #bfe1ec;
 
   --fam-bg: #edf7fb;
   --fam-surface: #ffffff;

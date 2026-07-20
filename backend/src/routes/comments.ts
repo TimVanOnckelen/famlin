@@ -5,6 +5,7 @@ import { emitDomainEvent } from '../events.js';
 import { requireGroupMember } from '../plugins/auth.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
+import { isTripCheckinMetadata } from '../services/postTypes/trip.js';
 
 export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -98,6 +99,9 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       hasAttachment: !!comment.attachmentUrl,
       parentId: comment.parentId,
       mentionedUserIds: body.mentionedUserIds ?? [],
+      // Always null here — the public route's body schema doesn't accept a
+      // client-sent metadata field (see createCommentBodySchema in types.ts).
+      metadata: comment.metadata,
     });
 
     // A brand new comment has no likes yet, so this is the same shape as the
@@ -114,7 +118,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     const comment = await prisma.comment.findUnique({
       where: { id },
-      include: { post: { select: { groupId: true } } },
+      include: { post: { select: { groupId: true, crossPostId: true } } },
     });
 
     if (!comment) {
@@ -128,9 +132,36 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // Editing writes into the group, so it requires *current* membership.
     if (await requireGroupMember(request, reply, comment.post.groupId)) return;
 
-    const updated = await prisma.comment.update({
+    const editedAt = new Date();
+
+    // A TRIP check-in on a cross-posted trip exists as one Comment copy per
+    // sibling post, all sharing metadata.checkinId (services/postTypes/
+    // trip.ts). This route is already author-only (see the check above), so
+    // editing one copy must fan the SAME content out to every sibling copy
+    // (INCLUDING this one, via one updateMany) — otherwise the check-in's
+    // text diverges across groups. Mirrors the author-delete fan-out below.
+    if (isTripCheckinMetadata(comment.metadata) && comment.post.crossPostId) {
+      const checkinId = comment.metadata.checkinId;
+      const siblingIds = (
+        await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
+      ).map((p) => p.id);
+      await prisma.comment.updateMany({
+        where: {
+          postId: { in: siblingIds },
+          authorId: comment.authorId,
+          metadata: { path: ['checkinId'], equals: checkinId },
+        },
+        data: { content: body.content, editedAt },
+      });
+    } else {
+      await prisma.comment.update({
+        where: { id },
+        data: { content: body.content, editedAt },
+      });
+    }
+
+    const updated = await prisma.comment.findUniqueOrThrow({
       where: { id },
-      data: { content: body.content, editedAt: new Date() },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true } },
@@ -145,7 +176,10 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request);
     const { id } = request.params as { id: string };
 
-    const comment = await prisma.comment.findUnique({ where: { id } });
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      include: { post: { select: { crossPostId: true } } },
+    });
 
     if (!comment) {
       return reply.status(404).send({ error: t('errors.commentNotFound') });
@@ -155,7 +189,27 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
     }
 
-    await prisma.comment.delete({ where: { id } });
+    // A TRIP check-in on a cross-posted trip exists as one Comment copy per
+    // sibling post, all sharing metadata.checkinId (services/postTypes/
+    // trip.ts). When the AUTHOR deletes their check-in, remove every copy —
+    // mirroring how an author's post DELETE fans out to siblings
+    // (routes/posts.ts). An admin moderating someone else's check-in stays
+    // per-group (single row), consistent with admin post moderation.
+    if (comment.authorId === request.user!.id && isTripCheckinMetadata(comment.metadata) && comment.post.crossPostId) {
+      const checkinId = comment.metadata.checkinId;
+      const siblingIds = (
+        await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
+      ).map((p) => p.id);
+      await prisma.comment.deleteMany({
+        where: {
+          postId: { in: siblingIds },
+          authorId: comment.authorId,
+          metadata: { path: ['checkinId'], equals: checkinId },
+        },
+      });
+    } else {
+      await prisma.comment.delete({ where: { id } });
+    }
 
     return { success: true };
   });

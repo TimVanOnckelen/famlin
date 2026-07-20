@@ -43,3 +43,42 @@ export function formatDateTime(dateString: string): string {
     minute: '2-digit',
   });
 }
+
+export function formatTime(dateString: string): string {
+  return new Date(dateString).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+}
+
+// "3 juli" / "3 July" — used by the trip timeline's closed (oldest-first)
+// variant, which labels each entry with a date instead of a time.
+//
+// A plain 'YYYY-MM-DD' (trip.startDate/endDate) parses as UTC midnight; in a
+// local timezone west of UTC that formats as the previous day. Anchor
+// date-only strings to local midnight before parsing (same trick as
+// formatTripDateRange above) so the calendar day never shifts; an ISO
+// datetime (e.g. closedAt) already carries a time and parses/formats in
+// local time correctly as-is.
+export function formatDayMonth(dateString: string): string {
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  const date = new Date(isDateOnly ? `${dateString}T00:00:00` : dateString);
+  return date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' });
+}
+
+// "3 t/m 14 juli" when start/end fall in the same month, else "3 Jul to 14 Aug".
+// startDate/endDate are trip typeData's plain 'YYYY-MM-DD' strings.
+export function formatTripDateRange(startDate: string, endDate: string): string {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+    return i18n.t('feed.trip.dateRangeSameMonth', {
+      startDay: start.getDate(),
+      endDay: end.getDate(),
+      month: end.toLocaleDateString(i18n.language, { month: 'long' }),
+    });
+  }
+
+  return i18n.t('feed.trip.dateRangeDifferentMonth', {
+    start: start.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
+    end: end.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
+  });
+}

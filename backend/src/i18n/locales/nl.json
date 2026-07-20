@@ -21,6 +21,7 @@
     "commentNotFound": "Reactie niet gevonden",
     "chitchatDisabled": "Chitchat is niet ingeschakeld voor deze groep",
     "chatMessageNotFound": "Chatbericht niet gevonden",
+    "replyToMessageNotFound": "Bericht waarop wordt gereageerd werd niet gevonden",
     "notificationNotFound": "Melding niet gevonden",
     "failedToRegisterPushToken": "Push-token registreren mislukt",
     "pushNotificationsDisabled": "Pushmeldingen zijn uitgeschakeld op deze server",
@@ -65,7 +66,12 @@
     "pollClosed": "Deze peiling is gesloten",
     "invalidPollOption": "Ongeldige peilingsoptie",
     "pollQuestionRequired": "Een peiling heeft een vraag nodig",
-    "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep"
+    "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep",
+    "tripNotAuthor": "Alleen de auteur van de reis kan dit doen",
+    "tripNotTraveler": "Alleen de reizigers van deze reis kunnen inchecken",
+    "tripTravelerNotMember": "Elke reiziger moet lid zijn van deze groep",
+    "tripClosed": "Deze reis is afgesloten",
+    "tripNotStarted": "Deze reis is nog niet begonnen"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -82,6 +88,8 @@
     "newMediaAssets_one": "{{count}} nieuwe foto toegevoegd aan \"{{album}}\" in {{group}}",
     "newMediaAssets_other": "{{count}} nieuwe foto's toegevoegd aan \"{{album}}\" in {{group}}",
     "newChatMessage": "{{author}} heeft een bericht gestuurd in de chat van {{group}}: \"{{excerpt}}\"",
+    "tripCheckin_one": "{{author}} heeft ingecheckt in {{place}}",
+    "tripCheckin_other": "{{author}} heeft vandaag {{count}} keer ingecheckt · laatste stop: {{place}}",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."

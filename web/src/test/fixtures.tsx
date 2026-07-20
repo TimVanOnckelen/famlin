@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Post, PostPoll, Comment, User } from '@famlin/api-client';
+import { Post, PostPoll, Comment, TripEnrichment, User } from '@famlin/api-client';
 
 export function makePost(overrides: Partial<Post> = {}): Post {
   return {
@@ -40,6 +40,26 @@ export function makePoll(overrides: Partial<PostPoll> = {}): PostPoll {
     myVoteOptionId: null,
     closesAt: null,
     closed: false,
+    ...overrides,
+  };
+}
+
+export function makeTrip(overrides: Partial<TripEnrichment> = {}): TripEnrichment {
+  return {
+    title: 'Road trip Italy',
+    destination: 'Tuscany & Emilia-Romagna, Italy',
+    startDate: '2026-07-03',
+    endDate: '2026-07-14',
+    coverPhotoUrl: null,
+    closed: false,
+    closedAt: null,
+    dayNumber: 4,
+    durationDays: null,
+    stopCount: 2,
+    photoCount: 5,
+    latestCheckin: { commentId: 'ci-2', place: 'Bologna', createdAt: '2026-07-06T14:20:00Z' },
+    collagePhotoUrls: [],
+    travelers: [],
     ...overrides,
   };
 }

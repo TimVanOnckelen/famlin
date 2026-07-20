@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PostCard } from '@/components/PostCard';
-import { makePost, makePoll, renderWithQueryClient } from '@/test/fixtures';
+import { makePost, makePoll, makeTrip, renderWithQueryClient } from '@/test/fixtures';
 import { Post, reactToPost, toggleFavoritePost, votePoll } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -200,5 +200,65 @@ describe('PostCard', () => {
       <PostCard post={makePost({ type: 'RSVP', content: 'Are you coming to the picnic?' })} />
     );
     expect(screen.getByText('Are you coming to the picnic?')).toBeInTheDocument();
+  });
+
+  describe('trip posts', () => {
+    it('renders the active trip card: badge, destination, last stop, stops-so-far, and follow CTA', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'TRIP', content: null, trip: makeTrip() })} />
+      );
+      expect(screen.getByText(/Day 4/)).toBeInTheDocument();
+      expect(screen.getByText('→ Tuscany & Emilia-Romagna, Italy')).toBeInTheDocument();
+      expect(screen.getByText('Bologna', { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/2 stops so far · Grandpa John/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Follow the trip →' })).toBeInTheDocument();
+    });
+
+    it('opens the trip detail view from the CTA', async () => {
+      const user = userEvent.setup();
+      const onOpenTrip = vi.fn();
+      renderWithQueryClient(
+        <PostCard post={makePost({ id: 'trip-post', type: 'TRIP', content: null, trip: makeTrip() })} onOpenTrip={onOpenTrip} />
+      );
+      await user.click(screen.getByRole('button', { name: 'Follow the trip →' }));
+      expect(onOpenTrip).toHaveBeenCalledWith('trip-post');
+    });
+
+    it('renders the closed trip card: badge, stats, author/date range, and diary CTA', () => {
+      renderWithQueryClient(
+        <PostCard
+          post={makePost({
+            type: 'TRIP',
+            content: null,
+            trip: makeTrip({
+              closed: true,
+              closedAt: '2026-07-14T18:00:00Z',
+              dayNumber: null,
+              durationDays: 12,
+              stopCount: 8,
+              photoCount: 30,
+              collagePhotoUrls: ['/uploads/a.jpg', '/uploads/b.jpg', '/uploads/c.jpg'],
+            }),
+          })}
+        />
+      );
+      expect(screen.getByText('🧳 TRIP · CLOSED')).toBeInTheDocument();
+      expect(screen.getByText('12 days · 8 stops · 30 photos')).toBeInTheDocument();
+      expect(screen.getByText(/Grandpa John/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'View the diary →' })).toBeInTheDocument();
+      // 3 collage photos + 1 overflow tile showing the remainder.
+      expect(screen.getByText('+27')).toBeInTheDocument();
+    });
+
+    // The trip card never surfaces a "comments" toggle at all (see PostCard's
+    // TRIP branch and TripFeedCard) — check-in comments only ever appear in
+    // the trip detail view's own timeline, never inline on the feed card.
+    it('never renders a generic inline-comments affordance for trip posts', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'TRIP', content: null, commentCount: 5, trip: makeTrip() })} />
+      );
+      expect(screen.queryByText(/comments/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument();
+    });
   });
 });

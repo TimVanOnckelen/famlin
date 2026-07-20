@@ -1,4 +1,4 @@
-import { Post, PollCreateData, PostType, ReactionType } from './types';
+import { Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -22,7 +22,7 @@ export interface CreatePostBody {
     groupIds?: string[];
     content?: string;
     type: PostType;
-    typeData?: PollCreateData | Record<string, unknown>;
+    typeData?: PollCreateData | TripTypeData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
     latitude?: number;
@@ -37,8 +37,17 @@ export interface ReactionResult {
     counts: Partial<Record<ReactionType, number>>;
 }
 export declare function reactToPost(postId: string, type: ReactionType): Promise<ReactionResult>;
+export declare function fetchPostReactions(postId: string): Promise<PostReactor[]>;
 export declare function toggleFavoritePost(postId: string): Promise<{
     favorited: boolean;
 }>;
 export declare function interactWithPost(postId: string, key: string, value?: unknown): Promise<Post>;
 export declare function votePoll(postId: string, optionId: string): Promise<Post>;
+export interface CheckInTripBody {
+    place: string;
+    text?: string;
+    photoUrls?: string[];
+}
+export declare function checkInTrip(postId: string, data: CheckInTripBody): Promise<Post>;
+export declare function closeTrip(postId: string): Promise<Post>;
+export declare function setTripTravelers(postId: string, userIds: string[]): Promise<Post>;

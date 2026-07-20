@@ -97,7 +97,21 @@
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
     "peopleInPost": "People recognized in this post",
-    "sharedWithGroups": "Shared with {{names}}"
+    "sharedWithGroups": "Shared with {{names}}",
+    "trip": {
+      "activeBadge": "🧳 Day {{day}} · on the go",
+      "lastStopLabel": "Last stop:",
+      "stopsSoFar_one": "{{count}} stop so far · {{author}}",
+      "stopsSoFar_other": "{{count}} stops so far · {{author}}",
+      "followCta": "Follow the trip →",
+      "closedBadge": "🧳 TRIP · CLOSED",
+      "closedStats": "{{days}} days · {{stops}} stops · {{photos}} photos",
+      "authorDateRange": "{{author}} · {{range}}",
+      "dateRangeSameMonth": "{{startDay}} to {{endDay}} {{month}}",
+      "dateRangeDifferentMonth": "{{start}} to {{end}}",
+      "viewDiaryCta": "View the diary →",
+      "morePhotosOverlay": "+{{count}}"
+    }
   },
   "search": {
     "title": "Search {{group}}",
@@ -119,15 +133,26 @@
     "groupsLabel": "Share with",
     "multipleGroupsSelected": "{{count}} groups selected",
     "contentPlaceholder": "Write something for the family...",
+    "milestoneContentPlaceholder": "Tell the story of this milestone...",
     "addPhotoTitle": "Photos & videos",
     "addPhotoSubtitle": "Choose from gallery",
     "addAlbumPhotoTitle": "Album photos",
     "addAlbumPhotoSubtitle": "Choose from a shared album",
+    "attachLabel": "Add",
+    "changeTypeHint": "Tap to change the type — each type has its own fields below",
     "postType": {
       "update": "Update",
       "milestone": "Milestone",
-      "poll": "Poll"
+      "poll": "Poll",
+      "trip": "Trip"
     },
+    "postTypeSubtitle": {
+      "update": "Share a moment, photo or video",
+      "milestone": "Birthday, birth, anniversary",
+      "poll": "Ask the family a question",
+      "trip": "Track a journey with check-ins"
+    },
+    "chooserTitle": "What do you want to share?",
     "noPostTypesForSelection": "These families don't share any post type — change the selected families to post.",
     "milestoneTitle": "🎂 This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
@@ -153,6 +178,24 @@
       "nameLabel": "Location name",
       "namePlaceholder": "E.g. Grandma's house",
       "tapHint": "Tap the map to place the pin"
+    },
+    "trip": {
+      "helper": "You'll track the trip afterwards via check-ins on the trip detail page",
+      "titleLabel": "Title",
+      "titlePlaceholder": "E.g. Road trip Italy",
+      "destinationLabel": "Destination",
+      "destinationPlaceholder": "E.g. Tuscany & Emilia-Romagna, Italy",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "endDateOptional": "optional",
+      "datePlaceholder": "YYYY-MM-DD",
+      "dateHint": "Format: YYYY-MM-DD",
+      "coverPhotoTitle": "Add cover photo",
+      "coverPhotoSubtitle": "Optional — you can also set this later",
+      "travelersLabel": "Travel companions",
+      "travelersSubtitle": "Optional — they can check in too",
+      "travelersSelected_one": "{{count}} travel companion",
+      "travelersSelected_other": "{{count}} travel companions"
     }
   },
   "poll": {
@@ -207,6 +250,9 @@
       "deleteFailed": "Could not delete"
     }
   },
+  "reactions": {
+    "title": "Reactions"
+  },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",
@@ -226,7 +272,11 @@
     "placeholder": "Message...",
     "addAttachment": "Attach a photo or video",
     "readBy": "Seen",
-    "sendFailed": "Message could not be sent"
+    "sendFailed": "Message could not be sent",
+    "replyingTo": "Replying to {{name}}",
+    "cancelReply": "Cancel reply",
+    "attachmentPhoto": "📷 Photo",
+    "attachmentVideo": "🎥 Video"
   },
   "photos": {
     "title": "Photos",
@@ -284,5 +334,66 @@
     "downloadSuccess": "Saved to your photo library",
     "downloadError": "Could not save this photo",
     "downloadPermissionDenied": "Famlin needs permission to save photos to your library"
+  },
+  "trip": {
+    "detail": {
+      "activeBadge": "🧳 ACTIVE · DAY {{day}}",
+      "closedBadge": "🧳 CLOSED",
+      "sinceLabel": "{{author}} · since {{date}}",
+      "statsStops": "stops",
+      "statsPhotos": "photos",
+      "statsDays": "days",
+      "tripCommentsSectionTitle_one": "💬 Trip comments · {{count}}",
+      "tripCommentsSectionTitle_other": "💬 Trip comments · {{count}}",
+      "addCheckinButton": "+ Check-in",
+      "timelineLabelActive": "Timeline · newest first",
+      "timelineLabelClosed": "Diary · oldest first",
+      "dayTimeLabel": "Day {{day}} · {{time}}",
+      "dayDateLabel": "Day {{day}} · {{date}}",
+      "likesLabel": "❤️ {{count}}",
+      "commentsCountButton_one": "{{count}} reply",
+      "commentsCountButton_other": "{{count}} replies",
+      "closingLine": "Trip closed by {{author}} · {{date}}",
+      "emptyTitle": "The trip has begun…",
+      "emptyDescription": "No check-ins yet. Once {{name}} is on the way, the first stops will appear here.",
+      "menuButtonLabel": "Trip options",
+      "closeTripMenuItem": "Close trip",
+      "viewPhotos": "View photos",
+      "editTravelersMenuItem": "Edit travel companions",
+      "travelersWith": "With {{names}}",
+      "travelersRowLabel": "Travel companions"
+    },
+    "checkin": {
+      "headerTitle": "Check-in",
+      "submitButton": "Check in",
+      "contextLine": "{{title}} · Day {{day}}",
+      "placeLabel": "Where are you? *",
+      "placePlaceholder": "E.g. Bologna",
+      "textPlaceholder": "Tell something about this stop (optional)...",
+      "addPhotoLabel": "Photo / video",
+      "alerts": {
+        "failed": "Check-in failed"
+      }
+    },
+    "close": {
+      "title": "Close the trip?",
+      "description": "“{{title}}” becomes a closed diary — the timeline reverses (oldest stop first) and no new check-ins can be added. You can't undo this.",
+      "confirmButton": "Close the trip",
+      "cancelButton": "Not yet",
+      "footnote": "Automatically closes on the end date, if you set one.",
+      "alerts": {
+        "failed": "Could not close the trip"
+      }
+    },
+    "travelers": {
+      "pickerTitle": "Travel companions",
+      "pickerHint": "They can also check in on this trip",
+      "save": "Save",
+      "noMembers": "No other members in this family",
+      "loadError": "Could not load the member list",
+      "alerts": {
+        "failed": "Could not save the travel companions"
+      }
+    }
   }
 }

@@ -59,6 +59,10 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   on_this_day: 'notifications.onThisDay',
   new_media_assets: 'notifications.newMediaAssets',
   new_chat_message: 'notifications.newChatMessage',
+  // count-pluralized (_one/_other) — see notifications.tripCheckin_one/_other
+  // in the locale files and src/subscribers/notifications.ts, which computes
+  // `count` (today's check-in count for this author on this trip).
+  trip_checkin: 'notifications.tripCheckin',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
@@ -89,10 +93,19 @@ interface NotifyOptions {
   // reference them, so this stays permissive rather than per-type.
   params: Record<string, string | number>;
   recipientIds: string[];
+  // Opt-in bundling: when set, a recipient who already has a `type` +
+  // `postId` Notification row created at/after this timestamp gets that row
+  // UPDATED in place (new message, marked unread again, createdAt refreshed
+  // so it resurfaces) instead of a brand-new row — and gets no second
+  // channel delivery (push/email) for it either. Only a recipient with no
+  // such existing row gets the normal create-row-and-deliver path. Today
+  // this only backs trip check-in bundling (see subscribers/notifications.ts)
+  // but is generic enough for a future same-day-digest need.
+  bundleSince?: Date;
 }
 
 async function notify(options: NotifyOptions) {
-  const { type, senderId, params, recipientIds } = options;
+  const { type, senderId, params, recipientIds, bundleSince } = options;
   const postId = options.postId ?? null;
 
   const ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
@@ -118,23 +131,48 @@ async function notify(options: NotifyOptions) {
   const t = i18n.getFixedT(settings.defaultLanguage);
   const message = t(resolveMessageKey(type, params), params);
 
-  // The in-app history row is written unconditionally — channels below are
-  // the optional deliveries of it.
-  await prisma.notification.createMany({
-    data: recipients.map((r) => ({
-      userId: r.id,
-      type,
-      relatedPostId: postId,
-      message,
-    })),
-  });
+  // Recipients who already have a bundle-eligible row get it updated
+  // instead of a new one created (and no channel delivery below) — everyone
+  // else falls through to the normal create + deliver path.
+  let updateRecipientIds = new Set<string>();
+  if (bundleSince && postId) {
+    const existing = await prisma.notification.findMany({
+      where: { userId: { in: recipients.map((r) => r.id) }, type, relatedPostId: postId, createdAt: { gte: bundleSince } },
+      select: { id: true, userId: true },
+    });
+    if (existing.length > 0) {
+      updateRecipientIds = new Set(existing.map((row) => row.userId));
+      await prisma.notification.updateMany({
+        where: { id: { in: existing.map((row) => row.id) } },
+        data: { message, readAt: null, createdAt: new Date() },
+      });
+    }
+  }
+
+  const createRecipients = recipients.filter((r) => !updateRecipientIds.has(r.id));
+
+  // The in-app history row is written unconditionally (for non-bundled
+  // recipients) — channels below are the optional deliveries of it.
+  if (createRecipients.length > 0) {
+    await prisma.notification.createMany({
+      data: createRecipients.map((r) => ({
+        userId: r.id,
+        type,
+        relatedPostId: postId,
+        message,
+      })),
+    });
+  }
 
   // Channels run in parallel and each failure is trapped, so one broken
-  // delivery mechanism never blocks the others.
+  // delivery mechanism never blocks the others. Bundled (updated-in-place)
+  // recipients deliberately get no second delivery — that's the whole point
+  // of bundling same-day check-ins into one notification instead of
+  // spamming one push per stop.
   await Promise.all(
     notificationChannels.map(async (channel) => {
       if (!channel.isEnabled(settings)) return;
-      const wanted = recipients.filter((r) => channel.wants(r, type));
+      const wanted = createRecipients.filter((r) => channel.wants(r, type));
       if (wanted.length === 0) return;
       try {
         await channel.send({ type, recipients: wanted, message, settings, postId });
@@ -193,6 +231,8 @@ export async function notifyUsers(options: {
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
   params: Record<string, string | number>;
+  // See NotifyOptions.bundleSince above.
+  bundleSince?: Date;
 }) {
   const { userIds, ...rest } = options;
   await notify({ ...rest, recipientIds: userIds });

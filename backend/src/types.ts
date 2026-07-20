@@ -6,7 +6,10 @@ import { SUPPORTED_LANGUAGES } from './i18n/index.js';
 // tracking pixel or another group's asset path.
 const UPLOAD_PATH_REGEX =
   /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)$/;
-const uploadPathSchema = z.string().regex(UPLOAD_PATH_REGEX, 'Must be an uploaded asset path');
+// Exported so postTypes handlers (e.g. trip.ts's coverPhotoUrl/photoUrls) can
+// reuse the exact same "must be a /uploads/ path" check without re-deriving
+// the regex.
+export const uploadPathSchema = z.string().regex(UPLOAD_PATH_REGEX, 'Must be an uploaded asset path');
 
 // Matches exactly what routes/immich.ts's legacy proxy route serves:
 // /api/immich/assets/<MediaAlbumLink cuid>/<Immich asset uuid>/<variant>.<ext>.
@@ -156,6 +159,7 @@ export const createChatMessageBodySchema = z
   .object({
     content: z.string().max(2000).optional(),
     attachmentUrl: uploadPathSchema.optional(),
+    replyToMessageId: z.string().optional(),
   })
   .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
     message: 'content or attachmentUrl is required',

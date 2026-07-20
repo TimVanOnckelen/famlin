@@ -86,4 +86,22 @@ describe('CommentsSection', () => {
       attachmentUrl: '/uploads/new-photo.jpg',
     });
   });
+
+  // filterComments backs TripDetailPage's "Reacties op de reis" section,
+  // which must never surface check-in comments (metadata.kind ===
+  // 'trip_checkin') or their replies — see web's TripDetailPage.tsx.
+  it('excludes comments (and their replies) that filterComments removes', async () => {
+    vi.mocked(fetchComments).mockResolvedValue([
+      makeComment({ id: 'checkin-1', content: 'Arrived in Bologna!', metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'checkin-1' } }),
+      makeComment({ id: 'checkin-reply', content: 'Nice!', parentId: 'checkin-1' }),
+      makeComment({ id: 'trip-comment', content: 'Have a great trip!' }),
+    ]);
+    renderWithQueryClient(
+      <CommentsSection post={makePost()} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
+    );
+
+    expect(await screen.findByText('Have a great trip!')).toBeInTheDocument();
+    expect(screen.queryByText('Arrived in Bologna!')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nice!')).not.toBeInTheDocument();
+  });
 });

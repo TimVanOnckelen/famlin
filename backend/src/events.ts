@@ -42,6 +42,19 @@ export interface DomainEvents {
     // validated. Subscribers must re-check each id is a current member of
     // the post's group before acting on it.
     mentionedUserIds: string[];
+    // The comment row's own metadata (Comment.metadata) — null for every
+    // ordinary user-authored comment, {kind: 'trip_checkin', ...} for a TRIP
+    // check-in (services/postTypes/trip.ts). Lets the notifications
+    // subscriber recognize a check-in and notify with `trip_checkin` instead
+    // of the normal `new_comment`, without re-querying the comment.
+    metadata: unknown;
+    // Set only by trip.ts's `checkin` interaction: one entry per Comment
+    // copy the check-in created — one for a single-group trip, one per
+    // cross-post sibling otherwise (mirrors post.created's `posts` array).
+    // Lets the notifications subscriber notify a recipient who's in several
+    // sibling groups exactly once. Absent for ordinary comments
+    // (routes/comments.ts never sets it).
+    checkinTargets?: Array<{ commentId: string; postId: string; groupId: string; groupName: string }>;
   };
   'reaction.added': {
     // Set (not removed) reactions only — covers both adding and switching.

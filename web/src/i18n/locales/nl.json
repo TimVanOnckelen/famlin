@@ -34,7 +34,20 @@
     "empty": "Nog geen berichten — deel de eerste update met je familie!",
     "loadMore": "Toon meer",
     "loadFailed": "De feed kon niet geladen worden.",
-    "sharedWith": "Gedeeld met {{names}}"
+    "sharedWith": "Gedeeld met {{names}}",
+    "trip": {
+      "activeBadge": "🧳 Dag {{day}} · onderweg",
+      "lastStopLabel": "Laatste stop:",
+      "stopsSoFar_one": "{{count}} stop tot nu toe · {{author}}",
+      "stopsSoFar_other": "{{count}} stops tot nu toe · {{author}}",
+      "followCta": "Volg de reis →",
+      "closedBadge": "🧳 REIS · AFGESLOTEN",
+      "closedStats": "{{days}} dagen · {{stops}} stops · {{photos}} foto's",
+      "authorDateRange": "{{author}} · {{range}}",
+      "dateRangeSameMonth": "{{startDay}} t/m {{endDay}} {{month}}",
+      "dateRangeDifferentMonth": "{{start}} tot {{end}}",
+      "viewDiaryCta": "Bekijk het dagboek →"
+    }
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -177,5 +190,38 @@
     "sendFailed": "Je bericht kon niet verstuurd worden. Probeer opnieuw.",
     "today": "Vandaag",
     "yesterday": "Gisteren"
+  },
+  "tabs": {
+    "feed": "Feed",
+    "photos": "Foto's",
+    "profile": "Profiel",
+    "chat": "Chat"
+  },
+  "trip": {
+    "detail": {
+      "backToFeed": "Terug naar de feed",
+      "activeBadge": "🧳 ACTIEF · DAG {{day}}",
+      "closedBadge": "🧳 AFGESLOTEN",
+      "sinceLabel": "{{author}} · sinds {{date}}",
+      "statsStops": "stops",
+      "statsPhotos": "foto's",
+      "statsDays": "dagen",
+      "travelersRowLabel": "Reisgenoten",
+      "travelersWith": "Met {{names}}",
+      "tripCommentsSectionTitle_one": "💬 Reacties op de reis · {{count}}",
+      "tripCommentsSectionTitle_other": "💬 Reacties op de reis · {{count}}",
+      "timelineLabelActive": "Tijdlijn · nieuwste eerst",
+      "timelineLabelClosed": "Dagboek · oudste eerst",
+      "dayTimeLabel": "Dag {{day}} · {{time}}",
+      "dayDateLabel": "Dag {{day}} · {{date}}",
+      "likesLabel": "❤️ {{count}}",
+      "replyAction": "Reageren",
+      "replyPlaceholder": "Schrijf een antwoord…",
+      "commentsCountButton_one": "{{count}} reactie",
+      "commentsCountButton_other": "{{count}} reacties",
+      "closingLine": "Reis afgesloten door {{author}} · {{date}}",
+      "emptyTitle": "De reis is begonnen…",
+      "emptyDescription": "Nog geen check-ins. Zodra {{name}} onderweg is, verschijnen de eerste stops hier."
+    }
   }
 }

@@ -129,6 +129,34 @@ curl -X POST "$FAMLIN_URL/api/posts/$POST_ID/interactions" \
 
 Sending the same `{"key": "vote", "value": {"optionId": "..."}}` again **removes** your vote; sending a different `optionId` **switches** it — the same toggle-or-switch behavior as reactions. Votes are public to group members (not anonymous), and everyone can see the tally whether or not they've voted yet.
 
+## Recipe: start a trip and check in
+
+`type: "TRIP"` creates a living travel journal instead of a plain update: `typeData` carries `{title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds?}` — only `title` and `startDate` (`YYYY-MM-DD`) are required. The author is always an implicit traveler alongside anyone listed in `travelerUserIds`. Trips cross-post like any other type (pass `groupIds`), but stay **one** journal: check-ins, closing, and traveler changes apply to every group's copy, so every `travelerUserIds` entry must be a member of every target group.
+
+```bash
+TRIP_ID=$(curl -s -X POST "$FAMLIN_URL/api/posts" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"groupId": "cmb1ghi...", "type": "TRIP", "typeData": {"title": "Portugal 2026", "destination": "Lisbon", "startDate": "2026-08-01", "endDate": "2026-08-14"}}' \
+  | jq -r '.id')
+
+# Add a journal entry — the author or any listed traveler can do this, as
+# long as the trip isn't closed
+curl -X POST "$FAMLIN_URL/api/posts/$TRIP_ID/interactions" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "checkin", "value": {"place": "Lisbon, Portugal", "text": "Arrived, first pastel de nata already eaten."}}'
+
+# Close it early (author only) — otherwise it auto-closes once endDate's day
+# has fully elapsed
+curl -X POST "$FAMLIN_URL/api/posts/$TRIP_ID/interactions" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "close"}'
+```
+
+Each check-in is stored as an ordinary comment under the hood (so it can be liked and replied to), but it doesn't trigger a `new_comment` notification — instead the group gets a push-only `trip_checkin` notification, with multiple same-day check-ins from the same author bundled into one (and, on a cross-posted trip, members of several target groups notified only once). On a cross-posted trip each group gets its own copy of the check-in comment, all sharing the same `metadata.checkinId` — deleting your check-in in one group deletes it everywhere. Fetch the post (`GET /api/posts/{id}`) to read its live aggregates — day counter, stop/photo counts, latest check-in, a small photo collage — from the `trip` field.
+
 ## Recipe: a photo-frame script
 
 Fetch the newest photo across your groups and download it — the skeleton of a digital photo frame:

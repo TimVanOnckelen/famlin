@@ -112,6 +112,7 @@ function ImagePage({
     panStart: null as { dx: number; dy: number; tx: number; ty: number } | null,
     moved: false,
     lastTapAt: 0,
+    touchStart: null as { x: number; y: number; at: number } | null,
     pageHeight: 0,
   }).current;
   const onZoomChangeRef = useRef(onZoomChange);
@@ -150,12 +151,24 @@ function ImagePage({
 
   const responder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      // iOS: claim every touch and cede scale-1 drags to the pager via the
+      // termination request below (UIScrollView asks for the responder).
+      // Android native views never send that request — a granted JS
+      // responder just blocks the pager from intercepting — so there we
+      // must not claim on touch-down at all; we only claim on moves the
+      // zoom logic owns (pinch, or single-finger pan while zoomed). Taps
+      // are detected via the View's onTouchStart/onTouchEnd instead, which
+      // fire regardless of responder ownership.
+      onStartShouldSetPanResponder: () => Platform.OS === 'ios',
       onMoveShouldSetPanResponder: (evt, gestureState) =>
         evt.nativeEvent.touches.length >= 2 ||
         (z.scale > 1 && (Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2)),
       // At scale 1, let the paging ScrollView steal single-finger drags.
       onPanResponderTerminationRequest: () => z.scale <= 1,
+      // Android: once we do own a pinch or a zoomed pan, keep the pager
+      // from stealing it mid-gesture.
+      onShouldBlockNativeResponder: (evt) =>
+        evt.nativeEvent.touches.length >= 2 || z.scale > 1,
       onPanResponderGrant: () => {
         z.pinchBase = null;
         z.panStart = null;
@@ -192,15 +205,7 @@ function ImagePage({
       onPanResponderRelease: () => {
         z.pinchBase = null;
         z.panStart = null;
-        if (!z.moved) {
-          const now = Date.now();
-          if (now - z.lastTapAt < DOUBLE_TAP_WINDOW_MS) {
-            z.lastTapAt = 0;
-            animateTo(z.scale > 1 ? 1 : DOUBLE_TAP_SCALE);
-          } else {
-            z.lastTapAt = now;
-          }
-        } else if (z.scale < 1.05) {
+        if (z.moved && z.scale < 1.05) {
           // Pinched back to (almost) fit — snap clean so paging re-enables.
           animateTo(1);
         }
@@ -221,11 +226,48 @@ function ImagePage({
     }
   }, [isActive]);
 
+  // Tap/double-tap detection lives on plain touch events, not the
+  // PanResponder: on Android a plain tap never grants us the responder
+  // (see onStartShouldSetPanResponder above), and touch events fire either
+  // way. A paging swipe ends in a native touch-cancel, so it can't register
+  // as a tap.
+  function handleTouchStart(e: { nativeEvent: { touches: { pageX: number; pageY: number }[] } }) {
+    const touches = e.nativeEvent.touches;
+    if (touches.length === 1) {
+      z.touchStart = { x: touches[0].pageX, y: touches[0].pageY, at: Date.now() };
+    } else {
+      // A second finger means pinch, not tap.
+      z.touchStart = null;
+    }
+  }
+
+  function handleTouchEnd(e: { nativeEvent: { pageX: number; pageY: number; touches: unknown[] } }) {
+    if (e.nativeEvent.touches.length > 0) return;
+    const start = z.touchStart;
+    z.touchStart = null;
+    if (!start) return;
+    const movedTooFar =
+      Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 10;
+    const now = Date.now();
+    if (movedTooFar || now - start.at > DOUBLE_TAP_WINDOW_MS) return;
+    if (now - z.lastTapAt < DOUBLE_TAP_WINDOW_MS) {
+      z.lastTapAt = 0;
+      animateTo(z.scale > 1 ? 1 : DOUBLE_TAP_SCALE);
+    } else {
+      z.lastTapAt = now;
+    }
+  }
+
   return (
     <View
       style={[styles.page, { width }]}
       onLayout={(e) => {
         z.pageHeight = e.nativeEvent.layout.height;
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        z.touchStart = null;
       }}
       {...responder.panHandlers}
     >

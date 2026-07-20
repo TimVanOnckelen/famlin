@@ -230,7 +230,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await postTypeHandler.validateCreate?.({ content: body.content, typeData: parsedTypeData });
+      await postTypeHandler.validateCreate?.({
+        content: body.content,
+        typeData: parsedTypeData,
+        authorId: request.user!.id,
+        targetGroupIds: targets,
+      });
     } catch (err) {
       if (err instanceof PostTypeError) {
         return reply.status(400).send({ error: t(`errors.${err.code}`) });
@@ -238,7 +243,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       throw err;
     }
 
-    const persistedTypeData = postTypeHandler.transformCreate?.(parsedTypeData) ?? parsedTypeData ?? null;
+    const persistedTypeData =
+      postTypeHandler.transformCreate?.(parsedTypeData, { authorId: request.user!.id }) ?? parsedTypeData ?? null;
 
     if (targets.length === 1) {
       const groupId = targets[0];
@@ -460,17 +466,21 @@ export default async function postRoutes(fastify: FastifyInstance) {
     return { success: true };
   });
 
-  // A post-type-specific action — poll voting today, RSVPs etc. later (see
-  // services/postTypes/). No domain event is emitted here (deliberate: no
-  // vote notifications in v1). Cross-posted siblings are intentionally NOT
-  // fanned out — a vote only ever applies to the one sibling row the caller
-  // can see, unlike author PATCH/DELETE above.
+  // A post-type-specific action — poll voting, TRIP check-ins/closing, RSVPs
+  // etc. later (see services/postTypes/). This route itself emits no domain
+  // event (deliberate: no vote notifications in v1) — a handler that DOES
+  // want one emits it itself from inside interact() (trip.ts's checkin emits
+  // comment.created). This route does not fan out to cross-posted siblings
+  // itself — a poll vote only ever applies to the one sibling row the caller
+  // can see — but a handler whose interaction semantically spans siblings
+  // (trip.ts's checkin/close/setTravelers) fans out internally via the
+  // crossPostId it receives.
   fastify.post('/:postId/interactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { postId } = request.params as { postId: string };
     const { key, value } = postInteractionBodySchema.parse(request.body);
 
-    const post = await prisma.post.findUnique({ where: { id: postId } });
+    const post = await prisma.post.findUnique({ where: { id: postId }, include: { group: { select: { name: true } } } });
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
@@ -484,7 +494,19 @@ export default async function postRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await postTypeHandler.interact({ post: { id: post.id, typeData: post.typeData }, userId: request.user!.id, key, value });
+      await postTypeHandler.interact({
+        post: {
+          id: post.id,
+          typeData: post.typeData,
+          authorId: post.authorId,
+          groupId: post.groupId,
+          groupName: post.group.name,
+          crossPostId: post.crossPostId,
+        },
+        userId: request.user!.id,
+        key,
+        value,
+      });
     } catch (err) {
       if (err instanceof PostTypeError) {
         return reply.status(400).send({ error: t(`errors.${err.code}`) });

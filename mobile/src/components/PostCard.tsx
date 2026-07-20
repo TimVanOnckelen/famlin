@@ -9,9 +9,11 @@ import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
+import { ReactionsModal } from '@/components/ReactionsModal';
 import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
 import { postTypeRenderers } from '@/components/postTypes';
+import { TripCard } from '@/components/TripCard';
 import { Post, PostPerson, ReactionType } from '@/types';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
@@ -30,6 +32,62 @@ function getPersonAvatarColor(label: string) {
     hash = label.charCodeAt(i) + ((hash << 5) - hash);
   }
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+// Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
+// the stacked pair's second tile showing "+N" once more photos exist than fit.
+// Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
+function PhotoCollage({
+  urls,
+  onPressPhoto,
+}: {
+  urls: string[];
+  onPressPhoto: (index: number) => void;
+}) {
+  if (urls.length === 2) {
+    return (
+      <View style={styles.collageRow}>
+        {urls.map((url, index) => (
+          <TouchableOpacity
+            key={url}
+            activeOpacity={0.95}
+            style={styles.collageTileFlex}
+            onPress={() => onPressPhoto(index)}
+          >
+            <MediaThumbnail url={url} style={styles.collageImage} />
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  }
+
+  const stackUrls = urls.slice(1, 3);
+  const extraCount = urls.length - 3;
+
+  return (
+    <View style={styles.collageRow}>
+      <TouchableOpacity activeOpacity={0.95} style={styles.collageMainTile} onPress={() => onPressPhoto(0)}>
+        <MediaThumbnail url={urls[0]} style={styles.collageImage} />
+      </TouchableOpacity>
+      <View style={styles.collageStack}>
+        {stackUrls.map((url, i) => (
+          <TouchableOpacity
+            key={url}
+            activeOpacity={0.95}
+            style={styles.collageStackTile}
+            onPress={() => onPressPhoto(i + 1)}
+          >
+            <MediaThumbnail url={url} style={styles.collageImage} />
+            {i === stackUrls.length - 1 && extraCount > 0 && (
+              <View style={styles.collageMoreOverlay} pointerEvents="none">
+                <Text style={styles.collageMoreText}>+{extraCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 function PersonChip({ person }: { person: PostPerson }) {
@@ -77,10 +135,25 @@ export const PostCard = React.memo(function PostCard({
   post: Post;
   showGroup?: boolean;
 }) {
+  // TRIP posts get a wholesale different card layout (gradient frame, its
+  // own hero source, a follow/diary CTA instead of the usual comment
+  // button) — delegate to the dedicated component before any of the
+  // UPDATE/MILESTONE-shaped hooks/rendering in DefaultPostCard run, the same
+  // precedent as web's PostCard. This wrapper itself calls no hooks, so
+  // branching here on post.type can never violate the rules of hooks.
+  if (post.type === 'TRIP') {
+    return <TripCard post={post} showGroup={showGroup} />;
+  }
+
+  return <DefaultPostCard post={post} showGroup={showGroup} />;
+});
+
+function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const isMilestone = post.type === 'MILESTONE';
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+  const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
@@ -124,9 +197,13 @@ export const PostCard = React.memo(function PostCard({
     <View style={[styles.postCard, isMilestone && !hasPhotos && styles.milestoneCard]}>
       {hasPhotos && (
         <View>
-          <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
-            <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />
-          </TouchableOpacity>
+          {allPhotoUrls.length > 1 ? (
+            <PhotoCollage urls={allPhotoUrls} onPressPhoto={openFullscreen} />
+          ) : (
+            <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
+              <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />
+            </TouchableOpacity>
+          )}
 
           {isMilestone && !!post.content && (
             <View style={styles.heroScrim} pointerEvents="none">
@@ -151,24 +228,26 @@ export const PostCard = React.memo(function PostCard({
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.heroBookmark}
-            onPress={() => favoriteMutation.mutate()}
-            disabled={favoriteMutation.isPending}
-            accessibilityLabel={t('feed.favorite')}
-          >
-            <Icon
-              name="bookmark"
-              size={16}
-              color={post.favoritedByMe ? colors.primary : colors.textMuted}
-            />
-          </TouchableOpacity>
-
-          {allPhotoUrls.length > 1 && (
-            <View style={styles.morePhotosPill} pointerEvents="none">
-              <Text style={styles.morePhotosText}>+{allPhotoUrls.length - 1}</Text>
-            </View>
-          )}
+          <View style={styles.heroTopRight}>
+            {allPhotoUrls.length > 1 && (
+              <View style={styles.photoCountBadge} pointerEvents="none">
+                <Icon name="image" size={13} color={colors.white} />
+                <Text style={styles.photoCountText}>{allPhotoUrls.length}</Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={styles.heroBookmark}
+              onPress={() => favoriteMutation.mutate()}
+              disabled={favoriteMutation.isPending}
+              accessibilityLabel={t('feed.favorite')}
+            >
+              <Icon
+                name="bookmark"
+                size={16}
+                color={post.favoritedByMe ? colors.primary : colors.textMuted}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -287,7 +366,7 @@ export const PostCard = React.memo(function PostCard({
         </TouchableOpacity>
         {reactors.length > 0 && (
           <View style={styles.reactorArea}>
-            <ReactorStack reactors={reactors} />
+            <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
           </View>
         )}
       </View>
@@ -297,9 +376,13 @@ export const PostCard = React.memo(function PostCard({
         onSelect={selectReaction}
         onClose={() => setReactionPickerOpen(false)}
       />
+      <ReactionsModal
+        postId={reactionsModalOpen ? post.id : null}
+        onClose={() => setReactionsModalOpen(false)}
+      />
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
   postCard: {
@@ -361,10 +444,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textTitle,
   },
-  heroBookmark: {
+  heroTopRight: {
     position: 'absolute',
     top: 10,
     right: 10,
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  heroBookmark: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -372,19 +459,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  morePhotosPill: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+  photoCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 100,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
   },
-  morePhotosText: {
+  photoCountText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12.5,
+    color: colors.white,
+  },
+  collageRow: {
+    flexDirection: 'row',
+    height: 280,
+    gap: 2,
+  },
+  collageTileFlex: {
+    flex: 1,
+  },
+  collageMainTile: {
+    flex: 1.5,
+  },
+  collageStack: {
+    flex: 1,
+    gap: 2,
+  },
+  collageStackTile: {
+    flex: 1,
+  },
+  collageImage: {
+    width: '100%',
+    height: '100%',
+  },
+  collageMoreOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(20,10,5,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  collageMoreText: {
     fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 13,
-    color: colors.textTitle,
+    fontSize: 20,
+    color: colors.white,
   },
   cardBody: {
     paddingHorizontal: 14,

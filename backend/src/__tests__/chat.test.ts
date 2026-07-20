@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
 import { prisma } from '../db.js';
@@ -180,6 +181,93 @@ describe('creating, listing, and deleting messages', () => {
     });
     expect(allowed.statusCode).toBe(200);
     expect(allowed.json()).toEqual({ success: true });
+  });
+});
+
+describe('replying to a message', () => {
+  it('creates a message replying to another and round-trips the replyTo excerpt', async () => {
+    const original = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'original message to reply to' },
+    });
+    expect(original.statusCode).toBe(200);
+    const originalId = original.json().id;
+
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'a reply', replyToMessageId: originalId },
+    });
+    expect(reply.statusCode).toBe(200);
+    const replyBody = reply.json();
+    expect(replyBody.replyToMessageId).toBe(originalId);
+    expect(replyBody.replyTo).toMatchObject({
+      id: originalId,
+      authorId: memberA.id,
+      authorName: memberA.name,
+      kind: 'USER',
+      content: 'original message to reply to',
+      attachmentUrl: null,
+    });
+  });
+
+  it('yields replyTo.content === null (not "") when replying to an attachment-only message', async () => {
+    const attachmentUrl = `/uploads/${randomUUID()}.jpg`;
+    const original = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    });
+    expect(original.statusCode).toBe(200);
+    expect(original.json().content).toBeNull();
+    const originalId = original.json().id;
+
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'replying to your photo', replyToMessageId: originalId },
+    });
+    expect(reply.statusCode).toBe(200);
+    expect(reply.json().replyTo).toMatchObject({
+      id: originalId,
+      content: null,
+      attachmentUrl,
+    });
+  });
+
+  it('returns 404 when replyToMessageId does not exist', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'replying to nothing', replyToMessageId: `nonexistent-${runId}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: expect.any(String) });
+  });
+
+  it('returns 404 when replyToMessageId points at a message in a different group', async () => {
+    const otherGroupMessage = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${unreadGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'a message in a different group' },
+    });
+    expect(otherGroupMessage.statusCode).toBe(200);
+    const otherGroupMessageId = otherGroupMessage.json().id;
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { content: 'cross-group reply attempt', replyToMessageId: otherGroupMessageId },
+    });
+    expect(res.statusCode).toBe(404);
   });
 });
 

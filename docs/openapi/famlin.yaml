@@ -534,6 +534,21 @@ paths:
         creation. `closesAt` is optional and API-only (no composer support
         yet) — once it passes, the poll stops accepting votes. Polls may also
         carry `uploadedAssetUrls` like any other post.
+
+        `type: "TRIP"` creates a living travel journal: `typeData` carries
+        `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
+        — `title` (1-120 chars) and `startDate` (`YYYY-MM-DD`) are required;
+        `destination` (≤160 chars), `endDate` (`YYYY-MM-DD`, must not be
+        before `startDate`), `coverPhotoUrl` (an uploaded `/uploads/...`
+        path), and `travelerUserIds` (up to 20 other members who may also
+        check in — the author is always an implicit traveler and is
+        stripped if included) are all optional. Trips cross-post like any
+        other type, and a cross-posted trip stays **one** journal: check-ins,
+        closing, and traveler changes apply to every group's copy. Because of
+        that, every `travelerUserIds` entry must be a current member of
+        **every** target group. Check-ins, closing the trip, and changing its
+        travelers all happen after creation via
+        `POST /api/posts/{postId}/interactions` (see below).
       requestBody:
         required: true
         content:
@@ -561,15 +576,17 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP]
                   default: UPDATE
-                  description: A server may support additional types beyond these three.
+                  description: A server may support additional types beyond these four.
                 typeData:
                   type: object
                   description: |
                     Type-specific creation payload; rejected (`400`) if sent
                     for a type that doesn't accept one (`UPDATE`/`MILESTONE`
                     today). For `POLL`: `{ options: [{ text }], closesAt? }`.
+                    For `TRIP`: `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
+                    (see the `TRIP` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -606,7 +623,9 @@ paths:
             Invalid request body (see `details`), or a post-type-specific
             problem: an unrecognized `type`, `typeData` that doesn't match
             the type's own schema (or was sent for a type that doesn't accept
-            one), or — for a poll — an empty question.
+            one), — for a poll — an empty question, or — for a trip —
+            `endDate` before `startDate`, or a `travelerUserIds` entry that
+            isn't a current member of every target group.
           content:
             application/json:
               schema:
@@ -805,15 +824,43 @@ paths:
       summary: Post-type-specific interaction
       description: |
         A generic, per-user action whose meaning depends on the post's
-        `type` — poll voting today, more later as new types are registered.
-        `key`/`value` are opaque here; the post's own type decides what's
-        valid. No notification is sent for an interaction.
+        `type` — poll voting and trip check-ins today, more later as new
+        types are registered. `key`/`value` are opaque here; the post's own
+        type decides what's valid. This endpoint itself emits no
+        notification — a handler that wants one sends it itself (a trip
+        check-in does, see below).
 
         For a `POLL` post: `key: "vote"`, `value: { optionId }`. Voting your
         current option again **removes** your vote (unvote); voting a
         different option **switches** it. Votes are public to group members
         (not anonymous) and results are visible whether or not you've voted.
         Voting after `closesAt` has passed is rejected.
+
+        For a `TRIP` post, three keys are supported. A cross-posted trip
+        stays one journal — each of these applies to every sibling group's
+        copy, not just the one addressed by `postId`:
+
+        - `key: "checkin"`, `value: { place, text?, photoUrls? }` — adds a
+          journal entry (`place` 1-80 chars, `text` up to 2000 chars,
+          `photoUrls` up to 10 uploaded `/uploads/...` paths). Only the
+          trip's author or one of its `travelerUserIds` may check in, and
+          only while the trip is open and has started (a check-in before
+          `startDate` is rejected). On a cross-posted trip the entry is
+          stored as one comment copy per sibling post, all sharing the same
+          `metadata.checkinId` (see `Comment`) — but only in sibling groups
+          the check-in author is still a member of at that moment; the
+          author editing or deleting one copy edits/deletes them all. Notifies the rest of each group with a push-only
+          `trip_checkin` notification — same-day check-ins from the same
+          author are bundled into one, and a member of several sibling
+          groups is notified exactly once.
+        - `key: "close"`, no `value` — closes the trip early, on every
+          sibling copy atomically. Author only, and only once (a trip also
+          auto-closes once its `endDate` has fully elapsed).
+        - `key: "setTravelers"`, `value: { userIds }` — replaces the trip's
+          co-traveler list wholesale (up to 20 ids; the author is always an
+          implicit traveler) on every sibling copy atomically. Author only,
+          and only while the trip is open; every id must be a current member
+          of every sibling group.
       parameters:
         - name: postId
           in: path
@@ -832,11 +879,14 @@ paths:
                   maxLength: 50
                   example: vote
                 value:
-                  description: Shape depends on `key` — for `vote`, `{ optionId }`.
+                  description: |
+                    Shape depends on `key` — for `vote`, `{ optionId }`; for
+                    a trip's `checkin`, `{ place, text?, photoUrls? }`; for
+                    `setTravelers`, `{ userIds }`; omitted for `close`.
                   example: { optionId: opt_1 }
       responses:
         '200':
-          description: The post, fully re-shaped (including `poll`) with your interaction applied.
+          description: The post, fully re-shaped (including `poll`/`trip`) with your interaction applied.
           content:
             application/json:
               schema:
@@ -844,8 +894,10 @@ paths:
         '400':
           description: |
             The post's type doesn't support interactions, `key`/`value`
-            wasn't valid for it, or — for a poll — an unknown `optionId` or a
-            closed poll.
+            wasn't valid for it, — for a poll — an unknown `optionId` or a
+            closed poll, or — for a trip — you're not the author/a traveler
+            for that action, the trip is closed, or (for `setTravelers`) a
+            `userIds` entry isn't a current member of every sibling group.
           content:
             application/json:
               schema:
@@ -949,6 +1001,11 @@ paths:
       operationId: updateComment
       tags: [Comments]
       summary: Edit your own comment
+      description: |
+        Author-only. When editing a trip check-in on a cross-posted trip,
+        the same content update fans out to every sibling group's copy of
+        that check-in (same `metadata.checkinId`), keeping them identical —
+        mirroring the delete fan-out below.
       parameters:
         - name: id
           in: path
@@ -989,7 +1046,12 @@ paths:
       operationId: deleteComment
       tags: [Comments]
       summary: Delete a comment
-      description: Permanent. Only the author (or an admin) can delete.
+      description: |
+        Permanent. Only the author (or an admin) can delete. When the
+        **author** deletes a trip check-in on a cross-posted trip, every
+        sibling group's copy of that check-in (same `metadata.checkinId`) is
+        deleted with it; an admin deleting someone else's check-in removes
+        only that one group's copy.
       parameters:
         - name: id
           in: path
@@ -1042,6 +1104,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReactionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/posts/{postId}/reactions:
+    get:
+      operationId: listPostReactions
+      tags: [Reactions]
+      summary: List who reacted to a post, and with what
+      description: |
+        The full reactor list, newest first — unlike `Post.recentReactors`
+        (capped at 3, no `type`), this is every reactor plus which emoji they
+        left.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Every reactor and their reaction type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostReactor'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1166,7 +1261,8 @@ paths:
       description: |
         `content` and `attachmentUrl` are both optional but at least one is
         required. `attachmentUrl` must be a path returned by the upload
-        endpoint (`/uploads/...`); arbitrary URLs are rejected.
+        endpoint (`/uploads/...`); arbitrary URLs are rejected. `replyToMessageId`
+        is optional and must reference an existing message in the same group.
       parameters:
         - name: groupId
           in: path
@@ -1185,6 +1281,12 @@ paths:
                 attachmentUrl:
                   type: string
                   description: An `/uploads/...` path from the upload endpoint.
+                replyToMessageId:
+                  type: string
+                  description: |
+                    The id of an existing message in this group to reply to.
+                    Must belong to the same group; unknown or cross-group ids
+                    are rejected with 404.
       responses:
         '200':
           description: The created message
@@ -1202,6 +1304,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: Not a member of the group, or the group has chat disabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: |
+            The group doesn't exist, or replyToMessageId doesn't reference a
+            message in this group.
           content:
             application/json:
               schema:
@@ -2029,6 +2139,16 @@ components:
         counts:
           $ref: '#/components/schemas/ReactionCounts'
 
+    PostReactor:
+      type: object
+      description: One reactor's identity plus which emoji they left.
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          properties:
+            type:
+              $ref: '#/components/schemas/ReactionType'
+
     UserSummary:
       type: object
       properties:
@@ -2077,7 +2197,7 @@ components:
         allowedPostTypes:
           type: array
           items: { type: string }
-          example: [UPDATE, MILESTONE, POLL]
+          example: [UPDATE, MILESTONE, POLL, TRIP]
           description: |
             Post types you can create in this group (see `Post`'s `type`).
             Always the resolved, effective list — never empty. A group an
@@ -2146,14 +2266,15 @@ components:
           example: First day of school!
         type:
           type: string
-          enum: [UPDATE, MILESTONE, POLL]
+          enum: [UPDATE, MILESTONE, POLL, TRIP]
           description: |
             An open-ended discriminator — a server may register additional
-            types beyond these three (see `PostTypeHandler` in the developer
+            types beyond these four (see `PostTypeHandler` in the developer
             docs); treat an unrecognized value as a plain update. `content`
             stays the universal human-readable field for every type (a
-            poll's question, for instance); type-specific configuration
-            lives in `typeData` instead.
+            poll's question, for instance — a `TRIP` post's `content` is
+            plain free text, its own identity lives in `typeData`/`trip`
+            instead); type-specific configuration lives in `typeData`.
         typeData:
           type: object
           nullable: true
@@ -2161,9 +2282,15 @@ components:
             Type-specific configuration, `null` for `UPDATE`/`MILESTONE`. For
             `POLL`: `{ options: [{ id, text }], closesAt }` — the stored
             options (immutable after creation) and optional ISO 8601 close
-            time. Not present on the response to `POST /api/posts` or
-            `PATCH /api/posts/{id}` beyond what you sent — read the poll's
-            live vote tallies from `poll` below instead.
+            time. For `TRIP`: `{ title, destination, startDate, endDate, coverPhotoUrl, travelerUserIds, closedAt, closedByUserId }`
+            — `closedAt`/`closedByUserId` (both `null` until the trip is
+            closed) and `travelerUserIds` are the only parts of a trip's
+            `typeData` that change after creation, written by the `close`
+            and `setTravelers` interactions respectively; every other field
+            is immutable, same as a poll's options. Not present on the
+            response to `POST /api/posts` or `PATCH /api/posts/{id}` beyond
+            what you sent — read the poll's live vote tallies from `poll`,
+            or a trip's live aggregates from `trip`, below instead.
           example:
             options:
               - { id: opt_1, text: Pizza }
@@ -2179,6 +2306,16 @@ components:
             it's absent from `POST /api/posts` and `PATCH /api/posts/{id}`
             responses (fetch the post again, e.g. via `GET /api/posts/{id}`,
             to see it) — the same precedent as `people` below.
+        trip:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostTrip'
+          description: |
+            Present only when `type` is `TRIP` — the enriched, read-time view
+            of the trip (day counter, stop/photo counts, latest check-in,
+            a small photo collage, resolved travelers). Computed on every
+            read, so — like `poll` — it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
           nullable: true
@@ -2285,6 +2422,77 @@ components:
             $ref: '#/components/schemas/UserSummary'
           description: Everyone who voted for this option, oldest vote first.
 
+    PostTrip:
+      type: object
+      description: |
+        The enriched, read-time view of a `TRIP` post's `typeData` — computed
+        fresh on every read, never stored as-is. A trip's check-ins are its
+        `Comment` rows with `metadata.kind: "trip_checkin"` (see `Comment`
+        below); this object aggregates them rather than requiring a second
+        fetch.
+      properties:
+        title: { type: string }
+        destination:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          example: '2026-08-01'
+          description: Plain `YYYY-MM-DD`, no time component.
+        endDate:
+          type: string
+          nullable: true
+          example: '2026-08-14'
+        coverPhotoUrl:
+          type: string
+          nullable: true
+        travelers:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: |
+            Co-travelers who may also check in, resolved from
+            `typeData.travelerUserIds` — never includes the post's own
+            author, who is an implicit traveler shown separately via
+            `author`.
+        closed:
+          type: boolean
+          description: |
+            `true` once the trip was explicitly closed (`close` interaction)
+            or its `endDate`'s day has fully elapsed (auto-close) — either
+            way, `checkin`/`close`/`setTravelers` are then rejected.
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the trip was explicitly closed; `null` if it's still open or only auto-closed by `endDate`.
+        dayNumber:
+          type: integer
+          nullable: true
+          description: Which day of the trip today is (1-based), or `null` once `closed` or while `startDate` is still in the future.
+        durationDays:
+          type: integer
+          nullable: true
+          description: Total trip length in days, or `null` while still open with no `endDate`.
+        stopCount:
+          type: integer
+          description: Total number of check-ins.
+        photoCount:
+          type: integer
+          description: Total number of photos across every check-in.
+        latestCheckin:
+          type: object
+          nullable: true
+          properties:
+            commentId: { type: string }
+            place: { type: string }
+            createdAt: { type: string, format: date-time }
+        collagePhotoUrls:
+          type: array
+          items: { type: string }
+          maxItems: 3
+          description: Up to the 3 most recent check-in photos, newest first.
+
     Comment:
       type: object
       properties:
@@ -2304,6 +2512,19 @@ components:
           description: >-
             A photo/video the commenter uploaded as part of this comment itself
             (`null` if the comment has none) — distinct from `assetUrl` above.
+        metadata:
+          type: object
+          nullable: true
+          description: |
+            Handler-owned payload for a comment a post-type handler created
+            on your behalf rather than one you wrote yourself — `null` for
+            every ordinary comment. Today this is only a `TRIP` post's
+            check-in: `{ kind: "trip_checkin", checkinId, place, photoUrls }`
+            — `checkinId` is shared by every comment copy one check-in
+            creates (one per cross-post sibling group; a single-group trip's
+            lone copy carries it too). You can never send this field
+            yourself when creating a comment.
+          example: { kind: trip_checkin, checkinId: 8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d, place: 'Lisbon, Portugal', photoUrls: [] }
         parentId:
           type: string
           nullable: true
@@ -2352,6 +2573,34 @@ components:
           description: |
             For `SYSTEM_MILESTONE` messages, the milestone post this message
             was triggered by; `null` otherwise.
+        replyToMessageId:
+          type: string
+          nullable: true
+          description: |
+            The id of the message this one replies to, if any; `null`
+            otherwise. Set to `null` if the replied-to message is later
+            deleted.
+        replyTo:
+          nullable: true
+          description: |
+            A lightweight preview of the message being replied to, computed
+            read-time; `null` if this message isn't a reply (or the replied-to
+            message was deleted).
+          allOf:
+            - type: object
+              properties:
+                id: { type: string }
+                authorId: { type: string }
+                authorName: { type: string }
+                kind:
+                  type: string
+                  enum: [USER, SYSTEM_MILESTONE]
+                content:
+                  type: string
+                  description: A short excerpt of the replied-to message's content.
+                attachmentUrl:
+                  type: string
+                  nullable: true
         createdAt: { type: string, format: date-time }
         editedAt:
           type: string
@@ -2414,7 +2663,7 @@ components:
         id: { type: string }
         type:
           type: string
-          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, or `on_this_day`.'
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, or `trip_checkin`.'
         message: { type: string }
         relatedPostId:
           type: string

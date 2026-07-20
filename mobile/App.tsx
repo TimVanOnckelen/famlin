@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from '@/navigation/navigationRef';
@@ -17,6 +18,7 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { InviteScreen } from '@/screens/InviteScreen';
 import { MainTabs } from '@/navigation/MainTabs';
 import { PostDetailScreen } from '@/screens/PostDetailScreen';
+import { TripDetailScreen } from '@/screens/TripDetailScreen';
 import { NewPostScreen } from '@/screens/NewPostScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
@@ -188,6 +190,14 @@ function AppContent() {
               }}
             />
             <Stack.Screen
+              name="TripDetail"
+              component={TripDetailScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
               name="NewPost"
               component={NewPostScreen}
               options={{
@@ -260,10 +270,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AppContent />
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
