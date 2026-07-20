@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/TimVanOnckelen/famlin/compare/v0.5.0...v0.5.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* update package version to 0.5.0 and add react-native-worklets de… ([0509186](https://github.com/TimVanOnckelen/famlin/commit/0509186d1aaaf4d27e19010f3bc6fe6326637b13))
+* update package version to 0.5.0 and add react-native-worklets dependency ([2262de6](https://github.com/TimVanOnckelen/famlin/commit/2262de6b21f61099f7dc623fad15e56727615360))
+
 ## [0.5.0](https://github.com/TimVanOnckelen/famlin/compare/v0.4.0...v0.5.0) (2026-07-20)
 
 
