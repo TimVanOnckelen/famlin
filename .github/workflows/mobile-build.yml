@@ -50,6 +50,15 @@ jobs:
         working-directory: mobile
         run: npm ci
 
+      # Last gate before the store build: a native dep whose version drifts
+      # from expo/bundledNativeModules.json makes Expo mix precompiled and
+      # source-built frameworks, which crashes at launch only in the released
+      # binary (the worklets 0.10.2 / RNWorklets dyld incident). Fail the
+      # release here rather than shipping it.
+      - name: Check dependency versions match the Expo SDK
+        working-directory: mobile
+        run: npx expo install --check
+
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
