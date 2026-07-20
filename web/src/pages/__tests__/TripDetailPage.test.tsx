@@ -32,13 +32,13 @@ describe('TripDetailPage', () => {
         id: 'ci-1',
         authorId: 'user-1',
         createdAt: '2026-07-04T09:00:00Z',
-        metadata: { kind: 'trip_checkin', place: 'Florence', photoUrls: [] },
+        metadata: { kind: 'trip_checkin', place: 'Florence', photoUrls: [], checkinId: 'ci-1' },
       }),
       makeComment({
         id: 'ci-2',
         authorId: 'user-1',
         createdAt: '2026-07-06T14:20:00Z',
-        metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [] },
+        metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'ci-2' },
       }),
       makeComment({ id: 'com-1', authorId: 'user-2', content: 'Have a great trip!' }),
     ]);
@@ -79,13 +79,13 @@ describe('TripDetailPage', () => {
         id: 'ci-1',
         authorId: 'user-1',
         createdAt: '2026-07-04T09:00:00Z',
-        metadata: { kind: 'trip_checkin', place: 'Florence', photoUrls: [] },
+        metadata: { kind: 'trip_checkin', place: 'Florence', photoUrls: [], checkinId: 'ci-1' },
       }),
       makeComment({
         id: 'ci-2',
         authorId: 'user-1',
         createdAt: '2026-07-06T14:20:00Z',
-        metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [] },
+        metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'ci-2' },
       }),
     ]);
 

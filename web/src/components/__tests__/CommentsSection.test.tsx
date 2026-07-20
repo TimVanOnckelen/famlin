@@ -92,7 +92,7 @@ describe('CommentsSection', () => {
   // 'trip_checkin') or their replies — see web's TripDetailPage.tsx.
   it('excludes comments (and their replies) that filterComments removes', async () => {
     vi.mocked(fetchComments).mockResolvedValue([
-      makeComment({ id: 'checkin-1', content: 'Arrived in Bologna!', metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [] } }),
+      makeComment({ id: 'checkin-1', content: 'Arrived in Bologna!', metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'checkin-1' } }),
       makeComment({ id: 'checkin-reply', content: 'Nice!', parentId: 'checkin-1' }),
       makeComment({ id: 'trip-comment', content: 'Have a great trip!' }),
     ]);
