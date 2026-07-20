@@ -16,6 +16,13 @@ const envSchema = z.object({
     .string()
     .default('false')
     .transform((v) => v === 'true'),
+  // Demo mode: block all mutating requests (POST/PUT/PATCH/DELETE) except
+  // login/session endpoints, so visitors can browse sample data but cannot
+  // post, comment, like, upload, or modify anything.
+  READ_ONLY: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export const config = envSchema.parse(process.env);

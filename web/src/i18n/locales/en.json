@@ -197,6 +197,9 @@
     "profile": "Profile",
     "chat": "Chat"
   },
+  "demo": {
+    "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
+  },
   "trip": {
     "detail": {
       "backToFeed": "Back to the feed",

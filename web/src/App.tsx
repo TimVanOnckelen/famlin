@@ -8,6 +8,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { PhotosPage } from '@/pages/PhotosPage';
 import { ChatPage } from '@/pages/ChatPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
+import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
 
 export default function App() {
   const { user, setAuth, clearSession, loadToken, isLoading, logout } = useAuthStore();
@@ -65,62 +66,77 @@ export default function App() {
 
   if (view === 'profile') {
     return (
-      <ProfilePage
-        user={user}
-        onBack={() => setView('feed')}
-        onOpenPhotos={() => setView('photos')}
-        onOpenChat={() => setView('chat')}
-        onLogout={() => logout()}
-      />
+      <>
+        <ReadOnlyBanner />
+        <ProfilePage
+          user={user}
+          onBack={() => setView('feed')}
+          onOpenPhotos={() => setView('photos')}
+          onOpenChat={() => setView('chat')}
+          onLogout={() => logout()}
+        />
+      </>
     );
   }
 
   if (view === 'photos') {
     return (
-      <PhotosPage
-        user={user}
-        onOpenFeed={() => setView('feed')}
-        onOpenChat={() => setView('chat')}
-        onOpenProfile={() => setView('profile')}
-        onLogout={() => logout()}
-      />
+      <>
+        <ReadOnlyBanner />
+        <PhotosPage
+          user={user}
+          onOpenFeed={() => setView('feed')}
+          onOpenChat={() => setView('chat')}
+          onOpenProfile={() => setView('profile')}
+          onLogout={() => logout()}
+        />
+      </>
     );
   }
 
   if (view === 'chat') {
     return (
-      <ChatPage
-        user={user}
-        onBack={() => setView('feed')}
-        onOpenPhotos={() => setView('photos')}
-        onOpenProfile={() => setView('profile')}
-      />
+      <>
+        <ReadOnlyBanner />
+        <ChatPage
+          user={user}
+          onBack={() => setView('feed')}
+          onOpenPhotos={() => setView('photos')}
+          onOpenProfile={() => setView('profile')}
+        />
+      </>
     );
   }
 
   if (view === 'trip' && tripPostId) {
     return (
-      <TripDetailPage
-        postId={tripPostId}
-        onBack={() => setView('feed')}
-        onOpenPhotos={() => setView('photos')}
-        onOpenChat={() => setView('chat')}
-        onOpenProfile={() => setView('profile')}
-      />
+      <>
+        <ReadOnlyBanner />
+        <TripDetailPage
+          postId={tripPostId}
+          onBack={() => setView('feed')}
+          onOpenPhotos={() => setView('photos')}
+          onOpenChat={() => setView('chat')}
+          onOpenProfile={() => setView('profile')}
+        />
+      </>
     );
   }
 
   return (
-    <FeedPage
-      user={user}
-      onOpenProfile={() => setView('profile')}
-      onOpenPhotos={() => setView('photos')}
-      onOpenChat={() => setView('chat')}
-      onOpenTrip={(postId) => {
-        setTripPostId(postId);
-        setView('trip');
-      }}
-      onLogout={() => logout()}
-    />
+    <>
+      <ReadOnlyBanner />
+      <FeedPage
+        user={user}
+        onOpenProfile={() => setView('profile')}
+        onOpenPhotos={() => setView('photos')}
+        onOpenChat={() => setView('chat')}
+        onOpenTrip={(postId) => {
+          setTripPostId(postId);
+          setView('trip');
+        }}
+        onLogout={() => logout()}
+      />
+    </>
   );
 }

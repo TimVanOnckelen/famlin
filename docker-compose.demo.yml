@@ -1,0 +1,65 @@
+# Demo instance: a single-container Famlin deployment with demo data and
+# read-only mode enabled. Intended for a small Google Cloud Compute Engine
+# e2-micro VM or any Docker host.
+#
+# Usage on the demo server:
+#   docker compose -f docker-compose.demo.yml pull
+#   docker compose -f docker-compose.demo.yml up -d
+#
+# The backend image is built and pushed as ghcr.io/timvanonckelen/famlin:demo
+# by .github/workflows/demo.yml.
+
+services:
+  famlin-db:
+    image: postgres:16-alpine
+    container_name: famlin-demo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: famlin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: famlin
+    volumes:
+      - famlin-demo-db-data:/var/lib/postgresql/data
+    # Tuned for a small 1 GB VM. Remove or adjust these if you have more RAM.
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=50
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U famlin -d famlin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  famlin-backend:
+    image: ghcr.io/timvanonckelen/famlin:demo
+    container_name: famlin-demo-backend
+    restart: unless-stopped
+    depends_on:
+      famlin-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      READ_ONLY: "true"
+    volumes:
+      - famlin-demo-uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    # Run migrations, seed demo data once, then start the server.
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/prisma/seed.js &&
+        node dist/server.js
+      "
+
+volumes:
+  famlin-demo-db-data:
+  famlin-demo-uploads:

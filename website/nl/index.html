@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Famlin — Jouw familie, op je eigen server</title>
-<meta name="description" content="Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's en updates op je eigen server. Open source, geen advertenties, geen algoritme.">
+<meta name="description" content="Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's, mijlpalen, polls en reisdagboeken op je eigen server. Open source, geen advertenties, geen algoritme.">
 <link rel="icon" href="/favicon.ico">
 <meta property="og:title" content="Famlin — Jouw familie, op je eigen server">
-<meta property="og:description" content="Een private, self-hosted familie-app. Open source, self-hosted, geen advertenties, geen algoritme.">
+<meta property="og:description" content="Een private, self-hosted familie-app met foto's, mijlpalen, polls, reisdagboeken en familiechat. Open source, self-hosted, geen advertenties, geen algoritme.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <link rel="alternate" hreflang="en" href="https://famlin.app/">
@@ -28,9 +28,12 @@
     footer > div:first-child { grid-template-columns: 1fr 1fr !important; }
     nav a[href="#features"], nav a[href="#docs"] { display: none; }
     h1 { font-size: 40px !important; }
+    .showcase-track { gap: 18px !important; }
   }
   @media (max-width: 520px) {
     section#features > div:last-child, section#docs > div:last-child, footer > div:first-child { grid-template-columns: 1fr !important; }
+    .showcase-card { width: 168px !important; }
+    .showcase-frame { width: 152px !important; height: 330px !important; }
   }
 </style>
 </head>
@@ -77,7 +80,7 @@
         <span style="font-size:13px;font-weight:800;color:white;">Self-hosted · jouw server, jouw familie, jouw data</span>
       </div>
       <h1 style="font-size:56px;font-weight:900;color:#0f222a;letter-spacing:-2.5px;line-height:1.02;margin:0 0 20px;text-wrap:balance;">Jouw familie,<br><span style="color:#006e94;">op je eigen server.</span></h1>
-      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's en updates die op <em>jouw</em> hardware draait. Geen cloud lock-in, geen algoritme, geen advertenties. Gewoon dichter bij elkaar, van de kleinkinderen tot oma en opa.</p>
+      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is een private, self-hosted familie-app — een rustige, chronologische tijdlijn van foto's, mijlpalen, polls en reisdagboeken die op <em>jouw</em> hardware draait. Geen cloud lock-in, geen algoritme, geen advertenties. Werkt als app of gewoon in de browser — dichter bij elkaar, van de kleinkinderen tot oma en opa.</p>
 
       <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:22px;">
         <a href="#install" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:17px;font-weight:800;padding:16px 30px;border-radius:100px;box-shadow:0 6px 18px rgba(0,110,148,0.34);">
@@ -97,7 +100,7 @@
       <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(49,142,162,0.18),transparent 68%);top:40px;"></div>
       <div style="position:relative;width:288px;background:#0f222a;border-radius:44px;padding:11px;box-shadow:0 30px 70px rgba(0,80,110,0.28);">
         <div style="border-radius:34px;overflow:hidden;height:576px;position:relative;">
-          <img src="/assets/images/screenshot.png" alt="Famlin-app feed met familieberichten en een verjaardagsmijlpaal" width="266" height="576" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          <img src="/assets/images/screenshots/feed.png" alt="Famlin-app feed met familieberichten en een verjaardagsmijlpaal" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
         </div>
       </div>
     </div>
@@ -139,12 +142,13 @@
           <span class="mono" style="font-size:12px;color:#5f7883;margin-left:8px;">deploy — famlin</span>
         </div>
         <div class="mono" style="font-size:13.5px;line-height:2;color:#c3d2d8;flex:1;overflow-x:auto;">
-          <div><span style="color:#5f7883;"># 1 · bestanden ophalen</span></div>
-          <div><span style="color:#4be0a0;">$</span> git clone https://github.com/TimVanOnckelen/famlin.git</div>
-          <div><span style="color:#4be0a0;">$</span> cd famlin &amp;&amp; cp .env.example .env</div>
-          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · start Famlin</span></div>
+          <div><span style="color:#5f7883;"># 1 · haal het compose-bestand op (geen broncode nodig)</span></div>
+          <div><span style="color:#4be0a0;">$</span> mkdir famlin &amp;&amp; cd famlin</div>
+          <div><span style="color:#4be0a0;">$</span> curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.yml</div>
+          <div style="margin-top:6px;"><span style="color:#5f7883;"># 2 · configureer &amp; start — haalt de image op van ghcr.io</span></div>
+          <div><span style="color:#4be0a0;">$</span> nano .env <span style="color:#5f7883;"># JWT_SECRET, POSTGRES_PASSWORD</span></div>
           <div><span style="color:#4be0a0;">$</span> docker compose -f docker-compose.yml up -d</div>
-          <div style="margin-top:10px;color:#7fd9c0;">[ok] Famlin actief op :3000</div>
+          <div style="margin-top:10px;color:#7fd9c0;">[ok] Image opgehaald van ghcr.io/timvanonckelen/famlin</div>
           <div style="color:#7fd9c0;">[ok] Migraties toegepast</div>
           <div style="color:#7fd9c0;">[ok] Klaar om je familie uit te nodigen</div>
         </div>
@@ -162,7 +166,7 @@
         </div>
         <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
           <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
-          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Installeer de app</div><div style="font-size:15px;color:#597784;line-height:1.55;">Iedereen installeert Famlin voor iOS of Android en verbindt met het adres van je server. Deel je eerste herinnering.</div></div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Aan de slag — app of browser</div><div style="font-size:15px;color:#597784;line-height:1.55;">Iedereen installeert Famlin voor iOS of Android, of opent gewoon het adres van je server in de browser. Deel je eerste herinnering.</div></div>
         </div>
       </div>
     </div>
@@ -178,50 +182,158 @@
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#4b8b5a;stroke-width:2.2;stroke-linecap:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Self-hosted &amp; open source</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Jouw data staat op jouw server, nooit bij ons. MIT-licentie en volledig te controleren — geen leverancier, geen lock-in, geen verrassingen.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Eén tijdlijn, elke familiegroep</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Een rustige, chronologische tijdlijn voor één familie of meerdere — post naar verschillende groepen tegelijk wanneer iets in meer dan één groep thuishoort.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-7.58 7-12a7 7 0 10-14 0c0 4.42 7 12 7 12z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/><circle cx="12" cy="9" r="2.5" style="stroke:#006e94;stroke-width:2;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Chronologische tijdlijn</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Nieuwste eerst, gesorteerd op tijd. Geen ranking, geen gemiste posts — precies zoals het hoort.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Trips — een gedeeld reisdagboek</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Eén reisverslag, check-ins bij elke stop, foto's onderweg, een dagteller, en medereizigers die ook kunnen aanvullen.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 21V10M12 21V4M19 21v-7" style="stroke:#8a5a12;stroke-width:2.2;stroke-linecap:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Polls voor familiebeslissingen</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Stel een vraag, iedereen stemt, en de uitslag wordt live bijgewerkt — ideaal om een datum, een naam of een restaurant te kiezen.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
         <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Mijlpalen die opvallen</h3>
         <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Verjaardagen en andere grote momenten krijgen een warme accentkaart — onmogelijk te missen, nooit opdringerig.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v10a1 1 0 01-1 1H9l-4 4v-4H5a1 1 0 01-1-1V5z" style="stroke:#4b8b5a;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Liken, reageren &amp; favorieten</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Een hartje, een korte reactie, of een bewaarde favoriet voor later. Warme betrokkenheid zonder like-tellers of prestatiedruk.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Een chat per familie</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Optionele chat per familie voor snel overleg — reacties, bijlagen en leesbevestigingen, aan te zetten door een admin.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#006e94;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Jouw foto's, jouw opslag</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Voeg foto's rechtstreeks toe vanuit je camera of galerij. Ze worden opgeslagen op je eigen server — volledige kwaliteit, volledig van jou.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Reageren, antwoorden en taggen</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Zes reacties, reacties met eigen foto's, @vermeldingen die de juiste persoon verwittigen, en favorieten om later terug te vinden.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#8a5a12;stroke-width:2;"/><path d="M12 7v5l3 3" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#8a5a12;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#8a5a12;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Rustig, niet verslavend</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Geen oneindige scroll, geen leesbevestigingen, geen spam aan meldingen. Open de app wanneer jij daar zin in hebt.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Jouw foto's en video's, jouw opslag</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">HEIC-ondersteuning, automatische compressie en videominiaturen — volledige kwaliteit, opgeslagen op je eigen server, niet in een vreemde cloud.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M8.5 8.5L10 7a3 3 0 114.24 4.24L12.7 12.7M15.5 15.5L14 17a3 3 0 11-4.24-4.24l1.5-1.5" style="stroke:#c85a34;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Koppel je bestaande fotobibliotheek</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Verbind een Immich-server of een lokale map, en filter albums op herkende familieleden die een admin aan gezichten koppelt.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="13" height="9" rx="1.3" style="stroke:#4b8b5a;stroke-width:2;"/><path d="M7 17h5" style="stroke:#4b8b5a;stroke-width:2;stroke-linecap:round;"/><rect x="17.5" y="7" width="4.5" height="9" rx="1.1" style="stroke:#4b8b5a;stroke-width:2;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Overal bruikbaar — ook in de browser</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Native apps voor iOS en Android, plus een volledige webapp op dezelfde server — wie liever niets installeert, opent gewoon een link.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ SCHERMAFBEELDINGEN ═══════ -->
+  <section id="showcase" style="max-width:1120px;margin:0 auto;padding:24px 24px 64px;">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">In de app</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Een kijkje in de app</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">Van de familietijdlijn tot een gedeeld reisdagboek — dit is hoe het dagelijkse leven in Famlin eruitziet, op de telefoon of in de browser.</p>
+    </div>
+    <div class="showcase-track" style="display:flex;gap:26px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 4px 14px;-webkit-overflow-scrolling:touch;">
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/trips.png" alt="Famlin reisdagboek-scherm met check-ins en een dagteller" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Trips</div>
+          <div style="font-size:13px;color:#597784;">Reisdagboek met check-ins</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/polls.png" alt="Famlin-poll op een familiebericht met live stemresultaten" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Polls</div>
+          <div style="font-size:13px;color:#597784;">Vraag het de familie, live resultaten</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/chat.png" alt="Famlin groepschat voor een familie" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Chat</div>
+          <div style="font-size:13px;color:#597784;">Chat per familie</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/multi-image.png" alt="Famlin-bericht met meerdere foto's in één galerij" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Multi-foto berichten</div>
+          <div style="font-size:13px;color:#597784;">Deel een hele fotoserie in één keer</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/add-post.png" alt="Famlin nieuw-bericht-scherm met foto-upload" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Nieuw bericht maken</div>
+          <div style="font-size:13px;color:#597784;">In een paar tikken gedeeld</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/profile.png" alt="Famlin profielscherm met meldings- en taalinstellingen" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Profiel</div>
+          <div style="font-size:13px;color:#597784;">Meldingen, taal en meer</div>
+        </div>
       </div>
 
     </div>
@@ -302,15 +414,15 @@
   <!-- ═══════ APP DOWNLOAD (secondary, after install) ═══════ -->
   <section id="download" style="max-width:1120px;margin:0 auto;padding:24px 24px 80px;">
     <div style="background:white;border-radius:28px;padding:56px 40px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e3edf1;">
-      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Stap drie · de app</div>
-      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Zodra je server live is, installeer je de app</h2>
-      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:560px;">Famlin staat niet als één vaste vermelding in een app store — elke Famlin-server is een eigen installatie, dus wie jouw server heeft opgezet bouwt en deelt de iOS- en Android-app met de familie. Ben jij dat? Dan lees je in de self-hosting gids hoe je de app bouwt met Expo EAS.</p>
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Stap drie · zoals jij het wil</div>
+      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Zodra je server live is, kan iedereen erbij</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:560px;">Installeer Famlin voor iOS of Android, of sla de app store gewoon over — elke Famlin-server serveert ook een volledige webapp op zijn eigen adres, dus wie liever niets installeert, opent gewoon de browser. De Android-app staat op Google Play. Er is geen vaste iOS-vermelding — door Apple's distributiemodel bouwt en deelt wie jouw server beheert de iOS-app zelf met de familie; de self-hosting gids legt uit hoe dat gaat met Expo EAS.</p>
       <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;">
-        <a href="/docs/server-setup" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:16px;font-weight:800;padding:15px 28px;border-radius:100px;box-shadow:0 4px 14px rgba(0,110,148,0.3);">
-          Self-hosting gids
+        <a href="https://play.google.com/store/apps/details?id=be.xeweb.famlin" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:16px;font-weight:800;padding:15px 28px;border-radius:100px;box-shadow:0 4px 14px rgba(0,110,148,0.3);">
+          Beschikbaar op Google Play
         </a>
-        <a href="/docs/admin-configuration" style="display:inline-flex;align-items:center;gap:10px;background:white;border:1.5px solid #d9e3e7;color:#0f222a;font-size:16px;font-weight:800;padding:15px 26px;border-radius:100px;">
-          Adminconfiguratie
+        <a href="/docs/server-setup" style="display:inline-flex;align-items:center;gap:10px;background:white;border:1.5px solid #d9e3e7;color:#0f222a;font-size:16px;font-weight:800;padding:15px 26px;border-radius:100px;">
+          Self-hosting gids
         </a>
       </div>
     </div>

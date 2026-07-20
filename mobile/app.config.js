@@ -113,5 +113,6 @@ export default ({ config }) => ({
     "expo-web-browser",
     "expo-video",
     "expo-status-bar",
+    "expo-image",
   ],
 });

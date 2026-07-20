@@ -71,7 +71,8 @@
     "tripNotTraveler": "Only the trip's travelers can check in",
     "tripTravelerNotMember": "Every traveler must be a member of this group",
     "tripClosed": "This trip is closed",
-    "tripNotStarted": "This trip hasn't started yet"
+    "tripNotStarted": "This trip hasn't started yet",
+    "readOnly": "This demo is read-only. You can browse, but you can't post, comment, or make changes."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

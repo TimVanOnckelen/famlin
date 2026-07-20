@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { ZodError } from 'zod';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
+import readOnlyPlugin from './plugins/readOnly.js';
 import { config } from './config.js';
 import { getT } from './i18n/index.js';
 import { registerNotificationSubscriber } from './subscribers/notifications.js';
@@ -159,6 +160,11 @@ export async function buildApp() {
     root: uploadsDir,
     prefix: '/uploads/',
   });
+
+  // Read-only mode must be registered before auth routes so it can intercept
+  // all mutating requests (except the login/session allow-list) before they
+  // reach their handlers.
+  await fastify.register(readOnlyPlugin);
 
   await fastify.register(authPlugin);
 

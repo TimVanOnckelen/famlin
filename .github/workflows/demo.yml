@@ -1,0 +1,121 @@
+name: Deploy demo instance
+
+# Builds and pushes a :demo image on every push to main, then redeploys it on
+# the configured demo server via SSH. The demo runs docker-compose.demo.yml
+# with READ_ONLY=true and seeded demo data.
+#
+# Required repository secrets:
+#   DEMO_HOST          - hostname or IP of the demo server
+#   DEMO_USER          - SSH user on the demo server
+#   DEMO_SSH_KEY       - private key for SSH (authorized on the demo server)
+#   DEMO_JWT_SECRET    - JWT secret used by the demo instance
+#   DEMO_DB_PASSWORD   - Postgres password used by the demo instance
+#
+# Optional repository secrets:
+#   DEMO_TRUST_PROXY   - set to "true" if the demo sits behind a reverse proxy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and push demo image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}:demo
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to demo server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check demo server secrets
+        id: check
+        env:
+          DEMO_HOST: ${{ secrets.DEMO_HOST }}
+          DEMO_USER: ${{ secrets.DEMO_USER }}
+          DEMO_SSH_KEY: ${{ secrets.DEMO_SSH_KEY }}
+        run: |
+          if [ -n "$DEMO_HOST" ] && [ -n "$DEMO_USER" ] && [ -n "$DEMO_SSH_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Demo server secrets are not configured; skipping SSH deploy."
+          fi
+
+      - name: Setup SSH
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' '${{ secrets.DEMO_SSH_KEY }}' > ~/.ssh/demo_key
+          chmod 600 ~/.ssh/demo_key
+          cat >> ~/.ssh/config <<EOF
+          Host demo
+            HostName ${{ secrets.DEMO_HOST }}
+            User ${{ secrets.DEMO_USER }}
+            IdentityFile ~/.ssh/demo_key
+            StrictHostKeyChecking no
+          EOF
+
+      - name: Copy compose file to demo server
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          scp docker-compose.demo.yml demo:~/docker-compose.demo.yml
+
+      - name: Write demo environment file
+        if: steps.check.outputs.configured == 'true'
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.DEMO_DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.DEMO_JWT_SECRET }}
+          TRUST_PROXY: ${{ secrets.DEMO_TRUST_PROXY || 'false' }}
+        run: |
+          ssh demo "cat > ~/.env.famlin-demo" <<EOF
+            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            JWT_SECRET=${JWT_SECRET}
+            TRUST_PROXY=${TRUST_PROXY}
+          EOF
+
+      - name: Pull and restart demo services
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          ssh demo <<'EOF'
+            set -e
+            cd ~
+            docker compose -f docker-compose.demo.yml --env-file .env.famlin-demo pull
+            docker compose -f docker-compose.demo.yml --env-file .env.famlin-demo up -d
+            docker compose -f docker-compose.demo.yml --env-file .env.famlin-demo ps
+          EOF
+
+      - name: Health check
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          ssh demo "docker compose -f docker-compose.demo.yml --env-file .env.famlin-demo exec -T famlin-backend wget -qO- http://localhost:3000/health"

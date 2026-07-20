@@ -196,6 +196,42 @@ server {
 
 If you're on a Synology NAS, the built-in **Control Panel → Login Portal → Reverse Proxy** works the same way: forward `famlin.yourdomain.com` (HTTPS) to `localhost:3000` (HTTP).
 
+## Demo instance
+
+Famlin includes a read-only demo mode for public showcases. It uses the same image but pre-seeds the database with sample data and blocks all mutating requests (`POST`/`PUT`/`PATCH`/`DELETE`) except login endpoints, so visitors can browse but cannot post, comment, upload, or modify anything.
+
+### Run the demo locally
+
+```bash
+curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.demo.yml
+# Set a JWT secret and Postgres password, then start:
+JWT_SECRET=your-jwt-secret POSTGRES_PASSWORD=your-db-password \
+  docker compose -f docker-compose.demo.yml up -d
+```
+
+Log in with `admin@example.com` / `test123456` or `test@example.com` / `test123456` to browse the sample family.
+
+### Deploy on a free Google Cloud VM
+
+The cheapest always-free option is a Compute Engine `e2-micro` instance in `us-central1`, `us-east1`, or `us-west1`:
+
+1. Create a VM with the Container-Optimized OS or Debian/Ubuntu.
+2. Install Docker and Docker Compose.
+3. Download `docker-compose.demo.yml` and create an `.env` file with `JWT_SECRET` and `POSTGRES_PASSWORD`.
+4. Open firewall port `3000` (or put a reverse proxy in front).
+5. Run `docker compose -f docker-compose.demo.yml up -d`.
+
+### CI-deployed demo
+
+The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famlin:demo` image on every push to `main` and can SSH into a demo server to redeploy it. Configure these repository secrets to enable it:
+
+- `DEMO_HOST` — hostname or IP of the demo server
+- `DEMO_USER` — SSH user
+- `DEMO_SSH_KEY` — SSH private key
+- `DEMO_JWT_SECRET` — JWT secret for the demo instance
+- `DEMO_DB_PASSWORD` — Postgres password for the demo instance
+- `DEMO_TRUST_PROXY` — set to `true` only if the demo sits behind a reverse proxy
+
 ## Next steps
 
 Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.

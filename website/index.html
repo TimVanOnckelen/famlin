@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Famlin — Your family, on your own server</title>
-<meta name="description" content="Famlin is a private, self-hosted family app — a calm, chronological timeline of photos and updates that lives on your own server. Open source, no ads, no algorithm.">
+<meta name="description" content="Famlin is a private, self-hosted family app — a calm, chronological feed of photos, milestones, polls, and trip journals that lives on your own server. Open source, no ads, no algorithm.">
 <link rel="icon" href="/favicon.ico">
 <meta property="og:title" content="Famlin — Your family, on your own server">
-<meta property="og:description" content="A private, self-hosted family updates app. Open source, self-hosted, no ads, no algorithm.">
+<meta property="og:description" content="A private, self-hosted family updates app with photos, milestones, polls, trip journals, and family chat. Open source, self-hosted, no ads, no algorithm.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <link rel="alternate" hreflang="en" href="https://famlin.app/">
@@ -28,9 +28,12 @@
     footer > div:first-child { grid-template-columns: 1fr 1fr !important; }
     nav a[href="#features"], nav a[href="#docs"] { display: none; }
     h1 { font-size: 40px !important; }
+    .showcase-track { gap: 18px !important; }
   }
   @media (max-width: 520px) {
     section#features > div:last-child, section#docs > div:last-child, footer > div:first-child { grid-template-columns: 1fr !important; }
+    .showcase-card { width: 168px !important; }
+    .showcase-frame { width: 152px !important; height: 330px !important; }
   }
 </style>
 </head>
@@ -77,7 +80,7 @@
         <span style="font-size:13px;font-weight:800;color:white;">Self-hosted · your server, your family, your data</span>
       </div>
       <h1 style="font-size:56px;font-weight:900;color:#0f222a;letter-spacing:-2.5px;line-height:1.02;margin:0 0 20px;text-wrap:balance;">Your family,<br><span style="color:#006e94;">on your own server.</span></h1>
-      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is a private, self-hosted family app — a calm, chronological timeline of photos and updates that lives on <em>your</em> hardware. No cloud lock-in, no algorithm, no ads. Just closer, from the grandkids to grandma and grandpa.</p>
+      <p style="font-size:20px;color:#3f5560;line-height:1.6;margin:0 0 32px;max-width:490px;text-wrap:pretty;">Famlin is a private, self-hosted family app — a calm, chronological timeline of photos, milestones, polls and trip journals that lives on <em>your</em> hardware. No cloud lock-in, no algorithm, no ads. Works as an app or right in the browser — just closer, from the grandkids to grandma and grandpa.</p>
 
       <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:22px;">
         <a href="#install" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:17px;font-weight:800;padding:16px 30px;border-radius:100px;box-shadow:0 6px 18px rgba(0,110,148,0.34);">
@@ -97,7 +100,7 @@
       <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(49,142,162,0.18),transparent 68%);top:40px;"></div>
       <div style="position:relative;width:288px;background:#0f222a;border-radius:44px;padding:11px;box-shadow:0 30px 70px rgba(0,80,110,0.28);">
         <div style="border-radius:34px;overflow:hidden;height:576px;position:relative;">
-          <img src="/assets/images/screenshot.png" alt="Famlin app feed showing family posts and a birthday milestone" width="266" height="576" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          <img src="/assets/images/screenshots/feed.png" alt="Famlin app feed showing family posts and a birthday milestone" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
         </div>
       </div>
     </div>
@@ -163,7 +166,7 @@
         </div>
         <div style="background:white;border-radius:18px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;gap:16px;align-items:flex-start;">
           <div style="width:38px;height:38px;border-radius:19px;background:#006e94;color:white;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
-          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Get the app</div><div style="font-size:15px;color:#597784;line-height:1.55;">Everyone installs Famlin for iOS or Android and connects to your server's address. Share your first memory.</div></div>
+          <div><div style="font-size:18px;font-weight:800;color:#0f222a;margin-bottom:3px;">Get in — app or browser</div><div style="font-size:15px;color:#597784;line-height:1.55;">Everyone installs Famlin for iOS or Android, or simply opens your server's address in a browser. Share your first memory.</div></div>
         </div>
       </div>
     </div>
@@ -179,50 +182,158 @@
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><rect x="3" y="13" width="18" height="7" rx="1.5" style="stroke:#4b8b5a;stroke-width:2;"/><circle cx="7" cy="7.5" r="1" style="fill:#4b8b5a;"/><circle cx="7" cy="16.5" r="1" style="fill:#4b8b5a;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#4b8b5a;stroke-width:2.2;stroke-linecap:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Self-hosted &amp; open source</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Your data lives on your server, never ours. MIT-licensed and auditable — no vendor, no lock-in, no surprises.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">One feed, every family group</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">A calm, chronological timeline for one family or several — post to multiple groups at once when something belongs in more than one.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" style="stroke:#006e94;stroke-width:2.2;stroke-linecap:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-7.58 7-12a7 7 0 10-14 0c0 4.42 7 12 7 12z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/><circle cx="12" cy="9" r="2.5" style="stroke:#006e94;stroke-width:2;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Chronological feed</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Newest first, ordered by time. No ranking, no missed posts — exactly the way it should be.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Trips — a shared travel journal</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">One itinerary, check-ins from every stop, photos along the way, a day counter, and co-travelers who can add to it too.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 21V10M12 21V4M19 21v-7" style="stroke:#8a5a12;stroke-width:2.2;stroke-linecap:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Polls for family decisions</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Ask a question, everyone votes, and the tally updates live — perfect for picking a date, a name, or a restaurant.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7S9 2 6.5 3.5 8 7 12 7zM12 7s3-5 5.5-3.5S16 7 12 7z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
         <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Milestones that stand out</h3>
         <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Birthdays and other big moments get a warm accent card — impossible to miss, never intrusive.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#c85a34;stroke-width:2;stroke-linejoin:round;"/></svg>
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v10a1 1 0 01-1 1H9l-4 4v-4H5a1 1 0 01-1-1V5z" style="stroke:#4b8b5a;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Like, comment &amp; favorite</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">A heart, a short reply, or a bookmark for later. Warm engagement without like-counters or performance pressure.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">A group chat for each family</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Optional, per-family chat for quick back-and-forth — replies, attachments, and read receipts, switched on by an admin.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#daf3fe;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#006e94;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#006e94;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" style="stroke:#006e94;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Your photos, your storage</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Add photos straight from your camera or gallery. They're stored on your own server — full quality, fully yours.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">React, reply, and mention</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Six reactions, comments with photos of their own, @mentions that notify the right person, and favorites to save for later.</p>
       </div>
 
       <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
         <div style="width:54px;height:54px;border-radius:15px;background:#ffe6c0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" style="stroke:#8a5a12;stroke-width:2;"/><path d="M12 7v5l3 3" style="stroke:#8a5a12;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" style="stroke:#8a5a12;stroke-width:2;"/><circle cx="8.5" cy="10" r="1.6" style="fill:#8a5a12;"/><path d="M3 16l5-4 4 3 3-2 6 5" style="stroke:#8a5a12;stroke-width:2;stroke-linejoin:round;"/></svg>
         </div>
-        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Calm, not addictive</h3>
-        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">No infinite scroll, no read receipts, no notification spam. Open it when you feel like it.</p>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Your photos and videos, your storage</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">HEIC support, automatic compression, and video thumbnails — full quality, stored on your own server, not a stranger's cloud.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#f6d9d0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M8.5 8.5L10 7a3 3 0 114.24 4.24L12.7 12.7M15.5 15.5L14 17a3 3 0 11-4.24-4.24l1.5-1.5" style="stroke:#c85a34;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Link your existing photo library</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Connect an Immich server or a local folder, and filter albums by recognized family members an admin maps by face.</p>
+      </div>
+
+      <div style="background:white;border-radius:20px;padding:30px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <div style="width:54px;height:54px;border-radius:15px;background:#d7efe0;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="13" height="9" rx="1.3" style="stroke:#4b8b5a;stroke-width:2;"/><path d="M7 17h5" style="stroke:#4b8b5a;stroke-width:2;stroke-linecap:round;"/><rect x="17.5" y="7" width="4.5" height="9" rx="1.1" style="stroke:#4b8b5a;stroke-width:2;"/></svg>
+        </div>
+        <h3 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 8px;">Apps everywhere — including the browser</h3>
+        <p style="font-size:16px;color:#597784;line-height:1.6;margin:0;">Native apps for iOS and Android, plus a full web app served by the same server — family who'd rather not install anything can just open a link.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ SCREENSHOT SHOWCASE ═══════ -->
+  <section id="showcase" style="max-width:1120px;margin:0 auto;padding:24px 24px 64px;">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">See it in action</div>
+      <h2 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">A closer look at the app</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto;max-width:560px;">From the family feed to a shared trip journal — here's what everyday life in Famlin looks like, on the phone or in the browser.</p>
+    </div>
+    <div class="showcase-track" style="display:flex;gap:26px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 4px 14px;-webkit-overflow-scrolling:touch;">
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/trips.png" alt="Famlin trip journal screen showing check-ins and a day counter" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Trips</div>
+          <div style="font-size:13px;color:#597784;">Travel journal with check-ins</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/polls.png" alt="Famlin poll on a family post with live vote tallies" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Polls</div>
+          <div style="font-size:13px;color:#597784;">Ask the family, see live results</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/chat.png" alt="Famlin group chat for a family" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Chat</div>
+          <div style="font-size:13px;color:#597784;">Per-family group chat</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/multi-image.png" alt="Famlin post with multiple photos in one gallery" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Multi-photo posts</div>
+          <div style="font-size:13px;color:#597784;">Share a whole gallery at once</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/add-post.png" alt="Famlin new post composer with photo upload" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">New post composer</div>
+          <div style="font-size:13px;color:#597784;">Compose in seconds</div>
+        </div>
+      </div>
+
+      <div class="showcase-card" style="flex:0 0 auto;width:216px;scroll-snap-align:start;">
+        <div style="background:#0f222a;border-radius:34px;padding:8px;box-shadow:0 16px 36px rgba(0,80,110,0.22);">
+          <div class="showcase-frame" style="border-radius:26px;overflow:hidden;width:200px;height:435px;">
+            <img src="/assets/images/screenshots/profile.png" alt="Famlin profile screen with notification and language settings" width="1206" height="2622" style="display:block;width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <div style="font-size:15px;font-weight:800;color:#0f222a;">Profile</div>
+          <div style="font-size:13px;color:#597784;">Notifications, language, and more</div>
+        </div>
       </div>
 
     </div>
@@ -303,9 +414,9 @@
   <!-- ═══════ APP DOWNLOAD (secondary, after install) ═══════ -->
   <section id="download" style="max-width:1120px;margin:0 auto;padding:24px 24px 80px;">
     <div style="background:white;border-radius:28px;padding:56px 40px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e3edf1;">
-      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Step three · the app</div>
-      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Once your server is live, get the app</h2>
-      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:560px;">The Android app is on Google Play. There's no single iOS listing — Apple's distribution model means whoever runs your server builds and shares the iOS app with the family; the self-hosting guide covers doing that with Expo EAS.</p>
+      <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Step three · however you like</div>
+      <h2 style="font-size:38px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 12px;">Once your server is live, everyone gets in</h2>
+      <p style="font-size:18px;color:#597784;line-height:1.6;margin:0 auto 30px;max-width:560px;">Install Famlin for iOS or Android, or skip the app store entirely — every Famlin server also serves a full member web app at its own address, so anyone can just open it in a browser. The Android app is on Google Play. There's no single iOS listing — Apple's distribution model means whoever runs your server builds and shares the iOS app with the family; the self-hosting guide covers doing that with Expo EAS.</p>
       <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;">
         <a href="https://play.google.com/store/apps/details?id=be.xeweb.famlin" style="display:inline-flex;align-items:center;gap:10px;background:#006e94;color:white;font-size:16px;font-weight:800;padding:15px 28px;border-radius:100px;box-shadow:0 4px 14px rgba(0,110,148,0.3);">
           Get it on Google Play
