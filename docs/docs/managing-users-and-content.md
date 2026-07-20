@@ -44,3 +44,16 @@ There's no bulk delete action.
 ## Push notification log
 
 The **Push notification log** page lists every push-notification send attempt — both automatic (a new post, comment, reaction, ...) and manually resent from the Content page — newest first. Each row shows when it was sent, the notification type, which post it was for (if any), how many people were eligible, how many devices were actually reached, how many failed, and who triggered it ("System" for automatic sends, otherwise the admin who clicked resend).
+
+## Data export
+
+The **Server settings** page's general section has a **Data export** card with a single **Download export** button. It downloads a zip containing:
+
+- All posts, comments, reactions, and favorites, across every group.
+- All chat messages.
+- The member list (names, emails, avatars, admin status) and group membership.
+- Every uploaded photo and video, including the original, unresized files.
+
+It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, invite links, push tokens, or API tokens. It's a portable copy of your family's content, not a way to clone or migrate a whole server deployment.
+
+There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.

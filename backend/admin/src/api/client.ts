@@ -289,4 +289,27 @@ export const api = {
 
   deleteMediaPersonLink: (id: string) =>
     request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
+
+  // Not a JSON endpoint (returns a zip stream), so this bypasses request()
+  // and does its own auth header + error handling instead.
+  downloadExport: async (): Promise<{ blob: Blob; filename: string }> => {
+    const headers: Record<string, string> = {};
+    const token = getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch('/api/admin/export', { headers });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code);
+    }
+
+    const blob = await res.blob();
+    const disposition = res.headers.get('content-disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match?.[1] ?? `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`;
+    return { blob, filename };
+  },
 };

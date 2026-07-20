@@ -23,7 +23,12 @@ export function formatTime(iso: string, locale: string): string {
 }
 
 // "3 juli" / "3 July" — the trip timeline's closed (oldest-first) variant,
-// which labels each entry with a date instead of a time.
+// which labels each entry with a date instead of a time. A plain
+// 'YYYY-MM-DD' date (no time component) parses as UTC midnight, which would
+// format as the previous day for anyone west of UTC — append a local
+// midnight time first, same trick formatTripDateRange uses in trip.ts. An
+// ISO datetime already carries its own time/offset, so it's parsed as-is.
 export function formatDayMonth(iso: string, locale: string): string {
-  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'long' });
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : new Date(iso);
+  return parsed.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
 }

@@ -50,7 +50,12 @@ export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
           authorId: message.replyToMessage.authorId,
           authorName: message.replyToMessage.author.name,
           kind: message.replyToMessage.kind,
-          content: excerptText(message.replyToMessage.content),
+          // Preserve null (rather than excerptText's '' fallback) for an
+          // attachment-only original message — the api-client contract is
+          // `content: string | null`, and mobile's replyTo.content ??
+          // photoLabel fallback (ChatScreen.tsx) only works if a missing
+          // quote is actually null, not an empty string.
+          content: message.replyToMessage.content?.trim() ? excerptText(message.replyToMessage.content) : null,
           attachmentUrl: message.replyToMessage.attachmentUrl,
         }
       : null,

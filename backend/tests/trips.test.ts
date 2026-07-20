@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
@@ -457,6 +457,35 @@ describe('TRIP posts', () => {
     });
   });
 
+  describe('future-dated trips', () => {
+    it('rejects checking in on a trip that has not started yet', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const trip = await (await createTrip(author, group.id, { startDate: isoDate(3) })).json();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${trip.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Too early' } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe("This trip hasn't started yet");
+      expect(await prisma.comment.count({ where: { postId: trip.id } })).toBe(0);
+    });
+
+    it('enriches dayNumber as null (not Day 1) and closed as false for a trip that has not started yet', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const trip = await (await createTrip(author, group.id, { startDate: isoDate(3) })).json();
+
+      const get = await app.inject({ method: 'GET', url: `/api/posts/${trip.id}`, headers: authHeader(author) });
+      expect(get.statusCode).toBe(200);
+      expect(get.json().trip.dayNumber).toBeNull();
+      expect(get.json().trip.closed).toBe(false);
+    });
+  });
+
   describe('auto-close', () => {
     it('reports closed:true once endDate has fully elapsed, with no close interaction', async () => {
       const author = await createUser();
@@ -558,14 +587,19 @@ describe('TRIP posts', () => {
       });
       expect(res.statusCode).toBe(200);
 
-      // Trip creation itself already notified `other` with `new_post` — scope
-      // to `trip_checkin` specifically so this assertion is about the
-      // check-in notification, not a count of every notification on the post.
-      const otherNotifications = await prisma.notification.findMany({
-        where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+      // The comment.created subscriber runs fire-and-forget (see
+      // src/events.ts) — poll rather than assert immediately.
+      await vi.waitFor(async () => {
+        // Trip creation itself already notified `other` with `new_post` —
+        // scope to `trip_checkin` specifically so this assertion is about
+        // the check-in notification, not a count of every notification on
+        // the post.
+        const otherNotifications = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        expect(otherNotifications).toHaveLength(1);
+        expect(otherNotifications[0].message).toContain('Somewhere nice');
       });
-      expect(otherNotifications).toHaveLength(1);
-      expect(otherNotifications[0].message).toContain('Somewhere nice');
 
       const authorNotifications = await prisma.notification.findMany({
         where: { relatedPostId: trip.id, userId: author.id, type: 'trip_checkin' },
@@ -576,7 +610,12 @@ describe('TRIP posts', () => {
       expect(newCommentNotifications).toHaveLength(0);
     });
 
-    it('uses the "checked in N times today" copy from the second check-in of the same day onward', async () => {
+    // Same-day check-ins from the same author are bundled into ONE
+    // notification per recipient rather than one row/push per stop (see the
+    // bundling contract on services/notifications.ts's `bundleSince`) — the
+    // SECOND check-in of the day updates the FIRST check-in's row in place
+    // (escalated message) instead of creating a second row.
+    it('bundles same-day check-ins into one notification with escalating "checked in N times today" copy', async () => {
       const author = await createUser();
       const other = await createUser();
       const group = await createGroupWithMember(author);
@@ -589,6 +628,17 @@ describe('TRIP posts', () => {
         headers: authHeader(author),
         payload: { key: 'checkin', value: { place: 'First stop' } },
       });
+
+      let firstId: string;
+      await vi.waitFor(async () => {
+        const rows = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].message).toBe(`${author.name} checked in at First stop`);
+        firstId = rows[0].id;
+      });
+
       await app.inject({
         method: 'POST',
         url: `/api/posts/${trip.id}/interactions`,
@@ -596,13 +646,16 @@ describe('TRIP posts', () => {
         payload: { key: 'checkin', value: { place: 'Second stop' } },
       });
 
-      const notifications = await prisma.notification.findMany({
-        where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
-        orderBy: { createdAt: 'asc' },
+      await vi.waitFor(async () => {
+        const notifications = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        // Still one row — the second check-in escalated it in place rather
+        // than adding a second one.
+        expect(notifications).toHaveLength(1);
+        expect(notifications[0].id).toBe(firstId);
+        expect(notifications[0].message).toBe(`${author.name} checked in 2 times today · last stop: Second stop`);
       });
-      expect(notifications).toHaveLength(2);
-      expect(notifications[0].message).toBe(`${author.name} checked in at First stop`);
-      expect(notifications[1].message).toBe(`${author.name} checked in 2 times today · last stop: Second stop`);
     });
   });
 
@@ -696,6 +749,42 @@ describe('TRIP posts', () => {
       expect(getB.json().trip.photoCount).toBe(1);
       expect(getB.json().trip.collagePhotoUrls).toEqual([photo]);
       expect(getB.json().trip.latestCheckin.commentId).toBe(copyB.id);
+    });
+
+    it('creates a Comment copy only in sibling groups the checking-in traveler is still a member of', async () => {
+      const author = await createUser();
+      const traveler = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await addMember(groupA.id, traveler.id);
+      await addMember(groupB.id, traveler.id);
+      const created = await createCrossTrip(author, [groupA.id, groupB.id], [traveler.id]);
+      expect(created.statusCode).toBe(200);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+
+      // Traveler is removed from group B only, after the trip/traveler list
+      // was validated — simulates a membership change that happens between
+      // setTravelers and a later check-in (see trip.ts's checkin branch).
+      await prisma.groupMember.deleteMany({ where: { groupId: groupB.id, userId: traveler.id } });
+
+      // Checking in via sibling A (the traveler is still a member there,
+      // so the route's own membership check passes).
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(traveler),
+        payload: { key: 'checkin', value: { place: 'Only in A now' } },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().trip.stopCount).toBe(1);
+
+      expect(await prisma.comment.count({ where: { postId: a.id } })).toBe(1);
+      expect(await prisma.comment.count({ where: { postId: b.id } })).toBe(0);
+
+      // B's own enrichment reflects no check-in at all.
+      const getB = await app.inject({ method: 'GET', url: `/api/posts/${b.id}`, headers: authHeader(author) });
+      expect(getB.statusCode).toBe(200);
+      expect(getB.json().trip.stopCount).toBe(0);
     });
 
     it('notifies a member of both sibling groups exactly once per check-in', async () => {
@@ -846,6 +935,139 @@ describe('TRIP posts', () => {
       const trips = feed.json().items.filter((p: any) => p.type === 'TRIP');
       expect(trips).toHaveLength(1);
       expect(trips[0].trip.title).toBe('Cross trip');
+    });
+
+    it('author editing a check-in fans the new content out to every sibling copy', async () => {
+      const author = await createUser();
+      const groupA = await createGroupWithMember(author);
+      const groupB = await createGroupWithMember(author);
+      await createCrossTrip(author, [groupA.id, groupB.id]);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${a.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Original stop', text: 'first text' } },
+      });
+      const copyA = await prisma.comment.findFirstOrThrow({ where: { postId: a.id } });
+      const copyB = await prisma.comment.findFirstOrThrow({ where: { postId: b.id } });
+      expect(copyA.content).toBe('first text');
+      expect(copyB.content).toBe('first text');
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${copyA.id}`,
+        headers: authHeader(author),
+        payload: { content: 'edited text' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().content).toBe('edited text');
+
+      const updatedA = await prisma.comment.findUniqueOrThrow({ where: { id: copyA.id } });
+      const updatedB = await prisma.comment.findUniqueOrThrow({ where: { id: copyB.id } });
+      expect(updatedA.content).toBe('edited text');
+      expect(updatedB.content).toBe('edited text');
+      expect(updatedB.editedAt).not.toBeNull();
+    });
+  });
+
+  describe('check-in notification bundling', () => {
+    it('resurfaces the bundled notification as unread on the second same-day check-in', async () => {
+      const author = await createUser();
+      const other = await createUser();
+      const group = await createGroupWithMember(author);
+      await addMember(group.id, other.id);
+      const trip = await (await createTrip(author, group.id)).json();
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${trip.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'First stop' } },
+      });
+
+      let firstId = '';
+      await vi.waitFor(async () => {
+        const rows = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        expect(rows).toHaveLength(1);
+        firstId = rows[0].id;
+      });
+      // Mark it read, so the assertion below proves the second check-in
+      // resurfaces the SAME row as unread rather than just checking the
+      // message text.
+      await prisma.notification.update({ where: { id: firstId }, data: { readAt: new Date() } });
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${trip.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Second stop' } },
+      });
+
+      await vi.waitFor(async () => {
+        const notifications = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        expect(notifications).toHaveLength(1);
+        expect(notifications[0].id).toBe(firstId);
+        expect(notifications[0].message).toBe(`${author.name} checked in 2 times today · last stop: Second stop`);
+        expect(notifications[0].readAt).toBeNull();
+      });
+    });
+
+    it('creates a fresh notification row for a check-in on a different day', async () => {
+      const author = await createUser();
+      const other = await createUser();
+      const group = await createGroupWithMember(author);
+      await addMember(group.id, other.id);
+      const trip = await (await createTrip(author, group.id)).json();
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${trip.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Yesterday stop' } },
+      });
+
+      // Simulate "yesterday" by backdating both the check-in Comment and its
+      // Notification row past the UTC-day boundary the bundling window uses
+      // — the bundling window is keyed off real "now", so there's no other
+      // way to exercise the day-rollover path without waiting a real day.
+      // Waits for the first (fire-and-forget) notification to actually exist
+      // before backdating it, rather than a blind updateMany that could race
+      // ahead of its own creation.
+      const yesterdayComment = await prisma.comment.findFirstOrThrow({ where: { postId: trip.id } });
+      const yesterday = new Date(Date.now() - 25 * 60 * 60 * 1000);
+      await prisma.comment.update({ where: { id: yesterdayComment.id }, data: { createdAt: yesterday } });
+
+      let firstNotificationId = '';
+      await vi.waitFor(async () => {
+        const rows = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+        });
+        expect(rows).toHaveLength(1);
+        firstNotificationId = rows[0].id;
+      });
+      await prisma.notification.update({ where: { id: firstNotificationId }, data: { createdAt: yesterday } });
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/posts/${trip.id}/interactions`,
+        headers: authHeader(author),
+        payload: { key: 'checkin', value: { place: 'Today stop' } },
+      });
+
+      await vi.waitFor(async () => {
+        const notifications = await prisma.notification.findMany({
+          where: { relatedPostId: trip.id, userId: other.id, type: 'trip_checkin' },
+          orderBy: { createdAt: 'asc' },
+        });
+        expect(notifications).toHaveLength(2);
+        expect(notifications[1].message).toBe(`${author.name} checked in at Today stop`);
+      });
     });
   });
 });

@@ -50,8 +50,17 @@ export function formatTime(dateString: string): string {
 
 // "3 juli" / "3 July" — used by the trip timeline's closed (oldest-first)
 // variant, which labels each entry with a date instead of a time.
+//
+// A plain 'YYYY-MM-DD' (trip.startDate/endDate) parses as UTC midnight; in a
+// local timezone west of UTC that formats as the previous day. Anchor
+// date-only strings to local midnight before parsing (same trick as
+// formatTripDateRange above) so the calendar day never shifts; an ISO
+// datetime (e.g. closedAt) already carries a time and parses/formats in
+// local time correctly as-is.
 export function formatDayMonth(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' });
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  const date = new Date(isDateOnly ? `${dateString}T00:00:00` : dateString);
+  return date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' });
 }
 
 // "3 t/m 14 juli" when start/end fall in the same month, else "3 Jul to 14 Aug".

@@ -844,10 +844,12 @@ paths:
           journal entry (`place` 1-80 chars, `text` up to 2000 chars,
           `photoUrls` up to 10 uploaded `/uploads/...` paths). Only the
           trip's author or one of its `travelerUserIds` may check in, and
-          only while the trip is open. On a cross-posted trip the entry is
+          only while the trip is open and has started (a check-in before
+          `startDate` is rejected). On a cross-posted trip the entry is
           stored as one comment copy per sibling post, all sharing the same
-          `metadata.checkinId` (see `Comment`); the author deleting one copy
-          deletes them all. Notifies the rest of each group with a push-only
+          `metadata.checkinId` (see `Comment`) — but only in sibling groups
+          the check-in author is still a member of at that moment; the
+          author editing or deleting one copy edits/deletes them all. Notifies the rest of each group with a push-only
           `trip_checkin` notification — same-day check-ins from the same
           author are bundled into one, and a member of several sibling
           groups is notified exactly once.
@@ -999,6 +1001,11 @@ paths:
       operationId: updateComment
       tags: [Comments]
       summary: Edit your own comment
+      description: |
+        Author-only. When editing a trip check-in on a cross-posted trip,
+        the same content update fans out to every sibling group's copy of
+        that check-in (same `metadata.checkinId`), keeping them identical —
+        mirroring the delete fan-out below.
       parameters:
         - name: id
           in: path
@@ -2462,7 +2469,7 @@ components:
         dayNumber:
           type: integer
           nullable: true
-          description: Which day of the trip today is (1-based), or `null` once `closed`.
+          description: Which day of the trip today is (1-based), or `null` once `closed` or while `startDate` is still in the future.
         durationDays:
           type: integer
           nullable: true

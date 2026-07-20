@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
 import { getAllSettings } from '../services/settings.js';
 import i18n from '../i18n/index.js';
+import { isTripCheckinMetadata } from '../services/postTypes/trip.js';
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
@@ -95,22 +96,10 @@ export function registerNotificationSubscriber(): void {
     // new_post/new_chat_message), not just thread participants, and it must
     // never also fire the generic new_comment notification below. Push-only
     // (no email), same precedent as new_chat_message.
-    if (event.metadata && typeof event.metadata === 'object' && (event.metadata as { kind?: unknown }).kind === 'trip_checkin') {
-      const place = (event.metadata as { place: string }).place;
+    if (isTripCheckinMetadata(event.metadata)) {
+      const place = event.metadata.place;
       const startOfTodayUtc = new Date();
       startOfTodayUtc.setUTCHours(0, 0, 0, 0);
-      // Per check-in AUTHOR (not per trip) — a co-traveler's bundling count
-      // is independent of the trip author's. Counted on the event's own
-      // post; a cross-posted trip's sibling copies are created in lockstep,
-      // so every sibling carries the same per-author count.
-      const countToday = await prisma.comment.count({
-        where: {
-          postId: event.postId,
-          authorId: event.authorId,
-          metadata: { path: ['kind'], equals: 'trip_checkin' },
-          createdAt: { gte: startOfTodayUtc },
-        },
-      });
 
       // A cross-posted trip's check-in carries one target per sibling
       // Comment copy — a member of several sibling groups must be notified
@@ -139,6 +128,21 @@ export function registerNotificationSubscriber(): void {
         if (recipientIds.length === 0) continue;
         recipientIds.forEach((id) => assigned.add(id));
 
+        // Per check-in AUTHOR and per TARGET post (not per trip) — a
+        // co-traveler's bundling count is independent of the trip author's,
+        // and counting on this target's own postId (rather than the
+        // invoked event.postId) keeps the count accurate even if per-group
+        // admin moderation has removed a copy from one sibling but not
+        // another.
+        const countForTarget = await prisma.comment.count({
+          where: {
+            postId: target.postId,
+            authorId: event.authorId,
+            metadata: { path: ['kind'], equals: 'trip_checkin' },
+            createdAt: { gte: startOfTodayUtc },
+          },
+        });
+
         await notifyUsers({
           type: 'trip_checkin',
           userIds: recipientIds,
@@ -147,7 +151,15 @@ export function registerNotificationSubscriber(): void {
           // count drives i18next pluralization (tripCheckin_one/_other, see
           // the locale files) — 1 = this author's first check-in today for
           // this trip, 2+ = "checked in N times today, last stop: {place}".
-          params: { author: event.authorName, group: target.groupName, place, count: countToday },
+          params: { author: event.authorName, group: target.groupName, place, count: countForTarget },
+          // Same-day check-ins from the same author are bundled into ONE
+          // notification per recipient rather than one push/row per stop:
+          // notify()'s bundling (see services/notifications.ts) UPDATEs an
+          // existing same-day trip_checkin row in place (new message, marked
+          // unread, createdAt refreshed so it resurfaces) instead of
+          // creating a new row/push when one already exists for this
+          // (recipient, postId, type) since startOfTodayUtc.
+          bundleSince: startOfTodayUtc,
         });
       }
       return;

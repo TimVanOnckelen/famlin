@@ -84,13 +84,18 @@ function normalizeTravelerIds(ids: string[], authorId: string): string[] {
 // Every proposed traveler must be a CURRENT member of EVERY target group —
 // a co-traveler's check-ins land in all cross-post sibling groups, and
 // members must never create content in a group they don't belong to.
-// Checked when the list is written (create/setTravelers), not on every
-// check-in: a traveler later removed from a group loses feed access anyway,
-// and re-validating the stored list per check-in would silently change past
-// behavior.
-async function assertTravelersAreMembers(userIds: string[], groupIds: string[]): Promise<void> {
+// Checked when the list is written (create/setTravelers) as the "is this a
+// valid traveler list" gate; a traveler's isTraveler status at check-in time
+// still isn't re-validated against the stored list (removal from the trip
+// itself, as opposed to a group, is a deliberate setTravelers edit, not
+// membership churn). What DOES change per check-in: which sibling groups
+// actually get a Comment copy — see the membership filter in interact()'s
+// 'checkin' branch below, which skips a sibling whose group the acting user
+// is no longer a member of, rather than trusting this create/setTravelers-time
+// check to still hold forever.
+async function assertTravelersAreMembers(userIds: string[], groupIds: string[], db: TripDbClient = prisma): Promise<void> {
   if (userIds.length === 0) return;
-  const memberships = await prisma.groupMember.findMany({
+  const memberships = await db.groupMember.findMany({
     where: { groupId: { in: groupIds }, userId: { in: userIds } },
     select: { groupId: true, userId: true },
   });
@@ -109,19 +114,28 @@ async function assertTravelersAreMembers(userIds: string[], groupIds: string[]):
   }
 }
 
+// Either the top-level PrismaClient or an interactive-transaction client —
+// every helper below that issues queries takes one of these so it can run
+// either standalone (create-time validation, outside any transaction) or
+// inside the interact() transactions below (see lockTripRows).
+type TripDbClient = typeof prisma | Prisma.TransactionClient;
+
 // The post ids/groups one trip interaction spans: the post itself for a
 // single-group trip, every sibling sharing its crossPostId for a
 // cross-posted one. Includes the invoked post.
-async function getTripSiblings(post: {
-  id: string;
-  groupId: string;
-  groupName: string;
-  crossPostId: string | null;
-}): Promise<Array<{ id: string; groupId: string; groupName: string }>> {
+async function getTripSiblings(
+  post: {
+    id: string;
+    groupId: string;
+    groupName: string;
+    crossPostId: string | null;
+  },
+  db: TripDbClient = prisma
+): Promise<Array<{ id: string; groupId: string; groupName: string }>> {
   if (!post.crossPostId) {
     return [{ id: post.id, groupId: post.groupId, groupName: post.groupName }];
   }
-  const siblings = await prisma.post.findMany({
+  const siblings = await db.post.findMany({
     where: { crossPostId: post.crossPostId },
     select: { id: true, groupId: true, group: { select: { name: true } } },
     orderBy: { id: 'asc' },
@@ -129,7 +143,39 @@ async function getTripSiblings(post: {
   return siblings.map((s) => ({ id: s.id, groupId: s.groupId, groupName: s.group.name }));
 }
 
-function isTripCheckinMetadata(value: unknown): value is TripCheckinMetadata {
+// Locks every sibling row (or the single post row, for a non-cross-posted
+// trip) FOR UPDATE, ordered by id to avoid deadlocking against a concurrent
+// interaction on the same trip taking the locks in a different order. Must
+// be called inside an interactive transaction — the lock is released when
+// that transaction commits/rolls back. Returns the FRESH typeData read
+// under the lock, so guards re-run against it instead of the (possibly
+// stale) snapshot the route read before the transaction started — see the
+// lost-update race this closes in interact() below.
+async function lockTripRows(
+  tx: Prisma.TransactionClient,
+  post: { id: string; crossPostId: string | null }
+): Promise<PersistedTripTypeData> {
+  const rows = post.crossPostId
+    ? await tx.$queryRaw<Array<{ id: string; typeData: PersistedTripTypeData }>>`
+        SELECT id, "typeData" FROM "Post" WHERE "crossPostId" = ${post.crossPostId} ORDER BY id FOR UPDATE
+      `
+    : await tx.$queryRaw<Array<{ id: string; typeData: PersistedTripTypeData }>>`
+        SELECT id, "typeData" FROM "Post" WHERE id = ${post.id} ORDER BY id FOR UPDATE
+      `;
+  const own = rows.find((r) => r.id === post.id) ?? rows[0];
+  if (!own) {
+    // Data-integrity bug (the invoked post itself vanished mid-transaction)
+    // — mirrors the defensive check at the top of interact().
+    throw new PostTypeError('invalidInteraction');
+  }
+  return own.typeData;
+}
+
+// Exported so routes/comments.ts (PATCH/DELETE fan-out) and
+// subscribers/notifications.ts (routing a check-in to `trip_checkin` instead
+// of `new_comment`/`mention`) share this one guard instead of each
+// hand-rolling their own `metadata?.kind === 'trip_checkin'` check.
+export function isTripCheckinMetadata(value: unknown): value is TripCheckinMetadata {
   return !!value && typeof value === 'object' && (value as Record<string, unknown>).kind === 'trip_checkin';
 }
 
@@ -151,9 +197,21 @@ function isTripClosed(typeData: PersistedTripTypeData): boolean {
   return Date.now() > endOfDay;
 }
 
-function computeDayNumber(startDate: string): number {
+// A future-dated trip (startDate after today, UTC) hasn't begun yet — no
+// check-ins are accepted and it isn't "Day 1" in the journal view.
+function isTripNotStarted(typeData: PersistedTripTypeData): boolean {
   const todayStr = new Date().toISOString().slice(0, 10);
-  return Math.max(1, daysBetween(startDate, todayStr) + 1);
+  return todayStr < typeData.startDate;
+}
+
+// null before the trip has started (see isTripNotStarted) — the enriched
+// `trip.dayNumber` field is `number | null` precisely for this case, so
+// clients already tolerate it (same as the closed-trip null below).
+function computeDayNumber(startDate: string): number | null {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const diff = daysBetween(startDate, todayStr);
+  if (diff < 0) return null;
+  return diff + 1;
 }
 
 function computeDurationDays(typeData: PersistedTripTypeData): number | null {
@@ -213,47 +271,85 @@ export const tripHandler: PostTypeHandler = {
     }
 
     if (key === 'checkin') {
-      // The author or any designated co-traveler may check in (the author
-      // is implicitly a traveler and never stored in travelerUserIds).
-      const isTraveler = post.authorId === userId || (typeData.travelerUserIds ?? []).includes(userId);
-      if (!isTraveler) {
-        throw new PostTypeError('tripNotTraveler');
-      }
-      if (isTripClosed(typeData)) {
-        throw new PostTypeError('tripClosed');
-      }
+      // Locks the sibling row(s) FOR UPDATE and re-runs every state guard
+      // against the freshly-read typeData, then creates the Comment
+      // copy/copies in the SAME transaction — closes the lost-update race a
+      // bare read-then-write would have against a concurrent close/
+      // setTravelers landing between this route's initial read and the
+      // write below (see lockTripRows above).
+      const { authorizedSiblings, created, primary, metadata } = await prisma.$transaction(async (tx) => {
+        const freshTypeData = await lockTripRows(tx, post);
 
-      const parsed = checkinValueSchema.safeParse(value);
-      if (!parsed.success) {
-        throw new PostTypeError('invalidInteraction');
-      }
-      const { place, text, photoUrls } = parsed.data;
-      // One shared checkinId across every copy (single-group trips get it
-      // too, for uniformity) — see TripCheckinMetadata and the author
-      // delete fan-out in routes/comments.ts.
-      const metadata: TripCheckinMetadata = { kind: 'trip_checkin', checkinId: randomUUID(), place, photoUrls: photoUrls ?? [] };
+        // The author or any designated co-traveler may check in (the
+        // author is implicitly a traveler and never stored in
+        // travelerUserIds).
+        const isTraveler = post.authorId === userId || (freshTypeData.travelerUserIds ?? []).includes(userId);
+        if (!isTraveler) {
+          throw new PostTypeError('tripNotTraveler');
+        }
+        if (isTripClosed(freshTypeData)) {
+          throw new PostTypeError('tripClosed');
+        }
+        if (isTripNotStarted(freshTypeData)) {
+          throw new PostTypeError('tripNotStarted');
+        }
 
-      // A cross-posted trip stores one Comment copy per sibling post (same
-      // content/metadata), created atomically — comments are group-scoped
-      // (they hang off one Post row), so each sibling group needs its own
-      // copy to see the check-in, mirroring how cross-posted posts
-      // themselves are per-group rows.
-      const siblings = await getTripSiblings(post);
-      const created = await prisma.$transaction(
-        siblings.map((sibling) =>
-          prisma.comment.create({
-            data: {
-              postId: sibling.id,
-              authorId: userId,
-              content: text ?? '',
-              metadata: metadata as unknown as Prisma.InputJsonValue,
-            },
-            include: { author: { select: { name: true } } },
-          })
-        )
-      );
-      const invokedIndex = siblings.findIndex((sibling) => sibling.id === post.id);
-      const primary = created[invokedIndex] ?? created[0];
+        const parsed = checkinValueSchema.safeParse(value);
+        if (!parsed.success) {
+          throw new PostTypeError('invalidInteraction');
+        }
+        const { place, text, photoUrls } = parsed.data;
+        // One shared checkinId across every copy (single-group trips get it
+        // too, for uniformity) — see TripCheckinMetadata and the author
+        // delete fan-out in routes/comments.ts.
+        const metadata: TripCheckinMetadata = { kind: 'trip_checkin', checkinId: randomUUID(), place, photoUrls: photoUrls ?? [] };
+
+        // A cross-posted trip stores one Comment copy per sibling post
+        // (same content/metadata) — but ONLY in a sibling whose group the
+        // acting user is STILL a member of. The route only re-checks
+        // membership in the invoked post's group (requireGroupMember in
+        // routes/posts.ts); a co-traveler who has since been removed from
+        // one sibling's group must not get a Comment created in a group
+        // they can no longer see. This means a check-in can produce fewer
+        // copies than there are siblings — intentional, mirrors how admin
+        // content moderation already lets sibling copies diverge. Skipped
+        // for a non-cross-posted trip (no crossPostId): its one sibling IS
+        // the invoked post, already authorized by the route, so the extra
+        // membership query would be pure overhead on the common case.
+        const siblings = await getTripSiblings(post, tx);
+        let authorizedSiblings = siblings;
+        if (post.crossPostId) {
+          const memberGroupIds = new Set(
+            (
+              await tx.groupMember.findMany({
+                where: { userId, groupId: { in: siblings.map((sibling) => sibling.groupId) } },
+                select: { groupId: true },
+              })
+            ).map((m) => m.groupId)
+          );
+          // The invoked post's group is already authorized by the route, so
+          // it always gets its copy regardless of the membership query above.
+          memberGroupIds.add(post.groupId);
+          authorizedSiblings = siblings.filter((sibling) => memberGroupIds.has(sibling.groupId));
+        }
+
+        const created = await Promise.all(
+          authorizedSiblings.map((sibling) =>
+            tx.comment.create({
+              data: {
+                postId: sibling.id,
+                authorId: userId,
+                content: text ?? '',
+                metadata: metadata as unknown as Prisma.InputJsonValue,
+              },
+              include: { author: { select: { name: true } } },
+            })
+          )
+        );
+        const invokedIndex = authorizedSiblings.findIndex((sibling) => sibling.id === post.id);
+        const primary = created[invokedIndex] ?? created[0];
+        return { authorizedSiblings, created, primary, metadata };
+      });
 
       // ONE comment.created event for the whole check-in, carrying every
       // copy via checkinTargets (mirrors post.created's `posts` array) so
@@ -274,7 +370,7 @@ export const tripHandler: PostTypeHandler = {
         parentId: null,
         mentionedUserIds: [],
         metadata: primary.metadata,
-        checkinTargets: siblings.map((sibling, i) => ({
+        checkinTargets: authorizedSiblings.map((sibling, i) => ({
           commentId: created[i].id,
           postId: sibling.id,
           groupId: sibling.groupId,
@@ -288,22 +384,31 @@ export const tripHandler: PostTypeHandler = {
       if (post.authorId !== userId) {
         throw new PostTypeError('tripNotAuthor');
       }
-      if (isTripClosed(typeData)) {
-        throw new PostTypeError('tripClosed');
-      }
 
-      // Deliberate exception to "typeData is immutable after create" (see
-      // the contract note in ./types.ts) — TRIP is the one type whose own
-      // handler owns further writes to its typeData, since closing a trip is
-      // part of its lifecycle, not an edit to the post's content. Fans out
-      // to every cross-post sibling in one statement (siblings always share
-      // identical typeData — created together, and every mutation goes
-      // through this same fan-out) — the `{crossPostId, authorId}` where
-      // mirrors author PATCH/DELETE in routes/posts.ts.
-      const updated: PersistedTripTypeData = { ...typeData, closedAt: new Date().toISOString(), closedByUserId: userId };
-      await prisma.post.updateMany({
-        where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
-        data: { typeData: updated as unknown as Prisma.InputJsonValue },
+      // Locks the sibling row(s) FOR UPDATE and re-checks isTripClosed
+      // against the freshly-read typeData before writing — closes the
+      // lost-update race where a concurrent close/setTravelers interleaving
+      // could otherwise write a stale snapshot back (e.g. resetting
+      // closedAt/closedByUserId to null and silently "reopening" the trip).
+      await prisma.$transaction(async (tx) => {
+        const freshTypeData = await lockTripRows(tx, post);
+        if (isTripClosed(freshTypeData)) {
+          throw new PostTypeError('tripClosed');
+        }
+
+        // Deliberate exception to "typeData is immutable after create" (see
+        // the contract note in ./types.ts) — TRIP is the one type whose own
+        // handler owns further writes to its typeData, since closing a trip is
+        // part of its lifecycle, not an edit to the post's content. Fans out
+        // to every cross-post sibling in one statement (siblings always share
+        // identical typeData — created together, and every mutation goes
+        // through this same fan-out) — the `{crossPostId, authorId}` where
+        // mirrors author PATCH/DELETE in routes/posts.ts.
+        const updated: PersistedTripTypeData = { ...freshTypeData, closedAt: new Date().toISOString(), closedByUserId: userId };
+        await tx.post.updateMany({
+          where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
+          data: { typeData: updated as unknown as Prisma.InputJsonValue },
+        });
       });
       return;
     }
@@ -312,29 +417,39 @@ export const tripHandler: PostTypeHandler = {
       if (post.authorId !== userId) {
         throw new PostTypeError('tripNotAuthor');
       }
-      if (isTripClosed(typeData)) {
-        throw new PostTypeError('tripClosed');
-      }
 
       const parsed = setTravelersValueSchema.safeParse(value);
       if (!parsed.success) {
         throw new PostTypeError('invalidInteraction');
       }
-
       const travelerIds = normalizeTravelerIds(parsed.data.userIds, post.authorId);
-      // Against EVERY sibling's group — a traveler checks into all of them.
-      const siblings = await getTripSiblings(post);
-      await assertTravelersAreMembers(
-        travelerIds,
-        siblings.map((sibling) => sibling.groupId)
-      );
 
-      // Replaces the stored list wholesale — same "handler owns its own
-      // typeData" exception and sibling fan-out as `close` above.
-      const updated: PersistedTripTypeData = { ...typeData, travelerUserIds: travelerIds };
-      await prisma.post.updateMany({
-        where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
-        data: { typeData: updated as unknown as Prisma.InputJsonValue },
+      // Locks the sibling row(s) FOR UPDATE and re-checks isTripClosed
+      // against the freshly-read typeData before writing — same
+      // lost-update race as `close` above (a concurrent close landing
+      // between this route's initial read and the write below must not be
+      // silently discarded).
+      await prisma.$transaction(async (tx) => {
+        const freshTypeData = await lockTripRows(tx, post);
+        if (isTripClosed(freshTypeData)) {
+          throw new PostTypeError('tripClosed');
+        }
+
+        // Against EVERY sibling's group — a traveler checks into all of them.
+        const siblings = await getTripSiblings(post, tx);
+        await assertTravelersAreMembers(
+          travelerIds,
+          siblings.map((sibling) => sibling.groupId),
+          tx
+        );
+
+        // Replaces the stored list wholesale — same "handler owns its own
+        // typeData" exception and sibling fan-out as `close` above.
+        const updated: PersistedTripTypeData = { ...freshTypeData, travelerUserIds: travelerIds };
+        await tx.post.updateMany({
+          where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
+          data: { typeData: updated as unknown as Prisma.InputJsonValue },
+        });
       });
       return;
     }

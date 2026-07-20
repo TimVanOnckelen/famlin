@@ -92,6 +92,9 @@ export function ServerSettingsPage() {
   const [testingLocalMedia, setTestingLocalMedia] = useState(false);
   const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null);
 
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
   useEffect(() => {
     Promise.all([
       api.getSettings().then((s) => {
@@ -149,6 +152,26 @@ export function ServerSettingsPage() {
       setLocalMediaTestResult('not_found');
     } finally {
       setTestingLocalMedia(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const { blob, filename } = await api.downloadExport();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setExportError(err.message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -310,6 +333,17 @@ export function ServerSettingsPage() {
                   </label>
                 </div>
                 <p className="hint">{t('serverSettings.storeUrlsHint')}</p>
+              </SettingsCard>
+            )}
+
+            {activeSection === 'general' && (
+              <SettingsCard icon="download" title={t('serverSettings.dataExport')} desc={t('serverSettings.dataExportDesc')}>
+                <div className="settings-test-row">
+                  <button type="button" className="secondary" onClick={handleExport} disabled={exporting}>
+                    {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}
+                  </button>
+                </div>
+                {exportError && <p className="test-err">{exportError}</p>}
               </SettingsCard>
             )}
 

@@ -15,12 +15,15 @@ function parseISODateParts(dateStr: string): [number, number, number] {
 // Derives a check-in's day number from the trip's startDate — day 1 =
 // startDate itself, counting whole UTC calendar days (not 24h periods), per
 // the backend contract ("Day numbers: derive client-side from startDate,
-// UTC date diff + 1").
+// UTC date diff + 1"). Clamped to a minimum of 1 (mirrors the backend's
+// Math.max(1, ...) in services/postTypes/trip.ts) since a check-in can land
+// on a UTC calendar day before startDate for a traveler east of UTC
+// checking in shortly after local midnight on the trip's first day.
 export function computeTripDayNumber(startDate: string, atIso: string): number {
   const start = Date.UTC(...parseISODateParts(startDate));
   const at = Date.UTC(...parseISODateParts(atIso));
   const diffDays = Math.round((at - start) / (24 * 60 * 60 * 1000));
-  return diffDays + 1;
+  return Math.max(1, diffDays + 1);
 }
 
 export interface TripCheckinEntry {

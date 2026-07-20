@@ -70,7 +70,8 @@
     "tripNotAuthor": "Alleen de auteur van de reis kan dit doen",
     "tripNotTraveler": "Alleen de reizigers van deze reis kunnen inchecken",
     "tripTravelerNotMember": "Elke reiziger moet lid zijn van deze groep",
-    "tripClosed": "Deze reis is afgesloten"
+    "tripClosed": "Deze reis is afgesloten",
+    "tripNotStarted": "Deze reis is nog niet begonnen"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

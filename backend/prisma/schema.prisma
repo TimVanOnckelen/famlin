@@ -234,6 +234,7 @@ model ChatMessage {
   editedAt      DateTime?
 
   @@index([groupId, createdAt])
+  @@index([replyToMessageId])
 }
 
 // One row per (group, user) — the timestamp of that user's last chat read.

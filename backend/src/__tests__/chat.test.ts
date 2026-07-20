@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
 import { prisma } from '../db.js';
@@ -210,6 +211,32 @@ describe('replying to a message', () => {
       kind: 'USER',
       content: 'original message to reply to',
       attachmentUrl: null,
+    });
+  });
+
+  it('yields replyTo.content === null (not "") when replying to an attachment-only message', async () => {
+    const attachmentUrl = `/uploads/${randomUUID()}.jpg`;
+    const original = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenA}` },
+      payload: { attachmentUrl },
+    });
+    expect(original.statusCode).toBe(200);
+    expect(original.json().content).toBeNull();
+    const originalId = original.json().id;
+
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/chat/groups/${chitchatGroupId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+      payload: { content: 'replying to your photo', replyToMessageId: originalId },
+    });
+    expect(reply.statusCode).toBe(200);
+    expect(reply.json().replyTo).toMatchObject({
+      id: originalId,
+      content: null,
+      attachmentUrl,
     });
   });
 

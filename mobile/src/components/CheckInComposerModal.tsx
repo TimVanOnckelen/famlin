@@ -21,6 +21,11 @@ import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 
+// Matches the server's cap on a check-in's photoUrls array (routes/posts.ts
+// interaction schema) — enforced here too so uploads never succeed only to
+// have the interaction request rejected afterwards.
+const MAX_CHECKIN_PHOTOS = 10;
+
 interface CheckInComposerModalProps {
   visible: boolean;
   tripTitle: string;
@@ -55,11 +60,13 @@ export function CheckInComposerModal({
     }
   }, [visible]);
 
+  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photoUrls.length;
+
   const { pick, uploading } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
-      selectionLimit: 6,
+      selectionLimit: Math.max(1, Math.min(6, remainingPhotoSlots)),
       quality: 0.8,
       videoMaxDuration: 120,
     },
@@ -71,7 +78,9 @@ export function CheckInComposerModal({
   async function pickPhotos() {
     const result = await pick();
     setPendingCount(0);
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls]);
+    // Defensive slice: selectionLimit already caps a single pick at the
+    // remaining slot count, but this guards against picks racing each other.
+    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_CHECKIN_PHOTOS));
   }
 
   function removePhoto(url: string) {
@@ -166,10 +175,12 @@ export function CheckInComposerModal({
                 <ActivityIndicator size="small" color={colors.white} />
               </View>
             ))}
-            <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
-              <Icon name="plus" size={20} color={colors.trip} />
-              <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>
-            </TouchableOpacity>
+            {photoUrls.length < MAX_CHECKIN_PHOTOS && (
+              <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
+                <Icon name="plus" size={20} color={colors.trip} />
+                <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>

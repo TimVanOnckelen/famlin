@@ -135,21 +135,25 @@ export const PostCard = React.memo(function PostCard({
   post: Post;
   showGroup?: boolean;
 }) {
+  // TRIP posts get a wholesale different card layout (gradient frame, its
+  // own hero source, a follow/diary CTA instead of the usual comment
+  // button) — delegate to the dedicated component before any of the
+  // UPDATE/MILESTONE-shaped hooks/rendering in DefaultPostCard run, the same
+  // precedent as web's PostCard. This wrapper itself calls no hooks, so
+  // branching here on post.type can never violate the rules of hooks.
+  if (post.type === 'TRIP') {
+    return <TripCard post={post} showGroup={showGroup} />;
+  }
+
+  return <DefaultPostCard post={post} showGroup={showGroup} />;
+});
+
+function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const isMilestone = post.type === 'MILESTONE';
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
-
-  // TRIP posts get a wholesale different card layout (gradient frame, its
-  // own hero source, a follow/diary CTA instead of the usual comment
-  // button) — bail out to the dedicated component before any of the
-  // UPDATE/MILESTONE-shaped rendering below runs. Hooks above this line
-  // (useState) still run unconditionally either way, keeping hook order
-  // stable across renders.
-  if (post.type === 'TRIP') {
-    return <TripCard post={post} showGroup={showGroup} />;
-  }
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
   const fullscreenUrls = allPhotoUrls;
@@ -378,7 +382,7 @@ export const PostCard = React.memo(function PostCard({
       />
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
   postCard: {

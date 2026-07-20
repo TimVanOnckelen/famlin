@@ -31,6 +31,13 @@ describe('computeTripDayNumber', () => {
   it('handles a check-in several days after the start', () => {
     expect(computeTripDayNumber('2026-07-03', '2026-07-14T14:20:00.000Z')).toBe(12);
   });
+
+  it('clamps to day 1 when the check-in\'s UTC date falls before startDate', () => {
+    // A check-in made at 00:30 local time in UTC+2 on the trip's start date
+    // is still 2026-07-02T22:30:00.000Z in UTC — one calendar day before
+    // startDate — which would otherwise compute to day 0.
+    expect(computeTripDayNumber('2026-07-03', '2026-07-02T22:30:00.000Z')).toBe(1);
+  });
 });
 
 describe('splitTripComments', () => {

@@ -31,6 +31,7 @@ import {
   createMediaPersonLinkBodySchema,
 } from '../types.js';
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
+import { buildExportArchive } from '../services/export.js';
 import { getT } from '../i18n/index.js';
 
 // Builds the invite link's origin from the request that reached us, since
@@ -860,5 +861,31 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
       throw err;
     }
+  });
+
+  // Full data export: a zip of all family content (users sans credentials,
+  // groups/members, posts, comments, reactions, favorites, chat messages) and
+  // the entire uploads directory — see services/export.ts for exactly what's
+  // deliberately left out (Setting, invites, tokens, notification history).
+  fastify.get('/export', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const archive = await buildExportArchive();
+    archive.on('error', (err) => {
+      request.log.error(err, 'export archive stream error');
+    });
+
+    const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`;
+    reply.header('content-type', 'application/zip');
+    reply.header('content-disposition', `attachment; filename="${filename}"`);
+
+    // finalize() returns a promise (archiver v8) — fire it after attaching
+    // the archive to the response so bytes start streaming immediately;
+    // a rejection is caught here in addition to the 'error' listener above
+    // so it can never surface as an unhandled rejection.
+    archive.finalize().catch((err) => {
+      request.log.error(err, 'export archive finalize error');
+    });
+    return reply.send(archive);
   });
 }
