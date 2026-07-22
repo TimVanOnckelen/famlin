@@ -1,0 +1,3 @@
+demo.famlin.app {
+	reverse_proxy famlin-backend:3000
+}

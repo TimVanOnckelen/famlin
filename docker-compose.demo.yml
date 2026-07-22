@@ -1,10 +1,15 @@
 # Demo instance: a single-container Famlin deployment with demo data and
-# read-only mode enabled. Intended for a small Google Cloud Compute Engine
-# e2-micro VM or any Docker host.
+# read-only mode enabled, fronted by Caddy for automatic HTTPS on
+# demo.famlin.app. Intended for a small VM (Oracle Cloud Always Free,
+# GCP e2-micro, or any other small Docker host).
 #
 # Usage on the demo server:
 #   docker compose -f docker-compose.demo.yml pull
 #   docker compose -f docker-compose.demo.yml up -d
+#
+# Caddyfile.demo (copied alongside this file as ./Caddyfile.demo) must be
+# present on the server; Caddy needs ports 80/443 reachable from the internet
+# and demo.famlin.app's DNS pointed at this host to issue a Let's Encrypt cert.
 #
 # The backend image is built and pushed as ghcr.io/timvanonckelen/famlin:demo
 # by .github/workflows/demo.yml.
@@ -46,12 +51,14 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Caddy is always in front of this instance, so requests always carry
+      # X-Forwarded-* headers correctly.
+      TRUST_PROXY: "true"
       READ_ONLY: "true"
     volumes:
       - famlin-demo-uploads:/app/uploads
-    ports:
-      - "3000:3000"
+    # No host port publish: only Caddy is exposed to the internet, reaching
+    # this container over the compose network by service name.
     # Run migrations, seed demo data once, then start the server.
     command: >
       sh -c "
@@ -60,6 +67,22 @@ services:
         node dist/server.js
       "
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: famlin-demo-caddy
+    restart: unless-stopped
+    depends_on:
+      - famlin-backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.demo:/etc/caddy/Caddyfile:ro
+      - famlin-demo-caddy-data:/data
+      - famlin-demo-caddy-config:/config
+
 volumes:
   famlin-demo-db-data:
   famlin-demo-uploads:
+  famlin-demo-caddy-data:
+  famlin-demo-caddy-config:

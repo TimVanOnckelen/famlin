@@ -2,7 +2,9 @@ name: Deploy demo instance
 
 # Builds and pushes a :demo image on every push to main, then redeploys it on
 # the configured demo server via SSH. The demo runs docker-compose.demo.yml
-# with READ_ONLY=true and seeded demo data.
+# with READ_ONLY=true and seeded demo data, fronted by Caddy for automatic
+# HTTPS on demo.famlin.app (Caddyfile.demo) — DNS for that domain must
+# already point at the demo server, and ports 80/443 must be reachable.
 #
 # Required repository secrets:
 #   DEMO_HOST          - hostname or IP of the demo server
@@ -10,9 +12,6 @@ name: Deploy demo instance
 #   DEMO_SSH_KEY       - private key for SSH (authorized on the demo server)
 #   DEMO_JWT_SECRET    - JWT secret used by the demo instance
 #   DEMO_DB_PASSWORD   - Postgres password used by the demo instance
-#
-# Optional repository secrets:
-#   DEMO_TRUST_PROXY   - set to "true" if the demo sits behind a reverse proxy
 
 on:
   push:
@@ -86,22 +85,21 @@ jobs:
             StrictHostKeyChecking no
           EOF
 
-      - name: Copy compose file to demo server
+      - name: Copy compose file and Caddyfile to demo server
         if: steps.check.outputs.configured == 'true'
         run: |
           scp docker-compose.demo.yml demo:~/docker-compose.demo.yml
+          scp Caddyfile.demo demo:~/Caddyfile.demo
 
       - name: Write demo environment file
         if: steps.check.outputs.configured == 'true'
         env:
           POSTGRES_PASSWORD: ${{ secrets.DEMO_DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.DEMO_JWT_SECRET }}
-          TRUST_PROXY: ${{ secrets.DEMO_TRUST_PROXY || 'false' }}
         run: |
           ssh demo "cat > ~/.env.famlin-demo" <<EOF
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
-            TRUST_PROXY=${TRUST_PROXY}
           EOF
 
       - name: Pull and restart demo services
