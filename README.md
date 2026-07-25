@@ -11,6 +11,8 @@
 [![Last commit](https://img.shields.io/github/last-commit/TimVanOnckelen/famlin)](https://github.com/TimVanOnckelen/famlin/commits/main)
 [![GitHub stars](https://img.shields.io/github/stars/TimVanOnckelen/famlin?style=flat)](https://github.com/TimVanOnckelen/famlin/stargazers)
 
+> 🤖 **AI-Assisted Project.** This codebase is developed with the assistance of AI. Code generation, architecture design, and development workflows leverage AI tooling.
+
 > ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
 
 Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend, an Expo React Native mobile app, and a desktop-focused web app.
@@ -177,7 +179,9 @@ Famlin supports login via any standards-compliant OpenID Connect provider (Googl
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please read:
+- [CONTRIBUTING.md](CONTRIBUTING.md) — general contribution guidelines
+- [AI-GUIDELINES.md](AI-GUIDELINES.md) — how to responsibly use AI when working on Famlin
 
 ## Troubleshooting
 
