@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { fetchChatUnreadCounts } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import './BottomNav.css';
 
 type BottomNavTab = 'feed' | 'photos' | 'chat' | 'profile';
@@ -42,15 +43,7 @@ export function BottomNav({
         className={`bottom-nav-item${active === 'feed' ? ' bottom-nav-item-active' : ''}`}
         onClick={onFeed}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M3 12L12 3l9 9M5 10v10h5v-6h4v6h5V10"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon name="home" size={22} />
         <span>{t('tabs.feed')}</span>
       </button>
 
@@ -59,12 +52,7 @@ export function BottomNav({
           className={`bottom-nav-item${active === 'photos' ? ' bottom-nav-item-active' : ''}`}
           onClick={onPhotos ?? (() => {})}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          </svg>
+          <Icon name="grid" size={22} />
           <span>{t('tabs.photos')}</span>
         </button>
       )}
@@ -75,15 +63,7 @@ export function BottomNav({
           onClick={onChat ?? (() => {})}
         >
           <span className="bottom-nav-icon-wrap">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Icon name="message-square" size={22} />
             {hasUnreadChat && <span className="bottom-nav-badge" aria-hidden />}
           </span>
           <span>{t('tabs.chat')}</span>
@@ -94,15 +74,7 @@ export function BottomNav({
         className={`bottom-nav-item${active === 'profile' ? ' bottom-nav-item-active' : ''}`}
         onClick={onProfile}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon name="user" size={22} />
         <span>{t('tabs.profile')}</span>
       </button>
 
@@ -113,9 +85,7 @@ export function BottomNav({
           aria-label={t('feed.newPost')}
           title={t('feed.newPost')}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          </svg>
+          <Icon name="plus" size={24} color="white" strokeWidth={2.5} />
         </button>
       )}
     </nav>

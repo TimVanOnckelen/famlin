@@ -50,11 +50,12 @@ tags:
     description: |
       Comments on a post. Replies are one level deep via `parentId`. A comment
       can be pinned to a single photo/video of the post via `assetUrl`; replies
-      inherit their parent's pin. A comment can also carry its own photo/video
-      via `attachmentUrl` — a file the commenter uploaded (`POST
+      inherit their parent's pin. A comment can also carry its own photos/videos
+      via `attachmentUrls` (up to 10) — files the commenter uploaded (`POST
       /api/uploads`) as part of the comment itself, independent of any
-      pinning — and `content` is then optional (a comment can be a photo or
-      video with no text).
+      pinning — and `content` is then optional (a comment can be photos or
+      videos with no text). `attachmentUrl` is the legacy single-attachment
+      field, still sent on every response as `attachmentUrls[0]`.
   - name: Reactions
     description: |
       Emoji reactions on posts and comments — one reaction per user per
@@ -484,6 +485,10 @@ paths:
         a member of is a `403`. A post shared with several of your groups (see
         `sharedWithGroups` on `POST /api/posts`) is deduplicated — you see it
         once, not once per shared group.
+
+        `type` narrows the same list to a single post type — e.g.
+        `type=ALBUM` lists just the shared photo albums in those groups,
+        without paging through the whole feed to find them.
       parameters:
         - name: groupIds
           in: query
@@ -494,6 +499,13 @@ paths:
           in: query
           schema: { type: string }
           description: Legacy single-group filter.
+        - name: type
+          in: query
+          schema: { type: string }
+          description: >-
+            Return only posts of this type (`UPDATE`, `MILESTONE`, `POLL`,
+            `TRIP`, `ALBUM`). An unrecognized type is a `400`.
+          example: ALBUM
         - $ref: '#/components/parameters/cursor'
         - $ref: '#/components/parameters/take'
       responses:
@@ -503,6 +515,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostsPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -982,9 +996,13 @@ paths:
         `mentionedUserIds` are ids resolved from the group member list for
         `@name` mentions — the server re-validates each id is a current member
         of the post's group before notifying them. A reply (`parentId`)
-        inherits its parent's `assetUrl` pin. `content` and `attachmentUrl` are
-        each optional, but at least one is required — a comment can be a photo
-        or video with no text.
+        inherits its parent's `assetUrl` pin. `content`, `attachmentUrl` and
+        `attachmentUrls` are each optional, but at least one is required — a
+        comment can be photos or videos with no text.
+
+        Send `attachmentUrls` for a comment carrying up to 10 photos/videos;
+        `attachmentUrl` is the legacy single-attachment field and is ignored
+        when `attachmentUrls` is present. Duplicate paths are dropped.
       parameters:
         - name: postId
           in: path
@@ -1009,9 +1027,18 @@ paths:
                 attachmentUrl:
                   type: string
                   description: >-
-                    A photo/video path returned by `POST /api/uploads`, uploaded by the
-                    commenter as part of this comment itself — distinct from `assetUrl`,
-                    which instead pins the comment to an existing asset already on the post.
+                    Legacy single-attachment field: a photo/video path returned by
+                    `POST /api/uploads`, uploaded by the commenter as part of this comment
+                    itself — distinct from `assetUrl`, which instead pins the comment to an
+                    existing asset already on the post. Ignored when `attachmentUrls` is sent.
+                attachmentUrls:
+                  type: array
+                  maxItems: 10
+                  items: { type: string }
+                  description: >-
+                    Photo/video paths returned by `POST /api/uploads`, uploaded by the
+                    commenter as part of this comment itself. Takes precedence over
+                    `attachmentUrl`.
                 mentionedUserIds:
                   type: array
                   maxItems: 20
@@ -2601,8 +2628,15 @@ components:
           type: string
           nullable: true
           description: >-
-            A photo/video the commenter uploaded as part of this comment itself
-            (`null` if the comment has none) — distinct from `assetUrl` above.
+            Legacy single-attachment field, always `attachmentUrls[0]` (`null` if the
+            comment has none) — kept so clients built before multi-attachment comments
+            still render one. Distinct from `assetUrl` above.
+        attachmentUrls:
+          type: array
+          items: { type: string }
+          description: >-
+            Every photo/video the commenter uploaded as part of this comment itself
+            (empty if none) — distinct from `assetUrl` above.
         metadata:
           type: object
           nullable: true

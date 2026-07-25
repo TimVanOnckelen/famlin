@@ -189,6 +189,7 @@ export interface Comment {
     parentId?: string | null;
     assetUrl?: string | null;
     attachmentUrl?: string | null;
+    attachmentUrls?: string[] | null;
     metadata?: TripCheckinMetadata | AlbumPhotoMetadata | null;
     likeCount: number;
     likedByMe: boolean;

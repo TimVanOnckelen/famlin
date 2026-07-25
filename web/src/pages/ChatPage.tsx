@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  api,
+  uploadFiles,
   fetchGroups,
   fetchGroupMembers,
   fetchChatMessages,
@@ -14,6 +14,7 @@ import {
   ChatMessagesPage,
   User,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { BottomNav } from '@/components/BottomNav';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -22,13 +23,11 @@ import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './ChatPage.css';
 
-// Mirrors CommentsSection.tsx's uploadCommentAttachment exactly — same
-// endpoint, same "first url of the batch" contract.
+// Same endpoint as every other composer, same "first url of the batch"
+// contract as CommentsSection.tsx.
 async function uploadChatAttachment(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post<{ urls: string[] }>('/uploads', formData);
-  return response.data.urls[0];
+  const urls = await uploadFiles([file]);
+  return urls[0];
 }
 
 function dateKey(iso: string): string {
@@ -205,15 +204,7 @@ export function ChatPage({
     <div className="chat-shell">
       <main className="chat-column">
         <button className="chat-back" onClick={onBack}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M15 5l-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Icon name="chevron-left" size={16} strokeWidth={2.5} />
           {t('chat.backToFeed')}
         </button>
 
@@ -223,7 +214,9 @@ export function ChatPage({
 
         {groupsQuery.isSuccess && chatGroups.length === 0 && (
           <div className="chat-empty">
-            <div className="chat-empty-emoji">💬</div>
+            <div className="chat-empty-icon" aria-hidden>
+              <Icon name="message-square" size={40} strokeWidth={1.5} />
+            </div>
             <p>{t('chat.noChatGroups')}</p>
           </div>
         )}
@@ -336,7 +329,7 @@ export function ChatPage({
                         onClick={clearAttachment}
                         aria-label={t('chat.removeAttachment')}
                       >
-                        ×
+                        <Icon name="x" size={12} strokeWidth={2.5} />
                       </button>
                     </div>
                   )}
@@ -354,11 +347,7 @@ export function ChatPage({
                       onClick={() => fileInputRef.current?.click()}
                       aria-label={t('chat.addAttachment')}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
-                        <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
-                        <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                      </svg>
+                      <Icon name="image" size={18} />
                     </button>
                     <input
                       className="chat-input"
@@ -373,15 +362,7 @@ export function ChatPage({
                       disabled={(!draft.trim() && !attachmentFile) || sendMutation.isPending}
                       aria-label={t('chat.send')}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <Icon name="send" size={18} />
                     </button>
                   </div>
                 </form>

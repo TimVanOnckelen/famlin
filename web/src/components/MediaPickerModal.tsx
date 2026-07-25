@@ -8,6 +8,7 @@ import {
   getMediaAlbumAssets,
   getUploadUrl,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import './MediaPickerModal.css';
 
@@ -153,8 +154,16 @@ export function MediaPickerModal({
                     aria-pressed={isSelected}
                   >
                     <ShimmerImage src={getUploadUrl(asset.thumbnailUrl)} loading="lazy" />
-                    {asset.type === 'VIDEO' && <span className="media-picker-video-badge">▶</span>}
-                    {isSelected && <span className="media-picker-check">✓</span>}
+                    {asset.type === 'VIDEO' && (
+                      <span className="media-picker-video-badge">
+                        <Icon name="play" size={11} filled />
+                      </span>
+                    )}
+                    {isSelected && (
+                      <span className="media-picker-check">
+                        <Icon name="check" size={14} strokeWidth={3} />
+                      </span>
+                    )}
                   </button>
                 );
               })}

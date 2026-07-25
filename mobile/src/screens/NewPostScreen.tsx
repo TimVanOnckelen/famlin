@@ -18,7 +18,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
+import { Icon, IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Group, PostType } from '@/types';
 import { fetchGroups, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client';
@@ -38,6 +38,16 @@ import {
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
+// Feather names, not emoji — same reasoning as POST_TYPE_ICON below. The chip
+// label itself is what gets stored as Post.milestoneTag, so it stays plain
+// text and the icon is purely the chip's own decoration.
+const MILESTONE_TAG_ICON: Record<string, IconName> = {
+  birthday: 'gift',
+  birth: 'star',
+  anniversary: 'heart',
+  graduation: 'award',
+  custom: 'edit-3',
+};
 const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM'] as const;
 const MIN_POLL_OPTIONS = 2;
 const MAX_POLL_OPTIONS = 10;
@@ -46,12 +56,21 @@ const MAX_POLL_OPTIONS = 10;
 const TRIP_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 // Icon/accent used by the "what do you want to share?" type-chooser step.
-const POST_TYPE_ICON: Record<string, string> = {
-  UPDATE: '📝',
-  MILESTONE: '🎂',
-  POLL: '🗳️',
-  TRIP: '🧳',
-  ALBUM: '🖼️',
+// Feather names, not emoji: an emoji is drawn by the platform's own font, so
+// the same chooser looks different on iOS, Android and web — see Icon.tsx.
+const POST_TYPE_ICON: Record<string, IconName> = {
+  UPDATE: 'edit-3',
+  MILESTONE: 'gift',
+  POLL: 'bar-chart-2',
+  TRIP: 'briefcase',
+  ALBUM: 'image',
+};
+const POST_TYPE_ICON_COLOR: Record<string, string> = {
+  UPDATE: colors.accent,
+  MILESTONE: colors.milestoneText,
+  POLL: colors.primary,
+  TRIP: colors.trip,
+  ALBUM: colors.primary,
 };
 const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
@@ -371,7 +390,7 @@ export function NewPostScreen() {
                     }}
                   >
                     <View style={[styles.typeRowIcon, { backgroundColor: POST_TYPE_ICON_BG[option] }]}>
-                      <Text style={styles.typeRowEmoji}>{POST_TYPE_ICON[option]}</Text>
+                      <Icon name={POST_TYPE_ICON[option]} size={22} color={POST_TYPE_ICON_COLOR[option]} />
                     </View>
                     <View style={styles.typeRowText}>
                       <Text style={styles.typeRowTitle}>{t(`newPost.postType.${option.toLowerCase()}`)}</Text>
@@ -424,7 +443,7 @@ export function NewPostScreen() {
             onPress={() => setComposerStep('type')}
           >
             <View style={[styles.typeChipIcon, { backgroundColor: chipStyle.iconBg }]}>
-              <Text style={styles.typeChipEmoji}>{POST_TYPE_ICON[postType]}</Text>
+              <Icon name={POST_TYPE_ICON[postType]} size={14} color={chipStyle.text} />
             </View>
             <Text style={[styles.typeChipLabel, { color: chipStyle.text }]}>
               {t(`newPost.postType.${postType.toLowerCase()}`)}
@@ -651,6 +670,11 @@ export function NewPostScreen() {
                       setSelectedTag(tag);
                     }}
                   >
+                    <Icon
+                      name={MILESTONE_TAG_ICON[tagKey]}
+                      size={14}
+                      color={active ? colors.milestoneText : colors.textMuted}
+                    />
                     <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
                       {tag}
                     </Text>
@@ -664,6 +688,11 @@ export function NewPostScreen() {
                   setSelectedTag(null);
                 }}
               >
+                <Icon
+                  name={MILESTONE_TAG_ICON.custom}
+                  size={14}
+                  color={isCustomTag ? colors.milestoneText : colors.textMuted}
+                />
                 <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
                   {t('newPost.milestoneTags.custom')}
                 </Text>
@@ -908,9 +937,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeRowEmoji: {
-    fontSize: 22,
-  },
   typeRowText: {
     flex: 1,
   },
@@ -1044,9 +1070,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeChipEmoji: {
-    fontSize: 14,
-  },
   typeChipLabel: {
     fontFamily: 'Nunito_800ExtraBold',
     fontSize: 15,
@@ -1154,6 +1177,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 100,

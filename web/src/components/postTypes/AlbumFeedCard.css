@@ -54,7 +54,7 @@
 }
 
 .album-card-hero-placeholder {
-  font-size: 40px;
+  color: var(--fam-primary);
 }
 
 .album-card-collage-tile {

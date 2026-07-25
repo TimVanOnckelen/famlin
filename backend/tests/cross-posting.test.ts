@@ -195,6 +195,35 @@ describe('cross-posting', () => {
     expect(remaining).toBe(0);
   });
 
+  it('PATCH by the author replaces the photos on every sibling', async () => {
+    const author = await createUser();
+    const groupA = await createGroupWithMember(author);
+    const groupB = await createGroupWithMember(author);
+    const assetPath = () => `/uploads/${randomUUID()}.jpg`;
+    const [keep, drop, added] = [assetPath(), assetPath(), assetPath()];
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'photos', uploadedAssetUrls: [keep, drop] },
+    });
+    const postId = create.json().id;
+
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/api/posts/${postId}`,
+      headers: authHeader(author),
+      payload: { uploadedAssetUrls: [keep, added] },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json().uploadedAssetUrls).toEqual([keep, added]);
+
+    const rows = await prisma.post.findMany({ where: { groupId: { in: [groupA.id, groupB.id] } } });
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.uploadedAssetUrls.join() === [keep, added].join())).toBe(true);
+  });
+
   it('notifies each recipient exactly once even when they belong to every target group', async () => {
     const author = await createUser();
     const recipientBoth = await createUser();

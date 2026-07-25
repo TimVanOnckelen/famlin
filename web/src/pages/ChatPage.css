@@ -69,8 +69,8 @@
   margin: 0;
 }
 
-.chat-empty-emoji {
-  font-size: 44px;
+.chat-empty-icon {
+  color: var(--fam-primary);
   line-height: 1;
 }
 
@@ -392,13 +392,15 @@
   position: absolute;
   top: -6px;
   right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
   border-radius: 50%;
   border: none;
   background: rgba(0, 0, 0, 0.65);
   color: #fff;
-  font-size: 13px;
   line-height: 1;
   cursor: pointer;
 }

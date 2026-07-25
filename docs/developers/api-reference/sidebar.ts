@@ -572,6 +572,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/postalbum",
+          label: "PostAlbum",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/comment",
           label: "Comment",
           className: "schema",

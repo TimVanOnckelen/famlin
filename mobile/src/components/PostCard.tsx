@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +35,10 @@ function getPersonAvatarColor(label: string) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
+// Past this many photos the collage becomes a horizontally scrolling gallery
+// instead, matching the post detail screen and the comment cards.
+const COLLAGE_MAX_PHOTOS = 4;
+
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
 // Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
@@ -59,6 +63,25 @@ function PhotoCollage({
           </TouchableOpacity>
         ))}
       </View>
+    );
+  }
+
+  // More photos than the collage can show at once: scroll them sideways so
+  // every one is reachable from the card instead of hiding behind a "+N".
+  if (urls.length > COLLAGE_MAX_PHOTOS) {
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.collageGallery}>
+        {urls.map((url, index) => (
+          <TouchableOpacity
+            key={url}
+            activeOpacity={0.95}
+            style={styles.collageGalleryTile}
+            onPress={() => onPressPhoto(index)}
+          >
+            <MediaThumbnail url={url} style={styles.collageImage} />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     );
   }
 
@@ -225,7 +248,10 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           <View style={styles.heroTopLeft} pointerEvents="none">
             {isMilestone && (
               <View style={styles.milestoneBadge}>
-                <Text style={styles.milestoneBadgeText}>{t('feed.milestoneBadge')}</Text>
+                <View style={styles.milestoneBadgePill}>
+                  <Icon name="gift" size={12} color={colors.milestoneText} />
+                  <Text style={styles.milestoneBadgeText}>{t('feed.milestoneBadge')}</Text>
+                </View>
               </View>
             )}
             <View style={styles.authorChip}>
@@ -264,7 +290,10 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           <>
             {isMilestone && (
               <View style={styles.milestoneBadgeRow}>
-                <Text style={styles.milestoneBadgeText}>{t('feed.milestoneBadge')}</Text>
+                <View style={styles.milestoneBadgePill}>
+                  <Icon name="gift" size={12} color={colors.milestoneText} />
+                  <Text style={styles.milestoneBadgeText}>{t('feed.milestoneBadge')}</Text>
+                </View>
               </View>
             )}
 
@@ -486,6 +515,14 @@ const styles = StyleSheet.create({
     height: 280,
     gap: 2,
   },
+  collageGallery: {
+    height: 280,
+    gap: 2,
+  },
+  collageGalleryTile: {
+    width: 240,
+    height: '100%',
+  },
   collageTileFlex: {
     flex: 1,
   },
@@ -524,15 +561,20 @@ const styles = StyleSheet.create({
   milestoneBadgeRow: {
     marginBottom: 10,
   },
-  milestoneBadgeText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 11,
-    color: colors.milestoneText,
+  milestoneBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.milestone,
     paddingHorizontal: 13,
     paddingVertical: 4,
     borderRadius: 100,
     alignSelf: 'flex-start',
+  },
+  milestoneBadgeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    color: colors.milestoneText,
     letterSpacing: 0.3,
   },
   authorRow: {

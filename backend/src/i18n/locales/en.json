@@ -45,6 +45,8 @@
     "cannotRemoveLastAdmin": "Cannot remove the last remaining admin",
     "parentCommentNotFound": "Parent comment not found",
     "assetNotFoundOnPost": "Asset not found on this post",
+    "commentContentRequired": "A comment needs text or at least one photo",
+    "commentAttachmentsNotEditable": "The photos on this comment can't be edited here",
     "setupAlreadyComplete": "Setup has already been completed",
     "immichNotConfigured": "Immich is not configured",
     "immichUnreachable": "Could not reach the Immich server with these settings",

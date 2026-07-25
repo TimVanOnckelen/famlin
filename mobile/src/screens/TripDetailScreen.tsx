@@ -340,7 +340,7 @@ function TripHeader({
           <MediaThumbnail url={getUploadUrl(coverUrl)} style={styles.cover} />
         ) : (
           <View style={[styles.cover, styles.coverPlaceholder]}>
-            <Text style={styles.coverPlaceholderEmoji}>🧳</Text>
+            <Icon name="briefcase" size={48} color={colors.trip} />
           </View>
         )}
         {trip.closed && <View style={styles.coverDim} pointerEvents="none" />}
@@ -348,6 +348,7 @@ function TripHeader({
 
       <View style={styles.card}>
         <View style={trip.closed ? styles.closedBadge : styles.activeBadge}>
+          <Icon name="briefcase" size={12} color={trip.closed ? colors.tripDark : colors.white} />
           <Text style={trip.closed ? styles.closedBadgeText : styles.activeBadgeText}>
             {trip.closed ? t('trip.detail.closedBadge') : t('trip.detail.activeBadge', { day: trip.dayNumber ?? 1 })}
           </Text>
@@ -401,9 +402,12 @@ function TripHeader({
 
       <View style={styles.tripCommentsSection}>
         <TouchableOpacity style={styles.tripCommentsHeader} onPress={onToggleTripComments}>
-          <Text style={styles.tripCommentsTitle}>
-            {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
-          </Text>
+          <View style={styles.tripCommentsTitleRow}>
+            <Icon name="message-square" size={14} color={colors.textMuted} />
+            <Text style={styles.tripCommentsTitle}>
+              {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
+            </Text>
+          </View>
           <Icon name={tripCommentsExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textMuted} />
         </TouchableOpacity>
         {tripCommentsExpanded &&
@@ -458,9 +462,10 @@ function TripCommentRow({
           <Text style={styles.tripCommentAuthor}>{comment.author.name}</Text> · {comment.content}
         </Text>
         <View style={styles.tripCommentActions}>
-          <TouchableOpacity onPress={onLike}>
+          <TouchableOpacity onPress={onLike} style={styles.tripCommentLike}>
+            {comment.likeCount > 0 && <Icon name="heart" size={13} color={colors.textMuted} />}
             <Text style={styles.tripCommentAction}>
-              {comment.likeCount > 0 ? `❤️ ${comment.likeCount}` : t('postDetail.like')}
+              {comment.likeCount > 0 ? `${comment.likeCount}` : t('postDetail.like')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onReply}>
@@ -495,7 +500,7 @@ function TripEmptyState({
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconCircle}>
-        <Text style={styles.emptyIconEmoji}>🧳</Text>
+        <Icon name="briefcase" size={28} color={colors.trip} />
       </View>
       <Text style={styles.emptyTitle}>{t('trip.detail.emptyTitle')}</Text>
       <Text style={styles.emptyDescription}>{t('trip.detail.emptyDescription', { name: authorName })}</Text>
@@ -581,6 +586,7 @@ function CheckinTimelineItem({
 
         <View style={styles.timelineFooter}>
           <TouchableOpacity onPress={onLike} style={styles.timelineLikeButton}>
+            <Icon name="heart" size={13} color={colors.textMuted} />
             <Text style={styles.timelineLikeText}>{t('trip.detail.likesLabel', { count: comment.likeCount })}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onToggleExpanded}>
@@ -633,9 +639,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  coverPlaceholderEmoji: {
-    fontSize: 48,
-  },
   coverDim: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(60,60,65,0.2)',
@@ -653,6 +656,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     alignSelf: 'flex-start',
     backgroundColor: colors.trip,
     borderRadius: 100,
@@ -665,6 +671,9 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   closedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     alignSelf: 'flex-start',
     borderWidth: 1.5,
     borderColor: colors.tripBorder,
@@ -759,6 +768,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  tripCommentsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   tripCommentsTitle: {
     fontFamily: 'Nunito_700Bold',
     fontSize: 13.5,
@@ -792,6 +806,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 14,
     marginTop: 3,
+  },
+  tripCommentLike: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   tripCommentAction: {
     fontFamily: 'Nunito_700Bold',
@@ -923,7 +942,11 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 8,
   },
-  timelineLikeButton: {},
+  timelineLikeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   timelineLikeText: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13.5,
@@ -975,9 +998,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tripTint,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyIconEmoji: {
-    fontSize: 28,
   },
   emptyTitle: {
     fontFamily: 'Nunito_800ExtraBold',

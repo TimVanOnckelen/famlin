@@ -102,8 +102,8 @@
   margin: 0;
 }
 
-.feed-empty-emoji {
-  font-size: 44px;
+.feed-empty-icon {
+  color: var(--fam-primary);
   line-height: 1;
 }
 

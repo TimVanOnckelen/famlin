@@ -1,0 +1,38 @@
+---
+id: postalbum
+title: "PostAlbum"
+description: "The enriched, read-time view of an `ALBUM` post's `typeData` — computed"
+sidebar_label: "PostAlbum"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"title":"string","coverPhotoUrl":"string","closed":true,"closedAt":"2024-07-29T15:51:28.071Z","photoCount":0,"contributorCount":0,"contributors":[{"id":"string","name":"string","avatarUrl":"string"}],"collagePhotoUrls":["string"],"latestContribution":{"commentId":"string","contributorName":"string","createdAt":"2024-07-29T15:51:28.071Z"}}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostAlbum"}
+>
+</Heading>
+
+
+
+The enriched, read-time view of an `ALBUM` post's `typeData` — computed
+fresh on every read. An album's photos are its `Comment` rows with
+`metadata.kind: "album_photo"` (see `Comment` below); this object
+aggregates them rather than requiring a second fetch. The full photo
+set lives on those comments' `metadata.photoUrls` — fetch the post's
+comments to render the whole grid.
+
+
+<Schema
+  {...require("./postalbum.Schema.json")}
+>
+  
+</Schema>
+            

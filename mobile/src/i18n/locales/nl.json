@@ -90,7 +90,7 @@
     "viewMembers": "Groepsleden bekijken",
     "viewFavorites": "Favorieten bekijken",
     "favorite": "Favoriet",
-    "milestoneBadge": "🎂 MIJLPAAL",
+    "milestoneBadge": "MIJLPAAL",
     "comments_one": "{{count}} reactie",
     "comments_other": "{{count}} reacties",
     "onThisDayTitle": "Op deze dag",
@@ -99,12 +99,12 @@
     "peopleInPost": "Personen herkend in dit bericht",
     "sharedWithGroups": "Gedeeld met {{names}}",
     "trip": {
-      "activeBadge": "🧳 Dag {{day}} · onderweg",
+      "activeBadge": "Dag {{day}} · onderweg",
       "lastStopLabel": "Laatste stop:",
       "stopsSoFar_one": "{{count}} stop tot nu toe · {{author}}",
       "stopsSoFar_other": "{{count}} stops tot nu toe · {{author}}",
       "followCta": "Volg de reis →",
-      "closedBadge": "🧳 REIS · AFGESLOTEN",
+      "closedBadge": "REIS · AFGESLOTEN",
       "closedStats": "{{days}} dagen · {{stops}} stops · {{photos}} foto's",
       "authorDateRange": "{{author}} · {{range}}",
       "dateRangeSameMonth": "{{startDay}} t/m {{endDay}} {{month}}",
@@ -113,8 +113,8 @@
       "morePhotosOverlay": "+{{count}}"
     },
     "album": {
-      "badge": "🖼️ GEDEELD ALBUM",
-      "closedBadge": "🖼️ ALBUM · AFGESLOTEN",
+      "badge": "GEDEELD ALBUM",
+      "closedBadge": "ALBUM · AFGESLOTEN",
       "stats": "{{photos}} foto's · {{contributors}} bijdragers",
       "contributedBy_one": "Toegevoegd door {{name}}",
       "contributedBy_other": "Toegevoegd door {{name}} +{{others}} meer",
@@ -170,7 +170,7 @@
     },
     "chooserTitle": "Wat wil je delen?",
     "noPostTypesForSelection": "Deze families hebben geen gemeenschappelijk berichttype — wijzig de geselecteerde families om te kunnen plaatsen.",
-    "milestoneTitle": "🎂 Dit is een mijlpaal",
+    "milestoneTitle": "Dit is een mijlpaal",
     "milestoneSubtitle": "Bijv. verjaardag, geboorte, jubileum",
     "alerts": {
       "noGroupSelected": "Geen groep geselecteerd",
@@ -180,11 +180,11 @@
       "uploadFailed": "Upload mislukt"
     },
     "milestoneTags": {
-      "birthday": "🎂 Verjaardag",
-      "birth": "👶 Geboorte",
-      "anniversary": "💍 Jubileum",
-      "graduation": "🎓 Diploma",
-      "custom": "✏️ Anders",
+      "birthday": "Verjaardag",
+      "birth": "Geboorte",
+      "anniversary": "Jubileum",
+      "graduation": "Diploma",
+      "custom": "Anders",
       "customPlaceholder": "Geef deze mijlpaal een naam..."
     },
     "location": {
@@ -239,7 +239,7 @@
   "postDetail": {
     "title": "Bericht",
     "postedInGroup": "in {{group}} · {{time}}",
-    "milestoneBadge": "🎂 MIJLPAAL",
+    "milestoneBadge": "MIJLPAAL",
     "commentsHeader": "Reacties · {{count}}",
     "commentPlaceholder": "Schrijf een reactie...",
     "replyPlaceholder": "Schrijf een antwoord...",
@@ -259,12 +259,16 @@
     "deleteCommentConfirmMessage": "Dit kan niet ongedaan worden gemaakt.",
     "editPlaceholder": "Bewerk je bericht...",
     "addAttachment": "Voeg een foto of video toe",
+    "addPhotos": "Foto's toevoegen",
     "removeAttachment": "Bijlage verwijderen",
     "viewAttachment": "Bijlage bekijken",
     "alerts": {
       "editFailed": "Wijzigingen konden niet worden opgeslagen",
       "deleteFailed": "Verwijderen mislukt"
-    }
+    },
+    "photoCount_one": "{{count}} foto",
+    "photoCount_other": "{{count}} foto’s",
+    "deletePhotoCommentsConfirmMessage": "Hiermee verwijder je alle {{count}} foto’s in deze reactie. Dit kan niet ongedaan worden gemaakt."
   },
   "reactions": {
     "title": "Wie reageerde"
@@ -291,14 +295,16 @@
     "sendFailed": "Bericht kon niet worden verzonden",
     "replyingTo": "Aan het antwoorden op {{name}}",
     "cancelReply": "Antwoord annuleren",
-    "attachmentPhoto": "📷 Foto",
-    "attachmentVideo": "🎥 Video"
+    "attachmentPhoto": "Foto",
+    "attachmentVideo": "Video"
   },
   "photos": {
     "title": "Foto's",
     "emptyTitle": "Nog geen foto's.",
     "emptySubtitle": "Foto's van je familie zullen hier verschijnen.",
-    "allPeople": "Iedereen"
+    "allPeople": "Iedereen",
+    "albumsTitle": "Gedeelde albums",
+    "allPhotosTitle": "Alle foto's"
   },
   "profile": {
     "title": "Profiel",
@@ -353,20 +359,20 @@
   },
   "trip": {
     "detail": {
-      "activeBadge": "🧳 ACTIEF · DAG {{day}}",
-      "closedBadge": "🧳 AFGESLOTEN",
+      "activeBadge": "ACTIEF · DAG {{day}}",
+      "closedBadge": "AFGESLOTEN",
       "sinceLabel": "{{author}} · sinds {{date}}",
       "statsStops": "stops",
       "statsPhotos": "foto's",
       "statsDays": "dagen",
-      "tripCommentsSectionTitle_one": "💬 Reacties op de reis · {{count}}",
-      "tripCommentsSectionTitle_other": "💬 Reacties op de reis · {{count}}",
+      "tripCommentsSectionTitle_one": "Reacties op de reis · {{count}}",
+      "tripCommentsSectionTitle_other": "Reacties op de reis · {{count}}",
       "addCheckinButton": "+ Check-in",
       "timelineLabelActive": "Tijdlijn · nieuwste eerst",
       "timelineLabelClosed": "Dagboek · oudste eerst",
       "dayTimeLabel": "Dag {{day}} · {{time}}",
       "dayDateLabel": "Dag {{day}} · {{date}}",
-      "likesLabel": "❤️ {{count}}",
+      "likesLabel": "{{count}}",
       "commentsCountButton_one": "{{count}} reactie",
       "commentsCountButton_other": "{{count}} reacties",
       "closingLine": "Reis afgesloten door {{author}} · {{date}}",
@@ -414,14 +420,14 @@
   },
   "album": {
     "detail": {
-      "badge": "🖼️ GEDEELD ALBUM",
-      "closedBadge": "🖼️ AFGESLOTEN",
+      "badge": "GEDEELD ALBUM",
+      "closedBadge": "AFGESLOTEN",
       "statsPhotos": "foto's",
       "statsContributors": "bijdragers",
       "contributedBy": "Met {{names}}",
       "addPhotosCta": "Foto's toevoegen",
       "closeCta": "Afsluiten",
-      "commentsSectionTitle": "💬 Reacties",
+      "commentsSectionTitle": "Reacties",
       "emptyTitle": "Nog geen foto's",
       "emptyDescription": "Voeg als eerste foto's toe aan dit album.",
       "emptyClosedDescription": "Dit album werd afgesloten voordat er foto's werden toegevoegd."

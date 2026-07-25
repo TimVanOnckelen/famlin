@@ -68,6 +68,7 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
       <View style={styles.body}>
         <View style={styles.badgeRow}>
           <View style={album.closed ? styles.closedBadge : styles.badge}>
+            <Icon name="image" size={11} color={album.closed ? colors.primaryDark : colors.white} />
             <Text style={album.closed ? styles.closedBadgeText : styles.badgeText}>
               {album.closed ? t('feed.album.closedBadge') : t('feed.album.badge')}
             </Text>
@@ -143,7 +144,7 @@ function AlbumCollage({
   if (urls.length === 0) {
     return (
       <View style={[styles.collageRow, styles.heroPlaceholder]}>
-        <Text style={styles.heroPlaceholderEmoji}>🖼️</Text>
+        <Icon name="image" size={40} color={colors.primary} />
       </View>
     );
   }
@@ -192,9 +193,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroPlaceholderEmoji: {
-    fontSize: 40,
-  },
   collageRow: {
     flexDirection: 'row',
     height: 200,
@@ -236,6 +234,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.primary,
     borderRadius: 100,
     paddingHorizontal: 11,
@@ -247,6 +248,9 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   closedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     borderWidth: 1.5,
     borderColor: colors.primaryTint,
     borderRadius: 100,

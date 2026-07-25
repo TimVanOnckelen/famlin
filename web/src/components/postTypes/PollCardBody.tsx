@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Post, votePoll, patchPostInCaches } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import '../PostCard.css';
 
 export function PollCardBody({ post }: { post: Post }) {
@@ -46,7 +47,7 @@ export function PollCardBody({ post }: { post: Post }) {
                     {option.text}
                     {isMine && (
                       <span className="poll-option-mine-badge" title={t('poll.yourVote')} aria-label={t('poll.yourVote')}>
-                        ✓
+                        <Icon name="check" size={14} strokeWidth={3} />
                       </span>
                     )}
                   </span>

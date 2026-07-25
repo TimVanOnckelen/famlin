@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
+import { ensureFreshMediaToken, fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
@@ -19,8 +19,11 @@ export default function App() {
   const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip' | 'album'>('feed');
   // Only meaningful while view === 'trip' — which post's trip is open.
   const [tripPostId, setTripPostId] = useState<string | null>(null);
-  // Only meaningful while view === 'album' — which post's album is open.
+  // Only meaningful while view === 'album' — which post's album is open, and
+  // which page it was opened from, so "back" returns there (an album is
+  // reachable from both the feed and the Photos tab's albums strip).
   const [albumPostId, setAlbumPostId] = useState<string | null>(null);
+  const [albumOrigin, setAlbumOrigin] = useState<'feed' | 'photos'>('feed');
 
   // A session ending on the profile view (logout or 401) shouldn't land the
   // next login on the profile page.
@@ -29,6 +32,7 @@ export default function App() {
       setView('feed');
       setTripPostId(null);
       setAlbumPostId(null);
+      setAlbumOrigin('feed');
     }
   }, [user]);
 
@@ -37,6 +41,20 @@ export default function App() {
       clearSession();
     });
   }, [clearSession]);
+
+  // Web counterpart of mobile's AppState listener: the media token (7d TTL)
+  // can go stale, or its initial fetch can simply have failed, and <img>/
+  // <video> requests bypass axios's 401 handling entirely — so without this
+  // every photo silently 401s for the rest of the session. Re-check whenever
+  // the tab is brought back to the foreground.
+  useEffect(() => {
+    if (!user) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') ensureFreshMediaToken();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [user?.id]);
 
   useEffect(() => {
     async function bootstrap() {
@@ -92,6 +110,11 @@ export default function App() {
           onOpenFeed={() => setView('feed')}
           onOpenChat={() => setView('chat')}
           onOpenProfile={() => setView('profile')}
+          onOpenAlbum={(postId) => {
+            setAlbumPostId(postId);
+            setAlbumOrigin('photos');
+            setView('album');
+          }}
           onLogout={() => logout()}
         />
       </>
@@ -133,7 +156,7 @@ export default function App() {
         <ReadOnlyBanner />
         <AlbumDetailPage
           postId={albumPostId}
-          onBack={() => setView('feed')}
+          onBack={() => setView(albumOrigin)}
           onOpenPhotos={() => setView('photos')}
           onOpenChat={() => setView('chat')}
           onOpenProfile={() => setView('profile')}
@@ -156,6 +179,7 @@ export default function App() {
         }}
         onOpenAlbum={(postId) => {
           setAlbumPostId(postId);
+          setAlbumOrigin('feed');
           setView('album');
         }}
         onLogout={() => logout()}

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
@@ -34,12 +35,18 @@ import {
   fetchComments,
   fetchGroupMembers,
   GroupMember,
+  CommentGroup,
+  MAX_COMMENT_ATTACHMENTS,
   createComment,
   reactToComment,
   updatePost,
   deletePost,
   updateComment,
   deleteComment,
+  groupCommentAttachments,
+  // Aliased: this screen already has a `commentAttachments` state variable
+  // for the comment being composed, which is a different thing entirely.
+  commentAttachments as commentAttachmentUrls,
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
@@ -53,6 +60,18 @@ import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 // only place a user is actively composing a mention.
 const TRAILING_MENTION_REGEX = /(?:^|\s)@([\p{L}\d_]*)$/u;
 
+// Up to this many photos on one comment card lay out as a wrapping grid;
+// beyond it the card becomes a horizontally scrolling gallery instead, so a
+// long photo burst never pushes the rest of the thread off the screen.
+const COMMENT_GRID_MAX_TILES = 4;
+
+// Same rule for the post's own photos: up to four (hero included) lay out as
+// the wrapping grid, more than that scrolls sideways.
+const POST_GRID_MAX_PHOTOS = 4;
+
+/** Mirrors uploadedAssetUrls' max in the backend's updatePostBodySchema. */
+const MAX_POST_ASSETS = 20;
+
 export function PostDetailScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
@@ -65,12 +84,25 @@ export function PostDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState('');
+  // The post's photos as the edit has them so far — seeded from the post when
+  // editing starts, then added to and removed from until save, which sends
+  // the whole list. Pending entries are local URIs whose upload is still in
+  // flight, shown with a spinner and not yet part of the list being saved.
+  const [editPostAssets, setEditPostAssets] = useState<string[]>([]);
+  const [editPostPendingAssets, setEditPostPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false);
   const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
   const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
-  const [commentAttachment, setCommentAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
+  // Staged attachments for the comment being written — a local preview each,
+  // with uploadedUrl filled in once its upload lands.
+  const [commentAttachments, setCommentAttachments] = useState<
+    { uri: string; isVideo: boolean; uploadedUrl?: string }[]
+  >([]);
+  const uploadedAttachmentUrls = commentAttachments
+    .map((a) => a.uploadedUrl)
+    .filter((url): url is string => !!url);
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
@@ -113,19 +145,19 @@ export function PostDetailScreen() {
       content,
       parentId,
       mentionedUserIds,
-      attachmentUrl,
+      attachmentUrls,
     }: {
       content: string;
       parentId?: string;
       mentionedUserIds?: string[];
-      attachmentUrl?: string;
-    }) => createComment(postId, { content: content || undefined, parentId, mentionedUserIds, attachmentUrl }),
+      attachmentUrls?: string[];
+    }) => createComment(postId, { content: content || undefined, parentId, mentionedUserIds, attachmentUrls }),
     onSuccess: () => {
       setCommentText('');
       setReplyingTo(null);
       setSelectedMentions([]);
       setMentionQuery(null);
-      setCommentAttachment(null);
+      setCommentAttachments([]);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -141,9 +173,11 @@ export function PostDetailScreen() {
   });
 
   const editPostMutation = useMutation({
-    mutationFn: (content: string) => updatePost(postId, content),
+    mutationFn: ({ content, uploadedAssetUrls }: { content: string; uploadedAssetUrls: string[] }) =>
+      updatePost(postId, { content, uploadedAssetUrls }),
     onSuccess: () => {
       setIsEditingPost(false);
+      setEditPostPendingAssets([]);
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
@@ -164,15 +198,25 @@ export function PostDetailScreen() {
   });
 
   const editCommentMutation = useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) => updateComment(id, content),
-    onSuccess: () => refetch(),
+    // attachmentUrls is always sent (never undefined) because the edit UI
+    // always shows the comment's photos — an unchanged list is the same list.
+    mutationFn: ({ id, content, attachmentUrls }: { id: string; content: string; attachmentUrls: string[] }) =>
+      updateComment(id, { content, attachmentUrls }),
+    onSuccess: () => {
+      refetch();
+      // An edit can now change a comment's photos, so refresh the post the
+      // same way deleting a comment does rather than only the thread.
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+    },
     onError: (err: any) => {
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'));
     },
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: (commentId: string) => deleteComment(commentId),
+    // Takes a list because a bundled photo card stands for several comments —
+    // deleting it removes exactly the ones it shows.
+    mutationFn: (commentIds: string[]) => Promise.all(commentIds.map((id) => deleteComment(id))),
     onSuccess: () => {
       refetch();
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
@@ -183,6 +227,8 @@ export function PostDetailScreen() {
     },
   });
 
+  // Runs of photo-only comments by the same author collapse into one card
+  // (see groupCommentAttachments) — both at top level and within a thread.
   const repliesByParentId = useMemo(() => {
     const map = new Map<string, Comment[]>();
     for (const comment of comments || []) {
@@ -194,14 +240,23 @@ export function PostDetailScreen() {
     return map;
   }, [comments]);
 
-  const topLevelComments = useMemo(
-    () => (comments || []).filter((comment: Comment) => !comment.parentId),
+  // A bundle stands for several comments, so its replies are everything
+  // hanging off any of them, back in chronological order.
+  const replyGroupsFor = (group: CommentGroup): CommentGroup[] =>
+    groupCommentAttachments(
+      group.comments
+        .flatMap((comment) => repliesByParentId.get(comment.id) || [])
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    );
+
+  const topLevelGroups = useMemo(
+    () => groupCommentAttachments((comments || []).filter((comment: Comment) => !comment.parentId)),
     [comments]
   );
 
   function submitComment() {
     const trimmed = commentText.trim();
-    if (!trimmed && !commentAttachment?.uploadedUrl) return;
+    if (!trimmed && !uploadedAttachmentUrls.length) return;
     // Only mention someone whose "@name" is still actually present in the
     // final text — if the user deleted it after picking it from the list,
     // don't notify them.
@@ -212,28 +267,83 @@ export function PostDetailScreen() {
       content: trimmed,
       parentId: replyingTo?.id,
       mentionedUserIds,
-      attachmentUrl: commentAttachment?.uploadedUrl,
+      attachmentUrls: uploadedAttachmentUrls,
     });
   }
+
+  const attachmentRoom = MAX_COMMENT_ATTACHMENTS - commentAttachments.length;
+  // How many placeholders the batch in flight appended, so a failed upload
+  // removes exactly those and leaves earlier picks alone.
+  const attachmentBatchSize = useRef(0);
 
   const { pick: pickAttachmentMedia, uploading: attachmentUploading } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: Math.max(1, attachmentRoom),
       quality: 0.8,
       videoMaxDuration: 120,
     },
-    // Show the local preview (with the uploading overlay) while the upload
-    // is in flight; clear it again if the upload fails.
-    onPicked: ([asset]) => setCommentAttachment({ uri: asset.uri, isVideo: asset.isVideo }),
-    onError: () => setCommentAttachment(null),
+    includeIndexInName: true,
+    // Show the local previews (with the uploading overlay) while the upload
+    // is in flight; drop them again if it fails.
+    onPicked: (assets) => {
+      attachmentBatchSize.current = assets.length;
+      setCommentAttachments((old) => [
+        ...old,
+        ...assets.map((asset) => ({ uri: asset.uri, isVideo: asset.isVideo })),
+      ]);
+    },
+    onError: () => {
+      setCommentAttachments((old) => old.slice(0, Math.max(0, old.length - attachmentBatchSize.current)));
+    },
   });
 
-  async function pickCommentAttachment() {
+  async function pickCommentAttachments() {
+    if (attachmentRoom <= 0) return;
     const result = await pickAttachmentMedia();
     if (!result) return;
-    const [asset] = result.assets;
-    const [uploadedUrl] = result.urls;
-    setCommentAttachment({ uri: asset.uri, isVideo: asset.isVideo, uploadedUrl });
+    // Swap the placeholders this batch added for the uploaded versions.
+    setCommentAttachments((old) => [
+      ...old.slice(0, Math.max(0, old.length - result.assets.length)),
+      ...result.assets.map((asset, index) => ({
+        uri: asset.uri,
+        isVideo: asset.isVideo,
+        uploadedUrl: result.urls[index],
+      })),
+    ]);
+  }
+
+  function removeCommentAttachment(index: number) {
+    setCommentAttachments((old) => old.filter((_, i) => i !== index));
+  }
+
+  // Same pick-then-upload flow as the composer's, for photos added while
+  // editing the post. Removing one is local until save — nothing is deleted
+  // from the server, the saved list just stops referring to it.
+  const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length;
+
+  const { pick: pickEditPostMedia, uploading: editPostUploading } = usePickAndUploadMedia({
+    pickerOptions: {
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: Math.max(1, editPostAssetRoom),
+      quality: 0.8,
+      videoMaxDuration: 120,
+    },
+    includeIndexInName: true,
+    onPicked: setEditPostPendingAssets,
+  });
+
+  async function pickEditPostAssets() {
+    if (editPostAssetRoom <= 0) return;
+    const result = await pickEditPostMedia();
+    if (result) setEditPostAssets((prev) => [...prev, ...result.urls]);
+    setEditPostPendingAssets([]);
+  }
+
+  function removeEditPostAsset(url: string) {
+    setEditPostAssets((prev) => prev.filter((u) => u !== url));
   }
 
   function handleCommentTextChange(text: string) {
@@ -279,7 +389,14 @@ export function PostDetailScreen() {
 
   function startEditPost() {
     setEditPostContent(post!.content || '');
+    setEditPostAssets(post!.uploadedAssetUrls);
+    setEditPostPendingAssets([]);
     setIsEditingPost(true);
+  }
+
+  function cancelEditPost() {
+    setIsEditingPost(false);
+    setEditPostPendingAssets([]);
   }
 
   function confirmDeletePost() {
@@ -297,14 +414,24 @@ export function PostDetailScreen() {
     ]);
   }
 
-  const canSavePostEdit = editPostContent.trim().length > 0 || allPhotoUrls.length > 0;
+  // A post can be photos-only or text-only, but not neither — and it's the
+  // edit's own photo list that decides, not the one currently on screen.
+  const canSavePostEdit = editPostContent.trim().length > 0 || editPostAssets.length > 0;
+
+  // While editing, the photo strip in the editor IS the post's photo list —
+  // the read-only hero and gallery would show a stale second copy of it (and
+  // a photo the user just removed), so they step aside for the duration. The
+  // hero doubles as the screen's chrome when there are photos, so everything
+  // keyed off it (the safe-area top edge, the header, the floating back
+  // button, the sheet's overlap) has to follow the same flag.
+  const showHeroPhoto = hasPhotos && !isEditingPost;
 
   return (
     <SafeAreaView
       style={styles.container}
-      edges={hasPhotos ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
+      edges={showHeroPhoto ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
     >
-      {!hasPhotos && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
+      {!showHeroPhoto && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -312,11 +439,11 @@ export function PostDetailScreen() {
         keyboardVerticalOffset={90}
       >
         <FlatList
-          data={topLevelComments}
-          keyExtractor={(item) => item.id}
+          data={topLevelGroups}
+          keyExtractor={(item) => item.key}
           ListHeaderComponent={
             <>
-              {hasPhotos && (
+              {showHeroPhoto && (
                 <View>
                   <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
                     <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />
@@ -325,7 +452,10 @@ export function PostDetailScreen() {
                     <View style={styles.heroScrim} pointerEvents="none">
                       <Scrim />
                       <View style={styles.heroBadge}>
-                        <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
+                        <View style={styles.milestoneBadgePill}>
+                          <Icon name="gift" size={12} color={colors.milestoneText} />
+                          <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
+                        </View>
                       </View>
                       {!!post.content && (
                         <Text style={styles.heroMilestoneTitle} numberOfLines={3}>
@@ -339,13 +469,16 @@ export function PostDetailScreen() {
             <View
               style={[
                 styles.postContainer,
-                hasPhotos && styles.postContainerOverlap,
+                showHeroPhoto && styles.postContainerOverlap,
                 isMilestone && !hasPhotos && styles.milestoneContainer,
               ]}
             >
               {isMilestone && !hasPhotos && (
                 <View style={styles.milestoneBadge}>
-                  <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
+                  <View style={styles.milestoneBadgePill}>
+                    <Icon name="gift" size={12} color={colors.milestoneText} />
+                    <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
+                  </View>
                 </View>
               )}
 
@@ -385,18 +518,66 @@ export function PostDetailScreen() {
                     multiline
                     autoFocus
                   />
+
+                  {(editPostAssets.length > 0 || editPostPendingAssets.length > 0) && (
+                    <View style={styles.editAttachmentRow}>
+                      {editPostAssets.map((url) => (
+                        <View style={styles.attachmentPreview} key={url}>
+                          <MediaThumbnail
+                            url={getUploadUrl(url, 'thumbnail')}
+                            fallbackUrl={getUploadUrl(url)}
+                            style={styles.attachmentPreviewImage}
+                          />
+                          <TouchableOpacity
+                            style={styles.attachmentRemoveButton}
+                            onPress={() => removeEditPostAsset(url)}
+                            accessibilityLabel={t('postDetail.removeAttachment')}
+                          >
+                            <Icon name="x" size={12} color={colors.white} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      {editPostPendingAssets.map((asset, index) => (
+                        <View style={styles.attachmentPreview} key={`pending-${index}`}>
+                          <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
+                          <View style={styles.attachmentUploadingOverlay}>
+                            <ActivityIndicator size="small" color={colors.white} />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
                   <View style={styles.postEditActions}>
                     <TouchableOpacity
+                      style={styles.editAddPhotoButton}
+                      onPress={pickEditPostAssets}
+                      disabled={editPostUploading || editPostAssetRoom <= 0}
+                      accessibilityLabel={t('postDetail.addAttachment')}
+                    >
+                      <Icon name="image" size={16} color={colors.primary} />
+                      <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.editActionsSpacer} />
+                    <TouchableOpacity
                       style={styles.postEditCancelButton}
-                      onPress={() => setIsEditingPost(false)}
+                      onPress={cancelEditPost}
                       disabled={editPostMutation.isPending}
                     >
                       <Text style={styles.postEditCancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.postEditSaveButton, !canSavePostEdit && styles.sendButtonDisabled]}
-                      onPress={() => editPostMutation.mutate(editPostContent.trim())}
-                      disabled={editPostMutation.isPending || !canSavePostEdit}
+                      style={[
+                        styles.postEditSaveButton,
+                        (!canSavePostEdit || editPostUploading) && styles.sendButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        editPostMutation.mutate({
+                          content: editPostContent.trim(),
+                          uploadedAssetUrls: editPostAssets,
+                        })
+                      }
+                      disabled={editPostMutation.isPending || editPostUploading || !canSavePostEdit}
                     >
                       <Text style={styles.postEditSaveText}>{t('common.save')}</Text>
                     </TouchableOpacity>
@@ -418,7 +599,7 @@ export function PostDetailScreen() {
                 <PostLocationPreview latitude={post.latitude} longitude={post.longitude} locationName={post.locationName} />
               )}
 
-              {allPhotoUrls.length > 1 && (
+              {!isEditingPost && allPhotoUrls.length > 1 && allPhotoUrls.length <= POST_GRID_MAX_PHOTOS && (
                 <View style={styles.photoGallery}>
                   {allPhotoUrls.slice(1).map((url: string, index: number) => (
                     <TouchableOpacity
@@ -431,6 +612,29 @@ export function PostDetailScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
+              )}
+
+              {/* Past POST_GRID_MAX_PHOTOS the wrapping grid would push the
+                  post's text and comments far down the screen — scroll the
+                  photos sideways instead. */}
+              {!isEditingPost && allPhotoUrls.length > POST_GRID_MAX_PHOTOS && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.photoStrip}
+                  contentContainerStyle={styles.photoStripContent}
+                >
+                  {allPhotoUrls.slice(1).map((url: string, index: number) => (
+                    <TouchableOpacity
+                      key={url}
+                      activeOpacity={0.95}
+                      style={styles.photoStripItem}
+                      onPress={() => openFullscreen(index + 1)}
+                    >
+                      <MediaThumbnail url={allPhotoThumbUrls[index + 1]} fallbackUrl={url} style={styles.photoImage} />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               )}
 
               <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
@@ -473,21 +677,23 @@ export function PostDetailScreen() {
           renderItem={({ item }) => (
             <View style={hasPhotos ? styles.commentPad : undefined}>
               <CommentItem
-                comment={item}
-                replies={repliesByParentId.get(item.id) || []}
+                group={item}
+                replyGroups={replyGroupsFor(item)}
                 currentUserId={user?.id}
                 onLike={(commentId, type) => likeCommentMutation.mutate({ commentId, type })}
                 onLongPressLike={(commentId) => setReactionPickerCommentId(commentId)}
                 onReply={(comment) => setReplyingTo({ id: comment.id, authorName: comment.author.name })}
-                onEdit={(id, content) => editCommentMutation.mutateAsync({ id, content })}
-                onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
+                onEdit={(id, content, attachmentUrls) =>
+                  editCommentMutation.mutateAsync({ id, content, attachmentUrls })
+                }
+                onDelete={(commentIds) => deleteCommentMutation.mutate(commentIds)}
               />
             </View>
           )}
           contentContainerStyle={hasPhotos ? styles.commentsListHero : styles.commentsList}
         />
 
-        {hasPhotos && (
+        {showHeroPhoto && (
           <TouchableOpacity
             style={[styles.floatingBack, { top: insets.top + 8 }]}
             onPress={() => navigation.goBack()}
@@ -519,23 +725,25 @@ export function PostDetailScreen() {
           </View>
         )}
 
-        {commentAttachment && (
+        {commentAttachments.length > 0 && (
           <View style={styles.attachmentPreviewRow}>
-            <View style={styles.attachmentPreview}>
-              <MediaThumbnail url={commentAttachment.uri} style={styles.attachmentPreviewImage} />
-              {attachmentUploading && (
-                <View style={styles.attachmentUploadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
-                </View>
-              )}
-              <TouchableOpacity
-                style={styles.attachmentRemoveButton}
-                onPress={() => setCommentAttachment(null)}
-                accessibilityLabel={t('postDetail.removeAttachment')}
-              >
-                <Icon name="x" size={12} color={colors.white} />
-              </TouchableOpacity>
-            </View>
+            {commentAttachments.map((attachment, index) => (
+              <View style={styles.attachmentPreview} key={`${attachment.uri}-${index}`}>
+                <MediaThumbnail url={attachment.uri} style={styles.attachmentPreviewImage} />
+                {!attachment.uploadedUrl && (
+                  <View style={styles.attachmentUploadingOverlay}>
+                    <ActivityIndicator size="small" color={colors.white} />
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.attachmentRemoveButton}
+                  onPress={() => removeCommentAttachment(index)}
+                  accessibilityLabel={t('postDetail.removeAttachment')}
+                >
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
         )}
 
@@ -543,8 +751,8 @@ export function PostDetailScreen() {
           <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={36} />
           <TouchableOpacity
             style={styles.attachButton}
-            onPress={pickCommentAttachment}
-            disabled={attachmentUploading}
+            onPress={pickCommentAttachments}
+            disabled={attachmentUploading || attachmentRoom <= 0}
             accessibilityLabel={t('postDetail.addAttachment')}
           >
             <Icon name="image" size={18} color={colors.textMuted} />
@@ -560,10 +768,10 @@ export function PostDetailScreen() {
           <TouchableOpacity
             style={[
               styles.sendButton,
-              !commentText.trim() && !commentAttachment?.uploadedUrl && styles.sendButtonDisabled,
+              !commentText.trim() && !uploadedAttachmentUrls.length && styles.sendButtonDisabled,
             ]}
             onPress={submitComment}
-            disabled={(!commentText.trim() && !commentAttachment?.uploadedUrl) || attachmentUploading}
+            disabled={(!commentText.trim() && !uploadedAttachmentUrls.length) || attachmentUploading}
           >
             <Icon name="send" size={18} color={colors.white} />
           </TouchableOpacity>
@@ -595,8 +803,8 @@ export function PostDetailScreen() {
 }
 
 function CommentItem({
-  comment,
-  replies,
+  group,
+  replyGroups,
   currentUserId,
   onLike,
   onLongPressLike,
@@ -604,41 +812,42 @@ function CommentItem({
   onEdit,
   onDelete,
 }: {
-  comment: Comment;
-  replies: Comment[];
+  group: CommentGroup;
+  replyGroups: CommentGroup[];
   currentUserId?: string;
   onLike: (commentId: string, type: ReactionType) => void;
   onLongPressLike: (commentId: string) => void;
   onReply: (comment: Comment) => void;
-  onEdit: (commentId: string, content: string) => Promise<unknown>;
-  onDelete: (commentId: string) => void;
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
+  onDelete: (commentIds: string[]) => void;
 }) {
+  const { lead } = group;
   return (
     <View style={styles.commentItem}>
-      <Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} size={38} />
+      <Avatar name={lead.author.name} avatarUrl={lead.author.avatarUrl} size={38} />
       <View style={styles.commentContent}>
         <CommentBody
-          comment={comment}
-          isOwn={comment.authorId === currentUserId}
-          onLike={(type) => onLike(comment.id, type)}
-          onLongPressLike={() => onLongPressLike(comment.id)}
-          onReply={() => onReply(comment)}
+          group={group}
+          isOwn={lead.authorId === currentUserId}
+          onLike={(type) => onLike(group.reactionTargetId, type)}
+          onLongPressLike={() => onLongPressLike(group.reactionTargetId)}
+          onReply={() => onReply(lead)}
           onEdit={onEdit}
           onDelete={onDelete}
         />
 
-        {replies.length > 0 && (
+        {replyGroups.length > 0 && (
           <View style={styles.repliesContainer}>
-            {replies.map((reply) => (
-              <View key={reply.id} style={styles.replyItem}>
-                <Avatar name={reply.author.name} avatarUrl={reply.author.avatarUrl} size={30} />
+            {replyGroups.map((replyGroup) => (
+              <View key={replyGroup.key} style={styles.replyItem}>
+                <Avatar name={replyGroup.lead.author.name} avatarUrl={replyGroup.lead.author.avatarUrl} size={30} />
                 <View style={styles.commentContent}>
                   <CommentBody
-                    comment={reply}
-                    isOwn={reply.authorId === currentUserId}
-                    onLike={(type) => onLike(reply.id, type)}
-                    onLongPressLike={() => onLongPressLike(reply.id)}
-                    onReply={() => onReply(comment)}
+                    group={replyGroup}
+                    isOwn={replyGroup.lead.authorId === currentUserId}
+                    onLike={(type) => onLike(replyGroup.reactionTargetId, type)}
+                    onLongPressLike={() => onLongPressLike(replyGroup.reactionTargetId)}
+                    onReply={() => onReply(lead)}
                     onEdit={onEdit}
                     onDelete={onDelete}
                   />
@@ -653,7 +862,7 @@ function CommentItem({
 }
 
 function CommentBody({
-  comment,
+  group,
   isOwn,
   onLike,
   onLongPressLike,
@@ -661,42 +870,96 @@ function CommentBody({
   onEdit,
   onDelete,
 }: {
-  comment: Comment;
+  group: CommentGroup;
   isOwn: boolean;
   onLike: (type: ReactionType) => void;
   onLongPressLike: () => void;
   onReply: () => void;
-  onEdit: (commentId: string, content: string) => Promise<unknown>;
-  onDelete: (commentId: string) => void;
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
+  onDelete: (commentIds: string[]) => void;
 }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
+  const comment = group.lead;
+  const attachmentUrls = group.attachments.map((attachment) => attachment.url);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
+  // The comment's photos as the edit has them so far, same wholesale-replace
+  // contract as the post editor above. Editing is only offered on a
+  // single-comment card (see the Edit button below), so these are exactly
+  // this comment's own attachments.
+  const [editAttachments, setEditAttachments] = useState<string[]>([]);
+  const [editPendingAttachments, setEditPendingAttachments] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length;
+
+  const { pick: pickEditMedia, uploading: editUploading } = usePickAndUploadMedia({
+    pickerOptions: {
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: Math.max(1, editAttachmentRoom),
+      quality: 0.8,
+      videoMaxDuration: 120,
+    },
+    includeIndexInName: true,
+    onPicked: setEditPendingAttachments,
+  });
+
+  async function pickEditAttachments() {
+    if (editAttachmentRoom <= 0) return;
+    const result = await pickEditMedia();
+    if (result) setEditAttachments((prev) => [...prev, ...result.urls]);
+    setEditPendingAttachments([]);
+  }
 
   function startEdit() {
     setEditText(comment.content);
+    setEditAttachments(commentAttachmentUrls(comment));
+    setEditPendingAttachments([]);
     setIsEditing(true);
   }
 
+  function cancelEdit() {
+    setIsEditing(false);
+    setEditPendingAttachments([]);
+  }
+
+  const canSaveEdit = !!editText.trim() || editAttachments.length > 0;
+
   async function saveEdit() {
-    const trimmed = editText.trim();
-    if (!trimmed) return;
+    if (!canSaveEdit) return;
     setSaving(true);
     try {
-      await onEdit(comment.id, trimmed);
+      await onEdit(comment.id, editText.trim(), editAttachments);
       setIsEditing(false);
+      setEditPendingAttachments([]);
     } finally {
       setSaving(false);
     }
   }
 
   function confirmDelete() {
-    Alert.alert(t('postDetail.deleteCommentConfirmTitle'), t('postDetail.deleteCommentConfirmMessage'), [
+    // A bundle is one card standing for several comments, so say how many are
+    // about to go rather than silently deleting more than the user sees.
+    const message = group.isBundle
+      ? t('postDetail.deletePhotoCommentsConfirmMessage', { count: group.comments.length })
+      : t('postDetail.deleteCommentConfirmMessage');
+    Alert.alert(t('postDetail.deleteCommentConfirmTitle'), message, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => onDelete(comment.id) },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => onDelete(group.comments.map((c) => c.id)),
+      },
     ]);
+  }
+
+  function openViewer(index: number) {
+    navigation.navigate('ImageViewer', {
+      urls: attachmentUrls.map((url) => getUploadUrl(url)),
+      initialIndex: index,
+    });
   }
 
   if (isEditing) {
@@ -709,11 +972,51 @@ function CommentBody({
           multiline
           autoFocus
         />
+
+        {(editAttachments.length > 0 || editPendingAttachments.length > 0) && (
+          <View style={styles.editAttachmentRow}>
+            {editAttachments.map((url) => (
+              <View style={styles.attachmentPreview} key={url}>
+                <MediaThumbnail
+                  url={getUploadUrl(url, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(url)}
+                  style={styles.attachmentPreviewImage}
+                />
+                <TouchableOpacity
+                  style={styles.attachmentRemoveButton}
+                  onPress={() => setEditAttachments((prev) => prev.filter((u) => u !== url))}
+                  accessibilityLabel={t('postDetail.removeAttachment')}
+                >
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {editPendingAttachments.map((asset, index) => (
+              <View style={styles.attachmentPreview} key={`pending-${index}`}>
+                <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
+                <View style={styles.attachmentUploadingOverlay}>
+                  <ActivityIndicator size="small" color={colors.white} />
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.commentEditActions}>
-          <TouchableOpacity onPress={() => setIsEditing(false)} disabled={saving}>
+          <TouchableOpacity
+            style={styles.editAddPhotoButton}
+            onPress={pickEditAttachments}
+            disabled={editUploading || editAttachmentRoom <= 0}
+            accessibilityLabel={t('postDetail.addAttachment')}
+          >
+            <Icon name="image" size={16} color={colors.primary} />
+            <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
+          </TouchableOpacity>
+          <View style={styles.editActionsSpacer} />
+          <TouchableOpacity onPress={cancelEdit} disabled={saving}>
             <Text style={styles.commentAction}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={saveEdit} disabled={saving || !editText.trim()}>
+          <TouchableOpacity onPress={saveEdit} disabled={saving || editUploading || !canSaveEdit}>
             <Text style={[styles.commentAction, styles.commentActionActive]}>{t('common.save')}</Text>
           </TouchableOpacity>
         </View>
@@ -727,31 +1030,84 @@ function CommentBody({
         <Text style={styles.commentAuthor}>{comment.author.name}</Text>
         {!!comment.content && <Text style={styles.commentText}>{comment.content}</Text>}
       </View>
-      {!!comment.attachmentUrl && (
+      {attachmentUrls.length === 1 && (
         <TouchableOpacity
           style={styles.commentAttachment}
           activeOpacity={0.9}
           accessibilityLabel={t('postDetail.viewAttachment')}
-          onPress={() =>
-            navigation.navigate('ImageViewer', { urls: [getUploadUrl(comment.attachmentUrl!)], initialIndex: 0 })
-          }
+          onPress={() => openViewer(0)}
         >
           <MediaThumbnail
-            url={getUploadUrl(comment.attachmentUrl, 'thumbnail')}
-            fallbackUrl={getUploadUrl(comment.attachmentUrl)}
+            url={getUploadUrl(attachmentUrls[0], 'thumbnail')}
+            fallbackUrl={getUploadUrl(attachmentUrls[0])}
             style={styles.commentAttachmentImage}
           />
         </TouchableOpacity>
+      )}
+      {attachmentUrls.length > 1 && attachmentUrls.length <= COMMENT_GRID_MAX_TILES && (
+        <View style={styles.commentAttachmentGrid}>
+          {attachmentUrls.map((url, index) => (
+            <TouchableOpacity
+              key={`${url}-${index}`}
+              style={styles.commentAttachmentTile}
+              activeOpacity={0.9}
+              accessibilityLabel={t('postDetail.viewAttachment')}
+              onPress={() => openViewer(index)}
+            >
+              <MediaThumbnail
+                url={getUploadUrl(url, 'thumbnail')}
+                fallbackUrl={getUploadUrl(url)}
+                style={styles.commentAttachmentTileImage}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+      {attachmentUrls.length > COMMENT_GRID_MAX_TILES && (
+        // A scrolling row needs to say so — the count badge is what tells you
+        // there's more here than the tiles that happen to fit.
+        <View style={styles.commentAttachmentGallery}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.commentAttachmentGalleryContent}
+          >
+            {attachmentUrls.map((url, index) => (
+              <TouchableOpacity
+                key={`${url}-${index}`}
+                style={styles.commentAttachmentTile}
+                activeOpacity={0.9}
+                accessibilityLabel={t('postDetail.viewAttachment')}
+                onPress={() => openViewer(index)}
+              >
+                <MediaThumbnail
+                  url={getUploadUrl(url, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(url)}
+                  style={styles.commentAttachmentTileImage}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.commentAttachmentCount} pointerEvents="none">
+            <Icon name="image" size={11} color={colors.white} />
+            <Text style={styles.commentAttachmentCountText}>{attachmentUrls.length}</Text>
+          </View>
+        </View>
       )}
       <View style={styles.commentMetaRow}>
         <Text style={styles.commentTime}>
           {formatRelativeDate(comment.createdAt)}
           {comment.editedAt ? ` · ${t('common.edited')}` : ''}
         </Text>
-        <TouchableOpacity onPress={() => onLike(comment.myReaction ?? 'LIKE')} onLongPress={onLongPressLike}>
-          <Text style={[styles.commentAction, comment.myReaction && styles.commentActionActive]}>
-            {comment.myReaction ? REACTION_EMOJI[comment.myReaction] : t('postDetail.like')}
-            {comment.likeCount > 0 ? ` · ${comment.likeCount}` : ''}
+        {attachmentUrls.length > 1 && (
+          <Text style={styles.commentTime}>
+            {t('postDetail.photoCount', { count: attachmentUrls.length })}
+          </Text>
+        )}
+        <TouchableOpacity onPress={() => onLike(group.myReaction ?? 'LIKE')} onLongPress={onLongPressLike}>
+          <Text style={[styles.commentAction, group.myReaction && styles.commentActionActive]}>
+            {group.myReaction ? REACTION_EMOJI[group.myReaction] : t('postDetail.like')}
+            {group.likeCount > 0 ? ` · ${group.likeCount}` : ''}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onReply}>
@@ -759,9 +1115,13 @@ function CommentBody({
         </TouchableOpacity>
         {isOwn && (
           <>
-            <TouchableOpacity onPress={startEdit}>
-              <Text style={styles.commentAction}>{t('common.edit')}</Text>
-            </TouchableOpacity>
+            {/* Editing a bundle would write text onto just one of the photos
+                it stands for, so it stays a single-comment action. */}
+            {!group.isBundle && (
+              <TouchableOpacity onPress={startEdit}>
+                <Text style={styles.commentAction}>{t('common.edit')}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={confirmDelete}>
               <Text style={styles.commentAction}>{t('common.delete')}</Text>
             </TouchableOpacity>
@@ -849,15 +1209,20 @@ const styles = StyleSheet.create({
   milestoneBadge: {
     marginBottom: 10,
   },
-  milestoneBadgeText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 11,
-    color: colors.milestoneText,
+  milestoneBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.milestone,
     paddingHorizontal: 13,
     paddingVertical: 4,
     borderRadius: 100,
     alignSelf: 'flex-start',
+  },
+  milestoneBadgeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    color: colors.milestoneText,
   },
   authorRow: {
     flexDirection: 'row',
@@ -945,6 +1310,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginBottom: 12,
+  },
+  photoStrip: {
+    marginBottom: 12,
+  },
+  photoStripContent: {
+    gap: 6,
+  },
+  photoStripItem: {
+    width: 150,
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   photoWrapper: {
     width: '48%',
@@ -1052,6 +1429,52 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  // Several photos — one multi-photo comment, or a bundle of consecutive
+  // photo-only comments from the same author (see groupCommentAttachments).
+  commentAttachmentGrid: {
+    marginTop: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    maxWidth: 244,
+  },
+  // More than COMMENT_GRID_MAX_TILES photos: one scrollable strip instead of
+  // a grid that would grow taller with every burst.
+  commentAttachmentGallery: {
+    marginTop: 6,
+    position: 'relative',
+  },
+  commentAttachmentGalleryContent: {
+    gap: 4,
+    paddingRight: 14,
+  },
+  commentAttachmentCount: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(20, 10, 5, 0.62)',
+  },
+  commentAttachmentCountText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  commentAttachmentTile: {
+    width: 78,
+    height: 78,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  commentAttachmentTileImage: {
+    width: '100%',
+    height: '100%',
+  },
   commentText: {
     fontFamily: 'Nunito_400Regular',
     fontSize: 16,
@@ -1140,6 +1563,36 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     paddingHorizontal: 14,
     paddingTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  // Same tiles as the composer's preview row above, minus that row's screen
+  // padding — these sit inside the post/comment editor's own container.
+  editAttachmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  editAddPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  editAddPhotoText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
+  },
+  editActionsSpacer: {
+    flex: 1,
   },
   attachmentPreview: {
     width: 64,

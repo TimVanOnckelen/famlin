@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { fetchGroups, fetchPosts, User } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { PostCard } from '@/components/PostCard';
@@ -108,7 +109,9 @@ export function FeedPage({
 
         {postsQuery.isSuccess && posts.length === 0 && (
           <div className="feed-empty">
-            <div className="feed-empty-emoji">📸</div>
+            <div className="feed-empty-icon" aria-hidden>
+              <Icon name="camera" size={40} strokeWidth={1.5} />
+            </div>
             <p>{t('feed.empty')}</p>
             <button className="btn btn-primary" onClick={() => setComposerOpen(true)}>
               {t('feed.newPost')}

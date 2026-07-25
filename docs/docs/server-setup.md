@@ -145,6 +145,7 @@ Famlin does not terminate TLS itself. Point your reverse proxy at the container'
 - Forward the whole path space (`/`, `/api`, `/admin`, `/uploads`) to the backend — everything is served from the one Fastify process.
 - Uploaded photos require a valid session or media token to fetch (see [Security](./security)), not just a correct URL, so your proxy doesn't need to restrict access to `/uploads/` itself — just don't cache responses across different users/sessions.
 - The mobile app, the web app, and the admin UI all do OIDC's Authorization Code + PKCE flow directly against your identity provider, then hand the resulting token to the backend — no proxy-level auth or special CORS handling is needed beyond passing requests through as-is.
+- **Raise the proxy's request body limit and upload timeout.** Famlin itself accepts uploads up to 200 MB per file (photos and videos), but most proxies cap request bodies far lower by default — Nginx allows just 1 MB, which silently rejects almost every phone photo. When the proxy cuts the upload off, the app can't tell why and shows the user a bare "Network Error", and nothing appears in the Famlin container's logs because the request never reached it. Set the limit to at least the largest file you want to allow (`client_max_body_size` on Nginx, `maxRequestBodyBytes` on Traefik's buffering middleware; Caddy has no limit by default), and make sure any read/send timeout is generous enough for a slow mobile upload.
 - **Set `TRUST_PROXY=true`** in `.env` once Famlin is behind a reverse proxy, and make sure the proxy sets (not merely appends to) `X-Forwarded-Proto` and `X-Forwarded-Host` on every request it forwards — all the examples below do this. This is what lets Famlin build correct invite links and origin URLs; leaving it `false` behind a proxy, or `true` with no proxy in front, both produce wrong links.
 
 <details>
@@ -187,7 +188,10 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        client_max_body_size 25m; # photo uploads
+        client_max_body_size 200m; # photo/video uploads — Famlin's own per-file limit
+        proxy_request_buffering off; # stream the upload through instead of buffering it to disk first
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
     }
 }
 ```

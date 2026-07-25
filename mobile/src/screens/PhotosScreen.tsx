@@ -22,9 +22,10 @@ import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { EmptyState } from '@/components/EmptyState';
+import { MediaThumbnail } from '@/components/MediaThumbnail';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { PhotoItem } from '@/types';
-import { fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
+import { PhotoItem, Post } from '@/types';
+import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
 import { getUploadUrl } from '@/api/uploads';
 
 const PhotoRow = React.memo(function PhotoRow({
@@ -78,6 +79,52 @@ const PhotoRow = React.memo(function PhotoRow({
   );
 });
 
+// One album in the Photos tab's albums strip — the same collage photos the
+// feed card shows, reduced to a single square tile. Deliberately lighter than
+// AlbumCard (no reactions, no inline "add photos"): this is a shortcut into
+// AlbumDetailScreen, not a feed card. Mirrors web's AlbumTile in PhotosPage.
+const AlbumStripTile = React.memo(function AlbumStripTile({
+  post,
+  onPress,
+}: {
+  post: Post;
+  onPress: (postId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const album = post.album;
+  if (!album) return null;
+
+  const coverUrl = album.collagePhotoUrls[0] ?? album.coverPhotoUrl ?? null;
+
+  return (
+    <TouchableOpacity style={styles.albumTile} onPress={() => onPress(post.id)} activeOpacity={0.8}>
+      <View style={styles.albumTileCover}>
+        {coverUrl ? (
+          <MediaThumbnail url={getUploadUrl(coverUrl)} style={styles.albumTileImage} />
+        ) : (
+          <View style={[styles.albumTileImage, styles.albumTilePlaceholder]}>
+            <Icon name="image" size={28} color={colors.primary} />
+          </View>
+        )}
+        {album.photoCount > 1 && (
+          <View style={styles.albumTileCount} pointerEvents="none">
+            <Icon name="image" size={11} color={colors.white} />
+            <Text style={styles.albumTileCountText}>{album.photoCount}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.albumTileTitle} numberOfLines={1}>
+        {album.title}
+      </Text>
+      <Text style={styles.albumTileMeta} numberOfLines={1}>
+        {album.closed
+          ? t('feed.album.closedBadge')
+          : t('feed.album.stats', { photos: album.photoCount, contributors: album.contributorCount })}
+      </Text>
+    </TouchableOpacity>
+  );
+});
+
 export function PhotosScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
@@ -109,6 +156,16 @@ export function PhotosScreen() {
     queryFn: () => getGroupMediaPeople(activeGroupId!),
     enabled: !!activeGroupId,
   });
+
+  // The group's shared (collaborative ALBUM) posts, shown as a strip above the
+  // timeline — without it they're only reachable by scrolling the feed until
+  // the album card comes back around. One page is plenty for a strip.
+  const { data: albumsPage } = useQuery({
+    queryKey: ['album-posts', activeGroupId],
+    queryFn: () => fetchAlbumPosts({ groupIds: [activeGroupId!] }),
+    enabled: !!activeGroupId,
+  });
+  const albums = albumsPage?.items ?? [];
 
   // Load photo timeline for the active group
   const { query, items: allPhotos, onEndReached } = useCursorPagination({
@@ -209,6 +266,29 @@ export function PhotosScreen() {
 
   const rowKeyExtractor = useCallback((item: PhotoItem[]) => item[0].id, []);
 
+  const openAlbum = useCallback(
+    (postId: string) => navigation.navigate('AlbumDetail', { postId }),
+    [navigation]
+  );
+
+  const albumsHeader = useMemo(() => {
+    if (albums.length === 0) return null;
+    return (
+      <View style={styles.albumsSection}>
+        <Text style={styles.sectionHeaderText}>{t('photos.albumsTitle')}</Text>
+        <FlatList
+          horizontal
+          data={albums}
+          keyExtractor={(item) => item.id}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => <AlbumStripTile post={item} onPress={openAlbum} />}
+          contentContainerStyle={styles.albumsList}
+        />
+        <Text style={styles.sectionHeaderText}>{t('photos.allPhotosTitle')}</Text>
+      </View>
+    );
+  }, [albums, openAlbum, t]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -294,6 +374,7 @@ export function PhotosScreen() {
           keyExtractor={rowKeyExtractor}
           renderItem={renderRow}
           renderSectionHeader={renderSectionHeader}
+          ListHeaderComponent={albumsHeader}
           removeClippedSubviews
           initialNumToRender={4}
           maxToRenderPerBatch={4}
@@ -411,6 +492,69 @@ const styles = StyleSheet.create({
   gridContainer: {
     padding: 12,
     paddingBottom: 110,
+  },
+  albumsSection: {
+    marginBottom: 4,
+  },
+  sectionHeaderText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.textTitle,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 10,
+  },
+  albumsList: {
+    gap: 12,
+    paddingHorizontal: 4,
+    paddingBottom: 4,
+  },
+  albumTile: {
+    width: 132,
+    gap: 6,
+  },
+  albumTileCover: {
+    width: 132,
+    height: 132,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.bg,
+  },
+  albumTileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  albumTilePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryTint,
+  },
+  albumTileCount: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+  },
+  albumTileCountText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    color: colors.white,
+  },
+  albumTileTitle: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    color: colors.textTitle,
+  },
+  albumTileMeta: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    color: colors.textMuted,
   },
   gridRow: {
     flexDirection: 'row',

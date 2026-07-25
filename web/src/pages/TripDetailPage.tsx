@@ -10,6 +10,7 @@ import {
   getUploadUrl,
   patchPostInCaches,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { BottomNav } from '@/components/BottomNav';
 import { CommentsSection } from '@/components/CommentsSection';
@@ -96,13 +97,14 @@ export function TripDetailPage({
             <ShimmerImage src={getUploadUrl(coverUrl)} className="trip-detail-cover-media" loading="eager" />
           ) : (
             <div className="trip-detail-cover-placeholder" aria-hidden>
-              🧳
+              <Icon name="briefcase" size={48} strokeWidth={1.5} />
             </div>
           )}
         </div>
 
         <section className="trip-detail-header">
           <span className={`trip-badge ${trip.closed ? 'trip-badge-closed' : 'trip-badge-active'}`}>
+            <Icon name="briefcase" size={12} strokeWidth={2.2} />
             {trip.closed ? t('trip.detail.closedBadge') : t('trip.detail.activeBadge', { day: trip.dayNumber ?? 1 })}
           </span>
           <h1 className="trip-detail-title">{trip.title}</h1>
@@ -148,6 +150,7 @@ export function TripDetailPage({
 
         <section className="trip-detail-comments-section">
           <h2 className="trip-detail-section-title">
+            <Icon name="message-square" size={16} />
             {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
           </h2>
           <CommentsSection post={post} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
@@ -162,7 +165,7 @@ export function TripDetailPage({
         {sortedCheckins.length === 0 ? (
           <div className="trip-detail-empty">
             <div className="trip-detail-empty-icon" aria-hidden>
-              🧳
+              <Icon name="briefcase" size={28} strokeWidth={1.5} />
             </div>
             <div className="trip-detail-empty-title">{t('trip.detail.emptyTitle')}</div>
             <div className="trip-detail-empty-description">
@@ -207,9 +210,7 @@ function BackLink({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   return (
     <button className="trip-detail-back" onClick={onBack}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <Icon name="chevron-left" size={16} strokeWidth={2.5} />
       {t('trip.detail.backToFeed')}
     </button>
   );
@@ -320,6 +321,7 @@ function CheckinTimelineItem({
             onClick={() => likeMutation.mutate()}
             disabled={likeMutation.isPending}
           >
+            <Icon name="heart" size={13} />
             {t('trip.detail.likesLabel', { count: comment.likeCount })}
           </button>
           <button type="button" className="comment-like" onClick={() => setReplyOpen((v) => !v)}>

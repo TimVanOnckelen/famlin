@@ -131,26 +131,47 @@ export const createPostBodySchema = z
     path: ['groupId'],
   });
 
+// Upper bound on photos/videos in one comment. Deliberately lower than a
+// post's 20 — a comment is a reply, not an album.
+export const MAX_COMMENT_ATTACHMENTS = 10;
+
 export const createCommentBodySchema = z
   .object({
     // Optional so a comment can be photo/video-only — the refine below still
-    // requires at least one of content/attachmentUrl.
+    // requires at least one of content/attachmentUrl(s).
     content: z.string().max(2000).optional(),
     parentId: z.string().optional(),
     assetUrl: assetPathSchema.optional(),
-    // A photo/video the commenter uploaded specifically for this comment
+    // Photos/videos the commenter uploaded specifically for this comment
     // (via POST /api/uploads), distinct from assetUrl above which instead
     // pins the comment to an existing asset already on the post.
+    // attachmentUrl is the legacy single-attachment field older clients still
+    // send; attachmentUrls wins when both are present (see routes/comments.ts).
     attachmentUrl: uploadPathSchema.optional(),
+    attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
     // IDs the client resolved from the group member list while typing "@name" —
     // the server only trusts these as a set of candidate ids and still
     // re-validates each one is a current member of the post's group.
     mentionedUserIds: z.array(z.string()).max(20).optional(),
   })
-  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl || !!data.attachmentUrls?.length, {
     message: 'content or attachmentUrl is required',
     path: ['content'],
   });
+
+/**
+ * Normalizes the two attachment fields a client may send into the array the
+ * Comment row stores: `attachmentUrls` wins when present, `attachmentUrl` is
+ * the legacy single-photo fallback. Duplicate paths are dropped so the same
+ * upload can't be listed twice in one comment.
+ */
+export function normalizeCommentAttachments(body: {
+  attachmentUrl?: string;
+  attachmentUrls?: string[];
+}): string[] {
+  const urls = body.attachmentUrls?.length ? body.attachmentUrls : body.attachmentUrl ? [body.attachmentUrl] : [];
+  return [...new Set(urls)];
+}
 
 // POST /api/chat/groups/:groupId/messages — mirrors createCommentBodySchema's
 // "at least one of content/attachmentUrl" shape (a chat message can be
@@ -188,9 +209,10 @@ export const updatePostBodySchema = z
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     locationName: z.string().max(200).nullable().optional(),
-    // Present so a cross-posted edit can rewrite a linked-album asset via
-    // copyMediaAssetsToUploads (see routes/posts.ts PATCH /:id) — no client
-    // sends this on a plain edit today, but it's the same shape as create's.
+    // Same shape as create's: the edit's complete photo/video list, which
+    // replaces the stored one wholesale (that's how a client both adds and
+    // removes). Omitted leaves the post's existing assets untouched, so a
+    // text-only edit never has to resend them.
     uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
@@ -198,8 +220,19 @@ export const updatePostBodySchema = z
     path: ['latitude'],
   });
 
+// Both fields are optional and independent: sending only `content` leaves the
+// comment's photos alone, sending only attachments leaves its text alone. The
+// "at least one of content/attachments" rule create enforces in the schema
+// can't live here — whether the edit ends up empty depends on the stored row
+// as much as on the body, so routes/comments.ts checks it against the result.
 export const updateCommentBodySchema = z.object({
-  content: z.string().min(1).max(2000),
+  content: z.string().max(2000).optional(),
+  // The comment's complete attachment list after the edit, replacing the
+  // stored one wholesale (adds and removals are the same request).
+  // attachmentUrl is the legacy single-attachment field, same precedence as
+  // createCommentBodySchema — see normalizeCommentAttachments.
+  attachmentUrl: uploadPathSchema.optional(),
+  attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
 });
 
 export const pushTokenBodySchema = z.object({

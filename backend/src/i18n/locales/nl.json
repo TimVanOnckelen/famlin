@@ -45,6 +45,8 @@
     "cannotRemoveLastAdmin": "Kan de laatste beheerder niet verwijderen",
     "parentCommentNotFound": "Bovenliggende reactie niet gevonden",
     "assetNotFoundOnPost": "Bestand niet gevonden bij dit bericht",
+    "commentContentRequired": "Een reactie heeft tekst of minstens één foto nodig",
+    "commentAttachmentsNotEditable": "De foto's bij deze reactie kun je hier niet bewerken",
     "setupAlreadyComplete": "Installatie is al voltooid",
     "immichNotConfigured": "Immich is niet geconfigureerd",
     "immichUnreachable": "Kan de Immich-server niet bereiken met deze instellingen",

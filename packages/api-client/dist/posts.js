@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fetchPosts = fetchPosts;
+exports.fetchAlbumPosts = fetchAlbumPosts;
 exports.fetchPost = fetchPost;
 exports.fetchOnThisDay = fetchOnThisDay;
 exports.searchPosts = searchPosts;
@@ -24,9 +25,18 @@ async function fetchPosts(params = {}) {
         params: {
             groupIds: params.groupIds && params.groupIds.length > 0 ? params.groupIds.join(',') : undefined,
             cursor: params.cursor,
+            type: params.type,
         },
     });
     return response.data;
+}
+// The albums shown in the Photos tab: every ALBUM post in the given groups,
+// newest first. Kept here (rather than each client hand-rolling the
+// `type: 'ALBUM'` call) so web and mobile share the older-server fallback —
+// see FetchPostsParams.type.
+async function fetchAlbumPosts(params = {}) {
+    const page = await fetchPosts({ ...params, type: 'ALBUM' });
+    return { ...page, items: page.items.filter((post) => post.type === 'ALBUM') };
 }
 async function fetchPost(postId) {
     const response = await client_1.api.get(`/posts/${postId}`);
@@ -48,8 +58,8 @@ async function createPost(data) {
     const response = await client_1.api.post('/posts', data);
     return response.data;
 }
-async function updatePost(postId, content) {
-    const response = await client_1.api.patch(`/posts/${postId}`, { content });
+async function updatePost(postId, data) {
+    const response = await client_1.api.patch(`/posts/${postId}`, data);
     return response.data;
 }
 async function deletePost(postId) {

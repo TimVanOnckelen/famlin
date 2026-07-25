@@ -163,6 +163,80 @@ describe('comments routes', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().content).toBe('');
       expect(res.json().attachmentUrl).toBe(photoUrl);
+      expect(res.json().attachmentUrls).toEqual([photoUrl]);
+    });
+
+    it('creates a comment with several photos and mirrors the first onto attachmentUrl', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const photoUrls = [assetPath(), assetPath(), assetPath()];
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: photoUrls },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual(photoUrls);
+      // Clients built before multi-attachment comments only read this field.
+      expect(res.json().attachmentUrl).toBe(photoUrls[0]);
+
+      const list = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+      });
+      expect(list.json()[0].attachmentUrls).toEqual(photoUrls);
+    });
+
+    it('drops a duplicate attachment path', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const photoUrl = assetPath();
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [photoUrl, photoUrl] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual([photoUrl]);
+    });
+
+    it('rejects more attachments than a comment may carry', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: Array.from({ length: 11 }, assetPath) },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects an attachmentUrls entry that is not a valid uploaded asset path', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [assetPath(), 'https://evil.example.com/x.jpg'] },
+      });
+
+      expect(res.statusCode).toBe(400);
     });
 
     it('rejects a comment with neither content nor an attachment', async () => {
@@ -190,6 +264,133 @@ describe('comments routes', () => {
         url: `/api/posts/${post.id}/comments`,
         headers: authHeader(author),
         payload: { attachmentUrl: 'https://evil.example.com/x.jpg' },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+  });
+
+  describe('editing attachments', () => {
+    // Creating through the route rather than the fixture so both attachment
+    // columns are populated the way a real comment's are.
+    async function postComment(app: FastifyInstance, postId: string, user: any, payload: object) {
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${postId}/comments`,
+        headers: authHeader(user),
+        payload,
+      });
+      expect(res.statusCode).toBe(200);
+      return res.json();
+    }
+
+    it('adds photos to a text-only comment', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const comment = await postComment(app, post.id, author, { content: 'just words' });
+
+      const photoUrls = [assetPath(), assetPath()];
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { content: 'just words', attachmentUrls: photoUrls },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual(photoUrls);
+      expect(res.json().attachmentUrl).toBe(photoUrls[0]);
+    });
+
+    it('removes photos from a comment, clearing the legacy mirror too', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const comment = await postComment(app, post.id, author, {
+        content: 'look at these',
+        attachmentUrls: [assetPath(), assetPath()],
+      });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual([]);
+      expect(res.json().attachmentUrl).toBeNull();
+      // Untouched: the edit only sent attachments.
+      expect(res.json().content).toBe('look at these');
+    });
+
+    it('keeps a photo-only comment when the edit drops only one of its photos', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const [keep, drop] = [assetPath(), assetPath()];
+      const comment = await postComment(app, post.id, author, { attachmentUrls: [keep, drop] });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [keep] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual([keep]);
+      expect(res.json().content).toBe('');
+    });
+
+    it('leaves the photos alone when the edit only sends content', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const photoUrls = [assetPath()];
+      const comment = await postComment(app, post.id, author, { content: 'before', attachmentUrls: photoUrls });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { content: 'after' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().content).toBe('after');
+      expect(res.json().attachmentUrls).toEqual(photoUrls);
+    });
+
+    it('rejects an edit that would leave the comment with neither text nor photos', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const comment = await postComment(app, post.id, author, { content: 'something' });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { content: '   ', attachmentUrls: [] },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects removing the last photo of a photo-only comment', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+      const comment = await postComment(app, post.id, author, { attachmentUrls: [assetPath()] });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [] },
       });
 
       expect(res.statusCode).toBe(400);

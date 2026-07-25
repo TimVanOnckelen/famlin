@@ -242,7 +242,7 @@ describe('PostCard', () => {
           })}
         />
       );
-      expect(screen.getByText('🧳 TRIP · CLOSED')).toBeInTheDocument();
+      expect(screen.getByText('TRIP · CLOSED')).toBeInTheDocument();
       expect(screen.getByText('12 days · 8 stops · 30 photos')).toBeInTheDocument();
       expect(screen.getByText(/Grandpa John/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'View the diary →' })).toBeInTheDocument();
@@ -267,7 +267,7 @@ describe('PostCard', () => {
       renderWithQueryClient(
         <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />
       );
-      expect(screen.getByText('🖼️ SHARED ALBUM')).toBeInTheDocument();
+      expect(screen.getByText('SHARED ALBUM')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Summer at the lake' })).toBeInTheDocument();
       expect(screen.getByText('5 photos · 2 contributors')).toBeInTheDocument();
       expect(screen.getByText(/Added by Sophie/)).toBeInTheDocument();
@@ -297,7 +297,7 @@ describe('PostCard', () => {
         <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum({ closed: true }) })} />
       );
       expect(screen.queryByRole('button', { name: 'Add photos' })).not.toBeInTheDocument();
-      expect(screen.getByText('🖼️ ALBUM · CLOSED')).toBeInTheDocument();
+      expect(screen.getByText('ALBUM · CLOSED')).toBeInTheDocument();
     });
 
     it('never renders a generic inline-comments affordance for album posts', () => {

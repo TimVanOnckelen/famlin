@@ -13,6 +13,7 @@ import {
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -22,6 +23,11 @@ import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
+
+// Past this many photos the collage becomes a horizontally scrolling gallery
+// instead — every photo stays reachable on the card itself rather than hiding
+// behind a "+N" tile. Matches the comment cards' threshold.
+const COLLAGE_MAX_PHOTOS = 4;
 
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
@@ -45,6 +51,14 @@ function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: 
   if (assetUrls.length === 2) {
     return (
       <div className="post-collage post-collage-2">
+        {assetUrls.map((assetUrl, i) => tile(assetUrl, i))}
+      </div>
+    );
+  }
+
+  if (assetUrls.length > COLLAGE_MAX_PHOTOS) {
+    return (
+      <div className="post-collage post-collage-gallery">
         {assetUrls.map((assetUrl, i) => tile(assetUrl, i))}
       </div>
     );
@@ -220,14 +234,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       aria-label={t('feed.favorite')}
       title={t('feed.favorite')}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill={post.favoritedByMe ? 'currentColor' : 'none'} aria-hidden>
-        <path
-          d="M19 21l-7-4.5L5 21V5a2 2 0 012-2h10a2 2 0 012 2z"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Icon name="bookmark" size={18} filled={post.favoritedByMe} />
     </button>
   );
 
@@ -255,16 +262,15 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
               <span>{post.author.name}</span>
             </div>
             {isMilestone && (
-              <span className="milestone-badge milestone-badge-overlay">{t('feed.milestoneBadge')}</span>
+              <span className="milestone-badge milestone-badge-overlay">
+                <Icon name="gift" size={13} strokeWidth={2.2} />
+                {t('feed.milestoneBadge')}
+              </span>
             )}
             <div className="post-hero-top-right">
               {isCollage && (
                 <span className="post-photo-count-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="white" strokeWidth="2" />
-                    <circle cx="8.5" cy="10" r="1.5" fill="white" />
-                    <path d="M21 15l-5-5-9 9" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                  <Icon name="image" size={14} color="white" />
                   {post.uploadedAssetUrls.length}
                 </span>
               )}
@@ -281,7 +287,12 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         <div className="post-body">
           {!hasPhotos && (
             <>
-              {isMilestone && <span className="milestone-badge">{t('feed.milestoneBadge')}</span>}
+              {isMilestone && (
+                <span className="milestone-badge">
+                  <Icon name="gift" size={13} strokeWidth={2.2} />
+                  {t('feed.milestoneBadge')}
+                </span>
+              )}
               <div className="post-author-row">
                 <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={44} />
                 <div>
@@ -321,12 +332,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
 
           {sharedWithNames && (
             <div className="post-shared-indicator" title={t('feed.sharedWith', { names: sharedWithNames })}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M18 8a3 3 0 10-2.83-4H15a3 3 0 000 6 2.97 2.97 0 001.5-.4l-6.32 3.7a3 3 0 100 3.4l6.32 3.7A2.97 2.97 0 0015 20a3 3 0 103-3.1v-.1a3 3 0 00-1.5.4L10.18 13.5a3 3 0 000-3l6.32-3.7c.44.26.95.4 1.5.4z"
-                  fill="currentColor"
-                />
-              </svg>
+              <Icon name="share-2" size={14} />
               {t('feed.sharedWith', { names: sharedWithNames })}
             </div>
           )}
@@ -341,13 +347,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 {post.myReaction ? (
                   <span className="reaction-emoji">{REACTION_EMOJI[post.myReaction]}</span>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
+                  <Icon name="heart" size={18} />
                 )}
                 {post.likeCount}
               </button>
@@ -366,14 +366,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
             </div>
 
             <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <Icon name="message-square" size={18} />
               {t('feed.comments', { count: post.commentCount })}
             </button>
           </div>
