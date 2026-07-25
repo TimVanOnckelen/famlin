@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.UPLOAD_TIMEOUT_MS = void 0;
 exports.getUploadUrl = getUploadUrl;
+exports.uploadFiles = uploadFiles;
 exports.refreshMediaToken = refreshMediaToken;
 exports.ensureFreshMediaToken = ensureFreshMediaToken;
 const client_1 = require("./client");
@@ -34,6 +36,33 @@ function getUploadUrl(path, variant) {
     const query = token ? `?token=${encodeURIComponent(token)}` : '';
     return `${serverUrl}${resolvedPath}${query}`;
 }
+// Uploading is the one request that routinely outlives the client's default
+// 15s timeout (see client.ts) — a phone photo, let alone a video, can take
+// minutes on mobile data, and an aborted upload surfaces to the user as an
+// opaque "Network Error". Every upload call site must pass this.
+exports.UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+// Browser file upload — the single place web posts to /api/uploads, so the
+// two things that silently break it live in one spot:
+//   - Content-Type must be cleared. The shared client defaults to
+//     application/json, and axios ≥1 *serializes FormData to JSON* when the
+//     content type says JSON (`{"file":{}}`), so the bytes never leave the
+//     browser and the route answers 406 "the request is not multipart".
+//     Undefined lets the browser generate `multipart/form-data; boundary=...`
+//     itself (mobile's uploadMedia clears it for the same reason).
+//   - The default timeout is far too short for real photos/videos.
+async function uploadFiles(files) {
+    const formData = new FormData();
+    // The upload route walks every file part in the request, so one round trip
+    // covers the whole batch (same as mobile's uploadMedia).
+    for (const file of files) {
+        formData.append('file', file);
+    }
+    const response = await client_1.api.post('/uploads', formData, {
+        headers: { 'Content-Type': undefined },
+        timeout: exports.UPLOAD_TIMEOUT_MS,
+    });
+    return response.data.urls;
+}
 let mediaTokenFetchedAt = null;
 const MEDIA_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 async function refreshMediaToken() {
@@ -50,7 +79,12 @@ async function refreshMediaToken() {
         }
         catch {
             if (attempt === 1) {
-                (0, client_1.setMediaToken)(null);
+                // Deliberately keep whatever token is already cached: it's valid for
+                // 7d and a transient refresh failure (offline, flaky connection) is
+                // no reason to throw it away — dropping it turns every subsequent
+                // <Image>/<Video> GET into a 401 with no retry path. Only the
+                // freshness stamp is cleared, so ensureFreshMediaToken() retries on
+                // the next foreground.
                 mediaTokenFetchedAt = null;
             }
         }

@@ -49,6 +49,7 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
         <View style={styles.body}>
           <View style={styles.badgeRow}>
             <View style={styles.closedBadge}>
+              <Icon name="briefcase" size={11} color={colors.tripDark} />
               <Text style={styles.closedBadgeText}>{t('feed.trip.closedBadge')}</Text>
             </View>
             {groupTag}
@@ -96,11 +97,12 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
           <MediaThumbnail url={getUploadUrl(heroUrl)} style={styles.heroImage} />
         ) : (
           <View style={[styles.heroImage, styles.heroPlaceholder]}>
-            <Text style={styles.heroPlaceholderEmoji}>🧳</Text>
+            <Icon name="briefcase" size={40} color={colors.trip} />
           </View>
         )}
         {trip.dayNumber != null && (
           <View style={styles.activeBadge}>
+            <Icon name="briefcase" size={12} color={colors.white} />
             <Text style={styles.activeBadgeText}>{t('feed.trip.activeBadge', { day: trip.dayNumber })}</Text>
           </View>
         )}
@@ -146,7 +148,7 @@ function ClosedCollage({ photoUrls, photoCount }: { photoUrls: string[]; photoCo
   if (photoUrls.length === 0) {
     return (
       <View style={[styles.collageRow, styles.heroPlaceholder]}>
-        <Text style={styles.heroPlaceholderEmoji}>🧳</Text>
+        <Icon name="briefcase" size={40} color={colors.trip} />
       </View>
     );
   }
@@ -211,10 +213,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroPlaceholderEmoji: {
-    fontSize: 40,
-  },
   activeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     position: 'absolute',
     left: 12,
     top: 12,
@@ -275,6 +277,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   closedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     borderWidth: 1.5,
     borderColor: colors.tripBorder,
     borderRadius: 100,

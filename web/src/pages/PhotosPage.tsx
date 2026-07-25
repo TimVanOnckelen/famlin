@@ -9,6 +9,7 @@ import {
   PhotoItem,
   User,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { Lightbox } from '@/components/Lightbox';
@@ -192,7 +193,9 @@ export function PhotosPage({
 
         {photosQuery.isSuccess && photos.length === 0 && (
           <div className="photos-empty">
-            <div className="photos-empty-emoji">📸</div>
+            <div className="photos-empty-icon" aria-hidden>
+              <Icon name="camera" size={40} strokeWidth={1.5} />
+            </div>
             <p>{t('photos.empty')}</p>
           </div>
         )}

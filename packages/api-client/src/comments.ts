@@ -11,14 +11,17 @@ export async function fetchComments(postId: string, assetUrl?: string): Promise<
 
 export interface CreateCommentBody {
   // Optional so a comment can be photo/video-only — the server rejects a
-  // request with neither content nor attachmentUrl.
+  // request with neither content nor attachments.
   content?: string;
   parentId?: string;
   mentionedUserIds?: string[];
   assetUrl?: string;
-  // A photo/video the commenter uploaded as part of this comment itself
-  // (from POST /api/uploads) — distinct from assetUrl above.
+  // Photos/videos the commenter uploaded as part of this comment itself
+  // (from POST /api/uploads) — distinct from assetUrl above. attachmentUrl is
+  // the legacy single-attachment field; send attachmentUrls (max
+  // MAX_COMMENT_ATTACHMENTS), which wins when the server understands it.
   attachmentUrl?: string;
+  attachmentUrls?: string[];
 }
 
 export async function createComment(postId: string, data: CreateCommentBody): Promise<Comment> {

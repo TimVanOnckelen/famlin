@@ -7,6 +7,7 @@ export interface CreateCommentBody {
     mentionedUserIds?: string[];
     assetUrl?: string;
     attachmentUrl?: string;
+    attachmentUrls?: string[];
 }
 export declare function createComment(postId: string, data: CreateCommentBody): Promise<Comment>;
 export declare function updateComment(commentId: string, content: string): Promise<Comment>;

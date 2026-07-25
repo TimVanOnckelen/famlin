@@ -131,26 +131,47 @@ export const createPostBodySchema = z
     path: ['groupId'],
   });
 
+// Upper bound on photos/videos in one comment. Deliberately lower than a
+// post's 20 — a comment is a reply, not an album.
+export const MAX_COMMENT_ATTACHMENTS = 10;
+
 export const createCommentBodySchema = z
   .object({
     // Optional so a comment can be photo/video-only — the refine below still
-    // requires at least one of content/attachmentUrl.
+    // requires at least one of content/attachmentUrl(s).
     content: z.string().max(2000).optional(),
     parentId: z.string().optional(),
     assetUrl: assetPathSchema.optional(),
-    // A photo/video the commenter uploaded specifically for this comment
+    // Photos/videos the commenter uploaded specifically for this comment
     // (via POST /api/uploads), distinct from assetUrl above which instead
     // pins the comment to an existing asset already on the post.
+    // attachmentUrl is the legacy single-attachment field older clients still
+    // send; attachmentUrls wins when both are present (see routes/comments.ts).
     attachmentUrl: uploadPathSchema.optional(),
+    attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
     // IDs the client resolved from the group member list while typing "@name" —
     // the server only trusts these as a set of candidate ids and still
     // re-validates each one is a current member of the post's group.
     mentionedUserIds: z.array(z.string()).max(20).optional(),
   })
-  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl, {
+  .refine((data) => !!data.content?.trim() || !!data.attachmentUrl || !!data.attachmentUrls?.length, {
     message: 'content or attachmentUrl is required',
     path: ['content'],
   });
+
+/**
+ * Normalizes the two attachment fields a client may send into the array the
+ * Comment row stores: `attachmentUrls` wins when present, `attachmentUrl` is
+ * the legacy single-photo fallback. Duplicate paths are dropped so the same
+ * upload can't be listed twice in one comment.
+ */
+export function normalizeCommentAttachments(body: {
+  attachmentUrl?: string;
+  attachmentUrls?: string[];
+}): string[] {
+  const urls = body.attachmentUrls?.length ? body.attachmentUrls : body.attachmentUrl ? [body.attachmentUrl] : [];
+  return [...new Set(urls)];
+}
 
 // POST /api/chat/groups/:groupId/messages — mirrors createCommentBodySchema's
 // "at least one of content/attachmentUrl" shape (a chat message can be

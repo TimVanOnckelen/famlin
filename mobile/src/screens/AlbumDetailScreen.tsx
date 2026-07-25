@@ -138,12 +138,13 @@ export function AlbumDetailScreen() {
             <MediaThumbnail url={getUploadUrl(coverUrl)} style={styles.cover} />
           ) : (
             <View style={[styles.cover, styles.coverPlaceholder]}>
-              <Text style={styles.coverPlaceholderEmoji}>🖼️</Text>
+              <Icon name="image" size={48} color={colors.primary} />
             </View>
           )}
 
           <View style={styles.section}>
             <View style={album.closed ? styles.closedBadge : styles.badge}>
+              <Icon name="image" size={12} color={album.closed ? colors.primaryDark : colors.white} />
               <Text style={album.closed ? styles.closedBadgeText : styles.badgeText}>
                 {album.closed ? t('album.detail.closedBadge') : t('album.detail.badge')}
               </Text>
@@ -187,7 +188,7 @@ export function AlbumDetailScreen() {
 
           {photos.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🖼️</Text>
+              <Icon name="image" size={28} color={colors.primary} />
               <Text style={styles.emptyTitle}>{t('album.detail.emptyTitle')}</Text>
               <Text style={styles.emptyDescription}>
                 {album.closed ? t('album.detail.emptyClosedDescription') : t('album.detail.emptyDescription')}
@@ -204,7 +205,10 @@ export function AlbumDetailScreen() {
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('album.detail.commentsSectionTitle')}</Text>
+            <View style={styles.sectionTitleRow}>
+              <Icon name="message-square" size={15} color={colors.textTitle} />
+              <Text style={styles.sectionTitle}>{t('album.detail.commentsSectionTitle')}</Text>
+            </View>
             {discussion.length === 0 ? (
               <Text style={styles.noComments}>{t('comments.empty')}</Text>
             ) : (
@@ -272,9 +276,21 @@ const styles = StyleSheet.create({
   coverPlaceholder: { backgroundColor: colors.primaryTint, alignItems: 'center', justifyContent: 'center' },
   coverPlaceholderEmoji: { fontSize: 56 },
   section: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
-  badge: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: 100, paddingHorizontal: 12, paddingVertical: 4 },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
   badgeText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 11, color: colors.white },
   closedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     alignSelf: 'flex-start',
     borderWidth: 1.5,
     borderColor: colors.primaryTint,
@@ -312,6 +328,7 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 17, color: colors.textTitle, marginTop: 8 },
   emptyDescription: { fontFamily: 'Nunito_400Regular', fontSize: 14, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   sectionTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: colors.textTitle },
   noComments: { fontFamily: 'Nunito_400Regular', fontSize: 14, color: colors.textMuted },
   comment: { flexDirection: 'row', gap: 10, marginTop: 12 },

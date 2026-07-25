@@ -2,100 +2,122 @@ import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  api,
+  uploadFiles,
   Post,
   Comment,
+  CommentGroup,
+  MAX_COMMENT_ATTACHMENTS,
   fetchComments,
   createComment,
   reactToComment,
+  groupCommentAttachments,
   getUploadUrl,
   patchPostInCaches,
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 
-async function uploadCommentAttachment(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post<{ urls: string[] }>('/uploads', formData);
-  return response.data.urls[0];
-}
+// Up to this many photos on one comment card lay out as a wrapping grid;
+// beyond it the card becomes a horizontally scrolling gallery instead, so a
+// long photo burst never pushes the rest of the thread down the page.
+const GRID_MAX_TILES = 4;
 
-function CommentItem({ comment, isReply }: { comment: Comment; isReply: boolean }) {
+function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: boolean }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { lead, attachments } = group;
 
-  // Basic like toggle (LIKE reaction) — the full per-emoji picker stays a
-  // post-level affordance for now, matching the calm comment row in mobile.
+  // Basic reaction toggle — the full per-emoji picker stays a post-level
+  // affordance for now, matching the calm comment row in mobile. Sending back
+  // the reaction the user already left is what removes it, so a LOVE left
+  // from mobile toggles off here instead of switching to LIKE.
   // The endpoint returns only { myReaction, counts }, so patch optimistically
   // and re-fetch rather than merging the response into the cache.
   const likeMutation = useMutation({
-    mutationFn: () => reactToComment(comment.id, 'LIKE'),
+    mutationFn: () => reactToComment(group.reactionTargetId, group.myReaction ?? 'LIKE'),
     onMutate: () => {
-      const liked = comment.myReaction === 'LIKE';
-      queryClient.setQueryData<Comment[]>(['comments', comment.postId], (old) =>
+      const reacted = !!group.myReaction;
+      queryClient.setQueryData<Comment[]>(['comments', lead.postId], (old) =>
         old?.map((c) =>
-          c.id === comment.id
+          c.id === group.reactionTargetId
             ? {
                 ...c,
-                myReaction: liked ? null : 'LIKE',
-                likedByMe: !liked,
-                likeCount: Math.max(0, c.likeCount + (liked ? -1 : 1)),
+                myReaction: reacted ? null : 'LIKE',
+                likedByMe: !reacted,
+                likeCount: Math.max(0, c.likeCount + (reacted ? -1 : 1)),
               }
             : c
         )
       );
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', comment.postId] });
+      queryClient.invalidateQueries({ queryKey: ['comments', lead.postId] });
     },
   });
 
+  const layout =
+    attachments.length > GRID_MAX_TILES
+      ? 'comment-attachment-gallery'
+      : attachments.length > 1
+        ? 'comment-attachment-grid'
+        : 'comment-attachment';
+
   return (
     <div className={`comment${isReply ? ' comment-reply' : ''}`}>
-      <Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} size={32} />
+      <Avatar name={lead.author.name} avatarUrl={lead.author.avatarUrl} size={32} />
       <div className="comment-main">
         <div className="comment-bubble">
-          <span className="comment-author">{comment.author.name}</span>
-          {!!comment.content && <span className="comment-text">{comment.content}</span>}
+          <span className="comment-author">{lead.author.name}</span>
+          {!!lead.content && <span className="comment-text">{lead.content}</span>}
         </div>
-        {comment.attachmentUrl && (
-          <button
-            type="button"
-            className="comment-attachment"
-            onClick={() => setLightboxOpen(true)}
-            aria-label={t('comments.viewAttachment')}
-          >
-            {isVideoUrl(comment.attachmentUrl) ? (
-              <video src={getUploadUrl(comment.attachmentUrl)} muted preload="metadata" />
-            ) : (
-              <ShimmerImage
-                src={getUploadUrl(comment.attachmentUrl, 'thumbnail')}
-                fallbackSrc={getUploadUrl(comment.attachmentUrl)}
-                loading="lazy"
-              />
-            )}
-          </button>
+        {attachments.length > 0 && (
+          <div className={layout}>
+            {attachments.map(({ url, commentId }, index) => (
+              <button
+                key={`${commentId}-${url}`}
+                type="button"
+                className="comment-attachment-tile"
+                onClick={() => setLightboxIndex(index)}
+                aria-label={t('comments.viewAttachment')}
+              >
+                {isVideoUrl(url) ? (
+                  <video src={getUploadUrl(url)} muted preload="metadata" />
+                ) : (
+                  <ShimmerImage
+                    src={getUploadUrl(url, 'thumbnail')}
+                    fallbackSrc={getUploadUrl(url)}
+                    loading="lazy"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
         )}
         <div className="comment-meta">
-          <span>{formatRelativeDate(comment.createdAt, i18n.language)}</span>
+          <span>{formatRelativeDate(lead.createdAt, i18n.language)}</span>
+          {group.isBundle && <span>{t('comments.photoCount', { count: attachments.length })}</span>}
           <button
-            className={`comment-like${comment.likedByMe ? ' comment-like-active' : ''}`}
+            className={`comment-like${group.myReaction ? ' comment-like-active' : ''}`}
             onClick={() => likeMutation.mutate()}
             disabled={likeMutation.isPending}
           >
             {t('comments.like')}
-            {comment.likeCount > 0 ? ` · ${comment.likeCount}` : ''}
+            {group.likeCount > 0 ? ` · ${group.likeCount}` : ''}
           </button>
         </div>
       </div>
 
-      {lightboxOpen && comment.attachmentUrl && (
-        <Lightbox assetUrls={[comment.attachmentUrl]} initialIndex={0} onClose={() => setLightboxOpen(false)} />
+      {lightboxIndex !== null && (
+        <Lightbox
+          assetUrls={attachments.map((a) => a.url)}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
     </div>
   );
@@ -119,8 +141,7 @@ export function CommentsSection({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
-  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ file: File; previewUrl: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const commentsQuery = useQuery({
@@ -129,13 +150,13 @@ export function CommentsSection({
   });
 
   const createMutation = useMutation({
-    mutationFn: async ({ content, file }: { content: string; file: File | null }) => {
-      const attachmentUrl = file ? await uploadCommentAttachment(file) : undefined;
-      return createComment(post.id, { content: content || undefined, attachmentUrl });
+    mutationFn: async ({ content, files }: { content: string; files: File[] }) => {
+      const attachmentUrls = files.length ? await uploadFiles(files) : undefined;
+      return createComment(post.id, { content: content || undefined, attachmentUrls });
     },
     onSuccess: (created) => {
       setDraft('');
-      clearAttachment();
+      clearAttachments();
       queryClient.setQueryData<Comment[]>(['comments', post.id], (old) =>
         old ? [...old, created] : [created]
       );
@@ -143,34 +164,57 @@ export function CommentsSection({
     },
   });
 
-  function clearAttachment() {
-    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
-    setAttachmentFile(null);
-    setAttachmentPreviewUrl(null);
+  function clearAttachments() {
+    pending.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    setPending([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  function pickAttachment(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
-    setAttachmentFile(file);
-    setAttachmentPreviewUrl(URL.createObjectURL(file));
+  function removeAttachment(index: number) {
+    setPending((old) => {
+      const removed = old[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return old.filter((_, i) => i !== index);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function pickAttachments(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setPending((old) => {
+      // Picking again adds to what's already staged; anything past the
+      // server's per-comment cap is dropped rather than failing the send.
+      const room = MAX_COMMENT_ATTACHMENTS - old.length;
+      const added = files.slice(0, Math.max(0, room)).map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+      return [...old, ...added];
+    });
+    // Let the same file be picked again after it's removed.
+    e.target.value = '';
   }
 
   function submit(e: FormEvent) {
     e.preventDefault();
     const content = draft.trim();
-    if ((content || attachmentFile) && !createMutation.isPending) {
-      createMutation.mutate({ content, file: attachmentFile });
+    if ((content || pending.length) && !createMutation.isPending) {
+      createMutation.mutate({ content, files: pending.map((item) => item.file) });
     }
   }
 
-  // Order: top-level comments chronologically, each followed by its replies.
+  // Order: top-level comment groups chronologically, each followed by its
+  // replies. Grouping collapses runs of photo-only comments by the same author
+  // into one card (see groupCommentAttachments) — replies are grouped the same
+  // way within their own thread.
   const rawComments = commentsQuery.data ?? [];
   const comments = filterComments ? filterComments(rawComments) : rawComments;
-  const topLevel = comments.filter((c) => !c.parentId);
-  const repliesFor = (parentId: string) => comments.filter((c) => c.parentId === parentId);
+  const topLevelGroups = groupCommentAttachments(comments.filter((c) => !c.parentId));
+  const replyGroupsFor = (group: CommentGroup) =>
+    groupCommentAttachments(
+      comments.filter((c) => group.comments.some((parent) => parent.id === c.parentId))
+    );
 
   return (
     <div className="comments-section">
@@ -180,31 +224,35 @@ export function CommentsSection({
         <div className="comments-hint">{t('comments.empty')}</div>
       )}
 
-      {topLevel.map((comment) => (
-        <div key={comment.id}>
-          <CommentItem comment={comment} isReply={false} />
-          {repliesFor(comment.id).map((reply) => (
-            <CommentItem key={reply.id} comment={reply} isReply />
+      {topLevelGroups.map((group) => (
+        <div key={group.key}>
+          <CommentGroupItem group={group} isReply={false} />
+          {replyGroupsFor(group).map((reply) => (
+            <CommentGroupItem key={reply.key} group={reply} isReply />
           ))}
         </div>
       ))}
 
       <form className="comment-composer-form" onSubmit={submit}>
-        {attachmentPreviewUrl && (
-          <div className="comment-attachment-preview">
-            {attachmentFile?.type.startsWith('video/') ? (
-              <video src={attachmentPreviewUrl} muted />
-            ) : (
-              <img src={attachmentPreviewUrl} alt="" />
-            )}
-            <button
-              type="button"
-              className="comment-attachment-remove"
-              onClick={clearAttachment}
-              aria-label={t('comments.removeAttachment')}
-            >
-              ×
-            </button>
+        {pending.length > 0 && (
+          <div className="comment-attachment-previews">
+            {pending.map((item, index) => (
+              <div className="comment-attachment-preview" key={item.previewUrl}>
+                {item.file.type.startsWith('video/') ? (
+                  <video src={item.previewUrl} muted />
+                ) : (
+                  <img src={item.previewUrl} alt="" />
+                )}
+                <button
+                  type="button"
+                  className="comment-attachment-remove"
+                  onClick={() => removeAttachment(index)}
+                  aria-label={t('comments.removeAttachment')}
+                >
+                  <Icon name="x" size={12} strokeWidth={2.5} />
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <div className="comment-composer">
@@ -212,20 +260,18 @@ export function CommentsSection({
             ref={fileInputRef}
             type="file"
             accept="image/*,video/mp4,video/quicktime,video/webm"
+            multiple
             hidden
-            onChange={pickAttachment}
+            onChange={pickAttachments}
           />
           <button
             type="button"
             className="comment-attach-button"
             onClick={() => fileInputRef.current?.click()}
+            disabled={pending.length >= MAX_COMMENT_ATTACHMENTS}
             aria-label={t('comments.addAttachment')}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
-              <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
-              <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            </svg>
+            <Icon name="image" size={18} />
           </button>
           <input
             className="comment-input"
@@ -237,7 +283,7 @@ export function CommentsSection({
           <button
             type="submit"
             className="btn btn-primary comment-send"
-            disabled={(!draft.trim() && !attachmentFile) || createMutation.isPending}
+            disabled={(!draft.trim() && !pending.length) || createMutation.isPending}
           >
             {t('comments.send')}
           </button>

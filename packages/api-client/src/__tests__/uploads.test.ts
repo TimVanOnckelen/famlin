@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('../client', () => ({
-  api: { get: vi.fn() },
+  api: { get: vi.fn(), post: vi.fn() },
   getCurrentServerUrl: vi.fn(),
   getCurrentMediaToken: vi.fn(),
   setMediaToken: vi.fn(),
@@ -82,6 +82,33 @@ describe('uploads', () => {
     });
   });
 
+  describe('uploadFiles', () => {
+    it('posts the batch as multipart, clearing the JSON content type', async () => {
+      const client = await import('../client');
+      (client.api.post as any).mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } });
+
+      const { uploadFiles, UPLOAD_TIMEOUT_MS } = await import('../uploads');
+      const files = [new File(['a'], 'a.jpg'), new File(['b'], 'b.jpg')];
+      const urls = await uploadFiles(files as any);
+
+      expect(urls).toEqual(['/uploads/a.jpg', '/uploads/b.jpg']);
+      const [path, body, config] = (client.api.post as any).mock.calls[0];
+      expect(path).toBe('/uploads');
+      // The whole batch goes in one request, and every part is named "file"
+      // (the route walks every file part regardless of field name).
+      expect(body).toBeInstanceOf(FormData);
+      expect((body as FormData).getAll('file')).toHaveLength(2);
+      // Leaving the client's default application/json in place makes axios
+      // serialize the FormData to JSON ({"file":{}}) and the route answers
+      // 406 "the request is not multipart" — the bytes never leave at all.
+      expect(config.headers['Content-Type']).toBeUndefined();
+      expect('Content-Type' in config.headers).toBe(true);
+      // A photo/video upload must not be held to the JSON-API timeout.
+      expect(config.timeout).toBe(UPLOAD_TIMEOUT_MS);
+      expect(UPLOAD_TIMEOUT_MS).toBeGreaterThan(60_000);
+    });
+  });
+
   describe('refreshMediaToken', () => {
     it('retries once on failure and succeeds, without ever nulling the token', async () => {
       const client = await import('../client');
@@ -97,7 +124,7 @@ describe('uploads', () => {
       expect(client.setMediaToken).not.toHaveBeenCalledWith(null);
     });
 
-    it('sets the token to null only after both attempts fail', async () => {
+    it('keeps the cached token when both attempts fail', async () => {
       const client = await import('../client');
       (client.api.get as any).mockRejectedValue(new Error('network fail'));
 
@@ -105,7 +132,23 @@ describe('uploads', () => {
       await refreshMediaToken();
 
       expect(client.api.get).toHaveBeenCalledTimes(2);
-      expect(client.setMediaToken).toHaveBeenLastCalledWith(null);
+      // Dropping the existing token would 401 every /uploads GET with no
+      // retry path; a possibly-stale token is strictly better than none.
+      expect(client.setMediaToken).not.toHaveBeenCalled();
+    });
+
+    it('marks the token stale after a failed refresh so the next foreground retries', async () => {
+      const client = await import('../client');
+      (client.api.get as any).mockRejectedValue(new Error('network fail'));
+
+      const { refreshMediaToken, ensureFreshMediaToken } = await import('../uploads');
+      await refreshMediaToken();
+      (client.api.get as any).mockClear();
+      (client.getCurrentMediaToken as any).mockReturnValue('stale-token');
+
+      await ensureFreshMediaToken();
+
+      expect(client.api.get).toHaveBeenCalled();
     });
 
     it('succeeds on the first attempt without a second call', async () => {

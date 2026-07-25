@@ -4,12 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 
+import { Icon } from '@/components/Icon';
 import { PhotoCollage } from '@/components/PhotoCollage';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
 import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
-import { FontAwesome } from '@expo/vector-icons';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { setApiBaseUrl } from '@/api/client';
 
@@ -179,7 +179,7 @@ export function LoginScreen() {
         ) : (
           <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
             <TouchableOpacity style={styles.serverChip} onPress={handleChangeServer}>
-              <FontAwesome name="server" size={13} color={colors.textMuted} />
+              <Icon name="server" size={13} color={colors.textMuted} />
               <Text style={styles.serverChipText} numberOfLines={1}>{serverUrl}</Text>
               <Text style={styles.serverChipEdit}>{t('login.changeServer')}</Text>
             </TouchableOpacity>
@@ -235,7 +235,7 @@ export function LoginScreen() {
                   onPress={handleSsoLogin}
                   disabled={isSsoLoading}
                 >
-                  <FontAwesome name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
+                  <Icon name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
                   <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
                     {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
                   </Text>

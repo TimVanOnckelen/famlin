@@ -1,7 +1,8 @@
 import { FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addAlbumPhotos, api, patchPostInCaches } from '@famlin/api-client';
+import { addAlbumPhotos, uploadFiles, patchPostInCaches } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import './NewPostModal.css';
 
 // Contribute photos to an ALBUM post — the write half of the collaborative
@@ -10,15 +11,6 @@ import './NewPostModal.css';
 // so linked-album proxy URLs can't be contributed here, mirroring mobile's
 // check-in composer. Uploads first, then POSTs the resulting paths via the
 // interactions endpoint.
-async function uploadFiles(files: File[]): Promise<string[]> {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append('file', file);
-  }
-  const response = await api.post<{ urls: string[] }>('/uploads', formData);
-  return response.data.urls;
-}
-
 const MAX_PHOTOS = 10;
 
 export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClose: () => void }) {
@@ -75,7 +67,7 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
                   onClick={() => setFiles(files.filter((_, j) => j !== i))}
                   aria-label={t('newPost.removePhoto')}
                 >
-                  ×
+                  <Icon name="x" size={14} strokeWidth={2.5} />
                 </button>
               </div>
             ))}
@@ -97,11 +89,7 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
             onClick={() => fileInputRef.current?.click()}
             disabled={files.length >= MAX_PHOTOS}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
-              <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
-              <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            </svg>
+            <Icon name="image" size={18} />
             {t('newPost.addPhotos')}
           </button>
           <span className="field-hint">{t('album.addPhotosHint', { max: MAX_PHOTOS })}</span>

@@ -11,7 +11,7 @@ export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from './uploads';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS, } from './uploads';
 export type { ReactionType, User, Group, Post, PostPerson, PostReactor, PostType, PollOptionResult, PostPoll, PollCreateData, TripTypeData, TripTraveler, TripLatestCheckin, TripEnrichment, TripCheckinMetadata, AlbumTypeData, AlbumContributor, AlbumLatestContribution, AlbumEnrichment, AlbumPhotoMetadata, Comment, Notification, } from './types';
 export { REACTION_TYPES } from './types';
 export { patchPostInCaches } from './postCache';
@@ -21,6 +21,8 @@ export type { FetchPostsParams, PostsPage, SearchPostsParams, CreatePostBody, Re
 export { fetchPosts, fetchPost, fetchOnThisDay, searchPosts, fetchFavorites, createPost, updatePost, deletePost, reactToPost, fetchPostReactions, toggleFavoritePost, interactWithPost, votePoll, checkInTrip, closeTrip, setTripTravelers, addAlbumPhotos, closeAlbum, } from './posts';
 export type { CreateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
+export type { CommentGroup } from './commentGroups';
+export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments, } from './commentGroups';
 export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
 export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts, } from './chat';
 export { fetchNotifications, fetchUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, } from './notifications';

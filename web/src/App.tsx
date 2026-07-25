@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
+import { ensureFreshMediaToken, fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
@@ -37,6 +37,20 @@ export default function App() {
       clearSession();
     });
   }, [clearSession]);
+
+  // Web counterpart of mobile's AppState listener: the media token (7d TTL)
+  // can go stale, or its initial fetch can simply have failed, and <img>/
+  // <video> requests bypass axios's 401 handling entirely — so without this
+  // every photo silently 401s for the rest of the session. Re-check whenever
+  // the tab is brought back to the foreground.
+  useEffect(() => {
+    if (!user) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') ensureFreshMediaToken();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [user?.id]);
 
   useEffect(() => {
     async function bootstrap() {

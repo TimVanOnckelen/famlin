@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 import { AppIcon } from '@/components/Logo';
+import { Icon } from '@/components/Icon';
 import { colors } from '@/constants/colors';
 
 // "Photo-collage arrival" from the styleguide: three tilted polaroid frames
@@ -13,12 +14,12 @@ export function PhotoCollage() {
       <View style={styles.glow} />
       <View style={[styles.polaroid, styles.left]}>
         <View style={styles.photo}>
-          <Text style={styles.photoEmoji}>👨‍👩‍👧</Text>
+          <Icon name="users" size={26} color={colors.primary} />
         </View>
       </View>
       <View style={[styles.polaroid, styles.right]}>
         <View style={styles.photo}>
-          <Text style={styles.photoEmoji}>🎂</Text>
+          <Icon name="gift" size={26} color={colors.primary} />
         </View>
       </View>
       <View style={[styles.polaroid, styles.center]}>
@@ -88,8 +89,5 @@ const styles = StyleSheet.create({
   photoLarge: {
     width: 66,
     height: 66,
-  },
-  photoEmoji: {
-    fontSize: 26,
   },
 });

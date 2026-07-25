@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addAlbumPhotos,
-  api,
+  uploadFiles,
   createPost,
   getGroupMediaAlbums,
   getUploadUrl,
@@ -11,6 +11,7 @@ import {
   MediaAsset,
   PhotoItem,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import './NewPostModal.css';
@@ -18,15 +19,6 @@ import './NewPostModal.css';
 // The post types this composer knows how to build, in chip order.
 const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM'] as const;
 type ComposerType = (typeof COMPOSER_TYPES)[number];
-
-async function uploadFiles(files: File[]): Promise<string[]> {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append('file', file);
-  }
-  const response = await api.post<{ urls: string[] }>('/uploads', formData);
-  return response.data.urls;
-}
 
 export function NewPostModal({
   groups,
@@ -232,6 +224,7 @@ export function NewPostModal({
                 className={`type-chip${type === 'UPDATE' ? ' type-chip-active' : ''}`}
                 onClick={() => setType('UPDATE')}
               >
+                <Icon name="edit-3" size={15} />
                 {t('newPost.typeUpdate')}
               </button>
             )}
@@ -241,6 +234,7 @@ export function NewPostModal({
                 className={`type-chip type-chip-milestone${type === 'MILESTONE' ? ' type-chip-milestone-active' : ''}`}
                 onClick={() => setType('MILESTONE')}
               >
+                <Icon name="gift" size={15} />
                 {t('newPost.typeMilestone')}
               </button>
             )}
@@ -250,6 +244,7 @@ export function NewPostModal({
                 className={`type-chip type-chip-poll${type === 'POLL' ? ' type-chip-poll-active' : ''}`}
                 onClick={() => setType('POLL')}
               >
+                <Icon name="bar-chart-2" size={15} />
                 {t('newPost.typePoll')}
               </button>
             )}
@@ -259,6 +254,7 @@ export function NewPostModal({
                 className={`type-chip type-chip-album${type === 'ALBUM' ? ' type-chip-album-active' : ''}`}
                 onClick={() => setType('ALBUM')}
               >
+                <Icon name="image" size={15} />
                 {t('newPost.typeAlbum')}
               </button>
             )}
@@ -316,7 +312,7 @@ export function NewPostModal({
                     onClick={() => removePollOption(i)}
                     aria-label={t('newPost.removeOption')}
                   >
-                    ×
+                    <Icon name="x" size={16} strokeWidth={2.5} />
                   </button>
                 )}
               </div>
@@ -344,7 +340,7 @@ export function NewPostModal({
                   onClick={() => setFiles(files.filter((_, j) => j !== i))}
                   aria-label={t('newPost.removePhoto')}
                 >
-                  ×
+                  <Icon name="x" size={14} strokeWidth={2.5} />
                 </button>
               </div>
             ))}
@@ -357,7 +353,7 @@ export function NewPostModal({
                   onClick={() => setMediaAssets(mediaAssets.filter((a) => a.assetId !== asset.assetId))}
                   aria-label={t('newPost.removePhoto')}
                 >
-                  ×
+                  <Icon name="x" size={14} strokeWidth={2.5} />
                 </button>
               </div>
             ))}
@@ -374,22 +370,12 @@ export function NewPostModal({
         />
         <div className="attach-actions">
           <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
-              <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
-              <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            </svg>
+            <Icon name="image" size={18} />
             {t('newPost.addPhotos')}
           </button>
           {hasLinkedAlbums && type !== 'ALBUM' && (
             <button type="button" className="btn btn-secondary" onClick={() => setMediaPickerOpen(true)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M12 3a9 9 0 109 9 9 9 0 00-9-9zm0 5a4 4 0 11-4 4 4 4 0 014-4z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-              </svg>
+              <Icon name="disc" size={18} />
               {t('newPost.addFromAlbums')}
             </button>
           )}

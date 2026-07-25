@@ -186,10 +186,16 @@ model Comment {
   // Set when the comment is pinned to one photo/video in the post's
   // uploadedAssetUrls rather than the post as a whole (null = post-level).
   assetUrl  String?
-  // A photo/video the commenter uploaded as part of this comment itself
-  // (an /uploads/ path, like Post.uploadedAssetUrls) — distinct from
-  // assetUrl, which instead points at an existing asset on the post.
+  // Photos/videos the commenter uploaded as part of this comment itself
+  // (/uploads/ paths, like Post.uploadedAssetUrls) — distinct from assetUrl,
+  // which instead points at an existing asset on the post.
+  //
+  // attachmentUrl is the legacy single-attachment column, kept in sync with
+  // attachmentUrls[0] on every write so already-installed clients (which only
+  // know that field) keep rendering the first photo of a multi-photo comment.
+  // Read attachmentUrls; write both.
   attachmentUrl String?
+  attachmentUrls String[] @default([])
   content   String
   // Handler-owned, type-specific payload for a comment created BY a post-type
   // handler rather than the plain comments route — e.g. a TRIP post's

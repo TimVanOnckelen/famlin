@@ -2,7 +2,7 @@ import { FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  api,
+  uploadFiles,
   changePassword,
   fetchNotificationConfig,
   fetchServerInfo,
@@ -10,6 +10,7 @@ import {
   NotificationPrefs,
   User,
 } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { BottomNav } from '@/components/BottomNav';
 import { useAuthStore } from '@/stores/authStore';
@@ -62,10 +63,8 @@ export function ProfilePage({
 
   const updateAvatar = useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await api.post<{ urls: string[] }>('/uploads', formData);
-      return updateMe({ avatarUrl: response.data.urls[0] });
+      const urls = await uploadFiles([file]);
+      return updateMe({ avatarUrl: urls[0] });
     },
     onSuccess: (updated) => {
       setUploadError(null);
@@ -128,9 +127,7 @@ export function ProfilePage({
     <div className="profile-shell">
       <main className="profile-column">
         <button className="profile-back" onClick={onBack}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Icon name="chevron-left" size={16} strokeWidth={2.5} />
           {t('profile.backToFeed')}
         </button>
 
@@ -145,14 +142,7 @@ export function ProfilePage({
           >
             <Avatar name={user.name} avatarUrl={user.avatarUrl} size={88} />
             <span className="profile-avatar-badge" aria-hidden>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M4 8a2 2 0 0 1 2-2h1.5l1.2-1.8A1 1 0 0 1 9.5 3.7h5a1 1 0 0 1 .8.5L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"
-                  stroke="white"
-                  strokeWidth="1.8"
-                />
-                <circle cx="12" cy="12.5" r="3.2" stroke="white" strokeWidth="1.8" />
-              </svg>
+              <Icon name="camera" size={14} color="white" strokeWidth={2} />
             </span>
           </button>
           <input
@@ -294,12 +284,7 @@ export function ProfilePage({
           <h2 className="profile-section-title">{t('profile.server')}</h2>
           <div className="profile-server-row">
             <span className="profile-server-icon" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="7" rx="2" stroke="white" strokeWidth="1.8" />
-                <rect x="3" y="13" width="18" height="7" rx="2" stroke="white" strokeWidth="1.8" />
-                <circle cx="7" cy="7.5" r="1" fill="white" />
-                <circle cx="7" cy="16.5" r="1" fill="white" />
-              </svg>
+              <Icon name="server" size={18} color="white" />
             </span>
             <div className="profile-server-text">
               <div className="profile-setting-desc">{t('profile.connectedTo')}</div>

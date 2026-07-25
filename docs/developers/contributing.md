@@ -80,6 +80,7 @@ docker compose up --build
 - Use TypeScript for backend, admin, web, and shared-package code.
 - Follow the existing project structure and naming conventions described in the [Architecture](./architecture) page.
 - Keep commits focused and write clear commit messages.
+- **Icons come from one flat, minimal set — never the platform's native icons, and never an emoji.** Each front end has an `Icon` component that owns the whole vocabulary: `mobile/src/components/Icon.tsx` (Feather via `@expo/vector-icons`), `web/src/components/Icon.tsx`, and `backend/admin/src/components/Icon.tsx` (both inline Feather paths). Use the same Feather name across apps for the same concept, and add a new icon to the component rather than dropping a one-off `<svg>`, another `@expo/vector-icons` family, or an emoji into a screen — an emoji is drawn by the platform's own font, so it changes shape per OS and can't take a tint. The one exception is **reactions** (👍❤️😂😮😢🥰, `constants/reactions.ts` in both apps), which stay native platform emoji: a reaction is the user's own expressive content, not chrome. Decorative emoji also don't belong in locale strings — put the icon in the component and keep the translated string plain text.
 
 ## Communication
 

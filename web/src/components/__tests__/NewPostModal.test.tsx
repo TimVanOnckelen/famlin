@@ -147,7 +147,7 @@ describe('NewPostModal', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
 
-      await user.click(screen.getByRole('button', { name: '📊 Poll' }));
+      await user.click(screen.getByRole('button', { name: 'Poll' }));
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?');
       const postButton = screen.getByRole('button', { name: 'Post' });
       expect(postButton).toBeDisabled();
@@ -161,7 +161,7 @@ describe('NewPostModal', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
 
-      await user.click(screen.getByRole('button', { name: '📊 Poll' }));
+      await user.click(screen.getByRole('button', { name: 'Poll' }));
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?');
       await user.type(screen.getByPlaceholderText('Option 1'), 'Pizza');
       await user.type(screen.getByPlaceholderText('Option 2'), 'Sushi');
@@ -185,7 +185,7 @@ describe('NewPostModal', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
 
-      await user.click(screen.getByRole('button', { name: '📊 Poll' }));
+      await user.click(screen.getByRole('button', { name: 'Poll' }));
       expect(screen.queryByLabelText('Remove option')).not.toBeInTheDocument();
 
       const addButton = screen.getByRole('button', { name: 'Add option' });
@@ -204,7 +204,7 @@ describe('NewPostModal', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
 
-      await user.click(screen.getByRole('button', { name: '📊 Poll' }));
+      await user.click(screen.getByRole('button', { name: 'Poll' }));
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?');
       await user.click(screen.getByRole('button', { name: 'Add option' }));
       await user.type(screen.getByPlaceholderText('Option 1'), 'Pizza');
@@ -227,7 +227,7 @@ describe('NewPostModal', () => {
       const user = userEvent.setup();
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
 
-      await user.click(screen.getByRole('button', { name: '🖼️ Album' }));
+      await user.click(screen.getByRole('button', { name: 'Album' }));
       const postButton = screen.getByRole('button', { name: 'Post' });
       expect(postButton).toBeDisabled();
 
@@ -253,8 +253,8 @@ describe('NewPostModal', () => {
       vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
       expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '🎂 Milestone' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '📊 Poll' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Milestone' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Poll' })).toBeInTheDocument();
     });
 
     it('hides type chips the group does not allow', () => {
@@ -271,8 +271,8 @@ describe('NewPostModal', () => {
         <NewPostModal groups={restrictedGroups} defaultGroupId="group-1" onClose={() => {}} />
       );
       expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '📊 Poll' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '🎂 Milestone' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Poll' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Milestone' })).not.toBeInTheDocument();
     });
 
     it('offers only the intersection when cross-posting and resets a type that falls out', async () => {
@@ -297,14 +297,14 @@ describe('NewPostModal', () => {
       );
 
       // Only group-1 selected: Poll is offered — pick it.
-      await user.click(screen.getByRole('button', { name: '📊 Poll' }));
+      await user.click(screen.getByRole('button', { name: 'Poll' }));
       expect(screen.getByPlaceholderText('Ask a question…')).toBeInTheDocument();
 
       // Add group-2: the intersection is just UPDATE, so the Poll (and
       // Milestone) chips disappear and the selected type resets to Update.
       await user.click(screen.getByRole('button', { name: 'Grandparents' }));
-      expect(screen.queryByRole('button', { name: '📊 Poll' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: '🎂 Milestone' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Poll' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Milestone' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
       expect(await screen.findByPlaceholderText(/Share an update/)).toBeInTheDocument();
 

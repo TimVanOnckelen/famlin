@@ -9,11 +9,12 @@ custom_edit_url: null
 
 Comments on a post. Replies are one level deep via `parentId`. A comment
 can be pinned to a single photo/video of the post via `assetUrl`; replies
-inherit their parent's pin. A comment can also carry its own photo/video
-via `attachmentUrl` — a file the commenter uploaded (`POST
+inherit their parent's pin. A comment can also carry its own photos/videos
+via `attachmentUrls` (up to 10) — files the commenter uploaded (`POST
 /api/uploads`) as part of the comment itself, independent of any
-pinning — and `content` is then optional (a comment can be a photo or
-video with no text).
+pinning — and `content` is then optional (a comment can be photos or
+videos with no text). `attachmentUrl` is the legacy single-attachment
+field, still sent on every response as `attachmentUrls[0]`.
 
 
 

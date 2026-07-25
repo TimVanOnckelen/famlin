@@ -131,7 +131,7 @@ export function CheckInComposerModal({
           <View>
             <Text style={styles.label}>{t('trip.checkin.placeLabel')}</Text>
             <View style={styles.placeInputRow}>
-              <Text style={styles.placeIcon}>📍</Text>
+              <Icon name="map-pin" size={16} color={colors.trip} />
               <TextInput
                 style={styles.placeInput}
                 placeholder={t('trip.checkin.placePlaceholder')}

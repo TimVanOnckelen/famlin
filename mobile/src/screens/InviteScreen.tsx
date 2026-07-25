@@ -14,8 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
-import { FontAwesome } from '@expo/vector-icons';
 
+import { Icon } from '@/components/Icon';
 import { AppIcon } from '@/components/Logo';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
@@ -267,7 +267,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                           onPress={handleSsoLogin}
                           disabled={ssoLoading}
                         >
-                          <FontAwesome name="key" size={20} color={ssoLoading ? colors.textMuted : colors.textTitle} />
+                          <Icon name="key" size={20} color={ssoLoading ? colors.textMuted : colors.textTitle} />
                           <Text style={[styles.ssoButtonText, ssoLoading && styles.ssoButtonTextDisabled]}>
                             {ssoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoName })}
                           </Text>

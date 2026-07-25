@@ -163,6 +163,80 @@ describe('comments routes', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().content).toBe('');
       expect(res.json().attachmentUrl).toBe(photoUrl);
+      expect(res.json().attachmentUrls).toEqual([photoUrl]);
+    });
+
+    it('creates a comment with several photos and mirrors the first onto attachmentUrl', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const photoUrls = [assetPath(), assetPath(), assetPath()];
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: photoUrls },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual(photoUrls);
+      // Clients built before multi-attachment comments only read this field.
+      expect(res.json().attachmentUrl).toBe(photoUrls[0]);
+
+      const list = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+      });
+      expect(list.json()[0].attachmentUrls).toEqual(photoUrls);
+    });
+
+    it('drops a duplicate attachment path', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const photoUrl = assetPath();
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [photoUrl, photoUrl] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().attachmentUrls).toEqual([photoUrl]);
+    });
+
+    it('rejects more attachments than a comment may carry', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: Array.from({ length: 11 }, assetPath) },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects an attachmentUrls entry that is not a valid uploaded asset path', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/posts/${post.id}/comments`,
+        headers: authHeader(author),
+        payload: { attachmentUrls: [assetPath(), 'https://evil.example.com/x.jpg'] },
+      });
+
+      expect(res.statusCode).toBe(400);
     });
 
     it('rejects a comment with neither content nor an attachment', async () => {

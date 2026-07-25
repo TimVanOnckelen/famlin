@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches } from '@famlin/api-client';
+import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { BottomNav } from '@/components/BottomNav';
 import { CommentsSection } from '@/components/CommentsSection';
@@ -92,13 +93,14 @@ export function AlbumDetailPage({
             <ShimmerImage src={getUploadUrl(coverUrl)} className="album-detail-cover-media" loading="eager" />
           ) : (
             <div className="album-detail-cover-placeholder" aria-hidden>
-              🖼️
+              <Icon name="image" size={48} strokeWidth={1.5} />
             </div>
           )}
         </div>
 
         <section className="album-detail-header">
           <span className={`album-badge ${album.closed ? 'album-badge-closed' : ''}`}>
+            <Icon name="image" size={12} strokeWidth={2.2} />
             {album.closed ? t('album.detail.closedBadge') : t('album.detail.badge')}
           </span>
           <h1 className="album-detail-title">{album.title}</h1>
@@ -152,7 +154,7 @@ export function AlbumDetailPage({
         {photos.length === 0 ? (
           <div className="album-detail-empty">
             <div className="album-detail-empty-icon" aria-hidden>
-              🖼️
+              <Icon name="image" size={28} strokeWidth={1.5} />
             </div>
             <div className="album-detail-empty-title">{t('album.detail.emptyTitle')}</div>
             <div className="album-detail-empty-description">
@@ -180,7 +182,10 @@ export function AlbumDetailPage({
         )}
 
         <section className="album-detail-comments-section">
-          <h2 className="album-detail-section-title">{t('album.detail.commentsSectionTitle')}</h2>
+          <h2 className="album-detail-section-title">
+            <Icon name="message-square" size={16} />
+            {t('album.detail.commentsSectionTitle')}
+          </h2>
           <CommentsSection post={post} filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
         </section>
       </main>
@@ -198,9 +203,7 @@ function BackLink({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   return (
     <button className="album-detail-back" onClick={onBack}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <Icon name="chevron-left" size={16} strokeWidth={2.5} />
       {t('album.detail.backToFeed')}
     </button>
   );

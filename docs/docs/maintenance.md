@@ -101,6 +101,8 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 **Uploaded photos disappear after a redeploy** — this means the `famlin-uploads` volume isn't being reused, usually because the compose project name changed (e.g. running from a different directory) or `-v` / `down -v` was used, which removes volumes. Avoid `docker compose down -v` in production; use plain `down` (or just `up -d --build` for updates, no `down` needed at all).
 
+**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Put a reverse proxy in front](./server-setup#4-put-a-reverse-proxy-in-front). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
+
 **Can't reach `/admin` through the reverse proxy but the container works on `localhost:3000`** — check that the proxy forwards the full path (not just `/`) and doesn't strip the `/admin` prefix.
 
 See also the [Security policy](./security) page for hardening recommendations.

@@ -64,13 +64,13 @@ describe('CommentsSection', () => {
     expect(await screen.findByRole('button', { name: 'View attachment' })).toBeInTheDocument();
   });
 
-  it('uploads a picked photo and sends the comment with its attachmentUrl', async () => {
+  it('uploads a picked photo and sends the comment with its attachmentUrls', async () => {
     URL.createObjectURL = vi.fn(() => 'blob:mock-preview');
     URL.revokeObjectURL = vi.fn();
     const uploadSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { urls: ['/uploads/new-photo.jpg'] } });
     const user = userEvent.setup();
     vi.mocked(fetchComments).mockResolvedValue([]);
-    vi.mocked(createComment).mockResolvedValue(makeComment({ id: 'new', attachmentUrl: '/uploads/new-photo.jpg' }));
+    vi.mocked(createComment).mockResolvedValue(makeComment({ id: 'new', attachmentUrls: ['/uploads/new-photo.jpg'] }));
 
     const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />);
     const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
@@ -83,8 +83,64 @@ describe('CommentsSection', () => {
     await waitFor(() => expect(uploadSpy).toHaveBeenCalled());
     expect(createComment).toHaveBeenCalledWith('post-1', {
       content: undefined,
-      attachmentUrl: '/uploads/new-photo.jpg',
+      attachmentUrls: ['/uploads/new-photo.jpg'],
     });
+  });
+
+  it('stages several picked photos and sends them as one comment', async () => {
+    let previewId = 0;
+    URL.createObjectURL = vi.fn(() => `blob:mock-preview-${previewId++}`);
+    URL.revokeObjectURL = vi.fn();
+    const uploadSpy = vi
+      .spyOn(api, 'post')
+      .mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } });
+    const user = userEvent.setup();
+    vi.mocked(fetchComments).mockResolvedValue([]);
+    vi.mocked(createComment).mockResolvedValue(
+      makeComment({ id: 'new', content: '', attachmentUrls: ['/uploads/a.jpg', '/uploads/b.jpg'] })
+    );
+
+    const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(fileInput, [
+      new File(['x'], 'a.jpg', { type: 'image/jpeg' }),
+      new File(['y'], 'b.jpg', { type: 'image/jpeg' }),
+    ]);
+
+    expect(await screen.findAllByRole('button', { name: 'Remove attachment' })).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(uploadSpy).toHaveBeenCalled());
+    // One upload request for the batch, one comment carrying both photos.
+    expect(uploadSpy).toHaveBeenCalledTimes(1);
+    expect(createComment).toHaveBeenCalledWith('post-1', {
+      content: undefined,
+      attachmentUrls: ['/uploads/a.jpg', '/uploads/b.jpg'],
+    });
+  });
+
+  it('bundles consecutive photo-only comments from the same author into one card', async () => {
+    vi.mocked(fetchComments).mockResolvedValue([
+      makeComment({ id: 'c1', content: '', attachmentUrls: ['/uploads/a.jpg'], createdAt: '2026-07-08T11:00:00Z' }),
+      makeComment({ id: 'c2', content: '', attachmentUrls: ['/uploads/b.jpg'], createdAt: '2026-07-08T11:01:00Z' }),
+      makeComment({ id: 'c3', content: '', attachmentUrls: ['/uploads/c.jpg'], createdAt: '2026-07-08T11:02:00Z' }),
+    ]);
+    const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />);
+
+    await waitFor(() => expect(container.querySelectorAll('.comment')).toHaveLength(1));
+    expect(screen.getAllByRole('button', { name: 'View attachment' })).toHaveLength(3);
+    expect(screen.getByText('3 photos')).toBeInTheDocument();
+  });
+
+  it('keeps a photo comment that has text on its own card', async () => {
+    vi.mocked(fetchComments).mockResolvedValue([
+      makeComment({ id: 'c1', content: '', attachmentUrls: ['/uploads/a.jpg'], createdAt: '2026-07-08T11:00:00Z' }),
+      makeComment({ id: 'c2', content: 'Look!', attachmentUrls: ['/uploads/b.jpg'], createdAt: '2026-07-08T11:01:00Z' }),
+    ]);
+    const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />);
+
+    await waitFor(() => expect(container.querySelectorAll('.comment')).toHaveLength(2));
+    expect(screen.getByText('Look!')).toBeInTheDocument();
   });
 
   // filterComments backs TripDetailPage's "Reacties op de reis" section,

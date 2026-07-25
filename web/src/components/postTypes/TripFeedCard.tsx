@@ -10,6 +10,7 @@ import {
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatTime } from '@/utils/time';
 import { formatTripDateRange } from '@/utils/trip';
@@ -83,13 +84,7 @@ export function TripFeedCard({
           {post.myReaction ? (
             <span className="reaction-emoji">{REACTION_EMOJI[post.myReaction]}</span>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-            </svg>
+            <Icon name="heart" size={18} />
           )}
           {post.likeCount}
         </button>
@@ -124,7 +119,10 @@ export function TripFeedCard({
           />
           <div className="post-body trip-card-body">
             <div className="trip-card-badge-row">
-              <span className="trip-badge trip-badge-closed">{t('feed.trip.closedBadge')}</span>
+              <span className="trip-badge trip-badge-closed">
+                <Icon name="briefcase" size={12} strokeWidth={2.2} />
+                {t('feed.trip.closedBadge')}
+              </span>
               {groupChip}
             </div>
             <h3 className="trip-card-title">{trip.title}</h3>
@@ -176,11 +174,12 @@ export function TripFeedCard({
             )
           ) : (
             <div className="trip-card-hero-placeholder" aria-hidden>
-              🧳
+              <Icon name="briefcase" size={40} strokeWidth={1.5} />
             </div>
           )}
           {trip.dayNumber != null && (
             <span className="trip-badge trip-badge-active trip-card-hero-badge">
+              <Icon name="briefcase" size={12} strokeWidth={2.2} />
               {t('feed.trip.activeBadge', { day: trip.dayNumber })}
             </span>
           )}
@@ -198,7 +197,8 @@ export function TripFeedCard({
           {trip.destination && <div className="trip-card-destination">→ {trip.destination}</div>}
           {trip.latestCheckin && (
             <div className="trip-card-last-stop">
-              📍 {t('feed.trip.lastStopLabel')}{' '}
+              <Icon name="map-pin" size={14} />
+              {t('feed.trip.lastStopLabel')}{' '}
               <strong>{trip.latestCheckin.place}</strong> · {formatTime(trip.latestCheckin.createdAt, i18n.language)}
             </div>
           )}
@@ -233,7 +233,7 @@ function TripClosedCollage({
     return (
       <button type="button" className="trip-card-collage" onClick={onOpen} aria-label={label}>
         <div className="trip-card-hero-placeholder" aria-hidden>
-          🧳
+          <Icon name="briefcase" size={40} strokeWidth={1.5} />
         </div>
       </button>
     );

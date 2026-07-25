@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
 import { isVideoUrl } from '@/utils/media';
@@ -70,7 +71,10 @@ export function AlbumFeedCard({
         />
         <div className="post-body album-card-body">
           <div className="album-card-badge-row">
-            <span className="album-badge">{album.closed ? t('feed.album.closedBadge') : t('feed.album.badge')}</span>
+            <span className="album-badge">
+              <Icon name="image" size={12} strokeWidth={2.2} />
+              {album.closed ? t('feed.album.closedBadge') : t('feed.album.badge')}
+            </span>
             {groupChip}
           </div>
           <button type="button" className="album-card-title album-card-title-btn" onClick={() => onOpenAlbum?.(post.id)}>
@@ -109,13 +113,7 @@ export function AlbumFeedCard({
                 {post.myReaction ? (
                   <span className="reaction-emoji">{REACTION_EMOJI[post.myReaction]}</span>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
+                  <Icon name="heart" size={18} />
                 )}
                 {post.likeCount}
               </button>
@@ -134,9 +132,7 @@ export function AlbumFeedCard({
             </div>
             {!album.closed && (
               <button type="button" className="album-card-add" onClick={() => setContributeOpen(true)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                <Icon name="plus" size={16} />
                 {t('feed.album.addPhotosCta')}
               </button>
             )}
@@ -170,7 +166,7 @@ function AlbumCollage({
     return (
       <button type="button" className="album-card-collage album-card-collage-empty" onClick={onOpen} aria-label={label}>
         <div className="album-card-hero-placeholder" aria-hidden>
-          🖼️
+          <Icon name="image" size={40} strokeWidth={1.5} />
         </div>
       </button>
     );

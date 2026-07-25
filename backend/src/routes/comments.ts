@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { createCommentBodySchema, updateCommentBodySchema } from '../types.js';
+import { createCommentBodySchema, normalizeCommentAttachments, updateCommentBodySchema } from '../types.js';
 import { emitDomainEvent } from '../events.js';
 import { requireGroupMember } from '../plugins/auth.js';
 import { shapeComment } from '../services/comments.js';
@@ -68,6 +68,11 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
     }
 
+    // attachmentUrls is the real column; attachmentUrl keeps mirroring its
+    // first entry so clients built before multi-attachment comments still
+    // render (the first photo of) a multi-photo comment.
+    const attachmentUrls = normalizeCommentAttachments(body);
+
     const comment = await prisma.comment.create({
       data: {
         postId,
@@ -75,7 +80,8 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         content: body.content?.trim() ?? '',
         parentId: body.parentId,
         assetUrl,
-        attachmentUrl: body.attachmentUrl,
+        attachmentUrl: attachmentUrls[0] ?? null,
+        attachmentUrls,
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
@@ -96,7 +102,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       authorId: request.user!.id,
       authorName: comment.author.name,
       content: comment.content,
-      hasAttachment: !!comment.attachmentUrl,
+      hasAttachment: comment.attachmentUrls.length > 0,
       parentId: comment.parentId,
       mentionedUserIds: body.mentionedUserIds ?? [],
       // Always null here — the public route's body schema doesn't accept a

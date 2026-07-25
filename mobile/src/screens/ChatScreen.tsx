@@ -359,7 +359,8 @@ function ChatMessageRow({
           disabled={!message.refPostId}
           onPress={onPressMilestone}
         >
-          <Text style={styles.milestonePillText}>🎂 {message.content}</Text>
+          <Icon name="gift" size={14} color={colors.milestoneText} />
+          <Text style={styles.milestonePillText}>{message.content}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -524,6 +525,7 @@ const styles = StyleSheet.create({
   milestonePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     backgroundColor: colors.milestone,
     paddingHorizontal: 14,
     paddingVertical: 7,

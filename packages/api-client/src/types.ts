@@ -267,10 +267,14 @@ export interface Comment {
   // Set when the comment is pinned to one photo/video in the post rather
   // than the post as a whole — matches an entry in Post.uploadedAssetUrls.
   assetUrl?: string | null;
-  // A photo/video the commenter uploaded as part of this comment itself —
+  // Photos/videos the commenter uploaded as part of this comment itself —
   // distinct from assetUrl above, which instead points at an existing asset
-  // on the post.
+  // on the post. attachmentUrl is the legacy single-attachment field, kept in
+  // sync with attachmentUrls[0] by the server; read them via
+  // commentAttachments() rather than either field directly, so a response
+  // from an older server (no attachmentUrls) still resolves.
   attachmentUrl?: string | null;
+  attachmentUrls?: string[] | null;
   // Set when this comment was authored by a post-type handler rather than the
   // plain comment route — a TRIP check-in (kind 'trip_checkin') or an ALBUM
   // photo contribution (kind 'album_photo') — null/absent for every ordinary

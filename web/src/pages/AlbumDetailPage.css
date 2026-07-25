@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
+  color: var(--fam-primary);
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -188,7 +188,8 @@
 }
 
 .album-detail-empty-icon {
-  font-size: 44px;
+  color: var(--fam-primary);
+  line-height: 1;
 }
 
 .album-detail-empty-title {
@@ -211,6 +212,9 @@
 }
 
 .album-detail-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 15px;
   font-weight: 800;
   color: var(--fam-text-title);

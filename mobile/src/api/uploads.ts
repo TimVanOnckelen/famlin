@@ -1,4 +1,5 @@
 import { api } from './client';
+import { UPLOAD_TIMEOUT_MS } from '@famlin/api-client';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from '@famlin/api-client';
 
@@ -26,6 +27,10 @@ export async function uploadMedia(files: { uri: string; name: string; type: stri
     headers: {
       'Content-Type': undefined,
     },
+    // The client's default 15s timeout is a JSON-API budget; a photo — let
+    // alone a video — on mobile data routinely needs far longer, and the
+    // aborted request surfaces to the user as an opaque "Network Error".
+    timeout: UPLOAD_TIMEOUT_MS,
   });
 
   return response.data.urls;

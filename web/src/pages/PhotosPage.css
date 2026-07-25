@@ -197,8 +197,8 @@
   margin: 0;
 }
 
-.photos-empty-emoji {
-  font-size: 44px;
+.photos-empty-icon {
+  color: var(--fam-primary);
   line-height: 1;
 }
 

@@ -90,7 +90,7 @@
     "viewMembers": "View group members",
     "viewFavorites": "View favorites",
     "favorite": "Favorite",
-    "milestoneBadge": "🎂 MILESTONE",
+    "milestoneBadge": "MILESTONE",
     "comments_one": "{{count}} comment",
     "comments_other": "{{count}} comments",
     "onThisDayTitle": "On this day",
@@ -99,12 +99,12 @@
     "peopleInPost": "People recognized in this post",
     "sharedWithGroups": "Shared with {{names}}",
     "trip": {
-      "activeBadge": "🧳 Day {{day}} · on the go",
+      "activeBadge": "Day {{day}} · on the go",
       "lastStopLabel": "Last stop:",
       "stopsSoFar_one": "{{count}} stop so far · {{author}}",
       "stopsSoFar_other": "{{count}} stops so far · {{author}}",
       "followCta": "Follow the trip →",
-      "closedBadge": "🧳 TRIP · CLOSED",
+      "closedBadge": "TRIP · CLOSED",
       "closedStats": "{{days}} days · {{stops}} stops · {{photos}} photos",
       "authorDateRange": "{{author}} · {{range}}",
       "dateRangeSameMonth": "{{startDay}} to {{endDay}} {{month}}",
@@ -113,8 +113,8 @@
       "morePhotosOverlay": "+{{count}}"
     },
     "album": {
-      "badge": "🖼️ SHARED ALBUM",
-      "closedBadge": "🖼️ ALBUM · CLOSED",
+      "badge": "SHARED ALBUM",
+      "closedBadge": "ALBUM · CLOSED",
       "stats": "{{photos}} photos · {{contributors}} contributors",
       "contributedBy_one": "Added by {{name}}",
       "contributedBy_other": "Added by {{name}} +{{others}} more",
@@ -170,7 +170,7 @@
     },
     "chooserTitle": "What do you want to share?",
     "noPostTypesForSelection": "These families don't share any post type — change the selected families to post.",
-    "milestoneTitle": "🎂 This is a milestone",
+    "milestoneTitle": "This is a milestone",
     "milestoneSubtitle": "E.g. birthday, birth, anniversary",
     "alerts": {
       "noGroupSelected": "No group selected",
@@ -180,11 +180,11 @@
       "uploadFailed": "Upload failed"
     },
     "milestoneTags": {
-      "birthday": "🎂 Birthday",
-      "birth": "👶 Birth",
-      "anniversary": "💍 Anniversary",
-      "graduation": "🎓 Graduation",
-      "custom": "✏️ Other",
+      "birthday": "Birthday",
+      "birth": "Birth",
+      "anniversary": "Anniversary",
+      "graduation": "Graduation",
+      "custom": "Other",
       "customPlaceholder": "Name this milestone..."
     },
     "location": {
@@ -239,7 +239,7 @@
   "postDetail": {
     "title": "Post",
     "postedInGroup": "in {{group}} · {{time}}",
-    "milestoneBadge": "🎂 MILESTONE",
+    "milestoneBadge": "MILESTONE",
     "commentsHeader": "Comments · {{count}}",
     "commentPlaceholder": "Write a comment...",
     "replyPlaceholder": "Write a reply...",
@@ -264,7 +264,10 @@
     "alerts": {
       "editFailed": "Could not save changes",
       "deleteFailed": "Could not delete"
-    }
+    },
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "deletePhotoCommentsConfirmMessage": "This removes all {{count}} photos in this comment. This can't be undone."
   },
   "reactions": {
     "title": "Reactions"
@@ -291,8 +294,8 @@
     "sendFailed": "Message could not be sent",
     "replyingTo": "Replying to {{name}}",
     "cancelReply": "Cancel reply",
-    "attachmentPhoto": "📷 Photo",
-    "attachmentVideo": "🎥 Video"
+    "attachmentPhoto": "Photo",
+    "attachmentVideo": "Video"
   },
   "photos": {
     "title": "Photos",
@@ -353,20 +356,20 @@
   },
   "trip": {
     "detail": {
-      "activeBadge": "🧳 ACTIVE · DAY {{day}}",
-      "closedBadge": "🧳 CLOSED",
+      "activeBadge": "ACTIVE · DAY {{day}}",
+      "closedBadge": "CLOSED",
       "sinceLabel": "{{author}} · since {{date}}",
       "statsStops": "stops",
       "statsPhotos": "photos",
       "statsDays": "days",
-      "tripCommentsSectionTitle_one": "💬 Trip comments · {{count}}",
-      "tripCommentsSectionTitle_other": "💬 Trip comments · {{count}}",
+      "tripCommentsSectionTitle_one": "Trip comments · {{count}}",
+      "tripCommentsSectionTitle_other": "Trip comments · {{count}}",
       "addCheckinButton": "+ Check-in",
       "timelineLabelActive": "Timeline · newest first",
       "timelineLabelClosed": "Diary · oldest first",
       "dayTimeLabel": "Day {{day}} · {{time}}",
       "dayDateLabel": "Day {{day}} · {{date}}",
-      "likesLabel": "❤️ {{count}}",
+      "likesLabel": "{{count}}",
       "commentsCountButton_one": "{{count}} reply",
       "commentsCountButton_other": "{{count}} replies",
       "closingLine": "Trip closed by {{author}} · {{date}}",
@@ -414,14 +417,14 @@
   },
   "album": {
     "detail": {
-      "badge": "🖼️ SHARED ALBUM",
-      "closedBadge": "🖼️ CLOSED",
+      "badge": "SHARED ALBUM",
+      "closedBadge": "CLOSED",
       "statsPhotos": "photos",
       "statsContributors": "contributors",
       "contributedBy": "With {{names}}",
       "addPhotosCta": "Add photos",
       "closeCta": "Close",
-      "commentsSectionTitle": "💬 Comments",
+      "commentsSectionTitle": "Comments",
       "emptyTitle": "No photos yet",
       "emptyDescription": "Be the first to add photos to this album.",
       "emptyClosedDescription": "This album was closed before any photos were added."
