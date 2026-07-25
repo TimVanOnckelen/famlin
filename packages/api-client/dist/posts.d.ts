@@ -1,4 +1,4 @@
-import { Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
+import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -22,7 +22,7 @@ export interface CreatePostBody {
     groupIds?: string[];
     content?: string;
     type: PostType;
-    typeData?: PollCreateData | TripTypeData | Record<string, unknown>;
+    typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
     latitude?: number;
@@ -51,3 +51,9 @@ export interface CheckInTripBody {
 export declare function checkInTrip(postId: string, data: CheckInTripBody): Promise<Post>;
 export declare function closeTrip(postId: string): Promise<Post>;
 export declare function setTripTravelers(postId: string, userIds: string[]): Promise<Post>;
+export interface AddAlbumPhotosBody {
+    photoUrls: string[];
+    caption?: string;
+}
+export declare function addAlbumPhotos(postId: string, data: AddAlbumPhotosBody): Promise<Post>;
+export declare function closeAlbum(postId: string): Promise<Post>;

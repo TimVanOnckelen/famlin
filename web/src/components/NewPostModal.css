@@ -133,6 +133,19 @@
   font-weight: 700;
 }
 
+.type-chip-album-active {
+  border: 2px solid var(--fam-primary);
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary-dark);
+  font-weight: 700;
+}
+
+/* Album title — a single-line title field above the description textarea. */
+.album-title-input {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 /* ── Poll options editor ─────────────────────────────────────────────────── */
 
 .poll-options-editor {

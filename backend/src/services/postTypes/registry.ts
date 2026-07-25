@@ -2,7 +2,8 @@ import type { PostTypeHandler } from './types.js';
 import { updateHandler } from './update.js';
 import { milestoneHandler } from './milestone.js';
 import { pollHandler } from './poll.js';
-import { tripHandler } from './trip.js';
+import { tripHandler, isTripCheckinMetadata } from './trip.js';
+import { albumHandler, isAlbumPhotoMetadata } from './album.js';
 
 // The static post-type registry — adding a custom post type (an RSVP, ...) =
 // implement PostTypeHandler in a new file in this directory and add it here.
@@ -13,7 +14,21 @@ const handlers = new Map<string, PostTypeHandler>([
   [milestoneHandler.id, milestoneHandler],
   [pollHandler.id, pollHandler],
   [tripHandler.id, tripHandler],
+  [albumHandler.id, albumHandler],
 ]);
+
+// A handler-authored Comment (a TRIP check-in, an ALBUM photo contribution)
+// carries a per-type metadata `kind` plus a stable correlation id shared by
+// the sibling copies one action fans out across a cross-post's target groups.
+// This maps such a comment's metadata to the JSON path + value that finds all
+// its siblings, so routes/comments.ts's author edit/delete fan-out stays one
+// generic branch instead of a per-type `if` ladder. Returns null for an
+// ordinary user comment (metadata === null), which fans out to nothing.
+export function handlerCommentSiblingKey(metadata: unknown): { path: string[]; value: string } | null {
+  if (isTripCheckinMetadata(metadata)) return { path: ['checkinId'], value: metadata.checkinId };
+  if (isAlbumPhotoMetadata(metadata)) return { path: ['contributionId'], value: metadata.contributionId };
+  return null;
+}
 
 export function getPostTypeHandler(id: string): PostTypeHandler | undefined {
   return handlers.get(id);

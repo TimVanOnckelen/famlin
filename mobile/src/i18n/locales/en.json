@@ -111,6 +111,15 @@
       "dateRangeDifferentMonth": "{{start}} to {{end}}",
       "viewDiaryCta": "View the diary →",
       "morePhotosOverlay": "+{{count}}"
+    },
+    "album": {
+      "badge": "🖼️ SHARED ALBUM",
+      "closedBadge": "🖼️ ALBUM · CLOSED",
+      "stats": "{{photos}} photos · {{contributors}} contributors",
+      "contributedBy_one": "Added by {{name}}",
+      "contributedBy_other": "Added by {{name}} +{{others}} more",
+      "addPhotosCta": "Add photos",
+      "openCta": "Open album →"
     }
   },
   "search": {
@@ -144,13 +153,20 @@
       "update": "Update",
       "milestone": "Milestone",
       "poll": "Poll",
-      "trip": "Trip"
+      "trip": "Trip",
+      "album": "Album"
     },
     "postTypeSubtitle": {
       "update": "Share a moment, photo or video",
       "milestone": "Birthday, birth, anniversary",
       "poll": "Ask the family a question",
-      "trip": "Track a journey with check-ins"
+      "trip": "Track a journey with check-ins",
+      "album": "A photo album the whole family adds to"
+    },
+    "album": {
+      "titleLabel": "Album title",
+      "titlePlaceholder": "e.g. Summer at the lake",
+      "descriptionPlaceholder": "Describe the album... (optional)"
     },
     "chooserTitle": "What do you want to share?",
     "noPostTypesForSelection": "These families don't share any post type — change the selected families to post.",
@@ -393,6 +409,39 @@
       "loadError": "Could not load the member list",
       "alerts": {
         "failed": "Could not save the travel companions"
+      }
+    }
+  },
+  "album": {
+    "detail": {
+      "badge": "🖼️ SHARED ALBUM",
+      "closedBadge": "🖼️ CLOSED",
+      "statsPhotos": "photos",
+      "statsContributors": "contributors",
+      "contributedBy": "With {{names}}",
+      "addPhotosCta": "Add photos",
+      "closeCta": "Close",
+      "commentsSectionTitle": "💬 Comments",
+      "emptyTitle": "No photos yet",
+      "emptyDescription": "Be the first to add photos to this album.",
+      "emptyClosedDescription": "This album was closed before any photos were added."
+    },
+    "addPhotos": {
+      "headerTitle": "Add photos",
+      "submitButton": "Add",
+      "contextLine": "Adding to “{{title}}”",
+      "addPhotoLabel": "Photo / video",
+      "captionPlaceholder": "Add a caption (optional)...",
+      "alerts": {
+        "failed": "Could not add your photos"
+      }
+    },
+    "close": {
+      "confirmTitle": "Close the album?",
+      "confirmBody": "No new photos can be added once the album is closed. You can't undo this.",
+      "confirmButton": "Close the album",
+      "alerts": {
+        "failed": "Could not close the album"
       }
     }
   }

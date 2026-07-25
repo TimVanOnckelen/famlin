@@ -24,7 +24,7 @@ export interface PostPerson {
 // types the server ships today, but the `(string & {})` branch keeps this
 // widen-able (custom types added server-side) without TS narrowing string
 // literals away.
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | (string & {});
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | (string & {});
 
 export interface PollOptionResult {
   id: string;
@@ -116,6 +116,62 @@ export interface TripCheckinMetadata {
   checkinId: string;
 }
 
+// The shape a client sends as `typeData` when creating an ALBUM post — a
+// collaborative photo album any group member can add photos to. The album's
+// identity is its title (plus an optional cover); the human-readable `content`
+// stays an optional free-text description, same as a TRIP.
+export interface AlbumTypeData {
+  title: string;
+  coverPhotoUrl?: string;
+}
+
+// One contributor on an album, as enriched into AlbumEnrichment.contributors.
+export interface AlbumContributor {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
+// The most recent contribution on an album, surfaced on the feed card without
+// fetching the whole comment list.
+export interface AlbumLatestContribution {
+  commentId: string;
+  contributorName: string;
+  createdAt: string;
+}
+
+// Present only when type === 'ALBUM' — the read-time-enriched, per-post view
+// computed from the album's typeData plus its photo-contribution comments (see
+// AlbumPhotoMetadata below for how a contribution is represented as a
+// comment). The full photo set lives on those comments' metadata.photoUrls
+// (fetch the post's comments); this carries just the feed-card summary.
+export interface AlbumEnrichment {
+  title: string;
+  coverPhotoUrl: string | null;
+  closed: boolean;
+  closedAt: string | null;
+  photoCount: number;
+  contributorCount: number;
+  // Up to 8 contributors, newest first — for the feed card's avatar stack.
+  contributors: AlbumContributor[];
+  // Up to 6 photo URLs, newest first — the feed card's collage.
+  collagePhotoUrls: string[];
+  latestContribution: AlbumLatestContribution | null;
+}
+
+// An album photo contribution is a Comment whose `metadata.kind` is
+// 'album_photo' (see Comment.metadata below) — this is the shape of that
+// metadata. The optional caption rides on Comment.content (like a TRIP
+// check-in's text), not here.
+export interface AlbumPhotoMetadata {
+  kind: 'album_photo';
+  photoUrls: string[];
+  // Stable id shared across the sibling copies a cross-posted album's
+  // contribution fans out to (one Comment per target group) — lets clients
+  // correlate the same contribution across groups.
+  contributionId: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -170,6 +226,8 @@ export interface Post {
   poll?: PostPoll;
   // Present only when type === 'TRIP' — see TripEnrichment.
   trip?: TripEnrichment;
+  // Present only when type === 'ALBUM' — see AlbumEnrichment.
+  album?: AlbumEnrichment;
   milestoneTag?: string | null;
   uploadedAssetUrls: string[];
   createdAt: string;
@@ -213,11 +271,12 @@ export interface Comment {
   // distinct from assetUrl above, which instead points at an existing asset
   // on the post.
   attachmentUrl?: string | null;
-  // Set when this comment is really a TRIP check-in (kind 'trip_checkin')
-  // rather than a regular comment — null/absent for every ordinary comment.
-  // See TripCheckinMetadata; clients split a post's comment list on this
-  // field to build the trip timeline vs. the "reacties op de reis" section.
-  metadata?: TripCheckinMetadata | null;
+  // Set when this comment was authored by a post-type handler rather than the
+  // plain comment route — a TRIP check-in (kind 'trip_checkin') or an ALBUM
+  // photo contribution (kind 'album_photo') — null/absent for every ordinary
+  // comment. Clients split a post's comment list on this field to build the
+  // trip timeline / album photo grid vs. the ordinary-comments section.
+  metadata?: TripCheckinMetadata | AlbumPhotoMetadata | null;
   likeCount: number;
   likedByMe: boolean;
   myReaction: ReactionType | null;

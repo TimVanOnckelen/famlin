@@ -8,6 +8,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { PhotosPage } from '@/pages/PhotosPage';
 import { ChatPage } from '@/pages/ChatPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
+import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
 
 export default function App() {
@@ -15,9 +16,11 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   // No client-side routing yet — the profile, photos, chat, and trip-detail
   // pages are simple view switches.
-  const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip'>('feed');
+  const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip' | 'album'>('feed');
   // Only meaningful while view === 'trip' — which post's trip is open.
   const [tripPostId, setTripPostId] = useState<string | null>(null);
+  // Only meaningful while view === 'album' — which post's album is open.
+  const [albumPostId, setAlbumPostId] = useState<string | null>(null);
 
   // A session ending on the profile view (logout or 401) shouldn't land the
   // next login on the profile page.
@@ -25,6 +28,7 @@ export default function App() {
     if (!user) {
       setView('feed');
       setTripPostId(null);
+      setAlbumPostId(null);
     }
   }, [user]);
 
@@ -123,6 +127,21 @@ export default function App() {
     );
   }
 
+  if (view === 'album' && albumPostId) {
+    return (
+      <>
+        <ReadOnlyBanner />
+        <AlbumDetailPage
+          postId={albumPostId}
+          onBack={() => setView('feed')}
+          onOpenPhotos={() => setView('photos')}
+          onOpenChat={() => setView('chat')}
+          onOpenProfile={() => setView('profile')}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <ReadOnlyBanner />
@@ -134,6 +153,10 @@ export default function App() {
         onOpenTrip={(postId) => {
           setTripPostId(postId);
           setView('trip');
+        }}
+        onOpenAlbum={(postId) => {
+          setAlbumPostId(postId);
+          setView('album');
         }}
         onLogout={() => logout()}
       />

@@ -375,6 +375,8 @@
   "postTypes": {
     "UPDATE": "Update",
     "MILESTONE": "Milestone",
-    "POLL": "Poll"
+    "POLL": "Poll",
+    "TRIP": "Trip",
+    "ALBUM": "Album"
   }
 }

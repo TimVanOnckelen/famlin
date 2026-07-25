@@ -1,0 +1,210 @@
+/* Album feed card (postTypes/AlbumFeedCard) — a collaborative photo album.
+   Reuses post-card/post-card-inner's masonry positioning + shadow/radius,
+   with a teal (primary) accent to distinguish it from the trip card. */
+
+.album-card-inner {
+  border-color: var(--fam-primary-tint);
+}
+
+.album-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Collage hero (2×2 grid + overflow tile) ───────────────────────────── */
+
+.album-card-collage {
+  display: grid;
+  gap: 2px;
+  height: 240px;
+  width: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: var(--fam-primary-tint);
+}
+
+.album-card-collage-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.album-card-collage-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.album-card-collage-3,
+.album-card-collage-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* With exactly 3 tiles, let the first span the full left column. */
+.album-card-collage-3 .album-card-collage-tile:first-child {
+  grid-row: span 2;
+}
+
+.album-card-collage-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.album-card-hero-placeholder {
+  font-size: 40px;
+}
+
+.album-card-collage-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.album-card-collage-tile img,
+.album-card-collage-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.album-card-collage-tile .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.album-card-collage-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 15, 20, 0.55);
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ── Badge ──────────────────────────────────────────────────────────────── */
+
+.album-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 13px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  background: var(--fam-primary);
+  color: white;
+}
+
+.album-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Text ───────────────────────────────────────────────────────────────── */
+
+.album-card-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: var(--fam-text-title);
+  margin: 4px 0 0;
+}
+
+.album-card-title-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.album-card-muted {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Contributor stack ─────────────────────────────────────────────────── */
+
+.album-card-contributors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.album-card-contributors-stack {
+  display: flex;
+}
+
+.album-card-contributor-face {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--fam-surface);
+  margin-left: -8px;
+}
+
+.album-card-contributor-face:first-child {
+  margin-left: 0;
+}
+
+.album-card-contributors-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+/* ── Actions row (reaction picker + add + CTA) ─────────────────────────── */
+
+.album-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--fam-primary-tint);
+  padding-top: 10px;
+}
+
+.album-card-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid var(--fam-primary);
+  background: none;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--fam-primary-dark);
+  cursor: pointer;
+  padding: 5px 12px;
+}
+
+.album-card-add:hover {
+  background: var(--fam-primary-tint);
+}
+
+.album-card-cta {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--fam-primary-dark);
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.album-card-cta:hover {
+  text-decoration: underline;
+}

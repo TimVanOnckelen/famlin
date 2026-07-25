@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Post, PostPoll, Comment, TripEnrichment, User } from '@famlin/api-client';
+import { Post, PostPoll, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client';
 
 export function makePost(overrides: Partial<Post> = {}): Post {
   return {
@@ -60,6 +60,24 @@ export function makeTrip(overrides: Partial<TripEnrichment> = {}): TripEnrichmen
     latestCheckin: { commentId: 'ci-2', place: 'Bologna', createdAt: '2026-07-06T14:20:00Z' },
     collagePhotoUrls: [],
     travelers: [],
+    ...overrides,
+  };
+}
+
+export function makeAlbum(overrides: Partial<AlbumEnrichment> = {}): AlbumEnrichment {
+  return {
+    title: 'Summer at the lake',
+    coverPhotoUrl: null,
+    closed: false,
+    closedAt: null,
+    photoCount: 5,
+    contributorCount: 2,
+    contributors: [
+      { id: 'user-2', name: 'Sophie', avatarUrl: null },
+      { id: 'user-3', name: 'Emma', avatarUrl: null },
+    ],
+    collagePhotoUrls: [],
+    latestContribution: { commentId: 'ac-1', contributorName: 'Sophie', createdAt: '2026-07-08T12:00:00Z' },
     ...overrides,
   };
 }

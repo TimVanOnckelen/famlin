@@ -69,6 +69,11 @@ export type {
   TripLatestCheckin,
   TripEnrichment,
   TripCheckinMetadata,
+  AlbumTypeData,
+  AlbumContributor,
+  AlbumLatestContribution,
+  AlbumEnrichment,
+  AlbumPhotoMetadata,
   Comment,
   Notification,
 } from './types';
@@ -86,6 +91,7 @@ export type {
   CreatePostBody,
   ReactionResult,
   CheckInTripBody,
+  AddAlbumPhotosBody,
 } from './posts';
 export {
   fetchPosts,
@@ -104,6 +110,8 @@ export {
   checkInTrip,
   closeTrip,
   setTripTravelers,
+  addAlbumPhotos,
+  closeAlbum,
 } from './posts';
 
 export type { CreateCommentBody } from './comments';

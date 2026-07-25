@@ -72,6 +72,8 @@
     "tripTravelerNotMember": "Elke reiziger moet lid zijn van deze groep",
     "tripClosed": "Deze reis is afgesloten",
     "tripNotStarted": "Deze reis is nog niet begonnen",
+    "albumNotAuthor": "Alleen de maker van het album kan dit doen",
+    "albumClosed": "Dit album is afgesloten",
     "readOnly": "Deze demo is alleen-lezen. Je kunt rondkijken, maar niet plaatsen, reageren of wijzigingen maken."
   },
   "notifications": {
@@ -91,6 +93,8 @@
     "newChatMessage": "{{author}} heeft een bericht gestuurd in de chat van {{group}}: \"{{excerpt}}\"",
     "tripCheckin_one": "{{author}} heeft ingecheckt in {{place}}",
     "tripCheckin_other": "{{author}} heeft vandaag {{count}} keer ingecheckt · laatste stop: {{place}}",
+    "albumPhoto_one": "{{author}} heeft foto's aan een album in {{group}} toegevoegd",
+    "albumPhoto_other": "{{author}} heeft vandaag {{count}} keer foto's aan een album in {{group}} toegevoegd",
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app."

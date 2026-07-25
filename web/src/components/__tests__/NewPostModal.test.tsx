@@ -2,13 +2,14 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NewPostModal } from '@/components/NewPostModal';
 import { renderWithQueryClient } from '@/test/fixtures';
-import { createPost, getGroupMediaAlbums, getMediaAlbumAssets } from '@famlin/api-client';
+import { addAlbumPhotos, createPost, getGroupMediaAlbums, getMediaAlbumAssets } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   getGroupMediaAlbums: vi.fn(),
   getMediaAlbumAssets: vi.fn(),
   createPost: vi.fn(),
+  addAlbumPhotos: vi.fn(),
 }));
 
 const groups = [{ id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false }];
@@ -216,6 +217,34 @@ describe('NewPostModal', () => {
           typeData: { options: [{ text: 'Pizza' }, { text: 'Sushi' }] },
         })
       );
+    });
+  });
+
+  describe('album composer', () => {
+    it('disables Post until an album title is entered, then submits type ALBUM with the title', async () => {
+      vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+      vi.mocked(createPost).mockResolvedValue({ id: 'album-post' } as never);
+      const user = userEvent.setup();
+      renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: '🖼️ Album' }));
+      const postButton = screen.getByRole('button', { name: 'Post' });
+      expect(postButton).toBeDisabled();
+
+      await user.type(await screen.findByPlaceholderText(/Album title/), 'Summer at the lake');
+      expect(postButton).toBeEnabled();
+      await user.click(postButton);
+
+      expect(createPost).toHaveBeenCalledWith({
+        groupId: 'group-1',
+        groupIds: undefined,
+        content: undefined,
+        type: 'ALBUM',
+        typeData: { title: 'Summer at the lake' },
+        uploadedAssetUrls: [],
+      });
+      // No photos picked → no seed contribution.
+      expect(addAlbumPhotos).not.toHaveBeenCalled();
     });
   });
 

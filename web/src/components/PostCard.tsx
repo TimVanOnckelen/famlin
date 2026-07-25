@@ -18,6 +18,7 @@ import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { postTypeRenderers } from '@/components/postTypes';
 import { TripFeedCard } from '@/components/postTypes/TripFeedCard';
+import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import './PostCard.css';
@@ -117,10 +118,12 @@ export function PostCard({
   post,
   showGroup = false,
   onOpenTrip,
+  onOpenAlbum,
 }: {
   post: Post;
   showGroup?: boolean;
   onOpenTrip?: (postId: string) => void;
+  onOpenAlbum?: (postId: string) => void;
 }) {
   // TRIP posts get a wholesale-different card (different hero source, no
   // inline comments, a "follow/view diary" CTA instead of a comment button)
@@ -130,6 +133,13 @@ export function PostCard({
   // simply by never mounting CommentsSection for a TRIP post.
   if (post.type === 'TRIP') {
     return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />;
+  }
+
+  // ALBUM posts likewise get their own card (collage hero, contributor stack,
+  // an "Add photos"/"Open album" CTA) — its photo contributions live as
+  // metadata comments and must never surface in a generic inline comment list.
+  if (post.type === 'ALBUM') {
+    return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />;
   }
 
   return <DefaultPostCard post={post} showGroup={showGroup} />;

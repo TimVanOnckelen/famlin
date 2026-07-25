@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PostCard } from '@/components/PostCard';
-import { makePost, makePoll, makeTrip, renderWithQueryClient } from '@/test/fixtures';
+import { makePost, makePoll, makeTrip, makeAlbum, renderWithQueryClient } from '@/test/fixtures';
 import { Post, reactToPost, toggleFavoritePost, votePoll } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -258,6 +258,52 @@ describe('PostCard', () => {
         <PostCard post={makePost({ type: 'TRIP', content: null, commentCount: 5, trip: makeTrip() })} />
       );
       expect(screen.queryByText(/comments/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('album posts', () => {
+    it('renders the album card: badge, title, stats, contributors, and open CTA', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />
+      );
+      expect(screen.getByText('🖼️ SHARED ALBUM')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Summer at the lake' })).toBeInTheDocument();
+      expect(screen.getByText('5 photos · 2 contributors')).toBeInTheDocument();
+      expect(screen.getByText(/Added by Sophie/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open album →' })).toBeInTheDocument();
+    });
+
+    it('opens the album detail view from the CTA', async () => {
+      const user = userEvent.setup();
+      const onOpenAlbum = vi.fn();
+      renderWithQueryClient(
+        <PostCard
+          post={makePost({ id: 'album-post', type: 'ALBUM', content: null, album: makeAlbum() })}
+          onOpenAlbum={onOpenAlbum}
+        />
+      );
+      await user.click(screen.getByRole('button', { name: 'Open album →' }));
+      expect(onOpenAlbum).toHaveBeenCalledWith('album-post');
+    });
+
+    it('shows an "Add photos" CTA on an open album', () => {
+      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />);
+      expect(screen.getByRole('button', { name: 'Add photos' })).toBeInTheDocument();
+    });
+
+    it('hides the "Add photos" CTA and shows the closed badge on a closed album', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum({ closed: true }) })} />
+      );
+      expect(screen.queryByRole('button', { name: 'Add photos' })).not.toBeInTheDocument();
+      expect(screen.getByText('🖼️ ALBUM · CLOSED')).toBeInTheDocument();
+    });
+
+    it('never renders a generic inline-comments affordance for album posts', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'ALBUM', content: null, commentCount: 5, album: makeAlbum() })} />
+      );
       expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument();
     });
   });

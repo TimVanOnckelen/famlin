@@ -1,0 +1,218 @@
+/* Album detail page (pages/AlbumDetailPage) — the read + contribute view of a
+   collaborative photo album, opened as an App.tsx `view` state like
+   TripDetailPage. Reuses the shared design tokens. */
+
+.album-detail-shell {
+  min-height: 100vh;
+  background: var(--fam-bg);
+  padding-bottom: 80px;
+}
+
+.album-detail-column {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.album-detail-hint {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.album-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: var(--fam-primary-dark);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.album-detail-back:hover {
+  text-decoration: underline;
+}
+
+/* ── Cover ──────────────────────────────────────────────────────────────── */
+
+.album-detail-cover {
+  width: 100%;
+  height: 260px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--fam-primary-tint);
+}
+
+.album-detail-cover-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.album-detail-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.album-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--fam-border);
+}
+
+.album-badge-closed {
+  background: transparent;
+  border: 1.5px solid var(--fam-primary);
+  color: var(--fam-primary-dark);
+}
+
+.album-detail-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--fam-text-title);
+  margin: 0;
+}
+
+.album-detail-description {
+  font-size: 15px;
+  color: var(--fam-text-body);
+  margin: 0;
+}
+
+.album-detail-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 4px;
+}
+
+.album-detail-stat-number {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--fam-primary-dark);
+}
+
+.album-detail-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.album-detail-contributors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.album-detail-contributors-stack {
+  display: flex;
+}
+
+.album-detail-contributor-face {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--fam-surface);
+  margin-left: -8px;
+}
+
+.album-detail-contributor-face:first-child {
+  margin-left: 0;
+}
+
+.album-detail-contributors-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+.album-detail-header-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Photo grid ─────────────────────────────────────────────────────────── */
+
+.album-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 16px 0;
+}
+
+.album-detail-grid-tile {
+  position: relative;
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  background: var(--fam-primary-tint);
+}
+
+.album-detail-grid-tile img,
+.album-detail-grid-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.album-detail-grid-tile .shimmer-frame {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+
+.album-detail-empty {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.album-detail-empty-icon {
+  font-size: 44px;
+}
+
+.album-detail-empty-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin-top: 8px;
+}
+
+.album-detail-empty-description {
+  font-size: 14px;
+  color: var(--fam-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Comments ───────────────────────────────────────────────────────────── */
+
+.album-detail-comments-section {
+  margin-top: 16px;
+}
+
+.album-detail-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin: 0 0 8px;
+}

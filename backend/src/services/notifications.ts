@@ -63,6 +63,9 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   // in the locale files and src/subscribers/notifications.ts, which computes
   // `count` (today's check-in count for this author on this trip).
   trip_checkin: 'notifications.tripCheckin',
+  // count-pluralized like trip_checkin — bundles same-day contributions from
+  // the same author into one notification (see src/subscribers/notifications.ts).
+  album_photo: 'notifications.albumPhoto',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
