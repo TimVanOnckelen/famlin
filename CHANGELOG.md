@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/TimVanOnckelen/famlin/compare/v0.6.0...v0.6.1) (2026-07-25)
+
+
+### Features
+
+* add collaborative ALBUM post type ([62414f1](https://github.com/TimVanOnckelen/famlin/commit/62414f17d9a13fd64c70e3521e45d408b509af0d))
+* add collaborative ALBUM post type ([79dcee6](https://github.com/TimVanOnckelen/famlin/commit/79dcee618e0cc428380e41e8e1995dddd4cff3aa))
+
 ## [0.6.0](https://github.com/TimVanOnckelen/famlin/compare/v0.5.1...v0.6.0) (2026-07-20)
 
 
