@@ -177,7 +177,9 @@
     "empty": "No photos yet",
     "loadFailed": "Photos couldn't be loaded.",
     "shareToFeed": "Share to feed",
-    "viewPost": "View post"
+    "viewPost": "View post",
+    "albumsTitle": "Shared albums",
+    "allPhotosTitle": "All photos"
   },
   "poll": {
     "votes_one": "{{count}} vote",

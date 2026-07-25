@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, authHeader } from './helpers.js';
 
@@ -84,6 +85,103 @@ describe('posts routes', () => {
       });
       expect(list.json().items).toHaveLength(1);
       expect(list.json().items[0].content).toBe('hello family');
+    });
+  });
+
+  describe('editing photos', () => {
+    // Same /uploads/<uuid>.<ext> shape the upload route writes — anything else
+    // fails schema validation before the route runs (see UPLOAD_PATH_REGEX).
+    const assetPath = () => `/uploads/${randomUUID()}.jpg`;
+
+    it('replaces the post\'s photos, adding and removing in one edit', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const [keep, drop] = [assetPath(), assetPath()];
+      const added = assetPath();
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [keep, drop] });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+        payload: { content: 'edited', uploadedAssetUrls: [keep, added] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().uploadedAssetUrls).toEqual([keep, added]);
+
+      const reread = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+      });
+      expect(reread.json().uploadedAssetUrls).toEqual([keep, added]);
+    });
+
+    it('removes every photo when the edit sends an empty list', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [assetPath()] });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+        payload: { uploadedAssetUrls: [] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().uploadedAssetUrls).toEqual([]);
+    });
+
+    it('leaves the photos alone when the edit omits them', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const photos = [assetPath()];
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: photos });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+        payload: { content: 'text-only edit' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().content).toBe('text-only edit');
+      expect(res.json().uploadedAssetUrls).toEqual(photos);
+    });
+
+    it('rejects a photo path that is not one the upload route could have written', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+        payload: { uploadedAssetUrls: ['https://evil.example.com/x.jpg'] },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects adding a linked-album asset the post\'s group has no link to', async () => {
+      const author = await createUser();
+      const group = await createGroupWithMember(author);
+      const post = await createPost({ groupId: group.id, authorId: author.id });
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(author),
+        // A well-formed proxy path (cuid-shaped link id) so it clears schema
+        // validation and reaches the route's own group check.
+        payload: { uploadedAssetUrls: [`/api/media/assets/clx000000000000000000000/${randomUUID()}/preview.jpg`] },
+      });
+
+      expect(res.statusCode).toBe(400);
     });
   });
 

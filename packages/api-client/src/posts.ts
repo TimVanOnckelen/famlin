@@ -5,6 +5,11 @@ export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
   groupIds?: string[];
   cursor?: string;
+  // Narrows the same list to one post type — what the Photos tab's albums
+  // section asks for ('ALBUM'). Omit for the ordinary mixed feed. A server
+  // that predates the filter ignores it and returns every type, so callers
+  // that must not show other types should still filter defensively.
+  type?: PostType;
 }
 
 export interface PostsPage {
@@ -17,9 +22,19 @@ export async function fetchPosts(params: FetchPostsParams = {}): Promise<PostsPa
     params: {
       groupIds: params.groupIds && params.groupIds.length > 0 ? params.groupIds.join(',') : undefined,
       cursor: params.cursor,
+      type: params.type,
     },
   });
   return response.data;
+}
+
+// The albums shown in the Photos tab: every ALBUM post in the given groups,
+// newest first. Kept here (rather than each client hand-rolling the
+// `type: 'ALBUM'` call) so web and mobile share the older-server fallback —
+// see FetchPostsParams.type.
+export async function fetchAlbumPosts(params: { groupIds?: string[]; cursor?: string } = {}): Promise<PostsPage> {
+  const page = await fetchPosts({ ...params, type: 'ALBUM' });
+  return { ...page, items: page.items.filter((post) => post.type === 'ALBUM') };
 }
 
 export async function fetchPost(postId: string): Promise<Post> {
@@ -76,8 +91,21 @@ export async function createPost(data: CreatePostBody): Promise<Post> {
   return response.data;
 }
 
-export async function updatePost(postId: string, content: string): Promise<Post> {
-  const response = await api.patch<Post>(`/posts/${postId}`, { content });
+export interface UpdatePostBody {
+  content?: string;
+  milestoneTag?: string;
+  // The post's complete photo/video list after the edit — send it to add or
+  // remove photos (it replaces the stored list wholesale), omit it to leave
+  // them untouched. Paths are the same shape createPost takes: /uploads/
+  // paths from POST /api/uploads, or media-proxy paths from a linked album.
+  uploadedAssetUrls?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
+}
+
+export async function updatePost(postId: string, data: UpdatePostBody): Promise<Post> {
+  const response = await api.patch<Post>(`/posts/${postId}`, data);
   return response.data;
 }
 

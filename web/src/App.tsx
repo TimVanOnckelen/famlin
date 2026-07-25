@@ -19,8 +19,11 @@ export default function App() {
   const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip' | 'album'>('feed');
   // Only meaningful while view === 'trip' — which post's trip is open.
   const [tripPostId, setTripPostId] = useState<string | null>(null);
-  // Only meaningful while view === 'album' — which post's album is open.
+  // Only meaningful while view === 'album' — which post's album is open, and
+  // which page it was opened from, so "back" returns there (an album is
+  // reachable from both the feed and the Photos tab's albums strip).
   const [albumPostId, setAlbumPostId] = useState<string | null>(null);
+  const [albumOrigin, setAlbumOrigin] = useState<'feed' | 'photos'>('feed');
 
   // A session ending on the profile view (logout or 401) shouldn't land the
   // next login on the profile page.
@@ -29,6 +32,7 @@ export default function App() {
       setView('feed');
       setTripPostId(null);
       setAlbumPostId(null);
+      setAlbumOrigin('feed');
     }
   }, [user]);
 
@@ -106,6 +110,11 @@ export default function App() {
           onOpenFeed={() => setView('feed')}
           onOpenChat={() => setView('chat')}
           onOpenProfile={() => setView('profile')}
+          onOpenAlbum={(postId) => {
+            setAlbumPostId(postId);
+            setAlbumOrigin('photos');
+            setView('album');
+          }}
           onLogout={() => logout()}
         />
       </>
@@ -147,7 +156,7 @@ export default function App() {
         <ReadOnlyBanner />
         <AlbumDetailPage
           postId={albumPostId}
-          onBack={() => setView('feed')}
+          onBack={() => setView(albumOrigin)}
           onOpenPhotos={() => setView('photos')}
           onOpenChat={() => setView('chat')}
           onOpenProfile={() => setView('profile')}
@@ -170,6 +179,7 @@ export default function App() {
         }}
         onOpenAlbum={(postId) => {
           setAlbumPostId(postId);
+          setAlbumOrigin('feed');
           setView('album');
         }}
         onLogout={() => logout()}

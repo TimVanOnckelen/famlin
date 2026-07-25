@@ -2,12 +2,17 @@ import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionTyp
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
+    type?: PostType;
 }
 export interface PostsPage {
     items: Post[];
     nextCursor: string | null;
 }
 export declare function fetchPosts(params?: FetchPostsParams): Promise<PostsPage>;
+export declare function fetchAlbumPosts(params?: {
+    groupIds?: string[];
+    cursor?: string;
+}): Promise<PostsPage>;
 export declare function fetchPost(postId: string): Promise<Post>;
 export declare function fetchOnThisDay(groupId: string): Promise<Post[]>;
 export interface SearchPostsParams {
@@ -30,7 +35,15 @@ export interface CreatePostBody {
     locationName?: string;
 }
 export declare function createPost(data: CreatePostBody): Promise<Post>;
-export declare function updatePost(postId: string, content: string): Promise<Post>;
+export interface UpdatePostBody {
+    content?: string;
+    milestoneTag?: string;
+    uploadedAssetUrls?: string[];
+    latitude?: number | null;
+    longitude?: number | null;
+    locationName?: string | null;
+}
+export declare function updatePost(postId: string, data: UpdatePostBody): Promise<Post>;
 export declare function deletePost(postId: string): Promise<void>;
 export interface ReactionResult {
     myReaction: ReactionType | null;

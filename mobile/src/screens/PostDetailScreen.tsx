@@ -44,6 +44,9 @@ import {
   updateComment,
   deleteComment,
   groupCommentAttachments,
+  // Aliased: this screen already has a `commentAttachments` state variable
+  // for the comment being composed, which is a different thing entirely.
+  commentAttachments as commentAttachmentUrls,
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
@@ -66,6 +69,9 @@ const COMMENT_GRID_MAX_TILES = 4;
 // the wrapping grid, more than that scrolls sideways.
 const POST_GRID_MAX_PHOTOS = 4;
 
+/** Mirrors uploadedAssetUrls' max in the backend's updatePostBodySchema. */
+const MAX_POST_ASSETS = 20;
+
 export function PostDetailScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
@@ -78,6 +84,12 @@ export function PostDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState('');
+  // The post's photos as the edit has them so far — seeded from the post when
+  // editing starts, then added to and removed from until save, which sends
+  // the whole list. Pending entries are local URIs whose upload is still in
+  // flight, shown with a spinner and not yet part of the list being saved.
+  const [editPostAssets, setEditPostAssets] = useState<string[]>([]);
+  const [editPostPendingAssets, setEditPostPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false);
   const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
   const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
@@ -161,9 +173,11 @@ export function PostDetailScreen() {
   });
 
   const editPostMutation = useMutation({
-    mutationFn: (content: string) => updatePost(postId, content),
+    mutationFn: ({ content, uploadedAssetUrls }: { content: string; uploadedAssetUrls: string[] }) =>
+      updatePost(postId, { content, uploadedAssetUrls }),
     onSuccess: () => {
       setIsEditingPost(false);
+      setEditPostPendingAssets([]);
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
@@ -184,8 +198,16 @@ export function PostDetailScreen() {
   });
 
   const editCommentMutation = useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) => updateComment(id, content),
-    onSuccess: () => refetch(),
+    // attachmentUrls is always sent (never undefined) because the edit UI
+    // always shows the comment's photos — an unchanged list is the same list.
+    mutationFn: ({ id, content, attachmentUrls }: { id: string; content: string; attachmentUrls: string[] }) =>
+      updateComment(id, { content, attachmentUrls }),
+    onSuccess: () => {
+      refetch();
+      // An edit can now change a comment's photos, so refresh the post the
+      // same way deleting a comment does rather than only the thread.
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+    },
     onError: (err: any) => {
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'));
     },
@@ -296,6 +318,34 @@ export function PostDetailScreen() {
     setCommentAttachments((old) => old.filter((_, i) => i !== index));
   }
 
+  // Same pick-then-upload flow as the composer's, for photos added while
+  // editing the post. Removing one is local until save — nothing is deleted
+  // from the server, the saved list just stops referring to it.
+  const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length;
+
+  const { pick: pickEditPostMedia, uploading: editPostUploading } = usePickAndUploadMedia({
+    pickerOptions: {
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: Math.max(1, editPostAssetRoom),
+      quality: 0.8,
+      videoMaxDuration: 120,
+    },
+    includeIndexInName: true,
+    onPicked: setEditPostPendingAssets,
+  });
+
+  async function pickEditPostAssets() {
+    if (editPostAssetRoom <= 0) return;
+    const result = await pickEditPostMedia();
+    if (result) setEditPostAssets((prev) => [...prev, ...result.urls]);
+    setEditPostPendingAssets([]);
+  }
+
+  function removeEditPostAsset(url: string) {
+    setEditPostAssets((prev) => prev.filter((u) => u !== url));
+  }
+
   function handleCommentTextChange(text: string) {
     setCommentText(text);
     const match = text.match(TRAILING_MENTION_REGEX);
@@ -339,7 +389,14 @@ export function PostDetailScreen() {
 
   function startEditPost() {
     setEditPostContent(post!.content || '');
+    setEditPostAssets(post!.uploadedAssetUrls);
+    setEditPostPendingAssets([]);
     setIsEditingPost(true);
+  }
+
+  function cancelEditPost() {
+    setIsEditingPost(false);
+    setEditPostPendingAssets([]);
   }
 
   function confirmDeletePost() {
@@ -357,14 +414,24 @@ export function PostDetailScreen() {
     ]);
   }
 
-  const canSavePostEdit = editPostContent.trim().length > 0 || allPhotoUrls.length > 0;
+  // A post can be photos-only or text-only, but not neither — and it's the
+  // edit's own photo list that decides, not the one currently on screen.
+  const canSavePostEdit = editPostContent.trim().length > 0 || editPostAssets.length > 0;
+
+  // While editing, the photo strip in the editor IS the post's photo list —
+  // the read-only hero and gallery would show a stale second copy of it (and
+  // a photo the user just removed), so they step aside for the duration. The
+  // hero doubles as the screen's chrome when there are photos, so everything
+  // keyed off it (the safe-area top edge, the header, the floating back
+  // button, the sheet's overlap) has to follow the same flag.
+  const showHeroPhoto = hasPhotos && !isEditingPost;
 
   return (
     <SafeAreaView
       style={styles.container}
-      edges={hasPhotos ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
+      edges={showHeroPhoto ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
     >
-      {!hasPhotos && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
+      {!showHeroPhoto && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -376,7 +443,7 @@ export function PostDetailScreen() {
           keyExtractor={(item) => item.key}
           ListHeaderComponent={
             <>
-              {hasPhotos && (
+              {showHeroPhoto && (
                 <View>
                   <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
                     <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />
@@ -402,7 +469,7 @@ export function PostDetailScreen() {
             <View
               style={[
                 styles.postContainer,
-                hasPhotos && styles.postContainerOverlap,
+                showHeroPhoto && styles.postContainerOverlap,
                 isMilestone && !hasPhotos && styles.milestoneContainer,
               ]}
             >
@@ -451,18 +518,66 @@ export function PostDetailScreen() {
                     multiline
                     autoFocus
                   />
+
+                  {(editPostAssets.length > 0 || editPostPendingAssets.length > 0) && (
+                    <View style={styles.editAttachmentRow}>
+                      {editPostAssets.map((url) => (
+                        <View style={styles.attachmentPreview} key={url}>
+                          <MediaThumbnail
+                            url={getUploadUrl(url, 'thumbnail')}
+                            fallbackUrl={getUploadUrl(url)}
+                            style={styles.attachmentPreviewImage}
+                          />
+                          <TouchableOpacity
+                            style={styles.attachmentRemoveButton}
+                            onPress={() => removeEditPostAsset(url)}
+                            accessibilityLabel={t('postDetail.removeAttachment')}
+                          >
+                            <Icon name="x" size={12} color={colors.white} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      {editPostPendingAssets.map((asset, index) => (
+                        <View style={styles.attachmentPreview} key={`pending-${index}`}>
+                          <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
+                          <View style={styles.attachmentUploadingOverlay}>
+                            <ActivityIndicator size="small" color={colors.white} />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
                   <View style={styles.postEditActions}>
                     <TouchableOpacity
+                      style={styles.editAddPhotoButton}
+                      onPress={pickEditPostAssets}
+                      disabled={editPostUploading || editPostAssetRoom <= 0}
+                      accessibilityLabel={t('postDetail.addAttachment')}
+                    >
+                      <Icon name="image" size={16} color={colors.primary} />
+                      <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.editActionsSpacer} />
+                    <TouchableOpacity
                       style={styles.postEditCancelButton}
-                      onPress={() => setIsEditingPost(false)}
+                      onPress={cancelEditPost}
                       disabled={editPostMutation.isPending}
                     >
                       <Text style={styles.postEditCancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.postEditSaveButton, !canSavePostEdit && styles.sendButtonDisabled]}
-                      onPress={() => editPostMutation.mutate(editPostContent.trim())}
-                      disabled={editPostMutation.isPending || !canSavePostEdit}
+                      style={[
+                        styles.postEditSaveButton,
+                        (!canSavePostEdit || editPostUploading) && styles.sendButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        editPostMutation.mutate({
+                          content: editPostContent.trim(),
+                          uploadedAssetUrls: editPostAssets,
+                        })
+                      }
+                      disabled={editPostMutation.isPending || editPostUploading || !canSavePostEdit}
                     >
                       <Text style={styles.postEditSaveText}>{t('common.save')}</Text>
                     </TouchableOpacity>
@@ -484,7 +599,7 @@ export function PostDetailScreen() {
                 <PostLocationPreview latitude={post.latitude} longitude={post.longitude} locationName={post.locationName} />
               )}
 
-              {allPhotoUrls.length > 1 && allPhotoUrls.length <= POST_GRID_MAX_PHOTOS && (
+              {!isEditingPost && allPhotoUrls.length > 1 && allPhotoUrls.length <= POST_GRID_MAX_PHOTOS && (
                 <View style={styles.photoGallery}>
                   {allPhotoUrls.slice(1).map((url: string, index: number) => (
                     <TouchableOpacity
@@ -502,7 +617,7 @@ export function PostDetailScreen() {
               {/* Past POST_GRID_MAX_PHOTOS the wrapping grid would push the
                   post's text and comments far down the screen — scroll the
                   photos sideways instead. */}
-              {allPhotoUrls.length > POST_GRID_MAX_PHOTOS && (
+              {!isEditingPost && allPhotoUrls.length > POST_GRID_MAX_PHOTOS && (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -568,7 +683,9 @@ export function PostDetailScreen() {
                 onLike={(commentId, type) => likeCommentMutation.mutate({ commentId, type })}
                 onLongPressLike={(commentId) => setReactionPickerCommentId(commentId)}
                 onReply={(comment) => setReplyingTo({ id: comment.id, authorName: comment.author.name })}
-                onEdit={(id, content) => editCommentMutation.mutateAsync({ id, content })}
+                onEdit={(id, content, attachmentUrls) =>
+                  editCommentMutation.mutateAsync({ id, content, attachmentUrls })
+                }
                 onDelete={(commentIds) => deleteCommentMutation.mutate(commentIds)}
               />
             </View>
@@ -576,7 +693,7 @@ export function PostDetailScreen() {
           contentContainerStyle={hasPhotos ? styles.commentsListHero : styles.commentsList}
         />
 
-        {hasPhotos && (
+        {showHeroPhoto && (
           <TouchableOpacity
             style={[styles.floatingBack, { top: insets.top + 8 }]}
             onPress={() => navigation.goBack()}
@@ -701,7 +818,7 @@ function CommentItem({
   onLike: (commentId: string, type: ReactionType) => void;
   onLongPressLike: (commentId: string) => void;
   onReply: (comment: Comment) => void;
-  onEdit: (commentId: string, content: string) => Promise<unknown>;
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
   onDelete: (commentIds: string[]) => void;
 }) {
   const { lead } = group;
@@ -758,7 +875,7 @@ function CommentBody({
   onLike: (type: ReactionType) => void;
   onLongPressLike: () => void;
   onReply: () => void;
-  onEdit: (commentId: string, content: string) => Promise<unknown>;
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
   onDelete: (commentIds: string[]) => void;
 }) {
   const { t } = useTranslation();
@@ -767,20 +884,56 @@ function CommentBody({
   const attachmentUrls = group.attachments.map((attachment) => attachment.url);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
+  // The comment's photos as the edit has them so far, same wholesale-replace
+  // contract as the post editor above. Editing is only offered on a
+  // single-comment card (see the Edit button below), so these are exactly
+  // this comment's own attachments.
+  const [editAttachments, setEditAttachments] = useState<string[]>([]);
+  const [editPendingAttachments, setEditPendingAttachments] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length;
+
+  const { pick: pickEditMedia, uploading: editUploading } = usePickAndUploadMedia({
+    pickerOptions: {
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: Math.max(1, editAttachmentRoom),
+      quality: 0.8,
+      videoMaxDuration: 120,
+    },
+    includeIndexInName: true,
+    onPicked: setEditPendingAttachments,
+  });
+
+  async function pickEditAttachments() {
+    if (editAttachmentRoom <= 0) return;
+    const result = await pickEditMedia();
+    if (result) setEditAttachments((prev) => [...prev, ...result.urls]);
+    setEditPendingAttachments([]);
+  }
 
   function startEdit() {
     setEditText(comment.content);
+    setEditAttachments(commentAttachmentUrls(comment));
+    setEditPendingAttachments([]);
     setIsEditing(true);
   }
 
+  function cancelEdit() {
+    setIsEditing(false);
+    setEditPendingAttachments([]);
+  }
+
+  const canSaveEdit = !!editText.trim() || editAttachments.length > 0;
+
   async function saveEdit() {
-    const trimmed = editText.trim();
-    if (!trimmed) return;
+    if (!canSaveEdit) return;
     setSaving(true);
     try {
-      await onEdit(comment.id, trimmed);
+      await onEdit(comment.id, editText.trim(), editAttachments);
       setIsEditing(false);
+      setEditPendingAttachments([]);
     } finally {
       setSaving(false);
     }
@@ -819,11 +972,51 @@ function CommentBody({
           multiline
           autoFocus
         />
+
+        {(editAttachments.length > 0 || editPendingAttachments.length > 0) && (
+          <View style={styles.editAttachmentRow}>
+            {editAttachments.map((url) => (
+              <View style={styles.attachmentPreview} key={url}>
+                <MediaThumbnail
+                  url={getUploadUrl(url, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(url)}
+                  style={styles.attachmentPreviewImage}
+                />
+                <TouchableOpacity
+                  style={styles.attachmentRemoveButton}
+                  onPress={() => setEditAttachments((prev) => prev.filter((u) => u !== url))}
+                  accessibilityLabel={t('postDetail.removeAttachment')}
+                >
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {editPendingAttachments.map((asset, index) => (
+              <View style={styles.attachmentPreview} key={`pending-${index}`}>
+                <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
+                <View style={styles.attachmentUploadingOverlay}>
+                  <ActivityIndicator size="small" color={colors.white} />
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.commentEditActions}>
-          <TouchableOpacity onPress={() => setIsEditing(false)} disabled={saving}>
+          <TouchableOpacity
+            style={styles.editAddPhotoButton}
+            onPress={pickEditAttachments}
+            disabled={editUploading || editAttachmentRoom <= 0}
+            accessibilityLabel={t('postDetail.addAttachment')}
+          >
+            <Icon name="image" size={16} color={colors.primary} />
+            <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
+          </TouchableOpacity>
+          <View style={styles.editActionsSpacer} />
+          <TouchableOpacity onPress={cancelEdit} disabled={saving}>
             <Text style={styles.commentAction}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={saveEdit} disabled={saving || !editText.trim()}>
+          <TouchableOpacity onPress={saveEdit} disabled={saving || editUploading || !canSaveEdit}>
             <Text style={[styles.commentAction, styles.commentActionActive]}>{t('common.save')}</Text>
           </TouchableOpacity>
         </View>
@@ -1373,6 +1566,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  // Same tiles as the composer's preview row above, minus that row's screen
+  // padding — these sit inside the post/comment editor's own container.
+  editAttachmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  editAddPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  editAddPhotoText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
+  },
+  editActionsSpacer: {
+    flex: 1,
   },
   attachmentPreview: {
     width: 64,

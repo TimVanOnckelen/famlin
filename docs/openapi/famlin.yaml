@@ -485,6 +485,10 @@ paths:
         a member of is a `403`. A post shared with several of your groups (see
         `sharedWithGroups` on `POST /api/posts`) is deduplicated — you see it
         once, not once per shared group.
+
+        `type` narrows the same list to a single post type — e.g.
+        `type=ALBUM` lists just the shared photo albums in those groups,
+        without paging through the whole feed to find them.
       parameters:
         - name: groupIds
           in: query
@@ -495,6 +499,13 @@ paths:
           in: query
           schema: { type: string }
           description: Legacy single-group filter.
+        - name: type
+          in: query
+          schema: { type: string }
+          description: >-
+            Return only posts of this type (`UPDATE`, `MILESTONE`, `POLL`,
+            `TRIP`, `ALBUM`). An unrecognized type is a `400`.
+          example: ALBUM
         - $ref: '#/components/parameters/cursor'
         - $ref: '#/components/parameters/take'
       responses:
@@ -504,6 +515,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostsPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

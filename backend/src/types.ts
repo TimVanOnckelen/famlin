@@ -209,9 +209,10 @@ export const updatePostBodySchema = z
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     locationName: z.string().max(200).nullable().optional(),
-    // Present so a cross-posted edit can rewrite a linked-album asset via
-    // copyMediaAssetsToUploads (see routes/posts.ts PATCH /:id) — no client
-    // sends this on a plain edit today, but it's the same shape as create's.
+    // Same shape as create's: the edit's complete photo/video list, which
+    // replaces the stored one wholesale (that's how a client both adds and
+    // removes). Omitted leaves the post's existing assets untouched, so a
+    // text-only edit never has to resend them.
     uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
@@ -219,8 +220,19 @@ export const updatePostBodySchema = z
     path: ['latitude'],
   });
 
+// Both fields are optional and independent: sending only `content` leaves the
+// comment's photos alone, sending only attachments leaves its text alone. The
+// "at least one of content/attachments" rule create enforces in the schema
+// can't live here — whether the edit ends up empty depends on the stored row
+// as much as on the body, so routes/comments.ts checks it against the result.
 export const updateCommentBodySchema = z.object({
-  content: z.string().min(1).max(2000),
+  content: z.string().max(2000).optional(),
+  // The comment's complete attachment list after the edit, replacing the
+  // stored one wholesale (adds and removals are the same request).
+  // attachmentUrl is the legacy single-attachment field, same precedence as
+  // createCommentBodySchema — see normalizeCommentAttachments.
+  attachmentUrl: uploadPathSchema.optional(),
+  attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
 });
 
 export const pushTokenBodySchema = z.object({

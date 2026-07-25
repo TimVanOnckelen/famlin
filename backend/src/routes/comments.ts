@@ -140,6 +140,33 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     const editedAt = new Date();
 
+    // Attachments are replaced wholesale when the client sends them and left
+    // untouched when it doesn't, so a text-only edit (every pre-existing
+    // client) never has to resend the photo list.
+    const attachmentsProvided = body.attachmentUrls !== undefined || body.attachmentUrl !== undefined;
+    const attachmentUrls = attachmentsProvided ? normalizeCommentAttachments(body) : comment.attachmentUrls;
+    const content = body.content === undefined ? comment.content : body.content.trim();
+
+    // A handler-authored comment keeps its photos in metadata.photoUrls, not
+    // attachmentUrls (services/postTypes/trip.ts, album.ts) — rewriting the
+    // column here would leave the real photos in place while desyncing the
+    // aggregates enrichPosts computes from them. Those types edit their own
+    // photos through their own interactions, so reject it outright rather
+    // than half-applying it. Their text still edits (and fans out) below.
+    if (attachmentsProvided && comment.metadata !== null) {
+      return reply.status(400).send({ error: t('errors.commentAttachmentsNotEditable') });
+    }
+
+    // The same "content or attachments" rule createCommentBodySchema enforces,
+    // but checked against the resulting row: an edit may send only one of the
+    // two fields, so neither the body nor the stored comment alone says
+    // whether the comment is about to end up empty. Skipped for a
+    // handler-authored comment, whose emptiness its own handler defines
+    // (a TRIP check-in is a place, with text and photos both optional).
+    if (comment.metadata === null && !content && attachmentUrls.length === 0) {
+      return reply.status(400).send({ error: t('errors.commentContentRequired') });
+    }
+
     // A handler-authored Comment (a TRIP check-in, an ALBUM photo
     // contribution) on a cross-posted post exists as one copy per sibling
     // post, all sharing a stable correlation id in metadata (services/
@@ -159,12 +186,19 @@ export default async function commentRoutes(fastify: FastifyInstance) {
           authorId: comment.authorId,
           metadata: { path: siblingKey.path, equals: siblingKey.value },
         },
-        data: { content: body.content, editedAt },
+        data: { content, editedAt },
       });
     } else {
       await prisma.comment.update({
         where: { id },
-        data: { content: body.content, editedAt },
+        data: {
+          content,
+          editedAt,
+          // attachmentUrl keeps mirroring the array's first entry, same as on
+          // create — a client built before multi-attachment comments still
+          // renders (the first photo of) an edited comment.
+          ...(attachmentsProvided ? { attachmentUrl: attachmentUrls[0] ?? null, attachmentUrls } : {}),
+        },
       });
     }
 

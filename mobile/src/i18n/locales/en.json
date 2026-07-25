@@ -259,6 +259,7 @@
     "deleteCommentConfirmMessage": "This can't be undone.",
     "editPlaceholder": "Edit your post...",
     "addAttachment": "Attach a photo or video",
+    "addPhotos": "Add photos",
     "removeAttachment": "Remove attachment",
     "viewAttachment": "View attachment",
     "alerts": {
@@ -301,7 +302,9 @@
     "title": "Photos",
     "emptyTitle": "No photos yet.",
     "emptySubtitle": "Photos from your family will appear here.",
-    "allPeople": "Everyone"
+    "allPeople": "Everyone",
+    "albumsTitle": "Shared albums",
+    "allPhotosTitle": "All photos"
   },
   "profile": {
     "title": "Profile",

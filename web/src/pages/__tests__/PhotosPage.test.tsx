@@ -1,10 +1,12 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PhotosPage } from '@/pages/PhotosPage';
-import { makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
+import { makeAlbum, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures';
+import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
+  fetchAlbumPosts: vi.fn(),
   fetchGroups: vi.fn(),
   getGroupPhotoTimeline: vi.fn(),
   getGroupMediaPeople: vi.fn(),
@@ -34,6 +36,7 @@ beforeEach(() => {
   vi.mocked(fetchGroups).mockResolvedValue(groups);
   vi.mocked(getGroupMediaPeople).mockResolvedValue(people);
   vi.mocked(getGroupPhotoTimeline).mockResolvedValue({ items: [], nextCursor: null });
+  vi.mocked(fetchAlbumPosts).mockResolvedValue({ items: [], nextCursor: null });
 });
 
 describe('PhotosPage', () => {
@@ -123,6 +126,45 @@ describe('PhotosPage', () => {
     );
 
     expect(await screen.findByText('No photos yet')).toBeInTheDocument();
+  });
+
+  it('shows the shared albums strip for the active group and opens an album', async () => {
+    const onOpenAlbum = vi.fn();
+    vi.mocked(fetchAlbumPosts).mockResolvedValue({
+      items: [
+        makePost({
+          id: 'album-post-1',
+          type: 'ALBUM',
+          album: makeAlbum({ title: 'Summer at the lake', photoCount: 5, contributorCount: 2 }),
+        }),
+      ],
+      nextCursor: null,
+    });
+
+    renderWithQueryClient(
+      <PhotosPage
+        user={makeUser()}
+        onOpenProfile={() => {}}
+        onOpenAlbum={onOpenAlbum}
+        onLogout={() => {}}
+      />
+    );
+
+    const tile = await screen.findByRole('button', { name: /Summer at the lake/ });
+    expect(screen.getByText('Shared albums')).toBeInTheDocument();
+    expect(fetchAlbumPosts).toHaveBeenCalledWith({ groupIds: ['group-1'] });
+
+    await userEvent.click(tile);
+    expect(onOpenAlbum).toHaveBeenCalledWith('album-post-1');
+  });
+
+  it('hides the albums section when the group has no albums', async () => {
+    renderWithQueryClient(
+      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+    );
+
+    await screen.findByText('No photos yet');
+    expect(screen.queryByText('Shared albums')).not.toBeInTheDocument();
   });
 
   it('shows video play icon for video items', async () => {

@@ -16,8 +16,8 @@ async function createComment(postId, data) {
     const response = await client_1.api.post(`/posts/${postId}/comments`, data);
     return response.data;
 }
-async function updateComment(commentId, content) {
-    const response = await client_1.api.patch(`/comments/${commentId}`, { content });
+async function updateComment(commentId, data) {
+    const response = await client_1.api.patch(`/comments/${commentId}`, data);
     return response.data;
 }
 async function deleteComment(commentId) {

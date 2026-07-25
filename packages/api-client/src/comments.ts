@@ -29,8 +29,20 @@ export async function createComment(postId: string, data: CreateCommentBody): Pr
   return response.data;
 }
 
-export async function updateComment(commentId: string, content: string): Promise<Comment> {
-  const response = await api.patch<Comment>(`/comments/${commentId}`, { content });
+export interface UpdateCommentBody {
+  content?: string;
+  // The comment's complete attachment list after the edit — send it to add or
+  // remove photos (it replaces the stored list wholesale), omit it to leave
+  // them untouched. The two fields are independent, but the server rejects an
+  // edit that would leave the comment with neither text nor photos.
+  // A handler-authored comment (a TRIP check-in, an ALBUM contribution) keeps
+  // its photos elsewhere and rejects attachment edits — text only there.
+  attachmentUrl?: string;
+  attachmentUrls?: string[];
+}
+
+export async function updateComment(commentId: string, data: UpdateCommentBody): Promise<Comment> {
+  const response = await api.patch<Comment>(`/comments/${commentId}`, data);
   return response.data;
 }
 

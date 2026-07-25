@@ -25,6 +25,148 @@
   gap: 8px;
 }
 
+/* ── Shared albums strip ────────────────────────────────────────────────── */
+
+.photos-albums {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.photos-section-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fam-text);
+  margin: 0;
+}
+
+/* Horizontal scroller: albums are a wayfinding shortcut, so they stay on one
+   row rather than pushing the photo timeline below the fold. */
+.photos-albums-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.photos-album-tile {
+  flex: 0 0 auto;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.photos-album-collage {
+  display: grid;
+  width: 180px;
+  height: 180px;
+  gap: 2px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--fam-bg);
+}
+
+.photos-album-collage-1 {
+  grid-template-columns: 1fr;
+}
+
+.photos-album-collage-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.photos-album-collage-3,
+.photos-album-collage-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* Three photos: the first spans the full left column. */
+.photos-album-collage-3 .photos-album-collage-tile:first-child {
+  grid-row: span 2;
+}
+
+.photos-album-collage-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fam-primary);
+}
+
+.photos-album-collage-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.photos-album-collage-tile .shimmer-frame {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.photos-album-collage-tile img,
+.photos-album-collage-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photos-album-collage-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.photos-album-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fam-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photos-album-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.photos-album-closed {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--fam-primary);
+}
+
+@media (max-width: 480px) {
+  .photos-album-tile,
+  .photos-album-collage {
+    width: 140px;
+  }
+
+  .photos-album-collage {
+    height: 140px;
+  }
+}
+
 /* ── Photos timeline (grouped by month) ─────────────────────────────────── */
 
 .photos-timeline {

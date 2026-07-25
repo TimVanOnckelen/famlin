@@ -95,12 +95,14 @@ export type {
   PostsPage,
   SearchPostsParams,
   CreatePostBody,
+  UpdatePostBody,
   ReactionResult,
   CheckInTripBody,
   AddAlbumPhotosBody,
 } from './posts';
 export {
   fetchPosts,
+  fetchAlbumPosts,
   fetchPost,
   fetchOnThisDay,
   searchPosts,
@@ -120,7 +122,7 @@ export {
   closeAlbum,
 } from './posts';
 
-export type { CreateCommentBody } from './comments';
+export type { CreateCommentBody, UpdateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
 
 export type { CommentGroup } from './commentGroups';

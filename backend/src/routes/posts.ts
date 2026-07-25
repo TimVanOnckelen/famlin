@@ -48,10 +48,17 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // The feed is a filter over the user's groups: `groupIds` (comma-separated)
   // selects a subset, the legacy `groupId` selects one, and neither means
   // every group the user belongs to. Whatever is requested is checked against
-  // their memberships — never trust the ids alone.
+  // their memberships — never trust the ids alone. The optional `type` narrows
+  // the same list to one post type (the Photos tab's albums section asks for
+  // `type=ALBUM`), validated against the post-type registry so an unknown id
+  // is a 400 rather than a silently empty page.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
-    const { groupId, groupIds } = request.query as { groupId?: string; groupIds?: string };
+    const { groupId, groupIds, type } = request.query as { groupId?: string; groupIds?: string; type?: string };
+
+    if (type !== undefined && !getPostTypeHandler(type)) {
+      return reply.status(400).send({ error: t('errors.unknownPostType') });
+    }
 
     const requested = groupIds
       ? [...new Set(groupIds.split(',').filter(Boolean))]
@@ -81,7 +88,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // stable order/cursor key — id breaks the tie deterministically for both
     // the page order and the "leading duplicate" check below.
     const posts = await prisma.post.findMany({
-      where: { groupId: { in: effectiveGroupIds } },
+      where: { groupId: { in: effectiveGroupIds }, ...(type ? { type } : {}) },
       include: postInclude(request.user!.id),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
@@ -423,6 +430,17 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return { ...shaped, people: [] };
     }
 
+    // A linked-album asset added by the edit has to be authorized against this
+    // post's group exactly like a new post's would be — mirrors POST / above.
+    // (The cross-post branch's copyMediaAssetsToUploads does the equivalent
+    // check against every sibling group instead.)
+    if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, post.groupId))) {
+      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
+    }
+
+    // Removing a photo leaves any comment pinned to it (Comment.assetUrl)
+    // behind rather than deleting it — the text someone wrote is theirs, and
+    // it still shows in the post's main comment list.
     const updated = await prisma.post.update({
       where: { id },
       data: {
@@ -430,6 +448,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         milestoneTag: body.milestoneTag,
         editedAt: new Date(),
         ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
+        ...(body.uploadedAssetUrls ? { uploadedAssetUrls: body.uploadedAssetUrls } : {}),
       },
       include: postInclude(request.user!.id),
     });

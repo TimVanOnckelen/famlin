@@ -177,7 +177,9 @@
     "empty": "Nog geen foto's",
     "loadFailed": "Foto's konden niet geladen worden.",
     "shareToFeed": "Delen op feed",
-    "viewPost": "Bericht bekijken"
+    "viewPost": "Bericht bekijken",
+    "albumsTitle": "Gedeelde albums",
+    "allPhotosTitle": "Alle foto's"
   },
   "poll": {
     "votes_one": "{{count}} stem",

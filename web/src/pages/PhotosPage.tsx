@@ -2,14 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
+  fetchAlbumPosts,
   fetchGroups,
   getGroupPhotoTimeline,
   getGroupMediaPeople,
   getUploadUrl,
   PhotoItem,
+  Post,
   User,
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
+import { isVideoUrl } from '@/utils/media';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { Lightbox } from '@/components/Lightbox';
@@ -22,12 +25,14 @@ export function PhotosPage({
   onOpenFeed,
   onOpenChat,
   onOpenProfile,
+  onOpenAlbum,
   onLogout,
 }: {
   user: User;
   onOpenFeed?: () => void;
   onOpenChat?: () => void;
   onOpenProfile: () => void;
+  onOpenAlbum?: (postId: string) => void;
   onLogout: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -52,6 +57,17 @@ export function PhotosPage({
     enabled: activeGroupId !== null,
   });
   const people = peopleQuery.data ?? [];
+
+  // The group's shared (collaborative ALBUM) posts, shown as a strip above the
+  // timeline — without this they're only reachable by scrolling the feed until
+  // the album card shows up again. One page is plenty for a strip; the feed
+  // remains the place to see older ones.
+  const albumsQuery = useQuery({
+    queryKey: ['album-posts', activeGroupId],
+    queryFn: () => fetchAlbumPosts({ groupIds: [activeGroupId!] }),
+    enabled: activeGroupId !== null,
+  });
+  const albums = albumsQuery.data?.items ?? [];
 
   const photosQuery = useInfiniteQuery({
     queryKey: ['photos', activeGroupId, selectedPersonId],
@@ -180,6 +196,17 @@ export function PhotosPage({
           </div>
         )}
 
+        {albums.length > 0 && (
+          <section className="photos-albums" aria-label={t('photos.albumsTitle')}>
+            <h2 className="photos-section-header">{t('photos.albumsTitle')}</h2>
+            <div className="photos-albums-strip">
+              {albums.map((album) => (
+                <AlbumTile key={album.id} post={album} onOpen={() => onOpenAlbum?.(album.id)} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {photosQuery.isLoading && <div className="photos-hint">{t('common.loading')}</div>}
 
         {photosQuery.isError && (
@@ -198,6 +225,10 @@ export function PhotosPage({
             </div>
             <p>{t('photos.empty')}</p>
           </div>
+        )}
+
+        {photos.length > 0 && albums.length > 0 && (
+          <h2 className="photos-section-header">{t('photos.allPhotosTitle')}</h2>
         )}
 
         {photos.length > 0 && (
@@ -255,6 +286,50 @@ export function PhotosPage({
         />
       )}
     </div>
+  );
+}
+
+// One album in the Photos tab's albums strip: a 2×2 collage of the album's
+// newest photos (the same `album.collagePhotoUrls` the feed card uses, so no
+// extra request), its title, and its counts. Deliberately lighter than
+// AlbumFeedCard — no reactions, no inline "add photos" — since this is a
+// wayfinding strip, not a feed card; everything else lives one click away in
+// AlbumDetailPage.
+function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
+  const { t } = useTranslation();
+  const album = post.album;
+  if (!album) return null;
+
+  const urls = album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
+  const visible = urls.slice(0, 4);
+  const overflow = Math.max(0, album.photoCount - visible.length);
+
+  return (
+    <button type="button" className="photos-album-tile" onClick={onOpen}>
+      {visible.length === 0 ? (
+        <span className="photos-album-collage photos-album-collage-empty" aria-hidden>
+          <Icon name="image" size={32} strokeWidth={1.5} />
+        </span>
+      ) : (
+        <span className={`photos-album-collage photos-album-collage-${visible.length}`} aria-hidden>
+          {visible.map((url, i) => (
+            <span key={`${url}-${i}`} className="photos-album-collage-tile">
+              {isVideoUrl(url) ? (
+                <video src={getUploadUrl(url)} muted preload="metadata" />
+              ) : (
+                <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
+              )}
+              {i === visible.length - 1 && overflow > 0 && <span className="photos-album-collage-more">+{overflow}</span>}
+            </span>
+          ))}
+        </span>
+      )}
+      <span className="photos-album-title">{album.title}</span>
+      <span className="photos-album-meta">
+        {album.closed && <span className="photos-album-closed">{t('feed.album.closedBadge')}</span>}
+        {t('feed.album.stats', { photos: album.photoCount, contributors: album.contributorCount })}
+      </span>
+    </button>
   );
 }
 
