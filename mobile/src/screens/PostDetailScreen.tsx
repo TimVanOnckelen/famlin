@@ -871,35 +871,42 @@ function CommentBody({
         </View>
       )}
       {attachmentUrls.length > COMMENT_GRID_MAX_TILES && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.commentAttachmentGallery}
-          contentContainerStyle={styles.commentAttachmentGalleryContent}
-        >
-          {attachmentUrls.map((url, index) => (
-            <TouchableOpacity
-              key={`${url}-${index}`}
-              style={styles.commentAttachmentTile}
-              activeOpacity={0.9}
-              accessibilityLabel={t('postDetail.viewAttachment')}
-              onPress={() => openViewer(index)}
-            >
-              <MediaThumbnail
-                url={getUploadUrl(url, 'thumbnail')}
-                fallbackUrl={getUploadUrl(url)}
-                style={styles.commentAttachmentTileImage}
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        // A scrolling row needs to say so — the count badge is what tells you
+        // there's more here than the tiles that happen to fit.
+        <View style={styles.commentAttachmentGallery}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.commentAttachmentGalleryContent}
+          >
+            {attachmentUrls.map((url, index) => (
+              <TouchableOpacity
+                key={`${url}-${index}`}
+                style={styles.commentAttachmentTile}
+                activeOpacity={0.9}
+                accessibilityLabel={t('postDetail.viewAttachment')}
+                onPress={() => openViewer(index)}
+              >
+                <MediaThumbnail
+                  url={getUploadUrl(url, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(url)}
+                  style={styles.commentAttachmentTileImage}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.commentAttachmentCount} pointerEvents="none">
+            <Icon name="image" size={11} color={colors.white} />
+            <Text style={styles.commentAttachmentCountText}>{attachmentUrls.length}</Text>
+          </View>
+        </View>
       )}
       <View style={styles.commentMetaRow}>
         <Text style={styles.commentTime}>
           {formatRelativeDate(comment.createdAt)}
           {comment.editedAt ? ` · ${t('common.edited')}` : ''}
         </Text>
-        {group.isBundle && (
+        {attachmentUrls.length > 1 && (
           <Text style={styles.commentTime}>
             {t('postDetail.photoCount', { count: attachmentUrls.length })}
           </Text>
@@ -1242,10 +1249,28 @@ const styles = StyleSheet.create({
   // a grid that would grow taller with every burst.
   commentAttachmentGallery: {
     marginTop: 6,
+    position: 'relative',
   },
   commentAttachmentGalleryContent: {
     gap: 4,
     paddingRight: 14,
+  },
+  commentAttachmentCount: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(20, 10, 5, 0.62)',
+  },
+  commentAttachmentCountText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '700',
   },
   commentAttachmentTile: {
     width: 78,

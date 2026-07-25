@@ -758,12 +758,55 @@
   padding: 6px 14px 0;
 }
 
+.comment-attachment-gallery-wrap {
+  position: relative;
+}
+
 .comment-attachment-gallery {
   display: flex;
   gap: 4px;
   padding: 6px 14px 0;
   overflow-x: auto;
   scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.comment-attachment-gallery .comment-attachment-tile {
+  scroll-snap-align: start;
+}
+
+/* Fades the last tile out at the right edge so the row reads as scrollable
+   rather than as everything there is. */
+.comment-attachment-gallery-wrap::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--fam-surface));
+}
+
+/* The milestone card's own warm gradient, so the fade blends there too. */
+.post-card-milestone .comment-attachment-gallery-wrap::after {
+  background: linear-gradient(to right, rgba(255, 230, 192, 0), #ffe6c0);
+}
+
+.comment-attachment-count {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(20, 10, 5, 0.62);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .comment-attachment-grid .comment-attachment-tile,

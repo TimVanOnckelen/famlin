@@ -29,7 +29,14 @@ export interface CommentGroup {
     }[];
     /** True once the group merged more than one comment. */
     isBundle: boolean;
-    /** Summed across the group, so no reaction disappears behind the bundle. */
+    /**
+     * Reactions on the comment the card's reaction button acts on — NOT the sum
+     * across the bundle. Summing counts one person twice when they reacted to
+     * several photos of the same burst, and the responses carry counts rather
+     * than reactor ids, so there's nothing to deduplicate by. Showing the
+     * target's own count keeps the number and the button describing the same
+     * thing.
+     */
     likeCount: number;
     /** The first reaction the current user left anywhere in the group. */
     myReaction: ReactionType | null;

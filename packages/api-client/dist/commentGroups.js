@@ -45,15 +45,16 @@ function canMerge(previous, next, windowMs) {
 function toGroup(comments) {
     const lead = comments[0];
     const reacted = comments.find((c) => c.myReaction);
+    const reactionTarget = reacted ?? lead;
     return {
         key: lead.id,
         comments,
         lead,
         attachments: comments.flatMap((c) => commentAttachments(c).map((url) => ({ url, commentId: c.id }))),
         isBundle: comments.length > 1,
-        likeCount: comments.reduce((sum, c) => sum + c.likeCount, 0),
-        myReaction: reacted?.myReaction ?? null,
-        reactionTargetId: reacted?.id ?? lead.id,
+        likeCount: reactionTarget.likeCount,
+        myReaction: reactionTarget.myReaction,
+        reactionTargetId: reactionTarget.id,
         latestCreatedAt: comments[comments.length - 1].createdAt,
     };
 }

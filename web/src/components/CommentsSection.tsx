@@ -60,12 +60,28 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
     },
   });
 
-  const layout =
-    attachments.length > GRID_MAX_TILES
-      ? 'comment-attachment-gallery'
-      : attachments.length > 1
-        ? 'comment-attachment-grid'
-        : 'comment-attachment';
+  const isGallery = attachments.length > GRID_MAX_TILES;
+  const layout = isGallery
+    ? 'comment-attachment-gallery'
+    : attachments.length > 1
+      ? 'comment-attachment-grid'
+      : 'comment-attachment';
+
+  const tiles = attachments.map(({ url, commentId }, index) => (
+    <button
+      key={`${commentId}-${url}`}
+      type="button"
+      className="comment-attachment-tile"
+      onClick={() => setLightboxIndex(index)}
+      aria-label={t('comments.viewAttachment')}
+    >
+      {isVideoUrl(url) ? (
+        <video src={getUploadUrl(url)} muted preload="metadata" />
+      ) : (
+        <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
+      )}
+    </button>
+  ));
 
   return (
     <div className={`comment${isReply ? ' comment-reply' : ''}`}>
@@ -75,32 +91,23 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
           <span className="comment-author">{lead.author.name}</span>
           {!!lead.content && <span className="comment-text">{lead.content}</span>}
         </div>
-        {attachments.length > 0 && (
-          <div className={layout}>
-            {attachments.map(({ url, commentId }, index) => (
-              <button
-                key={`${commentId}-${url}`}
-                type="button"
-                className="comment-attachment-tile"
-                onClick={() => setLightboxIndex(index)}
-                aria-label={t('comments.viewAttachment')}
-              >
-                {isVideoUrl(url) ? (
-                  <video src={getUploadUrl(url)} muted preload="metadata" />
-                ) : (
-                  <ShimmerImage
-                    src={getUploadUrl(url, 'thumbnail')}
-                    fallbackSrc={getUploadUrl(url)}
-                    loading="lazy"
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+        {attachments.length > 0 &&
+          // A scrolling row needs to say so: the count badge and the fade at
+          // the right edge are what tell you there's more than fits.
+          (isGallery ? (
+            <div className="comment-attachment-gallery-wrap">
+              <div className={layout}>{tiles}</div>
+              <span className="comment-attachment-count">
+                <Icon name="image" size={12} />
+                {attachments.length}
+              </span>
+            </div>
+          ) : (
+            <div className={layout}>{tiles}</div>
+          ))}
         <div className="comment-meta">
           <span>{formatRelativeDate(lead.createdAt, i18n.language)}</span>
-          {group.isBundle && <span>{t('comments.photoCount', { count: attachments.length })}</span>}
+          {attachments.length > 1 && <span>{t('comments.photoCount', { count: attachments.length })}</span>}
           <button
             className={`comment-like${group.myReaction ? ' comment-like-active' : ''}`}
             onClick={() => likeMutation.mutate()}

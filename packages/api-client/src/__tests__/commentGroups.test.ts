@@ -133,22 +133,30 @@ describe('groupCommentAttachments', () => {
     expect(groups.map((g) => g.comments.map((c) => c.id))).toEqual([['c1'], ['c2']]);
   });
 
-  it('sums reactions and targets the comment the user already reacted to', () => {
+  // Deliberately not the sum: one person reacting to three photos of the same
+  // burst would read as three reactions, and there are no reactor ids in the
+  // response to deduplicate by. The count describes the comment the button
+  // acts on, so number and button always agree.
+  it('reports the reactions of the comment the user already reacted to, not the sum', () => {
     const groups = groupCommentAttachments([
       photoComment('c1', 0, { likeCount: 2 }),
       photoComment('c2', 1, { likeCount: 1, likedByMe: true, myReaction: 'LOVE' }),
       photoComment('c3', 2, { likeCount: 3, likedByMe: true, myReaction: 'LIKE' }),
     ]);
 
-    expect(groups[0].likeCount).toBe(6);
+    expect(groups[0].likeCount).toBe(1);
     expect(groups[0].myReaction).toBe('LOVE');
     expect(groups[0].reactionTargetId).toBe('c2');
   });
 
   it('targets the lead comment when the user has not reacted', () => {
-    const groups = groupCommentAttachments([photoComment('c1', 0), photoComment('c2', 1)]);
+    const groups = groupCommentAttachments([
+      photoComment('c1', 0, { likeCount: 4 }),
+      photoComment('c2', 1, { likeCount: 2 }),
+    ]);
     expect(groups[0].myReaction).toBeNull();
     expect(groups[0].reactionTargetId).toBe('c1');
+    expect(groups[0].likeCount).toBe(4);
   });
 
   it('leaves ordinary text comments as groups of one, in order', () => {
