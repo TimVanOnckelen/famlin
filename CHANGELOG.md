@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.2](https://github.com/TimVanOnckelen/famlin/compare/v0.6.1...v0.6.2) (2026-07-25)
+
+
+### Features
+
+* add Icon component and replace SVGs with icons ([196da6c](https://github.com/TimVanOnckelen/famlin/commit/196da6c80ec2fd86440c5dcd63d3adde469e0014))
+* add Icon component and replace SVGs with icons in PhotosPage, ProfilePage, and TripDetailPage ([ef524c9](https://github.com/TimVanOnckelen/famlin/commit/ef524c9e213d3c505310f68c5c913e31b6758b28))
+* added shared albums in photos tab ([22d981a](https://github.com/TimVanOnckelen/famlin/commit/22d981a66929a6ff466ecfcddb61a82a9dbb65da))
+* albums in photos tab ([d5c66c9](https://github.com/TimVanOnckelen/famlin/commit/d5c66c9f7f1bc821b3ba1bc7a3ac6ca24632ce6a))
+* edit post enhanced ([d5c66c9](https://github.com/TimVanOnckelen/famlin/commit/d5c66c9f7f1bc821b3ba1bc7a3ac6ca24632ce6a))
+* editing a post now allows editing,removing and adding media. ([22d981a](https://github.com/TimVanOnckelen/famlin/commit/22d981a66929a6ff466ecfcddb61a82a9dbb65da))
+
+
+### Bug Fixes
+
+* **uploads:** send web uploads as multipart and lift the 15s timeout ([196da6c](https://github.com/TimVanOnckelen/famlin/commit/196da6c80ec2fd86440c5dcd63d3adde469e0014))
+
 ## [0.6.1](https://github.com/TimVanOnckelen/famlin/compare/v0.6.0...v0.6.1) (2026-07-25)
 
 
