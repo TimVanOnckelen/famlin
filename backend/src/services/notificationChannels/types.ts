@@ -20,7 +20,12 @@ export type NotifyType =
   // — push-only, reuses pushOnNewPost (see PUSH_PREF_FIELD in push.ts). Fires
   // instead of new_comment for a check-in comment (Comment.metadata.kind ===
   // 'trip_checkin'), see src/subscribers/notifications.ts.
-  | 'trip_checkin';
+  | 'trip_checkin'
+  // A photo contribution to an ALBUM post (services/postTypes/album.ts's
+  // `addPhotos` interaction) — push-only, reuses pushOnNewPost. Fires instead
+  // of new_comment for a contribution comment (Comment.metadata.kind ===
+  // 'album_photo'), same precedent as trip_checkin above.
+  | 'album_photo';
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().

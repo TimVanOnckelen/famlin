@@ -531,8 +531,11 @@ function CheckinTimelineItem({
 }) {
   const { t } = useTranslation();
   const { comment, dayNumber, replies } = entry;
-  const metadata = comment.metadata!;
-  const photoUrls = metadata.photoUrls || [];
+  // Entries here are always trip check-ins (splitTripComments filters on
+  // metadata.kind === 'trip_checkin'); narrow the widened Comment.metadata
+  // union back to the check-in shape so `place` is accessible.
+  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null;
+  const photoUrls = metadata?.photoUrls || [];
   // A co-traveler's check-in gets attributed explicitly; the trip author's
   // own check-ins don't repeat their name on every entry (the header already
   // names them).
@@ -550,7 +553,7 @@ function CheckinTimelineItem({
             ? t('trip.detail.dayDateLabel', { day: dayNumber, date: formatDayMonth(comment.createdAt) })
             : t('trip.detail.dayTimeLabel', { day: dayNumber, time: formatTime(comment.createdAt) })}
         </Text>
-        <Text style={styles.timelinePlace}>{metadata.place}</Text>
+        {metadata && <Text style={styles.timelinePlace}>{metadata.place}</Text>}
         {isCoTravelerCheckin && (
           <View style={styles.timelineAuthorRow}>
             <Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} size={20} />

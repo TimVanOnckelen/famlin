@@ -14,6 +14,7 @@ import { ReactorStack } from '@/components/ReactorStack';
 import { Scrim } from '@/components/Scrim';
 import { postTypeRenderers } from '@/components/postTypes';
 import { TripCard } from '@/components/TripCard';
+import { AlbumCard } from '@/components/AlbumCard';
 import { Post, PostPerson, ReactionType } from '@/types';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
@@ -143,6 +144,13 @@ export const PostCard = React.memo(function PostCard({
   // branching here on post.type can never violate the rules of hooks.
   if (post.type === 'TRIP') {
     return <TripCard post={post} showGroup={showGroup} />;
+  }
+
+  // ALBUM posts likewise get their own card (collage hero, contributor stack,
+  // an "Add photos"/"Open album" CTA) — its photo contributions live as
+  // metadata comments and must never surface in a generic inline comment list.
+  if (post.type === 'ALBUM') {
+    return <AlbumCard post={post} showGroup={showGroup} />;
   }
 
   return <DefaultPostCard post={post} showGroup={showGroup} />;

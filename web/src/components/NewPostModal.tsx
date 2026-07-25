@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  addAlbumPhotos,
   api,
   createPost,
   getGroupMediaAlbums,
@@ -15,7 +16,7 @@ import { ShimmerImage } from '@/components/ShimmerImage';
 import './NewPostModal.css';
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL'] as const;
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM'] as const;
 type ComposerType = (typeof COMPOSER_TYPES)[number];
 
 async function uploadFiles(files: File[]): Promise<string[]> {
@@ -50,6 +51,9 @@ export function NewPostModal({
   // blank rows are filtered out on submit and don't count toward the ≥2
   // validation requirement.
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  // ALBUM: the album's title lives in typeData, not content (content stays an
+  // optional description).
+  const [albumTitle, setAlbumTitle] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(
     initialAsset && initialAsset.source === 'album'
@@ -112,6 +116,28 @@ export function NewPostModal({
   const submitMutation = useMutation({
     mutationFn: async () => {
       const uploadedUrls = files.length > 0 ? await uploadFiles(files) : [];
+
+      // ALBUM: create an empty album (title in typeData, first uploaded photo
+      // as the cover), then seed the uploaded photos as the author's first
+      // contribution via the addPhotos interaction — album photos are stored
+      // as contribution comments, not on Post.uploadedAssetUrls. Linked-album
+      // assets can't seed a contribution (the interaction only accepts
+      // /uploads/ paths), so the album composer is file-upload only.
+      if (type === 'ALBUM') {
+        const post = await createPost({
+          groupId: primaryGroupId,
+          groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
+          content: content.trim() || undefined,
+          type,
+          typeData: { title: albumTitle.trim(), ...(uploadedUrls[0] ? { coverPhotoUrl: uploadedUrls[0] } : {}) },
+          uploadedAssetUrls: [],
+        });
+        if (uploadedUrls.length > 0) {
+          await addAlbumPhotos(post.id, { photoUrls: uploadedUrls });
+        }
+        return post;
+      }
+
       // previewUrl is a JPEG still even for a video, so videos attach their
       // original rendition instead (mirrors mobile's MediaPickerModal).
       const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl));
@@ -169,7 +195,9 @@ export function NewPostModal({
     !submitMutation.isPending &&
     (type === 'POLL'
       ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
-      : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0);
+      : type === 'ALBUM'
+        ? albumTitle.trim().length > 0
+        : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0);
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -225,9 +253,30 @@ export function NewPostModal({
                 {t('newPost.typePoll')}
               </button>
             )}
+            {offeredTypes.includes('ALBUM') && (
+              <button
+                type="button"
+                className={`type-chip type-chip-album${type === 'ALBUM' ? ' type-chip-album-active' : ''}`}
+                onClick={() => setType('ALBUM')}
+              >
+                {t('newPost.typeAlbum')}
+              </button>
+            )}
           </div>
         ) : (
           <div className="modal-error">{t('newPost.noAllowedTypes')}</div>
+        )}
+
+        {type === 'ALBUM' && offeredTypes.includes('ALBUM') && (
+          <input
+            className="field-input album-title-input"
+            type="text"
+            value={albumTitle}
+            onChange={(e) => setAlbumTitle(e.target.value)}
+            placeholder={t('newPost.albumTitlePlaceholder')}
+            maxLength={120}
+            autoFocus
+          />
         )}
 
         <textarea
@@ -239,11 +288,13 @@ export function NewPostModal({
               ? t('newPost.milestonePlaceholder')
               : type === 'POLL'
                 ? t('newPost.pollPlaceholder')
-                : t('newPost.placeholder')
+                : type === 'ALBUM'
+                  ? t('newPost.albumDescriptionPlaceholder')
+                  : t('newPost.placeholder')
           }
           rows={type === 'UPDATE' ? 5 : 2}
           maxLength={5000}
-          autoFocus
+          autoFocus={type !== 'ALBUM'}
         />
 
         {type === 'POLL' && offeredTypes.includes('POLL') && (
@@ -330,7 +381,7 @@ export function NewPostModal({
             </svg>
             {t('newPost.addPhotos')}
           </button>
-          {hasLinkedAlbums && (
+          {hasLinkedAlbums && type !== 'ALBUM' && (
             <button type="button" className="btn btn-secondary" onClick={() => setMediaPickerOpen(true)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path

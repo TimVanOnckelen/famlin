@@ -72,6 +72,8 @@
     "tripTravelerNotMember": "Every traveler must be a member of this group",
     "tripClosed": "This trip is closed",
     "tripNotStarted": "This trip hasn't started yet",
+    "albumNotAuthor": "Only the album's author can do this",
+    "albumClosed": "This album is closed",
     "readOnly": "This demo is read-only. You can browse, but you can't post, comment, or make changes."
   },
   "notifications": {
@@ -91,6 +93,8 @@
     "newChatMessage": "{{author}} sent a message in {{group}} chat: \"{{excerpt}}\"",
     "tripCheckin_one": "{{author}} checked in at {{place}}",
     "tripCheckin_other": "{{author}} checked in {{count}} times today · last stop: {{place}}",
+    "albumPhoto_one": "{{author}} added photos to an album in {{group}}",
+    "albumPhoto_other": "{{author}} added photos to an album in {{group}} {{count}} times today",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app."

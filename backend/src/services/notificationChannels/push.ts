@@ -25,6 +25,7 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
   new_media_assets: 'pushOnNewPost',
   new_chat_message: 'pushOnChitchat',
   trip_checkin: 'pushOnNewPost',
+  album_photo: 'pushOnNewPost',
 };
 
 // The actual send, plus its PushDeliveryLog write — shared by the organic

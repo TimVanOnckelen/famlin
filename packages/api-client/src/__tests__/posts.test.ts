@@ -124,4 +124,38 @@ describe('posts', () => {
       });
     });
   });
+
+  describe('addAlbumPhotos', () => {
+    it('delegates to interactWithPost with key "addPhotos" and the contribution body', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-8', type: 'ALBUM' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { addAlbumPhotos } = await import('../posts');
+      const result = await addAlbumPhotos('post-8', { photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'], caption: 'By the lake' });
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-8/interactions', {
+        key: 'addPhotos',
+        value: { photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'], caption: 'By the lake' },
+      });
+      expect(result).toBe(fakePost);
+    });
+  });
+
+  describe('closeAlbum', () => {
+    it('delegates to interactWithPost with key "close" and no value', async () => {
+      const client = await import('../client');
+      const fakePost = { id: 'post-9', type: 'ALBUM' };
+      (client.api.post as any).mockResolvedValue({ data: fakePost });
+
+      const { closeAlbum } = await import('../posts');
+      const result = await closeAlbum('post-9');
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-9/interactions', {
+        key: 'close',
+        value: undefined,
+      });
+      expect(result).toBe(fakePost);
+    });
+  });
 });

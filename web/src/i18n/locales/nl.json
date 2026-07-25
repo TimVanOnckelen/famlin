@@ -47,6 +47,16 @@
       "dateRangeSameMonth": "{{startDay}} t/m {{endDay}} {{month}}",
       "dateRangeDifferentMonth": "{{start}} tot {{end}}",
       "viewDiaryCta": "Bekijk het dagboek →"
+    },
+    "album": {
+      "badge": "🖼️ GEDEELD ALBUM",
+      "closedBadge": "🖼️ ALBUM · AFGESLOTEN",
+      "stats": "{{photos}} foto's · {{contributors}} bijdragers",
+      "contributorsLabel": "Bijdragers",
+      "contributedBy_one": "Toegevoegd door {{name}}",
+      "contributedBy_other": "Toegevoegd door {{name}} +{{others}} meer",
+      "addPhotosCta": "Foto's toevoegen",
+      "openCta": "Album openen →"
     }
   },
   "comments": {
@@ -68,10 +78,13 @@
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Mijlpaal",
     "typePoll": "📊 Peiling",
+    "typeAlbum": "🖼️ Album",
     "noAllowedTypes": "De geselecteerde families hebben geen enkel berichttype gemeen — wijzig de selectie om te kunnen plaatsen.",
     "placeholder": "Deel een update met je familie…",
     "milestonePlaceholder": "Wat is de mijlpaal? (bijv. Emma wordt 5! 🎉)",
     "pollPlaceholder": "Stel een vraag…",
+    "albumTitlePlaceholder": "Albumtitel (bijv. Zomer aan het meer)",
+    "albumDescriptionPlaceholder": "Beschrijf het album… (optioneel)",
     "pollOptionPlaceholder": "Optie {{number}}",
     "addOption": "Optie toevoegen",
     "removeOption": "Optie verwijderen",
@@ -225,6 +238,28 @@
       "closingLine": "Reis afgesloten door {{author}} · {{date}}",
       "emptyTitle": "De reis is begonnen…",
       "emptyDescription": "Nog geen check-ins. Zodra {{name}} onderweg is, verschijnen de eerste stops hier."
+    }
+  },
+  "album": {
+    "addPhotosTitle": "Foto's aan het album toevoegen",
+    "addPhotosHint": "Maximaal {{max}} foto's of video's per keer.",
+    "captionPlaceholder": "Voeg een bijschrift toe… (optioneel)",
+    "addPhotosSubmit": "Toevoegen aan album",
+    "addPhotosFailed": "Je foto's konden niet worden toegevoegd. Probeer het opnieuw.",
+    "detail": {
+      "backToFeed": "Terug naar de feed",
+      "badge": "🖼️ GEDEELD ALBUM",
+      "closedBadge": "🖼️ AFGESLOTEN",
+      "statsPhotos": "foto's",
+      "statsContributors": "bijdragers",
+      "contributorsLabel": "Bijdragers",
+      "contributedBy": "Met {{names}}",
+      "addPhotosCta": "Foto's toevoegen",
+      "closeCta": "Album afsluiten",
+      "commentsSectionTitle": "💬 Reacties",
+      "emptyTitle": "Nog geen foto's",
+      "emptyDescription": "Voeg als eerste foto's toe aan dit album.",
+      "emptyClosedDescription": "Dit album werd afgesloten voordat er foto's werden toegevoegd."
     }
   }
 }

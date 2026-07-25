@@ -5,7 +5,7 @@ import { emitDomainEvent } from '../events.js';
 import { requireGroupMember } from '../plugins/auth.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
-import { isTripCheckinMetadata } from '../services/postTypes/trip.js';
+import { handlerCommentSiblingKey } from '../services/postTypes/registry.js';
 
 export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -134,14 +134,16 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     const editedAt = new Date();
 
-    // A TRIP check-in on a cross-posted trip exists as one Comment copy per
-    // sibling post, all sharing metadata.checkinId (services/postTypes/
-    // trip.ts). This route is already author-only (see the check above), so
-    // editing one copy must fan the SAME content out to every sibling copy
-    // (INCLUDING this one, via one updateMany) — otherwise the check-in's
-    // text diverges across groups. Mirrors the author-delete fan-out below.
-    if (isTripCheckinMetadata(comment.metadata) && comment.post.crossPostId) {
-      const checkinId = comment.metadata.checkinId;
+    // A handler-authored Comment (a TRIP check-in, an ALBUM photo
+    // contribution) on a cross-posted post exists as one copy per sibling
+    // post, all sharing a stable correlation id in metadata (services/
+    // postTypes/*.ts; see handlerCommentSiblingKey). This route is already
+    // author-only (see the check above), so editing one copy must fan the
+    // SAME content out to every sibling copy (INCLUDING this one, via one
+    // updateMany) — otherwise the caption/text diverges across groups.
+    // Mirrors the author-delete fan-out below.
+    const siblingKey = handlerCommentSiblingKey(comment.metadata);
+    if (siblingKey && comment.post.crossPostId) {
       const siblingIds = (
         await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
       ).map((p) => p.id);
@@ -149,7 +151,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         where: {
           postId: { in: siblingIds },
           authorId: comment.authorId,
-          metadata: { path: ['checkinId'], equals: checkinId },
+          metadata: { path: siblingKey.path, equals: siblingKey.value },
         },
         data: { content: body.content, editedAt },
       });
@@ -189,14 +191,15 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
     }
 
-    // A TRIP check-in on a cross-posted trip exists as one Comment copy per
-    // sibling post, all sharing metadata.checkinId (services/postTypes/
-    // trip.ts). When the AUTHOR deletes their check-in, remove every copy —
-    // mirroring how an author's post DELETE fans out to siblings
-    // (routes/posts.ts). An admin moderating someone else's check-in stays
-    // per-group (single row), consistent with admin post moderation.
-    if (comment.authorId === request.user!.id && isTripCheckinMetadata(comment.metadata) && comment.post.crossPostId) {
-      const checkinId = comment.metadata.checkinId;
+    // A handler-authored Comment (a TRIP check-in, an ALBUM photo
+    // contribution) on a cross-posted post exists as one copy per sibling
+    // post, all sharing a stable correlation id in metadata (see
+    // handlerCommentSiblingKey). When the AUTHOR deletes theirs, remove every
+    // copy — mirroring how an author's post DELETE fans out to siblings
+    // (routes/posts.ts). An admin moderating someone else's stays per-group
+    // (single row), consistent with admin post moderation.
+    const siblingKey = handlerCommentSiblingKey(comment.metadata);
+    if (comment.authorId === request.user!.id && siblingKey && comment.post.crossPostId) {
       const siblingIds = (
         await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
       ).map((p) => p.id);
@@ -204,7 +207,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         where: {
           postId: { in: siblingIds },
           authorId: comment.authorId,
-          metadata: { path: ['checkinId'], equals: checkinId },
+          metadata: { path: siblingKey.path, equals: siblingKey.value },
         },
       });
     } else {

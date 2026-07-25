@@ -111,6 +111,15 @@
       "dateRangeDifferentMonth": "{{start}} tot {{end}}",
       "viewDiaryCta": "Bekijk het dagboek →",
       "morePhotosOverlay": "+{{count}}"
+    },
+    "album": {
+      "badge": "🖼️ GEDEELD ALBUM",
+      "closedBadge": "🖼️ ALBUM · AFGESLOTEN",
+      "stats": "{{photos}} foto's · {{contributors}} bijdragers",
+      "contributedBy_one": "Toegevoegd door {{name}}",
+      "contributedBy_other": "Toegevoegd door {{name}} +{{others}} meer",
+      "addPhotosCta": "Foto's toevoegen",
+      "openCta": "Album openen →"
     }
   },
   "search": {
@@ -144,13 +153,20 @@
       "update": "Update",
       "milestone": "Mijlpaal",
       "poll": "Poll",
-      "trip": "Reis"
+      "trip": "Reis",
+      "album": "Album"
     },
     "postTypeSubtitle": {
       "update": "Deel een moment, foto of video",
       "milestone": "Verjaardag, geboorte, jubileum",
       "poll": "Stel de familie een vraag",
-      "trip": "Volg een reis met check-ins"
+      "trip": "Volg een reis met check-ins",
+      "album": "Een fotoalbum waar de hele familie aan toevoegt"
+    },
+    "album": {
+      "titleLabel": "Albumtitel",
+      "titlePlaceholder": "bijv. Zomer aan het meer",
+      "descriptionPlaceholder": "Beschrijf het album... (optioneel)"
     },
     "chooserTitle": "Wat wil je delen?",
     "noPostTypesForSelection": "Deze families hebben geen gemeenschappelijk berichttype — wijzig de geselecteerde families om te kunnen plaatsen.",
@@ -393,6 +409,39 @@
       "loadError": "Ledenlijst kon niet worden geladen",
       "alerts": {
         "failed": "Reisgenoten konden niet worden opgeslagen"
+      }
+    }
+  },
+  "album": {
+    "detail": {
+      "badge": "🖼️ GEDEELD ALBUM",
+      "closedBadge": "🖼️ AFGESLOTEN",
+      "statsPhotos": "foto's",
+      "statsContributors": "bijdragers",
+      "contributedBy": "Met {{names}}",
+      "addPhotosCta": "Foto's toevoegen",
+      "closeCta": "Afsluiten",
+      "commentsSectionTitle": "💬 Reacties",
+      "emptyTitle": "Nog geen foto's",
+      "emptyDescription": "Voeg als eerste foto's toe aan dit album.",
+      "emptyClosedDescription": "Dit album werd afgesloten voordat er foto's werden toegevoegd."
+    },
+    "addPhotos": {
+      "headerTitle": "Foto's toevoegen",
+      "submitButton": "Toevoegen",
+      "contextLine": "Toevoegen aan “{{title}}”",
+      "addPhotoLabel": "Foto / video",
+      "captionPlaceholder": "Voeg een bijschrift toe (optioneel)...",
+      "alerts": {
+        "failed": "Je foto's konden niet worden toegevoegd"
+      }
+    },
+    "close": {
+      "confirmTitle": "Album afsluiten?",
+      "confirmBody": "Er kunnen geen nieuwe foto's meer bij zodra het album is afgesloten. Je kunt dit niet ongedaan maken.",
+      "confirmButton": "Album afsluiten",
+      "alerts": {
+        "failed": "Album kon niet worden afgesloten"
       }
     }
   }

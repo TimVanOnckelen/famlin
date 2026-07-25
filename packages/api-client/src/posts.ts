@@ -1,5 +1,5 @@
 import { api } from './client';
-import { Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
+import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
 
 export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
@@ -58,11 +58,12 @@ export interface CreatePostBody {
   content?: string;
   type: PostType;
   // Handler-owned config for custom post types, e.g. poll options
-  // ({ options: [{ text }], closesAt? }) or a trip's title/destination/dates;
-  // absent/undefined for UPDATE/MILESTONE. TRIP posts cross-post like every
-  // other type (groupIds 1–20), with each travelerUserId required to be a
-  // member of every target group.
-  typeData?: PollCreateData | TripTypeData | Record<string, unknown>;
+  // ({ options: [{ text }], closesAt? }), a trip's title/destination/dates, or
+  // an album's { title, coverPhotoUrl? }; absent/undefined for
+  // UPDATE/MILESTONE. TRIP posts cross-post like every other type (groupIds
+  // 1–20), with each travelerUserId required to be a member of every target
+  // group.
+  typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
   milestoneTag?: string;
   uploadedAssetUrls: string[];
   latitude?: number;
@@ -156,4 +157,30 @@ export async function closeTrip(postId: string): Promise<Post> {
 // enriched post (its trip.travelers reflecting the new list).
 export async function setTripTravelers(postId: string, userIds: string[]): Promise<Post> {
   return interactWithPost(postId, 'setTravelers', { userIds });
+}
+
+export interface AddAlbumPhotosBody {
+  // Already-uploaded paths (POST /api/uploads first, same flow as post photos)
+  // — not raw files, this endpoint doesn't accept multipart data. 1–10 per
+  // contribution.
+  photoUrls: string[];
+  caption?: string;
+}
+
+// Adds photos to an ALBUM post. Allowed for ANY member of the post's group
+// (not just the author — the whole point of the type); the server rejects a
+// non-member (403) and a closed album (errors.albumClosed). Returns the full
+// shaped + enriched post, same contract as votePoll/checkInTrip — the
+// contribution itself is persisted as a Comment with
+// `metadata: { kind: 'album_photo', ... }` (see fetchComments), so callers
+// should also refresh the post's comments after this resolves.
+export async function addAlbumPhotos(postId: string, data: AddAlbumPhotosBody): Promise<Post> {
+  return interactWithPost(postId, 'addPhotos', data);
+}
+
+// Closes an album (author only, irreversible): flips `album.closed` so no more
+// photos can be added. Server errors: errors.albumNotAuthor,
+// errors.albumClosed. Returns the full shaped + enriched post.
+export async function closeAlbum(postId: string): Promise<Post> {
+  return interactWithPost(postId, 'close');
 }

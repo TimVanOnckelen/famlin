@@ -556,6 +556,18 @@ paths:
         **every** target group. Check-ins, closing the trip, and changing its
         travelers all happen after creation via
         `POST /api/posts/{postId}/interactions` (see below).
+
+        `type: "ALBUM"` creates a collaborative photo album that **any** group
+        member (not just the author) adds photos to: `typeData` carries
+        `{ title, coverPhotoUrl? }` — `title` (1-120 chars) is required,
+        `coverPhotoUrl` (an uploaded `/uploads/...` path) is optional. Photos
+        are added after creation via
+        `POST /api/posts/{postId}/interactions` (`key: "addPhotos"`, see
+        below), and the author can close the album (`key: "close"`) so no
+        more photos can be added. Albums cross-post like any other type, and a
+        cross-posted album stays **one** album whose contributions land in
+        every target group's copy. The album's photos are stored as its
+        contribution comments, not on `uploadedAssetUrls`.
       requestBody:
         required: true
         content:
@@ -583,9 +595,9 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL, TRIP]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM]
                   default: UPDATE
-                  description: A server may support additional types beyond these four.
+                  description: A server may support additional types beyond these five.
                 typeData:
                   type: object
                   description: |
@@ -593,7 +605,8 @@ paths:
                     for a type that doesn't accept one (`UPDATE`/`MILESTONE`
                     today). For `POLL`: `{ options: [{ text }], closesAt? }`.
                     For `TRIP`: `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
-                    (see the `TRIP` description above).
+                    (see the `TRIP` description above). For `ALBUM`:
+                    `{ title, coverPhotoUrl? }` (see the `ALBUM` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -831,11 +844,11 @@ paths:
       summary: Post-type-specific interaction
       description: |
         A generic, per-user action whose meaning depends on the post's
-        `type` — poll voting and trip check-ins today, more later as new
-        types are registered. `key`/`value` are opaque here; the post's own
-        type decides what's valid. This endpoint itself emits no
-        notification — a handler that wants one sends it itself (a trip
-        check-in does, see below).
+        `type` — poll voting, trip check-ins, and album photo contributions
+        today, more later as new types are registered. `key`/`value` are
+        opaque here; the post's own type decides what's valid. This endpoint
+        itself emits no notification — a handler that wants one sends it
+        itself (a trip check-in and an album contribution both do, see below).
 
         For a `POLL` post: `key: "vote"`, `value: { optionId }`. Voting your
         current option again **removes** your vote (unvote); voting a
@@ -868,6 +881,22 @@ paths:
           implicit traveler) on every sibling copy atomically. Author only,
           and only while the trip is open; every id must be a current member
           of every sibling group.
+
+        For an `ALBUM` post, two keys are supported (a cross-posted album stays
+        one album — each applies to every sibling group's copy):
+
+        - `key: "addPhotos"`, `value: { photoUrls, caption? }` — adds photos
+          to the album (`photoUrls` 1-10 uploaded `/uploads/...` paths,
+          `caption` up to 2000 chars). Allowed for **any** member of the
+          post's group, not just the author, and only while the album is
+          open. Stored as one contribution comment per sibling post (sharing a
+          `metadata.contributionId`, see `Comment`), only in sibling groups the
+          contributor is still a member of. Notifies the rest of each group
+          with a push-only `album_photo` notification — same-day contributions
+          from the same author are bundled into one.
+        - `key: "close"`, no `value` — closes the album on every sibling copy
+          atomically, so no more photos can be added. Author only, and only
+          once.
       parameters:
         - name: postId
           in: path
@@ -2323,6 +2352,16 @@ components:
             a small photo collage, resolved travelers). Computed on every
             read, so — like `poll` — it's absent from `POST /api/posts` and
             `PATCH /api/posts/{id}` responses.
+        album:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostAlbum'
+          description: |
+            Present only when `type` is `ALBUM` — the enriched, read-time view
+            of the album (photo/contributor counts, resolved contributors, a
+            small photo collage). Computed on every read, so — like `poll` and
+            `trip` — it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
           nullable: true
@@ -2500,6 +2539,51 @@ components:
           maxItems: 3
           description: Up to the 3 most recent check-in photos, newest first.
 
+    PostAlbum:
+      type: object
+      description: |
+        The enriched, read-time view of an `ALBUM` post's `typeData` — computed
+        fresh on every read. An album's photos are its `Comment` rows with
+        `metadata.kind: "album_photo"` (see `Comment` below); this object
+        aggregates them rather than requiring a second fetch. The full photo
+        set lives on those comments' `metadata.photoUrls` — fetch the post's
+        comments to render the whole grid.
+      properties:
+        title: { type: string }
+        coverPhotoUrl:
+          type: string
+          nullable: true
+        closed:
+          type: boolean
+          description: '`true` once the author closed the album (`close` interaction); `addPhotos` is then rejected.'
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        photoCount:
+          type: integer
+          description: Total number of photos across every contribution.
+        contributorCount:
+          type: integer
+          description: Number of distinct members who have contributed photos.
+        contributors:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          description: Up to 8 distinct contributors, newest first.
+        collagePhotoUrls:
+          type: array
+          items: { type: string }
+          maxItems: 6
+          description: Up to the 6 most recent contribution photos, newest first.
+        latestContribution:
+          type: object
+          nullable: true
+          properties:
+            commentId: { type: string }
+            contributorName: { type: string }
+            createdAt: { type: string, format: date-time }
+
     Comment:
       type: object
       properties:
@@ -2525,11 +2609,14 @@ components:
           description: |
             Handler-owned payload for a comment a post-type handler created
             on your behalf rather than one you wrote yourself — `null` for
-            every ordinary comment. Today this is only a `TRIP` post's
-            check-in: `{ kind: "trip_checkin", checkinId, place, photoUrls }`
-            — `checkinId` is shared by every comment copy one check-in
-            creates (one per cross-post sibling group; a single-group trip's
-            lone copy carries it too). You can never send this field
+            every ordinary comment. A `TRIP` post's check-in:
+            `{ kind: "trip_checkin", checkinId, place, photoUrls }`. An `ALBUM`
+            post's photo contribution:
+            `{ kind: "album_photo", contributionId, photoUrls }` (its optional
+            caption rides on `content`). In both cases the correlation id
+            (`checkinId`/`contributionId`) is shared by every comment copy one
+            action creates (one per cross-post sibling group; a single-group
+            post's lone copy carries it too). You can never send this field
             yourself when creating a comment.
           example: { kind: trip_checkin, checkinId: 8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d, place: 'Lisbon, Portugal', photoUrls: [] }
         parentId:
@@ -2670,7 +2757,7 @@ components:
         id: { type: string }
         type:
           type: string
-          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, or `trip_checkin`.'
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, `trip_checkin`, or `album_photo`.'
         message: { type: string }
         relatedPostId:
           type: string

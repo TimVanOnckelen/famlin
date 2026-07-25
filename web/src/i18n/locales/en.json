@@ -47,6 +47,16 @@
       "dateRangeSameMonth": "{{startDay}} to {{endDay}} {{month}}",
       "dateRangeDifferentMonth": "{{start}} to {{end}}",
       "viewDiaryCta": "View the diary →"
+    },
+    "album": {
+      "badge": "🖼️ SHARED ALBUM",
+      "closedBadge": "🖼️ ALBUM · CLOSED",
+      "stats": "{{photos}} photos · {{contributors}} contributors",
+      "contributorsLabel": "Contributors",
+      "contributedBy_one": "Added by {{name}}",
+      "contributedBy_other": "Added by {{name}} +{{others}} more",
+      "addPhotosCta": "Add photos",
+      "openCta": "Open album →"
     }
   },
   "comments": {
@@ -68,10 +78,13 @@
     "typeUpdate": "Update",
     "typeMilestone": "🎂 Milestone",
     "typePoll": "📊 Poll",
+    "typeAlbum": "🖼️ Album",
     "noAllowedTypes": "The selected families don't have any post type in common — change the selection to post.",
     "placeholder": "Share an update with your family…",
     "milestonePlaceholder": "What's the milestone? (e.g. Emma turns 5! 🎉)",
     "pollPlaceholder": "Ask a question…",
+    "albumTitlePlaceholder": "Album title (e.g. Summer at the lake)",
+    "albumDescriptionPlaceholder": "Describe the album… (optional)",
     "pollOptionPlaceholder": "Option {{number}}",
     "addOption": "Add option",
     "removeOption": "Remove option",
@@ -225,6 +238,28 @@
       "closingLine": "Trip closed by {{author}} · {{date}}",
       "emptyTitle": "The trip has begun…",
       "emptyDescription": "No check-ins yet. Once {{name}} is on the way, the first stops will appear here."
+    }
+  },
+  "album": {
+    "addPhotosTitle": "Add photos to the album",
+    "addPhotosHint": "Up to {{max}} photos or videos at a time.",
+    "captionPlaceholder": "Add a caption… (optional)",
+    "addPhotosSubmit": "Add to album",
+    "addPhotosFailed": "Your photos couldn't be added. Try again.",
+    "detail": {
+      "backToFeed": "Back to the feed",
+      "badge": "🖼️ SHARED ALBUM",
+      "closedBadge": "🖼️ CLOSED",
+      "statsPhotos": "photos",
+      "statsContributors": "contributors",
+      "contributorsLabel": "Contributors",
+      "contributedBy": "With {{names}}",
+      "addPhotosCta": "Add photos",
+      "closeCta": "Close album",
+      "commentsSectionTitle": "💬 Comments",
+      "emptyTitle": "No photos yet",
+      "emptyDescription": "Be the first to add photos to this album.",
+      "emptyClosedDescription": "This album was closed before any photos were added."
     }
   }
 }

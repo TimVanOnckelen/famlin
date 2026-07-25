@@ -15,6 +15,7 @@ export function FeedPage({
   onOpenPhotos,
   onOpenChat,
   onOpenTrip,
+  onOpenAlbum,
   onLogout,
 }: {
   user: User;
@@ -22,6 +23,7 @@ export function FeedPage({
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenTrip?: (postId: string) => void;
+  onOpenAlbum?: (postId: string) => void;
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
@@ -117,7 +119,7 @@ export function FeedPage({
         {posts.length > 0 && (
           <div className="feed-grid">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} showGroup={showGroupOnCards} onOpenTrip={onOpenTrip} />
+              <PostCard key={post.id} post={post} showGroup={showGroupOnCards} onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
             ))}
           </div>
         )}

@@ -19,6 +19,7 @@ import { InviteScreen } from '@/screens/InviteScreen';
 import { MainTabs } from '@/navigation/MainTabs';
 import { PostDetailScreen } from '@/screens/PostDetailScreen';
 import { TripDetailScreen } from '@/screens/TripDetailScreen';
+import { AlbumDetailScreen } from '@/screens/AlbumDetailScreen';
 import { NewPostScreen } from '@/screens/NewPostScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
@@ -192,6 +193,14 @@ function AppContent() {
             <Stack.Screen
               name="TripDetail"
               component={TripDetailScreen}
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="AlbumDetail"
+              component={AlbumDetailScreen}
               options={{
                 presentation: 'card',
                 animation: 'slide_from_right',

@@ -21,7 +21,7 @@ import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Group, PostType } from '@/types';
-import { fetchGroups, createPost, getGroupMediaAlbums } from '@famlin/api-client';
+import { fetchGroups, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
@@ -38,7 +38,7 @@ import {
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
-const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP'] as const;
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM'] as const;
 const MIN_POLL_OPTIONS = 2;
 const MAX_POLL_OPTIONS = 10;
 // 'YYYY-MM-DD' — matches the backend contract's typeData.startDate/endDate
@@ -51,12 +51,14 @@ const POST_TYPE_ICON: Record<string, string> = {
   MILESTONE: '🎂',
   POLL: '🗳️',
   TRIP: '🧳',
+  ALBUM: '🖼️',
 };
 const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
   MILESTONE: colors.milestoneBg,
   POLL: colors.primaryTint,
   TRIP: colors.tripTint,
+  ALBUM: colors.primaryTint,
 };
 
 // Colors for the swappable type chip at the top of the compose step — one
@@ -66,6 +68,7 @@ const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg:
   MILESTONE: { bg: colors.milestoneBg, border: colors.milestoneDivider, iconBg: colors.milestone, text: colors.milestoneText },
   POLL: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
+  ALBUM: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
 };
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
@@ -102,6 +105,10 @@ export function NewPostScreen() {
   // Co-travelers: group members (besides the author) who may also check in.
   const [tripTravelerIds, setTripTravelerIds] = useState<string[]>([]);
   const [showTravelerPicker, setShowTravelerPicker] = useState(false);
+  // Album composer state: the album's title lives in typeData; content stays
+  // an optional description. Initial photos (uploadedAssetUrls) are seeded as
+  // the author's first contribution after the album is created.
+  const [albumTitle, setAlbumTitle] = useState('');
   const isMilestone = postType === 'MILESTONE';
   // Multi-select: which groups this post goes to. The first entry is the
   // "primary" group (also what the media/album picker is scoped to); more
@@ -154,6 +161,7 @@ export function NewPostScreen() {
 
   const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
   const isTrip = postType === 'TRIP';
+  const isAlbum = postType === 'ALBUM';
 
   // Valid trip co-travelers = members of EVERY selected group (the server
   // enforces this per target group on a cross-posted trip). Shares the
@@ -178,8 +186,29 @@ export function NewPostScreen() {
   const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate);
 
   const createPostMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'));
+
+      // ALBUM: create an empty album (title in typeData, first uploaded photo
+      // as the cover), then seed the uploaded photos as the author's first
+      // contribution — album photos are stored as contribution comments, not
+      // on Post.uploadedAssetUrls. Only /uploads/ paths can seed a
+      // contribution (the addPhotos interaction rejects media-proxy URLs).
+      if (isAlbum) {
+        const seedPhotoUrls = uploadedAssetUrls.filter((url) => url.startsWith('/uploads/'));
+        const album = await createPost({
+          ...buildGroupSelectionPayload(selectedGroupIds),
+          content: content.trim() || undefined,
+          type: postType,
+          typeData: { title: albumTitle.trim(), coverPhotoUrl: seedPhotoUrls[0] || undefined },
+          uploadedAssetUrls: [],
+        });
+        if (seedPhotoUrls.length > 0) {
+          await addAlbumPhotos(album.id, { photoUrls: seedPhotoUrls });
+        }
+        return album;
+      }
+
       return createPost({
         ...buildGroupSelectionPayload(selectedGroupIds),
         content: isTrip ? undefined : content,
@@ -218,9 +247,11 @@ export function NewPostScreen() {
     offeredPostTypes.includes(postType) &&
     (isTrip
       ? tripTitle.trim().length > 0 && tripStartDateValid && tripEndDateValid
-      : postType === 'POLL'
-        ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
-        : content.trim().length > 0 || uploadedAssetUrls.length > 0);
+      : isAlbum
+        ? albumTitle.trim().length > 0
+        : postType === 'POLL'
+          ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
+          : content.trim().length > 0 || uploadedAssetUrls.length > 0);
 
   function addPollOption() {
     setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']));
@@ -445,15 +476,30 @@ export function NewPostScreen() {
           </View>
         )}
 
+        {isAlbum && offeredPostTypes.includes('ALBUM') && (
+          <View>
+            <Text style={styles.sectionLabel}>{t('newPost.album.titleLabel')} *</Text>
+            <TextInput
+              style={styles.tripInput}
+              placeholder={t('newPost.album.titlePlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={albumTitle}
+              onChangeText={setAlbumTitle}
+              maxLength={120}
+              autoFocus
+            />
+          </View>
+        )}
+
         {!isTrip && (
           <TextInput
             style={styles.textInput}
-            placeholder={contentPlaceholder}
+            placeholder={isAlbum ? t('newPost.album.descriptionPlaceholder') : contentPlaceholder}
             placeholderTextColor={colors.textMuted}
             multiline
             value={content}
             onChangeText={setContent}
-            autoFocus
+            autoFocus={!isAlbum}
           />
         )}
 

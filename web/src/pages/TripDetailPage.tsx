@@ -240,7 +240,10 @@ function CheckinTimelineItem({
   const [replyDraft, setReplyDraft] = useState('');
 
   const { comment, dayNumber, replies } = entry;
-  const metadata = comment.metadata;
+  // Entries here are always trip check-ins (splitTripComments filters on
+  // metadata.kind === 'trip_checkin'); narrow the widened Comment.metadata
+  // union back to the check-in shape so `place` is accessible.
+  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null;
   const photoUrls = metadata?.photoUrls ?? [];
   // A co-traveler's check-in gets attributed explicitly; the trip author's
   // own check-ins don't repeat their name on every entry (the header

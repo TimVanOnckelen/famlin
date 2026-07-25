@@ -4,6 +4,7 @@ import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from
 import { getAllSettings } from '../services/settings.js';
 import i18n from '../i18n/index.js';
 import { isTripCheckinMetadata } from '../services/postTypes/trip.js';
+import { isAlbumPhotoMetadata } from '../services/postTypes/album.js';
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
@@ -159,6 +160,65 @@ export function registerNotificationSubscriber(): void {
           // unread, createdAt refreshed so it resurfaces) instead of
           // creating a new row/push when one already exists for this
           // (recipient, postId, type) since startOfTodayUtc.
+          bundleSince: startOfTodayUtc,
+        });
+      }
+      return;
+    }
+
+    // An ALBUM photo contribution (services/postTypes/album.ts's `addPhotos`
+    // interaction) is stored as a Comment for the same reuse reasons as a TRIP
+    // check-in, and notifies the WHOLE group (anyone might want to see new
+    // photos), not just thread participants — never the generic new_comment
+    // below. Push-only, same precedent as trip_checkin/new_chat_message. This
+    // block mirrors the trip_checkin one above (cross-post target dedup +
+    // same-day bundling) minus the per-check-in `place`.
+    if (isAlbumPhotoMetadata(event.metadata)) {
+      const startOfTodayUtc = new Date();
+      startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+
+      const targets = event.checkinTargets ?? [
+        { commentId: event.commentId, postId: event.postId, groupId: event.groupId, groupName: event.groupName },
+      ];
+      const memberships = await prisma.groupMember.findMany({
+        where: { groupId: { in: targets.map((t) => t.groupId) }, userId: { not: event.authorId } },
+        select: { groupId: true, userId: true },
+      });
+      const groupIdsByUserId = new Map<string, Set<string>>();
+      for (const m of memberships) {
+        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
+        set.add(m.groupId);
+        groupIdsByUserId.set(m.userId, set);
+      }
+
+      const assigned = new Set<string>();
+      for (const target of targets) {
+        const recipientIds = [...groupIdsByUserId.entries()]
+          .filter(([userId, groups]) => !assigned.has(userId) && groups.has(target.groupId))
+          .map(([userId]) => userId);
+        if (recipientIds.length === 0) continue;
+        recipientIds.forEach((id) => assigned.add(id));
+
+        // Per contribution AUTHOR and per TARGET post (mirrors trip_checkin) —
+        // counts this author's contributions to this album copy today, so the
+        // notification bundles into "added photos N times" rather than one
+        // push per contribution.
+        const countForTarget = await prisma.comment.count({
+          where: {
+            postId: target.postId,
+            authorId: event.authorId,
+            metadata: { path: ['kind'], equals: 'album_photo' },
+            createdAt: { gte: startOfTodayUtc },
+          },
+        });
+
+        await notifyUsers({
+          type: 'album_photo',
+          userIds: recipientIds,
+          senderId: event.authorId,
+          postId: target.postId,
+          // count drives i18next pluralization (albumPhoto_one/_other).
+          params: { author: event.authorName, group: target.groupName, count: countForTarget },
           bundleSince: startOfTodayUtc,
         });
       }

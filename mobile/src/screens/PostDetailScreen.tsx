@@ -84,6 +84,8 @@ export function PostDetailScreen() {
   useEffect(() => {
     if (post?.type === 'TRIP') {
       navigation.replace('TripDetail', { postId });
+    } else if (post?.type === 'ALBUM') {
+      navigation.replace('AlbumDetail', { postId });
     }
   }, [post?.type, postId]);
 

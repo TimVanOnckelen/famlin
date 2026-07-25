@@ -16,6 +16,8 @@ exports.votePoll = votePoll;
 exports.checkInTrip = checkInTrip;
 exports.closeTrip = closeTrip;
 exports.setTripTravelers = setTripTravelers;
+exports.addAlbumPhotos = addAlbumPhotos;
+exports.closeAlbum = closeAlbum;
 const client_1 = require("./client");
 async function fetchPosts(params = {}) {
     const response = await client_1.api.get('/posts', {
@@ -102,4 +104,20 @@ async function closeTrip(postId) {
 // enriched post (its trip.travelers reflecting the new list).
 async function setTripTravelers(postId, userIds) {
     return interactWithPost(postId, 'setTravelers', { userIds });
+}
+// Adds photos to an ALBUM post. Allowed for ANY member of the post's group
+// (not just the author — the whole point of the type); the server rejects a
+// non-member (403) and a closed album (errors.albumClosed). Returns the full
+// shaped + enriched post, same contract as votePoll/checkInTrip — the
+// contribution itself is persisted as a Comment with
+// `metadata: { kind: 'album_photo', ... }` (see fetchComments), so callers
+// should also refresh the post's comments after this resolves.
+async function addAlbumPhotos(postId, data) {
+    return interactWithPost(postId, 'addPhotos', data);
+}
+// Closes an album (author only, irreversible): flips `album.closed` so no more
+// photos can be added. Server errors: errors.albumNotAuthor,
+// errors.albumClosed. Returns the full shaped + enriched post.
+async function closeAlbum(postId) {
+    return interactWithPost(postId, 'close');
 }
