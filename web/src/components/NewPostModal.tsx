@@ -14,6 +14,7 @@ import {
 import { Icon } from '@/components/Icon';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
 import { ShimmerImage } from '@/components/ShimmerImage';
+import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media';
 import './NewPostModal.css';
 
 // The post types this composer knows how to build, in chip order.
@@ -331,8 +332,16 @@ export function NewPostModal({
               <div key={`${file.name}-${i}`} className="photo-preview">
                 {file.type.startsWith('video/') ? (
                   <video src={URL.createObjectURL(file)} />
-                ) : (
+                ) : isBrowserDecodableImage(file) ? (
                   <img src={URL.createObjectURL(file)} alt={file.name} />
+                ) : (
+                  // No browser but Safari can decode a HEIC blob — show what
+                  // was picked rather than a broken image. It still uploads
+                  // fine; the backend serves it back as JPEG.
+                  <span className="photo-preview-placeholder" title={file.name}>
+                    <Icon name="image" size={20} />
+                    <span className="photo-preview-format">{fileFormatLabel(file)}</span>
+                  </span>
                 )}
                 <button
                   type="button"

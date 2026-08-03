@@ -862,6 +862,27 @@
   display: block;
 }
 
+/* Stand-in tile for a picked file the browser can't decode (HEIC/HEIF) — see
+   isBrowserDecodableImage in utils/media.ts. */
+.comment-attachment-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.comment-attachment-format {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .comment-attachment-remove {
   position: absolute;
   top: -6px;
