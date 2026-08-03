@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -37,6 +38,7 @@ import { formatTime, formatDayMonth } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
 import { patchPostInCaches } from '@/utils/postCache';
 import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip';
+import { awaitBatch, clearBatch, summarizeUploads, useBatchUploads } from '@/stores/uploadQueue';
 
 export function TripDetailScreen() {
   const { t } = useTranslation();
@@ -52,6 +54,9 @@ export function TripDetailScreen() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [tripCommentsExpanded, setTripCommentsExpanded] = useState(false);
   const [checkinComposerOpen, setCheckinComposerOpen] = useState(false);
+  // Batches belonging to a check-in that has been submitted but whose photos
+  // are still uploading — drives the progress banner below.
+  const [postingBatchIds, setPostingBatchIds] = useState<string[]>([]);
   const [closeSheetOpen, setCloseSheetOpen] = useState(false);
   const [travelerPickerOpen, setTravelerPickerOpen] = useState(false);
 
@@ -75,17 +80,42 @@ export function TripDetailScreen() {
   const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed]);
 
   const checkinMutation = useMutation({
-    mutationFn: (data: { place: string; text?: string; photoUrls: string[] }) => checkInTrip(postId, data),
-    onSuccess: (updatedPost) => {
+    // The composer hands over upload batches, not finished URLs: it closes
+    // the moment the user taps "Check in", and the photos keep uploading in
+    // the background queue. We wait for them here, then post the check-in
+    // with whatever landed.
+    mutationFn: async (data: { place: string; text?: string; batchIds: string[] }) => {
+      const settled = (await Promise.all(data.batchIds.map(awaitBatch))).flat();
+      data.batchIds.forEach(clearBatch);
+      const photoUrls = settled
+        .filter((item) => item.status === 'done')
+        .map((item) => item.url!);
+      const failedCount = settled.filter((item) => item.status === 'failed').length;
+      const post = await checkInTrip(postId, { place: data.place, text: data.text, photoUrls });
+      return { post, failedCount, totalCount: settled.length };
+    },
+    onSuccess: ({ post: updatedPost, failedCount, totalCount }) => {
       patchPostInCaches(queryClient, postId, () => updatedPost);
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       refetchComments();
-      setCheckinComposerOpen(false);
+      setPostingBatchIds([]);
+      if (failedCount > 0) {
+        // The check-in itself is the thing worth keeping — it's posted with
+        // the photos that made it, and the user is told what didn't.
+        Alert.alert(
+          t('trip.checkin.alerts.photosFailedTitle'),
+          t('trip.checkin.alerts.photosFailedMessage', { failed: failedCount, total: totalCount })
+        );
+      }
     },
     onError: (err: any) => {
+      setPostingBatchIds([]);
       Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.checkin.alerts.failed'));
     },
   });
+
+  const postingUploads = useBatchUploads(postingBatchIds);
+  const postingSummary = summarizeUploads(postingUploads);
 
   const closeMutation = useMutation({
     mutationFn: () => closeTrip(postId),
@@ -178,6 +208,19 @@ export function TripDetailScreen() {
         style={styles.flex}
         keyboardVerticalOffset={90}
       >
+        {checkinMutation.isPending && (
+          <View style={styles.postingBanner}>
+            <ActivityIndicator size="small" color={colors.tripDark} />
+            <Text style={styles.postingBannerText}>
+              {postingSummary.inFlight > 0
+                ? t('trip.checkin.uploadingBanner', {
+                    done: postingSummary.done,
+                    total: postingSummary.total,
+                  })
+                : t('trip.checkin.postingBanner')}
+            </Text>
+          </View>
+        )}
         <FlatList
           data={sortedCheckins}
           keyExtractor={(item) => item.comment.id}
@@ -279,7 +322,14 @@ export function TripDetailScreen() {
         dayNumber={trip.dayNumber ?? 1}
         submitting={checkinMutation.isPending}
         onCancel={() => setCheckinComposerOpen(false)}
-        onSubmit={(data) => checkinMutation.mutate(data)}
+        onSubmit={(data) => {
+          // Close straight away — the mutation waits on the still-running
+          // uploads behind the progress banner instead of holding the modal
+          // open for them.
+          setCheckinComposerOpen(false);
+          setPostingBatchIds(data.batchIds);
+          checkinMutation.mutate(data);
+        }}
       />
 
       <CloseTripSheet
@@ -623,6 +673,21 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  postingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: colors.tripBg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.tripBorder,
+  },
+  postingBannerText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13.5,
+    color: colors.tripDark,
   },
   listContent: {
     paddingBottom: 24,
