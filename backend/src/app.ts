@@ -6,7 +6,9 @@ import multipart from '@fastify/multipart';
 import staticPlugin from '@fastify/static';
 import path from 'path';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import { ZodError } from 'zod';
+import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { config } from './config.js';
@@ -142,8 +144,13 @@ export async function buildApp() {
 
     // The true, uncompressed original of a converted upload lives here (see
     // routes/uploads.ts) purely for a possible future "download original"
-    // feature — it's never served today, regardless of auth.
-    if (request.raw.url.startsWith('/uploads/originals/')) {
+    // feature — it's never served today, regardless of auth. The generated
+    // HEIC renditions below are internal too: they're served under the
+    // original upload's URL, never their own.
+    if (
+      request.raw.url.startsWith('/uploads/originals/') ||
+      request.raw.url.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
+    ) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') });
     }
 
@@ -151,9 +158,28 @@ export async function buildApp() {
     // confirms the token still maps to an active user at its issued
     // tokenVersion, so a deactivated user or a pre-password-reset token can't
     // keep reading family media.
-    if (await authenticateMediaRequest(request)) return;
+    if (!(await authenticateMediaRequest(request))) {
+      return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+    }
 
-    return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+    // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a
+    // JPEG rendition under the requested URL rather than the stored bytes (see
+    // the HEIC/HEIF renditions block in services/uploadVariants.ts). Every
+    // other request — and an undecodable file — resolves to null and falls
+    // straight through to @fastify/static below. GET only: the point is what
+    // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
+    if (request.method !== 'GET') return;
+    const requestedFile = request.raw.url.slice('/uploads/'.length).split('?')[0];
+    const rendition = await resolveHeicRendition(uploadsDir, requestedFile);
+    if (!rendition) return;
+
+    const { size, mtime } = await fs.stat(rendition);
+    return reply
+      .header('content-type', 'image/jpeg')
+      .header('content-length', String(size))
+      .header('last-modified', mtime.toUTCString())
+      .header('cache-control', 'public, max-age=0')
+      .send(createReadStream(rendition));
   });
 
   await fastify.register(staticPlugin, {

@@ -1623,6 +1623,13 @@ paths:
       summary: Download an uploaded file
       description: |
         Requires an `Authorization` header **or** `?token=<media token>`.
+
+        A `.heic`/`.heif` path (older uploads, stored before the server
+        converted images on upload) is answered with a generated JPEG —
+        `Content-Type: image/jpeg` — since browsers can't decode HEIC. The
+        path itself is unchanged, and so is the response for every other
+        format. If the server can't decode the file, the stored bytes are
+        returned instead.
       parameters:
         - name: file
           in: path

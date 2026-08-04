@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import fsp from 'fs/promises';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { buildTestApp, createUser, authHeader } from './helpers.js';
 
@@ -154,5 +155,123 @@ describe('POST /api/uploads — compression', () => {
     const res = await app.inject({ method: 'GET', url: urls[0], headers: authHeader(member) });
     expect(res.statusCode).toBe(200);
     expect(res.rawPayload.equals(gif)).toBe(true);
+  });
+});
+
+// Uploads stored under a .heic/.heif extension — everything predating the
+// compression pipeline, plus any upload whose conversion failed — are served
+// as generated JPEGs so non-Safari browsers can render them at all.
+//
+// The fixtures are JPEG bytes written under a .heic filename rather than real
+// HEIC files: sharp sniffs content instead of trusting the extension, so this
+// exercises the whole plan/generate/serve path while staying decodable in an
+// environment whose sharp build has no HEIF support (see backend/Dockerfile —
+// only the production image compiles against vips-heif).
+describe('GET /uploads/<uuid>.heic — legacy HEIC renditions', () => {
+  let app: FastifyInstance;
+  const writtenUuids: string[] = [];
+
+  beforeAll(async () => {
+    app = await buildTestApp();
+  });
+
+  afterEach(async () => {
+    for (const uuid of writtenUuids.splice(0)) {
+      for (const dir of [uploadsDir, path.join(uploadsDir, 'derived')]) {
+        const entries = await fsp.readdir(dir).catch(() => [] as string[]);
+        await Promise.all(
+          entries.filter((f) => f.startsWith(uuid)).map((f) => fsp.unlink(path.join(dir, f)).catch(() => {}))
+        );
+      }
+    }
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  async function writeLegacyUpload(ext: string, width: number, height: number): Promise<string> {
+    const uuid = randomUUID();
+    writtenUuids.push(uuid);
+    const bytes = await sharp({
+      create: { width, height, channels: 3, background: { r: 200, g: 60, b: 30 } },
+    })
+      .jpeg()
+      .toBuffer();
+    await fsp.writeFile(path.join(uploadsDir, `${uuid}${ext}`), bytes);
+    return uuid;
+  }
+
+  it('serves a JPEG rendition at the stored .heic URL', async () => {
+    const member = await createUser();
+    const uuid = await writeLegacyUpload('.heic', 3000, 2000);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}.heic`,
+      headers: authHeader(member),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toBe('image/jpeg');
+    const meta = await sharp(res.rawPayload).metadata();
+    expect(meta.format).toBe('jpeg');
+    expect(meta.width).toBe(1920);
+
+    // Second request is served from the cached rendition, not regenerated.
+    const cached = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}.heic`,
+      headers: authHeader(member),
+    });
+    expect(cached.statusCode).toBe(200);
+    expect(cached.rawPayload.equals(res.rawPayload)).toBe(true);
+  });
+
+  it('generates the missing -thumbnail.jpg sibling for a legacy .heif upload', async () => {
+    const member = await createUser();
+    const uuid = await writeLegacyUpload('.heif', 1200, 900);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}-thumbnail.jpg`,
+      headers: authHeader(member),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toBe('image/jpeg');
+    const meta = await sharp(res.rawPayload).metadata();
+    expect(meta.width).toBe(400);
+  });
+
+  it('never serves the generated renditions under their own path', async () => {
+    const member = await createUser();
+    const uuid = await writeLegacyUpload('.heic', 800, 600);
+    await app.inject({ method: 'GET', url: `/uploads/${uuid}.heic`, headers: authHeader(member) });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/derived/${uuid}.jpg`,
+      headers: authHeader(member),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('leaves a non-HEIC upload untouched', async () => {
+    const member = await createUser();
+    const uuid = randomUUID();
+    writtenUuids.push(uuid);
+    const bytes = await sharp({
+      create: { width: 40, height: 40, channels: 3, background: { r: 0, g: 0, b: 255 } },
+    })
+      .png()
+      .toBuffer();
+    await fsp.writeFile(path.join(uploadsDir, `${uuid}.png`), bytes);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}.png`,
+      headers: authHeader(member),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.rawPayload.equals(bytes)).toBe(true);
   });
 });
