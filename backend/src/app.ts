@@ -64,6 +64,17 @@ export async function buildApp() {
     }
   });
 
+  // Fastify 5 types the error handler's first argument as `unknown` rather
+  // than FastifyError, so the 4xx branch below has to narrow before reading
+  // `statusCode`/`message`. Only errors that are genuinely Fastify/plugin
+  // client errors get their message forwarded — everything else falls through
+  // to the generic 500, which is what keeps internal messages off the wire.
+  const isClientError = (error: unknown): error is Error & { statusCode: number } => {
+    if (!(error instanceof Error)) return false;
+    const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
+    return typeof statusCode === 'number' && statusCode < 500;
+  };
+
   fastify.setErrorHandler((error, request, reply) => {
     const t = getT(request);
 
@@ -73,7 +84,7 @@ export async function buildApp() {
 
     // Client errors raised by Fastify itself or plugins (bad JSON, payload too
     // large, rate limit exceeded, ...) already carry a safe, specific message.
-    if (error.statusCode && error.statusCode < 500) {
+    if (isClientError(error)) {
       return reply.status(error.statusCode).send({ error: error.message });
     }
 
