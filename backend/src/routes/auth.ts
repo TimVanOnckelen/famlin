@@ -7,11 +7,13 @@ import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateS
 import { getOidcSettings, getAllSettings } from '../services/settings.js';
 import { getValidInvite, consumeInvite } from '../services/invites.js';
 import { completeOidcLogin } from '../services/oidcLogin.js';
+import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js';
 import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
 import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config } from '../config.js';
 import {
+  appleLoginBodySchema,
   loginBodySchema,
   oidcExchangeBodySchema,
   oidcMobileHandoffBodySchema,
@@ -50,6 +52,18 @@ const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   exchange_failed: 'errors.oidcExchangeFailed',
 };
 
+const APPLE_ERROR_KEY: Record<AppleAuthError['code'], string> = {
+  invalid_token: 'errors.authFailed',
+  no_email: 'errors.appleAccountNoEmail',
+  not_allowed: 'errors.emailNotAllowed',
+};
+
+const APPLE_ERROR_STATUS: Record<AppleAuthError['code'], number> = {
+  invalid_token: 401,
+  no_email: 403,
+  not_allowed: 403,
+};
+
 function oidcErrorStatus(code: OidcError['code']): number {
   if (code === 'not_configured') return 503;
   if (code === 'exchange_failed') return 400;
@@ -84,6 +98,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // admin UI, GET /oidc/mobile-callback for the mobile app) rather than
     // exchanging it themselves. The secret itself never leaves the backend.
     const usesClientSecret = !!clientSecret;
+    // Sign in with Apple needs no server-side configuration, so it's always
+    // available — but the flag has to be advertised here so an iOS app talking
+    // to a server that predates POST /apple hides the button instead of
+    // offering a login that would 404.
     const disabled = {
       enabled: false,
       name,
@@ -92,6 +110,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       clientId: '',
       scopes,
       usesClientSecret,
+      appleSignInEnabled: true,
     };
 
     if (!issuer || !clientId) {
@@ -109,6 +128,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         clientId,
         scopes,
         usesClientSecret,
+        appleSignInEnabled: true,
         ...(usesClientSecret ? { mobileCallbackUrl: `${origin}/api/auth/oidc/mobile-callback` } : {}),
       };
     } catch {
@@ -193,6 +213,35 @@ export default async function authRoutes(fastify: FastifyInstance) {
       } catch (err) {
         if (err instanceof OidcError) {
           return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
+        }
+        fastify.log.error(err);
+        return reply.status(401).send({ error: t('errors.authFailed') });
+      }
+    }
+  );
+
+  // Sign in with Apple. Unlike /oidc this needs nothing configured on the
+  // server — Apple's issuer and keys are fixed, and the token's audience is
+  // the client app's own bundle id — so it's available on every deployment
+  // and satisfies App Store guideline 4.8's requirement that an app offering
+  // a third-party login also offer a privacy-preserving equivalent. The
+  // account it provisions is subject to the same allowedEmails/invite rules
+  // as any other login (an Apple private-relay address will practically
+  // always need an invite, since it can't be whitelisted in advance).
+  fastify.post(
+    '/apple',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body);
+      const t = getT(request);
+
+      try {
+        const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t);
+        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
+        return outcome.result;
+      } catch (err) {
+        if (err instanceof AppleAuthError) {
+          return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) });
         }
         fastify.log.error(err);
         return reply.status(401).send({ error: t('errors.authFailed') });
@@ -518,6 +567,40 @@ export default async function authRoutes(fastify: FastifyInstance) {
     });
 
     return sanitizeUser(user);
+  });
+
+  // Self-service account deletion — the same permanent, cascading delete an
+  // admin can perform via DELETE /api/admin/users/:id, but initiated by the
+  // account's owner without needing an admin (App Store guideline 5.1.1(v)
+  // requires an in-app deletion path, and there's deliberately no
+  // "deactivate" halfway state anywhere in Famlin). Removes their posts,
+  // comments, likes, favorites, chat messages and notifications through the
+  // schema's cascades; there is no restore.
+  fastify.delete('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request);
+    const userId = request.user!.id;
+
+    // Irreversible and account-wide, so it takes an interactive login session
+    // — a leaked personal access token must not be able to wipe the account
+    // it was scoped to. Same rule as minting a PAT (routes/api-tokens.ts).
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: t('errors.sessionRequired') });
+    }
+
+    // Deleting the only admin would leave the deployment with no way to
+    // administer itself, so that account has to hand over admin first —
+    // mirroring the same guard on the admin delete route.
+    const self = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+    if (!self) {
+      return reply.status(404).send({ error: t('errors.userNotFound') });
+    }
+    if (self.isAdmin && (await prisma.user.count({ where: { isAdmin: true } })) <= 1) {
+      return reply.status(400).send({ error: t('errors.cannotDeleteLastAdminAccount') });
+    }
+
+    await prisma.user.delete({ where: { id: userId } });
+    invalidateSessionCache(userId);
+    return { success: true };
   });
 
   // Public: lets clients know whether the server has push/email

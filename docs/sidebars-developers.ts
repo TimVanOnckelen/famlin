@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
       items: apiReferenceSidebar,
     },
     'contributing',
+    'ios-app-review',
     'project-brief',
   ],
 };

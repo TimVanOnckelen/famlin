@@ -17,6 +17,8 @@ The **Users** page lists every account, their group memberships, and whether the
 - **Toggle notifications** — the bell and mail icons flip all push/email notification types for that user on or off in one click; per-event-type settings (new post vs. comment vs. like) are only editable by the user themselves, in the app.
 - **Delete a user** — permanently removes the account, and everything they created with it: their posts, comments, likes, and favorites are deleted along with them (unlike removing someone from a group, below, which keeps their existing posts/comments visible). This can't be undone. You can't delete your own account this way, and you can't delete the last remaining admin.
 
+Members can also delete their own account without asking you, from **Profile → Delete account** in the mobile or web app (they have to type `DELETE` to confirm). It's the same permanent removal as the admin action above, so their posts, photos, comments and chat messages go with it and can't be restored. The only account that can't do this is the last remaining admin — if that's you and you want out, make someone else an admin first.
+
 ## Groups
 
 The **Groups** page is a two-pane view: pick a group on the left, manage it on the right.

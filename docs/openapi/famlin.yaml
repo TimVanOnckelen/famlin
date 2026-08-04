@@ -149,6 +149,76 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /api/auth/apple:
+    post:
+      operationId: loginWithApple
+      tags: [Account]
+      summary: Log in with Sign in with Apple
+      security: []
+      description: |
+        Exchanges an Apple identity token (from the native Sign in with Apple
+        sheet) for a Famlin session token. Needs no server-side configuration —
+        Apple's issuer and keys are fixed and the token's audience is the
+        client app's bundle identifier — so it is available on every
+        deployment. Self-hosters distributing their own iOS build add its
+        bundle identifier to the `appleBundleIds` server setting.
+
+        Account provisioning follows the same rules as any other login: a new
+        account is only created when the email is on the server's allow-list
+        or a valid invite token covers the signup. Apple private-relay
+        addresses will practically always need an invite.
+
+        Rate-limited to 10 attempts per 15 minutes per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identityToken]
+              properties:
+                identityToken:
+                  type: string
+                  description: The JWT from `AppleAuthentication.signInAsync`'s credential.
+                fullName:
+                  type: string
+                  maxLength: 100
+                  description: |
+                    Apple only discloses the user's name on their very first
+                    authorization for the app. Send it when present; when
+                    omitted the account keeps the name already on file.
+                inviteToken:
+                  type: string
+                  description: |
+                    Optional invite token; when valid the account joins the
+                    invite's group and may be provisioned even if its email
+                    isn't on the allow-list.
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Session JWT, valid 30 days.
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            The Apple account shared no email address, or its email isn't
+            allowed on this server and no valid invite covered the signup.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /api/auth/me:
     get:
       operationId: getMe
@@ -207,6 +277,44 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteMe
+      tags: [Account]
+      summary: Permanently delete your own account
+      description: |
+        Hard-deletes the authenticated account and cascades to everything it
+        owns — posts, comments, reactions, favorites, chat messages, push
+        tokens, personal access tokens and notifications. There is no restore
+        and no deactivated state, and every session and media token for the
+        account stops working immediately.
+
+        Refused with `400` if you are the only admin on the server: promote
+        someone else first, otherwise the deployment would be left with no
+        one able to administer it.
+
+        Session-authenticated requests only — a personal access token gets a
+        `403`, so a leaked token can't wipe the account it was scoped to.
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: You are the last remaining admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Authenticated with a personal access token instead of a login session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/auth/change-password:
     post:

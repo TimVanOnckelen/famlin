@@ -8,6 +8,13 @@ import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18
 // so `appStoreUrl` has no such default.
 const DEFAULT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=be.xeweb.famlin';
 
+// The bundle identifier of the official pre-built Famlin app (see
+// mobile/app.config.js). Sign in with Apple identity tokens carry the signing
+// app's bundle id as their audience, so this is the default value every
+// deployment verifies against — a self-hoster shipping their own EAS build
+// under a different bundle id adds theirs to the appleBundleIds setting.
+const DEFAULT_APPLE_BUNDLE_ID = 'be.xeweb.famlin';
+
 export interface ServerSettings {
   defaultLanguage: SupportedLanguage;
   appStoreUrl: string;
@@ -18,6 +25,7 @@ export interface ServerSettings {
   oidcClientId: string;
   oidcClientSecret: string;
   oidcScopes: string;
+  appleBundleIds: string;
   smtpHost: string;
   smtpPort: number;
   smtpUser: string;
@@ -40,6 +48,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'oidcClientId',
   'oidcClientSecret',
   'oidcScopes',
+  'appleBundleIds',
   'smtpHost',
   'smtpPort',
   'smtpUser',
@@ -107,6 +116,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     oidcClientId: parseValue('oidcClientId', map.get('oidcClientId') || ''),
     oidcClientSecret: parseValue('oidcClientSecret', map.get('oidcClientSecret') || ''),
     oidcScopes: parseValue('oidcScopes', map.get('oidcScopes') || 'openid email profile'),
+    appleBundleIds: parseValue('appleBundleIds', map.get('appleBundleIds') || ''),
     smtpHost: parseValue('smtpHost', map.get('smtpHost') || ''),
     smtpPort: parseValue('smtpPort', map.get('smtpPort') || '587'),
     smtpUser: parseValue('smtpUser', map.get('smtpUser') || ''),
@@ -193,6 +203,21 @@ export async function getOidcSettings(): Promise<OidcSettings> {
     clientSecret: settings.oidcClientSecret.trim(),
     scopes: settings.oidcScopes,
   };
+}
+
+// Sign in with Apple needs no per-deployment registration: the audience it
+// verifies against is the client app's bundle id, which ships in the app
+// build. The default covers the official app; the setting only exists so a
+// self-hoster distributing their own iOS build (necessarily under their own
+// bundle id, since Apple scopes those per developer account) can add it.
+// Comma-separated; the default is always accepted alongside any extras.
+export async function getAppleSettings(): Promise<{ bundleIds: string[] }> {
+  const settings = await getAllSettings();
+  const extra = settings.appleBundleIds
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return { bundleIds: [...new Set([DEFAULT_APPLE_BUNDLE_ID, ...extra])] };
 }
 
 export interface ImmichSettings {

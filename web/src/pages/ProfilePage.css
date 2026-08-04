@@ -293,3 +293,65 @@
 .profile-logout {
   margin-top: 8px;
 }
+
+/* ── Delete account ──────────────────────────────────────────────────────── */
+
+.profile-danger {
+  border: 1px solid var(--fam-danger);
+  background: var(--fam-danger-bg);
+}
+
+.profile-delete-trigger {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--fam-danger);
+  background: var(--fam-surface);
+  color: var(--fam-danger);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-delete-trigger:hover {
+  background: var(--fam-danger);
+  color: white;
+}
+
+.profile-delete-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-delete-warning {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fam-text-body);
+}
+
+.profile-delete-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.profile-delete-confirm {
+  padding: 10px 20px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: var(--fam-danger);
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-delete-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

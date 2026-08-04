@@ -299,6 +299,8 @@
     "oidcIssuer": "Issuer URL",
     "oidcClientId": "Client ID",
     "oidcClientSecret": "Client secret (optional)",
+    "appleBundleIds": "Extra Apple bundle IDs",
+    "appleBundleIdsHint": "Sign in with Apple works out of the box and needs no setup — leave this blank. Only fill it in if you distribute your own iOS build: list its bundle identifier (comma-separated for several) so this server accepts Sign in with Apple tokens issued to it. The official app's bundle ID is always accepted.",
     "oidcClientSecretHint": "Only needed for providers that reject a secretless PKCE exchange, such as Google. Leave blank for providers like Authentik/Keycloak/Auth0 that support a public/native client. When set, Famlin exchanges the authorization code on the backend instead of in the browser or app.",
     "oidcScopes": "Scopes",
     "oidcHint": "Works with any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, Auth0, ...). Register Famlin as a public/native client with PKCE and add this app's redirect URIs.",

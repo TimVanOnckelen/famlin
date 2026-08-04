@@ -58,6 +58,15 @@ export const loginBodySchema = z.object({
   inviteToken: z.string().optional(),
 });
 
+// Sign in with Apple. `fullName` is optional because Apple only discloses the
+// user's name in the response of their very first authorization for this app —
+// every later sign-in carries the identity token alone.
+export const appleLoginBodySchema = z.object({
+  identityToken: z.string(),
+  fullName: z.string().max(100).optional(),
+  inviteToken: z.string().optional(),
+});
+
 // Used by the admin UI when the configured OIDC provider requires a client
 // secret (e.g. Google) — the browser can't hold the secret, so it hands the
 // authorization code to the backend instead of exchanging it itself.
@@ -323,6 +332,10 @@ export const updateServerSettingsBodySchema = z.object({
   oidcClientId: z.string().optional(),
   oidcClientSecret: z.string().optional(),
   oidcScopes: z.string().optional(),
+  // Comma-separated extra iOS bundle identifiers accepted as the audience of
+  // a Sign in with Apple identity token, for self-hosters shipping their own
+  // build — the official app's bundle id is always accepted.
+  appleBundleIds: z.string().max(500).optional(),
   smtpHost: z.string().optional(),
   smtpPort: z.number().optional(),
   smtpUser: z.string().optional(),

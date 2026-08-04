@@ -21,6 +21,10 @@
   --fam-text-body: #233036;
   --fam-text-title: #0f222a;
 
+  /* Destructive actions (account deletion) — same token the admin UI uses. */
+  --fam-danger: #E05A4C;
+  --fam-danger-bg: #fdecea;
+
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 18px;

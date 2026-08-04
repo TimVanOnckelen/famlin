@@ -22,6 +22,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/login-with-apple",
+          label: "Log in with Sign in with Apple",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "api-reference/get-me",
           label: "Get the authenticated user",
           className: "api-method get",
@@ -31,6 +37,12 @@ const sidebar: SidebarsConfig = {
           id: "api-reference/update-me",
           label: "Update profile and notification preferences",
           className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-me",
+          label: "Permanently delete your own account",
+          className: "api-method delete",
         },
         {
           type: "doc",
