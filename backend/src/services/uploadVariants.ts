@@ -78,37 +78,28 @@ export async function generateVideoPoster(videoPath: string, posterPath: string)
 }
 
 // ---------------------------------------------------------------------------
-// Legacy HEIC/HEIF renditions
+// HEIC/HEIF renditions
 // ---------------------------------------------------------------------------
 //
-// Every browser except Safari refuses to decode HEIC/HEIF, so an upload stored
-// under its original extension renders as a broken image on the web app while
-// the iOS app shows it fine. Two kinds of upload are stored that way: anything
-// predating the conversion pipeline above (no backfill was ever run), and any
-// upload whose conversion failed at the time (the fallback in routes/uploads.ts).
-//
-// Their `/uploads/<uuid>.heic` URLs are baked into Post.uploadedAssetUrls,
-// Comment.attachmentUrls, chat messages and already-shipped clients, so they
-// can't be rewritten. Instead the /uploads/ hook in app.ts serves a JPEG
-// rendition under the very same URL, generated on first request and cached in
-// uploads/derived/ (inside the uploads volume, so it survives restarts;
-// blocked from being served directly, like originals/).
+// No browser but Safari decodes HEIC/HEIF, so an upload stored under that
+// extension is a broken image on the web app while the iOS app shows it fine.
+// Uploads predating the conversion above are stored that way, and so is any
+// upload whose conversion failed (the fallback in routes/uploads.ts). Their
+// `/uploads/<uuid>.heic` URLs are already in Post.uploadedAssetUrls,
+// Comment.attachmentUrls, chat messages and shipped clients, so converting the
+// files in place isn't enough — the URL has to keep working. The /uploads/ hook
+// in app.ts answers it with a JPEG instead, generated on first request by the
+// same generateUploadVariants() a fresh upload runs (so the two can't drift
+// apart) and cached in uploads/derived/, inside the uploads volume.
 
 export const DERIVED_DIR_NAME = 'derived';
 
 const HEIC_EXTENSIONS = ['.heic', '.heif'];
 
 // Only the exact filename shape routes/uploads.ts writes — which also keeps
-// anything path-traversal-ish from ever reaching the sharp/fs calls below.
+// anything path-traversal-ish from ever reaching the fs/sharp calls below.
 const UPLOAD_FILENAME_RE =
   /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(-thumbnail)?(\.[a-z0-9]+)$/i;
-
-export type HeicRenditionPlan = {
-  sourcePath: string;
-  derivedPath: string;
-  width: number;
-  quality: number;
-};
 
 async function exists(filePath: string): Promise<boolean> {
   try {
@@ -119,98 +110,95 @@ async function exists(filePath: string): Promise<boolean> {
   }
 }
 
-// Decides whether a `/uploads/<file>` request should be answered with a
-// generated JPEG instead of the bytes on disk. Returns null for every ordinary
-// request (the overwhelming majority), which then falls through to
-// @fastify/static untouched.
-export async function planHeicRendition(
+// Resolves a `/uploads/<file>` request to the JPEG that should answer it.
+// Returns null for every ordinary request — the caller falls through to
+// @fastify/static untouched — and also when the source can't be decoded (a
+// sharp build without HEIF support, a corrupt file, an unwritable cache dir),
+// so those keep being served as the raw stored bytes exactly as before.
+export async function resolveHeicRendition(
   uploadsDir: string,
   requestedFile: string
-): Promise<HeicRenditionPlan | null> {
+): Promise<string | null> {
   const match = UPLOAD_FILENAME_RE.exec(requestedFile);
   if (!match) return null;
-  const [, uuid, thumbnailSuffix, rawExt] = match;
+  const [, uuid, isThumbnail, rawExt] = match;
   const ext = rawExt.toLowerCase();
 
-  if (!thumbnailSuffix) {
-    if (!HEIC_EXTENSIONS.includes(ext)) return null;
-    return {
-      sourcePath: path.join(uploadsDir, `${uuid}${ext}`),
-      derivedPath: path.join(uploadsDir, DERIVED_DIR_NAME, `${uuid}.jpg`),
-      width: DISPLAY_WIDTH,
-      quality: 85,
-    };
-  }
-
-  // A thumbnail request only concerns us when no real thumbnail was ever
-  // generated — i.e. a legacy upload — so the on-disk file wins whenever it
-  // exists and the hot path stays a single stat.
-  if (ext !== '.jpg') return null;
-  if (await exists(path.join(uploadsDir, requestedFile))) return null;
-
-  for (const heicExt of HEIC_EXTENSIONS) {
-    const sourcePath = path.join(uploadsDir, `${uuid}${heicExt}`);
-    if (await exists(sourcePath)) {
-      return {
-        sourcePath,
-        derivedPath: path.join(uploadsDir, DERIVED_DIR_NAME, `${uuid}-thumbnail.jpg`),
-        width: THUMBNAIL_WIDTH,
-        quality: 80,
-      };
+  let sourcePath: string | null = null;
+  if (!isThumbnail) {
+    if (HEIC_EXTENSIONS.includes(ext)) sourcePath = path.join(uploadsDir, `${uuid}${ext}`);
+  } else if (ext === '.jpg' && !(await exists(path.join(uploadsDir, requestedFile)))) {
+    // Only an upload that never got a thumbnail generated concerns us, so a
+    // real one on disk wins and the ordinary path costs a single stat.
+    for (const heicExt of HEIC_EXTENSIONS) {
+      const candidate = path.join(uploadsDir, `${uuid}${heicExt}`);
+      if (await exists(candidate)) {
+        sourcePath = candidate;
+        break;
+      }
     }
   }
-  return null;
+  if (!sourcePath) return null;
+
+  const derivedDir = path.join(uploadsDir, DERIVED_DIR_NAME);
+  const ready = await ensureRenditions(sourcePath, derivedDir, uuid);
+  if (!ready) return null;
+  return path.join(derivedDir, isThumbnail ? `${uuid}-thumbnail.jpg` : `${uuid}.jpg`);
 }
 
-// Decoding a 12MP HEIC costs hundreds of milliseconds, and a feed can request
-// the same photo twice at once (hero + lightbox) — collapse concurrent misses
-// onto one decode instead of racing two sharp pipelines over the same file.
-const inFlight = new Map<string, Promise<string | null>>();
+// Decoding a 12MP HEIC costs hundreds of milliseconds, and one photo can be
+// requested twice at once (a grid tile and the hero it opens into) — collapse
+// concurrent misses onto a single generateUploadVariants() call, which itself
+// produces both renditions from one decode.
+const inFlight = new Map<string, Promise<boolean>>();
 
-// Returns the path of a servable JPEG rendition, or null when the source can't
-// be turned into one — a sharp build without HEIF support (the prebuilt
-// binaries omit the patent-encumbered HEVC decoder; only backend/Dockerfile's
-// production stage compiles against vips-heif), a corrupt file, an unwritable
-// cache dir. The caller then serves the raw bytes exactly as it did before.
-export async function ensureHeicRendition(plan: HeicRenditionPlan): Promise<string | null> {
-  const pending = inFlight.get(plan.derivedPath);
+function ensureRenditions(sourcePath: string, derivedDir: string, uuid: string): Promise<boolean> {
+  const pending = inFlight.get(uuid);
   if (pending) return pending;
 
-  const work = generateHeicRendition(plan).finally(() => inFlight.delete(plan.derivedPath));
-  inFlight.set(plan.derivedPath, work);
+  const work = generateRenditions(sourcePath, derivedDir, uuid).finally(() => inFlight.delete(uuid));
+  inFlight.set(uuid, work);
   return work;
 }
 
-async function generateHeicRendition(plan: HeicRenditionPlan): Promise<string | null> {
+async function generateRenditions(
+  sourcePath: string,
+  derivedDir: string,
+  uuid: string
+): Promise<boolean> {
   let sourceStat;
   try {
-    sourceStat = await fsp.stat(plan.sourcePath);
+    sourceStat = await fsp.stat(sourcePath);
   } catch {
-    return null;
+    return false;
   }
 
+  const displayPath = path.join(derivedDir, `${uuid}.jpg`);
+  const thumbnailPath = path.join(derivedDir, `${uuid}-thumbnail.jpg`);
   try {
-    const derivedStat = await fsp.stat(plan.derivedPath);
-    if (derivedStat.mtimeMs >= sourceStat.mtimeMs) return plan.derivedPath;
+    // Both are written together, so the display copy's freshness stands for
+    // the pair.
+    const cached = await fsp.stat(displayPath);
+    if (cached.mtimeMs >= sourceStat.mtimeMs) return true;
   } catch {
     // cache miss
   }
 
-  const tmpPath = `${plan.derivedPath}.${process.pid}.${Date.now()}.tmp`;
+  const suffix = `${process.pid}.${Date.now()}.tmp`;
+  const displayTmp = `${displayPath}.${suffix}`;
+  const thumbnailTmp = `${thumbnailPath}.${suffix}`;
   try {
-    await fsp.mkdir(path.dirname(plan.derivedPath), { recursive: true });
-    // rotate() applies the EXIF orientation before it's dropped with the rest
-    // of the metadata — iPhone photos are routinely stored sideways.
-    await sharp(plan.sourcePath)
-      .rotate()
-      .resize({ width: plan.width, height: plan.width, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: plan.quality })
-      .toFile(tmpPath);
-    // Atomic swap so a concurrent reader never sees a half-written file.
-    await fsp.rename(tmpPath, plan.derivedPath);
-    return plan.derivedPath;
+    await fsp.mkdir(derivedDir, { recursive: true });
+    await generateUploadVariants(sourcePath, displayTmp, thumbnailTmp);
+    // Atomic swaps so a concurrent reader never sees a half-written file.
+    await fsp.rename(displayTmp, displayPath);
+    await fsp.rename(thumbnailTmp, thumbnailPath);
+    return true;
   } catch {
-    await fsp.unlink(tmpPath).catch(() => {});
-    return null;
+    await Promise.all([
+      fsp.unlink(displayTmp).catch(() => {}),
+      fsp.unlink(thumbnailTmp).catch(() => {}),
+    ]);
+    return false;
   }
 }

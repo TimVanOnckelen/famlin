@@ -8,11 +8,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import { ZodError } from 'zod';
-import {
-  DERIVED_DIR_NAME,
-  planHeicRendition,
-  ensureHeicRendition,
-} from './services/uploadVariants.js';
+import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { config } from './config.js';
@@ -166,19 +162,15 @@ export async function buildApp() {
       return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
     }
 
-    // Legacy HEIC/HEIF uploads are unreadable in every browser but Safari, so
-    // serve a JPEG rendition under the requested URL rather than the stored
-    // bytes (see the Legacy HEIC/HEIF renditions block in
-    // services/uploadVariants.ts). Non-HEIC requests get a null plan and fall
-    // straight through to @fastify/static below. GET only — the point is what
+    // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a
+    // JPEG rendition under the requested URL rather than the stored bytes (see
+    // the HEIC/HEIF renditions block in services/uploadVariants.ts). Every
+    // other request — and an undecodable file — resolves to null and falls
+    // straight through to @fastify/static below. GET only: the point is what
     // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
     if (request.method !== 'GET') return;
     const requestedFile = request.raw.url.slice('/uploads/'.length).split('?')[0];
-    const plan = await planHeicRendition(uploadsDir, requestedFile);
-    if (!plan) return;
-    const rendition = await ensureHeicRendition(plan);
-    // No HEIF support in this sharp build, or an undecodable file — serve the
-    // raw upload as before instead of failing the request.
+    const rendition = await resolveHeicRendition(uploadsDir, requestedFile);
     if (!rendition) return;
 
     const { size, mtime } = await fs.stat(rendition);
