@@ -11,6 +11,7 @@ import { ZodError } from 'zod';
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
+import { requestPathname } from './utils/requestPath.js';
 import { config } from './config.js';
 import { getT } from './i18n/index.js';
 import { registerNotificationSubscriber } from './subscribers/notifications.js';
@@ -140,7 +141,12 @@ export async function buildApp() {
   // normal session token (header) or a scoped media token (query string, see
   // routes/uploads.ts) before @fastify/static serves the file below.
   fastify.addHook('onRequest', async (request, reply) => {
-    if (!request.raw.url?.startsWith('/uploads/')) return;
+    // Normalized, not `request.raw.url` — the raw string is not the path
+    // @fastify/static resolves, so guarding on it lets `//uploads/x.jpg`,
+    // `/uploads%2Fx.jpg` and friends skip this hook entirely. See
+    // utils/requestPath.ts.
+    const pathname = requestPathname(request.raw.url);
+    if (!pathname.startsWith('/uploads/')) return;
 
     // The true, uncompressed original of a converted upload lives here (see
     // routes/uploads.ts) purely for a possible future "download original"
@@ -148,8 +154,8 @@ export async function buildApp() {
     // HEIC renditions below are internal too: they're served under the
     // original upload's URL, never their own.
     if (
-      request.raw.url.startsWith('/uploads/originals/') ||
-      request.raw.url.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
+      pathname.startsWith('/uploads/originals/') ||
+      pathname.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
     ) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') });
     }
@@ -169,7 +175,7 @@ export async function buildApp() {
     // straight through to @fastify/static below. GET only: the point is what
     // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
     if (request.method !== 'GET') return;
-    const requestedFile = request.raw.url.slice('/uploads/'.length).split('?')[0];
+    const requestedFile = pathname.slice('/uploads/'.length);
     const rendition = await resolveHeicRendition(uploadsDir, requestedFile);
     if (!rendition) return;
 
@@ -270,7 +276,7 @@ export async function buildApp() {
   // client-side route (or a stale reference to a since-rebuilt asset) — fall
   // back to that SPA's index.html so its router can take over.
   fastify.setNotFoundHandler((request, reply) => {
-    const url = request.raw.url ?? '';
+    const url = requestPathname(request.raw.url);
     if (adminServed && url.startsWith('/admin/')) {
       return reply.sendFile('index.html', adminDir);
     }
