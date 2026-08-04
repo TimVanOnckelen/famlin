@@ -12,9 +12,11 @@ export interface OidcConfig {
     scopes: string;
     usesClientSecret: boolean;
     mobileCallbackUrl?: string;
+    appleSignInEnabled?: boolean;
 }
 export declare function fetchOidcConfig(): Promise<OidcConfig>;
 export declare function loginWithOidc(idToken: string, inviteToken?: string): Promise<LoginResponse>;
+export declare function loginWithApple(identityToken: string, fullName?: string, inviteToken?: string): Promise<LoginResponse>;
 export declare function exchangeOidcMobileHandoff(code: string): Promise<LoginResponse>;
 export declare function exchangeOidcCode(code: string, redirectUri: string, codeVerifier: string, inviteToken?: string): Promise<LoginResponse>;
 export declare function loginWithPassword(email: string, password: string, inviteToken?: string): Promise<LoginResponse>;
@@ -45,4 +47,5 @@ export interface ServerInfo {
     readOnly?: boolean;
 }
 export declare function fetchServerInfo(): Promise<ServerInfo>;
+export declare function deleteAccount(): Promise<void>;
 export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;

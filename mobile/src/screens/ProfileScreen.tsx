@@ -11,7 +11,7 @@ import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { updateMe, changePassword, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
+import { updateMe, changePassword, deleteAccount, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 import { setLanguage } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
@@ -26,6 +26,9 @@ export function ProfileScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
@@ -99,6 +102,26 @@ export function ProfileScreen() {
     const result = await pickAvatarMedia();
     if (!result) return;
     updateAvatar.mutate(result.urls[0]);
+  }
+
+  // Permanent, cascading account deletion (DELETE /api/auth/me) — the in-app
+  // deletion path App Store guideline 5.1.1(v) requires. Deliberately behind a
+  // type-to-confirm step, since nothing here can be undone.
+  const removeAccount = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: async () => {
+      setDeleteModalVisible(false);
+      await logout();
+    },
+    onError: (err: any) => {
+      setDeleteError(err.response?.data?.error || err.message || t('common.tryAgain'));
+    },
+  });
+
+  function openDeleteModal() {
+    setDeleteConfirmation('');
+    setDeleteError(null);
+    setDeleteModalVisible(true);
   }
 
   const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey: keyof NotificationPrefs }[] = [
@@ -285,6 +308,28 @@ export function ProfileScreen() {
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
 
+        <View style={styles.dangerSection}>
+          <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
+          <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>
+          <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteModal}>
+            <Icon name="trash" size={16} color={colors.danger} />
+            <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <DeleteAccountModal
+          visible={deleteModalVisible}
+          confirmation={deleteConfirmation}
+          onChangeConfirmation={setDeleteConfirmation}
+          error={deleteError}
+          deleting={removeAccount.isPending}
+          onCancel={() => setDeleteModalVisible(false)}
+          onConfirm={() => {
+            setDeleteError(null);
+            removeAccount.mutate();
+          }}
+        />
+
         <LanguagePickerModal
           visible={languageModalVisible}
           onClose={() => setLanguageModalVisible(false)}
@@ -343,7 +388,118 @@ function LanguagePickerModal({ visible, onClose, selectedLanguage, onSelect }: L
   );
 }
 
+interface DeleteAccountModalProps {
+  visible: boolean;
+  confirmation: string;
+  onChangeConfirmation: (value: string) => void;
+  error: string | null;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+// Type-to-confirm rather than a plain yes/no: deletion is immediate and
+// permanent (the server hard-deletes the account and cascades to every post,
+// comment, reaction and photo it owns), so an accidental tap must not be
+// enough. Guideline 5.1.1(v) allows confirmation steps like this — what it
+// forbids is making the user leave the app to finish.
+function DeleteAccountModal({
+  visible,
+  confirmation,
+  onChangeConfirmation,
+  error,
+  deleting,
+  onCancel,
+  onConfirm,
+}: DeleteAccountModalProps) {
+  const { t } = useTranslation();
+  const requiredWord = t('profile.deleteAccountConfirmWord');
+  const canConfirm = confirmation.trim().toUpperCase() === requiredWord.toUpperCase() && !deleting;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      <View style={modalStyles.overlay}>
+        <View style={modalStyles.sheet}>
+          <View style={modalStyles.handle} />
+          <Text style={modalStyles.title}>{t('profile.deleteAccount')}</Text>
+          <Text style={modalStyles.body}>{t('profile.deleteAccountWarning')}</Text>
+          <Text style={modalStyles.body}>
+            {t('profile.deleteAccountConfirmPrompt', { word: requiredWord })}
+          </Text>
+
+          <TextInput
+            style={modalStyles.confirmInput}
+            value={confirmation}
+            onChangeText={onChangeConfirmation}
+            placeholder={requiredWord}
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
+
+          {error && <Text style={modalStyles.error}>{error}</Text>}
+
+          <TouchableOpacity
+            style={[modalStyles.confirmButton, !canConfirm && modalStyles.confirmButtonDisabled]}
+            onPress={onConfirm}
+            disabled={!canConfirm}
+          >
+            {deleting ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={modalStyles.confirmButtonText}>{t('profile.deleteAccountConfirm')}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={modalStyles.closeButton} onPress={onCancel} disabled={deleting}>
+            <Text style={modalStyles.closeButtonText}>{t('common.cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const modalStyles = StyleSheet.create({
+  body: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textBody,
+    marginBottom: 12,
+  },
+  confirmInput: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    paddingHorizontal: 14,
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 16,
+    color: colors.textTitle,
+    marginBottom: 12,
+  },
+  error: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.danger,
+    marginBottom: 12,
+  },
+  confirmButton: {
+    backgroundColor: colors.danger,
+    paddingVertical: 16,
+    borderRadius: 100,
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: {
+    opacity: 0.5,
+  },
+  confirmButtonText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 16,
+    color: colors.white,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -643,6 +799,37 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
     color: colors.textMuted,
+  },
+  dangerSection: {
+    marginTop: 28,
+    padding: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerBg,
+    gap: 10,
+  },
+  dangerDescription: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textBody,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    backgroundColor: colors.white,
+  },
+  deleteAccountButtonText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 15,
+    color: colors.danger,
   },
   logoutButton: {
     backgroundColor: colors.primary,

@@ -21,6 +21,7 @@ import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithPassword } from '@/api/auth';
 import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
+import { AppleSignInButton } from '@/components/AppleSignInButton';
 import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client';
@@ -59,6 +60,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoEnabled, setSsoEnabled] = useState(false);
   const [ssoName, setSsoName] = useState('');
+  const [appleEnabled, setAppleEnabled] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -125,8 +127,12 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
           .then((config) => {
             setSsoEnabled(config.enabled);
             setSsoName(config.name);
+            setAppleEnabled(!!config.appleSignInEnabled);
           })
-          .catch(() => setSsoEnabled(false));
+          .catch(() => {
+            setSsoEnabled(false);
+            setAppleEnabled(false);
+          });
 
         setMode('choose');
       } catch (err) {
@@ -261,6 +267,16 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                     </TouchableOpacity>
                   ) : (
                     <>
+                      <AppleSignInButton
+                        serverSupported={appleEnabled}
+                        inviteToken={token}
+                        onSuccess={async (result) => {
+                          const serverUrl = (await getServerUrl()) || '';
+                          await setAuth(result.user, result.token, serverUrl);
+                          onDone();
+                        }}
+                      />
+
                       {ssoEnabled && (
                         <TouchableOpacity
                           style={[styles.ssoButton, ssoLoading && styles.ssoButtonDisabled]}

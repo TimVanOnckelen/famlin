@@ -5,17 +5,23 @@ import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/Icon';
+import { AppleSignInButton } from '@/components/AppleSignInButton';
 import { PhotoCollage } from '@/components/PhotoCollage';
 import { colors } from '@/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
 import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
+import { useAppleSignInAvailable } from '@/utils/appleLogin';
 import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { setApiBaseUrl } from '@/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
 type Step = 'server' | 'credentials';
+
+// Public help page — what Famlin is, how to get a server address, and how to
+// reach the developer. Also the App Store listing's support URL.
+const SUPPORT_URL = 'https://famlin.app/support/';
 
 function normalizeServerUrl(url: string): string {
   let trimmed = url.trim();
@@ -37,6 +43,9 @@ export function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSsoLoading, setIsSsoLoading] = useState(false);
   const [isCheckingServer, setIsCheckingServer] = useState(false);
+
+  const appleAvailable = useAppleSignInAvailable();
+  const showApple = appleAvailable && !!ssoConfig?.appleSignInEnabled;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -164,6 +173,12 @@ export function LoginScreen() {
               <Text style={styles.inputHint}>
                 {t('login.serverHint')}
               </Text>
+              {/* Famlin has no central sign-up, so someone arriving without a
+                  server address (a new relative, an app reviewer) has no way
+                  forward from this screen alone — this is that way out. */}
+              <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(SUPPORT_URL)}>
+                <Text style={styles.helpLink}>{t('login.needHelp')}</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -222,25 +237,33 @@ export function LoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            {ssoConfig?.enabled && (
-              <>
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>{t('common.or')}</Text>
-                  <View style={styles.dividerLine} />
-                </View>
+            {(ssoConfig?.enabled || showApple) && (
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>{t('common.or')}</Text>
+                <View style={styles.dividerLine} />
+              </View>
+            )}
 
-                <TouchableOpacity
-                  style={[styles.ssoButton, isSsoLoading && styles.ssoButtonDisabled]}
-                  onPress={handleSsoLogin}
-                  disabled={isSsoLoading}
-                >
-                  <Icon name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
-                  <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
-                    {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
-                  </Text>
-                </TouchableOpacity>
-              </>
+            {/* Sign in with Apple sits alongside the SSO option, not below
+                it, since guideline 4.8 wants it offered as an equivalent
+                choice wherever a third-party login is offered. */}
+            <AppleSignInButton
+              serverSupported={!!ssoConfig?.appleSignInEnabled}
+              onSuccess={(result) => setAuth(result.user, result.token, serverUrl)}
+            />
+
+            {ssoConfig?.enabled && (
+              <TouchableOpacity
+                style={[styles.ssoButton, isSsoLoading && styles.ssoButtonDisabled]}
+                onPress={handleSsoLogin}
+                disabled={isSsoLoading}
+              >
+                <Icon name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
+                <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
+                  {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
+                </Text>
+              </TouchableOpacity>
             )}
 
             <Text style={styles.hint}>
@@ -377,6 +400,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 8,
     lineHeight: 17,
+  },
+  helpLink: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
+    marginTop: 10,
   },
   loginButton: {
     width: '100%',

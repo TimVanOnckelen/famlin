@@ -21,6 +21,7 @@ export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, Server
 export {
   fetchOidcConfig,
   loginWithOidc,
+  loginWithApple,
   exchangeOidcMobileHandoff,
   exchangeOidcCode,
   loginWithPassword,
@@ -29,6 +30,7 @@ export {
   fetchNotificationConfig,
   fetchServerInfo,
   changePassword,
+  deleteAccount,
 } from './auth';
 
 export { compareVersions } from './version';

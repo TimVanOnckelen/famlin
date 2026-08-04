@@ -58,6 +58,7 @@ export interface ServerSettings {
   oidcClientId: string;
   oidcClientSecret: string;
   oidcScopes: string;
+  appleBundleIds: string;
   smtpHost: string;
   smtpPort: number;
   smtpUser: string;

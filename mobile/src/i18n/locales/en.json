@@ -30,6 +30,7 @@
     "serverLabel": "Famlin server",
     "serverPlaceholder": "https://famlin.yourdomain.com",
     "serverHint": "The address where your Famlin backend runs. For example https://famlin.example.com or http://192.168.1.10:3000.",
+    "needHelp": "Don't have a server address? Get help",
     "continueButton": "Continue",
     "changeServer": "Change",
     "emailLabel": "Email",
@@ -333,6 +334,13 @@
     "app": "App",
     "version": "Version {{version}}",
     "logout": "Log out",
+    "dangerZone": "Delete account",
+    "deleteAccountDescription": "Permanently delete your Famlin account and everything in it. This can't be undone.",
+    "deleteAccount": "Delete my account",
+    "deleteAccountWarning": "Deleting your account immediately and permanently removes your profile, your posts, photos, comments, reactions and chat messages from this family server. This cannot be undone and there is no way to restore it.",
+    "deleteAccountConfirmPrompt": "Type {{word}} below to confirm.",
+    "deleteAccountConfirmWord": "DELETE",
+    "deleteAccountConfirm": "Permanently delete",
     "languages": {
       "en": "English",
       "nl": "Nederlands"

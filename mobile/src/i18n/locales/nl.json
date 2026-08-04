@@ -30,6 +30,7 @@
     "serverLabel": "Famlin-server",
     "serverPlaceholder": "https://famlin.yourdomain.com",
     "serverHint": "Het adres waar jouw Famlin-backend draait. Bijvoorbeeld https://famlin.example.com of http://192.168.1.10:3000.",
+    "needHelp": "Geen serveradres? Bekijk de hulppagina",
     "continueButton": "Doorgaan",
     "changeServer": "Wijzigen",
     "emailLabel": "E-mail",
@@ -333,6 +334,13 @@
     "app": "App",
     "version": "Versie {{version}}",
     "logout": "Uitloggen",
+    "dangerZone": "Account verwijderen",
+    "deleteAccountDescription": "Verwijder je Famlin-account en alles erin definitief. Dit kan niet ongedaan worden gemaakt.",
+    "deleteAccount": "Mijn account verwijderen",
+    "deleteAccountWarning": "Je account verwijderen wist onmiddellijk en definitief je profiel, je berichten, foto's, reacties, reactie-emoji's en chatberichten van deze familieserver. Dit kan niet ongedaan worden gemaakt en er is geen manier om het te herstellen.",
+    "deleteAccountConfirmPrompt": "Typ {{word}} hieronder om te bevestigen.",
+    "deleteAccountConfirmWord": "VERWIJDER",
+    "deleteAccountConfirm": "Definitief verwijderen",
     "languages": {
       "en": "English",
       "nl": "Nederlands"

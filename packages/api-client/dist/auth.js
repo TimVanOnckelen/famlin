@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fetchOidcConfig = fetchOidcConfig;
 exports.loginWithOidc = loginWithOidc;
+exports.loginWithApple = loginWithApple;
 exports.exchangeOidcMobileHandoff = exchangeOidcMobileHandoff;
 exports.exchangeOidcCode = exchangeOidcCode;
 exports.loginWithPassword = loginWithPassword;
@@ -9,6 +10,7 @@ exports.fetchMe = fetchMe;
 exports.updateMe = updateMe;
 exports.fetchNotificationConfig = fetchNotificationConfig;
 exports.fetchServerInfo = fetchServerInfo;
+exports.deleteAccount = deleteAccount;
 exports.changePassword = changePassword;
 const client_1 = require("./client");
 async function fetchOidcConfig() {
@@ -17,6 +19,14 @@ async function fetchOidcConfig() {
 }
 async function loginWithOidc(idToken, inviteToken) {
     const response = await client_1.api.post('/auth/oidc', { idToken, inviteToken });
+    return response.data;
+}
+// Sign in with Apple. `fullName` is only available on the user's very first
+// authorization for this app — Apple never discloses it again, so pass it
+// through when present and omit it otherwise (the server keeps the name
+// already on file).
+async function loginWithApple(identityToken, fullName, inviteToken) {
+    const response = await client_1.api.post('/auth/apple', { identityToken, fullName, inviteToken });
     return response.data;
 }
 async function exchangeOidcMobileHandoff(code) {
@@ -55,6 +65,12 @@ async function fetchNotificationConfig() {
 async function fetchServerInfo() {
     const response = await client_1.api.get('/auth/server-info');
     return response.data;
+}
+// Permanently deletes the logged-in user's own account and everything it
+// cascades to (posts, comments, reactions, favorites, chat messages,
+// notifications). There is no restore — callers must confirm first.
+async function deleteAccount() {
+    await client_1.api.delete('/auth/me');
 }
 async function changePassword(currentPassword, newPassword) {
     await client_1.api.post('/auth/change-password', { currentPassword, newPassword });
