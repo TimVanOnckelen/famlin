@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   uploadFiles,
   changePassword,
+  deleteAccount,
   fetchNotificationConfig,
   fetchServerInfo,
   updateMe,
@@ -43,6 +44,9 @@ export function ProfilePage({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
@@ -89,6 +93,24 @@ export function ProfilePage({
       setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'));
     },
   });
+
+  // Permanent, cascading account deletion (DELETE /api/auth/me) — mirrors
+  // mobile's ProfileScreen, including the type-to-confirm step, since nothing
+  // it removes can be restored.
+  const removeAccount = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      setDeleteOpen(false);
+      onLogout();
+    },
+    onError: (err: any) => {
+      setDeleteError(err.response?.data?.error || t('common.tryAgain'));
+    },
+  });
+
+  const deleteConfirmWord = t('profile.deleteAccountConfirmWord');
+  const canConfirmDelete =
+    deleteConfirmation.trim().toUpperCase() === deleteConfirmWord.toUpperCase() && !removeAccount.isPending;
 
   function handlePasswordSubmit(e: FormEvent) {
     e.preventDefault();
@@ -301,6 +323,67 @@ export function ProfilePage({
         <button className="btn btn-primary profile-logout" onClick={onLogout}>
           {t('common.logout')}
         </button>
+
+        <section className="profile-section profile-danger">
+          <h2 className="profile-section-title">{t('profile.dangerZone')}</h2>
+          <p className="profile-setting-desc">{t('profile.deleteAccountDescription')}</p>
+
+          {!deleteOpen ? (
+            <button
+              className="profile-delete-trigger"
+              onClick={() => {
+                setDeleteConfirmation('');
+                setDeleteError(null);
+                setDeleteOpen(true);
+              }}
+            >
+              <Icon name="trash" size={16} />
+              {t('profile.deleteAccount')}
+            </button>
+          ) : (
+            <form
+              className="profile-delete-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setDeleteError(null);
+                removeAccount.mutate();
+              }}
+            >
+              <p className="profile-delete-warning">{t('profile.deleteAccountWarning')}</p>
+              <label className="field">
+                <span className="field-label">
+                  {t('profile.deleteAccountConfirmPrompt', { word: deleteConfirmWord })}
+                </span>
+                <input
+                  className="field-input"
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder={deleteConfirmWord}
+                  autoComplete="off"
+                />
+              </label>
+              {deleteError && (
+                <div className="profile-error" role="alert">
+                  {deleteError}
+                </div>
+              )}
+              <div className="profile-delete-actions">
+                <button type="submit" className="profile-delete-confirm" disabled={!canConfirmDelete}>
+                  {removeAccount.isPending ? t('common.loading') : t('profile.deleteAccountConfirm')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setDeleteOpen(false)}
+                  disabled={removeAccount.isPending}
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
       </main>
 
       <BottomNav active="profile" onFeed={onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={() => {}} />

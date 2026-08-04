@@ -41,8 +41,21 @@ export default ({ config }) => ({
     supportsTablet: true,
     bundleIdentifier: "be.xeweb.famlin",
     buildNumber: config.ios?.buildNumber,
+    // Adds the Sign in with Apple entitlement — required alongside the
+    // expo-apple-authentication plugin below for the login option App Store
+    // guideline 4.8 requires next to the app's SSO login.
+    usesAppleSignIn: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      // Purpose strings are reviewed against guideline 5.1.1(ii): each has to
+      // say what the data is used for and give a concrete example, not just
+      // name the resource. Keep them specific if you edit them.
+      NSPhotoLibraryUsageDescription:
+        "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
+      NSPhotoLibraryAddUsageDescription:
+        "Famlin saves photos to your library when you tap Save on a family photo — for example, keeping a picture a relative posted of your kids. Famlin only adds photos you explicitly choose to save.",
+      NSLocationWhenInUseUsageDescription:
+        "Famlin uses your location only when you tap the location button while writing a post or a trip check-in, so it can suggest the place to attach — for example, tagging a beach day with the town you are in. Your location is never tracked in the background.",
     },
   },
   android: {
@@ -94,19 +107,35 @@ export default ({ config }) => ({
       },
     ],
     [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
+        // Famlin only ever opens the library picker, never the camera or the
+        // microphone. `false` deletes those purpose strings (and blocks the
+        // Android permissions) instead of shipping the plugin's vague
+        // defaults for capabilities the app doesn't use — an unused, generic
+        // purpose string is exactly what guideline 5.1.1(ii) rejects.
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ],
+    [
       "expo-location",
       {
         locationWhenInUsePermission:
-          "Famlin gebruikt je locatie om aan te geven waar een bericht is gemaakt.",
+          "Famlin uses your location only when you tap the location button while writing a post or a trip check-in, so it can suggest the place to attach — for example, tagging a beach day with the town you are in. Your location is never tracked in the background.",
       },
     ],
     [
       "expo-media-library",
       {
-        savePhotosPermission: "Allow Famlin to save photos to your library.",
+        savePhotosPermission:
+          "Famlin saves photos to your library when you tap Save on a family photo — for example, keeping a picture a relative posted of your kids. Famlin only adds photos you explicitly choose to save.",
         isAccessMediaLocationEnabled: false,
       },
     ],
+    "expo-apple-authentication",
     "expo-font",
     "expo-localization",
     "expo-secure-store",

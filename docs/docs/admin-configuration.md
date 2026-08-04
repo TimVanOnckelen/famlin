@@ -55,9 +55,17 @@ Google's OAuth clients always require a client secret for the token exchange, an
 
 Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
 
+### Sign in with Apple
+
+Nothing to configure. The mobile app offers **Sign in with Apple** on iOS in addition to whatever else you've enabled, and the server verifies Apple's identity tokens directly against Apple's published keys — there's no client ID, secret, or issuer to fill in, and it works the same on every self-hosted deployment.
+
+It follows the same access rules as any other login: an account is only created for a new person if their email is on the allow-list (see below), or if they came in through a valid invite link. Note that Apple lets people hide their real address behind a `@privaterelay.appleid.com` relay address, which you can't put on an allow-list ahead of time — so in practice family members using Sign in with Apple should join through an invite link.
+
+The one setting that exists, **Extra Apple bundle IDs** (`/admin` → Server settings), is only for self-hosters who build and distribute their *own* iOS app instead of installing the official one: put your build's bundle identifier there (comma-separated for several) so this server accepts sign-ins issued to it. The official app's bundle ID is always accepted, so leave the field empty otherwise.
+
 ### Access control
 
-Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid OIDC login.
+Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC or Sign in with Apple if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid login — unless it arrives through a valid invite link, which is its own authorization and deliberately bypasses the allow-list.
 
 ## Media integrations
 

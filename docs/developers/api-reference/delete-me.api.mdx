@@ -1,0 +1,71 @@
+---
+id: delete-me
+title: "Permanently delete your own account"
+description: "Hard-deletes the authenticated account and cascades to everything it"
+sidebar_label: "Permanently delete your own account"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsFuG0cM/RViLrGNteQ2OQlFAQd10RQJasQOgsBrZKldSjvx7HAynJWiCgL6Ef3CfknB2bWtxM6t6CU5WZ7lDMnHRz5uDQeKmCz7F42ZmYYcJXpFpjAJl2JmV+a0rrn3yVwXpiGpow1qbWbmN4zN8XBBILUE2KeWfLI1JmoAh3uAvoEapcZGzRhoRXGTWuuXYFPpee0F/vnrbwgsSQqouevI669IWKsrKWCBK442kX5vMUFHIrjUf0MvbekT35DaBYrCHp06J1F3ep5D8JzsQkPTFydw2VIksAKeIZIkjlT6wQ6a7HiVs5CEiYr8Qg4chEQs+3zSUWNxcAILjgpC6W/zlsRBYM3xJqfaZeNEbjMpfelf06IXamBtUwvVs5OTCuwCNtwDRsposncbwKazHtjnE6G4ojiDELnjRKUX7og9ATkhWNgoqQBOLcW1leGRhoLjjQIKa+5dA3MCR4s0+PVcer2Pc0damuzNSqIINuUwL4Zsjz8vbaSPPUmSIUYtHj4OPSwpCWDpq2cnT6sChAHBEd5QMxrU6J9oNGGI9xY8m2CNAlJzyKaT0pvCRJLAXkjMbGt+PDnRP59zciQrDLRsTGFq9ol8UlMMwY0MmH4Qtd8aqVvqUH+lTSAzMzz/QHUyhQlRWyPZwZv0Oa09wzmzI9Sw6BN2wZGZpdjTbleYZJP+ay7GS7udnj57LOB3exV3KAkidWi9UiZX47/LgGLkuGcmKVq/NA+6uu/QH0fCRllRQIroxeWyr5TsLUF1WtcU0vFL9Msel1RBS9hQhIOKfDWtvKsOJ0ZTVqLYSI3OkcH/9T06Z/ngFpsfHmLzyopYvyzA+hU62xRAn4I+VwBHiLRi5VEdqVFqovtmsHr6CPE/a9Dc3V/rSeslETbAC21GXlp/O9S+CQB3hekotXwvdxo9ptbMzBSDneqsm3Z6OgxcVcGt6aMzM9OmFGQ2nS6wc9ZPxs6f1Nw9yO0d9xF47eHXbLs3is3uWt+u+2jTJj8+J4wUtYZmdnW9//lCAR8w3Te6A1YD0kizmU6lbPQgmNOvcOGgGjJ5HzC9n0wmVaH9lAtgB9FZ0xwwhEPgWHq8k7/f317CInIH1fkfF5dwD1wmVDWB56wUjKpaPg3yhR3BGjez0leaBUf7Z2bXDJ7nqOGnHNTPlU57rZP1C865jkUckTw9f2EKo5UZkqv7GBXWL5M+y4I9XhpqqROEJe8rVuD12cWlvga9V0ZVmkWV9ewuXv2aZZ0XC1tbdNDx3DrK+j9iI9ALTeDt0HRXjyJ9fTBtaEVOm0TUz2HpVe1r9DDvrWtU+we+WJ9oOexkArhE7dfh6wI76zZPZEwmK/SpczA2ra4zo2LON3B0tIzcB+iom1OU1oajoxnc+szKrY03JKLLVenv3vGQ7wocZJeW5DDfnJNjv4TEw0aU9paoNW4AI/f5GFPpA8Uh9QlcEMHVG53lGdjT8xcP4cgL1N6aYdkXOaKVHuQtMEfKUYf+2HiSmVIY3R07zBPKY+6Dc4odevLJbcZl4B7gccn4ki/b++H3fbf9vtv+z7vtOM8TfUrT4NBmXmfR2Y7qdGUwWFMYjdeoiKm+tSxJP223cxR6E91up8cfe4oqLdeFWWG0CkJWlsIM6plV54Y2w8pMQZthha7XEB7ovurRnWT+cvby7PLM7Hb/AibZF60=
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Permanently delete your own account"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/auth/me"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Hard-deletes the authenticated account and cascades to everything it
+owns — posts, comments, reactions, favorites, chat messages, push
+tokens, personal access tokens and notifications. There is no restore
+and no deactivated state, and every session and media token for the
+account stops working immediately.
+
+Refused with `400` if you are the only admin on the server: promote
+someone else first, otherwise the deployment would be left with no
+one able to administer it.
+
+Session-authenticated requests only — a personal access token gets a
+`403`, so a leaked token can't wipe the account it was scoped to.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./delete-me.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./delete-me.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

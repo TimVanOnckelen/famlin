@@ -75,6 +75,7 @@ export function ServerSettingsPage() {
     oidcClientId: '',
     oidcClientSecret: '',
     oidcScopes: '',
+    appleBundleIds: '',
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
@@ -399,6 +400,16 @@ export function ServerSettingsPage() {
                       placeholder="openid email profile"
                     />
                   </label>
+                  <label>
+                    {t('serverSettings.appleBundleIds')}
+                    <input
+                      type="text"
+                      value={form.appleBundleIds}
+                      onChange={(e) => updateField('appleBundleIds', e.target.value)}
+                      placeholder="com.example.famlin"
+                    />
+                  </label>
+                  <p className="hint">{t('serverSettings.appleBundleIdsHint')}</p>
                 </SettingsCard>
 
                 <SettingsCard icon="shield" title={t('serverSettings.accessControl')}>
