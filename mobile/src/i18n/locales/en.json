@@ -177,7 +177,8 @@
       "postFailed": "The message could not be posted",
       "permissionRequiredTitle": "Permission required",
       "permissionRequiredMessage": "We need access to your photo and video library.",
-      "uploadFailed": "Upload failed"
+      "uploadFailed": "Upload failed",
+      "uploadPartiallyFailed": "{{failed}} of {{total}} files could not be uploaded. The rest were added."
     },
     "milestoneTags": {
       "birthday": "Birthday",
@@ -393,8 +394,14 @@
       "placePlaceholder": "E.g. Bologna",
       "textPlaceholder": "Tell something about this stop (optional)...",
       "addPhotoLabel": "Photo / video",
+      "uploadHint_one": "{{count}} photo is still uploading — you can check in already, we'll finish it in the background.",
+      "uploadHint_other": "{{count}} photos are still uploading — you can check in already, we'll finish them in the background.",
+      "uploadingBanner": "Uploading photos… {{done}}/{{total}}",
+      "postingBanner": "Posting check-in…",
       "alerts": {
-        "failed": "Check-in failed"
+        "failed": "Check-in failed",
+        "photosFailedTitle": "Some photos failed",
+        "photosFailedMessage": "{{failed}} of {{total}} photos could not be uploaded. The check-in was posted without them."
       }
     },
     "close": {

@@ -8,16 +8,26 @@ import { buildTestApp, createUser, authHeader } from './helpers.js';
 const uploadsDir = path.join(process.cwd(), 'uploads');
 
 function buildMultipartBody(filename: string, contentType: string, data: Buffer) {
+  return buildMultiFileMultipartBody([{ filename, contentType, data }]);
+}
+
+// Builds a single multipart body carrying several files under the same
+// "file" field, in the given order — used to exercise the route's
+// bounded-concurrency post-processing phase across more than one upload.
+function buildMultiFileMultipartBody(files: { filename: string; contentType: string; data: Buffer }[]) {
   const boundary = '----FamlinTestBoundary';
-  const body = Buffer.concat([
-    Buffer.from(
-      `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
-        `Content-Type: ${contentType}\r\n\r\n`
-    ),
-    data,
-    Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]);
+  const parts = files.map((f) =>
+    Buffer.concat([
+      Buffer.from(
+        `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="file"; filename="${f.filename}"\r\n` +
+          `Content-Type: ${f.contentType}\r\n\r\n`
+      ),
+      f.data,
+      Buffer.from('\r\n'),
+    ])
+  );
+  const body = Buffer.concat([...parts, Buffer.from(`--${boundary}--\r\n`)]);
   return { body, contentType: `multipart/form-data; boundary=${boundary}` };
 }
 
@@ -154,5 +164,76 @@ describe('POST /api/uploads — compression', () => {
     const res = await app.inject({ method: 'GET', url: urls[0], headers: authHeader(member) });
     expect(res.statusCode).toBe(200);
     expect(res.rawPayload.equals(gif)).toBe(true);
+  });
+
+  it('processes multiple files from one request with matching per-file output, in the same order', async () => {
+    const member = await createUser();
+
+    const photoA = await sharp({
+      create: { width: 2400, height: 1600, channels: 3, background: { r: 200, g: 40, b: 40 } },
+    })
+      .jpeg()
+      .toBuffer();
+    const photoB = await sharp({
+      create: { width: 2200, height: 1400, channels: 3, background: { r: 40, g: 40, b: 200 } },
+    })
+      .jpeg()
+      .toBuffer();
+    const gif = await sharp({ create: { width: 20, height: 20, channels: 3, background: { r: 0, g: 255, b: 0 } } })
+      .gif()
+      .toBuffer();
+
+    const { body, contentType } = buildMultiFileMultipartBody([
+      { filename: 'a.jpg', contentType: 'image/jpeg', data: photoA },
+      { filename: 'b.jpg', contentType: 'image/jpeg', data: photoB },
+      { filename: 'c.gif', contentType: 'image/gif', data: gif },
+    ]);
+
+    const uploadRes = await app.inject({
+      method: 'POST',
+      url: '/api/uploads',
+      headers: { ...authHeader(member), 'content-type': contentType },
+      payload: body,
+    });
+    expect(uploadRes.statusCode).toBe(200);
+    const { urls } = uploadRes.json();
+    expect(urls).toHaveLength(3);
+
+    // Same order as the parts were uploaded in: jpg, jpg, gif.
+    expect(urls[0]).toMatch(/^\/uploads\/[0-9a-f-]{36}\.jpg$/);
+    expect(urls[1]).toMatch(/^\/uploads\/[0-9a-f-]{36}\.jpg$/);
+    expect(urls[2]).toMatch(/^\/uploads\/[0-9a-f-]{36}\.gif$/);
+
+    const uuidA = urls[0].match(/\/uploads\/([0-9a-f-]{36})\.jpg$/)![1];
+    const uuidB = urls[1].match(/\/uploads\/([0-9a-f-]{36})\.jpg$/)![1];
+    const uuidGif = urls[2].match(/\/uploads\/([0-9a-f-]{36})\.gif$/)![1];
+    writtenUuids.push(uuidA, uuidB, uuidGif);
+
+    // Each JPEG got its own resized display copy and 400px thumbnail.
+    for (const [url, uuid] of [
+      [urls[0], uuidA],
+      [urls[1], uuidB],
+    ] as const) {
+      const displayRes = await app.inject({ method: 'GET', url, headers: authHeader(member) });
+      expect(displayRes.statusCode).toBe(200);
+      const displayMeta = await sharp(displayRes.rawPayload).metadata();
+      expect(displayMeta.format).toBe('jpeg');
+      expect(displayMeta.width).toBe(1920);
+
+      const thumbRes = await app.inject({
+        method: 'GET',
+        url: `/uploads/${uuid}-thumbnail.jpg`,
+        headers: authHeader(member),
+      });
+      expect(thumbRes.statusCode).toBe(200);
+      const thumbMeta = await sharp(thumbRes.rawPayload).metadata();
+      expect(thumbMeta.format).toBe('jpeg');
+      expect(thumbMeta.width).toBe(400);
+    }
+
+    // The gif passed through byte-identical, unprocessed.
+    const gifRes = await app.inject({ method: 'GET', url: urls[2], headers: authHeader(member) });
+    expect(gifRes.statusCode).toBe(200);
+    expect(gifRes.rawPayload.equals(gif)).toBe(true);
   });
 });
