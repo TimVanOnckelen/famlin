@@ -177,7 +177,8 @@
       "postFailed": "Bericht kon niet worden geplaatst",
       "permissionRequiredTitle": "Toegang nodig",
       "permissionRequiredMessage": "We hebben toegang nodig tot je foto- en videobibliotheek.",
-      "uploadFailed": "Upload mislukt"
+      "uploadFailed": "Upload mislukt",
+      "uploadPartiallyFailed": "{{failed}} van {{total}} bestanden konden niet worden geüpload. De rest is toegevoegd."
     },
     "milestoneTags": {
       "birthday": "Verjaardag",
@@ -393,8 +394,14 @@
       "placePlaceholder": "Bijv. Bologna",
       "textPlaceholder": "Vertel iets over deze stop (optioneel)...",
       "addPhotoLabel": "Foto / video",
+      "uploadHint_one": "{{count}} foto wordt nog geüpload — je kunt al inchecken, we maken het op de achtergrond af.",
+      "uploadHint_other": "{{count}} foto's worden nog geüpload — je kunt al inchecken, we maken het op de achtergrond af.",
+      "uploadingBanner": "Foto's uploaden… {{done}}/{{total}}",
+      "postingBanner": "Check-in plaatsen…",
       "alerts": {
-        "failed": "Inchecken mislukt"
+        "failed": "Inchecken mislukt",
+        "photosFailedTitle": "Sommige foto's zijn mislukt",
+        "photosFailedMessage": "{{failed}} van {{total}} foto's konden niet worden geüpload. De check-in is zonder deze foto's geplaatst."
       }
     },
     "close": {

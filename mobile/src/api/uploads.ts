@@ -1,18 +1,42 @@
+import type { AxiosProgressEvent } from 'axios';
+
 import { api } from './client';
 import { UPLOAD_TIMEOUT_MS } from '@famlin/api-client';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from '@famlin/api-client';
 
-export async function uploadMedia(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
-  const formData = new FormData();
+export interface UploadFile {
+  uri: string;
+  name: string;
+  type: string;
+}
 
-  files.forEach((file, index) => {
-    formData.append(`file${index}`, {
-      uri: file.uri,
-      name: file.name,
-      type: file.type,
-    } as any);
-  });
+interface UploadMediaFileOptions {
+  /** Called with 0..1 as bytes go out. React Native's XHR layer emits real
+   * upload progress events, so this reflects actual uplink progress rather
+   * than a fake animation. */
+  onProgress?: (fraction: number) => void;
+  /** Aborts the in-flight request (the composer cancelling a batch). */
+  signal?: AbortSignal;
+}
+
+/**
+ * Uploads ONE file per request. The batch endpoint accepts many parts in a
+ * single request, but sending them one-per-request is what buys per-file
+ * progress, per-file retry (a failure loses one photo instead of the whole
+ * pick), and genuine parallelism — both on the wire and in the backend's
+ * variant generation, which processes the parts of a single request in
+ * sequence. Callers should go through the upload queue
+ * (stores/uploadQueue.ts) rather than calling this directly, so concurrency
+ * stays bounded.
+ */
+export async function uploadMediaFile(file: UploadFile, options: UploadMediaFileOptions = {}): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as any);
 
   // Don't set a Content-Type of our own: React Native's networking layer
   // must generate its own `multipart/form-data; boundary=...` header when it
@@ -31,7 +55,20 @@ export async function uploadMedia(files: { uri: string; name: string; type: stri
     // alone a video — on mobile data routinely needs far longer, and the
     // aborted request surfaces to the user as an opaque "Network Error".
     timeout: UPLOAD_TIMEOUT_MS,
+    signal: options.signal,
+    onUploadProgress: options.onProgress
+      ? (event: AxiosProgressEvent) => {
+          const total = event.total ?? 0;
+          if (total > 0) options.onProgress!(Math.min(1, event.loaded / total));
+        }
+      : undefined,
   });
 
-  return response.data.urls;
+  const url = response.data.urls[0];
+  if (!url) {
+    // A 200 with no URL would be a server bug, but treat it as a failed
+    // upload rather than returning undefined into the caller's url list.
+    throw new Error('Upload returned no URL');
+  }
+  return url;
 }

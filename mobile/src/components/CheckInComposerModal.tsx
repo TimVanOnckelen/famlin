@@ -17,9 +17,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
-import { getUploadUrl } from '@/api/uploads';
-import { isVideoUrl } from '@/utils/media';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+import { cancelBatch, removeUpload, retryBatch, useBatchUploads } from '@/stores/uploadQueue';
 
 // Matches the server's cap on a check-in's photoUrls array (routes/posts.ts
 // interaction schema) — enforced here too so uploads never succeed only to
@@ -32,7 +31,10 @@ interface CheckInComposerModalProps {
   dayNumber: number;
   submitting: boolean;
   onCancel: () => void;
-  onSubmit: (data: { place: string; text?: string; photoUrls: string[] }) => void;
+  /** Hands the upload batches over to the caller rather than the finished
+   * URLs: the check-in may be submitted while photos are still uploading, so
+   * it's the trip screen that waits for them to settle and then posts. */
+  onSubmit: (data: { place: string; text?: string; batchIds: string[] }) => void;
 }
 
 // The "+ Check-in" modal (design 6f) — minimal on purpose (place is the only
@@ -48,63 +50,69 @@ export function CheckInComposerModal({
   const { t } = useTranslation();
   const [place, setPlace] = useState('');
   const [text, setText] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
+
+  // The photos live in the upload queue, not in local state, so they keep
+  // uploading even while this modal is closing and the check-in is being
+  // posted.
+  const photos = useBatchUploads(batchIds);
 
   useEffect(() => {
     if (visible) {
       setPlace('');
       setText('');
-      setPhotoUrls([]);
-      setPendingCount(0);
+      setBatchIds([]);
     }
   }, [visible]);
 
-  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photoUrls.length;
+  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photos.length;
 
-  const { pick, uploading } = usePickAndUploadMedia({
+  const { pickToQueue } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
-      selectionLimit: Math.max(1, Math.min(6, remainingPhotoSlots)),
+      selectionLimit: Math.max(1, remainingPhotoSlots),
       quality: 0.8,
       videoMaxDuration: 120,
     },
     includeIndexInName: true,
-    onPicked: (assets) => setPendingCount(assets.length),
-    onError: () => setPendingCount(0),
   });
 
   async function pickPhotos() {
-    const result = await pick();
-    setPendingCount(0);
-    // Defensive slice: selectionLimit already caps a single pick at the
-    // remaining slot count, but this guards against picks racing each other.
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_CHECKIN_PHOTOS));
-  }
-
-  function removePhoto(url: string) {
-    setPhotoUrls((prev) => prev.filter((u) => u !== url));
+    // Returns as soon as the picker closes — the upload runs in the
+    // background queue, so the user can keep typing (or submit) while it's
+    // still going.
+    const result = await pickToQueue();
+    if (result) setBatchIds((prev) => [...prev, result.batchId]);
   }
 
   function handleSubmit() {
     const trimmedPlace = place.trim();
     if (!trimmedPlace) return;
-    onSubmit({ place: trimmedPlace, text: text.trim() || undefined, photoUrls });
+    onSubmit({ place: trimmedPlace, text: text.trim() || undefined, batchIds });
   }
 
   function handleCancel() {
-    if (place.trim() || text.trim() || photoUrls.length > 0) {
+    function discard() {
+      // Only cancel on an actual abandon — on submit the batches are handed
+      // to the trip screen, which owns them from then on.
+      batchIds.forEach(cancelBatch);
+      onCancel();
+    }
+    if (place.trim() || text.trim() || photos.length > 0) {
       Alert.alert(t('common.cancel'), undefined, [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.done'), style: 'destructive', onPress: onCancel },
+        { text: t('common.done'), style: 'destructive', onPress: discard },
       ]);
       return;
     }
-    onCancel();
+    discard();
   }
 
-  const canSubmit = place.trim().length > 0 && !submitting && !uploading;
+  const uploadsInFlight = photos.filter((photo) => photo.status === 'pending' || photo.status === 'uploading').length;
+  // Deliberately NOT blocked on uploads finishing: submitting hands the
+  // in-flight batches to the trip screen, which posts once they settle.
+  const canSubmit = place.trim().length > 0 && !submitting;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleCancel}>
@@ -154,34 +162,47 @@ export function CheckInComposerModal({
           />
 
           <View style={styles.photoGrid}>
-            {photoUrls.map((url) => {
-              const isVideo = isVideoUrl(url);
-              return (
-                <View key={url} style={styles.photoTile}>
-                  <Image source={{ uri: getUploadUrl(url) }} style={styles.photoImage} />
-                  {isVideo && (
-                    <View style={styles.videoBadge} pointerEvents="none">
-                      <Icon name="play" size={14} color={colors.white} />
-                    </View>
-                  )}
-                  <TouchableOpacity style={styles.removePhotoButton} onPress={() => removePhoto(url)}>
-                    <Icon name="x" size={12} color={colors.white} />
+            {photos.map((photo) => (
+              <View key={photo.id} style={styles.photoTile}>
+                {/* The local file URI, so the preview is instant and costs no
+                    network round trip — the uploaded copy is never fetched
+                    back just to show a 100px tile. */}
+                <Image source={{ uri: photo.file.uri }} style={styles.photoImage} />
+                {photo.isVideo && (
+                  <View style={styles.videoBadge} pointerEvents="none">
+                    <Icon name="play" size={14} color={colors.white} />
+                  </View>
+                )}
+                {(photo.status === 'pending' || photo.status === 'uploading') && (
+                  <View style={styles.photoOverlay} pointerEvents="none">
+                    <ActivityIndicator size="small" color={colors.white} />
+                    <Text style={styles.photoOverlayText}>{Math.round(photo.progress * 100)}%</Text>
+                  </View>
+                )}
+                {photo.status === 'failed' && (
+                  <TouchableOpacity style={styles.photoRetryOverlay} onPress={() => retryBatch(photo.batchId)}>
+                    <Icon name="refresh-cw" size={16} color={colors.white} />
+                    <Text style={styles.photoOverlayText}>{t('common.tryAgain')}</Text>
                   </TouchableOpacity>
-                </View>
-              );
-            })}
-            {Array.from({ length: pendingCount }).map((_, i) => (
-              <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
-                <ActivityIndicator size="small" color={colors.white} />
+                )}
+                <TouchableOpacity style={styles.removePhotoButton} onPress={() => removeUpload(photo.id)}>
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
               </View>
             ))}
-            {photoUrls.length < MAX_CHECKIN_PHOTOS && (
-              <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
+            {photos.length < MAX_CHECKIN_PHOTOS && (
+              <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos}>
                 <Icon name="plus" size={20} color={colors.trip} />
                 <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>
               </TouchableOpacity>
             )}
           </View>
+
+          {uploadsInFlight > 0 && (
+            <Text style={styles.uploadHint}>
+              {t('trip.checkin.uploadHint', { count: uploadsInFlight })}
+            </Text>
+          )}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -277,10 +298,37 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  photoTilePending: {
-    backgroundColor: colors.tripTint,
+  photoOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+  },
+  photoRetryOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(180,40,40,0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  photoOverlayText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 12,
+    color: colors.white,
+  },
+  uploadHint: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 13,
+    color: colors.textMuted,
   },
   photoImage: {
     width: '100%',
