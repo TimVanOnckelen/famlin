@@ -5,8 +5,7 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { buildTestApp, createUser, authHeader } from './helpers.js';
-
-const uploadsDir = path.join(process.cwd(), 'uploads');
+import { uploadsDir } from '../src/config.js';
 
 function buildMultipartBody(filename: string, contentType: string, data: Buffer) {
   const boundary = '----FamlinTestBoundary';
@@ -40,8 +39,9 @@ describe('POST /api/uploads — compression', () => {
   afterEach(async () => {
     // Clean up every file this suite may have created under uploads/ and
     // uploads/originals/, so repeated local test runs don't accumulate cruft
-    // in the real dev uploads directory (there's no per-test override of
-    // uploadsDir — routes/uploads.ts resolves it from process.cwd()).
+    // in whichever directory is in use (scripts/test-in-docker.sh points
+    // UPLOADS_DIR at a throwaway path, but a plain `npm test` still writes
+    // into the real dev uploads directory).
     for (const uuid of writtenUuids.splice(0)) {
       const entries = await fsp.readdir(uploadsDir).catch(() => [] as string[]);
       await Promise.all(

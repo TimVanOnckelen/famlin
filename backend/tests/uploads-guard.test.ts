@@ -4,8 +4,7 @@ import fsp from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 import { buildTestApp, createUser, authHeader } from './helpers.js';
-
-const uploadsDir = path.join(process.cwd(), 'uploads');
+import { uploadsDir } from '../src/config.js';
 
 function buildMultipartBody(filename: string, contentType: string, data: Buffer) {
   const boundary = '----FamlinGuardBoundary';

@@ -12,7 +12,7 @@ import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariant
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { requestPathname } from './utils/requestPath.js';
-import { config } from './config.js';
+import { config, uploadsDir } from './config.js';
 import { getT } from './i18n/index.js';
 import { registerNotificationSubscriber } from './subscribers/notifications.js';
 
@@ -113,7 +113,6 @@ export async function buildApp() {
     return reply.status(500).send({ error: t('errors.serverError') });
   });
 
-  const uploadsDir = path.join(process.cwd(), 'uploads');
   await fs.mkdir(uploadsDir, { recursive: true });
   // Holds the true, uncompressed original of a converted upload (see
   // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
