@@ -19,7 +19,7 @@ import { Icon } from '@/components/Icon';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatRelativeDate } from '@/utils/time';
-import { isVideoUrl } from '@/utils/media';
+import { fileFormatLabel, isBrowserDecodableImage, isVideoUrl } from '@/utils/media';
 
 // Up to this many photos on one comment card lay out as a wrapping grid;
 // beyond it the card becomes a horizontally scrolling gallery instead, so a
@@ -247,8 +247,16 @@ export function CommentsSection({
               <div className="comment-attachment-preview" key={item.previewUrl}>
                 {item.file.type.startsWith('video/') ? (
                   <video src={item.previewUrl} muted />
-                ) : (
+                ) : isBrowserDecodableImage(item.file) ? (
                   <img src={item.previewUrl} alt="" />
+                ) : (
+                  // HEIC can't be decoded from a blob: URL outside Safari —
+                  // show the format instead of a broken image (the upload
+                  // itself works, and comes back as JPEG).
+                  <span className="comment-attachment-placeholder" title={item.file.name}>
+                    <Icon name="image" size={18} />
+                    <span className="comment-attachment-format">{fileFormatLabel(item.file)}</span>
+                  </span>
                 )}
                 <button
                   type="button"
