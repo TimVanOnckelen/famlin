@@ -55,15 +55,14 @@ CI backs this up for the API surface: when a PR changes `docs/openapi/famlin.yam
 
 Famlin uses release-please to automate versioning and changelogs. Merging to `main` keeps an open release pull request up to date; merging that PR cuts a GitHub Release tagged `vX.Y.Z`. The same workflow run then rewrites the GitHub Release notes into human-readable highlights and breaking changes using [GitHub Models](https://docs.github.com/en/github-models) (the raw commit-level changelog stays in a collapsed section, and `CHANGELOG.md` is untouched; if the model call fails the release simply keeps the auto-generated notes), and builds and publishes a versioned backend image to `ghcr.io/timvanonckelen/famlin`, which is what `docker-compose.yml` runs by default — see [Server setup](/server-setup) and [Maintenance](/maintenance#building-from-source-instead) if you need to build from source instead.
 
-The same release also builds the mobile app with EAS (`mobile-build.yml`, `production` profile, both platforms) and submits it straight to the App Store and Play Store production tracks via `eas submit --auto-submit`. This needs several secrets configured on the repo (Settings → Secrets and variables → Actions), none of which are required just to build:
+The same release also builds the mobile app with EAS (`mobile-build.yml`, `production` profile, both platforms) and publishes the Android build to the Play Store production track. This needs a couple of secrets configured on the repo (Settings → Secrets and variables → Actions), neither of which is required just to build:
 
 - `EXPO_TOKEN` — required for any EAS build (manual or release).
-- `ASC_APP_ID`, `APPLE_TEAM_ID`, `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY_BASE64` (an App Store Connect API key `.p8`, base64-encoded) — iOS submission.
-- `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_BASE64` (a Google Play service account JSON key, base64-encoded) — Android submission.
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY_BASE64` (a Google Play service account JSON key, base64-encoded) — Android publishing.
 
-A brand-new app still needs its first build uploaded manually through App Store Connect / Play Console — the Play Developer API rejects submissions until an app has at least one release created through the Play Console UI, and a first App Store submission needs its store listing filled in before Apple will review it. After that, `eas submit` can publish subsequent releases to the same app/track.
+The Play Developer API rejects a brand-new app until it has at least one release created through the Play Console UI, so the very first Android build has to be uploaded there by hand; after that the release workflow handles it. On iOS, **Apple approval is still pending** — see [The iOS app](./ios-app-review).
 
-The workflow can also be run manually from the Actions tab (`workflow_dispatch`) with a chosen platform and `preview`/`development`/`production` profile — this only builds (no store submission) and is the easy path for ad-hoc test builds, since `preview`/`development` use EAS's internal distribution (installable straight from the build link, no store or extra secrets needed).
+The workflow can also be run manually from the Actions tab (`workflow_dispatch`) with a chosen platform and `preview`/`development`/`production` profile — this only builds, and is the easy path for ad-hoc test builds, since `preview`/`development` use EAS's internal distribution (installable straight from the build link, no store or extra secrets needed).
 
 ## Development setup
 
