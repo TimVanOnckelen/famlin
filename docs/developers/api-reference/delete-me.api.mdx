@@ -1,0 +1,71 @@
+---
+id: delete-me
+title: "Permanently delete your own account"
+description: "Hard-deletes the authenticated account and cascades to everything it"
+sidebar_label: "Permanently delete your own account"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVttuGzcQ/ZXBvsQ2ZMlt8iQUBRzURVMkaBA7CArLyFK7Iy1jLrklubJVQUA/ol/YL+kZcm3LkfNW9CV5kXa5w7mcuZzZFK5jr6J29lVdTIuaDUd+w8WoiGoZiullcVpVrrexuBrha6i87kQasr8oXx/nC4Fiw6R6/NqoKxW5JpXvkbI1VSpUqhYxR7xiv46NtkvScWbdjQ30z19/U+dCDCOqXNtCCZ48q0pM4XGhVs5r2MH3RkVqOQS1lNeuD83MRnfNIodYgrPKiHGIUD5PLlgX9UJcE41jumjYM+mAcxgK0Xme2SxHdTK8SlGEiL9R0pAcpwC9UJFOWq61ykZo4byAACVD3NDZBbpx/jqF2ibhyGY9ntmZfceLPkD/jY4NlS9OTkrSC1q7nhT8EjSdNWtSdastHtNJYA8XptR517oIU8G17CwTm8C00D7EETlI+hsdspKaO+PWAig86U1NcybDi5jtWgf8cV/NDUtqkjUdInukJrl5nqM9fpxaz3/0wCxkHyV56mnoacmQUjOLCJ+XIwqwAfvqGkqyQKXsM/Gmy/7egadxpgKFCuUponAGJYlEdcgeoy43xfcnJ/L3uCaHYqVcljXuVM5GeC6iquvMUAGTT0HkN0WoGm6VPMV1x9Dg5p+4irgIlBFT1Nla6FNYO4Jz5xCJuMW3qu0MzqLvebtF6+gor8X5cGm7ldMXTzn8+07GjQoR2LYKSUDJpGz8dxGw987viIXoYaXY6+q+VfYYvVdLVYwoemWDSWlfSbHDzxIocxePXyu77NGGJTUQR9EclGzLSWlNeTguJGQpFO2RB8yRbP/qAZ2zdHCHzXf72LzRKD67HJG2K2V0PSK+7UQdqtwDqJWTOqpwIKWpzFeD1fMnCv9Rg6bu/lJPaosOVzW5hTSjW2LADEPtqwAQki3Hxj3QnXivYoP3ier0RGbdpJXTPHCFBTdF7w0Emhi7MJ1MFqo12o6Hzh+DtPZiQ2d7ArvRz0l2ZxQX2yvRXfWgtHVSPmfMAC85xOvV7udzATxjuit0D6w4JJ4mMZlKSWjPmdMv1MJBmSP5CAA+jsdjzGj0U0qAzqRzw3NCJRyi5cBt9/T364cLWoCHqHz72/kFPQCXCqoc00snJeiFtTCPE32pFurUego6kCjA6H+m6prSy+Q1/ZCc+rGUaS950nbhUqxDEgckT9++QoCSmRwckPIC6+dBnyXCHi7lXMoEcSHtK+D+d2dwHdqot1JRpURRJj6791e+Jlp3C2wPGDLUurkGXQr/D9gEApWP6UNuussnkb46mNRYIIw0SRA7hzMrbA/+o3mvwczru3rR6MBl3snAnUsl/Zq/IlfarJ+FIZjE0KfG0NC0ss4MjDlf09HR0ru+w5LSzmGz0d3R0ZTubCbmlsbLgchyNbP3ekDccjfQQTKJpj5MN+cIAMwUXd6I4s4ShcQi3SBfOVZY7BBoDn1M58x0+V5meQIWmO7DkRaonTUD0Y+SRys5SFtg8hT7FOIbGi+kSkH7YnfEJJFasSr1wVv2OMBVhJm7/AHgYcn4vF42D8Pv2277bbf9n3fbYZ5Hvo2TzqDppa4T6WwGdroEI2tIir+FkJjwW4PKkk+bzVwFfu/NdivHiMELteBxpbwWEBKz4EJiz8Q617zOKzP4VQaqMr24sMf7wkf3lPnT2euzizOM538BJtkXrQ==
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Permanently delete your own account"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/auth/me"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Hard-deletes the authenticated account and cascades to everything it
+owns — posts, comments, reactions, favorites, chat messages, push
+tokens, personal access tokens and notifications. There is no restore
+and no deactivated state, and every session and media token for the
+account stops working immediately.
+
+Refused with `400` if you are the only admin on the server: promote
+someone else first, otherwise the deployment would be left with no
+one able to administer it.
+
+Session-authenticated requests only — a personal access token gets a
+`403`, so a leaked token can't wipe the account it was scoped to.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./delete-me.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./delete-me.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

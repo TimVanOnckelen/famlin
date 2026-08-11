@@ -21,5 +21,9 @@ export const colors = {
   textMuted: '#597784',
   textBody: '#233036',
   textTitle: '#0f222a',
+  // Destructive actions (account deletion) — same token the admin UI uses
+  // (--danger in backend/admin/src/index.css).
+  danger: '#E05A4C',
+  dangerBg: '#fdecea',
   white: '#FFFFFF',
 };

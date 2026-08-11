@@ -2,7 +2,7 @@ export type { StorageAdapter } from './storage';
 export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
 export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMediaToken, initApiBaseUrl, setUnauthorizedHandler, } from './client';
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo } from './auth';
-export { fetchOidcConfig, loginWithOidc, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, changePassword, } from './auth';
+export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, changePassword, deleteAccount, } from './auth';
 export { compareVersions } from './version';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
 export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';

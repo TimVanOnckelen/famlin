@@ -18,6 +18,11 @@ export interface OidcConfig {
   // mobileCallbackUrl + POST /oidc/mobile-handoff. See utils/oidcLogin.ts.
   usesClientSecret: boolean;
   mobileCallbackUrl?: string;
+  // Sign in with Apple needs no server-side configuration, so it's true on
+  // every server that supports it at all — optional here so a client talking
+  // to a server predating POST /auth/apple reads it as undefined and hides
+  // the button rather than offering a login that would 404.
+  appleSignInEnabled?: boolean;
 }
 
 export async function fetchOidcConfig(): Promise<OidcConfig> {
@@ -27,6 +32,19 @@ export async function fetchOidcConfig(): Promise<OidcConfig> {
 
 export async function loginWithOidc(idToken: string, inviteToken?: string): Promise<LoginResponse> {
   const response = await api.post<LoginResponse>('/auth/oidc', { idToken, inviteToken });
+  return response.data;
+}
+
+// Sign in with Apple. `fullName` is only available on the user's very first
+// authorization for this app — Apple never discloses it again, so pass it
+// through when present and omit it otherwise (the server keeps the name
+// already on file).
+export async function loginWithApple(
+  identityToken: string,
+  fullName?: string,
+  inviteToken?: string
+): Promise<LoginResponse> {
+  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken });
   return response.data;
 }
 
@@ -102,6 +120,13 @@ export interface ServerInfo {
 export async function fetchServerInfo(): Promise<ServerInfo> {
   const response = await api.get('/auth/server-info');
   return response.data;
+}
+
+// Permanently deletes the logged-in user's own account and everything it
+// cascades to (posts, comments, reactions, favorites, chat messages,
+// notifications). There is no restore — callers must confirm first.
+export async function deleteAccount(): Promise<void> {
+  await api.delete('/auth/me');
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
