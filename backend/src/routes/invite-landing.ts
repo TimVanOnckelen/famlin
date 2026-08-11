@@ -39,11 +39,12 @@ export default async function inviteLandingRoutes(fastify: FastifyInstance) {
       );
     }
 
-    // request.protocol/hostname already resolve X-Forwarded-Proto/Host
-    // correctly when TRUST_PROXY is enabled (see app.ts) — otherwise they
-    // reflect the raw connection, so a client can't spoof the origin baked
-    // into this link.
-    const origin = `${request.protocol}://${request.hostname}`;
+    // request.protocol/host already resolve X-Forwarded-Proto/Host correctly
+    // when TRUST_PROXY is enabled (see app.ts) — otherwise they reflect the raw
+    // connection, so a client can't spoof the origin baked into this link.
+    // host, not hostname: only host carries the port on Fastify 5, and this
+    // origin is what the app will talk to.
+    const origin = `${request.protocol}://${request.host}`;
     const appLink = `famlin://invite/${token}?server=${encodeURIComponent(origin)}`;
 
     const inviterName = invite.createdBy?.name;

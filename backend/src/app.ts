@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -48,6 +48,34 @@ export async function buildApp() {
     },
   });
 
+  // Fastify 5 runs the content-type parser for every body-carrying method,
+  // where Fastify 4 skipped it entirely when the request had no body. The JSON
+  // parser rejects an empty body (FST_ERR_CTP_EMPTY_JSON_BODY, 400), and axios
+  // sends `Content-Type: application/json` from its instance defaults on every
+  // request — bodyless ones included (see packages/api-client/src/client.ts).
+  // Without this hook, every DELETE from the web app, the mobile app and any
+  // already-installed client would 400 before reaching its handler: deleting a
+  // post, a comment or a chat message, revoking an API token, unregistering a
+  // push token.
+  //
+  // Dropping the header when the request demonstrably carries no body puts
+  // those requests back on Fastify's own "no body to parse" path, leaving the
+  // default parser (and its prototype-poisoning protection) in place for
+  // everything else. The emptiness test is the one Fastify itself applies
+  // (`isEmptyBody` in lib/handle-request.js): per RFC 9112 §6 a request has a
+  // body only when framed by Transfer-Encoding or a non-zero Content-Length,
+  // so this can never touch a request that has one.
+  fastify.addHook('onRequest', async (request) => {
+    if (request.headers['content-type'] === undefined) return;
+
+    const contentLength = request.headers['content-length'];
+    const framed =
+      request.headers['transfer-encoding'] !== undefined ||
+      (contentLength !== undefined && contentLength !== '0');
+
+    if (!framed) delete request.headers['content-type'];
+  });
+
   // Rate limiting and client-IP logging key off request.ip, which only
   // reflects X-Forwarded-For when TRUST_PROXY is on. If a reverse proxy sits
   // in front of this server but TRUST_PROXY is left off, every request
@@ -64,7 +92,9 @@ export async function buildApp() {
     }
   });
 
-  fastify.setErrorHandler((error, request, reply) => {
+  // Explicitly typed: Fastify 5 widened setErrorHandler's error parameter to
+  // `unknown` (anything can be thrown), where 4 typed it as FastifyError.
+  fastify.setErrorHandler((error: FastifyError, request, reply) => {
     const t = getT(request);
 
     if (error instanceof ZodError) {

@@ -38,12 +38,17 @@ import { getT } from '../i18n/index.js';
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
 // vary, but the reverse proxy (or the admin's own browser, for a direct
 // connection) tells us the address that actually works. request.protocol and
-// request.hostname already resolve X-Forwarded-Proto/Host correctly when
+// request.host already resolve X-Forwarded-Proto/Host correctly when
 // TRUST_PROXY is enabled (see app.ts), and fall back to the raw connection
 // otherwise — so a directly-exposed server can't have its origin spoofed by
 // a client-supplied header.
+//
+// request.host, not request.hostname: Fastify 5 redefined hostname to exclude
+// the port (4 included it) and added host as the port-carrying property. An
+// origin built from hostname would silently drop the port on any deployment
+// not served on 80/443, producing invite links that don't resolve.
 function getPublicOrigin(request: any): string {
-  return `${request.protocol}://${request.hostname}`;
+  return `${request.protocol}://${request.host}`;
 }
 
 // Safety cap on GET /media/:provider/people's combined (own + cross-owner

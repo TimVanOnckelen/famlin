@@ -58,7 +58,28 @@ WORKDIR /repo
 COPY package.json package-lock.json* ./
 COPY packages ./packages
 COPY web ./web
-RUN npm ci
+# --ignore-scripts is deliberate, for two reasons:
+#
+# 1. Reliability. npm 10's lifecycle-script runner has a race that intermittently
+#    kills the install with "npm error Exit handler never called!" (exit 1) —
+#    npm's own process exits before its exit handler runs. It shows up under
+#    slow/loaded installs, so it fails a CI or cold-cache image build maybe one
+#    run in three while passing locally on a warm cache. Skipping the script
+#    runner removes the code path the race lives in; both `--ignore-scripts` and
+#    `--foreground-scripts` avoid it, and the former also gets us (2).
+# 2. Determinism. The only script that matters here is @famlin/api-client's
+#    `prepare` hook, which compiles it to dist/ as an implicit side effect of
+#    install (and silently falls back to the committed dist/ when tsc isn't
+#    resolvable — see packages/api-client/scripts/prepare.js). Building it as an
+#    explicit step means this image always bundles a dist/ compiled from the
+#    source in this build context, never a stale committed one.
+#
+# Nothing else is skipped: fsevents is the only third-party dependency in the
+# root lockfile with an install script, and it's darwin-only, so it is never
+# installed here anyway. (The backend stages above/below must NOT do this —
+# their trees need prisma's and esbuild's install scripts to run.)
+RUN npm ci --ignore-scripts
+RUN npm run build --workspace=packages/api-client
 RUN npm run build --workspace=web
 
 # Production image

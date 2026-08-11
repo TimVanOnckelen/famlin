@@ -100,7 +100,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     try {
       const { doc } = await getDiscovery(issuer);
-      const origin = `${request.protocol}://${request.hostname}`;
+      // host, not hostname — Fastify 5's hostname drops the port, and this
+      // origin is handed to clients to build their OIDC redirect URI from.
+      const origin = `${request.protocol}://${request.host}`;
       return {
         enabled: true,
         name,
@@ -266,7 +268,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
         }
       }
 
-      const redirectUri = `${request.protocol}://${request.hostname}/api/auth/oidc/mobile-callback`;
+      // host, not hostname: this redirect_uri must byte-match the one the app
+      // authorized with (and the one registered at the provider), and Fastify
+      // 5's hostname would strip the port off a non-443 deployment.
+      const redirectUri = `${request.protocol}://${request.host}/api/auth/oidc/mobile-callback`;
       try {
         const idToken = await exchangeOidcCode({ code, redirectUri });
         const outcome = await completeOidcLogin(idToken, inviteToken, t);
