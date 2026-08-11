@@ -22,6 +22,11 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # Empty token = diff against local .git history instead of calling the
+          # GitHub API from Node. The checkout above already fetches every ref
+          # (fetch-depth: 0), and the API path breaks on runners whose TLS is
+          # intercepted ("self-signed certificate" since the Node 24 default).
+          token: ''
           filters: |
             mobile:
               - 'mobile/**'

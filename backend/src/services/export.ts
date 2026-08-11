@@ -21,11 +21,9 @@
 // stream fast and the resulting file trivially predictable in tests.
 import { ZipArchive, type Archiver } from 'archiver';
 import fs from 'fs';
-import path from 'path';
 import { prisma } from '../db.js';
+import { uploadsDir } from '../config.js';
 import pkg from '../../package.json' with { type: 'json' };
-
-const uploadsDir = path.join(process.cwd(), 'uploads');
 
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response

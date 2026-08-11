@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -11,7 +11,8 @@ import { ZodError } from 'zod';
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
-import { config } from './config.js';
+import { requestPathname } from './utils/requestPath.js';
+import { config, uploadsDir } from './config.js';
 import { getT } from './i18n/index.js';
 import { registerNotificationSubscriber } from './subscribers/notifications.js';
 
@@ -49,6 +50,34 @@ export async function buildApp() {
     },
   });
 
+  // Fastify 5 runs the content-type parser for every body-carrying method,
+  // where Fastify 4 skipped it entirely when the request had no body. The JSON
+  // parser rejects an empty body (FST_ERR_CTP_EMPTY_JSON_BODY, 400), and axios
+  // sends `Content-Type: application/json` from its instance defaults on every
+  // request — bodyless ones included (see packages/api-client/src/client.ts).
+  // Without this hook, every DELETE from the web app, the mobile app and any
+  // already-installed client would 400 before reaching its handler: deleting a
+  // post, a comment or a chat message, revoking an API token, unregistering a
+  // push token.
+  //
+  // Dropping the header when the request demonstrably carries no body puts
+  // those requests back on Fastify's own "no body to parse" path, leaving the
+  // default parser (and its prototype-poisoning protection) in place for
+  // everything else. The emptiness test is the one Fastify itself applies
+  // (`isEmptyBody` in lib/handle-request.js): per RFC 9112 §6 a request has a
+  // body only when framed by Transfer-Encoding or a non-zero Content-Length,
+  // so this can never touch a request that has one.
+  fastify.addHook('onRequest', async (request) => {
+    if (request.headers['content-type'] === undefined) return;
+
+    const contentLength = request.headers['content-length'];
+    const framed =
+      request.headers['transfer-encoding'] !== undefined ||
+      (contentLength !== undefined && contentLength !== '0');
+
+    if (!framed) delete request.headers['content-type'];
+  });
+
   // Rate limiting and client-IP logging key off request.ip, which only
   // reflects X-Forwarded-For when TRUST_PROXY is on. If a reverse proxy sits
   // in front of this server but TRUST_PROXY is left off, every request
@@ -65,7 +94,9 @@ export async function buildApp() {
     }
   });
 
-  fastify.setErrorHandler((error, request, reply) => {
+  // Explicitly typed: Fastify 5 widened setErrorHandler's error parameter to
+  // `unknown` (anything can be thrown), where 4 typed it as FastifyError.
+  fastify.setErrorHandler((error: FastifyError, request, reply) => {
     const t = getT(request);
 
     if (error instanceof ZodError) {
@@ -82,7 +113,6 @@ export async function buildApp() {
     return reply.status(500).send({ error: t('errors.serverError') });
   });
 
-  const uploadsDir = path.join(process.cwd(), 'uploads');
   await fs.mkdir(uploadsDir, { recursive: true });
   // Holds the true, uncompressed original of a converted upload (see
   // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
@@ -140,7 +170,12 @@ export async function buildApp() {
   // normal session token (header) or a scoped media token (query string, see
   // routes/uploads.ts) before @fastify/static serves the file below.
   fastify.addHook('onRequest', async (request, reply) => {
-    if (!request.raw.url?.startsWith('/uploads/')) return;
+    // Normalized, not `request.raw.url` — the raw string is not the path
+    // @fastify/static resolves, so guarding on it lets `//uploads/x.jpg`,
+    // `/uploads%2Fx.jpg` and friends skip this hook entirely. See
+    // utils/requestPath.ts.
+    const pathname = requestPathname(request.raw.url);
+    if (!pathname.startsWith('/uploads/')) return;
 
     // The true, uncompressed original of a converted upload lives here (see
     // routes/uploads.ts) purely for a possible future "download original"
@@ -148,8 +183,8 @@ export async function buildApp() {
     // HEIC renditions below are internal too: they're served under the
     // original upload's URL, never their own.
     if (
-      request.raw.url.startsWith('/uploads/originals/') ||
-      request.raw.url.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
+      pathname.startsWith('/uploads/originals/') ||
+      pathname.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
     ) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') });
     }
@@ -169,7 +204,7 @@ export async function buildApp() {
     // straight through to @fastify/static below. GET only: the point is what
     // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
     if (request.method !== 'GET') return;
-    const requestedFile = request.raw.url.slice('/uploads/'.length).split('?')[0];
+    const requestedFile = pathname.slice('/uploads/'.length);
     const rendition = await resolveHeicRendition(uploadsDir, requestedFile);
     if (!rendition) return;
 
@@ -270,7 +305,7 @@ export async function buildApp() {
   // client-side route (or a stale reference to a since-rebuilt asset) — fall
   // back to that SPA's index.html so its router can take over.
   fastify.setNotFoundHandler((request, reply) => {
-    const url = request.raw.url ?? '';
+    const url = requestPathname(request.raw.url);
     if (adminServed && url.startsWith('/admin/')) {
       return reply.sendFile('index.html', adminDir);
     }

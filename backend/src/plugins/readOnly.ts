@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getT } from '../i18n/index.js';
+import { requestPathname } from '../utils/requestPath.js';
 
 // HTTP methods that write or delete data. OPTIONS is deliberately excluded —
 // @fastify/cors handles CORS preflight before this hook runs.
@@ -30,7 +31,13 @@ export default fp(async function readOnlyPlugin(fastify: FastifyInstance) {
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!MUTATING_METHODS.has(request.method)) return;
 
-    const url = request.raw.url ?? '';
+    // Normalized, not `request.raw.url`: the allow-list is prefix-based, so on
+    // the raw string `POST /api/auth/login/../../posts` matches the
+    // `/api/auth/login` prefix and is waved through, then routes to
+    // /api/posts — writing to a supposedly read-only instance. Normalizing
+    // also strips the query string, which the raw form left attached
+    // (`/api/auth/login?next=/` failed to match its own allow-list entry).
+    const url = requestPathname(request.raw.url);
     if (isAllowedMutatingRequest(url)) return;
 
     const t = getT(request);

@@ -4,13 +4,12 @@ import { pipeline } from 'stream/promises';
 import { randomUUID } from 'crypto';
 import { prisma } from '../../db.js';
 import { parseMediaAssetPath } from '../../types.js';
-import { getMediaProvider } from './registry.js';
-
 // Same uploads directory routes/uploads.ts writes into — a copied asset ends
 // up indistinguishable from a directly-uploaded one, which is the point: it
 // lets a cross-posted sibling in a group without the source album linked
 // still display the photo/video (see the module doc comment below).
-const uploadsDir = path.join(process.cwd(), 'uploads');
+import { uploadsDir } from '../../config.js';
+import { getMediaProvider } from './registry.js';
 
 // Thrown for expected, user-facing failures so the route can map it to a
 // translated message instead of leaking fetch/fs internals (mirrors

@@ -32,9 +32,19 @@ if [ "$EXISTS" != "1" ]; then
   docker exec famlin-db psql $DB_HOST_ARGS -d postgres -c "CREATE DATABASE $TEST_DB_NAME;"
 fi
 
+# Same idea for media: /app/uploads in the dev container is the persistent
+# famlin-uploads volume holding real family photos. The suite uploads fixture
+# files into that directory, and GET /api/admin/export zips all of it — on a
+# dev instance with a few hundred MB of photos the export tests take longer
+# than vitest's default timeout and fail. Point the run at a throwaway
+# directory inside the container instead (UPLOADS_DIR, see src/config.ts).
+TEST_UPLOADS_DIR=/tmp/famlin-test-uploads
+docker exec "$CONTAINER" rm -rf "$TEST_UPLOADS_DIR"
+
 docker exec \
   -e NODE_ENV=test \
   -e DATABASE_URL="$TEST_DATABASE_URL" \
   -e JWT_SECRET="$JWT_SECRET" \
+  -e UPLOADS_DIR="$TEST_UPLOADS_DIR" \
   -e PORT=3999 \
   "$CONTAINER" npm test -- "$@"

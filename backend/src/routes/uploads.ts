@@ -6,14 +6,13 @@ import { randomUUID } from 'crypto';
 import { createMediaToken } from '../plugins/auth.js';
 import { prisma } from '../db.js';
 import { getT } from '../i18n/index.js';
+import { uploadsDir } from '../config.js';
 import {
   isConvertibleImage,
   isPosterableVideo,
   generateUploadVariants,
   generateVideoPoster,
 } from '../services/uploadVariants.js';
-
-const uploadsDir = path.join(process.cwd(), 'uploads');
 
 const ALLOWED_EXTENSIONS = new Set([
   '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',

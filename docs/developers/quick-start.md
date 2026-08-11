@@ -77,7 +77,7 @@ This builds into `backend/dist/web`, which the dev compose overlay bind-mounts i
 
 > After changing `packages/api-client/src/`, rebuild it with `npm run build:api-client` (or rerun the root `npm install`) — the mobile app and the web app both consume the compiled `dist/`, not the TypeScript source.
 
-## 6. Test the mobile app
+## 6. Test the mobile app on a simulator or emulator
 
 If you have Node installed locally (and the backend is already running in Docker):
 
@@ -91,9 +91,34 @@ npm install
 npm run ios      # or npm run android
 ```
 
-Scan the QR code with the Camera app (iOS) or the Expo Go app (Android).
+`npm run ios` / `npm run android` are `expo run:ios` / `expo run:android`: they generate the native project (`mobile/ios`, `mobile/android` — both gitignored build output), compile it, install it on a booted simulator/emulator, and start Metro. The first run takes several minutes; later runs are incremental, and a JS-only change needs no rebuild at all — `npm start` and reload.
 
-> The backend server address is not hardcoded. At login the user enters the address themselves (for example `https://famlin.yourdomain.com`). For local development `http://localhost:3000` is used automatically if the field is left empty.
+**Famlin cannot run in Expo Go.** It uses `expo-dev-client` plus native modules Expo Go doesn't bundle (notifications, media library, secure store, video), so a native build is required; the QR code that `npm start` prints opens the app you built above, not Expo Go.
+
+Pick a target device with `--device` when more than one is available:
+
+```bash
+npx expo run:android --device Pixel_7          # an AVD name from `emulator -list-avds`
+npx expo run:ios --device "iPhone 17"          # a simulator name from `xcrun simctl list devices`
+```
+
+After changing native dependencies or anything in `app.config.js` (permissions, plugins, icons), regenerate the native project before rebuilding — a stale one silently keeps the old native config:
+
+```bash
+npx expo prebuild --clean       # add -p android / -p ios to limit it to one platform
+```
+
+Then point the app at your local backend on the first launch screen:
+
+| Where the app runs | Server address to enter |
+| --- | --- |
+| iOS simulator | `http://localhost:3000` |
+| Android emulator | `http://10.0.2.2:3000` — the emulator's alias for your host machine; `localhost` there is the emulator itself |
+| Physical device | `http://<your-machine-LAN-IP>:3000` (same Wi-Fi) |
+
+Plain `http://` works on both because debug builds allow cleartext traffic; release builds do not.
+
+> The backend server address is deliberately never hardcoded — every deployment has its own, so the user types it at login (for example `https://famlin.yourdomain.com`) and it is stored from then on. Setting `EXPO_PUBLIC_API_URL` in `mobile/.env` only preselects the API base URL for development; there is no implicit `localhost` fallback, so an unreachable server surfaces as an error instead of silently retargeting.
 >
 > SSO login is configured entirely on the server (issuer, client ID, scopes) — the mobile app and admin UI discover it automatically, no build-time client IDs needed.
 
