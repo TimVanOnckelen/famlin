@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.3](https://github.com/TimVanOnckelen/famlin/compare/v0.6.2...v0.6.3) (2026-08-11)
+
+
+### Features
+
+* address App Store review rejection (Sign in with Apple, account deletion, purpose strings, support page) ([c6bd9f4](https://github.com/TimVanOnckelen/famlin/commit/c6bd9f4d06196bc0c8da63b68487c5d6f70c9fb0))
+* address App Store review rejection (Sign in with Apple, account… ([52dae9d](https://github.com/TimVanOnckelen/famlin/commit/52dae9d1dc8561af4a35945166a329fb3da8e25a))
+
+
+### Bug Fixes
+
+* **backend:** optimized upload process for better performance ([fae7ef2](https://github.com/TimVanOnckelen/famlin/commit/fae7ef20ed07c647cf3004e0ed75b9e2a2f9cf27))
+* **security:** normalize request paths in auth guards, resolve high advisories ([ab5b088](https://github.com/TimVanOnckelen/famlin/commit/ab5b088222eab5285e033cc311cc56d99bf927c9))
+* serve legacy HEIC uploads as JPEG so the web app can render them ([8a676df](https://github.com/TimVanOnckelen/famlin/commit/8a676dfd81bf4ae96ebc58a89d015a44cf82f58e))
+* serve legacy HEIC uploads as JPEG so the web app can render them ([d2b9ecd](https://github.com/TimVanOnckelen/famlin/commit/d2b9ecd11bdb8411bac0b74a133e123c5917c729))
+
 ## [0.6.2](https://github.com/TimVanOnckelen/famlin/compare/v0.6.1...v0.6.2) (2026-07-25)
 
 
