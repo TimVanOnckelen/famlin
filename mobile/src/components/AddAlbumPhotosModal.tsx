@@ -53,7 +53,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
 
   const remainingPhotoSlots = MAX_ALBUM_PHOTOS - photoUrls.length;
 
-  const { pick, uploading } = usePickAndUploadMedia({
+  const { pick, uploading, progress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -136,6 +136,9 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
             {Array.from({ length: pendingCount }).map((_, i) => (
               <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
                 <ActivityIndicator size="small" color={colors.white} />
+                {typeof progress === 'number' && progress > 0 && (
+                  <Text style={styles.pendingProgressText}>{Math.round(progress * 100)}%</Text>
+                )}
               </View>
             ))}
             {photoUrls.length < MAX_ALBUM_PHOTOS && (
@@ -228,6 +231,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pendingProgressText: {
+    marginTop: 4,
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    color: colors.white,
   },
   photoImage: {
     width: '100%',
