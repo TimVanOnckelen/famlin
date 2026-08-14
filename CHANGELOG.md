@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.4](https://github.com/TimVanOnckelen/famlin/compare/v0.6.3...v0.6.4) (2026-08-14)
+
+
+### Performance Improvements
+
+* **mobile:** show upload progress on trip check-in and album photo pickers ([10f6a9f](https://github.com/TimVanOnckelen/famlin/commit/10f6a9f75c8a1e1a9aa684ff6c1a83cfaf766789))
+* **mobile:** speed up photo/video uploads and show real progress ([f6c0442](https://github.com/TimVanOnckelen/famlin/commit/f6c0442615ec41e87a325b17534f28c231552e26))
+
 ## [0.6.3](https://github.com/TimVanOnckelen/famlin/compare/v0.6.2...v0.6.3) (2026-08-11)
 
 
