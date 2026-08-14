@@ -1,9 +1,16 @@
+import type { AxiosProgressEvent } from 'axios';
 import { api } from './client';
 import { UPLOAD_TIMEOUT_MS } from '@famlin/api-client';
 
 export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from '@famlin/api-client';
 
-export async function uploadMedia(files: { uri: string; name: string; type: string }[]): Promise<string[]> {
+export async function uploadMedia(
+  files: { uri: string; name: string; type: string }[],
+  // Reports the fraction (0-1) of request bytes sent so far — lets callers
+  // show real upload progress instead of an indefinite spinner, which is
+  // most of what makes a several-second upload feel like it's hanging.
+  onProgress?: (fraction: number) => void
+): Promise<string[]> {
   const formData = new FormData();
 
   files.forEach((file, index) => {
@@ -31,6 +38,11 @@ export async function uploadMedia(files: { uri: string; name: string; type: stri
     // alone a video — on mobile data routinely needs far longer, and the
     // aborted request surfaces to the user as an opaque "Network Error".
     timeout: UPLOAD_TIMEOUT_MS,
+    onUploadProgress: onProgress
+      ? (event: AxiosProgressEvent) => {
+          if (event.total) onProgress(event.loaded / event.total);
+        }
+      : undefined,
   });
 
   return response.data.urls;

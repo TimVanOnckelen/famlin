@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -21,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { MediaThumbnail } from '@/components/MediaThumbnail';
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
 import { Avatar } from '@/components/Avatar';
 import { PostLocationPreview } from '@/components/PostLocationPreview';
 import { ReactionPicker } from '@/components/ReactionPicker';
@@ -276,7 +276,7 @@ export function PostDetailScreen() {
   // removes exactly those and leaves earlier picks alone.
   const attachmentBatchSize = useRef(0);
 
-  const { pick: pickAttachmentMedia, uploading: attachmentUploading } = usePickAndUploadMedia({
+  const { pick: pickAttachmentMedia, uploading: attachmentUploading, progress: attachmentUploadProgress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -323,7 +323,7 @@ export function PostDetailScreen() {
   // from the server, the saved list just stops referring to it.
   const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length;
 
-  const { pick: pickEditPostMedia, uploading: editPostUploading } = usePickAndUploadMedia({
+  const { pick: pickEditPostMedia, uploading: editPostUploading, progress: editPostUploadProgress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -540,9 +540,7 @@ export function PostDetailScreen() {
                       {editPostPendingAssets.map((asset, index) => (
                         <View style={styles.attachmentPreview} key={`pending-${index}`}>
                           <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
-                          <View style={styles.attachmentUploadingOverlay}>
-                            <ActivityIndicator size="small" color={colors.white} />
-                          </View>
+                          <UploadProgressOverlay progress={editPostUploadProgress} style={styles.attachmentUploadingOverlay} />
                         </View>
                       ))}
                     </View>
@@ -731,9 +729,7 @@ export function PostDetailScreen() {
               <View style={styles.attachmentPreview} key={`${attachment.uri}-${index}`}>
                 <MediaThumbnail url={attachment.uri} style={styles.attachmentPreviewImage} />
                 {!attachment.uploadedUrl && (
-                  <View style={styles.attachmentUploadingOverlay}>
-                    <ActivityIndicator size="small" color={colors.white} />
-                  </View>
+                  <UploadProgressOverlay progress={attachmentUploadProgress} style={styles.attachmentUploadingOverlay} />
                 )}
                 <TouchableOpacity
                   style={styles.attachmentRemoveButton}
@@ -894,7 +890,7 @@ function CommentBody({
 
   const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length;
 
-  const { pick: pickEditMedia, uploading: editUploading } = usePickAndUploadMedia({
+  const { pick: pickEditMedia, uploading: editUploading, progress: editUploadProgress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -994,9 +990,7 @@ function CommentBody({
             {editPendingAttachments.map((asset, index) => (
               <View style={styles.attachmentPreview} key={`pending-${index}`}>
                 <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
-                <View style={styles.attachmentUploadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
-                </View>
+                <UploadProgressOverlay progress={editUploadProgress} style={styles.attachmentUploadingOverlay} />
               </View>
             ))}
           </View>

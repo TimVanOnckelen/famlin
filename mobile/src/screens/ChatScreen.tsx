@@ -39,6 +39,7 @@ import { isVideoUrl } from '@/utils/media';
 import { useAuthStore } from '@/stores/authStore';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
 
 // V1 is polling, not a socket — chat should still feel snappier than the
 // 30s notification poll, so refetch more often, but only while this screen
@@ -119,7 +120,7 @@ export function ChatScreen() {
   });
 
   // Same pick-then-upload flow as PostDetailScreen's comment attachment.
-  const { pick: pickAttachmentMedia, uploading: attachmentUploading } = usePickAndUploadMedia({
+  const { pick: pickAttachmentMedia, uploading: attachmentUploading, progress: attachmentUploadProgress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.8,
@@ -273,9 +274,7 @@ export function ChatScreen() {
             <View style={styles.attachmentPreview}>
               <MediaThumbnail url={attachment.uri} style={styles.attachmentPreviewImage} />
               {attachmentUploading && (
-                <View style={styles.attachmentUploadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
-                </View>
+                <UploadProgressOverlay progress={attachmentUploadProgress} style={styles.attachmentUploadingOverlay} />
               )}
               <TouchableOpacity
                 style={styles.attachmentRemoveButton}

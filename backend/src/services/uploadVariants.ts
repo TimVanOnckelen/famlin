@@ -54,6 +54,39 @@ export async function generateUploadVariants(
     .toFile(thumbnailPath);
 }
 
+// Upload-route variant of the pair above: starts both resize pipelines from
+// the same decoded source, but only waits for the display copy — the one
+// URL the route actually returns to the client. The thumbnail's `.toFile()`
+// keeps running after this resolves; the returned promise lets the caller
+// observe/log its outcome without blocking the response on it. A failed or
+// still-pending thumbnail just means `getUploadUrl(path, 'thumbnail')` 404s
+// until it lands, which every client already falls back to the display copy
+// for (MediaThumbnail.tsx's `fallbackUrl` prop) — the same fallback that
+// already covers pre-thumbnail-feature uploads.
+export function generateDisplayVariant(
+  originalPath: string,
+  displayPath: string,
+  thumbnailPath: string
+): { display: Promise<void>; thumbnail: Promise<void> } {
+  const image = sharp(originalPath).rotate();
+
+  const thumbnail = image
+    .clone()
+    .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_WIDTH, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toFile(thumbnailPath)
+    .then(() => {});
+
+  const display = image
+    .clone()
+    .resize({ width: DISPLAY_WIDTH, height: DISPLAY_WIDTH, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toFile(displayPath)
+    .then(() => {});
+
+  return { display, thumbnail };
+}
+
 // Extracts a poster frame from an uploaded video into the same
 // `<uuid>-thumbnail.jpg` path convention images use, so clients can render
 // video tiles as plain images (mobile falls back to mounting a real video
