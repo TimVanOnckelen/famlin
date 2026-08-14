@@ -26,6 +26,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
 import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
 import { TravelerPickerModal } from '@/components/TravelerPickerModal';
@@ -284,7 +285,7 @@ export function NewPostScreen() {
     setPollOptions((prev) => prev.map((option, i) => (i === index ? text : option)));
   }
 
-  const { pick: pickDeviceMedia, uploading } = usePickAndUploadMedia({
+  const { pick: pickDeviceMedia, uploading, progress: uploadProgress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -757,9 +758,7 @@ export function NewPostScreen() {
                   ) : (
                     <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
                   )}
-                  <View style={styles.uploadingOverlay}>
-                    <ActivityIndicator size="small" color={colors.white} />
-                  </View>
+                  <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
                 </View>
               ))}
             </ScrollView>

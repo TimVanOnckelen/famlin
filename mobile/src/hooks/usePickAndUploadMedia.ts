@@ -1,9 +1,37 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useTranslation } from 'react-i18next';
 
 import { uploadMedia } from '@/api/uploads';
+
+// The backend re-encodes every upload down to a 1920px display copy anyway
+// (see backend/src/services/uploadVariants.ts) — a modern phone photo is
+// routinely 12MP+ (several MB, often HEIC on iOS), so uploading it at full
+// resolution just spends time on the wire for detail nobody will see. This
+// cap is well above the backend's own display size so quality headroom
+// (cropping, a future higher-res display target) isn't lost, while still
+// cutting the true outliers (48MP sensors) down to a reasonable upload size.
+const MAX_UPLOAD_DIMENSION = 2560;
+
+// Downscales an image asset in place on-device before it's uploaded. Returns
+// the original uri untouched when the asset is already small enough — most
+// avatar-style picks and older/lower-res photos never hit the manipulator at
+// all. Resizing also re-encodes to JPEG, which is a deliberate side effect
+// for HEIC sources: it avoids the backend's synchronous HEIC decode entirely
+// for anything picked through this hook going forward.
+async function resizeForUpload(uri: string, width?: number, height?: number): Promise<{ uri: string; resized: boolean }> {
+  if (!width || !height || Math.max(width, height) <= MAX_UPLOAD_DIMENSION) {
+    return { uri, resized: false };
+  }
+  const resize = width >= height ? { width: MAX_UPLOAD_DIMENSION } : { height: MAX_UPLOAD_DIMENSION };
+  const manipulated = await ImageManipulator.manipulateAsync(uri, [{ resize }], {
+    compress: 0.85,
+    format: ImageManipulator.SaveFormat.JPEG,
+  });
+  return { uri: manipulated.uri, resized: true };
+}
 
 export interface PickedMediaAsset {
   uri: string;
@@ -58,6 +86,11 @@ export function usePickAndUploadMedia({
 }: UsePickAndUploadMediaOptions) {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
+  // Fraction (0-1) of the in-flight batch upload's bytes sent so far — null
+  // until the request actually starts streaming (see uploadMedia's
+  // onProgress). One combined figure for the whole batch, not per-file,
+  // since the client sends every asset as one multipart request.
+  const [progress, setProgress] = useState<number | null>(null);
 
   async function pick(): Promise<PickAndUploadResult | null> {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -69,15 +102,23 @@ export function usePickAndUploadMedia({
     const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
     if (result.canceled) return null;
 
-    const files = result.assets.map((asset, index) => {
-      const isVideo = asset.type === 'video';
-      const indexSuffix = includeIndexInName ? `-${index}` : '';
-      return {
-        uri: asset.uri,
-        name: asset.fileName || `${isVideo ? 'video' : fileNamePrefix}${indexSuffix}.${isVideo ? 'mp4' : 'jpg'}`,
-        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
-      };
-    });
+    const files = await Promise.all(
+      result.assets.map(async (asset, index) => {
+        const isVideo = asset.type === 'video';
+        const indexSuffix = includeIndexInName ? `-${index}` : '';
+        if (isVideo) {
+          return {
+            uri: asset.uri,
+            name: asset.fileName || `video${indexSuffix}.mp4`,
+            type: asset.mimeType || 'video/mp4',
+          };
+        }
+        const { uri, resized } = await resizeForUpload(asset.uri, asset.width, asset.height);
+        return resized
+          ? { uri, name: `${fileNamePrefix}${indexSuffix}.jpg`, type: 'image/jpeg' }
+          : { uri, name: asset.fileName || `${fileNamePrefix}${indexSuffix}.jpg`, type: asset.mimeType || 'image/jpeg' };
+      })
+    );
 
     const assets: PickedMediaAsset[] = files.map((file) => ({
       uri: file.uri,
@@ -87,7 +128,8 @@ export function usePickAndUploadMedia({
 
     try {
       setUploading(true);
-      const urls = await uploadMedia(files);
+      setProgress(0);
+      const urls = await uploadMedia(files, setProgress);
       return { assets, urls };
     } catch (err: any) {
       onError?.(err);
@@ -95,8 +137,9 @@ export function usePickAndUploadMedia({
       return null;
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   }
 
-  return { pick, uploading };
+  return { pick, uploading, progress };
 }

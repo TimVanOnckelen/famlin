@@ -10,7 +10,7 @@ import { uploadsDir } from '../config.js';
 import {
   isConvertibleImage,
   isPosterableVideo,
-  generateUploadVariants,
+  generateDisplayVariant,
   generateVideoPoster,
 } from '../services/uploadVariants.js';
 
@@ -64,15 +64,27 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
               const displayPath = path.join(uploadsDir, displayFilename);
               const thumbnailPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
 
+              // Only the display copy blocks the response — it's the one URL
+              // this route actually returns. The 400px thumbnail keeps
+              // generating after we've moved on (not tracked in writtenPaths,
+              // so a later part's failure in this same batch won't clean it
+              // up — an accepted, harmless orphan-file trade-off for not
+              // serializing every photo's full resize cost into one request).
+              const { display, thumbnail } = generateDisplayVariant(originalPath, displayPath, thumbnailPath);
+              thumbnail.catch((err) => request.log.warn({ err, thumbnailPath }, 'background thumbnail generation failed'));
+
               try {
-                await generateUploadVariants(originalPath, displayPath, thumbnailPath);
-                writtenPaths.push(displayPath, thumbnailPath);
+                await display;
+                writtenPaths.push(displayPath);
                 uploadedUrls.push(`/uploads/${displayFilename}`);
               } catch {
                 // sharp couldn't decode this file (corrupt/unsupported) — fall
                 // back to serving the raw upload as-is, exactly like before
                 // this feature existed, instead of stranding it unreachably
-                // in originals/.
+                // in originals/. Wait for the background thumbnail attempt
+                // (almost certainly failing for the same reason) first, so it
+                // can't write a stray file after originalPath is renamed away.
+                await thumbnail.catch(() => {});
                 await fs.unlink(displayPath).catch(() => {});
                 await fs.unlink(thumbnailPath).catch(() => {});
                 const fallbackFilename = `${uuid}${ext}`;
@@ -95,18 +107,19 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
 
               uploadedUrls.push(`/uploads/${filename}`);
 
-              // Best-effort poster frame for video grid/list tiles. A missing
-              // poster (ffmpeg absent, undecodable video) just means clients
-              // fall back to rendering the video itself, as before this
-              // feature existed — never a failed upload.
+              // Best-effort poster frame for video grid/list tiles. Not
+              // awaited — ffmpeg (up to a 30s timeout) would otherwise block
+              // the response for every video in the batch, and the poster
+              // doesn't affect the URL this route returns either way. A
+              // missing poster (ffmpeg absent, undecodable video, or just
+              // not finished yet) means clients fall back to rendering the
+              // video itself for that tile, as before this feature existed.
               if (isPosterableVideo(ext)) {
                 const posterPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
-                try {
-                  await generateVideoPoster(filepath, posterPath);
-                  writtenPaths.push(posterPath);
-                } catch {
-                  await fs.unlink(posterPath).catch(() => {});
-                }
+                generateVideoPoster(filepath, posterPath).catch((err) => {
+                  request.log.warn({ err, posterPath }, 'background video poster generation failed');
+                  fs.unlink(posterPath).catch(() => {});
+                });
               }
             }
           }
