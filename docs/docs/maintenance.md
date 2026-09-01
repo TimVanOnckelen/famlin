@@ -38,6 +38,37 @@ If you pinned `FAMLIN_VERSION` in `.env` (see below), bump it before pulling so 
 
 If you're [building from source](#building-from-source-instead) instead of running the pre-built image, update with `git pull && docker compose up -d --build` instead.
 
+## Versioning and compatibility
+
+Famlin follows [semantic versioning](https://semver.org/) from **1.0** onward, so the version number tells you what an
+update asks of you:
+
+| Bump | Example | What it means for you |
+| --- | --- | --- |
+| **Patch** | `1.0.0` → `1.0.1` | Bug fixes only. Pull and restart. |
+| **Minor** | `1.0.0` → `1.1.0` | New features, backwards compatible. Pull and restart. |
+| **Major** | `1.x` → `2.0.0` | Contains a breaking change. Read the release notes before updating — they state exactly what you need to do. |
+
+A "breaking change" is anything that needs action from you on upgrade: an incompatible API or response change, a newly
+required environment variable, or a changed default that alters behaviour. Every one of them is marked in the commit
+history and surfaced in a **⚠️ Breaking changes** section of the [release notes](https://github.com/timvanonckelen/famlin/releases),
+so a major release never lands without telling you why.
+
+What the 1.0 guarantee covers:
+
+- The **member-facing REST API** under `/api` (see the [API reference](/developers/api-reference/famlin-api)) — what personal access
+  tokens and your own integrations talk to.
+- The **database schema**, which is migrated forward automatically on container start. Downgrading to an older image
+  after a migration has run is not supported — restore a [backup](#backups) instead.
+- The **deployment surface**: the startup environment variables, the compose services, and the volume layout.
+
+Admin-only endpoints under `/api/admin` are internal to the bundled admin UI and are not covered — they can change in a
+minor release.
+
+Mobile app builds and the server are versioned together, and the server advertises the oldest app build it still accepts
+(`minAppVersion` on `GET /api/auth/server-info`). An app older than that shows a blocking "update required" screen rather
+than failing in confusing ways, so raising it is itself treated as a breaking change.
+
 ## Staying up to date
 
 The admin dashboard (`/admin`) checks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the running server's version and shows a banner — "A new version is available" with a link to that release's notes — whenever a newer version has shipped than the one you're running. No configuration needed; it's a one-shot, fail-soft check (no notice at all if GitHub is unreachable or rate-limited).
