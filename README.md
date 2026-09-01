@@ -13,7 +13,7 @@
 
 > 🤖 **AI-Assisted Project.** This codebase is developed with the assistance of AI. Code generation, architecture design, and development workflows leverage AI tooling.
 
-> ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
+> 🎉 **Famlin 1.0.** The REST API, data model, and self-hosting setup are stable. From 1.0 onward Famlin follows [semantic versioning](https://semver.org/): breaking changes only ship in a major release and are always called out in the [release notes](https://github.com/TimVanOnckelen/famlin/releases). It's still a small project — keep backups of your Postgres volume and uploads.
 
 Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend, an Expo React Native mobile app, and a desktop-focused web app.
 
