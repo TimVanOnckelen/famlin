@@ -790,12 +790,21 @@ describe('TRIP posts', () => {
     it('notifies a member of both sibling groups exactly once per check-in', async () => {
       const author = await createUser();
       const both = await createUser();
+      // Member of groupB ONLY. The subscriber walks the check-in's targets in
+      // order and assigns each recipient to the first target group they belong
+      // to, so `bOnly` is only notified while processing the LAST target —
+      // making their row the signal that the subscriber has finished. Without
+      // it, polling for `both`'s row could pass in the window between a
+      // (buggy) first and second notify and hide the very regression this
+      // test exists to catch. Mirrors cross-posting.test.ts's recipientBOnly.
+      const bOnly = await createUser();
       const groupA = await createGroupWithMember(author);
       const groupB = await createGroupWithMember(author);
       await addMember(groupA.id, both.id);
       await addMember(groupB.id, both.id);
+      await addMember(groupB.id, bOnly.id);
       await createCrossTrip(author, [groupA.id, groupB.id]);
-      const { a } = await getSiblings(groupA.id, groupB.id);
+      const { a, b } = await getSiblings(groupA.id, groupB.id);
 
       const res = await app.inject({
         method: 'POST',
@@ -805,8 +814,19 @@ describe('TRIP posts', () => {
       });
       expect(res.statusCode).toBe(200);
 
+      // The comment.created subscriber runs fire-and-forget (see
+      // src/events.ts) — poll rather than assert immediately.
+      await vi.waitFor(async () => {
+        const rows = await prisma.notification.findMany({ where: { userId: bOnly.id, type: 'trip_checkin' } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].relatedPostId).toBe(b.id);
+      });
+
+      // Target B has now been processed, so this count is final: a member of
+      // both groups is notified once, against the FIRST sibling (A).
       const notifications = await prisma.notification.findMany({ where: { userId: both.id, type: 'trip_checkin' } });
       expect(notifications).toHaveLength(1);
+      expect(notifications[0].relatedPostId).toBe(a.id);
       expect(notifications[0].message).toContain('Dedupe town');
     });
 
