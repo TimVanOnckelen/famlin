@@ -1,0 +1,121 @@
+version: 2
+
+# Famlin installs in five independent trees, so each needs its own entry:
+# the root npm workspace (web/ + packages/api-client), backend/,
+# backend/admin/, mobile/, and docs/. See CLAUDE.md > Commands.
+#
+# Updates are grouped so one PR carries a whole ecosystem's patch/minor bumps
+# instead of one PR per package — the lockfiles are large and CI runs a full
+# build per PR. Majors stay ungrouped and arrive as their own PR, since those
+# are the ones that need a human to read the changelog.
+
+updates:
+  # ---------------------------------------------------------------- root
+  # npm workspace: web/ (member-facing app) + packages/api-client (shared
+  # data layer consumed by web, admin and mobile).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    groups:
+      web-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  # ------------------------------------------------------------- backend
+  # The only tree with genuinely internet-facing runtime dependencies
+  # (fastify, sharp, nodemailer, prisma, jose), so it gets the highest PR
+  # budget — these are the bumps actually worth shipping promptly.
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels: [dependencies, backend]
+    groups:
+      fastify:
+        patterns: ['fastify', '@fastify/*', 'fastify-plugin']
+      prisma:
+        patterns: ['prisma', '@prisma/*']
+      backend-minor-patch:
+        patterns: ['*']
+        exclude-patterns: ['fastify', '@fastify/*', 'fastify-plugin', 'prisma', '@prisma/*']
+        update-types: [minor, patch]
+
+  # --------------------------------------------------------- backend/admin
+  - package-ecosystem: npm
+    directory: /backend/admin
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, admin]
+    groups:
+      admin-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  # -------------------------------------------------------------- mobile
+  # Expo pins its native modules to the exact versions in
+  # expo/bundledNativeModules.json. Bumping one off that set builds it from
+  # source against precompiled frameworks, and the mixed linkage crashes the
+  # released app at launch ("Library not loaded") while dev builds, tsc and
+  # Jest all stay green — the react-native-worklets 0.10.2 incident. So the
+  # whole Expo/React Native surface is ignored here and must move via
+  # `npx expo install` instead (CI enforces this with `expo install --check`).
+  # Dependabot is left to propose only the plain-JS dependencies.
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, mobile]
+    ignore:
+      - dependency-name: expo
+      - dependency-name: expo-*
+      - dependency-name: '@expo/*'
+      - dependency-name: '@expo-google-fonts/*'
+      - dependency-name: react-native
+      - dependency-name: react-native-*
+      - dependency-name: '@react-native-async-storage/*'
+      - dependency-name: react
+      - dependency-name: react-test-renderer
+      - dependency-name: jest-expo
+      - dependency-name: babel-preset-expo
+      - dependency-name: eslint-config-expo
+      - dependency-name: typescript
+      - dependency-name: '@types/react'
+    groups:
+      mobile-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  # ---------------------------------------------------------------- docs
+  # Build-time only — the Docusaurus site is statically built and deployed to
+  # GitHub Pages, never served by the backend, so nothing here reaches a
+  # running deployment. Kept low-noise on purpose.
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels: [dependencies, docs]
+    groups:
+      docusaurus:
+        patterns: ['@docusaurus/*', 'docusaurus-*']
+      docs-minor-patch:
+        patterns: ['*']
+        exclude-patterns: ['@docusaurus/*', 'docusaurus-*']
+        update-types: [minor, patch]
+
+  # ------------------------------------------------------- github-actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci]
+    groups:
+      actions:
+        patterns: ['*']
