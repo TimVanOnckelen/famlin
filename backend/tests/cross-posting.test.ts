@@ -246,20 +246,30 @@ describe('cross-posting', () => {
 
     const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, content: 'notify once' } });
 
+    // Every recipient assertion polls together, because the notifications
+    // subscriber walks event.posts sequentially and awaits one notifyUsers
+    // per target group: groupA's recipients (recipientBoth, recipientAOnly)
+    // commit in the first iteration, groupB's (recipientBOnly) in the
+    // second. Polling on recipientBoth alone and then reading the others
+    // bare raced the tail of that same dispatch, and failed in CI on
+    // recipientBOnly's row not having landed yet.
     await vi.waitFor(async () => {
       const rows = await prisma.notification.findMany({ where: { userId: recipientBoth.id, type: 'new_post' } });
       expect(rows).toHaveLength(1);
       // Assigned to the FIRST event-post (groupA's, targets order) whose
       // group they belong to — not notified again for groupB.
       expect(rows[0].relatedPostId).toBe(postA.id);
+
+      const aOnlyRows = await prisma.notification.findMany({ where: { userId: recipientAOnly.id, type: 'new_post' } });
+      expect(aOnlyRows).toHaveLength(1);
+
+      const bOnlyRows = await prisma.notification.findMany({ where: { userId: recipientBOnly.id, type: 'new_post' } });
+      expect(bOnlyRows).toHaveLength(1);
     });
 
-    const aOnlyRows = await prisma.notification.findMany({ where: { userId: recipientAOnly.id, type: 'new_post' } });
-    expect(aOnlyRows).toHaveLength(1);
-
-    const bOnlyRows = await prisma.notification.findMany({ where: { userId: recipientBOnly.id, type: 'new_post' } });
-    expect(bOnlyRows).toHaveLength(1);
-
+    // Safe to read bare: once every recipient row above has landed, the
+    // dispatch for this event has finished, so the author having no row is a
+    // settled outcome rather than a not-yet.
     const authorRows = await prisma.notification.findMany({ where: { userId: author.id, type: 'new_post' } });
     expect(authorRows).toHaveLength(0);
   });
