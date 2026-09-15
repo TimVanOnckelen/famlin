@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.6](https://github.com/TimVanOnckelen/famlin/compare/v0.6.5...v0.6.6) (2026-09-15)
+
+
+### Bug Fixes
+
+* **mobile:** bump Expo SDK 57 deps to the versions the SDK expects ([a97e846](https://github.com/TimVanOnckelen/famlin/commit/a97e8466c2c72efe93eb4d378d754db1f9b8adf9))
+
 ## [0.6.5](https://github.com/TimVanOnckelen/famlin/compare/v0.6.4...v0.6.5) (2026-09-15)
 
 
