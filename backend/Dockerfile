@@ -33,8 +33,18 @@ RUN npx prisma generate
 # failing the build, which breaks the shipped bundle at runtime in the
 # browser ("Failed to resolve module specifier axios") rather than at build
 # time. Give it its own node_modules so those resolve locally.
+#
+# --legacy-peer-deps is load-bearing, not cargo cult: with no lockfile this
+# install re-resolves from the registry every build, and --omit=dev only omits
+# dev dependencies from *installation* — arborist still builds them into the
+# ideal tree and walks their peer graphs. vitest 4.1.11's peers crash npm
+# 10.9.x there ("Cannot read properties of null (reading 'edgesOut')"), which
+# turned a previously-green build red with no code change. Skipping peer
+# resolution is the right semantics anyway: this stage only needs the runtime
+# deps admin's Vite build resolves against, and the package's peerDependencies
+# already duplicate its dependencies.
 COPY packages /packages
-RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund
+RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
 # Copy source and build (backend + admin UI -> dist/, dist/admin)
 COPY backend/ ./
