@@ -15,6 +15,7 @@ async function buildReadOnlyApp(): Promise<FastifyInstance> {
   fastify.post('/api/auth/login', async () => ({ ok: true }));
   fastify.post('/api/auth/oidc', async () => ({ ok: true }));
   fastify.post('/api/auth/oidc/exchange', async () => ({ ok: true }));
+  fastify.post('/api/auth/apple', async () => ({ ok: true }));
   fastify.post('/api/auth/setup', async () => ({ ok: true }));
   fastify.get('/api/auth/server-info', async () => ({ readOnly: true }));
   fastify.post('/api/posts', async () => ({ ok: true }));
@@ -77,6 +78,11 @@ describe('read-only mode', () => {
 
   it('allows POST /api/auth/oidc/exchange', async () => {
     const res = await app.inject({ method: 'POST', url: '/api/auth/oidc/exchange' });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('allows POST /api/auth/apple', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/auth/apple' });
     expect(res.statusCode).toBe(200);
   });
 

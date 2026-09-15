@@ -216,6 +216,15 @@ JWT_SECRET=your-jwt-secret POSTGRES_PASSWORD=your-db-password \
 
 Log in with `admin@example.com` / `test123456` or `test@example.com` / `test123456` to browse the sample family.
 
+:::warning Don't hand the demo instance to an app store reviewer
+Read-only mode blocks every mutation except the login endpoints, account
+deletion (`DELETE /api/auth/me`) included — so on the demo a reviewer can't
+post, comment, or delete their account, which reads as both an incomplete app
+and a missing account-deletion flow. Give App Review a normal, writable
+instance and a **non-admin** account (`admin@example.com` is the seed's only
+admin, and the last remaining admin deliberately can't delete itself).
+:::
+
 ### Deploy on a free Google Cloud VM
 
 The cheapest always-free option is a Compute Engine `e2-micro` instance in `us-central1`, `us-east1`, or `us-west1`:

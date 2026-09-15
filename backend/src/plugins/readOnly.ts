@@ -12,6 +12,11 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const ALLOWED_MUTATING_PREFIXES = [
   '/api/auth/login',
   '/api/auth/oidc',
+  // Sign in with Apple is a login endpoint like the two above, not a
+  // mutation a visitor can abuse. It has to stay reachable here because the
+  // demo instance is what App Review signs into, and guideline 4.8 requires
+  // the Apple option to actually work wherever the SSO one does.
+  '/api/auth/apple',
   '/api/auth/setup',
 ];
 
