@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.5](https://github.com/TimVanOnckelen/famlin/compare/v0.6.4...v0.6.5) (2026-09-15)
+
+
+### Bug Fixes
+
+* allow Sign in with Apple on read-only demo instances ([ee6848e](https://github.com/TimVanOnckelen/famlin/commit/ee6848e4ef6a340b3840b535a220635946922e0e))
+* **deps:** patch known vulnerabilities in runtime dependencies ([b3710fc](https://github.com/TimVanOnckelen/famlin/commit/b3710fc0cf7e4082fce55029fac9c09cf3713da0))
+* **docker:** unbreak the api-client install in the image build ([746eef6](https://github.com/TimVanOnckelen/famlin/commit/746eef62ce27610fb26947eada02ebc6b7bb871f))
+* **mobile:** realign Expo dependencies with the SDK 57 bundled set ([5f17e43](https://github.com/TimVanOnckelen/famlin/commit/5f17e43b144776556f040e1de7e84352d5727827))
+
 ## [0.6.4](https://github.com/TimVanOnckelen/famlin/compare/v0.6.3...v0.6.4) (2026-08-14)
 
 
