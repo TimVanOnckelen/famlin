@@ -60,7 +60,7 @@
     "tsx": "^4.22.4",
     "typescript": "^5.5.2",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
