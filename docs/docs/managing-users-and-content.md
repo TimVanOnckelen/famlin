@@ -29,6 +29,12 @@ The **Groups** page is a two-pane view: pick a group on the left, manage it on t
 - **Add an existing user to the group** — pick them from the dropdown next to **Add member** in the detail pane (the same action as "manage group membership" on the Users page).
 - **Add a new member to the group** — click **Add member** in the detail pane to open the same modal as on the Users page, preselected to this group; see [Inviting family members](./inviting-family) for the invite flow it defaults to.
 - **Remove a member** — the ✕ icon on their row. Removing someone from a group does **not** delete their existing posts/comments in that group — those stay visible to the remaining members (a deliberate choice, not a bug).
+- **Family Circles** — a **Circles** section in the detail pane, just under the member list. A circle is a smaller audience *inside* the group ("Grandparents", "Cousins", "Adults only"), so a family doesn't have to split into separate groups to share with part of it.
+  - **Create a circle** with a name and optional description, then add members from the group's own member list — only people already in the group can be added, since a circle narrows the group rather than granting access to it.
+  - **Members choose the audience when posting**: the composer offers "Everyone" or any circle they belong to. A circle post is invisible to everyone else in the family — feed, search, photos, comments, notifications, and the photo file itself.
+  - **Circles are private, including from you.** Members outside a circle can't see that it exists. And *you* can only read a circle's content if you're a member of it — circle posts don't appear on the Content page unless you're in the circle. This is deliberate: an admin flag shouldn't be a key to every private conversation in the family. The trade-off is that you can't moderate content in a circle you're not in; if you need to, add yourself to the circle (its members will see you there).
+  - **Deleting a circle permanently deletes its posts**, along with their comments, photos and reactions. There is no restore, and no option to move the content back to the whole family — silently widening an audience is exactly what circles exist to prevent. The confirmation tells you how many posts will be destroyed; if you're not in the circle, that count is all you'll be able to see of them.
+  - **Members can leave a circle themselves** from the app. Leaving a circle never removes them from the family group — they just stop seeing that circle's content. Only an admin can add them back.
 - **Invites** — further down the same page (status, copy link, revoke); see [Inviting family members](./inviting-family) for that flow.
 
 ## Content moderation
@@ -39,6 +45,7 @@ The **Content** page gives admins cross-group visibility into posts and comments
 - The posts tab also shows each post's comment/like counts and marks milestone posts; the comments tab shows a snippet of the post each comment was left on.
 - **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
 - **Resend push notification** (bell icon, posts only) re-delivers a post's push notification to the group — useful if a member's device was offline or missed it the first time. It only resends the push itself; it doesn't send another email or add a duplicate entry to anyone's in-app notification history.
+- **Content in circles you're not in isn't listed here.** Family Circles are a real privacy boundary that applies to admins too, so posts shared with a circle you don't belong to are excluded from both tabs — see the Circles bullet under [Groups](#groups) above.
 - **Cross-posted content is moderated per group.** When a member shares a post with several of their groups at once, each group gets its own independent copy. Deleting one group's copy from the Content page only removes that copy — it doesn't touch the copies in the post's other groups.
 
 There's no bulk delete action.
@@ -51,7 +58,7 @@ The **Push notification log** page lists every push-notification send attempt �
 
 The **Server settings** page's general section has a **Data export** card with a single **Download export** button. It downloads a zip containing:
 
-- All posts, comments, reactions, and favorites, across every group.
+- All posts, comments, reactions, and favorites, across every group — **including posts shared with circles you're not a member of**. This is the one place circle privacy doesn't apply, because a backup that silently left content out wouldn't be a usable backup. Treat the export file accordingly.
 - All chat messages.
 - The member list (names, emails, avatars, admin status) and group membership.
 - Every uploaded photo and video, including the original, unresized files.

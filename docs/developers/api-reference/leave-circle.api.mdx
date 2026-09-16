@@ -1,0 +1,77 @@
+---
+id: leave-circle
+title: "Leave a circle"
+description: "Removes you from the circle. This never removes you from the family"
+sidebar_label: "Leave a circle"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVlFvGzcM/iuEXpoEV7sb+mQMA9ItwzpkWJGkKIrY6NF3tE+tjrqKOjs3w8B+xH7hfslA6ZK4dbenPW178lmiJPIj+X3cGd9RwGg9v6zNzDjCDX1nQ+XIFCbiWszs1uQFMYvC1CRVsJ0eMDNzRa3fkMDge1gF30JsCKpkPYGbxgowbShA+JLdClvrhjmvg+87WFJjuQYb4Y/ffk+GYtvODSDRdyBEltcQG4zj/U8EKs+ROBaAcc6eKwLkGjyDvjmA9GGFFRVguXJ9ree7xkef3WiwTl68vrqElQ+TOc/5lZeYd9EFwnqAFmsCywdxgUQcYNtQIF0dAAMVaV+wpTlvcQBFUZ9DyLElVNPFAbr0xsaKXTqC6MFGUXzQsuX1nFtqlxRkAlf03qc1sALIgHVrGbBS6GcwmjW2020ht3oqFDa2UncVDYLaBkrW4NkNBfiQ3Fz6nmsMA2x972poCRnYx8byejJnU5gOA7YUKWjud4axJTMzOfqXtSmM1dR3GBtTmEAfexuoNrMYeiqMVA21aGY7E4dOz0kMltdmv1+osXSehUT3v372TH8+Lai3vgdHq3gAuCnMmGg1x65ztkoFO30vemZ3/KZfvqcqaihByzva/KL0VUUiB4ZL7x2hBk132HaOchj7fWGijfrXXI+H9ntdff7sq2Onf7YiltdaaBt0ti6A7joFJWEeaOM/UA1VoJo4WnT/XEQUgg/HYH/epj/2LfJTrWhcOq3WgCwOI9WwsZiwLs+rirr49BJ53eOaSmgIawpwUhKX05JdeToxCsFjxm/H9xePaF2khXusnh9jdUXi+1CRlhystBT/E2jsC9NSbLxybE2OIqVGi42ZmSl2dpprXaa7+z7bT8cWn7Zqq81935F9cGZmmhg7mU2nK2yd5clYwJPKt0cRv1Xi8VuGH5It1NQ5P7QKubalUNUHG4d0+ZIwUDjv1bXbxeH2taYhI31o9AC3OmRGBkjNlYyOnDmHjoJ4RgeYWgui/0AMJ2WO5F2H8d1kMikLbZmUlpGAt7QE7LpT8GHOCEIiym4/vbnJolK++uX6BhKc2Mdm6vzacjmBFz42StMgxPGBqmGLw2zOpUbhg/0VM7G+SF7DN8mpb0ulRM2e5ZVPsY6pHZE8f/XSFEYzk4Or+hAU1s+DvkiKNB7KuVSS8EICUXXy6uL6Rm+DnrXOSo2iTFL44K/uxobm7FcrW1l00PqldVn1RmwEeqEJvLEaMdx+EenFybSmDTltHdF3Tuesmlchw7K3rs5CpfViOdI6jwcCuEbLEvNuFu8nMgaT5PPcuXtNTqJU+Y5qWA5wdpZ18FG0zs5mcP+mqhNoO+ZAgo0054d7OGuowEl60pKcppNLcl4nAl+kYzEJsg4cXhMLGJRb0sAw545CDn0C10Rw+1ryMJEwPYZD5wHQClK6zlxUJI82uuBZ8pNbH5TXx8aTVCmFUX1vMfHWqJyXqv6Aj3L2SWnsHtnv/3Hq3zhOjewY6S5OO4c2VUmi8N2oALcGO6syOI7ZhZkdTFuja+lLxaXxEvXMbrdEodfB7fe6/LGnoAy+KMwGg1VpS3xeW9Hv2sxW6IT+pvpOrkYtO4W/cntcRB6U9dD1+s8U5gMNhyPifrEvTFbM5EPezpp6cPBI61VtHmTy+4vLi5sLs9//CZZ5e+8=
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Leave a circle"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/circles/{circleId}/members/me"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Removes you from the circle. This never removes you from the family
+group behind it — you simply stop seeing that circle's content, at
+once and on every surface, including photos you had the URL for.
+
+Posts you already made in the circle stay where they are, the same
+way leaving a group leaves your posts visible to its remaining
+members. Rejoining is an admin action: membership is self-service in
+one direction only, or the boundary would mean nothing.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./leave-circle.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./leave-circle.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./leave-circle.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

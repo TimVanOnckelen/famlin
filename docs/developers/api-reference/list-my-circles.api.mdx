@@ -1,0 +1,74 @@
+---
+id: list-my-circles
+title: "List your circles in a group"
+description: "Returns only the circles **you** belong to in that group. There is"
+sidebar_label: "List your circles in a group"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV21vGzcM/iuEviwxrnb38skYBrhF12VosaJJUQy5oKbvaFutjrpSOie3wMB+xH7hfslA6ezEjTdsQD8M2PzFsCRS5EPqeehb41sSjNbzWW2mxtkQX/ZPrVSOgilMxFUw00uzW7kqTE2hEtuqiZma1xQ74QCeXQ9xTVDlkzAa9b4bjWBBzvMKogfLENcYYSW+a8dwsSYhsKHkmpxdaBTkemAPxHXrLcd8XEMKQBuSfnCunjC7me7uKxmFYNk510MrdoORCggeEBpqFiTguxhsTeCZoOlCBPYRFgS4cKTROULhkm0EutEbxzBjoKaNfYpAcxNaeiFoCDlAaVhdpRArzxUJQ++70hTqueRhPzkrzbhkU5gWBRuKJIrprWFsyExNSuSsNoWxiujHjqQ3hRH62Fmh2kyjdFSYUK2pQTO9NbFv1S5Esbwy2+2VHg6t50BB9796/Fi/Dgv1s+9kX5yDUpjCVJ4jcVQrbFtnq9QRk/dBTW8fXu0X76mKmpFo/0SbL7aRmnDvGIqgpvLp+t78MMQZhAadIylAqAupMtjVlrjSmu/LNzTQbNcOjCL+OuT1knPBw9q2BbD2DVzbmjiAjdPDPhpawwZAJ4R1v2+Xkv0S5kNl5kP1DnOtj5Si2Bfz2F6u96cbhaEbbFqnS88FuW5RiGNQiwN8Hhpy55yilFtkWxjcYER5I+5vnc6pPvVdrvxw3nKkFcn9uL7ZFqYSwkj1LB5zvfTSYDRTU2OkR9E2ZLbbwkQbU1qZPcw2fwrzzbEGPeMNOluD9j2FCCcLrCE9Brh7NwV0HLq29RKphlb8xtbaLxSr8enna2QS8XIs0cOQf+ga5EfaOYprAVGQg1OYYGMx0eF8VlXUxkcvkFcdrmgOa8KaBE7mxPPJnN38dJzAunvvl8P9V3cIPksLO/S+fIjeSxuC5VUBNsNYAN206q4ALyC08R+ohkqoJo4W3X8Gq6+PUiGoWqgC3OnDEuLahs9Nif9idBIDxLVX3V9RCh3j2kzNBFs7qfYzQCDZ7CSrU2ox6xjbMJ1Mltg4y+OBJ8aVbx4klmTHXzN8n85CTa3zfaPIqm4FqjqxsU/OF4RCMus0iMur+9vninYG9P6hPaoakBkkUn/nQ0cEpiUJntEBVhWFANF/IIaTec7kXYvx3Xg8nhcw0F1WSoJrWgC27Sl4KRkhUAjWM/z49gKW4huYv/rp/AIScNjF9cT5leX5GJ74uE69FijNMwQBG4Jr7KclzzULL/aX1FpTeJKihm9TUN8l1dEiWV76lOtQwQHJ2aszUxitTE6u6kR140HSz5LiDUa5lsoNPlDIHf/62fmFeoOOtZ3mmsUcfv/1t7t4dTeuSVVxaSuLDhq/sCrPXO+wCdAFGsNbqxnD5VGkr04mNW3I6QsJes9pyb3voEKGRWddrSNU7pckQ3kyDYArtBxi3l1iY13/RRiSGZdc8sw5GF6synmofEs1LHoYjdKDhruhYDSawu7ONLXqq8uJiI1U8t4PZzIIcJKutBROk+V+pC2SWRwGWR1dr7EHFN+lZYwltyQ59TGcE8HlG2XpBOzs1dlDOGDpBbSDlKUz5RQpoo0ueA75ymsvSufDwwupUwrT+hAbTPQ0jJYv7A60e5Mf7jnuk/FiT3n/T/X/ZKofOCjSTZy0Dm2qRZdnsMyolwZbq5py9y9q7UPUjdvbBQZ6I2671eU8/CsZ1jYNwLWZLtEF+otinbwe+P4U/iyaD9Qf/NHYoOv0VOLgDYrNc+Hl1bYwWVVSDNks6849qwd6qF72UvL82YXZbv8ATjoMyQ==
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"List your circles in a group"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/circles"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Returns only the circles **you** belong to in that group. There is
+deliberately no endpoint that lists every circle in a group: circles
+are fully private, so a member outside one must not be able to learn
+it exists. An empty list therefore means "none that concern you", not
+"none exist".
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./list-my-circles.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./list-my-circles.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./list-my-circles.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

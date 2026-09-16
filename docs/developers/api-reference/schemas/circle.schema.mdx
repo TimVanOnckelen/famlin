@@ -1,0 +1,35 @@
+---
+id: circle
+title: "Circle"
+description: "A smaller, reusable audience inside one group. A circle narrows group"
+sidebar_label: "Circle"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"id":"string","groupId":"string","name":"Grandparents","description":"string","avatarUrl":"string","memberCount":4,"createdAt":"2024-07-29T15:51:28.071Z"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Circle"}
+>
+</Heading>
+
+
+
+A smaller, reusable audience inside one group. A circle narrows group
+membership, never widens it: every circle member is already a member
+of `groupId`.
+
+
+<Schema
+  {...require("./circle.Schema.json")}
+>
+  
+</Schema>
+            
