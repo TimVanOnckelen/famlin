@@ -57,7 +57,7 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
 
     if (await requireGroupMember(request, reply, groupId)) return;
 
-    const result = await getGroupPhotoTimeline(groupId, { cursor, take, personId });
+    const result = await getGroupPhotoTimeline(groupId, request.user!.id, { cursor, take, personId });
     if (!result.ok) return reply.status(result.status).send({ error: t(result.errorKey) });
 
     return { items: result.items, nextCursor: result.nextCursor };

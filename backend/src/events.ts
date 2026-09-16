@@ -26,6 +26,10 @@ export interface DomainEvents {
     // re-fetching the post.
     type: string;
     milestoneTag: string | null;
+    // The audience of the created post(s) — null for a whole-family post.
+    // Cross-posts are never circle-scoped, so one value covers every entry
+    // in `posts` above (same convention as `content`/`type`).
+    circleId: string | null;
   };
   'comment.created': {
     commentId: string;

@@ -79,7 +79,13 @@
     "tripNotStarted": "This trip hasn't started yet",
     "albumNotAuthor": "Only the album's author can do this",
     "albumClosed": "This album is closed",
-    "readOnly": "This demo is read-only. You can browse, but you can't post, comment, or make changes."
+    "readOnly": "This demo is read-only. You can browse, but you can't post, comment, or make changes.",
+    "notCircleMember": "You are not a member of this circle",
+    "circleNotFound": "Circle not found",
+    "circleNotEmpty": "This circle still contains posts. Confirm deletion to permanently remove them.",
+    "circleMemberNotInGroup": "That person is not a member of this family group",
+    "userAlreadyCircleMember": "That person is already in this circle",
+    "circleMemberNotFound": "That person is not in this circle"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

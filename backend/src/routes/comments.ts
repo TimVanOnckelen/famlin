@@ -6,6 +6,8 @@ import { requireGroupMember } from '../plugins/auth.js';
 import { shapeComment } from '../services/comments.js';
 import { getT } from '../i18n/index.js';
 import { handlerCommentSiblingKey } from '../services/postTypes/registry.js';
+import { canViewPostCircle } from '../services/circles.js';
+import { bindAssetsToScope } from '../services/uploads.js';
 
 export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -20,6 +22,13 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     }
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const comments = await prisma.comment.findMany({
       where: {
@@ -52,6 +61,13 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     }
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     let assetUrl = body.assetUrl;
 
@@ -90,6 +106,10 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       },
     });
 
+    // A comment's own photos inherit the post's audience: a photo replied
+    // onto a circle-private post must not be readable family-wide.
+    await bindAssetsToScope(attachmentUrls, post.circleId);
+
     // Handlers run fire-and-forget (see events.ts) — the notifications
     // subscriber decides who in the thread gets told (and re-validates the
     // client-supplied mention ids against current group membership).
@@ -124,7 +144,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     const comment = await prisma.comment.findUnique({
       where: { id },
-      include: { post: { select: { groupId: true, crossPostId: true } } },
+      include: { post: { select: { groupId: true, crossPostId: true, circleId: true } } },
     });
 
     if (!comment) {
@@ -137,6 +157,13 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     // Editing writes into the group, so it requires *current* membership.
     if (await requireGroupMember(request, reply, comment.post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const editedAt = new Date();
 

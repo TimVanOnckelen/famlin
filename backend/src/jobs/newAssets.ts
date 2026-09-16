@@ -117,6 +117,10 @@ export async function runNewAssetsJob(now = new Date()): Promise<void> {
         content: post.content,
         type: post.type,
         milestoneTag: post.milestoneTag,
+        // An auto-created new-assets post belongs to the whole group: the
+        // album it mirrors is linked group-wide, so scoping it to a circle
+        // would claim a privacy it doesn't have.
+        circleId: null,
       });
 
       await prisma.mediaAlbumLink.update({ where: { id: link.id }, data: { newAssetsCheckedAt: now } });

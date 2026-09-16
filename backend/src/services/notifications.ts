@@ -111,8 +111,30 @@ async function notify(options: NotifyOptions) {
   const { type, senderId, params, recipientIds, bundleSince } = options;
   const postId = options.postId ?? null;
 
-  const ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
+  let ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
   if (ids.length === 0) return;
+
+  // Circle privacy is enforced HERE, once, rather than at each of the half
+  // dozen places that assemble a recipient list (group fan-out, thread
+  // participants, mentions, trip check-in targets, on-this-day). Every
+  // notification that concerns a post carries its postId, so this single
+  // filter covers every existing type and any type added later — a new
+  // notification path cannot forget it and quietly tell a group member about
+  // a post they can't open.
+  //
+  // A notification with no postId (nothing to leak) skips the query entirely,
+  // as does a post that isn't circle-scoped.
+  if (postId) {
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { circleId: true } });
+    if (post?.circleId) {
+      const circleMembers = await prisma.circleMember.findMany({
+        where: { circleId: post.circleId, userId: { in: ids } },
+        select: { userId: true },
+      });
+      ids = circleMembers.map((m) => m.userId);
+      if (ids.length === 0) return;
+    }
+  }
 
   const recipients: Recipient[] = await prisma.user.findMany({
     where: { id: { in: ids } },

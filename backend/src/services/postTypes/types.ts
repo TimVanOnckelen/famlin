@@ -68,11 +68,38 @@ export interface PostTypeHandler {
     // post's cross-post siblings (trip.ts's checkin/close/setTravelers) —
     // it is internal plumbing and must NEVER be serialized into a response
     // (same privacy rule as shapePost's destructuring, see services/posts.ts).
-    post: { id: string; typeData: unknown; authorId: string; groupId: string; groupName: string; crossPostId: string | null };
+    // circleId is the post's audience (null = whole group). A handler that
+    // creates media as part of an interaction (trip check-in photos, album
+    // contributions) MUST bind those uploads to it — see bindAssetsToScope
+    // in services/uploads.ts — or the photo stays readable family-wide while
+    // the post carrying it is circle-private.
+    post: {
+      id: string;
+      typeData: unknown;
+      authorId: string;
+      groupId: string;
+      groupName: string;
+      crossPostId: string | null;
+      circleId: string | null;
+    };
     userId: string;
     key: string;
     value: unknown;
   }): Promise<void>;
+  /**
+   * Every /uploads/ path this type's persisted typeData references (a trip's
+   * or album's coverPhotoUrl today). routes/posts.ts calls it so those assets
+   * get bound to the post's audience alongside uploadedAssetUrls — without
+   * it, a Circle post's cover photo would stay readable family-wide while
+   * the post itself was private. A handler whose typeData holds no media
+   * (UPDATE, MILESTONE, POLL) simply omits this.
+   *
+   * Assets a handler attaches LATER, through its own interact() (a trip
+   * check-in's photoUrls, an album contribution's), are bound by that
+   * handler at the point it writes them — this hook only covers create-time
+   * typeData.
+   */
+  collectAssets?(typeData: unknown): string[];
   /** Batch-attach computed fields to already-shaped posts of this type (mutate in place). ONE query per page, no N+1. */
   enrichPosts?(posts: Array<Record<string, any> & { id: string; typeData?: unknown }>, viewerId: string): Promise<void>;
 }

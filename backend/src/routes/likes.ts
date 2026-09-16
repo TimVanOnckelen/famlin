@@ -6,19 +6,27 @@ import { getT } from '../i18n/index.js';
 import { reactionBodySchema } from '../types.js';
 import { reactionCounts } from '../services/reactions.js';
 import { isRecordNotFound } from '../utils/prismaErrors.js';
+import { canViewPostCircle } from '../services/circles.js';
 
 export default async function likeRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/reactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
     const { postId } = request.params as { postId: string };
 
-    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true } });
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true, circleId: true } });
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const likes = await prisma.like.findMany({
       where: { postId },
@@ -44,6 +52,13 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     }
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const existing = await prisma.like.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
@@ -110,6 +125,13 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     }
 
     if (await requireGroupMember(request, reply, comment.post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const existing = await prisma.like.findUnique({
       where: { commentId_userId: { commentId, userId: request.user!.id } },

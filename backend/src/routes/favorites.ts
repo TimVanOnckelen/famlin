@@ -5,6 +5,7 @@ import { paginationArgs, paginate } from '../services/pagination.js';
 import { paginationQuerySchema } from '../types.js';
 import { shapePostsWithPeople, dedupeByCrossPostId, postInclude } from '../services/posts.js';
 import { getT } from '../i18n/index.js';
+import { canViewPostCircle } from '../services/circles.js';
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
   fastify.post('/posts/:postId/favorite', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -18,6 +19,13 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
     }
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
+
+    // A circle-private post is invisible to group members outside it — same
+    // 404 the post itself returns, so its existence can't be probed here.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
 
     const existing = await prisma.favorite.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
@@ -49,6 +57,10 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
         // group's content via their old favorites).
         post: {
           group: { members: { some: { userId: request.user!.id } } },
+          // ...and, if the post is circle-private, still in that circle.
+          // Being removed from a circle must revoke access through an old
+          // favorite exactly as being removed from a group already does.
+          OR: [{ circleId: null }, { circle: { members: { some: { userId: request.user!.id } } } }],
         },
       },
       include: {

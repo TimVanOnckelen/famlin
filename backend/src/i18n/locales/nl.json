@@ -79,7 +79,13 @@
     "tripNotStarted": "Deze reis is nog niet begonnen",
     "albumNotAuthor": "Alleen de maker van het album kan dit doen",
     "albumClosed": "Dit album is afgesloten",
-    "readOnly": "Deze demo is alleen-lezen. Je kunt rondkijken, maar niet plaatsen, reageren of wijzigingen maken."
+    "readOnly": "Deze demo is alleen-lezen. Je kunt rondkijken, maar niet plaatsen, reageren of wijzigingen maken.",
+    "notCircleMember": "Je bent geen lid van deze kring",
+    "circleNotFound": "Kring niet gevonden",
+    "circleNotEmpty": "Deze kring bevat nog berichten. Bevestig de verwijdering om ze definitief te wissen.",
+    "circleMemberNotInGroup": "Die persoon is geen lid van deze familiegroep",
+    "userAlreadyCircleMember": "Die persoon zit al in deze kring",
+    "circleMemberNotFound": "Die persoon zit niet in deze kring"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

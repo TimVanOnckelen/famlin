@@ -12,6 +12,7 @@ import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.j
 import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config } from '../config.js';
+import { bindAssetsToScope } from '../services/uploads.js';
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -570,6 +571,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
       where: { id: request.user!.id },
       data: body,
     });
+
+    // An avatar is visible to everyone the user shares a group with, so it's
+    // bound family-wide (circleId null). Without this it would stay an
+    // unbound upload readable only by its uploader — i.e. every other
+    // member would see a broken avatar. See services/uploads.ts.
+    if (body.avatarUrl) {
+      await bindAssetsToScope([body.avatarUrl], null);
+    }
 
     return sanitizeUser(user);
   });

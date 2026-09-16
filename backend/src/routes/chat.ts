@@ -6,6 +6,7 @@ import { requireGroupMember } from '../plugins/auth.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { shapeChatMessagesWithReadBy } from '../services/chat.js';
 import { getT } from '../i18n/index.js';
+import { bindAssetsToScope } from '../services/uploads.js';
 
 const chatMessageInclude = {
   author: { select: { id: true, name: true, avatarUrl: true } },
@@ -89,6 +90,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       },
       include: chatMessageInclude,
     });
+
+    // Group chat is group-wide by definition — there is no per-circle chat in
+    // this version (see the "later" list on the Circles issue) — so a chat
+    // attachment binds family-wide.
+    if (body.attachmentUrl) {
+      await bindAssetsToScope([body.attachmentUrl], null);
+    }
 
     // Fire-and-forget, same pattern as comment.created (routes/comments.ts) —
     // the notifications subscriber decides who in the group gets told.
