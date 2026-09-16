@@ -13,6 +13,14 @@ import {
 import { emitDomainEvent } from '../events.js';
 import { getUserGroupIds } from '../services/groups.js';
 import { requireGroupMember } from '../plugins/auth.js';
+import {
+  canViewPostCircle,
+  getUserCircleIds,
+  validateCircleTarget,
+  visiblePostsWhere,
+  visiblePostsWhereFor,
+} from '../services/circles.js';
+import { bindAssetsToScope } from '../services/uploads.js';
 import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings, postInclude } from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
@@ -54,7 +62,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // is a 400 rather than a silently empty page.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
-    const { groupId, groupIds, type } = request.query as { groupId?: string; groupIds?: string; type?: string };
+    const { groupId, groupIds, circleIds, type } = request.query as {
+      groupId?: string;
+      groupIds?: string;
+      circleIds?: string;
+      type?: string;
+    };
 
     if (type !== undefined && !getPostTypeHandler(type)) {
       return reply.status(400).send({ error: t('errors.unknownPostType') });
@@ -87,8 +100,30 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // A cross-post's sibling rows share createdAt, so createdAt alone isn't a
     // stable order/cursor key — id breaks the tie deterministically for both
     // the page order and the "leading duplicate" check below.
+    // visiblePostsWhere adds the circle narrowing on top of the group filter.
+    // Every post-reading query composes with it rather than writing the
+    // clause by hand, because forgetting it fails OPEN — the query would
+    // quietly serve circle-private posts to the whole group.
+    const myCircleIds = await getUserCircleIds(request.user!.id);
+
+    // An optional narrowing to specific circles — what the feed's circle
+    // filter chips send. Requesting a circle you're not in is a 403, never a
+    // silently empty page: same rule as `groupIds`, and it keeps a
+    // non-member from probing circle ids.
+    const requestedCircleIds = circleIds ? [...new Set(circleIds.split(',').filter(Boolean))] : null;
+    if (requestedCircleIds && requestedCircleIds.some((id) => !myCircleIds.includes(id))) {
+      return reply.status(403).send({ error: t('errors.notCircleMember') });
+    }
+
     const posts = await prisma.post.findMany({
-      where: { groupId: { in: effectiveGroupIds }, ...(type ? { type } : {}) },
+      where: {
+        ...visiblePostsWhere(effectiveGroupIds, myCircleIds),
+        // Narrowing to circles means ONLY those circles' posts — whole-family
+        // posts are excluded, which is what makes the chip a real filter
+        // rather than a no-op on top of the default view.
+        ...(requestedCircleIds ? { circleId: { in: requestedCircleIds } } : {}),
+        ...(type ? { type } : {}),
+      },
       include: postInclude(request.user!.id),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
@@ -128,12 +163,19 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (await requireGroupMember(request, reply, groupId)) return;
 
+    // AND-composed rather than merged: visiblePostsWhere already uses OR for
+    // the circle clause, so spreading it next to this OR would silently
+    // replace one of them and turn search into a circle-privacy leak.
     const posts = await prisma.post.findMany({
       where: {
-        groupId,
-        OR: [
-          { content: { contains: q, mode: 'insensitive' } },
-          { milestoneTag: { contains: q, mode: 'insensitive' } },
+        AND: [
+          await visiblePostsWhereFor([groupId], request.user!.id),
+          {
+            OR: [
+              { content: { contains: q, mode: 'insensitive' } },
+              { milestoneTag: { contains: q, mode: 'insensitive' } },
+            ],
+          },
         ],
       },
       include: postInclude(request.user!.id),
@@ -157,7 +199,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
     if (posts.length === 0) return { items: [] };
 
     const full = await prisma.post.findMany({
-      where: { id: { in: posts.map((p) => p.id) } },
+      where: {
+        AND: [
+          { id: { in: posts.map((p) => p.id) } },
+          await visiblePostsWhereFor([groupId], request.user!.id),
+        ],
+      },
       include: postInclude(request.user!.id),
     });
     const byId = new Map(full.map((p) => [p.id, p]));
@@ -182,6 +229,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
 
+    // 404, not 403: a circle is fully private, so a group member outside it
+    // must not be able to confirm the post exists at all.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
     const [shaped] = await shapePostsWithPeople([post], request.user!.id);
     return shaped;
   });
@@ -197,6 +250,17 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     for (const groupId of targets) {
       if (await requireGroupMember(request, reply, groupId)) return;
+    }
+
+    // Circle targeting. The schema already guarantees a circleId never
+    // arrives alongside cross-posting, so there is exactly one target group
+    // to validate against here. All three failure reasons collapse to the
+    // same 403 on purpose: a circle is fully private, so a non-member must
+    // not be able to distinguish "not yours" from "doesn't exist" and probe
+    // for circles they can't see.
+    const circleId = body.circleId ?? null;
+    if (circleId && (await validateCircleTarget(circleId, targets[0], request.user!.id))) {
+      return reply.status(403).send({ error: t('errors.notCircleMember') });
     }
 
     // Custom post types (services/postTypes/registry.ts): look up the
@@ -272,9 +336,19 @@ export default async function postRoutes(fastify: FastifyInstance) {
           latitude: body.latitude,
           longitude: body.longitude,
           locationName: body.locationName,
+          circleId,
         },
         include: postInclude(request.user!.id),
       });
+
+      // Bind this post's photos to its audience so /uploads/* can authorize
+      // them (see services/uploads.ts). A null circleId marks them readable
+      // family-wide, which is what the unbound-until-attached rule needs
+      // even for ordinary posts.
+      await bindAssetsToScope(
+        [...(body.uploadedAssetUrls ?? []), ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
+        circleId
+      );
 
       // Handlers run fire-and-forget (see events.ts), so fanning out
       // push/email to the group can't hold the response or fail post
@@ -286,6 +360,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         content: post.content,
         type: post.type,
         milestoneTag: post.milestoneTag,
+        circleId: post.circleId,
       });
 
       // people: [] unenriched — a freshly created post can't wait on an
@@ -341,6 +416,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
       )
     );
 
+    // Cross-posts are never circle-scoped (the body schema rejects the
+    // combination), so their assets are always family-wide.
+    await bindAssetsToScope([...assetUrls, ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])], null);
+
     emitDomainEvent('post.created', {
       posts: createdPosts.map((p) => ({ postId: p.id, groupId: p.group.id, groupName: p.group.name })),
       authorId: request.user!.id,
@@ -348,6 +427,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       content: createdPosts[0].content,
       type: createdPosts[0].type,
       milestoneTag: createdPosts[0].milestoneTag,
+      // Cross-posts can never be circle-scoped (see createPostBodySchema).
+      circleId: null,
     });
 
     // The response mirrors the single-group shape (first target group's
@@ -416,6 +497,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Cross-posts are never circle-scoped, so any newly added photo is
+      // family-wide.
+      if (uploadedAssetUrls) {
+        await bindAssetsToScope(uploadedAssetUrls, null);
+      }
+
       const current = await prisma.post.findUnique({
         where: { id },
         include: postInclude(request.user!.id),
@@ -453,6 +540,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: postInclude(request.user!.id),
     });
 
+    // An edit can introduce photos that were uploaded after the post was
+    // created, so re-bind to this post's existing audience. circleId is
+    // immutable after creation (updatePostBodySchema doesn't accept it), so
+    // this can only ever re-assert the scope the post already had.
+    if (body.uploadedAssetUrls) {
+      await bindAssetsToScope(body.uploadedAssetUrls, updated.circleId);
+    }
+
     // Same reasoning as POST / above — don't make an edit wait on Immich.
     return { ...shapePost(updated, request.user!.id), people: [] };
   });
@@ -469,6 +564,15 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (post.authorId !== request.user!.id && !request.user!.isAdmin) {
       return reply.status(403).send({ error: t('errors.notAuthorized') });
+    }
+
+    // Admins are NOT implicit members of every circle (see services/circles.ts):
+    // the isAdmin bypass above lets them moderate group content, but a
+    // circle-private post is out of reach unless they're in that circle. The
+    // only admin route to it is deleting the whole circle, which reports its
+    // post count first (routes/admin.ts).
+    if (post.authorId !== request.user!.id && !(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
     // Only the author's OWN delete fans out to every cross-posted sibling.
@@ -507,6 +611,13 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     if (await requireGroupMember(request, reply, post.groupId)) return;
 
+    // Voting on a circle-private poll, or checking in to a circle-private
+    // trip, is reading and writing that post — a group member outside the
+    // circle gets the same 404 the post itself would give them.
+    if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: t('errors.postNotFound') });
+    }
+
     const postTypeHandler = getPostTypeHandler(post.type);
     if (!postTypeHandler?.interact) {
       return reply.status(400).send({ error: t('errors.invalidInteraction') });
@@ -521,6 +632,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
           groupId: post.groupId,
           groupName: post.group.name,
           crossPostId: post.crossPostId,
+          circleId: post.circleId,
         },
         userId: request.user!.id,
         key,

@@ -42,6 +42,18 @@ tags:
     description: |
       Read-only access to the groups (families) you belong to. Group management
       is an admin capability and not part of this API.
+  - name: Circles
+    description: |
+      Smaller, reusable audiences inside one family group ("Grandparents",
+      "Cousins"). A circle narrows group membership, it never widens it:
+      every circle member is already a member of the group behind it.
+
+      Circles are **fully private**. Only the circles you belong to are ever
+      returned to you — a group member outside a circle cannot see its name,
+      its members, or the posts in it, and has no way to learn it exists.
+      Creating, editing and deleting circles, and managing their membership,
+      are admin operations and are not part of this member-facing API; the
+      one mutation you can perform is leaving a circle you're in.
   - name: Posts
     description: |
       The heart of Famlin: updates and milestones shared with a group, with
@@ -597,7 +609,20 @@ paths:
         `type` narrows the same list to a single post type — e.g.
         `type=ALBUM` lists just the shared photo albums in those groups,
         without paging through the whole feed to find them.
+
+        Posts shared with a circle you're not in are never included, and
+        nothing about them (not a placeholder, not a count) appears in the
+        page. `circleIds` narrows the feed to specific circles, which means
+        **only** those circles' posts — whole-family posts are excluded.
       parameters:
+        - name: circleIds
+          in: query
+          schema: { type: string }
+          description: >-
+            Comma-separated circle ids (must all be circles you belong to; a
+            circle you're not in is a `403`). Returns only posts shared with
+            those circles.
+          example: cmb1mno,cmb1pqr
         - name: groupIds
           in: query
           schema: { type: string }
@@ -651,6 +676,15 @@ paths:
         server-side into Famlin's own upload storage at post time so every
         target group can see them without gaining access to the source
         album; direct uploads are shared as-is.
+
+        Pass `circleId` to narrow the audience from the whole group to one
+        circle within it. Only members of that circle will see the post, its
+        comments, its reactions and its photos — including by direct media
+        URL. The circle must belong to the target group and you must be a
+        member of it; all other cases are a `403` that deliberately doesn't
+        distinguish "not yours" from "doesn't exist", so circles you can't
+        see can't be probed. `circleId` cannot be combined with cross-posting
+        (a circle belongs to exactly one group), which is a `400`.
 
         Every target group's `allowedPostTypes` (see `Group`) must include
         the requested `type` — for a cross-post, **all** target groups must
@@ -712,6 +746,13 @@ paths:
                     ids cross-post (see above). Every id must be a group you
                     belong to.
                   example: [cmb1ghi, cmb1jkl]
+                circleId:
+                  type: string
+                  nullable: true
+                  description: |
+                    Narrow the audience to one circle within the target
+                    group. Omit (or `null`) to share with everyone in the
+                    group. Cannot be combined with cross-posting.
                 content:
                   type: string
                   maxLength: 5000
@@ -1371,6 +1412,108 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/NotGroupMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/circles:
+    get:
+      operationId: listMyCircles
+      tags: [Circles]
+      summary: List your circles in a group
+      description: |
+        Returns only the circles **you** belong to in that group. There is
+        deliberately no endpoint that lists every circle in a group: circles
+        are fully private, so a member outside one must not be able to learn
+        it exists. An empty list therefore means "none that concern you", not
+        "none exist".
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Your circles in that group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Circle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/circles/{circleId}/members:
+    get:
+      operationId: listCircleMembers
+      tags: [Circles]
+      summary: List a circle's members
+      description: |
+        Members only — who is in a circle is itself sensitive, so this is
+        gated on your own membership rather than on group membership. A
+        circle you're not in returns `404`, the same as one that doesn't
+        exist.
+      parameters:
+        - name: circleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The circle's members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/UserSummary'
+                        - type: object
+                          properties:
+                            joinedAt: { type: string, format: date-time }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/circles/{circleId}/members/me:
+    delete:
+      operationId: leaveCircle
+      tags: [Circles]
+      summary: Leave a circle
+      description: |
+        Removes you from the circle. This never removes you from the family
+        group behind it — you simply stop seeing that circle's content, at
+        once and on every surface, including photos you had the URL for.
+
+        Posts you already made in the circle stay where they are, the same
+        way leaving a group leaves your posts visible to its remaining
+        members. Rejoining is an admin action: membership is self-service in
+        one direction only, or the boundary would mean nothing.
+      parameters:
+        - name: circleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: You left the circle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -2425,6 +2568,21 @@ components:
           nullable: true
           description: If linked to a Famlin user, their avatar URL; otherwise `null`.
 
+    Circle:
+      type: object
+      description: |
+        A smaller, reusable audience inside one group. A circle narrows group
+        membership, never widens it: every circle member is already a member
+        of `groupId`.
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        name: { type: string, example: Grandparents }
+        description: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        memberCount: { type: integer, example: 4 }
+        createdAt: { type: string, format: date-time }
+
     Post:
       type: object
       properties:
@@ -2435,6 +2593,22 @@ components:
         groupId: { type: string }
         group:
           type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+        circleId:
+          type: string
+          nullable: true
+          description: |
+            The circle this post was shared with, or `null` for a post
+            visible to the whole group (which is every post created before
+            circles existed). You only ever receive posts you're allowed to
+            see, so a non-`null` value here always names a circle you belong
+            to.
+        circle:
+          type: object
+          nullable: true
+          description: The named circle, for rendering a "shared in …" badge.
           properties:
             id: { type: string }
             name: { type: string }

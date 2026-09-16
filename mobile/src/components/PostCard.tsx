@@ -20,6 +20,7 @@ import { REACTION_EMOJI } from '@/constants/reactions';
 import { getUploadUrl } from '@/api/uploads';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
+import { CircleTag } from './CircleTag';
 
 const AVATAR_COLORS = ['#006e94', '#318ea2', '#4b8b5a', '#005480', '#ed835e'];
 
@@ -214,14 +215,21 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   const hasPhotos = allPhotoUrls.length > 0;
   const reactors = post.recentReactors ?? [];
   const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
-  // Which family this post belongs to — shown when the surrounding list
-  // spans several (multi-group feed, favorites).
-  const groupTag = showGroup && post.group && (
-    <View style={styles.groupTag}>
-      <Text style={styles.groupTagText} numberOfLines={1}>
-        {post.group.name}
-      </Text>
-    </View>
+  // Both context tags travel together: which family this post belongs to
+  // (shown when the surrounding list spans several — multi-group feed,
+  // favorites) and which Circle it was shared with (when it wasn't shared
+  // with everyone).
+  const groupTag = (
+    <>
+      {showGroup && post.group && (
+        <View style={styles.groupTag}>
+          <Text style={styles.groupTagText} numberOfLines={1}>
+            {post.group.name}
+          </Text>
+        </View>
+      )}
+      <CircleTag post={post} />
+    </>
   );
 
   return (

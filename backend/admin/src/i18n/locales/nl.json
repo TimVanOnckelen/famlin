@@ -380,5 +380,24 @@
     "POLL": "Poll",
     "TRIP": "Reis",
     "ALBUM": "Album"
+  },
+  "circles": {
+    "heading_one": "{{count}} kring",
+    "heading_other": "{{count}} kringen",
+    "hint": "Met kringen deelt een deel van de familie privé. Leden buiten een kring zien de berichten, foto's en reacties nooit — en weten niet eens dat de kring bestaat.",
+    "create": "Nieuwe kring",
+    "namePlaceholder": "Naam van de kring (bv. Grootouders)",
+    "descriptionPlaceholder": "Omschrijving (optioneel)",
+    "none": "Nog geen kringen.",
+    "memberCount_one": "{{count}} lid",
+    "memberCount_other": "{{count}} leden",
+    "postCount_one": "{{count}} bericht",
+    "postCount_other": "{{count}} berichten",
+    "manageMembers": "Leden beheren",
+    "noMembers": "Nog niemand in deze kring.",
+    "selectMember": "Kies een familielid…",
+    "addMember": "Toevoegen aan kring",
+    "confirmDelete": "De kring \"{{name}}\" verwijderen?",
+    "confirmDeleteWithPosts": "De kring \"{{name}}\" verwijderen? Hiermee verdwijnen ook de {{count}} bericht(en) en alles wat erbij hoort, definitief. Je kunt deze inhoud daarna niet meer bekijken of herstellen."
   }
 }

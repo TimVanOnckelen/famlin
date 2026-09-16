@@ -1578,3 +1578,34 @@ h3 {
   justify-content: center;
   margin-top: 1rem;
 }
+
+/* --- Family Circles (CirclesSection) ------------------------------------ */
+
+/* Explains what a circle actually does, above the list — an admin creating
+   one is deciding who gets excluded, so the consequence belongs on screen
+   rather than in the docs. */
+.md-hint {
+  margin: 0 0 12px;
+  color: var(--text-muted, #64748b);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* A circle card stacks its summary row and (when expanded) its member list,
+   unlike the plain member cards it sits among. */
+.md-circle-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.md-circle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.md-circle-members {
+  border-top: 1px solid var(--border, #e2e8f0);
+  padding-top: 10px;
+}

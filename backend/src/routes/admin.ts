@@ -29,10 +29,17 @@ import {
   linkMediaAlbumBodySchema,
   updateMediaAlbumLinkBodySchema,
   createMediaPersonLinkBodySchema,
+  adminCreateCircleBodySchema,
+  adminDeleteCircleQuerySchema,
+  adminUpdateCircleBodySchema,
+  circleMemberBodySchema,
 } from '../types.js';
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
 import { buildExportArchive } from '../services/export.js';
 import { getT } from '../i18n/index.js';
+import { canViewPostCircle, getUserCircleIds } from '../services/circles.js';
+import { bindAssetsToScope } from '../services/uploads.js';
+import { isGroupMember } from '../services/groups.js';
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -417,8 +424,28 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { id, userId } = request.params as { id: string; userId: string };
 
     try {
-      await prisma.groupMember.delete({
-        where: { groupId_userId: { groupId: id, userId } },
+      // Removing someone from the family also removes them from every Circle
+      // inside it. A Circle only ever narrows group membership, so a circle
+      // membership that outlives the group membership behind it would grant
+      // access the outer boundary has already revoked — the removed member
+      // would keep reading that circle's posts and, worse, its photos by
+      // direct /uploads/ URL.
+      //
+      // This has to be an application-level cascade: CircleMember has no
+      // foreign key to GroupMember (they're independent join tables keyed on
+      // the same userId), so the database can't express it. One transaction,
+      // so a failure can't leave the memberships out of step.
+      //
+      // Their posts and comments in those circles stay, matching the existing
+      // rule that removing a group member leaves their content visible to the
+      // remaining members.
+      await prisma.$transaction(async (tx) => {
+        await tx.circleMember.deleteMany({
+          where: { userId, circle: { groupId: id } },
+        });
+        await tx.groupMember.delete({
+          where: { groupId_userId: { groupId: id, userId } },
+        });
       });
       return { success: true };
     } catch (err) {
@@ -501,6 +528,196 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // cross-posted post's admin delete stays single-row even though an
   // author's own delete fans out to every sibling — moderation is
   // deliberately per-group (see the isAdmin branch in posts.ts's DELETE).
+  // --- Family Circles -------------------------------------------------------
+  // Management is admin-only, the same posture group management already has
+  // (see the "group mutations live only in admin.ts" convention). There is no
+  // per-circle admin role in this version.
+  //
+  // Unlike the member-facing routes in routes/circles.ts, these enumerate
+  // EVERY circle in a group regardless of the calling admin's own membership:
+  // an admin has to be able to manage a circle they aren't in. Note that this
+  // is management access only — it does not extend to reading the circle's
+  // content (see the content moderation routes above).
+
+  fastify.get('/groups/:id/circles', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const { id } = request.params as { id: string };
+
+    const circles = await prisma.circle.findMany({
+      where: { groupId: id },
+      include: {
+        _count: { select: { members: true, posts: true } },
+        members: { include: { user: { select: userSelect } }, orderBy: { joinedAt: 'asc' } },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return circles.map(({ _count, members, ...circle }) => ({
+      ...circle,
+      memberCount: _count.members,
+      postCount: _count.posts,
+      members: members.map((m) => ({ ...toSafeUser(m.user), joinedAt: m.joinedAt })),
+    }));
+  });
+
+  fastify.post('/groups/:id/circles', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { id } = request.params as { id: string };
+    const body = adminCreateCircleBodySchema.parse(request.body);
+
+    const group = await prisma.group.findUnique({ where: { id }, select: { id: true } });
+    if (!group) return reply.status(404).send({ error: t('errors.groupNotFound') });
+
+    // A Circle narrows group membership, so every seeded member must already
+    // be in the group — otherwise the circle would grant access to someone
+    // the outer boundary excludes.
+    const userIds = [...new Set(body.userIds ?? [])];
+    if (userIds.length > 0) {
+      const memberships = await prisma.groupMember.findMany({
+        where: { groupId: id, userId: { in: userIds } },
+        select: { userId: true },
+      });
+      if (memberships.length !== userIds.length) {
+        return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') });
+      }
+    }
+
+    const circle = await prisma.circle.create({
+      data: {
+        groupId: id,
+        name: body.name,
+        description: body.description ?? null,
+        avatarUrl: body.avatarUrl ?? null,
+        createdById: request.user!.id,
+        members: { create: userIds.map((userId) => ({ userId })) },
+      },
+      include: { _count: { select: { members: true, posts: true } } },
+    });
+
+    // The circle's own avatar is readable by anyone who can see the circle,
+    // so it binds family-wide rather than to the circle itself — scoping it
+    // to the circle would be circular (you'd need to be a member to load the
+    // picture identifying the circle).
+    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null);
+
+    const { _count, ...rest } = circle;
+    return { ...rest, memberCount: _count.members, postCount: _count.posts };
+  });
+
+  fastify.patch('/circles/:circleId', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { circleId } = request.params as { circleId: string };
+    const body = adminUpdateCircleBodySchema.parse(request.body);
+
+    try {
+      const circle = await prisma.circle.update({
+        where: { id: circleId },
+        data: {
+          ...(body.name !== undefined ? { name: body.name } : {}),
+          ...('description' in body ? { description: body.description ?? null } : {}),
+          ...('avatarUrl' in body ? { avatarUrl: body.avatarUrl ?? null } : {}),
+        },
+        include: { _count: { select: { members: true, posts: true } } },
+      });
+
+      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null);
+
+      const { _count, ...rest } = circle;
+      return { ...rest, memberCount: _count.members, postCount: _count.posts };
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleNotFound') });
+      throw err;
+    }
+  });
+
+  // Deleting a circle permanently deletes its posts (and, through Post's own
+  // cascades, their comments/likes/favorites). There is no restore and no
+  // "move the content back to the whole family" fallback — silently widening
+  // an audience is exactly what this feature exists to prevent.
+  //
+  // Because an admin outside the circle cannot read that content (see the
+  // moderation routes above), a non-empty circle is refused unless the caller
+  // explicitly passes ?deleteContent=true. The 409 carries the post count so
+  // the UI can say how much is about to be destroyed — a number, never the
+  // content itself.
+  fastify.delete('/circles/:circleId', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { circleId } = request.params as { circleId: string };
+    const { deleteContent } = adminDeleteCircleQuerySchema.parse(request.query);
+
+    const circle = await prisma.circle.findUnique({
+      where: { id: circleId },
+      select: { id: true, _count: { select: { posts: true } } },
+    });
+    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') });
+
+    if (circle._count.posts > 0 && !deleteContent) {
+      return reply
+        .status(409)
+        .send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts });
+    }
+
+    await prisma.circle.delete({ where: { id: circleId } });
+
+    return { success: true, deletedPostCount: circle._count.posts };
+  });
+
+  fastify.post('/circles/:circleId/members', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { circleId } = request.params as { circleId: string };
+    const body = circleMemberBodySchema.parse(request.body);
+
+    const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } });
+    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') });
+
+    // Same rule as seeding at creation: a circle can only ever narrow the
+    // group, never grant access to a non-member of it.
+    if (!(await isGroupMember(circle.groupId, body.userId))) {
+      return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') });
+    }
+
+    try {
+      await prisma.circleMember.create({ data: { circleId, userId: body.userId } });
+    } catch (err: any) {
+      if (isUniqueConstraintViolation(err)) {
+        return reply.status(409).send({ error: t('errors.userAlreadyCircleMember') });
+      }
+      throw err;
+    }
+
+    return { success: true };
+  });
+
+  fastify.delete('/circles/:circleId/members/:userId', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const t = getT(request);
+    const { circleId, userId } = request.params as { circleId: string; userId: string };
+
+    try {
+      await prisma.circleMember.delete({ where: { circleId_userId: { circleId, userId } } });
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleMemberNotFound') });
+      throw err;
+    }
+
+    // Removing someone from a circle revokes their access to its posts and
+    // media immediately: every read path re-resolves circle membership per
+    // request, and the /uploads/ authorization cache is keyed on the upload,
+    // not on any per-user decision. Their posts in the circle stay, mirroring
+    // how removing a group member leaves their posts visible.
+    return { success: true };
+  });
+
   fastify.get('/content/posts', async (request, reply) => {
     if (requireAdmin(request, reply)) return;
 
@@ -511,11 +728,21 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
+    // Circle privacy applies to admins too: an admin sees a circle-scoped
+    // post here only if they are themselves a member of that circle. This is
+    // a deliberate, documented trade-off — it means content inside a circle
+    // an admin isn't in cannot be moderated from this screen, and the only
+    // admin action reaching it is deleting the whole circle (which reports
+    // its post count first). GET /api/admin/export is the one exception: it
+    // is a full backup, not a reading surface. See docs/docs/security.md.
+    const adminCircleIds = await getUserCircleIds(request.user!.id);
+
     const posts = await prisma.post.findMany({
       where: {
         ...(groupId ? { groupId } : {}),
         ...(authorId ? { authorId } : {}),
         ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+        OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }],
       },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
@@ -548,11 +775,24 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
+    // Circle privacy applies to admins too: an admin sees a circle-scoped
+    // post here only if they are themselves a member of that circle. This is
+    // a deliberate, documented trade-off — it means content inside a circle
+    // an admin isn't in cannot be moderated from this screen, and the only
+    // admin action reaching it is deleting the whole circle (which reports
+    // its post count first). GET /api/admin/export is the one exception: it
+    // is a full backup, not a reading surface. See docs/docs/security.md.
+    const adminCircleIds = await getUserCircleIds(request.user!.id);
+
     const comments = await prisma.comment.findMany({
       where: {
-        ...(groupId ? { post: { groupId } } : {}),
         ...(authorId ? { authorId } : {}),
         ...(q ? { content: { contains: q, mode: 'insensitive' } } : {}),
+        // A comment inherits its post's audience.
+        post: {
+          ...(groupId ? { groupId } : {}),
+          OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }],
+        },
       },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
@@ -573,6 +813,16 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return;
     const t = getT(request);
     const { id } = request.params as { id: string };
+
+    // An admin outside the post's circle can't see it on the Content page, so
+    // they mustn't be able to act on it here either — 404, the same answer
+    // that page's absence implies. resendPostPush() also filters recipients,
+    // so this is defence in depth rather than the only check.
+    const post = await prisma.post.findUnique({ where: { id }, select: { circleId: true } });
+    if (post && !(await canViewPostCircle(post.circleId, request.user!.id))) {
+      reply.status(404).send({ error: t('errors.postNotFound') });
+      return;
+    }
 
     try {
       const result = await resendPostPush(id, request.user!.id);
@@ -600,8 +850,21 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { postId } = request.query as { postId?: string };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
+    // A log row joins its post's `content`, which makes this a third content
+    // READING surface alongside /content/posts and /content/comments — so it
+    // takes the same circle narrowing they do. Rows with no post (a chat or
+    // on-this-day send) carry nothing circle-scoped and stay visible, so the
+    // operational view an admin needs is unaffected.
+    const adminCircleIds = await getUserCircleIds(request.user!.id);
+
     const logs = await prisma.pushDeliveryLog.findMany({
-      where: postId ? { postId } : {},
+      where: {
+        ...(postId ? { postId } : {}),
+        OR: [
+          { postId: null },
+          { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {

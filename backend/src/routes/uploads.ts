@@ -13,6 +13,7 @@ import {
   generateDisplayVariant,
   generateVideoPoster,
 } from '../services/uploadVariants.js';
+import { recordUpload } from '../services/uploads.js';
 
 const ALLOWED_EXTENSIONS = new Set([
   '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
@@ -128,6 +129,13 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         await cleanup();
         throw err;
       }
+
+      // Register each file so /uploads/* can authorize reads of it later
+      // (see the Upload model in schema.prisma). The row starts unbound, so
+      // until the client attaches the file to a post/comment/message/avatar
+      // only the uploader can read it back — which is exactly what a composer
+      // draft should be.
+      await Promise.all(uploadedUrls.map((url) => recordUpload(url, request.user!.id)));
 
       return { urls: uploadedUrls };
     }

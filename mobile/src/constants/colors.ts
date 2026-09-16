@@ -15,6 +15,13 @@ export const colors = {
   tripBg: '#eef7fb',
   tripTint: '#dcf0f7',
   tripBorder: '#bfe1ec',
+  // Family Circles. Deliberately the warm accent family rather than the
+  // primary blues: a circle badge has to read as "narrower than usual" at a
+  // glance, so it must not look like the neutral family chip. Mirrors
+  // --fam-circle-* in web/src/index.css.
+  circle: '#ed835e',
+  circleDark: '#a8482c',
+  circleTint: '#fdeae2',
   bg: '#edf7fb',
   surface: '#ffffff',
   border: '#d9e3e7',

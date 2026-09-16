@@ -3,6 +3,7 @@ export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
     type?: PostType;
+    circleIds?: string[];
 }
 export interface PostsPage {
     items: Post[];
@@ -30,6 +31,7 @@ export interface CreatePostBody {
     typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
+    circleId?: string | null;
     latitude?: number;
     longitude?: number;
     locationName?: string;

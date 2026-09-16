@@ -5,6 +5,7 @@ import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
 import { AddMemberModal } from './AddMemberModal';
+import { CirclesSection } from './CirclesSection';
 
 export function GroupsPage() {
   const { t } = useTranslation();
@@ -355,6 +356,11 @@ export function GroupsPage() {
                     })}
                   </ul>
                 )}
+
+                {/* Circles sit directly under the member list: they're a
+                    narrowing of exactly those people, so managing them next
+                    to membership is where an admin will look. */}
+                <CirclesSection groupId={selectedGroup.id} members={members} />
 
                 <div className="md-section-header">
                   <h4>{t('groups.memberCount', { count: members.length })}</h4>

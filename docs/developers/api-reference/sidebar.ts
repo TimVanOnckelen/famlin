@@ -122,6 +122,34 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Circles",
+      link: {
+        type: "doc",
+        id: "api-reference/circles",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-my-circles",
+          label: "List your circles in a group",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-circle-members",
+          label: "List a circle's members",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/leave-circle",
+          label: "Leave a circle",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Posts",
       link: {
         type: "doc",
@@ -550,6 +578,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/postperson",
           label: "PostPerson",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/circle",
+          label: "Circle",
           className: "schema",
         },
         {

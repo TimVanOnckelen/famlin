@@ -2,6 +2,7 @@ import { prisma } from '../../db.js';
 import { getMediaProvider } from './registry.js';
 import { resolvePersonFilterForAlbum } from './personFilter.js';
 import type { MediaAssetSummary } from './types.js';
+import { visiblePostsWhereFor } from '../circles.js';
 
 // The merged, capture-date-ordered photo feed backing
 // GET /api/media/groups/:groupId/photos — see routes/media.ts.
@@ -142,6 +143,10 @@ export type PhotoTimelineResult =
 // the group's posts, ordered newest-capture-first.
 export async function getGroupPhotoTimeline(
   groupId: string,
+  // viewerId is required, not optional: the post half of this timeline is
+  // subject to Circle privacy, and an optional viewer would make it easy for
+  // a future caller to silently opt out of that filter.
+  viewerId: string,
   options: { cursor?: string; take: number; personId?: string }
 ): Promise<PhotoTimelineResult> {
   // personId must be a mapped MediaPersonLink *somewhere* — mirrors the
@@ -164,7 +169,12 @@ export async function getGroupPhotoTimeline(
     // millions — but this would need a date-window filter (or its own
     // pagination source) if that assumption ever stops holding.
     prisma.post.findMany({
-      where: { groupId, uploadedAssetUrls: { isEmpty: false } },
+      where: {
+        AND: [
+          await visiblePostsWhereFor([groupId], viewerId),
+          { uploadedAssetUrls: { isEmpty: false } },
+        ],
+      },
       select: { id: true, createdAt: true, uploadedAssetUrls: true },
     }),
   ]);

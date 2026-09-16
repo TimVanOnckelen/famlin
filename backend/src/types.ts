@@ -132,12 +132,24 @@ export const createPostBodySchema = z
     // type expects).
     typeData: z.unknown().optional(),
     uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
+    // Narrows the audience from the whole group to one Circle within it
+    // (see services/circles.ts). Omitted or null = everyone in the target
+    // group, which is what every client built before Circles sends.
+    circleId: z.string().optional().nullable(),
   })
   .merge(locationFieldsSchema)
   .refine(requireLatLngTogether, { message: 'latitude and longitude must be provided together', path: ['latitude'] })
   .refine((data) => !!data.groupId || (data.groupIds && data.groupIds.length > 0), {
     message: 'groupId or groupIds is required',
     path: ['groupId'],
+  })
+  // A Circle belongs to exactly one Group, so "share with this circle" and
+  // "share with several families at once" are mutually exclusive by
+  // construction. Rejecting the combination here keeps crossPostId semantics
+  // — and the feed's sibling dedupe — entirely free of circle awareness.
+  .refine((data) => !data.circleId || (data.groupIds ?? [data.groupId]).length === 1, {
+    message: 'circleId cannot be combined with cross-posting',
+    path: ['circleId'],
   });
 
 // Upper bound on photos/videos in one comment. Deliberately lower than a
@@ -414,4 +426,42 @@ export const inviteRegisterBodySchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email().optional(),
   password: z.string().min(8).max(100),
+});
+
+// --- Family Circles ---------------------------------------------------------
+// A Circle is a smaller, reusable audience inside one Group. Management is
+// admin-only in this version (routes/admin.ts), matching the existing rule
+// that group mutations live only there — members can only leave their own
+// circle (routes/circles.ts).
+
+export const adminCreateCircleBodySchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional().nullable(),
+  // Same /uploads/ path constraint as User.avatarUrl — never an arbitrary
+  // external URL, which would beacon every viewer's client on render.
+  avatarUrl: uploadPathSchema.optional().nullable(),
+  // Seed membership at creation time so an admin doesn't have to create the
+  // circle and then add everyone in a second round trip.
+  userIds: z.array(z.string()).max(200).optional(),
+});
+
+export const adminUpdateCircleBodySchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).optional().nullable(),
+  avatarUrl: uploadPathSchema.optional().nullable(),
+});
+
+export const circleMemberBodySchema = z.object({
+  userId: z.string(),
+});
+
+// Deleting a circle permanently deletes its posts (Post.circleId cascades),
+// so the destructive path is opt-in: without this flag a non-empty circle
+// returns 409 with the post count, which is what lets the admin UI warn
+// before anything is destroyed.
+export const adminDeleteCircleQuerySchema = z.object({
+  deleteContent: z
+    .union([z.literal('true'), z.literal('false')])
+    .optional()
+    .transform((v) => v === 'true'),
 });

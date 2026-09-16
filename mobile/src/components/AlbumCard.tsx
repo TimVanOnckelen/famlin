@@ -14,6 +14,7 @@ import { addAlbumPhotos } from '@famlin/api-client';
 import { getUploadUrl } from '@/api/uploads';
 import { patchPostInCaches } from '@/utils/postCache';
 import { useReactToPost } from '@/hooks/usePostMutations';
+import { CircleTag } from './CircleTag';
 
 // The feed card for an ALBUM post — a collaborative photo album any group
 // member adds photos to. Like TripCard it's a wholesale-different card
@@ -51,12 +52,20 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
     likeMutation.mutate(post.myReaction ?? 'LOVE');
   }
 
-  const groupTag = showGroup && post.group && (
-    <View style={styles.groupTag}>
-      <Text style={styles.groupTagText} numberOfLines={1}>
-        {post.group.name}
-      </Text>
-    </View>
+  // Both context tags travel together: which family the post is in (when the
+  // feed spans several) and which Circle it was shared with (when it wasn't
+  // shared with everyone).
+  const groupTag = (
+    <>
+      {showGroup && post.group && (
+        <View style={styles.groupTag}>
+          <Text style={styles.groupTagText} numberOfLines={1}>
+            {post.group.name}
+          </Text>
+        </View>
+      )}
+      <CircleTag post={post} />
+    </>
   );
 
   return (

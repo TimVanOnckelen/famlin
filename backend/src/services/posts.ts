@@ -13,6 +13,11 @@ export const postInclude = (userId: string) => ({
   // The feed can span several groups (see the groupIds filter on GET /), so
   // clients need the group's name on each post to label where it belongs.
   group: { select: { id: true, name: true } },
+  // Safe to expose: a post only reaches a client that already passed the
+  // circle check, so naming its circle tells them nothing new — and it's
+  // what renders the "shared in Grandparents" badge. null for a
+  // whole-family post.
+  circle: { select: { id: true, name: true } },
   _count: { select: { comments: true, likes: true } },
   // All reaction rows (not just this user's) so the response can show a
   // per-emoji breakdown, not just a total — see services/reactions.ts.

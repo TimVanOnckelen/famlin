@@ -29,3 +29,5 @@ export { fetchNotifications, fetchUnreadNotificationCount, markNotificationRead,
 export { registerPushToken, unregisterPushToken } from './pushTokens';
 export type { ApiToken, CreatedApiToken } from './apiTokens';
 export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens';
+export type { Circle, CircleMember } from './types';
+export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';

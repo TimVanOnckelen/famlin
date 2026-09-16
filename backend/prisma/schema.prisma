@@ -8,23 +8,23 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(cuid())
-  email             String         @unique
+  id                String            @id @default(cuid())
+  email             String            @unique
   name              String
   avatarUrl         String?
   passwordHash      String?
-  createdAt         DateTime       @default(now())
-  isAdmin           Boolean        @default(false)
+  createdAt         DateTime          @default(now())
+  isAdmin           Boolean           @default(false)
   // Bumped on password change/reset so previously issued JWTs (which embed
   // the version they were signed with) stop being accepted immediately,
   // instead of remaining valid for the rest of their 30-day lifetime.
-  tokenVersion      Int            @default(0)
-  emailOnNewPost    Boolean        @default(true)
-  emailOnNewComment Boolean        @default(true)
-  emailOnNewLike    Boolean        @default(true)
-  pushOnNewPost     Boolean        @default(true)
-  pushOnNewComment  Boolean        @default(true)
-  pushOnNewLike     Boolean        @default(true)
+  tokenVersion      Int               @default(0)
+  emailOnNewPost    Boolean           @default(true)
+  emailOnNewComment Boolean           @default(true)
+  emailOnNewLike    Boolean           @default(true)
+  pushOnNewPost     Boolean           @default(true)
+  pushOnNewComment  Boolean           @default(true)
+  pushOnNewLike     Boolean           @default(true)
   pushTokens        PushToken[]
   groupMemberships  GroupMember[]
   posts             Post[]
@@ -32,8 +32,8 @@ model User {
   likes             Like[]
   favorites         Favorite[]
   notifications     Notification[]
-  createdInvites    Invite[]       @relation("InviteCreatedBy")
-  usedInvites       Invite[]       @relation("InviteUsedBy")
+  createdInvites    Invite[]          @relation("InviteCreatedBy")
+  usedInvites       Invite[]          @relation("InviteUsedBy")
   apiTokens         ApiToken[]
   mediaPersonLinks  MediaPersonLink[]
   postInteractions  PostInteraction[]
@@ -41,6 +41,9 @@ model User {
   pushOnChitchat    Boolean           @default(true)
   chatMessages      ChatMessage[]
   chatReads         ChatRead[]
+  circleMemberships CircleMember[]
+  createdCircles    Circle[]          @relation("CircleCreatedBy")
+  uploads           Upload[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -67,9 +70,9 @@ model ApiToken {
 }
 
 model Group {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
+  id               String           @id @default(cuid())
+  name             String
+  description      String?
   // Post types members may create in this group, by PostTypeHandler id
   // (services/postTypes/registry.ts). Empty = all registered types allowed
   // (same convention as the allowedEmails setting) — member-facing responses
@@ -77,27 +80,28 @@ model Group {
   // empty list; only admin responses expose the raw stored array. Enforced
   // at creation time only: existing posts of a later-disallowed type stay
   // visible.
-  allowedPostTypes String[] @default([])
+  allowedPostTypes String[]         @default([])
   // Whether this group's single central chat ("chitchat") is turned on —
   // off by default, an admin opt-in per group (see routes/admin.ts group
   // create/update). Member-facing chat routes 403 with
   // errors.chitchatDisabled while this is false.
-  chitchatEnabled Boolean @default(false)
-  createdAt   DateTime @default(now())
-  members     GroupMember[]
-  posts       Post[]
-  invites     Invite[]
-  mediaAlbumLinks MediaAlbumLink[]
-  chatMessages    ChatMessage[]
-  chatReads       ChatRead[]
+  chitchatEnabled  Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  members          GroupMember[]
+  posts            Post[]
+  invites          Invite[]
+  mediaAlbumLinks  MediaAlbumLink[]
+  chatMessages     ChatMessage[]
+  chatReads        ChatRead[]
+  circles          Circle[]
 }
 
 model GroupMember {
-  id       String  @id @default(cuid())
+  id       String   @id @default(cuid())
   groupId  String
-  group    Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt DateTime @default(now())
 
   @@unique([groupId, userId])
@@ -105,54 +109,68 @@ model GroupMember {
 }
 
 model Post {
-  id              String   @id @default(cuid())
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  content         String?
+  id                String            @id @default(cuid())
+  authorId          String
+  author            User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  groupId           String
+  group             Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  // Narrows this post's audience from the whole group to one Circle within
+  // it (see the Circle model below). null = visible to every group member,
+  // which is every post that existed before Circles and every post whose
+  // author chose "Everyone". A post can never target a Circle of a group it
+  // doesn't belong to, and circle-scoped posts are deliberately single-group
+  // (no cross-posting) — see routes/posts.ts.
+  //
+  // Cascade: deleting a Circle permanently deletes its posts. There is no
+  // soft delete and no "promote to whole family" path, because silently
+  // widening an audience is the exact failure this feature exists to
+  // prevent. The admin delete endpoint reports the affected post count first.
+  circleId          String?
+  circle            Circle?           @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  content           String?
   // Open string discriminator (was the closed PostType enum: UPDATE /
   // MILESTONE) so new post types (POLL, and whatever comes after it) can be
   // added without a migration — see services/postTypes/registry.ts, the
   // PostTypeHandler registry that owns per-type validation. Never renamed
   // once a deployment has posts of that type.
-  type            String   @default("UPDATE")
+  type              String            @default("UPDATE")
   // Handler-owned, type-specific config (e.g. a poll's options/closesAt) —
   // null for UPDATE/MILESTONE. Validated/transformed by the type's
   // PostTypeHandler at create time, immutable afterward. `content` stays the
   // universal human-readable field (a poll's question), so search,
   // notification previews, and old clients keep working unmodified.
-  typeData        Json?
-  milestoneTag    String?
+  typeData          Json?
+  milestoneTag      String?
   uploadedAssetUrls String[]
-  createdAt       DateTime @default(now())
-  editedAt        DateTime?
-  latitude        Float?
-  longitude       Float?
-  locationName    String?
-  comments        Comment[]
-  likes           Like[]
-  favorites       Favorite[]
-  notifications   Notification[]
+  createdAt         DateTime          @default(now())
+  editedAt          DateTime?
+  latitude          Float?
+  longitude         Float?
+  locationName      String?
+  comments          Comment[]
+  likes             Like[]
+  favorites         Favorite[]
+  notifications     Notification[]
   // System chat messages (kind: SYSTEM_MILESTONE) that deep-link back to this
   // post — see ChatMessage.refPostId below.
-  chatMessages    ChatMessage[]
+  chatMessages      ChatMessage[]
   // Shared by every sibling row of one cross-post (see the "cross-posting"
   // feature: one Post row per target group, all created together with this
   // same id) — null for an ordinary single-group post. Never exposed in any
   // API response (see shapePost in services/posts.ts): a non-author must
   // never be able to tell a post was cross-posted.
-  crossPostId     String?
+  crossPostId       String?
   // Per-user state for this post's type (poll votes today; RSVPs, etc.
   // later) — a generic, handler-owned table rather than one column per
   // feature. Never included in postInclude (routes/posts.ts) or serialized
   // directly; each PostTypeHandler owns reading/writing its own `key`
   // namespace (see services/postTypes/poll.ts).
-  interactions    PostInteraction[]
-  pushDeliveryLogs PushDeliveryLog[]
+  interactions      PostInteraction[]
+  pushDeliveryLogs  PushDeliveryLog[]
 
   @@index([groupId, createdAt])
   @@index([crossPostId])
+  @@index([circleId])
 }
 
 // Generic per-user state against a post, owned by that post's
@@ -178,14 +196,14 @@ model PostInteraction {
 }
 
 model Comment {
-  id        String    @id @default(cuid())
-  postId    String
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  postId         String
+  post           Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   // Set when the comment is pinned to one photo/video in the post's
   // uploadedAssetUrls rather than the post as a whole (null = post-level).
-  assetUrl  String?
+  assetUrl       String?
   // Photos/videos the commenter uploaded as part of this comment itself
   // (/uploads/ paths, like Post.uploadedAssetUrls) — distinct from assetUrl,
   // which instead points at an existing asset on the post.
@@ -194,9 +212,9 @@ model Comment {
   // attachmentUrls[0] on every write so already-installed clients (which only
   // know that field) keep rendering the first photo of a multi-photo comment.
   // Read attachmentUrls; write both.
-  attachmentUrl String?
-  attachmentUrls String[] @default([])
-  content   String
+  attachmentUrl  String?
+  attachmentUrls String[]  @default([])
+  content        String
   // Handler-owned, type-specific payload for a comment created BY a post-type
   // handler rather than the plain comments route — e.g. a TRIP post's
   // check-ins (services/postTypes/trip.ts): {kind: 'trip_checkin', place,
@@ -205,13 +223,13 @@ model Comment {
   // createCommentBodySchema) — only a post-type handler writes it, so
   // metadata.kind is a trustworthy discriminator for "this comment is really
   // a type-specific interaction, not user-authored prose."
-  metadata  Json?
-  createdAt DateTime  @default(now())
-  editedAt  DateTime?
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
-  likes     Like[]
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  editedAt       DateTime?
+  parentId       String?
+  parent         Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[] @relation("CommentReplies")
+  likes          Like[]
 
   @@index([postId, createdAt])
 }
@@ -223,21 +241,21 @@ model Comment {
 // deep-link. kind is an open string discriminator, same convention as
 // Post.type — never rename a persisted value.
 model ChatMessage {
-  id            String   @id @default(cuid())
-  groupId       String
-  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  authorId      String
-  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  kind          String   @default("USER")
-  content       String?
-  attachmentUrl String?
-  refPostId     String?
-  refPost       Post?    @relation(fields: [refPostId], references: [id], onDelete: SetNull)
+  id               String        @id @default(cuid())
+  groupId          String
+  group            Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId         String
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  kind             String        @default("USER")
+  content          String?
+  attachmentUrl    String?
+  refPostId        String?
+  refPost          Post?         @relation(fields: [refPostId], references: [id], onDelete: SetNull)
   replyToMessageId String?
   replyToMessage   ChatMessage?  @relation("ChatMessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
   replies          ChatMessage[] @relation("ChatMessageReplies")
-  createdAt     DateTime @default(now())
-  editedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  editedAt         DateTime?
 
   @@index([groupId, createdAt])
   @@index([replyToMessageId])
@@ -354,15 +372,15 @@ model PushDeliveryLog {
 // the entire authorization boundary for the /api/media and /api/immich asset
 // proxies — plus the per-request isAssetInAlbum re-check.
 model MediaAlbumLink {
-  id              String   @id @default(cuid())
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  provider        String   @default("immich")
-  externalAlbumId String
+  id                 String       @id @default(cuid())
+  groupId            String
+  group              Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  provider           String       @default("immich")
+  externalAlbumId    String
   // Cached label from the provider at link time, shown in the admin UI
   // without an extra round-trip; not kept in sync if renamed provider-side.
-  albumName       String
-  createdAt       DateTime @default(now())
+  albumName          String
+  createdAt          DateTime     @default(now())
   // Whether/how src/jobs/newAssets.ts surfaces newly-added assets on this
   // album: OFF (never), MANUAL (a notification), AUTO (a real Post).
   newAssetMode       NewAssetMode @default(OFF)
@@ -426,4 +444,100 @@ model Invite {
   createdAt   DateTime  @default(now())
 
   @@index([groupId])
+}
+
+// A smaller, reusable audience inside one Group ("Grandparents", "Cousins",
+// "Adults only"). A Circle is a narrowing layer on top of group membership,
+// never a replacement for it: every Circle member is by definition already a
+// GroupMember of `groupId`, and leaving a Circle never touches that
+// GroupMember row.
+//
+// Circles are FULLY PRIVATE: a group member who is not in a Circle cannot
+// see that it exists at all — not its name, not its avatar, not its member
+// list, and not the fact that a post they can't see was made in it. The
+// member-facing list endpoint returns only the caller's own circles; the
+// admin endpoints (routes/admin.ts) are the only way to enumerate all of a
+// group's circles.
+//
+// There is deliberately no per-circle role column in this first version:
+// management is admin-only (routes/admin.ts, guarded by requireAdmin), the
+// same posture group management already has. The only mutation a member can
+// perform on their own membership is leaving (routes/circles.ts).
+model Circle {
+  id          String         @id @default(cuid())
+  groupId     String
+  group       Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  // An /uploads/ path like User.avatarUrl. Deliberately readable by anyone
+  // who can see the circle at all (i.e. its members) — bound with a null
+  // scope so the avatar itself isn't circle-restricted media.
+  avatarUrl   String?
+  // SetNull rather than Cascade: deleting the admin who created a circle
+  // must not delete the circle or its content.
+  createdById String?
+  createdBy   User?          @relation("CircleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  members     CircleMember[]
+  posts       Post[]
+
+  @@index([groupId])
+}
+
+model CircleMember {
+  id       String   @id @default(cuid())
+  circleId String
+  circle   Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([circleId, userId])
+  @@index([userId])
+}
+
+// Reverse index from an uploaded file back to the audience allowed to read
+// it, so /uploads/* can be authorized per request instead of relying on an
+// unguessable UUID (see the onRequest hook in app.ts).
+//
+// It exists because an upload path is referenced from seven different places
+// — Post.uploadedAssetUrls, Post.typeData.coverPhotoUrl, Comment.assetUrl,
+// Comment.attachmentUrl(s), Comment.metadata.photoUrls, ChatMessage.
+// attachmentUrl and User.avatarUrl — two of which live inside Json columns
+// and so can't be queried by any practical index. Resolving "who owns this
+// file" at request time is therefore impossible without this table.
+//
+// `assetKey` is the upload's UUID, NOT a full path, so one row covers every
+// rendition of the same upload: `<uuid>.jpg`, `<uuid>-thumbnail.jpg`, the
+// video poster of `<uuid>.mp4`, and the generated HEIC rendition served
+// under the stored URL. Keying on the path instead would leave thumbnails
+// unprotected, which is the whole asset at 400px.
+//
+// Access rules (services/uploads.ts, resolveUploadAccess):
+//   - no row at all  -> allow. Uploads predating this table have no row and
+//     must keep working; enforcement is forward-looking, with no backfill.
+//   - circleId set   -> allow only members of that circle.
+//   - unbound        -> allow only the uploader (a composer draft that was
+//     never attached to anything).
+//   - otherwise      -> allow any authenticated user, exactly as before.
+//
+// circleId is an unconstrained column rather than a foreign key ON PURPOSE:
+// if it cascaded, deleting a Circle would delete these rows and its media
+// would silently revert to family-wide readable. Leaving the id dangling
+// keeps the asset unreadable by everyone, which is the correct fail-closed
+// direction for a privacy boundary.
+model Upload {
+  id         String   @id @default(cuid())
+  assetKey   String   @unique
+  uploaderId String?
+  uploader   User?    @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+  circleId   String?
+  // Set once the upload is attached to a post, comment, chat message or
+  // avatar. Until then only the uploader can read it.
+  bound      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([circleId])
+  @@index([uploaderId])
 }

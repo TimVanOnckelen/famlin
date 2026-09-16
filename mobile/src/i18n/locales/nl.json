@@ -12,7 +12,8 @@
     "error": "Fout",
     "edited": "Bewerkt",
     "delete": "Verwijderen",
-    "edit": "Bewerken"
+    "edit": "Bewerken",
+    "close": "Sluiten"
   },
   "relativeTime": {
     "justNow": "zojuist",
@@ -213,7 +214,10 @@
       "travelersSubtitle": "Optioneel — zij kunnen ook inchecken",
       "travelersSelected_one": "{{count}} reisgenoot",
       "travelersSelected_other": "{{count}} reisgenoten"
-    }
+    },
+    "audience": "Wie kan dit zien?",
+    "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
+    "audienceEveryone": "Iedereen"
   },
   "poll": {
     "questionPlaceholder": "Stel een vraag...",
@@ -458,5 +462,10 @@
         "failed": "Album kon niet worden afgesloten"
       }
     }
+  },
+  "circles": {
+    "membersHint": "Alleen deze mensen zien berichten die met deze kring gedeeld worden.",
+    "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
+    "joinedOn": "Lid sinds {{date}}"
   }
 }

@@ -9,6 +9,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import { ZodError } from 'zod';
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
+import { canReadUpload } from './services/uploads.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { requestPathname } from './utils/requestPath.js';
@@ -19,6 +20,7 @@ import { registerNotificationSubscriber } from './subscribers/notifications.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import groupRoutes from './routes/groups.js';
+import circleRoutes from './routes/circles.js';
 import postRoutes from './routes/posts.js';
 import commentRoutes from './routes/comments.js';
 import likeRoutes from './routes/likes.js';
@@ -193,8 +195,22 @@ export async function buildApp() {
     // confirms the token still maps to an active user at its issued
     // tokenVersion, so a deactivated user or a pre-password-reset token can't
     // keep reading family media.
-    if (!(await authenticateMediaRequest(request))) {
+    const viewerId = await authenticateMediaRequest(request);
+    if (!viewerId) {
       return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+    }
+
+    // Authenticated is not the same as authorized: a Circle-scoped photo must
+    // be unreadable to group members outside that circle even when they have
+    // the exact URL (see the Upload model in schema.prisma). canReadUpload
+    // resolves every rendition — display copy, -thumbnail, video poster, HEIC
+    // rendition — back to one Upload row, and returns true for the uploads
+    // that predate that table so existing media keeps working untouched.
+    //
+    // 404 rather than 403: whether a given file exists is itself information
+    // a non-member shouldn't get, and it matches how a missing file behaves.
+    if (!(await canReadUpload(pathname, viewerId))) {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
     }
 
     // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a
@@ -232,6 +248,7 @@ export async function buildApp() {
   await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(adminRoutes, { prefix: '/api/admin' });
   await fastify.register(groupRoutes, { prefix: '/api/groups' });
+  await fastify.register(circleRoutes, { prefix: '/api/circles' });
   await fastify.register(postRoutes, { prefix: '/api/posts' });
   await fastify.register(commentRoutes, { prefix: '/api' });
   await fastify.register(likeRoutes, { prefix: '/api' });

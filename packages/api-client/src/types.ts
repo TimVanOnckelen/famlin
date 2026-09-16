@@ -228,6 +228,11 @@ export interface Post {
   trip?: TripEnrichment;
   // Present only when type === 'ALBUM' — see AlbumEnrichment.
   album?: AlbumEnrichment;
+  // The Circle this post was shared with, or null/absent for a whole-family
+  // post. Only ever present on a post you're allowed to see, so it's safe to
+  // render as the "shared in <Circle>" badge.
+  circleId?: string | null;
+  circle?: { id: string; name: string } | null;
   milestoneTag?: string | null;
   uploadedAssetUrls: string[];
   createdAt: string;
@@ -298,4 +303,25 @@ export interface Notification {
     id: string;
     groupId: string;
   } | null;
+}
+
+// A smaller, reusable audience inside one Group ("Grandparents", "Cousins").
+// A Circle narrows group membership, it never widens it: every circle member
+// is already a member of the group. Only circles you belong to are ever
+// returned to you.
+export interface Circle {
+  id: string;
+  groupId: string;
+  name: string;
+  description?: string | null;
+  avatarUrl?: string | null;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface CircleMember {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  joinedAt: string;
 }

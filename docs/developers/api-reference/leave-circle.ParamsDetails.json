@@ -1,0 +1,1 @@
+{"parameters":[{"name":"circleId","in":"path","required":true,"schema":{"type":"string"}}]}

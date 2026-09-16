@@ -11,6 +11,7 @@ import {
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
+import { CircleBadge } from '@/components/CircleBadge';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { formatTime } from '@/utils/time';
 import { formatTripDateRange } from '@/utils/trip';
@@ -70,7 +71,15 @@ export function TripFeedCard({
   // older/partial cache entry is possible.
   if (!trip) return null;
 
-  const groupChip = showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>;
+  // Both context chips travel together: which family the post is in (when the
+  // feed spans several) and which Circle it was shared with (when it wasn't
+  // shared with everyone).
+  const groupChip = (
+    <>
+      {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
+      <CircleBadge post={post} />
+    </>
+  );
   const openLabel = trip.closed ? t('feed.trip.viewDiaryCta') : t('feed.trip.followCta');
 
   const reactionRow = (

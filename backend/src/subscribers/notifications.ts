@@ -61,7 +61,12 @@ export function registerNotificationSubscriber(): void {
     // refPostId) — inserted directly, no chat.created event, so it doesn't
     // trigger a second (redundant) notification on top of the new_post one
     // above.
-    if (event.type === 'MILESTONE') {
+    // A circle-private milestone deliberately posts NO system chat message:
+    // the one central group chat is group-wide (there is no per-circle chat
+    // in this version), so the message would announce the post's existence —
+    // author, milestone label and a deep link — to every group member,
+    // including the ones the circle exists to exclude.
+    if (event.type === 'MILESTONE' && !event.circleId) {
       const chitchatGroups = await prisma.group.findMany({
         where: { id: { in: groupIds }, chitchatEnabled: true },
         select: { id: true },

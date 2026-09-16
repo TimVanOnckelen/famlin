@@ -5,6 +5,7 @@ import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, get
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
+import { CircleBadge } from '@/components/CircleBadge';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
 import { isVideoUrl } from '@/utils/media';
@@ -57,7 +58,15 @@ export function AlbumFeedCard({
   // by the server, but an older/partial cache entry is possible.
   if (!album) return null;
 
-  const groupChip = showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>;
+  // Both context chips travel together: which family the post is in (when the
+  // feed spans several) and which Circle it was shared with (when it wasn't
+  // shared with everyone).
+  const groupChip = (
+    <>
+      {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
+      <CircleBadge post={post} />
+    </>
+  );
   const heroUrls = album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
 
   return (

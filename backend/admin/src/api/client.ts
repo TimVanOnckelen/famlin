@@ -18,6 +18,7 @@ import {
   PostTypeInfo,
   PostPushResendResult,
   PushDeliveryLog,
+  Circle,
 } from '../types';
 
 export type {
@@ -40,6 +41,7 @@ export type {
   PostTypeInfo,
   PostPushResendResult,
   PushDeliveryLog,
+  Circle,
 };
 
 export class ApiError extends Error {
@@ -199,6 +201,38 @@ export const api = {
     request<void>(`/api/admin/groups/${groupId}/members/${userId}`, {
       method: 'DELETE',
     }),
+
+  // --- Family Circles -------------------------------------------------------
+  // Management is admin-only, so these are the ONLY way to enumerate or edit
+  // a group's circles: the member-facing API returns just the caller's own
+  // circles, because a group member outside a circle must not learn it
+  // exists. Note this is management access, not content access — circle posts
+  // stay out of the moderation lists unless the admin is in the circle.
+
+  getGroupCircles: (groupId: string) =>
+    request<Circle[]>(`/api/admin/groups/${groupId}/circles`),
+
+  createCircle: (groupId: string, body: { name: string; description?: string | null; userIds?: string[] }) =>
+    request<Circle>(`/api/admin/groups/${groupId}/circles`, { method: 'POST', body }),
+
+  updateCircle: (circleId: string, body: { name?: string; description?: string | null }) =>
+    request<Circle>(`/api/admin/circles/${circleId}`, { method: 'PATCH', body }),
+
+  // Deleting a circle permanently deletes its posts. Without deleteContent
+  // the server refuses a non-empty circle with a 409 carrying the post count,
+  // which is what lets the UI say how much is about to be destroyed before
+  // the admin confirms.
+  deleteCircle: (circleId: string, deleteContent = false) =>
+    request<{ success: boolean; deletedPostCount: number }>(
+      `/api/admin/circles/${circleId}${deleteContent ? '?deleteContent=true' : ''}`,
+      { method: 'DELETE' }
+    ),
+
+  addCircleMember: (circleId: string, userId: string) =>
+    request<void>(`/api/admin/circles/${circleId}/members`, { method: 'POST', body: { userId } }),
+
+  removeCircleMember: (circleId: string, userId: string) =>
+    request<void>(`/api/admin/circles/${circleId}/members/${userId}`, { method: 'DELETE' }),
 
   getGroupInvites: (groupId: string) =>
     request<Invite[]>(`/api/admin/groups/${groupId}/invites`),

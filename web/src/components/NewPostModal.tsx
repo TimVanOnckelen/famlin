@@ -5,6 +5,7 @@ import {
   addAlbumPhotos,
   uploadFiles,
   createPost,
+  fetchMyCircles,
   getGroupMediaAlbums,
   getUploadUrl,
   Group,
@@ -38,6 +39,11 @@ export function NewPostModal({
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(
     initialGroupId ? [initialGroupId] : []
   );
+  // Audience: null = the whole family, otherwise one Circle within the single
+  // selected family. Circles and cross-posting are mutually exclusive (a
+  // Circle belongs to exactly one group), so this resets whenever the group
+  // selection changes.
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
   const [type, setType] = useState<ComposerType>('UPDATE');
   const [content, setContent] = useState('');
   // Poll options: always at least 2 rows in the editor (spec: 2–10 options);
@@ -70,6 +76,18 @@ export function NewPostModal({
   // several, drive it off the first one picked — the server copies
   // linked-album photos so every group ends up able to see them.
   const primaryGroupId = selectedGroupIds[0] ?? '';
+
+  // The audience picker offers only circles the author is in — which is all
+  // the server will ever return, and all they're allowed to post to. Offered
+  // only for a single-family post: cross-posting to several families can't be
+  // narrowed to a circle.
+  const canChooseCircle = selectedGroupIds.length === 1;
+  const circlesQuery = useQuery({
+    queryKey: ['circles', primaryGroupId],
+    queryFn: () => fetchMyCircles(primaryGroupId),
+    enabled: !!primaryGroupId && canChooseCircle,
+  });
+  const circles = canChooseCircle ? (circlesQuery.data ?? []) : [];
 
   // "Choose from albums" only appears when the primary group actually has
   // linked albums (from any media source) — same behavior as the mobile
@@ -120,6 +138,9 @@ export function NewPostModal({
         const post = await createPost({
           groupId: primaryGroupId,
           groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
+          // Omitted entirely for a whole-family post, so older servers that
+          // don't know about circles behave identically.
+          circleId: selectedCircleId ?? undefined,
           content: content.trim() || undefined,
           type,
           typeData: { title: albumTitle.trim(), ...(uploadedUrls[0] ? { coverPhotoUrl: uploadedUrls[0] } : {}) },
@@ -139,6 +160,9 @@ export function NewPostModal({
         // Omit groupIds entirely for a single group so older servers that
         // don't know about cross-posting behave identically.
         groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
+        // Omitted entirely for a whole-family post, so older servers that
+        // don't know about circles behave identically.
+        circleId: selectedCircleId ?? undefined,
         content: content.trim() || undefined,
         type,
         // Poll options only — no closesAt UI in v1 (API-only, backend default).
@@ -159,6 +183,9 @@ export function NewPostModal({
 
   function toggleGroup(id: string) {
     setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
+    // A circle belongs to one family, so any previous choice stops being
+    // valid the moment the family selection moves.
+    setSelectedCircleId(null);
   }
 
   function addFiles(list: FileList | null) {
@@ -211,6 +238,39 @@ export function NewPostModal({
                   aria-pressed={selectedGroupIds.includes(group.id)}
                 >
                   {group.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {circles.length > 0 && (
+          <div className="field">
+            <span className="field-label">{t('newPost.audience')}</span>
+            <span className="field-hint">{t('newPost.audienceHint')}</span>
+            <div className="group-select-chips" role="radiogroup" aria-label={t('newPost.audience')}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={selectedCircleId === null}
+                className={`filter-chip${selectedCircleId === null ? ' filter-chip-active' : ''}`}
+                onClick={() => setSelectedCircleId(null)}
+              >
+                {t('newPost.audienceEveryone')}
+              </button>
+              {circles.map((circle) => (
+                <button
+                  key={circle.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedCircleId === circle.id}
+                  className={`filter-chip filter-chip-circle${
+                    selectedCircleId === circle.id ? ' filter-chip-active' : ''
+                  }`}
+                  onClick={() => setSelectedCircleId(circle.id)}
+                >
+                  <Icon name="users" size={13} strokeWidth={2} />
+                  {circle.name}
                 </button>
               ))}
             </div>

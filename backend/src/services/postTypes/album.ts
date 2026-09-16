@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../db.js';
+import { bindAssetsToScope } from '../uploads.js';
 import { emitDomainEvent } from '../../events.js';
 import { uploadPathSchema } from '../../types.js';
 import { PostTypeError } from './types.js';
@@ -133,6 +134,10 @@ export const albumHandler: PostTypeHandler = {
     };
   },
 
+  collectAssets(typeData: unknown): string[] {
+    const cover = (typeData as { coverPhotoUrl?: string | null } | null)?.coverPhotoUrl;
+    return cover ? [cover] : [];
+  },
   async interact({ post, userId, key, value }) {
     const typeData = post.typeData as PersistedAlbumTypeData | null;
     if (!typeData) {
@@ -199,6 +204,11 @@ export const albumHandler: PostTypeHandler = {
             })
           )
         );
+        // Bind this contribution's photos to the post's audience in the same
+        // transaction that stores them, so a circle-private post's media
+        // isn't readable family-wide through its /uploads/ URL.
+        await bindAssetsToScope(metadata.photoUrls, post.circleId, tx);
+
         const invokedIndex = authorizedSiblings.findIndex((sibling) => sibling.id === post.id);
         const primary = created[invokedIndex] ?? created[0];
         return { authorizedSiblings, created, primary, metadata };

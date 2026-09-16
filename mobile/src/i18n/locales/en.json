@@ -12,7 +12,8 @@
     "error": "Error",
     "edited": "Edited",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "close": "Close"
   },
   "relativeTime": {
     "justNow": "just now",
@@ -213,7 +214,10 @@
       "travelersSubtitle": "Optional — they can check in too",
       "travelersSelected_one": "{{count}} travel companion",
       "travelersSelected_other": "{{count}} travel companions"
-    }
+    },
+    "audience": "Who can see this?",
+    "audienceHint": "Circles let you share with part of the family. Only people in the circle will see this post.",
+    "audienceEveryone": "Everyone"
   },
   "poll": {
     "questionPlaceholder": "Ask a question...",
@@ -458,5 +462,10 @@
         "failed": "Could not close the album"
       }
     }
+  },
+  "circles": {
+    "membersHint": "Only these people can see posts shared with this circle.",
+    "membersLoadFailed": "Couldn't load the members of this circle.",
+    "joinedOn": "Joined {{date}}"
   }
 }

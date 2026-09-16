@@ -57,7 +57,9 @@
       "contributedBy_other": "Toegevoegd door {{name}} +{{others}} meer",
       "addPhotosCta": "Foto's toevoegen",
       "openCta": "Album openen →"
-    }
+    },
+    "circleFilterLabel": "Filter op kring",
+    "sharedWithCircle": "Gedeeld met {{circle}}"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -94,7 +96,10 @@
     "addFromAlbums": "Kies uit albums",
     "removePhoto": "Foto verwijderen",
     "submit": "Plaatsen",
-    "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw."
+    "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw.",
+    "audience": "Wie kan dit zien?",
+    "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
+    "audienceEveryone": "Iedereen"
   },
   "profile": {
     "title": "Profiel",
@@ -272,5 +277,11 @@
       "emptyDescription": "Voeg als eerste foto's toe aan dit album.",
       "emptyClosedDescription": "Dit album werd afgesloten voordat er foto's werden toegevoegd."
     }
+  },
+  "circles": {
+    "membersHint": "Alleen deze mensen zien berichten die met deze kring gedeeld worden.",
+    "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
+    "joinedOn": "Lid sinds {{date}}",
+    "whoCanSee": "Wie kan berichten in {{circle}} zien?"
   }
 }
