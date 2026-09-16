@@ -369,6 +369,53 @@ describe('admin access is management-only', () => {
   });
 });
 
+describe('admin push surfaces respect the circle boundary', () => {
+  // A push renders its excerpt on a lock screen, so leaking a circle post
+  // here leaks the content itself, not merely that the post exists. Both of
+  // these were missed on the first pass: the push subsystem derives its own
+  // recipient lists and joins post content, so it doesn't inherit the feed's
+  // filtering for free.
+  it('hides circle posts from the push delivery log', async () => {
+    await prisma.pushDeliveryLog.create({
+      data: {
+        postId: circlePostId,
+        notifyType: 'new_post',
+        recipientCount: 1,
+        tokenCount: 1,
+        successCount: 1,
+        failureCount: 0,
+      },
+    });
+    await prisma.pushDeliveryLog.create({
+      data: {
+        postId: familyPostId,
+        notifyType: 'new_post',
+        recipientCount: 1,
+        tokenCount: 1,
+        successCount: 1,
+        failureCount: 0,
+      },
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/admin/push-log', headers: authHeader(admin) });
+    expect(res.statusCode).toBe(200);
+
+    const body = JSON.stringify(res.json().items);
+    // The post's content must not come back through the log's join.
+    expect(body).not.toContain('Secret circle news');
+    expect(body).toContain('Everyone can see this');
+  });
+
+  it('refuses to resend a circle post push for an admin outside the circle', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/admin/content/posts/${circlePostId}/retrigger-push`,
+      headers: authHeader(admin),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
 describe('circle deletion cascades', () => {
   it('permanently deletes the circle posts when confirmed', async () => {
     const doomed = await prisma.circle.create({

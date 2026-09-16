@@ -57,6 +57,28 @@ export async function canViewPostCircle(circleId: string | null, userId: string)
   return isCircleMember(circleId, userId);
 }
 
+// Narrows a candidate recipient list to people who can actually SEE the post
+// it concerns. Every fan-out that derives recipients from group membership
+// must run them through this, or it will tell circle outsiders about a post
+// they can't open — and a push notification renders its excerpt on a lock
+// screen, so that leaks the content itself, not just its existence.
+//
+// Takes the post's circleId rather than its id so a caller that already
+// loaded the post doesn't pay for a second lookup; `null` (a whole-family
+// post) short-circuits.
+export async function filterRecipientsByCircle(
+  circleId: string | null,
+  userIds: string[]
+): Promise<string[]> {
+  if (!circleId || userIds.length === 0) return userIds;
+
+  const members = await prisma.circleMember.findMany({
+    where: { circleId, userId: { in: userIds } },
+    select: { userId: true },
+  });
+  return members.map((m) => m.userId);
+}
+
 // Validates a client-supplied circleId at post-creation time: the circle must
 // exist, belong to the target group, and have the author as a member.
 // Returns a machine-readable reason rather than a translated string so the

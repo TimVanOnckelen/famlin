@@ -4,6 +4,7 @@ import i18n from '../i18n/index.js';
 import { notificationChannels } from './notificationChannels/index.js';
 import { pushChannel, sendPush } from './notificationChannels/push.js';
 import type { NotifyType, Recipient } from './notificationChannels/types.js';
+import { filterRecipientsByCircle } from './circles.js';
 
 export type { NotifyType, Recipient } from './notificationChannels/types.js';
 // Re-exported for callers that only need the SMTP transport (not a full
@@ -126,14 +127,8 @@ async function notify(options: NotifyOptions) {
   // as does a post that isn't circle-scoped.
   if (postId) {
     const post = await prisma.post.findUnique({ where: { id: postId }, select: { circleId: true } });
-    if (post?.circleId) {
-      const circleMembers = await prisma.circleMember.findMany({
-        where: { circleId: post.circleId, userId: { in: ids } },
-        select: { userId: true },
-      });
-      ids = circleMembers.map((m) => m.userId);
-      if (ids.length === 0) return;
-    }
+    ids = await filterRecipientsByCircle(post?.circleId ?? null, ids);
+    if (ids.length === 0) return;
   }
 
   const recipients: Recipient[] = await prisma.user.findMany({
@@ -298,6 +293,7 @@ export async function resendPostPush(
       content: true,
       authorId: true,
       groupId: true,
+      circleId: true,
       author: { select: { name: true } },
       group: { select: { name: true } },
     },
@@ -313,12 +309,22 @@ export async function resendPostPush(
     where: { groupId: post.groupId, userId: { not: post.authorId } },
     select: { userId: true },
   });
-  if (members.length === 0) {
+
+  // This resend does NOT go through notify(), so it has to apply the circle
+  // narrowing itself — a push renders its excerpt on the lock screen, so
+  // pushing a circle-private post to the whole group would leak the content,
+  // not merely its existence. Same helper notify() uses, so the two can't
+  // drift apart.
+  const recipientIds = await filterRecipientsByCircle(
+    post.circleId,
+    members.map((m) => m.userId)
+  );
+  if (recipientIds.length === 0) {
     return { recipientCount: 0, tokenCount: 0, successCount: 0, failureCount: 0 };
   }
 
   const recipients: Recipient[] = await prisma.user.findMany({
-    where: { id: { in: members.map((m) => m.userId) } },
+    where: { id: { in: recipientIds } },
     select: {
       id: true,
       email: true,

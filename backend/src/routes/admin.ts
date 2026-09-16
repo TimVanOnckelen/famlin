@@ -29,17 +29,15 @@ import {
   linkMediaAlbumBodySchema,
   updateMediaAlbumLinkBodySchema,
   createMediaPersonLinkBodySchema,
-} from '../types.js';
-import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
-import { buildExportArchive } from '../services/export.js';
-import { getT } from '../i18n/index.js';
-import { getUserCircleIds } from '../services/circles.js';
-import {
   adminCreateCircleBodySchema,
   adminDeleteCircleQuerySchema,
   adminUpdateCircleBodySchema,
   circleMemberBodySchema,
 } from '../types.js';
+import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
+import { buildExportArchive } from '../services/export.js';
+import { getT } from '../i18n/index.js';
+import { canViewPostCircle, getUserCircleIds } from '../services/circles.js';
 import { bindAssetsToScope } from '../services/uploads.js';
 import { isGroupMember } from '../services/groups.js';
 
@@ -796,6 +794,16 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const t = getT(request);
     const { id } = request.params as { id: string };
 
+    // An admin outside the post's circle can't see it on the Content page, so
+    // they mustn't be able to act on it here either — 404, the same answer
+    // that page's absence implies. resendPostPush() also filters recipients,
+    // so this is defence in depth rather than the only check.
+    const post = await prisma.post.findUnique({ where: { id }, select: { circleId: true } });
+    if (post && !(await canViewPostCircle(post.circleId, request.user!.id))) {
+      reply.status(404).send({ error: t('errors.postNotFound') });
+      return;
+    }
+
     try {
       const result = await resendPostPush(id, request.user!.id);
       if (!result) {
@@ -822,8 +830,21 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { postId } = request.query as { postId?: string };
     const { cursor, take } = paginationQuerySchema.parse(request.query);
 
+    // A log row joins its post's `content`, which makes this a third content
+    // READING surface alongside /content/posts and /content/comments — so it
+    // takes the same circle narrowing they do. Rows with no post (a chat or
+    // on-this-day send) carry nothing circle-scoped and stay visible, so the
+    // operational view an admin needs is unaffected.
+    const adminCircleIds = await getUserCircleIds(request.user!.id);
+
     const logs = await prisma.pushDeliveryLog.findMany({
-      where: postId ? { postId } : {},
+      where: {
+        ...(postId ? { postId } : {}),
+        OR: [
+          { postId: null },
+          { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
