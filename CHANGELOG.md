@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.7](https://github.com/TimVanOnckelen/famlin/compare/v0.6.6...v0.6.7) (2026-09-16)
+
+
+### Features
+
+* **circles:** add Circle UI to the mobile app ([b43da66](https://github.com/TimVanOnckelen/famlin/commit/b43da6653b1063818f99554943200d1bec25e1e6)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** add Circle UI to the web app and admin ([1a4340b](https://github.com/TimVanOnckelen/famlin/commit/1a4340b5ab89094e0e18bdaf9a2f0ebed8e6eefa)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** add Family Circles privacy boundary to the backend ([08eb5df](https://github.com/TimVanOnckelen/famlin/commit/08eb5dff5ad6eafce1dee8388ce055f854897f9a)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** Family Circles — smaller private audiences inside a family group ([4fcc0b2](https://github.com/TimVanOnckelen/famlin/commit/4fcc0b234626edb193735c088a2eef74a51a3863))
+* **circles:** show who is in a circle, and bump expo-build-properties ([dc3afe2](https://github.com/TimVanOnckelen/famlin/commit/dc3afe26e452f7b2b95341b1985deb71bd18d104)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+
+
+### Bug Fixes
+
+* **circles:** close two circle leaks in the admin push subsystem ([37b6359](https://github.com/TimVanOnckelen/famlin/commit/37b6359f643688e05face8eaf9c11ed6ead130ca)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** remove circle memberships when a member leaves the group ([de2918a](https://github.com/TimVanOnckelen/famlin/commit/de2918a9b8782d9c00d45b479dbd50a856a0ad0c)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+
 ## [0.6.6](https://github.com/TimVanOnckelen/famlin/compare/v0.6.5...v0.6.6) (2026-09-15)
 
 
