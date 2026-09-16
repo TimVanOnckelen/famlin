@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Post } from '@famlin/api-client';
 import { colors } from '../constants/colors';
 import { CircleMembersModal } from './CircleMembersModal';
@@ -21,7 +21,7 @@ export function CircleTag({ post }: { post: Post }) {
   const circle = post.circle;
 
   return (
-    <View style={styles.wrapper}>
+    <>
       <TouchableOpacity
         style={styles.circleTag}
         onPress={() => setMembersOpen(true)}
@@ -38,20 +38,22 @@ export function CircleTag({ post }: { post: Post }) {
         circleName={circle.name}
         onClose={() => setMembersOpen(false)}
       />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { alignSelf: 'flex-start' },
+  // Every consumer renders this next to the family chip in a `flexDirection:
+  // 'row', alignItems: 'center'` container, so the chip must stay a bare flex
+  // item: an `alignSelf` or a vertical margin here would pull it off the
+  // family chip's centre line. Mirrors PostCard/TripCard/AlbumCard's own
+  // `groupTag` style exactly, minus the wider `maxWidth` circle names need.
   circleTag: {
     backgroundColor: colors.circleTint,
     borderRadius: 100,
     paddingHorizontal: 10,
     paddingVertical: 3,
     maxWidth: 160,
-    marginBottom: 6,
-    alignSelf: 'flex-start',
   },
   circleTagText: {
     fontFamily: 'Nunito_800ExtraBold',

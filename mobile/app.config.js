@@ -97,6 +97,16 @@ export default ({ config }) => ({
         image: "./assets/splash.png",
         resizeMode: "contain",
         backgroundColor: "#edf7fb",
+        // Without an explicit imageWidth the plugin falls back to 100dp, which
+        // is what made the launch logo look tiny. splash.png is the logo mark
+        // stacked over the "Famlin" wordmark, trimmed to its content so this
+        // width lands on the artwork itself rather than on empty canvas.
+        imageWidth: 240,
+        // Android 12+ masks the splash icon to a 192dp circle inside the 288dp
+        // canvas expo-splash-screen composites onto, so the artwork is laid out
+        // to fit that circle and the Android width stays just inside it —
+        // anything wider and the wordmark gets clipped.
+        android: { imageWidth: 184 },
       },
     ],
     [

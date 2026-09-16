@@ -617,7 +617,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     maxWidth: 130,
-    marginBottom: 6,
   },
   groupTagText: {
     fontFamily: 'Nunito_800ExtraBold',
