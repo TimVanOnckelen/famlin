@@ -38,7 +38,7 @@
     "expo-server-sdk": "^3.10.0",
     "fastify": "^5.12.4",
     "fastify-plugin": "^6.0.0",
-    "i18next": "^26.3.4",
+    "i18next": "^26.4.2",
     "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.6.0",
@@ -57,9 +57,9 @@
     "globals": "^16.5.0",
     "nodemon": "^3.1.14",
     "prisma": "^5.15.1",
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.13",
     "typescript": "^5.5.2",
-    "typescript-eslint": "^8.46.0",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^4.1.11"
   },
   "prisma": {
