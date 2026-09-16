@@ -12,7 +12,8 @@
     "error": "Fout",
     "edited": "Bewerkt",
     "delete": "Verwijderen",
-    "edit": "Bewerken"
+    "edit": "Bewerken",
+    "close": "Sluiten"
   },
   "relativeTime": {
     "justNow": "zojuist",
@@ -461,5 +462,10 @@
         "failed": "Album kon niet worden afgesloten"
       }
     }
+  },
+  "circles": {
+    "membersHint": "Alleen deze mensen zien berichten die met deze kring gedeeld worden.",
+    "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
+    "joinedOn": "Lid sinds {{date}}"
   }
 }

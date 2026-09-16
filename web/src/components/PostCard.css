@@ -329,6 +329,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  /* It's a button now (it opens the circle's member list), so the browser's
+     default button chrome has to be reset back to chip styling. */
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
   background: var(--fam-circle-tint);
   color: var(--fam-circle-dark);
   border-radius: var(--r-pill);

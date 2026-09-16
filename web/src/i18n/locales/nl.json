@@ -277,5 +277,11 @@
       "emptyDescription": "Voeg als eerste foto's toe aan dit album.",
       "emptyClosedDescription": "Dit album werd afgesloten voordat er foto's werden toegevoegd."
     }
+  },
+  "circles": {
+    "membersHint": "Alleen deze mensen zien berichten die met deze kring gedeeld worden.",
+    "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
+    "joinedOn": "Lid sinds {{date}}",
+    "whoCanSee": "Wie kan berichten in {{circle}} zien?"
   }
 }

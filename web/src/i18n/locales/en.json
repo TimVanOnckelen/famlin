@@ -277,5 +277,11 @@
       "emptyDescription": "Be the first to add photos to this album.",
       "emptyClosedDescription": "This album was closed before any photos were added."
     }
+  },
+  "circles": {
+    "membersHint": "Only these people can see posts shared with this circle.",
+    "membersLoadFailed": "Couldn't load the members of this circle.",
+    "joinedOn": "Joined {{date}}",
+    "whoCanSee": "Who can see posts in {{circle}}?"
   }
 }

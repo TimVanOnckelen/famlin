@@ -12,7 +12,8 @@
     "error": "Error",
     "edited": "Edited",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "close": "Close"
   },
   "relativeTime": {
     "justNow": "just now",
@@ -461,5 +462,10 @@
         "failed": "Could not close the album"
       }
     }
+  },
+  "circles": {
+    "membersHint": "Only these people can see posts shared with this circle.",
+    "membersLoadFailed": "Couldn't load the members of this circle.",
+    "joinedOn": "Joined {{date}}"
   }
 }
