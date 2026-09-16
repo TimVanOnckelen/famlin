@@ -21,7 +21,13 @@ import { colors } from '@/constants/colors';
 import { Icon, IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Group, PostType } from '@/types';
-import { fetchGroups, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client';
+import {
+  fetchGroups,
+  fetchMyCircles,
+  createPost,
+  addAlbumPhotos,
+  getGroupMediaAlbums,
+} from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
@@ -135,6 +141,11 @@ export function NewPostScreen() {
   // than one selected turns the submit into a cross-post. At least one is
   // always required — see toggleGroupSelection.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  // Audience: null = the whole family, otherwise one Circle within the single
+  // selected family. Circles and cross-posting are mutually exclusive (a
+  // Circle belongs to exactly one group), so this resets whenever the family
+  // selection moves.
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
   const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([]);
   const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
   const [location, setLocation] = useState<PickedLocation | null>(null);
@@ -149,6 +160,18 @@ export function NewPostScreen() {
   // The linked-album media picker targets a single group — when several are
   // selected, drive it from the first one chosen.
   const primaryGroupId = selectedGroupIds[0] ?? null;
+
+  // The audience picker offers only circles the author is in — which is all
+  // the server ever returns, and all they're allowed to post to. Offered only
+  // for a single-family post: cross-posting to several families can't be
+  // narrowed to a circle.
+  const canChooseCircle = selectedGroupIds.length === 1;
+  const { data: circlesData } = useQuery({
+    queryKey: ['circles', primaryGroupId],
+    queryFn: () => fetchMyCircles(primaryGroupId!),
+    enabled: !!primaryGroupId && canChooseCircle,
+  });
+  const circles = canChooseCircle ? (circlesData ?? []) : [];
 
   const { data: mediaAlbums, isError: mediaAlbumsErrored } = useQuery({
     queryKey: ['media-albums', primaryGroupId],
@@ -218,6 +241,9 @@ export function NewPostScreen() {
         const seedPhotoUrls = uploadedAssetUrls.filter((url) => url.startsWith('/uploads/'));
         const album = await createPost({
           ...buildGroupSelectionPayload(selectedGroupIds),
+          // Omitted entirely for a whole-family post, so older servers that
+          // don't know about circles behave identically.
+          circleId: selectedCircleId ?? undefined,
           content: content.trim() || undefined,
           type: postType,
           typeData: { title: albumTitle.trim(), coverPhotoUrl: seedPhotoUrls[0] || undefined },
@@ -231,6 +257,9 @@ export function NewPostScreen() {
 
       return createPost({
         ...buildGroupSelectionPayload(selectedGroupIds),
+        // Omitted entirely for a whole-family post, so older servers that
+        // don't know about circles behave identically.
+        circleId: selectedCircleId ?? undefined,
         content: isTrip ? undefined : content,
         type: postType,
         milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
@@ -361,7 +390,12 @@ export function NewPostScreen() {
                     <TouchableOpacity
                       key={group.id}
                       style={[styles.groupChip, isActive && styles.groupChipActive]}
-                      onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
+                      onPress={() => {
+                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
+                        // A circle belongs to one family, so a previous
+                        // choice stops being valid once the family moves.
+                        setSelectedCircleId(null);
+                      }}
                       accessibilityState={{ selected: isActive }}
                     >
                       <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
@@ -483,11 +517,51 @@ export function NewPostScreen() {
                   <TouchableOpacity
                     key={group.id}
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
-                    onPress={() => setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))}
+                    onPress={() => {
+                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
+                        // A circle belongs to one family, so a previous
+                        // choice stops being valid once the family moves.
+                        setSelectedCircleId(null);
+                      }}
                     accessibilityState={{ selected: isActive }}
                   >
                     <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
                       {group.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {circles.length > 0 && (
+          <View style={styles.groupSelector}>
+            <Text style={styles.sectionLabel}>{t('newPost.audience')}</Text>
+            <Text style={styles.audienceHint}>{t('newPost.audienceHint')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <TouchableOpacity
+                style={[styles.groupChip, selectedCircleId === null && styles.groupChipActive]}
+                onPress={() => setSelectedCircleId(null)}
+                accessibilityState={{ selected: selectedCircleId === null }}
+              >
+                <Text
+                  style={[styles.groupChipText, selectedCircleId === null && styles.groupChipTextActive]}
+                >
+                  {t('newPost.audienceEveryone')}
+                </Text>
+              </TouchableOpacity>
+              {circles.map((circle) => {
+                const isActive = selectedCircleId === circle.id;
+                return (
+                  <TouchableOpacity
+                    key={circle.id}
+                    style={[styles.circleChip, isActive && styles.circleChipActive]}
+                    onPress={() => setSelectedCircleId(circle.id)}
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>
+                      {circle.name}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -987,6 +1061,36 @@ const styles = StyleSheet.create({
   groupChipActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  audienceHint: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 8,
+    lineHeight: 17,
+  },
+  // Warm circle palette so choosing a circle looks visibly different from
+  // choosing a family — mirrors the feed chips and the post badge.
+  circleChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    backgroundColor: colors.circleTint,
+    borderWidth: 1,
+    borderColor: colors.circleTint,
+    marginRight: 8,
+  },
+  circleChipActive: {
+    backgroundColor: colors.circle,
+    borderColor: colors.circle,
+  },
+  circleChipText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.circleDark,
+  },
+  circleChipTextActive: {
+    color: colors.white,
   },
   groupChipText: {
     fontFamily: 'Nunito_600SemiBold',

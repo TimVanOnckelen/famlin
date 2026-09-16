@@ -24,6 +24,7 @@ import {
   fetchGroups,
   fetchUnreadNotificationCount,
   fetchOnThisDay,
+  fetchMyCircles,
   fetchPosts,
 } from '@famlin/api-client';
 
@@ -35,6 +36,10 @@ export function FeedScreen() {
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  // Circles narrow the feed further, to just those circles' posts. Separate
+  // state from selectedGroupIds because the two mean opposite things: groups
+  // widen the pool, circles narrow it.
+  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
@@ -59,9 +64,28 @@ export function FeedScreen() {
       ? groups?.find((g: Group) => g.id === effectiveGroupIds[0])
       : undefined;
 
+  // Only circles the viewer belongs to ever come back — a group member
+  // outside a circle never learns it exists — so there's nothing to filter
+  // out here. Scoped to the single narrowed family, mirroring how
+  // on-this-day and search already work.
+  const { data: circles } = useQuery({
+    queryKey: ['circles', singleActiveGroup?.id],
+    queryFn: () => fetchMyCircles(singleActiveGroup!.id),
+    enabled: !!singleActiveGroup,
+  });
+
   function toggleGroup(groupId: string) {
     setSelectedGroupIds((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
+    );
+    // A circle belongs to one family, so a selection made under a different
+    // family filter is no longer valid — and the server would 403 it.
+    setSelectedCircleIds([]);
+  }
+
+  function toggleCircle(circleId: string) {
+    setSelectedCircleIds((prev) =>
+      prev.includes(circleId) ? prev.filter((id) => id !== circleId) : [...prev, circleId]
     );
   }
 
@@ -72,8 +96,12 @@ export function FeedScreen() {
   });
 
   const { query, items: posts, onEndReached } = useCursorPagination({
-    queryKey: ['posts', [...selectedGroupIds].sort().join(',') || 'all'],
-    queryFn: (cursor) => fetchPosts({ groupIds: selectedGroupIds, cursor }),
+    queryKey: [
+      'posts',
+      [...selectedGroupIds].sort().join(',') || 'all',
+      [...selectedCircleIds].sort().join(',') || 'all-circles',
+    ],
+    queryFn: (cursor) => fetchPosts({ groupIds: selectedGroupIds, circleIds: selectedCircleIds, cursor }),
     enabled: hasGroups,
   });
   const { isLoading, isRefetching, refetch } = query;
@@ -176,6 +204,32 @@ export function FeedScreen() {
                   accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+            contentContainerStyle={styles.groupList}
+          />
+        </View>
+      )}
+
+      {!!circles && circles.length > 0 && (
+        <View style={styles.filterRow}>
+          <FlatList
+            horizontal
+            data={circles}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => {
+              const isActive = selectedCircleIds.includes(item.id);
+              return (
+                <TouchableOpacity
+                  style={[styles.circleChip, isActive && styles.circleChipActive]}
+                  onPress={() => toggleCircle(item.id)}
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>
                     {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -315,6 +369,29 @@ const styles = StyleSheet.create({
   groupChipActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  // Circle chips sit in their own row beneath the family chips: they narrow
+  // the feed rather than widening it, so they read as a second, subordinate
+  // level in the warm circle palette rather than more of the same.
+  circleChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    backgroundColor: colors.circleTint,
+    borderWidth: 1,
+    borderColor: colors.circleTint,
+  },
+  circleChipActive: {
+    backgroundColor: colors.circle,
+    borderColor: colors.circle,
+  },
+  circleChipText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.circleDark,
+  },
+  circleChipTextActive: {
+    color: colors.white,
   },
   groupChipText: {
     fontFamily: 'Nunito_600SemiBold',

@@ -213,7 +213,10 @@
       "travelersSubtitle": "Optioneel — zij kunnen ook inchecken",
       "travelersSelected_one": "{{count}} reisgenoot",
       "travelersSelected_other": "{{count}} reisgenoten"
-    }
+    },
+    "audience": "Wie kan dit zien?",
+    "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
+    "audienceEveryone": "Iedereen"
   },
   "poll": {
     "questionPlaceholder": "Stel een vraag...",

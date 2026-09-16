@@ -11,6 +11,7 @@ import { Post } from '@/types';
 import { getUploadUrl } from '@/api/uploads';
 import { formatTripDateRange, formatTime } from '@/i18n/utils';
 import { useReactToPost } from '@/hooks/usePostMutations';
+import { CircleTag } from './CircleTag';
 
 // The feed card for a TRIP post (design 6a active / 6b closed) — different
 // enough from the generic UPDATE/MILESTONE card (gradient frame, its own
@@ -34,12 +35,20 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
     likeMutation.mutate(post.myReaction ?? 'LOVE');
   }
 
-  const groupTag = showGroup && post.group && (
-    <View style={styles.groupTag}>
-      <Text style={styles.groupTagText} numberOfLines={1}>
-        {post.group.name}
-      </Text>
-    </View>
+  // Both context tags travel together: which family the post is in (when the
+  // feed spans several) and which Circle it was shared with (when it wasn't
+  // shared with everyone).
+  const groupTag = (
+    <>
+      {showGroup && post.group && (
+        <View style={styles.groupTag}>
+          <Text style={styles.groupTagText} numberOfLines={1}>
+            {post.group.name}
+          </Text>
+        </View>
+      )}
+      <CircleTag post={post} />
+    </>
   );
 
   if (trip.closed) {
