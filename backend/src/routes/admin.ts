@@ -424,8 +424,28 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { id, userId } = request.params as { id: string; userId: string };
 
     try {
-      await prisma.groupMember.delete({
-        where: { groupId_userId: { groupId: id, userId } },
+      // Removing someone from the family also removes them from every Circle
+      // inside it. A Circle only ever narrows group membership, so a circle
+      // membership that outlives the group membership behind it would grant
+      // access the outer boundary has already revoked — the removed member
+      // would keep reading that circle's posts and, worse, its photos by
+      // direct /uploads/ URL.
+      //
+      // This has to be an application-level cascade: CircleMember has no
+      // foreign key to GroupMember (they're independent join tables keyed on
+      // the same userId), so the database can't express it. One transaction,
+      // so a failure can't leave the memberships out of step.
+      //
+      // Their posts and comments in those circles stay, matching the existing
+      // rule that removing a group member leaves their content visible to the
+      // remaining members.
+      await prisma.$transaction(async (tx) => {
+        await tx.circleMember.deleteMany({
+          where: { userId, circle: { groupId: id } },
+        });
+        await tx.groupMember.delete({
+          where: { groupId_userId: { groupId: id, userId } },
+        });
       });
       return { success: true };
     } catch (err) {

@@ -260,6 +260,79 @@ describe('circle membership revocation', () => {
   });
 });
 
+describe('removing a group member cascades to their circles', () => {
+  it('revokes circle access when they are removed from the family', async () => {
+    const removed = await createUser({ name: 'Removed Member' });
+    // Deleting the user cascades their memberships, so this runs even when an
+    // assertion below throws — otherwise a failure here would leave stale
+    // CircleMember rows and break the unrelated member-count tests.
+    try {
+      await addMember(group.id, removed.id);
+      await prisma.circleMember.create({ data: { circleId: circle.id, userId: removed.id } });
+
+      const before = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${circlePostId}`,
+        headers: authHeader(removed),
+      });
+      expect(before.statusCode).toBe(200);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/groups/${group.id}/members/${removed.id}`,
+        headers: authHeader(admin),
+      });
+      expect(res.statusCode).toBe(200);
+
+      // A circle only ever narrows group membership, so a circle membership
+      // must never outlive the group membership behind it — otherwise it
+      // would grant access the outer boundary has already revoked.
+      expect(
+        await prisma.circleMember.findFirst({ where: { circleId: circle.id, userId: removed.id } })
+      ).toBeNull();
+
+      const after = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${circlePostId}`,
+        headers: authHeader(removed),
+      });
+      expect(after.statusCode).toBe(403);
+    } finally {
+      await prisma.user.delete({ where: { id: removed.id } });
+    }
+  });
+
+  it('leaves circles in other families untouched', async () => {
+    const other = await createGroup({ name: 'Unaffected Family' });
+    const dual = await createUser({ name: 'Dual Member' });
+    try {
+      await addMember(group.id, dual.id);
+      await addMember(other.id, dual.id);
+
+      const otherCircle = await prisma.circle.create({
+        data: { groupId: other.id, name: 'Other Circle', members: { create: [{ userId: dual.id }] } },
+      });
+      await prisma.circleMember.create({ data: { circleId: circle.id, userId: dual.id } });
+
+      await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/groups/${group.id}/members/${dual.id}`,
+        headers: authHeader(admin),
+      });
+
+      // Only the removed family's circles are affected — the cascade is
+      // scoped to circles of THAT group, not every circle the user is in.
+      expect(await prisma.circleMember.findFirst({ where: { circleId: circle.id, userId: dual.id } })).toBeNull();
+      expect(
+        await prisma.circleMember.findFirst({ where: { circleId: otherCircle.id, userId: dual.id } })
+      ).not.toBeNull();
+    } finally {
+      await prisma.group.delete({ where: { id: other.id } });
+      await prisma.user.delete({ where: { id: dual.id } });
+    }
+  });
+});
+
 describe('circle discoverability', () => {
   it('lists only the caller own circles', async () => {
     const insiderRes = await app.inject({
