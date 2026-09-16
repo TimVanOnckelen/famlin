@@ -150,6 +150,11 @@ export interface Post {
     poll?: PostPoll;
     trip?: TripEnrichment;
     album?: AlbumEnrichment;
+    circleId?: string | null;
+    circle?: {
+        id: string;
+        name: string;
+    } | null;
     milestoneTag?: string | null;
     uploadedAssetUrls: string[];
     createdAt: string;
@@ -207,4 +212,19 @@ export interface Notification {
         id: string;
         groupId: string;
     } | null;
+}
+export interface Circle {
+    id: string;
+    groupId: string;
+    name: string;
+    description?: string | null;
+    avatarUrl?: string | null;
+    memberCount: number;
+    createdAt: string;
+}
+export interface CircleMember {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+    joinedAt: string;
 }

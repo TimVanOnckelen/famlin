@@ -10,6 +10,11 @@ export interface FetchPostsParams {
   // that predates the filter ignores it and returns every type, so callers
   // that must not show other types should still filter defensively.
   type?: PostType;
+  // Narrows to specific Circles — what the feed's circle filter chips send.
+  // Selecting circles shows ONLY those circles' posts, excluding whole-family
+  // ones, so the chip is a real filter rather than a no-op. Requesting a
+  // circle you're not in is a 403, never a silently empty page.
+  circleIds?: string[];
 }
 
 export interface PostsPage {
@@ -21,6 +26,7 @@ export async function fetchPosts(params: FetchPostsParams = {}): Promise<PostsPa
   const response = await api.get<PostsPage>('/posts', {
     params: {
       groupIds: params.groupIds && params.groupIds.length > 0 ? params.groupIds.join(',') : undefined,
+      circleIds: params.circleIds && params.circleIds.length > 0 ? params.circleIds.join(',') : undefined,
       cursor: params.cursor,
       type: params.type,
     },
@@ -81,6 +87,11 @@ export interface CreatePostBody {
   typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
   milestoneTag?: string;
   uploadedAssetUrls: string[];
+  // Narrows the audience from the whole group to one Circle within it.
+  // Mutually exclusive with cross-posting (a Circle belongs to exactly one
+  // group, so the server rejects circleId alongside a multi-group groupIds).
+  // Omit for "Everyone", which is what every pre-Circles client sends.
+  circleId?: string | null;
   latitude?: number;
   longitude?: number;
   locationName?: string;

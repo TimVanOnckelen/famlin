@@ -321,6 +321,23 @@
   white-space: nowrap;
 }
 
+/* "Shared in Grandparents" — marks a post that went to a Circle rather than
+   the whole family. Deliberately distinct from the family chip above (which
+   is neutral/primary): a reader needs to tell at a glance that this one is
+   narrower than usual, so it uses the accent tint plus a people glyph. */
+.post-circle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--fam-circle-tint);
+  color: var(--fam-circle-dark);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
 /* Author-only hint that a post was cross-posted to several families. */
 .post-shared-indicator {
   display: flex;

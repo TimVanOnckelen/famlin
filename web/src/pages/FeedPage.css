@@ -110,3 +110,12 @@
 .feed-load-more {
   align-self: center;
 }
+
+/* Circle chips sit in their own row under the family filter — they narrow
+   the feed rather than widening it, so they read as a second, subordinate
+   level rather than more of the same. */
+.filter-chip-circle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}

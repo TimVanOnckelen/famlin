@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { fetchGroups, fetchPosts, User } from '@famlin/api-client';
+import { fetchGroups, fetchMyCircles, fetchPosts, User } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
@@ -31,23 +31,57 @@ export function FeedPage({
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  // Circles narrow the feed further, to just those circles' posts. Kept in
+  // its own state (rather than mixed into selectedGroupIds) because the two
+  // filters mean different things: groups widen the pool, circles narrow it.
+  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [apiTokensOpen, setApiTokensOpen] = useState(false);
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const groups = groupsQuery.data ?? [];
 
+  // Only the circles the viewer actually belongs to ever come back — a group
+  // member outside a circle never learns it exists, so there is nothing to
+  // filter out here. Scoped to the single selected family when the group
+  // filter narrows to one, otherwise the first family.
+  const circlesGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
+  const circlesQuery = useQuery({
+    queryKey: ['circles', circlesGroupId],
+    queryFn: () => fetchMyCircles(circlesGroupId!),
+    enabled: !!circlesGroupId,
+  });
+  const circles = circlesQuery.data ?? [];
+
   function toggleGroup(groupId: string) {
     setSelectedGroupIds((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
+    );
+    // The circle list is per-family, so a circle selected under one family
+    // filter is meaningless under another — clear rather than send ids the
+    // server would 403.
+    setSelectedCircleIds([]);
+  }
+
+  function toggleCircle(circleId: string) {
+    setSelectedCircleIds((prev) =>
+      prev.includes(circleId) ? prev.filter((id) => id !== circleId) : [...prev, circleId]
     );
   }
 
   const postsQuery = useInfiniteQuery({
     // Key shape must stay ['posts', ...] — patchPostInCaches targets it.
-    queryKey: ['posts', [...selectedGroupIds].sort().join(',') || 'all'],
+    queryKey: [
+      'posts',
+      [...selectedGroupIds].sort().join(',') || 'all',
+      [...selectedCircleIds].sort().join(',') || 'all-circles',
+    ],
     queryFn: ({ pageParam }) =>
-      fetchPosts({ groupIds: selectedGroupIds, cursor: pageParam ?? undefined }),
+      fetchPosts({
+        groupIds: selectedGroupIds,
+        circleIds: selectedCircleIds,
+        cursor: pageParam ?? undefined,
+      }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
@@ -91,6 +125,24 @@ export function FeedPage({
                 aria-pressed={selectedGroupIds.includes(group.id)}
               >
                 {group.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {circles.length > 0 && (
+          <div className="feed-filter" role="group" aria-label={t('feed.circleFilterLabel')}>
+            {circles.map((circle) => (
+              <button
+                key={circle.id}
+                className={`filter-chip filter-chip-circle${
+                  selectedCircleIds.includes(circle.id) ? ' filter-chip-active' : ''
+                }`}
+                onClick={() => toggleCircle(circle.id)}
+                aria-pressed={selectedCircleIds.includes(circle.id)}
+              >
+                <Icon name="users" size={13} strokeWidth={2} />
+                {circle.name}
               </button>
             ))}
           </div>

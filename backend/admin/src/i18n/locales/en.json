@@ -380,5 +380,24 @@
     "POLL": "Poll",
     "TRIP": "Trip",
     "ALBUM": "Album"
+  },
+  "circles": {
+    "heading_one": "{{count}} circle",
+    "heading_other": "{{count}} circles",
+    "hint": "Circles let part of a family share privately. Members outside a circle never see its posts, photos or comments — and never learn it exists.",
+    "create": "New circle",
+    "namePlaceholder": "Circle name (e.g. Grandparents)",
+    "descriptionPlaceholder": "Description (optional)",
+    "none": "No circles yet.",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "postCount_one": "{{count}} post",
+    "postCount_other": "{{count}} posts",
+    "manageMembers": "Manage members",
+    "noMembers": "No one in this circle yet.",
+    "selectMember": "Select a family member…",
+    "addMember": "Add to circle",
+    "confirmDelete": "Delete the circle \"{{name}}\"?",
+    "confirmDeleteWithPosts": "Delete the circle \"{{name}}\"? This permanently deletes its {{count}} post(s) and everything on them. You cannot see or recover this content afterwards."
   }
 }

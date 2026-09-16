@@ -62,7 +62,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // is a 400 rather than a silently empty page.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request);
-    const { groupId, groupIds, type } = request.query as { groupId?: string; groupIds?: string; type?: string };
+    const { groupId, groupIds, circleIds, type } = request.query as {
+      groupId?: string;
+      groupIds?: string;
+      circleIds?: string;
+      type?: string;
+    };
 
     if (type !== undefined && !getPostTypeHandler(type)) {
       return reply.status(400).send({ error: t('errors.unknownPostType') });
@@ -99,10 +104,26 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // Every post-reading query composes with it rather than writing the
     // clause by hand, because forgetting it fails OPEN — the query would
     // quietly serve circle-private posts to the whole group.
-    const circleIds = await getUserCircleIds(request.user!.id);
+    const myCircleIds = await getUserCircleIds(request.user!.id);
+
+    // An optional narrowing to specific circles — what the feed's circle
+    // filter chips send. Requesting a circle you're not in is a 403, never a
+    // silently empty page: same rule as `groupIds`, and it keeps a
+    // non-member from probing circle ids.
+    const requestedCircleIds = circleIds ? [...new Set(circleIds.split(',').filter(Boolean))] : null;
+    if (requestedCircleIds && requestedCircleIds.some((id) => !myCircleIds.includes(id))) {
+      return reply.status(403).send({ error: t('errors.notCircleMember') });
+    }
 
     const posts = await prisma.post.findMany({
-      where: { ...visiblePostsWhere(effectiveGroupIds, circleIds), ...(type ? { type } : {}) },
+      where: {
+        ...visiblePostsWhere(effectiveGroupIds, myCircleIds),
+        // Narrowing to circles means ONLY those circles' posts — whole-family
+        // posts are excluded, which is what makes the chip a real filter
+        // rather than a no-op on top of the default view.
+        ...(requestedCircleIds ? { circleId: { in: requestedCircleIds } } : {}),
+        ...(type ? { type } : {}),
+      },
       include: postInclude(request.user!.id),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),

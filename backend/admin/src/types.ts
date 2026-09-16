@@ -201,3 +201,24 @@ export interface DashboardStats {
 export interface ServerInfo {
   version: string;
 }
+
+// A smaller, reusable audience inside one Group ("Grandparents", "Cousins").
+// Circles narrow group membership; they never widen it, so every circle
+// member is already a group member. Admin responses list every circle in the
+// group regardless of the admin's own membership — that's management access,
+// which deliberately does NOT extend to reading the circle's content.
+export interface Circle {
+  id: string;
+  groupId: string;
+  name: string;
+  description: string | null;
+  avatarUrl: string | null;
+  createdById: string | null;
+  createdAt: string;
+  memberCount: number;
+  // How many posts would be destroyed if this circle were deleted — the
+  // number is shown before confirming, but the content itself stays
+  // unreadable to an admin outside the circle.
+  postCount: number;
+  members?: GroupMember[];
+}

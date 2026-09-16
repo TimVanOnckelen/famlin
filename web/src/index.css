@@ -14,6 +14,14 @@
   --fam-trip-tint: #dcf0f7;
   --fam-trip-border: #bfe1ec;
 
+  /* Family Circles. Deliberately the warm accent family rather than the
+     primary blues: a circle badge has to read as "narrower than usual" at a
+     glance, so it must not look like the neutral family chip. Same
+     token shape as --fam-trip-* above. */
+  --fam-circle: #ed835e;
+  --fam-circle-dark: #a8482c;
+  --fam-circle-tint: #fdeae2;
+
   --fam-bg: #edf7fb;
   --fam-surface: #ffffff;
   --fam-border: #d9e3e7;

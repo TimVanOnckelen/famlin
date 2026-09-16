@@ -14,6 +14,7 @@ import {
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
+import { CircleBadge } from '@/components/CircleBadge';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -211,7 +212,15 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
     post.editedAt ? ` · ${t('common.edited')}` : ''
   }`;
   // When the feed spans several families, label each post with its group.
-  const groupChip = showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>;
+  // Both context chips travel together: which family the post is in (when the
+  // feed spans several) and which Circle it was shared with (when it wasn't
+  // shared with everyone).
+  const groupChip = (
+    <>
+      {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
+      <CircleBadge post={post} />
+    </>
+  );
 
   // Only present (and only ever sent to the author) when the post was
   // cross-posted to more than one family — never derive this for posts

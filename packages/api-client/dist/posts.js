@@ -24,6 +24,7 @@ async function fetchPosts(params = {}) {
     const response = await client_1.api.get('/posts', {
         params: {
             groupIds: params.groupIds && params.groupIds.length > 0 ? params.groupIds.join(',') : undefined,
+            circleIds: params.circleIds && params.circleIds.length > 0 ? params.circleIds.join(',') : undefined,
             cursor: params.cursor,
             type: params.type,
         },

@@ -57,7 +57,9 @@
       "contributedBy_other": "Added by {{name}} +{{others}} more",
       "addPhotosCta": "Add photos",
       "openCta": "Open album →"
-    }
+    },
+    "circleFilterLabel": "Filter by circle",
+    "sharedWithCircle": "Shared with {{circle}}"
   },
   "comments": {
     "placeholder": "Write a comment…",
@@ -94,7 +96,10 @@
     "addFromAlbums": "Choose from albums",
     "removePhoto": "Remove photo",
     "submit": "Post",
-    "failed": "Your post couldn't be created. Try again."
+    "failed": "Your post couldn't be created. Try again.",
+    "audience": "Who can see this?",
+    "audienceHint": "Circles let you share with part of the family. Only people in the circle will see this post.",
+    "audienceEveryone": "Everyone"
   },
   "profile": {
     "title": "Profile",
