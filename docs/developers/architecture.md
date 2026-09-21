@@ -44,6 +44,8 @@ List endpoints that can grow large (`GET /api/posts`, `GET /api/favorites`, and 
 
 The Prisma schema defines `User`, `Setting`, `Group`, `GroupMember`, `Circle`, `CircleMember`, `Post`, `PostInteraction`, `Comment`, `Like`, `Favorite`, `ChatMessage`, `ChatRead`, `PushToken`, `Notification`, `PushDeliveryLog`, `Invite`, `Upload`, `MediaAlbumLink`, `MediaPersonLink`, and `ApiToken`.
 
+The schema's `datasource` block carries only the provider — under Prisma 7 the connection string lives in `backend/prisma.config.ts`, which the CLI reads for `generate`/`migrate`, and `src/db.ts` passes to `PrismaClient` through the `@prisma/adapter-pg` driver adapter. `DATABASE_URL` is still the only thing you set; it is just read by application code now rather than by `env()` inside the schema. Anything that runs a Prisma command needs `prisma.config.ts` present alongside `prisma/` — that is why `backend/Dockerfile` copies it into both the build stage and the runtime stage, where the container's start command runs `prisma migrate deploy`.
+
 Key choices:
 
 - `GroupMember` is a many-to-many join table (`@@unique([groupId, userId])`).
