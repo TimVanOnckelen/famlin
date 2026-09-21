@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.7.0](https://github.com/TimVanOnckelen/famlin/compare/v0.6.6...v0.7.0) (2026-09-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** The backend now runs on Prisma 7, which executes queries through the @prisma/adapter-pg driver adapter rather than Prisma 5's query engine. No action is required — DATABASE_URL is unchanged and migrations are unchanged — but it is a different database driver path, so upgrade a production instance deliberately rather than incidentally.
+* `appStoreUrl` now defaults to the official App Store listing instead of being blank, so deployments that never configured it will start showing an App Store download button on the invite landing page and in `GET /api/auth/server-info`. Admins who distribute their own iOS build should set their own URL, or clear the field in /admin -> Server settings to hide the button.
+
+### Features
+
+* **backend:** migrate to Prisma 7 (supersedes [#99](https://github.com/TimVanOnckelen/famlin/issues/99)) ([7f18341](https://github.com/TimVanOnckelen/famlin/commit/7f1834186174311a45d7c3a17b7b981fff74571c))
+* **circles:** add Circle UI to the mobile app ([b43da66](https://github.com/TimVanOnckelen/famlin/commit/b43da6653b1063818f99554943200d1bec25e1e6)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** add Circle UI to the web app and admin ([1a4340b](https://github.com/TimVanOnckelen/famlin/commit/1a4340b5ab89094e0e18bdaf9a2f0ebed8e6eefa)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** add Family Circles privacy boundary to the backend ([08eb5df](https://github.com/TimVanOnckelen/famlin/commit/08eb5dff5ad6eafce1dee8388ce055f854897f9a)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** Family Circles — smaller private audiences inside a family group ([4fcc0b2](https://github.com/TimVanOnckelen/famlin/commit/4fcc0b234626edb193735c088a2eef74a51a3863))
+* **circles:** show who is in a circle, and bump expo-build-properties ([dc3afe2](https://github.com/TimVanOnckelen/famlin/commit/dc3afe26e452f7b2b95341b1985deb71bd18d104)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* point docs, website and store defaults at the iOS App Store listing ([76a518f](https://github.com/TimVanOnckelen/famlin/commit/76a518f0f27723631f7ca02fb388410a3205a478))
+
+
+### Bug Fixes
+
+* **backend:** don't require DATABASE_URL to load prisma.config.ts ([8e0f127](https://github.com/TimVanOnckelen/famlin/commit/8e0f127b0480dffe53644a0c3b706595c2ffb623))
+* **circles:** close two circle leaks in the admin push subsystem ([37b6359](https://github.com/TimVanOnckelen/famlin/commit/37b6359f643688e05face8eaf9c11ed6ead130ca)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+* **circles:** remove circle memberships when a member leaves the group ([de2918a](https://github.com/TimVanOnckelen/famlin/commit/de2918a9b8782d9c00d45b479dbd50a856a0ad0c)), closes [#75](https://github.com/TimVanOnckelen/famlin/issues/75)
+
 ## [0.6.6](https://github.com/TimVanOnckelen/famlin/compare/v0.6.5...v0.6.6) (2026-09-15)
 
 
