@@ -25,6 +25,8 @@ Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgre
 
 📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
 
+📱 Get the app: **[App Store](https://apps.apple.com/us/app/famlin/id6786783660)** · **[Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)** — both ask for your server's address on first launch, so the same download works for every deployment.
+
 ## Table of contents
 
 - [Quick start](#quick-start)

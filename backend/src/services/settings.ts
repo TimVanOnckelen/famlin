@@ -1,12 +1,13 @@
 import { prisma } from '../db.js';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n/index.js';
 
-// The official pre-built Android app — used as the default `playStoreUrl` for
-// deployments that haven't configured one, so self-hosters get a working
-// download link without having to build their own via EAS. There is no
-// equivalent single iOS listing (Apple requires per-developer distribution),
-// so `appStoreUrl` has no such default.
+// The official pre-built apps — used as the default `playStoreUrl`/`appStoreUrl`
+// for deployments that haven't configured one, so self-hosters get a working
+// download link without having to build and distribute their own via EAS.
+// A self-hoster shipping their own build overrides these with their own
+// listing, or clears the field to hide the download button entirely.
 const DEFAULT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=be.xeweb.famlin';
+const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/us/app/famlin/id6786783660';
 
 // The bundle identifier of the official pre-built Famlin app (see
 // mobile/app.config.js). Sign in with Apple identity tokens carry the signing
@@ -104,11 +105,11 @@ async function loadAllSettings(): Promise<ServerSettings> {
 
   return {
     defaultLanguage: parseValue('defaultLanguage', map.get('defaultLanguage') || DEFAULT_LANGUAGE),
-    appStoreUrl: parseValue('appStoreUrl', map.get('appStoreUrl') || ''),
-    // Distinguish "never configured" (fall back to the official listing) from
-    // an admin explicitly clearing the field to hide the download button —
-    // the latter must stay blank, so this can't use the `|| ''` pattern the
-    // other optional fields use above.
+    // Both store URLs distinguish "never configured" (fall back to the official
+    // listing) from an admin explicitly clearing the field to hide the download
+    // button — the latter must stay blank, so these can't use the `|| ''`
+    // pattern the other optional fields use.
+    appStoreUrl: parseValue('appStoreUrl', map.has('appStoreUrl') ? map.get('appStoreUrl')! : DEFAULT_APP_STORE_URL),
     playStoreUrl: parseValue('playStoreUrl', map.has('playStoreUrl') ? map.get('playStoreUrl')! : DEFAULT_PLAY_STORE_URL),
     allowedEmails: parseValue('allowedEmails', map.get('allowedEmails') || ''),
     oidcName: parseValue('oidcName', map.get('oidcName') || 'SSO'),

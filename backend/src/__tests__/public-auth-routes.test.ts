@@ -29,9 +29,9 @@ describe('GET /api/auth/server-info', () => {
     expect(body).toHaveProperty('playStoreUrl');
     expect(body).toHaveProperty('readOnly');
     expect(typeof body.readOnly).toBe('boolean');
-    // appStoreUrl has no default (no single iOS listing) — null when unset.
-    expect(body.appStoreUrl === null || typeof body.appStoreUrl === 'string').toBe(true);
-    // playStoreUrl defaults to the official pre-built Android app.
-    expect(body.playStoreUrl === null || typeof body.playStoreUrl === 'string').toBe(true);
+    // Both store URLs default to the official pre-built apps when the setting
+    // has never been saved; an admin can still clear either one to null.
+    expect(body.appStoreUrl).toBe('https://apps.apple.com/us/app/famlin/id6786783660');
+    expect(body.playStoreUrl).toBe('https://play.google.com/store/apps/details?id=be.xeweb.famlin');
   });
 });

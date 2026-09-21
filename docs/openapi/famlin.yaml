@@ -400,9 +400,9 @@ paths:
                     nullable: true
                     description: >-
                       This deployment's configured iOS App Store listing URL,
-                      or null if not configured (there is no default — each
-                      deployment distributes its own iOS build).
-                    example: null
+                      or null if the admin explicitly cleared it. Defaults to
+                      the official pre-built iOS app when never configured.
+                    example: https://apps.apple.com/us/app/famlin/id6786783660
                   playStoreUrl:
                     type: string
                     nullable: true

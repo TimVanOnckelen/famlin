@@ -5,7 +5,7 @@ title: Publishing the iOS app
 
 # Publishing the iOS app
 
-Famlin ships one shared, pre-built iOS app, but nothing stops you from building and distributing your own via EAS. Either way, App Review checks the same things — and because Famlin is self-hosted, a couple of them need more than "the code is there." This page lists the App Store requirements that shaped the app's design, what already satisfies them, and what you have to supply yourself in App Store Connect.
+Famlin ships one shared, pre-built iOS app — live on the [App Store](https://apps.apple.com/us/app/famlin/id6786783660) — but nothing stops you from building and distributing your own via EAS. Either way, App Review checks the same things — and because Famlin is self-hosted, a couple of them need more than "the code is there." This page lists the App Store requirements that shaped the app's design, what already satisfies them, and what you have to supply yourself in App Store Connect.
 
 ## What the app already does
 
