@@ -17,6 +17,11 @@ RUN npm ci
 
 # Generate Prisma client
 COPY backend/prisma ./prisma
+# Prisma 7 reads the datasource connection string (and the schema path) from
+# prisma.config.ts rather than from the schema's datasource block, so the CLI
+# needs it here for `generate` and in the production stage for the
+# `migrate deploy` this image runs at container start.
+COPY backend/prisma.config.ts ./
 RUN npx prisma generate
 
 # The admin UI depends on the shared api-client via file:../../packages/api-client
@@ -120,6 +125,7 @@ RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-d
 COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/prisma.config.ts ./
 COPY --from=base /app/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
 

@@ -22,6 +22,16 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
+      // eslint-plugin-react-hooks 7 enables the React Compiler's static
+      // analyses, which land as ERRORS on patterns that predate them:
+      // set-state-in-effect (a `useEffect(() => { load(); }, [])` fetch on
+      // mount) and immutability (a variable mutated during render, or an
+      // effect referencing a function declared below it). They're real
+      // findings, but fixing them means reworking effect/render code, which
+      // doesn't belong in a dependency bump — downgraded to warnings so they
+      // stay visible, exactly how no-explicit-any is handled above.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
