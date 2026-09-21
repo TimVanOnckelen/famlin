@@ -790,10 +790,14 @@ describe('TRIP posts', () => {
     it('notifies a member of both sibling groups exactly once per check-in', async () => {
       const author = await createUser();
       const both = await createUser();
+      const aOnly = await createUser();
+      const bOnly = await createUser();
       const groupA = await createGroupWithMember(author);
       const groupB = await createGroupWithMember(author);
       await addMember(groupA.id, both.id);
       await addMember(groupB.id, both.id);
+      await addMember(groupA.id, aOnly.id);
+      await addMember(groupB.id, bOnly.id);
       await createCrossTrip(author, [groupA.id, groupB.id]);
       const { a } = await getSiblings(groupA.id, groupB.id);
 
@@ -805,6 +809,27 @@ describe('TRIP posts', () => {
       });
       expect(res.statusCode).toBe(200);
 
+      // The comment.created subscriber runs fire-and-forget (see
+      // src/events.ts) and walks the check-in's targets sequentially, one
+      // notifyUsers await per sibling group, so nothing has been written yet
+      // when inject() resolves — read bare, `both` came back as an empty
+      // array in CI. Polling on `both` alone would fix the flake but weaken
+      // the assertion: waitFor stops at the first pass, so a duplicate still
+      // queued for the other target would slip through "exactly once".
+      // `aOnly`/`bOnly` are each in exactly one sibling group, so a row for
+      // both of them means EVERY target iteration has run — whichever order
+      // getTripSiblings() returned them in — and each iteration writes its
+      // recipients in a single createMany, so a duplicate for `both` would
+      // have committed alongside them.
+      await vi.waitFor(async () => {
+        const rows = await prisma.notification.findMany({
+          where: { userId: { in: [aOnly.id, bOnly.id] }, type: 'trip_checkin' },
+        });
+        expect(rows).toHaveLength(2);
+      });
+
+      // Safe to read bare: the dispatch for this event has finished, so one
+      // row for a member of BOTH groups is a settled outcome, not a not-yet.
       const notifications = await prisma.notification.findMany({ where: { userId: both.id, type: 'trip_checkin' } });
       expect(notifications).toHaveLength(1);
       expect(notifications[0].message).toContain('Dedupe town');
