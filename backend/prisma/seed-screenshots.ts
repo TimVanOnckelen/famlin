@@ -4,9 +4,13 @@
 // Assumes the /uploads files referenced below already exist (copied in
 // separately; this script only writes DB rows that point at them).
 import { PrismaClient, ReactionType } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+// Prisma 7: the client takes its connection via a driver adapter (see src/db.ts).
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 const img = {
   anniversary0: '/uploads/17878d8b-44ae-4fa8-b380-9fa6ed8037d3.jpg',
