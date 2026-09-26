@@ -119,6 +119,24 @@ export const api = {
       body: data,
     }),
 
+  // Multipart rather than JSON, so it can't go through request(): the
+  // browser must set the multipart Content-Type (with its boundary) itself.
+  restoreBackup: async (archive: File, data: { email: string; name: string; password: string }) => {
+    const form = new FormData();
+    form.append('email', data.email);
+    form.append('name', data.name);
+    form.append('password', data.password);
+    // Fields before the file, so the server has them without buffering it.
+    form.append('archive', archive);
+
+    const res = await fetch('/api/auth/setup/restore', { method: 'POST', body: form });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code);
+    }
+    return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>;
+  },
+
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
 
   loginWithOidc: (idToken: string) =>

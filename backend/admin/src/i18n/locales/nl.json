@@ -53,7 +53,16 @@
     "confirmPasswordLabel": "Bevestig wachtwoord",
     "passwordMismatch": "Wachtwoorden komen niet overeen.",
     "createAccountButton": "Beheerdersaccount aanmaken",
-    "setupFailed": "Installatie mislukt."
+    "setupFailed": "Installatie mislukt.",
+    "modeCreate": "Nieuw beginnen",
+    "modeRestore": "Back-up terugzetten",
+    "restoreSubtitle": "Verhuis je van server of herstel je een probleem? Upload een Famlin-data-export om alle families, berichten, foto's en chatberichten terug te zetten.",
+    "restoreArchiveLabel": "Famlin-export (.zip)",
+    "restoreAccountHint": "Dit wordt je beheerderslogin. Als de back-up al een account met dit e-mailadres bevat, wordt dat account beheerder en krijgt het dit wachtwoord; anders wordt een nieuw beheerdersaccount aangemaakt.",
+    "restoreAfterHint": "Een back-up bevat nooit wachtwoorden of serverinstellingen. Stel na het terugzetten aanmelden (OIDC) en e-mail opnieuw in onder Serverinstellingen — leden melden zich dan aan via SSO, of je stelt hun wachtwoord opnieuw in onder Gebruikers.",
+    "restoreButton": "Back-up terugzetten",
+    "restoring": "Bezig met terugzetten... dit kan even duren bij grote back-ups.",
+    "restoreFailed": "Terugzetten mislukt."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -291,7 +300,7 @@
     "playStoreUrl": "Google Play-URL",
     "storeUrlsHint": "Optioneel. Indien ingesteld toont de uitnodigingspagina downloadknoppen voor wie de app nog niet heeft. Laat leeg om ze te verbergen.",
     "dataExport": "Gegevens exporteren",
-    "dataExportDesc": "Download een zip met alle familie-inhoud — berichten, reacties, likes, favorieten, chatberichten, de ledenlijst en elke geüploade foto/video. Serverconfiguratie en geheimen (SMTP, OIDC, Immich, uitnodigingslinks, tokens) worden nooit meegenomen.",
+    "dataExportDesc": "Download een zip met alle familie-inhoud — berichten, reacties, likes, poll-stemmen, favorieten, chatberichten, kringen, de ledenlijst en elke geüploade foto/video. Je kunt hem terugzetten op een nieuwe, lege Famlin-server via het installatiescherm. Serverconfiguratie en geheimen (SMTP, OIDC, Immich, wachtwoorden, uitnodigingslinks, tokens) worden nooit meegenomen.",
     "dataExportDownload": "Export downloaden",
     "dataExportDownloading": "Export voorbereiden...",
     "oidc": "OIDC-login",

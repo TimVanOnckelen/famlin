@@ -60,9 +60,11 @@ The **Server settings** page's general section has a **Data export** card with a
 
 - All posts, comments, reactions, and favorites, across every group — **including posts shared with circles you're not a member of**. This is the one place circle privacy doesn't apply, because a backup that silently left content out wouldn't be a usable backup. Treat the export file accordingly.
 - All chat messages.
-- The member list (names, emails, avatars, admin status) and group membership.
+- The member list (names, emails, avatars, admin status), group membership, and circles.
 - Every uploaded photo and video, including the original, unresized files.
 
-It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, invite links, push tokens, or API tokens. It's a portable copy of your family's content, not a way to clone or migrate a whole server deployment.
+It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
+
+It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
 There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.
