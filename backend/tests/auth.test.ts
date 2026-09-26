@@ -127,6 +127,29 @@ describe('auth routes', () => {
       expect(res.statusCode).toBe(200);
     });
 
+    // Media tokens ride in every image URL's query string (copied links,
+    // proxy logs), so they must only ever unlock media — never the API.
+    it('does not accept a media token as a session token', async () => {
+      const admin = await createUser({ isAdmin: true });
+
+      const tokenRes = await app.inject({ method: 'GET', url: '/api/uploads/media-token', headers: authHeader(admin) });
+      expect(tokenRes.statusCode).toBe(200);
+      const mediaHeader = { authorization: `Bearer ${tokenRes.json().token}` };
+
+      for (const url of ['/api/auth/me', '/api/admin/settings', '/api/uploads/media-token']) {
+        const res = await app.inject({ method: 'GET', url, headers: mediaHeader });
+        expect(res.statusCode).toBe(401);
+      }
+
+      const patRes = await app.inject({
+        method: 'POST',
+        url: '/api/api-tokens',
+        headers: mediaHeader,
+        payload: { name: 'stolen' },
+      });
+      expect(patRes.statusCode).toBe(401);
+    });
+
     // /uploads/* is authorized via isSessionCurrent(), which caches its DB
     // lookup briefly (see plugins/auth.ts) for a hot path hit on every
     // photo/video render. These confirm the explicit cache invalidation on

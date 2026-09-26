@@ -29,6 +29,7 @@
     "oidcNotConfigured": "OIDC login is not configured",
     "invalidOidcToken": "Invalid OIDC token",
     "oidcAccountNoEmail": "OIDC account has no email",
+    "oidcEmailNotVerified": "Your identity provider has not verified this email address",
     "appleAccountNoEmail": "Your Apple account didn't share an email address, so we can't create your Famlin account. Sign in again and choose to share your email.",
     "oidcExchangeFailed": "Could not complete sign-in with the identity provider",
     "oidcHandoffExpired": "Sign-in expired, please try again",

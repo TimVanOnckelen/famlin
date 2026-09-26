@@ -108,7 +108,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     // A comment's own photos inherit the post's audience: a photo replied
     // onto a circle-private post must not be readable family-wide.
-    await bindAssetsToScope(attachmentUrls, post.circleId);
+    await bindAssetsToScope(attachmentUrls, post.circleId, request.user!.id);
 
     // Handlers run fire-and-forget (see events.ts) — the notifications
     // subscriber decides who in the thread gets told (and re-validates the

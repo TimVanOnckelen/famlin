@@ -62,7 +62,7 @@ export async function getDiscovery(issuer: string) {
 // Thrown for expected, user-facing OIDC failures so routes can map them to a
 // translated message instead of leaking jose/fetch internals via err.message.
 export class OidcError extends Error {
-  constructor(public code: 'not_configured' | 'no_email' | 'not_allowed' | 'exchange_failed') {
+  constructor(public code: 'not_configured' | 'no_email' | 'email_not_verified' | 'not_allowed' | 'exchange_failed') {
     super(code);
     this.name = 'OidcError';
   }
@@ -129,6 +129,16 @@ export async function verifyOidcToken(idToken: string, options?: { allowUnlisted
     throw new OidcError('no_email');
   }
 
+  // Accounts are matched on email alone, so an unverified email claim would
+  // let anyone who can register that address at the provider (self-signup
+  // with verification off, a user-editable email field) sign straight into
+  // the existing Famlin account for it. Only an explicit `false` is refused:
+  // some providers (e.g. Microsoft Entra) never emit the claim at all, and
+  // for those the admin is trusting the provider's email by configuring it.
+  if (payload.email_verified === false || payload.email_verified === 'false') {
+    throw new OidcError('email_not_verified');
+  }
+
   // A valid invite is its own authorization, so it can provision an account
   // for an email that isn't on the allowedEmails whitelist.
   if (!options?.allowUnlisted && !(await isEmailAllowed(email))) {
@@ -150,8 +160,18 @@ export function createUserToken(user: { id: string; email: string; name: string;
   );
 }
 
+// Session tokens carry no `scope` claim. Media tokens are signed with the same
+// secret, so without this check a 7-day media token lifted from any image URL
+// (copied link, proxy/access log) would pass as a full session credential.
 export function verifyToken(token: string) {
-  return jwt.verify(token, config.JWT_SECRET) as AuthenticatedRequest['user'] & { tokenVersion: number };
+  const decoded = jwt.verify(token, config.JWT_SECRET) as AuthenticatedRequest['user'] & {
+    tokenVersion: number;
+    scope?: unknown;
+  };
+  if (typeof decoded !== 'object' || decoded === null || decoded.scope !== undefined) {
+    throw new jwt.JsonWebTokenError('not a session token');
+  }
+  return decoded;
 }
 
 // A narrow-scope, longer-lived token used only to authorize reading files

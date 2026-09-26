@@ -347,7 +347,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
       // even for ordinary posts.
       await bindAssetsToScope(
         [...(body.uploadedAssetUrls ?? []), ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
-        circleId
+        circleId,
+        request.user!.id
       );
 
       // Handlers run fire-and-forget (see events.ts), so fanning out
@@ -418,7 +419,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     // Cross-posts are never circle-scoped (the body schema rejects the
     // combination), so their assets are always family-wide.
-    await bindAssetsToScope([...assetUrls, ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])], null);
+    await bindAssetsToScope(
+      [...assetUrls, ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
+      null,
+      request.user!.id
+    );
 
     emitDomainEvent('post.created', {
       posts: createdPosts.map((p) => ({ postId: p.id, groupId: p.group.id, groupName: p.group.name })),
@@ -500,7 +505,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       // Cross-posts are never circle-scoped, so any newly added photo is
       // family-wide.
       if (uploadedAssetUrls) {
-        await bindAssetsToScope(uploadedAssetUrls, null);
+        await bindAssetsToScope(uploadedAssetUrls, null, request.user!.id);
       }
 
       const current = await prisma.post.findUnique({
@@ -541,11 +546,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
     });
 
     // An edit can introduce photos that were uploaded after the post was
-    // created, so re-bind to this post's existing audience. circleId is
-    // immutable after creation (updatePostBodySchema doesn't accept it), so
-    // this can only ever re-assert the scope the post already had.
+    // created, so bind those to this post's existing audience. Photos the
+    // post already had are bound already and are left untouched (see
+    // bindAssetsToScope).
     if (body.uploadedAssetUrls) {
-      await bindAssetsToScope(body.uploadedAssetUrls, updated.circleId);
+      await bindAssetsToScope(body.uploadedAssetUrls, updated.circleId, request.user!.id);
     }
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.

@@ -37,6 +37,8 @@ Setup differs slightly depending on whether your provider supports a secretless 
    - Admin UI: `https://famlin.yourdomain.com/admin/`
 3. In `/admin` → Server settings, fill in **Issuer URL**, **Client ID**, **Scopes** (defaults to `openid email profile`), and **Display name** (shown on the login button). Leave **Client secret** blank.
 
+Famlin links an SSO login to an existing account by email, so it refuses any login whose ID token marks the email as unverified (`email_verified: false`). Keep email verification enabled at your provider if it allows self-registration or user-editable email addresses; providers that don't send the claim at all (such as Microsoft Entra ID) keep working.
+
 ### Google
 
 Google's OAuth clients always require a client secret for the token exchange, and its native "iOS"/"Android" client types force the mobile redirect onto a Google-generated scheme Famlin's shared, pre-built Android app can't have baked in ahead of time (every self-hosted deployment registers its own separate Google client). So instead, register one ordinary **Web application** client:
