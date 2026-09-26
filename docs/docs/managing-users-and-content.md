@@ -66,3 +66,7 @@ The **Server settings** page's general section has a **Data export** card with a
 It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, invite links, push tokens, or API tokens. It's a portable copy of your family's content, not a way to clone or migrate a whole server deployment.
 
 There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.
+
+### Members can export their own data
+
+Every member — not just admins — can download a copy of their family's content from their own profile, under **Your data → Download my data** (web and mobile app). That export is scoped to what the member can already see in the app: every post in their groups, **including other members' posts**, with the comments, reactions, chat, and photos/videos that go with them, plus their own favorites. It never includes another group's content, posts in circles they're not a member of, other members' favorites or notification settings, or any of the server secrets listed above. Each member can request up to 5 exports per hour.

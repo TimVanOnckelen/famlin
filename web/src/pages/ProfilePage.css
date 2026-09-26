@@ -355,3 +355,10 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.profile-export {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

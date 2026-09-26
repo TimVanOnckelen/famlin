@@ -13,6 +13,7 @@ import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config } from '../config.js';
 import { bindAssetsToScope } from '../services/uploads.js';
+import { buildMemberExportArchive } from '../services/memberExport.js';
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -582,6 +583,47 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     return sanitizeUser(user);
   });
+
+  // Self-service data export: a zip of everything the caller can already see
+  // (their groups' posts, comments, reactions and chat, their own favorites,
+  // fellow members' public profiles) plus exactly the upload files those rows
+  // reference. Scoped by services/memberExport.ts — deliberately NOT the
+  // server-wide admin export with a relaxed guard, see that file's header.
+  // Expensive (it streams the caller's whole family's media), and unlike the
+  // admin route any member can call it, hence the tight rate limit — keyed
+  // per user rather than per IP (a family behind one home router shouldn't
+  // share one budget), which is why it runs as a preHandler after
+  // authenticate instead of the plugin's default onRequest hook.
+  fastify.get(
+    '/me/export',
+    {
+      preHandler: [fastify.authenticate],
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: '1 hour',
+          hook: 'preHandler',
+          keyGenerator: (request) => `me-export:${request.user?.id ?? request.ip}`,
+        },
+      },
+    },
+    async (request, reply) => {
+      const archive = await buildMemberExportArchive(request.user!.id);
+      archive.on('error', (err) => {
+        request.log.error(err, 'member export archive stream error');
+      });
+
+      const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      reply.header('content-type', 'application/zip');
+      reply.header('content-disposition', `attachment; filename="${filename}"`);
+
+      // Same finalize-after-attach pattern as GET /api/admin/export.
+      archive.finalize().catch((err) => {
+        request.log.error(err, 'member export archive finalize error');
+      });
+      return reply.send(archive);
+    }
+  );
 
   // Self-service account deletion — the same permanent, cascading delete an
   // admin can perform via DELETE /api/admin/users/:id, but initiated by the

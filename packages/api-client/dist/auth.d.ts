@@ -48,4 +48,9 @@ export interface ServerInfo {
 }
 export declare function fetchServerInfo(): Promise<ServerInfo>;
 export declare function deleteAccount(): Promise<void>;
+export declare function downloadMyExport(): Promise<Blob>;
+export declare function getMyExportRequest(): Promise<{
+    url: string;
+    headers: Record<string, string>;
+}>;
 export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;

@@ -1,4 +1,5 @@
-import { api } from './client';
+import { api, getCurrentServerUrl } from './client';
+import { getStorageAdapter, TOKEN_KEY } from './storage';
 import { User } from './types';
 
 export interface LoginResponse {
@@ -127,6 +128,29 @@ export async function fetchServerInfo(): Promise<ServerInfo> {
 // notifications). There is no restore — callers must confirm first.
 export async function deleteAccount(): Promise<void> {
   await api.delete('/auth/me');
+}
+
+// Self-service data export (GET /api/auth/me/export): a zip of everything
+// the caller can see in their groups — other members' posts included — plus
+// the photos/videos it references. Can be large, so no request timeout.
+// Browser callers (web) take the Blob and save it; mobile streams straight
+// to disk instead via getMyExportRequest(), since holding a whole family's
+// media in JS memory would not survive on a phone.
+export async function downloadMyExport(): Promise<Blob> {
+  const response = await api.get<Blob>('/auth/me/export', { responseType: 'blob', timeout: 0 });
+  return response.data;
+}
+
+// The absolute URL + auth header for the export, for a native downloader
+// that writes to a file rather than going through axios.
+export async function getMyExportRequest(): Promise<{ url: string; headers: Record<string, string> }> {
+  const serverUrl = getCurrentServerUrl();
+  if (!serverUrl) throw new Error('No server URL configured');
+  const token = await getStorageAdapter().getItem(TOKEN_KEY);
+  return {
+    url: `${serverUrl}/api/auth/me/export`,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  };
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
