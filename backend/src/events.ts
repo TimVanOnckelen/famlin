@@ -84,6 +84,32 @@ export interface DomainEvents {
     kind: string;
     refPostId: string | null;
   };
+  'story.created': {
+    // One entry per Story row — one per target group for a cross-posted
+    // story, mirroring post.created's `posts`.
+    stories: Array<{ storyId: string; groupId: string; groupName: string }>;
+    authorId: string;
+    authorName: string;
+    circleId: string | null;
+    createdAt: Date;
+  };
+  'story.reaction.added': {
+    // Set (not removed) reactions only — covers both adding and switching.
+    storyId: string;
+    groupName: string;
+    storyAuthorId: string;
+    reactorId: string;
+    reactorName: string;
+    reactionType: string;
+  };
+  'story.reply.created': {
+    storyId: string;
+    groupName: string;
+    storyAuthorId: string;
+    fromUserId: string;
+    fromUserName: string;
+    content: string;
+  };
 }
 
 type Handler<K extends keyof DomainEvents> = (payload: DomainEvents[K]) => void | Promise<void>;

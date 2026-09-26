@@ -306,6 +306,81 @@ export function registerNotificationSubscriber(): void {
     });
   });
 
+  onDomainEvent('story.created', async (event) => {
+    // Stories are opt-in noise: only members who turned pushOnStory on hear
+    // about them at all (not even an in-app row for everyone else), and at
+    // most once per author per group per UTC day — a family member posting
+    // twenty stories from a birthday party is one notification, not twenty.
+    const startOfTodayUtc = new Date(event.createdAt);
+    startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+    const eventStoryIds = event.stories.map((s) => s.storyId);
+
+    const earlierToday = await prisma.story.findMany({
+      where: {
+        authorId: event.authorId,
+        groupId: { in: event.stories.map((s) => s.groupId) },
+        createdAt: { gte: startOfTodayUtc },
+        id: { notIn: eventStoryIds },
+      },
+      select: { groupId: true },
+    });
+    const alreadyAnnounced = new Set(earlierToday.map((s) => s.groupId));
+    const targets = event.stories.filter((s) => !alreadyAnnounced.has(s.groupId));
+    if (targets.length === 0) return;
+
+    const memberships = await prisma.groupMember.findMany({
+      where: {
+        groupId: { in: targets.map((t) => t.groupId) },
+        userId: { not: event.authorId },
+        user: { pushOnStory: true },
+      },
+      select: { groupId: true, userId: true },
+    });
+
+    // Cross-post dedupe, same as post.created: a member of several target
+    // groups is told once, via the first target they belong to. Circle
+    // narrowing happens inside notify() off the storyId.
+    const assigned = new Set<string>();
+    for (const target of targets) {
+      const recipientIds = memberships
+        .filter((m) => m.groupId === target.groupId && !assigned.has(m.userId))
+        .map((m) => m.userId);
+      if (recipientIds.length === 0) continue;
+      recipientIds.forEach((id) => assigned.add(id));
+
+      await notifyUsers({
+        type: 'new_story',
+        userIds: recipientIds,
+        senderId: event.authorId,
+        storyId: target.storyId,
+        params: { author: event.authorName, group: target.groupName },
+      });
+    }
+  });
+
+  onDomainEvent('story.reaction.added', async (event) => {
+    if (event.storyAuthorId === event.reactorId) return;
+    await notifyUser({
+      type: 'story_reaction',
+      userId: event.storyAuthorId,
+      senderId: event.reactorId,
+      storyId: event.storyId,
+      params: { author: event.reactorName, group: event.groupName, emoji: reactionEmoji(event.reactionType) },
+    });
+  });
+
+  onDomainEvent('story.reply.created', async (event) => {
+    // Goes only to the story's author — the reply is private between the
+    // two of them, so it's never fanned out anywhere else.
+    await notifyUser({
+      type: 'story_reply',
+      userId: event.storyAuthorId,
+      senderId: event.fromUserId,
+      storyId: event.storyId,
+      params: { author: event.fromUserName, group: event.groupName, excerpt: excerptText(event.content) },
+    });
+  });
+
   onDomainEvent('chat.created', async (event) => {
     // The one central group chat notifies every OTHER member of the group
     // (notifyGroup already excludes the sender) — mirrors new_post's

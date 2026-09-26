@@ -3,6 +3,7 @@ import { buildApp } from './app.js';
 import { config } from './config.js';
 import { runOnThisDayJob } from './jobs/onThisDay.js';
 import { runNewAssetsJob } from './jobs/newAssets.js';
+import { runExpireStoriesJob } from './jobs/expireStories.js';
 
 async function start() {
   const fastify = await buildApp();
@@ -28,6 +29,15 @@ async function start() {
   cron.schedule('15 * * * *', () => {
     runNewAssetsJob().catch((err) => fastify.log.error(err, 'new-assets job failed'));
   });
+
+  // Every 10 minutes: deletes stories that expired without being pinned,
+  // media included (see src/jobs/expireStories.ts). Also run once at boot so
+  // a server that was down for a while doesn't keep expired media around
+  // until the first tick.
+  const expireStories = () =>
+    runExpireStoriesJob().catch((err) => fastify.log.error(err, 'expire-stories job failed'));
+  cron.schedule('*/10 * * * *', expireStories);
+  expireStories();
 }
 
 start();

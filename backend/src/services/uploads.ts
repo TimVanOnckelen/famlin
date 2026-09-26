@@ -1,5 +1,9 @@
+import fsp from 'fs/promises';
+import path from 'path';
 import { prisma } from '../db.js';
+import { uploadsDir } from '../config.js';
 import { isCircleMember } from './circles.js';
+import { DERIVED_DIR_NAME } from './uploadVariants.js';
 
 // Authorization for /uploads/* — see the Upload model in schema.prisma for
 // why a reverse index table is the only practical way to answer "who is
@@ -111,4 +115,47 @@ export async function bindAssetsToScope(
     data: { bound: true, circleId },
   });
   invalidateUploadCache(assetKeys);
+}
+
+// Is this upload a fresh, never-attached file that `userId` uploaded
+// themselves? A Story requires exactly that (see routes/stories.ts): its
+// photo is deleted from disk when the story expires, so it must never be a
+// file some other post, comment or person also points at.
+export async function isUnboundUploadOwnedBy(assetPath: string, userId: string): Promise<boolean> {
+  const row = await prisma.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: { uploaderId: true, bound: true },
+  });
+  return !!row && row.uploaderId === userId && !row.bound;
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// Every extension routes/uploads.ts can have written an original under.
+const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
+
+// Permanently removes every file one upload produced — the served copy, its
+// -thumbnail.jpg, the never-served original, and any cached HEIC rendition
+// under derived/ — plus its Upload row. Used only for story media, whose
+// uploads are exclusive to the story (see isUnboundUploadOwnedBy above).
+// Missing files are fine (a thumbnail that never generated, an original that
+// was already a .jpg), so each unlink is best-effort.
+export async function deleteUploadFiles(assetPath: string): Promise<void> {
+  const assetKey = uploadAssetKey(assetPath);
+  // The path was validated against UPLOAD_PATH_REGEX on the way in, but this
+  // helper builds filesystem paths from it — refuse anything that isn't a
+  // bare uuid rather than trust every future caller.
+  if (!UUID_REGEX.test(assetKey)) return;
+
+  const served = path.basename(assetPath);
+  const candidates = [
+    path.join(uploadsDir, served),
+    path.join(uploadsDir, `${assetKey}-thumbnail.jpg`),
+    ...ORIGINAL_EXTENSIONS.map((ext) => path.join(uploadsDir, 'originals', `${assetKey}${ext}`)),
+    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}.jpg`),
+    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
+  ];
+  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})));
+
+  await prisma.upload.deleteMany({ where: { assetKey } });
+  invalidateUploadCache([assetKey]);
 }
