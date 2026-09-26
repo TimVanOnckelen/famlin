@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { PostCard } from '@/components/PostCard';
 import { NewPostModal } from '@/components/NewPostModal';
 import { ApiTokensModal } from '@/components/ApiTokensModal';
+import { StoryTray } from '@/components/StoryTray';
 import './FeedPage.css';
 
 export function FeedPage({
@@ -92,6 +93,12 @@ export function FeedPage({
   const composerDefaultGroupId =
     selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
 
+  // Stories follow the same family filter. Only fetched when at least one
+  // selected family has them turned on (an older server without stories
+  // reports no storiesEnabled at all, which reads as off).
+  const storyGroups = selectedGroupIds.length > 0 ? groups.filter((g) => selectedGroupIds.includes(g.id)) : groups;
+  const storiesEnabled = storyGroups.some((g) => g.storiesEnabled);
+
   // Label each card with its family whenever the feed spans more than one.
   const effectiveGroupCount = selectedGroupIds.length > 0 ? selectedGroupIds.length : groups.length;
   const showGroupOnCards = effectiveGroupCount > 1;
@@ -147,6 +154,8 @@ export function FeedPage({
             ))}
           </div>
         )}
+
+        <StoryTray groupIds={selectedGroupIds} enabled={storiesEnabled} />
 
         {postsQuery.isLoading && <div className="feed-hint">{t('common.loading')}</div>}
 

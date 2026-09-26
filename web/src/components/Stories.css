@@ -1,0 +1,412 @@
+/* ── Story strip (tray + Highlights) at the top of the feed ─────────────── */
+
+.story-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+}
+
+.story-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.story-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 68px;
+}
+
+/* A seen author gets a quiet grey ring; unseen gets the brand gradient —
+   the one signal the tray exists to give. */
+.story-ring {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--fam-border);
+}
+
+.story-ring > * {
+  box-shadow: 0 0 0 2px var(--fam-surface);
+}
+
+.story-bubble-unseen .story-ring {
+  background: linear-gradient(150deg, var(--fam-accent), var(--fam-primary));
+}
+
+.story-bubble-name {
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fam-text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.story-highlights-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--fam-text-muted);
+}
+
+.story-highlight {
+  flex-shrink: 0;
+  width: 64px;
+  height: 96px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--fam-primary-tint);
+}
+
+.story-highlight img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.story-highlight-more {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fam-primary);
+}
+
+/* ── Full-screen viewer ─────────────────────────────────────────────────── */
+
+.story-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(10, 20, 24, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* 9:16 like a phone screen, as large as the window allows. */
+.story-stage {
+  position: relative;
+  height: min(88vh, 860px);
+  aspect-ratio: 9 / 16;
+  max-width: 100%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.story-progress {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+}
+
+.story-progress-track {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.story-progress-fill {
+  display: block;
+  height: 100%;
+  background: #fff;
+}
+
+.story-header {
+  position: absolute;
+  top: 22px;
+  left: 12px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.story-header-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.story-author {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.story-meta {
+  font-size: 12px;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-icon-button {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.story-icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Invisible click targets over the left/right thirds of the photo. */
+.story-tap {
+  position: absolute;
+  top: 70px;
+  bottom: 120px;
+  width: 35%;
+  z-index: 2;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.story-tap-prev {
+  left: 0;
+}
+
+.story-tap-next {
+  right: 0;
+}
+
+.story-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 36px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+}
+
+.story-reactions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.story-reaction {
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.story-reaction:hover:not(:disabled) {
+  transform: scale(1.15);
+}
+
+.story-reaction-active {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.story-reply-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.story-reply-input {
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.story-reply-input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.story-replied,
+.story-error {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #fff;
+}
+
+.story-error {
+  color: #ffd2cc;
+}
+
+.story-insights-button {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Author-only insights sheet, sliding over the bottom of the story. */
+.story-insights {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: var(--fam-surface);
+  color: var(--fam-text-body);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 12px 14px;
+}
+
+.story-insights-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.story-insights-tab {
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fam-text-muted);
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.story-insights-tab-active {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary-dark);
+}
+
+.story-insights-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  color: var(--fam-text-muted);
+}
+
+.story-insights-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.story-insights-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.story-insights-reply {
+  align-items: flex-start;
+}
+
+.story-insights-name {
+  font-weight: 700;
+  color: var(--fam-text-title);
+  flex: 1;
+}
+
+.story-insights-reply-text {
+  display: block;
+  font-size: 14px;
+}
+
+.story-insights-meta {
+  font-size: 12px;
+  color: var(--fam-text-muted);
+}
+
+.story-insights-empty,
+.story-insights-privacy {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--fam-text-muted);
+}
+
+@media (max-width: 720px) {
+  .story-viewer {
+    padding: 0;
+  }
+
+  .story-stage {
+    height: 100%;
+    width: 100%;
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+}
