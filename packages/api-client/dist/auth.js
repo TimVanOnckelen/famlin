@@ -11,8 +11,11 @@ exports.updateMe = updateMe;
 exports.fetchNotificationConfig = fetchNotificationConfig;
 exports.fetchServerInfo = fetchServerInfo;
 exports.deleteAccount = deleteAccount;
+exports.downloadMyExport = downloadMyExport;
+exports.getMyExportRequest = getMyExportRequest;
 exports.changePassword = changePassword;
 const client_1 = require("./client");
+const storage_1 = require("./storage");
 async function fetchOidcConfig() {
     const response = await client_1.api.get('/auth/oidc-config');
     return response.data;
@@ -71,6 +74,28 @@ async function fetchServerInfo() {
 // notifications). There is no restore — callers must confirm first.
 async function deleteAccount() {
     await client_1.api.delete('/auth/me');
+}
+// Self-service data export (GET /api/auth/me/export): a zip of everything
+// the caller can see in their groups — other members' posts included — plus
+// the photos/videos it references. Can be large, so no request timeout.
+// Browser callers (web) take the Blob and save it; mobile streams straight
+// to disk instead via getMyExportRequest(), since holding a whole family's
+// media in JS memory would not survive on a phone.
+async function downloadMyExport() {
+    const response = await client_1.api.get('/auth/me/export', { responseType: 'blob', timeout: 0 });
+    return response.data;
+}
+// The absolute URL + auth header for the export, for a native downloader
+// that writes to a file rather than going through axios.
+async function getMyExportRequest() {
+    const serverUrl = (0, client_1.getCurrentServerUrl)();
+    if (!serverUrl)
+        throw new Error('No server URL configured');
+    const token = await (0, storage_1.getStorageAdapter)().getItem(storage_1.TOKEN_KEY);
+    return {
+        url: `${serverUrl}/api/auth/me/export`,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    };
 }
 async function changePassword(currentPassword, newPassword) {
     await client_1.api.post('/auth/change-password', { currentPassword, newPassword });

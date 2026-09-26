@@ -5,6 +5,7 @@ import {
   uploadFiles,
   changePassword,
   deleteAccount,
+  downloadMyExport,
   fetchNotificationConfig,
   fetchServerInfo,
   updateMe,
@@ -107,6 +108,29 @@ export function ProfilePage({
       setDeleteError(err.response?.data?.error || t('common.tryAgain'));
     },
   });
+
+  // Self-service data export (GET /api/auth/me/export). The zip is built and
+  // streamed server-side; here it lands as a Blob and is saved through a
+  // throwaway object-URL link, since the request needs the bearer header a
+  // plain <a href> can't send.
+  const exportData = useMutation({
+    mutationFn: downloadMyExport,
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    },
+  });
+  const exportError = exportData.isError
+    ? (exportData.error as any)?.response?.status === 429
+      ? t('profile.exportRateLimited')
+      : t('profile.exportFailed')
+    : null;
 
   const deleteConfirmWord = t('profile.deleteAccountConfirmWord');
   const canConfirmDelete =
@@ -306,6 +330,24 @@ export function ProfilePage({
             </form>
           </section>
         )}
+
+        <section className="profile-section">
+          <h2 className="profile-section-title">{t('profile.yourData')}</h2>
+          <p className="profile-setting-desc">{t('profile.exportDescription')}</p>
+          {exportError && (
+            <div className="profile-error" role="alert">
+              {exportError}
+            </div>
+          )}
+          <button
+            className="btn btn-secondary profile-export"
+            onClick={() => exportData.mutate()}
+            disabled={exportData.isPending}
+          >
+            <Icon name="download" size={16} />
+            {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
+          </button>
+        </section>
 
         <section className="profile-section">
           <h2 className="profile-section-title">{t('profile.server')}</h2>

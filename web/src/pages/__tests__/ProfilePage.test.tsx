@@ -2,13 +2,14 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchNotificationConfig, fetchServerInfo, updateMe } from '@famlin/api-client';
+import { downloadMyExport, fetchNotificationConfig, fetchServerInfo, updateMe } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchNotificationConfig: vi.fn(),
   fetchServerInfo: vi.fn(),
   updateMe: vi.fn(),
+  downloadMyExport: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -19,6 +20,33 @@ beforeEach(() => {
 });
 
 describe('ProfilePage', () => {
+  it('downloads the data export as a zip and says it includes everyone\'s posts', async () => {
+    const user = userEvent.setup();
+    vi.mocked(downloadMyExport).mockResolvedValue(new Blob(['PK'], { type: 'application/zip' }));
+    const createObjectURL = vi.fn(() => 'blob:export');
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />);
+    expect(screen.getByText(/includes posts from everyone in your groups/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Download my data' }));
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(downloadMyExport).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:export');
+    click.mockRestore();
+  });
+
+  it('explains a rate-limited export', async () => {
+    const user = userEvent.setup();
+    vi.mocked(downloadMyExport).mockRejectedValue({ response: { status: 429 } });
+
+    renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />);
+    await user.click(screen.getByRole('button', { name: 'Download my data' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('try again in an hour');
+  });
+
   it('shows the user identity and server version', async () => {
     renderWithQueryClient(
       <ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />

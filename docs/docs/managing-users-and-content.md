@@ -71,3 +71,7 @@ It deliberately does **not** include server configuration or secrets — SMTP se
 It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
 There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.
+
+### Members can export their own data
+
+Every member — not just admins — can download a copy of their family's content from their own profile, under **Your data → Download my data** (web and mobile app). That export is scoped to what the member can already see in the app: every post in their groups, **including other members' posts**, with the comments, reactions, chat, and photos/videos that go with them, plus their own favorites. It never includes another group's content, posts in circles they're not a member of, other members' favorites or notification settings, or any of the server secrets listed above. Each member can request up to 5 exports per hour.

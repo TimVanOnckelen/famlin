@@ -5,13 +5,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import Constants from 'expo-constants';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 import { colors } from '@/constants/colors';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { updateMe, changePassword, deleteAccount, fetchNotificationConfig, fetchServerInfo, NotificationPrefs } from '@/api/auth';
+import {
+  updateMe,
+  changePassword,
+  deleteAccount,
+  getMyExportRequest,
+  fetchNotificationConfig,
+  fetchServerInfo,
+  NotificationPrefs,
+} from '@/api/auth';
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
 import { setLanguage } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
@@ -115,6 +125,26 @@ export function ProfileScreen() {
     },
     onError: (err: any) => {
       setDeleteError(err.response?.data?.error || err.message || t('common.tryAgain'));
+    },
+  });
+
+  // Self-service data export (GET /api/auth/me/export). Streamed straight to
+  // a cache file by the native downloader rather than through axios — a whole
+  // family's photos would not fit in JS memory — then handed to the system
+  // share sheet so the member can save it to Files/Drive or send it on.
+  const exportData = useMutation({
+    mutationFn: async () => {
+      const { url, headers } = await getMyExportRequest();
+      const destination = new File(Paths.cache, `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`);
+      if (destination.exists) destination.delete();
+      const file = await File.downloadFileAsync(url, destination, { headers, idempotent: true });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, { mimeType: 'application/zip', UTI: 'public.zip-archive' });
+      }
+    },
+    onError: (err: any) => {
+      const rateLimited = String(err?.message ?? '').includes('429');
+      Alert.alert(t('common.error'), rateLimited ? t('profile.exportRateLimited') : t('profile.exportFailed'));
     },
   });
 
@@ -277,6 +307,26 @@ export function ProfileScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
+          <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
+          <TouchableOpacity
+            style={[styles.exportButton, exportData.isPending && styles.exportButtonDisabled]}
+            onPress={() => exportData.mutate()}
+            disabled={exportData.isPending}
+            accessibilityRole="button"
+          >
+            {exportData.isPending ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="download" size={16} color={colors.primary} />
+            )}
+            <Text style={styles.exportButtonText}>
+              {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
@@ -809,6 +859,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 13,
     color: colors.textMuted,
+  },
+  exportDescription: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textBody,
+    marginBottom: 12,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
+  },
+  exportButtonDisabled: {
+    opacity: 0.6,
+  },
+  exportButtonText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 15,
+    color: colors.primary,
   },
   dangerSection: {
     marginTop: 28,
