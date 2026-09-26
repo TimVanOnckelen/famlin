@@ -1,7 +1,13 @@
 import { PrismaClient, type ReactionType } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+// Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
+// rather than importing src/config.ts, so the Dockerfile's standalone
+// `tsc prisma/seed.ts` compile for the demo image stays self-contained.
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 async function main() {
   const testPasswordHash = await bcrypt.hash('test123456', 12);
