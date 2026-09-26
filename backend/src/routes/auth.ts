@@ -1,6 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import fs from 'fs';
+import fsp from 'fs/promises';
+import path from 'path';
+import { pipeline } from 'stream/promises';
 import pkg from '../../package.json' with { type: 'json' };
 import { prisma } from '../db.js';
 import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
@@ -11,9 +15,10 @@ import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js';
 import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
 import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
-import { config } from '../config.js';
+import { config, uploadsDir } from '../config.js';
 import { bindAssetsToScope } from '../services/uploads.js';
 import { deleteStoriesWithMedia } from '../services/stories.js';
+import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js';
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -196,6 +201,104 @@ export default async function authRoutes(fastify: FastifyInstance) {
         token,
         user: sanitizeUser(user),
       };
+    }
+  );
+
+  // Public, and like /setup only usable on a fresh install: restores an
+  // archive from GET /api/admin/export (services/import.ts) and provisions
+  // the restoring person's admin login in the same step. It lives here
+  // rather than under /api/admin because an empty instance has no admin to
+  // authenticate as — the "zero users" check under SETUP_ADVISORY_LOCK_KEY is
+  // its authorization, exactly as it is for /setup (whoever reaches a fresh
+  // server first can already make themselves its admin).
+  //
+  // multipart/form-data: an `archive` file plus the `email`, `name`,
+  // `password` fields /setup takes. If the backup has an account with that
+  // email, it's promoted to admin and given the password; otherwise a new
+  // admin account is created alongside the restored ones. Every other
+  // restored account has no password — members sign back in via SSO once
+  // it's reconfigured, or after an admin resets their password.
+  fastify.post(
+    '/setup/restore',
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request);
+      if (!request.isMultipart()) {
+        return reply.status(400).send({ error: t('errors.restoreArchiveMissing') });
+      }
+      // Cheap early refusal before spooling a multi-GB upload; the
+      // authoritative check is repeated under the advisory lock.
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') });
+      }
+
+      const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`);
+      await fsp.mkdir(workDir, { recursive: true });
+      try {
+        const fields: Record<string, string> = {};
+        let zipPath: string | null = null;
+
+        // No fileSize cap (the app-wide multipart limit is sized for a single
+        // photo/video, not a family's whole history) — the archive is
+        // streamed to disk on the uploads volume, never buffered in memory.
+        const parts = request.parts({ limits: { fileSize: Infinity, files: 1, fields: 10 } });
+        for await (const part of parts) {
+          if (part.type === 'file') {
+            if (part.fieldname !== 'archive' || zipPath) {
+              part.file.resume();
+              continue;
+            }
+            zipPath = path.join(workDir, 'archive.zip');
+            await pipeline(part.file, fs.createWriteStream(zipPath));
+          } else {
+            fields[part.fieldname] = String(part.value);
+          }
+        }
+
+        if (!zipPath) {
+          return reply.status(400).send({ error: t('errors.restoreArchiveMissing') });
+        }
+
+        const { email, name, password } = setupBodySchema.parse(fields);
+        const passwordHash = await hashPassword(password);
+
+        let result;
+        try {
+          result = await restoreArchive({
+            zipPath,
+            workDir,
+            admin: { email: email.toLowerCase().trim(), name, passwordHash },
+            lockKey: SETUP_ADVISORY_LOCK_KEY,
+          });
+        } catch (err) {
+          if (!(err instanceof RestoreError)) throw err;
+          request.log.warn({ err }, 'restore refused');
+          if (err.code === 'notEmpty') {
+            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') });
+          }
+          if (err.code === 'archiveTooNew') {
+            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') });
+          }
+          return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') });
+        }
+
+        const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } });
+        const token = createUserToken({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isAdmin: user.isAdmin,
+          tokenVersion: user.tokenVersion,
+        });
+
+        return {
+          token,
+          user: sanitizeUser(user),
+          counts: result.counts,
+        };
+      } finally {
+        await fsp.rm(workDir, { recursive: true, force: true });
+      }
     }
   );
 
