@@ -18,6 +18,7 @@ import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
 import { EmptyState } from '@/components/EmptyState';
+import { StoryTray } from '@/components/StoryTray';
 import { useCursorPagination } from '@/hooks/useCursorPagination';
 import { Group, Post } from '@/types';
 import {
@@ -105,6 +106,13 @@ export function FeedScreen() {
     enabled: hasGroups,
   });
   const { isLoading, isRefetching, refetch } = query;
+
+  // Stories follow the same family filter, and only show when at least one
+  // selected family has them turned on (an older server with no stories
+  // reports no storiesEnabled at all, which reads as off).
+  const storiesEnabled = (groups ?? []).some(
+    (g: Group) => g.storiesEnabled && (selectedGroupIds.length === 0 || selectedGroupIds.includes(g.id))
+  );
 
   // Search is still a per-group feature (the backend search endpoint requires
   // one group) — use the narrowed family, or fall back to the first one, the
@@ -260,23 +268,26 @@ export function FeedScreen() {
         windowSize={7}
         updateCellsBatchingPeriod={50}
         ListHeaderComponent={
-          hasGroups && onThisDay && onThisDay.length > 0 ? (
-            <TouchableOpacity
-              style={styles.onThisDayBanner}
-              onPress={() => navigation.navigate('PostDetail', { postId: onThisDay[0].id })}
-            >
-              <View style={styles.onThisDayIcon}>
-                <Icon name="clock" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.onThisDayText}>
-                <Text style={styles.onThisDayTitle}>{t('feed.onThisDayTitle')}</Text>
-                <Text style={styles.onThisDaySubtitle}>
-                  {t('feed.onThisDayCount', { count: onThisDay.length })}
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          ) : null
+          <>
+            <StoryTray groupIds={selectedGroupIds} enabled={hasGroups && storiesEnabled} />
+            {hasGroups && onThisDay && onThisDay.length > 0 ? (
+              <TouchableOpacity
+                style={styles.onThisDayBanner}
+                onPress={() => navigation.navigate('PostDetail', { postId: onThisDay[0].id })}
+              >
+                <View style={styles.onThisDayIcon}>
+                  <Icon name="clock" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.onThisDayText}>
+                  <Text style={styles.onThisDayTitle}>{t('feed.onThisDayTitle')}</Text>
+                  <Text style={styles.onThisDaySubtitle}>
+                    {t('feed.onThisDayCount', { count: onThisDay.length })}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
+          </>
         }
         ListEmptyComponent={
           !groupsLoaded || (isLoading && hasGroups) ? null : !hasGroups ? (

@@ -28,6 +28,8 @@ import { SearchScreen } from '@/screens/SearchScreen';
 import { ChatScreen } from '@/screens/ChatScreen';
 import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen';
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
+import { StoryViewerScreen } from '@/screens/StoryViewerScreen';
+import { StoryComposerScreen } from '@/screens/StoryComposerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
 import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter } from '@/api/client';
@@ -268,6 +270,22 @@ function AppContent() {
               options={{
                 presentation: 'fullScreenModal',
                 animation: 'fade',
+              }}
+            />
+            <Stack.Screen
+              name="StoryViewer"
+              component={StoryViewerScreen}
+              options={{
+                presentation: 'fullScreenModal',
+                animation: 'fade',
+              }}
+            />
+            <Stack.Screen
+              name="StoryComposer"
+              component={StoryComposerScreen}
+              options={{
+                presentation: 'fullScreenModal',
+                animation: 'slide_from_bottom',
               }}
             />
           </>

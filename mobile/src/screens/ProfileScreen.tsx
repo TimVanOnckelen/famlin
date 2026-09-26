@@ -124,10 +124,12 @@ export function ProfileScreen() {
     setDeleteModalVisible(true);
   }
 
-  const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey: keyof NotificationPrefs }[] = [
+  // emailKey is omitted for push-only types (stories never email).
+  const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey?: keyof NotificationPrefs }[] = [
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
+    { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
   ];
 
   async function handleLanguageChange(lang: SupportedLanguage) {
@@ -178,7 +180,9 @@ export function ProfileScreen() {
               {showEmail && <Text style={styles.notificationColumnLabel}>{t('profile.email')}</Text>}
             </View>
 
-            {notificationTypes.map(({ labelKey, pushKey, emailKey }) => (
+            {notificationTypes
+              .filter(({ emailKey }) => showPush || emailKey)
+              .map(({ labelKey, pushKey, emailKey }) => (
               <View key={labelKey} style={styles.notificationRow}>
                 <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
                 {showPush && (
@@ -189,7 +193,8 @@ export function ProfileScreen() {
                     thumbColor={colors.white}
                   />
                 )}
-                {showEmail && (
+                {showEmail && !emailKey && <View style={styles.pushOnlySpacer} />}
+                {showEmail && emailKey && (
                   <Switch
                     value={user?.[emailKey]}
                     onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
@@ -687,6 +692,11 @@ const styles = StyleSheet.create({
   },
   notificationLabel: {
     flex: 1,
+  },
+  // Holds the email column open on a push-only row (a Switch's footprint),
+  // so its push toggle still lines up under the Push header.
+  pushOnlySpacer: {
+    width: 51,
   },
   languageValue: {
     fontFamily: 'Nunito_700Bold',
