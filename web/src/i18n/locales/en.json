@@ -143,7 +143,8 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands"
-    }
+    },
+    "notifyNewStory": "Stories (push only)"
   },
   "apiTokens": {
     "menuItem": "API tokens",
@@ -289,5 +290,49 @@
     "membersLoadFailed": "Couldn't load the members of this circle.",
     "joinedOn": "Joined {{date}}",
     "whoCanSee": "Who can see posts in {{circle}}?"
+  },
+  "stories": {
+    "trayLabel": "Stories",
+    "yourStory": "Your story",
+    "open": "View {{name}}'s story",
+    "openUnseen": "View {{name}}'s new story",
+    "highlights": "Highlights",
+    "openHighlight": "View {{name}}'s highlight",
+    "moreHighlights": "More",
+    "viewerLabel": "Story",
+    "highlightBadge": "Highlight",
+    "imageAlt": "Story by {{name}}",
+    "previous": "Previous story",
+    "next": "Next story",
+    "reactLabel": "React to this story",
+    "reactions": {
+      "LIKE": "Like",
+      "LOVE": "Love",
+      "HAHA": "Haha",
+      "WOW": "Wow",
+      "SAD": "Sad",
+      "CARE": "Care"
+    },
+    "replyPlaceholder": "Reply privately to {{name}}…",
+    "replyLabel": "Private reply",
+    "sendReply": "Send reply",
+    "youReplied": "You replied: \"{{content}}\"",
+    "replyFailed": "Your reply couldn't be sent.",
+    "seenBy_one": "Seen by {{count}}",
+    "seenBy_other": "Seen by {{count}}",
+    "reactionsCount_one": "{{count}} reaction",
+    "reactionsCount_other": "{{count}} reactions",
+    "repliesCount_one": "{{count}} reply",
+    "repliesCount_other": "{{count}} replies",
+    "insightsLabel": "Story activity",
+    "tabs": {
+      "views": "Viewers",
+      "reactions": "Reactions",
+      "replies": "Replies"
+    },
+    "noViews": "Nobody has seen this story yet.",
+    "noReactions": "No reactions yet.",
+    "noReplies": "No replies yet.",
+    "repliesPrivate": "Only you can see who viewed this story and the replies you got."
   }
 }

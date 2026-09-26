@@ -1,5 +1,9 @@
+import fsp from 'fs/promises';
+import path from 'path';
 import { prisma } from '../db.js';
+import { uploadsDir } from '../config.js';
 import { isCircleMember } from './circles.js';
+import { DERIVED_DIR_NAME } from './uploadVariants.js';
 
 // Authorization for /uploads/* — see the Upload model in schema.prisma for
 // why a reverse index table is the only practical way to answer "who is
@@ -94,6 +98,17 @@ export async function recordUpload(assetPath: string, uploaderId: string): Promi
 // photo interactions. Passing circleId null means "whole family", which is
 // what every non-circle attach site does.
 //
+// An upload's audience is set exactly once, by its own uploader, when it is
+// first attached: only rows that are still unbound AND were uploaded by
+// `uploaderId` are touched. Every attach site accepts any well-formed
+// /uploads/ path from the client, so without both conditions anyone who knew
+// a photo's URL could re-scope it — widen a circle-private photo to the whole
+// server (e.g. by setting it as their avatar after being removed from the
+// circle) or narrow someone else's family photo into a circle to hide it.
+// Referencing an already-bound upload again (re-sharing, editing a post that
+// keeps its photos) leaves its existing audience as-is, which can only fail
+// closed: a circle photo reused elsewhere stays circle-only.
+//
 // Assets with no Upload row (server-side copies made by
 // services/media/copyAsset.ts, or uploads predating the table) are simply
 // not matched by the updateMany and stay on the legacy path — circle posts
@@ -101,14 +116,79 @@ export async function recordUpload(assetPath: string, uploaderId: string): Promi
 export async function bindAssetsToScope(
   assetPaths: (string | null | undefined)[],
   circleId: string | null,
+  uploaderId: string,
   tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
 ): Promise<void> {
   const assetKeys = [...new Set(assetPaths.filter((p): p is string => !!p).map(uploadAssetKey))];
   if (assetKeys.length === 0) return;
 
   await tx.upload.updateMany({
-    where: { assetKey: { in: assetKeys } },
+    where: { assetKey: { in: assetKeys }, uploaderId, bound: false },
     data: { bound: true, circleId },
   });
   invalidateUploadCache(assetKeys);
+}
+
+// Is this upload a fresh, never-attached file that `userId` uploaded
+// themselves? A Story requires exactly that (see routes/stories.ts): its
+// photo is deleted from disk when the story expires, so it must never be a
+// file some other post, comment or person also points at.
+export async function isUnboundUploadOwnedBy(assetPath: string, userId: string): Promise<boolean> {
+  const row = await prisma.upload.findUnique({
+    where: { assetKey: uploadAssetKey(assetPath) },
+    select: { uploaderId: true, bound: true },
+  });
+  return !!row && row.uploaderId === userId && !row.bound;
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// Every extension routes/uploads.ts can have written an original under.
+const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
+
+// Permanently removes every file one upload produced — the served copy, its
+// -thumbnail.jpg, the never-served original, and any cached HEIC rendition
+// under derived/ — plus its Upload row. Used only for story media, whose
+// uploads are exclusive to the story (see isUnboundUploadOwnedBy above).
+// Missing files are fine (a thumbnail that never generated, an original that
+// was already a .jpg), so each unlink is best-effort.
+export async function deleteUploadFiles(assetPath: string): Promise<void> {
+  const assetKey = uploadAssetKey(assetPath);
+  // The path was validated against UPLOAD_PATH_REGEX on the way in, but this
+  // helper builds filesystem paths from it — refuse anything that isn't a
+  // bare uuid rather than trust every future caller.
+  if (!UUID_REGEX.test(assetKey)) return;
+
+  const served = path.basename(assetPath);
+  const candidates = [
+    path.join(uploadsDir, served),
+    path.join(uploadsDir, `${assetKey}-thumbnail.jpg`),
+    ...ORIGINAL_EXTENSIONS.map((ext) => path.join(uploadsDir, 'originals', `${assetKey}${ext}`)),
+    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}.jpg`),
+    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
+  ];
+  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})));
+
+  await prisma.upload.deleteMany({ where: { assetKey } });
+  invalidateUploadCache([assetKey]);
+}
+
+// Atomically binds one fresh upload to `circleId` on behalf of its uploader,
+// reporting whether it did. Unlike bindAssetsToScope (which silently leaves
+// an already-bound or someone else's upload alone), a caller that needs the
+// upload to be exclusively its own — a Story, whose photo is deleted from
+// disk when it expires — uses this inside its transaction, so two concurrent
+// requests can't both claim the same file.
+export async function claimUnboundUpload(
+  assetPath: string,
+  uploaderId: string,
+  circleId: string | null,
+  tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
+): Promise<boolean> {
+  const assetKey = uploadAssetKey(assetPath);
+  const { count } = await tx.upload.updateMany({
+    where: { assetKey, uploaderId, bound: false },
+    data: { bound: true, circleId },
+  });
+  invalidateUploadCache([assetKey]);
+  return count === 1;
 }

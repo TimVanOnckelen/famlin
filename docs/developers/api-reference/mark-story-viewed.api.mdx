@@ -1,0 +1,71 @@
+---
+id: mark-story-viewed
+title: "Record that you've seen a story"
+description: "Idempotent. Ignored for your own story and once the story has expired,"
+sidebar_label: "Record that you've seen a story"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVtuO2zYQ/ZUBX/YCRU6DPAlFgQ2QIlv0EmSTBoVtRCNpLDFLkQyHstcxBPQj+oX9kmIoeXcbt33qQ4E+2SI5nDlnZs7woJyngFE7e92oQvUYbm+iC/ufNe2oUZmK2LIqlkpWNbFaZ6ohroP2YqQKdd1Q710kG3O4bq0L1MDGBdi7IYDbWWC5D9A24GxNEDualzpkoDuvAzXZyu46XXewCUSfiQHhlW47o9sunjGsFBNZqPYrBUZzBIygI4MLutUWDTx7Dp0bAucrqzLlMWBPkYJEflAWe1KF0gJHS8geY6cyFejTIM5VEcNAmeK6ox5VcVBx78WCY9C2VeO4lsPsnWVi2X/29Kn8/JmIN1S70FAD5y6Anpi4UJmqnRV2xAC9N7pOdC8+slgdTr266iPVUWAESU7Uk08e6pqYHx2snDOEApjusPeGJiDjmKmoo3yqm9loHGX1+dOvTsP+QTNr22ag7RaNbrL7nIALEGjrbqmBOlBDNmo0/x4iCsGFU7q/LLBXQ4/2SSBssDKUQQxo2WCkBrYaUz2VV3VNPj75Hm07YEsldIQNBTgvyZaL0pryIldCwUPOl7P/9QNbL9PCkavnp1z96CJs3GAb+P3X3wANOwgUh2Dnmse5svdugBrtWQQmyoDdcedMKl5zJOmE6URF4IOrqMn/F8yOmeopdk7UxjtOsUs7FmqBXi94kpnFQTfjYqtppzLFFLbHXh6CUYXqYvRcLBYb7I22+Vz+ee36E4y/HGXo23QWGvLG7XshWdqaqR6Cjvt0eUUYKFwNEs5y/Xj7RoifuH186J5gCUjNCpJaMx06CeYKPAV2oliYGhOiuyUL5+WE5IPH+CHP8zKThkuJ0DblYUcVoPcX4MLKIjAxa2fhu/dvYRNcD+Xrn27eQqIQh9gtjGu1LXN44WIHGAiYbJy0F3uCHe6LlS0FhQv6c6qyAl6kqOHrFNQ3pYip5EvbjUtY52TOTF69vlaZksxM4OohBKH1S9AvtxT2R/qnXIrEOCaG2GmGNy9v3sptMFiprFJQlKnD7uOV3djRyrrNRtcaDfSu0obSWJm5YRiYcnivBTEs/5Lp9fmioS0ZaRYWPxcrOzcrVIM2zcPY0jZSO41GBmxRW47T7gZ7baSVJzD5yq7slTEwNy9oBq6dpwaqPVxetsENHnrqKwrcaX95WRwFApw1e5AGnIAEHWll7++xkGwZzpNLTXyRLCsyzrYQXZbMYkeBxKt1kljAkCQqdhhX1lOYoOdwQwTLdyL2idir19endEwyNsROxH5SnyxFtJUFZ3lyuXNBpsLceGnsjlnq5x6TUs0zd5qJKRSJ/GwrhUj2KIdf1srhQQD/i++Kudkj3cWFN6gT6KRIh1nElgq9FiGYX0uZKtKzIynZOlOdKF6xVIdDhUzvghlHWf40UBAJWmdqi0GLGidBajTL/0YVGzRM/8DW+ZtZfi/g7wKdF9EK7Vs0g3ypTN3SfnodjesxU5O8J+/TxjQAHpmcDCYRyntNFx1S4/gHgu6gOQ==
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Record that you've seen a story"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/stories/{id}/view"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Idempotent. Ignored for your own story and once the story has expired,
+which freezes a Highlight's "seen by" list at its original 24 hours.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./mark-story-viewed.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./mark-story-viewed.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./mark-story-viewed.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

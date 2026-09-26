@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { fetchOidcConfig, loginWithPassword } from '@/api/auth';
 import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
 import { AppleSignInButton } from '@/components/AppleSignInButton';
 import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites';
-import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
+import { getServerUrl } from '@/utils/storage';
 import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -42,7 +42,12 @@ function normalizeServerUrl(url: string): string {
   if (!/^https?:\/\//i.test(trimmed)) {
     trimmed = `https://${trimmed}`;
   }
-  return trimmed.replace(/\/$/, '');
+  return trimmed.replace(/\/+$/, '');
+}
+
+// RN's URL polyfill doesn't implement `host`, so strip the scheme by hand.
+function serverHost(url: string): string {
+  return url.replace(/^https?:\/\//i, '').split('/')[0];
 }
 
 export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
@@ -61,6 +66,15 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
   const [ssoEnabled, setSsoEnabled] = useState(false);
   const [ssoName, setSsoName] = useState('');
   const [appleEnabled, setAppleEnabled] = useState(false);
+  // The server this invite belongs to, and whether it differs from the one
+  // this device is signed in to / remembers. Anyone can craft an invite link
+  // naming any server, so a foreign one is never persisted until the user
+  // has actually signed in there (setAuth saves it together with the new
+  // token), is shown to the user by host, and never receives the existing
+  // session's token (see tokenBelongsToCurrentServer in the api-client).
+  const [inviteServer, setInviteServer] = useState('');
+  const [isForeignServer, setIsForeignServer] = useState(false);
+  const previousServerRef = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -68,12 +82,14 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
       // foreign server — remember what was active before we switch, and put
       // it back on every path that bails out without a completed invite.
       const previousServerUrl = getCurrentServerUrl();
+      previousServerRef.current = previousServerUrl;
       function restorePreviousServer() {
         if (previousServerUrl) setApiBaseUrl(previousServerUrl);
       }
 
       try {
-        const targetServer = server ? normalizeServerUrl(server) : (await getServerUrl()) || '';
+        const storedServer = normalizeServerUrl((await getServerUrl()) || '');
+        const targetServer = server ? normalizeServerUrl(server) : storedServer;
         if (!targetServer) {
           setErrorMessage(t('invite.errors.noServer'));
           setMode('error');
@@ -99,13 +115,8 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
           throw err;
         }
 
-        // Only persist the server URL once it's confirmed reachable —
-        // otherwise a broken invite link could silently overwrite a
-        // previously working stored server address.
-        if (server) {
-          await persistServerUrl(targetServer);
-        }
-
+        setInviteServer(targetServer);
+        setIsForeignServer(targetServer !== storedServer);
         setPreview(result);
 
         if (result.status !== 'valid') {
@@ -143,6 +154,13 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
     })();
   }, [token, server]);
 
+  // Backing out of an invite for another server without signing in there:
+  // point the client back at the server the existing session belongs to.
+  function handleCancel() {
+    if (previousServerRef.current) setApiBaseUrl(previousServerRef.current);
+    onDone();
+  }
+
   async function handleJoinExisting() {
     setSubmitting(true);
     try {
@@ -165,8 +183,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
       }
 
       const loginResult = await performOidcLogin(config, token);
-      const serverUrl = (await getServerUrl()) || '';
-      await setAuth(loginResult.user, loginResult.token, serverUrl);
+      await setAuth(loginResult.user, loginResult.token, inviteServer);
       onDone();
     } catch (err: any) {
       if (err instanceof OidcCancelledError) return;
@@ -192,8 +209,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
         email: preview?.email ? undefined : email.trim(),
         password,
       });
-      const serverUrl = (await getServerUrl()) || '';
-      await setAuth(result.user, result.token, serverUrl);
+      await setAuth(result.user, result.token, inviteServer);
       onDone();
     } catch (err: any) {
       Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
@@ -210,8 +226,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
     setSubmitting(true);
     try {
       const result = await loginWithPassword(email.trim(), password, token);
-      const serverUrl = (await getServerUrl()) || '';
-      await setAuth(result.user, result.token, serverUrl);
+      await setAuth(result.user, result.token, inviteServer);
       onDone();
     } catch (err: any) {
       Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
@@ -253,9 +268,16 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                   : t('invite.invitedTitle', { group: preview.groupName })}
               </Text>
 
+              {isForeignServer && (
+                <Text style={styles.serverNotice}>{t('invite.serverNotice', { host: serverHost(inviteServer) })}</Text>
+              )}
+
               {mode === 'choose' && (
                 <>
-                  {user ? (
+                  {/* The current session belongs to the remembered server, so
+                      joining with it only works for an invite on that same
+                      server; a foreign server needs its own sign-in. */}
+                  {user && !isForeignServer ? (
                     <TouchableOpacity
                       style={[styles.loginButton, submitting && styles.loginButtonDisabled]}
                       onPress={handleJoinExisting}
@@ -271,8 +293,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                         serverSupported={appleEnabled}
                         inviteToken={token}
                         onSuccess={async (result) => {
-                          const serverUrl = (await getServerUrl()) || '';
-                          await setAuth(result.user, result.token, serverUrl);
+                          await setAuth(result.user, result.token, inviteServer);
                           onDone();
                         }}
                       />
@@ -297,6 +318,12 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                       <TouchableOpacity onPress={() => setMode('login')}>
                         <Text style={styles.linkText}>{t('invite.haveAccountLink')}</Text>
                       </TouchableOpacity>
+
+                      {user && (
+                        <TouchableOpacity onPress={handleCancel}>
+                          <Text style={styles.linkText}>{t('invite.continueToApp')}</Text>
+                        </TouchableOpacity>
+                      )}
                     </>
                   )}
                 </>
@@ -446,6 +473,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 28,
     lineHeight: 26,
+  },
+  serverNotice: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: -16,
+    marginBottom: 24,
+    lineHeight: 20,
   },
   errorText: {
     fontFamily: 'Nunito_600SemiBold',

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, ModerationComment, ModerationPost, User } from '../api/client';
+import { api, ApiError, Group, ModerationComment, ModerationPost, ModerationStory, User } from '../api/client';
 import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
 
-type Tab = 'posts' | 'comments';
+type Tab = 'posts' | 'comments' | 'stories';
 
 function truncate(text: string | null, length = 90) {
   if (!text) return '';
@@ -20,6 +20,35 @@ function AuthorCell({ name }: { name: string }) {
       </span>
       <span className="cell-name">{name}</span>
     </span>
+  );
+}
+
+// Story photos live under /uploads/, which needs the bearer token — so the
+// thumbnail is fetched with it and shown from an object URL.
+function StoryThumb({ imageUrl }: { imageUrl: string }) {
+  const { t } = useTranslation();
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    api
+      .fetchUploadObjectUrl(imageUrl.replace(/\.[a-z]+$/, '-thumbnail.jpg'))
+      .then((url) => {
+        objectUrl = url;
+        if (!cancelled) setSrc(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [imageUrl]);
+
+  return src ? (
+    <img src={src} alt={t('content.storyPhoto')} className="story-thumb" />
+  ) : (
+    <span className="story-thumb story-thumb-empty" aria-label={t('content.storyPhoto')} />
   );
 }
 
@@ -43,6 +72,7 @@ export function ContentPage() {
   const [q, setQ] = useState('');
   const [posts, setPosts] = useState<ModerationPost[]>([]);
   const [comments, setComments] = useState<ModerationComment[]>([]);
+  const [stories, setStories] = useState<ModerationStory[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
@@ -76,10 +106,15 @@ export function ContentPage() {
         if (requestId !== requestIdRef.current) return;
         setPosts(page.items);
         setNextCursor(page.nextCursor);
-      } else {
+      } else if (tab === 'comments') {
         const page = await api.getContentComments(filterParams);
         if (requestId !== requestIdRef.current) return;
         setComments(page.items);
+        setNextCursor(page.nextCursor);
+      } else {
+        const page = await api.getContentStories(filterParams);
+        if (requestId !== requestIdRef.current) return;
+        setStories(page.items);
         setNextCursor(page.nextCursor);
       }
     } finally {
@@ -106,10 +141,15 @@ export function ContentPage() {
         if (requestId !== requestIdRef.current) return;
         setPosts((current) => [...current, ...page.items]);
         setNextCursor(page.nextCursor);
-      } else {
+      } else if (tab === 'comments') {
         const page = await api.getContentComments(params);
         if (requestId !== requestIdRef.current) return;
         setComments((current) => [...current, ...page.items]);
+        setNextCursor(page.nextCursor);
+      } else {
+        const page = await api.getContentStories(params);
+        if (requestId !== requestIdRef.current) return;
+        setStories((current) => [...current, ...page.items]);
         setNextCursor(page.nextCursor);
       }
     } finally {
@@ -148,12 +188,20 @@ export function ContentPage() {
     load();
   };
 
-  const items = tab === 'posts' ? posts : comments;
+  const handleDeleteStory = async (story: ModerationStory) => {
+    if (!confirm(t('content.deleteConfirm'))) return;
+    await api.deleteStory(story.id);
+    load();
+  };
+
+  const items = tab === 'posts' ? posts : tab === 'comments' ? comments : stories;
   const emptyMessage = hasFilters
     ? t('content.noResults')
     : tab === 'posts'
       ? t('content.noPosts')
-      : t('content.noComments');
+      : tab === 'comments'
+        ? t('content.noComments')
+        : t('content.noStories');
 
   return (
     <>
@@ -174,22 +222,32 @@ export function ContentPage() {
             <Icon name="message-circle" size={14} />
             {t('content.tabComments')}
           </button>
+          <button
+            className={`seg-tab${tab === 'stories' ? ' active' : ''}`}
+            onClick={() => setTab('stories')}
+          >
+            <Icon name="clock" size={14} />
+            {t('content.tabStories')}
+          </button>
         </div>
       </div>
 
       <div className="card">
         <div className="content-toolbar">
-          <div className="search-field">
-            <span className="search-icon">
-              <Icon name="search" size={15} />
-            </span>
-            <input
-              type="search"
-              placeholder={t('content.searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          {/* Stories are photos — there is no text to search. */}
+          {tab !== 'stories' && (
+            <div className="search-field">
+              <span className="search-icon">
+                <Icon name="search" size={15} />
+              </span>
+              <input
+                type="search"
+                placeholder={t('content.searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          )}
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{t('content.allGroups')}</option>
             {groups.map((g) => (
@@ -281,6 +339,73 @@ export function ContentPage() {
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
                           onClick={() => handleDeletePost(post)}
+                        >
+                          <Icon name="trash" size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : tab === 'stories' ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t('content.table.author')}</th>
+                    <th>{t('content.table.content')}</th>
+                    <th>{t('content.table.group')}</th>
+                    <th>{t('content.table.activity')}</th>
+                    <th>{t('content.table.date')}</th>
+                    <th>{t('content.table.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stories.map((story) => (
+                    <tr key={story.id}>
+                      <td>
+                        <AuthorCell name={story.author.name} />
+                      </td>
+                      <td className="cell-content">
+                        <span className="story-cell">
+                          <StoryThumb imageUrl={story.imageUrl} />
+                          {story.pinnedAt ? (
+                            <span className="badge milestone">{t('content.storyHighlight')}</span>
+                          ) : (
+                            <span className="muted">
+                              {t('content.storyLive', {
+                                time: new Date(story.expiresAt).toLocaleString(i18n.language),
+                              })}
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="group-badges">
+                          <span className="badge">{story.group.name}</span>
+                          {story.circleId && <span className="badge">{t('content.storyCircle')}</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="activity-counts">
+                          <span title={t('content.viewsTooltip')}>
+                            <Icon name="eye" size={13} />
+                            {story.viewCount}
+                          </span>
+                          <span title={t('content.reactionsTooltip')}>
+                            <Icon name="heart" size={13} />
+                            {story.reactionCount}
+                          </span>
+                        </span>
+                      </td>
+                      <td>
+                        <DateCell iso={story.createdAt} />
+                      </td>
+                      <td className="actions">
+                        <button
+                          className="icon-button danger"
+                          title={t('common.delete')}
+                          aria-label={t('common.delete')}
+                          onClick={() => handleDeleteStory(story)}
                         >
                           <Icon name="trash" size={15} />
                         </button>

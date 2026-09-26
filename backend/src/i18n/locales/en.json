@@ -29,6 +29,7 @@
     "oidcNotConfigured": "OIDC login is not configured",
     "invalidOidcToken": "Invalid OIDC token",
     "oidcAccountNoEmail": "OIDC account has no email",
+    "oidcEmailNotVerified": "Your identity provider has not verified this email address",
     "appleAccountNoEmail": "Your Apple account didn't share an email address, so we can't create your Famlin account. Sign in again and choose to share your email.",
     "oidcExchangeFailed": "Could not complete sign-in with the identity provider",
     "oidcHandoffExpired": "Sign-in expired, please try again",
@@ -89,7 +90,13 @@
     "circleNotEmpty": "This circle still contains posts. Confirm deletion to permanently remove them.",
     "circleMemberNotInGroup": "That person is not a member of this family group",
     "userAlreadyCircleMember": "That person is already in this circle",
-    "circleMemberNotFound": "That person is not in this circle"
+    "circleMemberNotFound": "That person is not in this circle",
+    "storiesDisabled": "Stories are turned off for this group",
+    "storyNotFound": "Story not found",
+    "storyExpired": "This story has expired",
+    "invalidStoryImage": "The story photo must be a new upload of your own",
+    "storyReplyExists": "You already replied to this story",
+    "cannotReplyToOwnStory": "You can't reply to your own story"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -112,7 +119,10 @@
     "albumPhoto_other": "{{author}} added photos to an album in {{group}} {{count}} times today",
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
-    "emailBody": "{{message}}\n\nView it in the Famlin app."
+    "emailBody": "{{message}}\n\nView it in the Famlin app.",
+    "newStory": "{{author}} shared a story in {{group}}",
+    "storyReply": "{{author}} replied to your story: \"{{excerpt}}\"",
+    "storyReaction": "{{author}} reacted {{emoji}} to your story in {{group}}"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} shared a milestone: {{milestoneTag}}",

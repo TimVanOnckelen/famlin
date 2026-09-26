@@ -67,6 +67,9 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   // count-pluralized like trip_checkin — bundles same-day contributions from
   // the same author into one notification (see src/subscribers/notifications.ts).
   album_photo: 'notifications.albumPhoto',
+  new_story: 'notifications.newStory',
+  story_reply: 'notifications.storyReply',
+  story_reaction: 'notifications.storyReaction',
 };
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
@@ -92,6 +95,9 @@ interface NotifyOptions {
   // only new_media_assets, which is scoped to an album/group instead of a
   // single post.
   postId?: string | null;
+  // Set instead of postId for story notifications (new_story, story_reply,
+  // story_reaction). Circle-filtered exactly like postId below.
+  storyId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -111,6 +117,7 @@ interface NotifyOptions {
 async function notify(options: NotifyOptions) {
   const { type, senderId, params, recipientIds, bundleSince } = options;
   const postId = options.postId ?? null;
+  const storyId = options.storyId ?? null;
 
   let ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
   if (ids.length === 0) return;
@@ -130,6 +137,12 @@ async function notify(options: NotifyOptions) {
     ids = await filterRecipientsByCircle(post?.circleId ?? null, ids);
     if (ids.length === 0) return;
   }
+  // Same rule for a circle-scoped story.
+  if (storyId) {
+    const story = await prisma.story.findUnique({ where: { id: storyId }, select: { circleId: true } });
+    ids = await filterRecipientsByCircle(story?.circleId ?? null, ids);
+    if (ids.length === 0) return;
+  }
 
   const recipients: Recipient[] = await prisma.user.findMany({
     where: { id: { in: ids } },
@@ -143,6 +156,7 @@ async function notify(options: NotifyOptions) {
       pushOnNewComment: true,
       pushOnNewLike: true,
       pushOnChitchat: true,
+      pushOnStory: true,
     },
   });
   if (recipients.length === 0) return;
@@ -179,6 +193,7 @@ async function notify(options: NotifyOptions) {
         userId: r.id,
         type,
         relatedPostId: postId,
+        relatedStoryId: storyId,
         message,
       })),
     });
@@ -195,7 +210,7 @@ async function notify(options: NotifyOptions) {
       const wanted = createRecipients.filter((r) => channel.wants(r, type));
       if (wanted.length === 0) return;
       try {
-        await channel.send({ type, recipients: wanted, message, settings, postId });
+        await channel.send({ type, recipients: wanted, message, settings, postId, storyId });
       } catch (err) {
         console.error(`Notification channel "${channel.id}" failed`, err);
       }
@@ -230,6 +245,7 @@ export async function notifyUser(options: {
   userId: string;
   senderId: string;
   postId?: string | null;
+  storyId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -247,6 +263,7 @@ export async function notifyUsers(options: {
   userIds: string[];
   senderId: string;
   postId?: string | null;
+  storyId?: string | null;
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
@@ -335,6 +352,7 @@ export async function resendPostPush(
       pushOnNewComment: true,
       pushOnNewLike: true,
       pushOnChitchat: true,
+      pushOnStory: true,
     },
   });
 

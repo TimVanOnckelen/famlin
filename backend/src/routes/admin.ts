@@ -33,6 +33,7 @@ import {
   adminDeleteCircleQuerySchema,
   adminUpdateCircleBodySchema,
   circleMemberBodySchema,
+  adminStoriesQuerySchema,
 } from '../types.js';
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
 import { buildExportArchive } from '../services/export.js';
@@ -40,6 +41,7 @@ import { getT } from '../i18n/index.js';
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js';
 import { bindAssetsToScope } from '../services/uploads.js';
 import { isGroupMember } from '../services/groups.js';
+import { deleteStoriesWithMedia } from '../services/stories.js';
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -82,6 +84,7 @@ const userSelect = {
   pushOnNewComment: true,
   pushOnNewLike: true,
   pushOnChitchat: true,
+  pushOnStory: true,
   createdAt: true,
 } as const;
 
@@ -268,6 +271,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     }
 
     try {
+      // Stories cascade with the user; delete them first so their photos
+      // leave the disk too.
+      await deleteStoriesWithMedia({ authorId: id });
       await prisma.user.delete({ where: { id } });
       invalidateSessionCache(id);
       return { success: true };
@@ -331,6 +337,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         description: body.description,
         allowedPostTypes: body.allowedPostTypes ?? [],
         chitchatEnabled: body.chitchatEnabled ?? false,
+        storiesEnabled: body.storiesEnabled ?? true,
       },
     });
 
@@ -353,6 +360,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           // Omitted = unchanged; an explicit [] resets to "all allowed".
           ...(body.allowedPostTypes ? { allowedPostTypes: body.allowedPostTypes } : {}),
           ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
+          ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
         },
       });
       return group;
@@ -601,7 +609,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // so it binds family-wide rather than to the circle itself — scoping it
     // to the circle would be circular (you'd need to be a member to load the
     // picture identifying the circle).
-    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null);
+    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
 
     const { _count, ...rest } = circle;
     return { ...rest, memberCount: _count.members, postCount: _count.posts };
@@ -625,7 +633,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         include: { _count: { select: { members: true, posts: true } } },
       });
 
-      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null);
+      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
 
       const { _count, ...rest } = circle;
       return { ...rest, memberCount: _count.members, postCount: _count.posts };
@@ -664,6 +672,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         .send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts });
     }
 
+    // The circle's stories cascade with it; delete them explicitly first so
+    // their photos leave the disk too instead of lingering as unreadable
+    // orphans (a dangling Upload.circleId matches nobody).
+    await deleteStoriesWithMedia({ circleId });
     await prisma.circle.delete({ where: { id: circleId } });
 
     return { success: true, deletedPostCount: circle._count.posts };
@@ -803,6 +815,61 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     });
 
     return paginate(comments, take);
+  });
+
+  // Stories moderation: live stories and pinned Highlights (an expired,
+  // unpinned story is already gone for members and about to be deleted by
+  // the expiry job). Same circle rule as /content/posts — an admin sees a
+  // circle story only if they're in that circle. Private replies are never
+  // exposed here or anywhere else to admins.
+  fastify.get('/content/stories', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const { groupId, authorId, cursor, take } = adminStoriesQuerySchema.parse(request.query);
+    const adminCircleIds = await getUserCircleIds(request.user!.id);
+
+    const stories = await prisma.story.findMany({
+      where: {
+        ...(groupId ? { groupId } : {}),
+        ...(authorId ? { authorId } : {}),
+        AND: [
+          { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] },
+          { OR: [{ expiresAt: { gt: new Date() } }, { pinnedAt: { not: null } }] },
+        ],
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...paginationArgs({ cursor, take }),
+      include: {
+        author: { select: { id: true, name: true } },
+        group: { select: { id: true, name: true } },
+        _count: { select: { views: true, reactions: true } },
+      },
+    });
+
+    const { items, nextCursor } = paginate(stories, take);
+    return {
+      items: items.map(({ _count, crossStoryId: _crossStoryId, ...story }) => ({
+        ...story,
+        viewCount: _count.views,
+        reactionCount: _count.reactions,
+      })),
+      nextCursor,
+    };
+  });
+
+  // Per-group, like admin post moderation: deleting one cross-post sibling
+  // leaves the others (and therefore their shared photo) in place.
+  fastify.delete('/content/stories/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+
+    const { id } = request.params as { id: string };
+    const story = await prisma.story.findUnique({ where: { id }, select: { circleId: true } });
+    if (!story || !(await canViewPostCircle(story.circleId, request.user!.id))) {
+      return reply.status(404).send({ error: getT(request)('errors.storyNotFound') });
+    }
+
+    await deleteStoriesWithMedia({ id });
+    return { success: true };
   });
 
   // Lets an admin manually resend a post's push notification (e.g. a member

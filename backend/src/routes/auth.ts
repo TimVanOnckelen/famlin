@@ -18,6 +18,7 @@ import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config, uploadsDir } from '../config.js';
 import { bindAssetsToScope } from '../services/uploads.js';
 import { buildMemberExportArchive } from '../services/memberExport.js';
+import { deleteStoriesWithMedia } from '../services/stories.js';
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js';
 import {
   appleLoginBodySchema,
@@ -55,6 +56,7 @@ const MIN_APP_VERSION = '0.1.0';
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
   no_email: 'errors.oidcAccountNoEmail',
+  email_not_verified: 'errors.oidcEmailNotVerified',
   not_allowed: 'errors.emailNotAllowed',
   exchange_failed: 'errors.oidcExchangeFailed',
 };
@@ -85,6 +87,8 @@ function oidcErrorToMobileCode(code: OidcError['code']): string {
       return 'oidc_not_configured';
     case 'no_email':
       return 'oidc_no_email';
+    case 'email_not_verified':
+      return 'oidc_email_not_verified';
     case 'not_allowed':
       return 'email_not_allowed';
     case 'exchange_failed':
@@ -681,7 +685,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // unbound upload readable only by its uploader — i.e. every other
     // member would see a broken avatar. See services/uploads.ts.
     if (body.avatarUrl) {
-      await bindAssetsToScope([body.avatarUrl], null);
+      await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
     }
 
     return sanitizeUser(user);
@@ -757,6 +761,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.cannotDeleteLastAdminAccount') });
     }
 
+    // Stories cascade with the user, but their photos would stay on disk —
+    // delete them (media included) first.
+    await deleteStoriesWithMedia({ authorId: userId });
     await prisma.user.delete({ where: { id: userId } });
     invalidateSessionCache(userId);
     return { success: true };

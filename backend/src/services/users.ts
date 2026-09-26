@@ -32,5 +32,6 @@ export function sanitizeUser(user: any) {
     pushOnNewComment: user.pushOnNewComment,
     pushOnNewLike: user.pushOnNewLike,
     pushOnChitchat: user.pushOnChitchat,
+    pushOnStory: user.pushOnStory,
   };
 }

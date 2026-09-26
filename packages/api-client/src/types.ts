@@ -186,6 +186,8 @@ export interface User {
   pushOnNewPost: boolean;
   pushOnNewComment: boolean;
   pushOnNewLike: boolean;
+  // Opt-in push for other members' new stories. Missing = older server.
+  pushOnStory?: boolean;
 }
 
 export interface Group {
@@ -200,6 +202,9 @@ export interface Group {
   allowedPostTypes?: string[];
   // Whether chat is enabled for this group.
   chitchatEnabled: boolean;
+  // Whether members may post stories here. Missing = an older server with
+  // no stories at all — clients treat that as off.
+  storiesEnabled?: boolean;
 }
 
 export interface Post {
@@ -296,10 +301,17 @@ export interface Notification {
   id: string;
   type: string;
   relatedPostId?: string | null;
+  // Set instead of relatedPostId for new_story/story_reply/story_reaction.
+  // Null again once the story has expired and been deleted.
+  relatedStoryId?: string | null;
   message: string;
   readAt?: string | null;
   createdAt: string;
   post?: {
+    id: string;
+    groupId: string;
+  } | null;
+  story?: {
     id: string;
     groupId: string;
   } | null;

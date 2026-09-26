@@ -43,6 +43,14 @@ model User {
   circleMemberships CircleMember[]
   createdCircles    Circle[]          @relation("CircleCreatedBy")
   uploads           Upload[]
+  // Opt-in (default off) push for a new story from another member — at most
+  // one push per author per group per day (see the story.created handler in
+  // src/subscribers/notifications.ts). Push-only, no email counterpart.
+  pushOnStory       Boolean           @default(false)
+  stories           Story[]
+  storyViews        StoryView[]
+  storyReactions    StoryReaction[]
+  storyReplies      StoryReply[]
 }
 
 // A personal access token a member creates to call the API from their own
@@ -85,6 +93,11 @@ model Group {
   // create/update). Member-facing chat routes 403 with
   // errors.chitchatDisabled while this is false.
   chitchatEnabled  Boolean          @default(false)
+  // Whether members may post Stories in this group — ON by default (unlike
+  // chitchat), admin-controlled per group. Member-facing story routes 403
+  // with errors.storiesDisabled while this is false, and a disabled group's
+  // stories and highlights are hidden from members.
+  storiesEnabled   Boolean          @default(true)
   createdAt        DateTime         @default(now())
   members          GroupMember[]
   posts            Post[]
@@ -93,6 +106,7 @@ model Group {
   chatMessages     ChatMessage[]
   chatReads        ChatRead[]
   circles          Circle[]
+  stories          Story[]
 }
 
 model GroupMember {
@@ -324,15 +338,20 @@ model PushToken {
 }
 
 model Notification {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type          String
-  relatedPostId String?
-  post          Post?     @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
-  message       String
-  readAt        DateTime?
-  createdAt     DateTime  @default(now())
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  relatedPostId  String?
+  post           Post?     @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
+  // Set for story notifications (new_story/story_reply/story_reaction)
+  // instead of relatedPostId. SetNull: the history row outlives the story's
+  // 24h expiry, it just stops deep-linking anywhere.
+  relatedStoryId String?
+  story          Story?    @relation(fields: [relatedStoryId], references: [id], onDelete: SetNull)
+  message        String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
@@ -480,6 +499,7 @@ model Circle {
   updatedAt   DateTime       @updatedAt
   members     CircleMember[]
   posts       Post[]
+  stories     Story[]
 
   @@index([groupId])
 }
@@ -539,4 +559,88 @@ model Upload {
 
   @@index([circleId])
   @@index([uploaderId])
+}
+
+// A Story: one photo shared for 24 hours (Instagram-style). Deliberately its
+// own table rather than a Post type — every feed, search, on-this-day, photo
+// timeline and admin query reads Post, and each of them would otherwise need
+// an exclusion that fails OPEN if forgotten, leaking an expiring story into
+// the permanent feed.
+//
+// Audience mirrors Post exactly: one row per target group (cross-posting,
+// siblings share `crossStoryId`, never serialized), or one Circle inside one
+// group — never both. After `expiresAt` an unpinned story is hard-deleted
+// together with its media by src/jobs/expireStories.ts; a story the author
+// pinned (`pinnedAt`, only settable while live) stays forever as one of the
+// group's Highlights.
+model Story {
+  id            String          @id @default(cuid())
+  authorId      String
+  author        User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  groupId       String
+  group         Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  // Same semantics as Post.circleId, including the cascade on circle delete.
+  circleId      String?
+  circle        Circle?         @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  crossStoryId  String?
+  // An /uploads/ photo the author uploaded specifically for this story (the
+  // create route requires an unbound upload owned by the author), so the
+  // expiry job can delete the file without affecting any other content.
+  // Overlays/stickers are flattened into this image on the device.
+  imageUrl      String
+  createdAt     DateTime        @default(now())
+  expiresAt     DateTime
+  pinnedAt      DateTime?
+  views         StoryView[]
+  reactions     StoryReaction[]
+  replies       StoryReply[]
+  notifications Notification[]
+
+  @@index([groupId, expiresAt])
+  @@index([groupId, pinnedAt])
+  @@index([expiresAt, pinnedAt])
+  @@index([crossStoryId])
+  @@index([circleId])
+}
+
+// Per-viewer "seen by" receipt, visible only to the story's author. Only
+// written while the story is live, so a Highlight's list is frozen at the
+// views from its original 24 hours.
+model StoryView {
+  id       String   @id @default(cuid())
+  storyId  String
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+
+  @@unique([storyId, userId])
+}
+
+// One reaction per user per story — same toggle/switch semantics as Like.
+model StoryReaction {
+  id        String       @id @default(cuid())
+  storyId   String
+  story     Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  @@unique([storyId, userId])
+}
+
+// A private, one-shot reply from a viewer to the story's author. Readable
+// only by those two people — never by admins, never in the push log's
+// content or the export. There is no answer/thread: one reply per viewer.
+model StoryReply {
+  id         String   @id @default(cuid())
+  storyId    String
+  story      Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation(fields: [fromUserId], references: [id], onDelete: Cascade)
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@unique([storyId, fromUserId])
 }

@@ -47,6 +47,7 @@
       "oidcNotConfigured": "SSO login is not configured on this server.",
       "oidcExchangeFailed": "Could not complete sign-in with the identity provider. Try again or contact your server admin.",
       "oidcNoEmail": "The SSO account does not have an email address. Use a different account.",
+      "oidcEmailNotVerified": "The SSO account's email address has not been verified. Verify it with your identity provider first.",
       "emailNotAllowed": "This email address is not allowed on this server. Use the email address your family admin invited, or ask them to add this address.",
       "inviteEmailMismatch": "This invitation is for a different email address. Sign in with the email address the invitation was sent to.",
       "inviteInvalid": "This invitation link is invalid, expired, or already used. Ask your family admin for a new one.",
@@ -71,6 +72,7 @@
     "namePlaceholder": "Jane Doe",
     "newPasswordLabel": "Choose a password",
     "continueToApp": "Continue to the app",
+    "serverNotice": "This invite is for the Famlin server at {{host}}. Only continue if you trust this address.",
     "errors": {
       "notFound": "This invite link doesn't exist. Ask your family admin to send you a new one.",
       "expired": "This invite has expired. Ask your family admin to send you a new one.",
@@ -354,7 +356,8 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands"
-    }
+    },
+    "notifyNewStory": "Stories"
   },
   "tabs": {
     "feed": "Feed",
@@ -473,5 +476,69 @@
     "membersHint": "Only these people can see posts shared with this circle.",
     "membersLoadFailed": "Couldn't load the members of this circle.",
     "joinedOn": "Joined {{date}}"
+  },
+  "stories": {
+    "yourStory": "Your story",
+    "addStory": "Add a story",
+    "viewYourStory": "View your story",
+    "open": "View {{name}}'s story",
+    "openUnseen": "View {{name}}'s new story",
+    "highlights": "Highlights",
+    "openHighlight": "View {{name}}'s highlight",
+    "moreHighlights": "More",
+    "highlightBadge": "Highlight",
+    "previous": "Previous story",
+    "next": "Next story",
+    "gone": "This story is no longer available.",
+    "reactions": {
+      "LIKE": "Like",
+      "LOVE": "Love",
+      "HAHA": "Haha",
+      "WOW": "Wow",
+      "SAD": "Sad",
+      "CARE": "Care"
+    },
+    "replyPlaceholder": "Reply privately to {{name}}…",
+    "sendReply": "Send reply",
+    "youReplied": "You replied: \"{{content}}\"",
+    "replyFailed": "Your reply couldn't be sent.",
+    "actionFailed": "That didn't work. Please try again.",
+    "seenBy_one": "Seen by {{count}}",
+    "seenBy_other": "Seen by {{count}}",
+    "repliesCount_one": "{{count}} reply",
+    "repliesCount_other": "{{count}} replies",
+    "tabs": {
+      "views": "Viewers",
+      "reactions": "Reactions",
+      "replies": "Replies"
+    },
+    "noViews": "Nobody has seen this story yet.",
+    "noReactions": "No reactions yet.",
+    "noReplies": "No replies yet.",
+    "repliesPrivate": "Only you can see who viewed this story and the replies you got.",
+    "pin": "Keep as Highlight",
+    "unpin": "Remove from Highlights",
+    "delete": "Delete",
+    "deleteTitle": "Delete this story?",
+    "deleteMessage": "It will be removed for everyone, together with its photo. This can't be undone.",
+    "unpinDeleteTitle": "Remove this Highlight?",
+    "unpinDeleteMessage": "This story has already expired, so removing it from Highlights deletes it for good.",
+    "newStory": "New story",
+    "takePhoto": "Take a photo",
+    "chooseFromLibrary": "Choose from library",
+    "expiresHint": "Stories disappear after 24 hours, unless you keep them as a Highlight.",
+    "noStoryGroups": "None of your families has stories turned on.",
+    "permissionDenied": "Famlin needs permission to use your camera or photos for this.",
+    "back": "Pick another photo",
+    "addText": "Add text",
+    "addSticker": "Add sticker",
+    "draw": "Draw",
+    "undo": "Undo",
+    "textPlaceholder": "Type something…",
+    "done": "Done",
+    "removeOverlay": "Remove this from your story?",
+    "remove": "Remove",
+    "share": "Share",
+    "shareFailed": "Your story couldn't be shared."
   }
 }

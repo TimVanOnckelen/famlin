@@ -34,9 +34,13 @@ export function usePushNotifications() {
     if (Platform.OS === 'web') return;
 
     function handleResponse(response: Notifications.NotificationResponse) {
-      const data = response.notification.request.content.data as { relatedPostId?: string } | undefined;
+      const data = response.notification.request.content.data as
+        | { relatedPostId?: string | null; relatedStoryId?: string | null }
+        | undefined;
       if (data?.relatedPostId) {
         navigate('PostDetail', { postId: data.relatedPostId });
+      } else if (data?.relatedStoryId) {
+        navigate('StoryViewer', { storyId: data.relatedStoryId });
       }
     }
 

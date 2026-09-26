@@ -21,6 +21,8 @@ function getServerMediatedErrorMessage(code: string | string[] | undefined): str
       return i18n.t('login.errors.oidcExchangeFailed');
     case 'oidc_no_email':
       return i18n.t('login.errors.oidcNoEmail');
+    case 'oidc_email_not_verified':
+      return i18n.t('login.errors.oidcEmailNotVerified');
     case 'email_not_allowed':
       return i18n.t('login.errors.emailNotAllowed');
     case 'invite_email_mismatch':

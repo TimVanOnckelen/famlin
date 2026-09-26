@@ -15,7 +15,10 @@ export interface PushSendResult {
 // closest existing preference column (comment activity / new post activity)
 // rather than adding more boolean columns + admin UI toggles for an
 // MVP-scale feature set.
-const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat'> = {
+const PUSH_PREF_FIELD: Record<
+  NotifyType,
+  'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat' | 'pushOnStory'
+> = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
   new_like_post: 'pushOnNewLike',
@@ -26,6 +29,9 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
   new_chat_message: 'pushOnChitchat',
   trip_checkin: 'pushOnNewPost',
   album_photo: 'pushOnNewPost',
+  new_story: 'pushOnStory',
+  story_reply: 'pushOnNewComment',
+  story_reaction: 'pushOnNewLike',
 };
 
 // The actual send, plus its PushDeliveryLog write — shared by the organic
@@ -36,7 +42,7 @@ const PUSH_PREF_FIELD: Record<NotifyType, 'pushOnNewPost' | 'pushOnNewComment' |
 // deliberately hides from callers that only iterate the generic channel
 // list.
 export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
-  const { recipients, message, settings, postId, type, triggeredByAdminId } = args;
+  const { recipients, message, settings, postId, storyId, type, triggeredByAdminId } = args;
   const tokens = await prisma.pushToken.findMany({
     where: { userId: { in: recipients.map((r) => r.id) } },
   });
@@ -54,7 +60,7 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
       body: message,
       // Lets the client's notification-tap handler navigate straight to the
       // relevant post (see mobile's usePushNotifications.ts).
-      data: { relatedPostId: postId },
+      data: storyId ? { relatedPostId: postId, relatedStoryId: storyId } : { relatedPostId: postId },
     }));
 
     const chunks = expo.chunkPushNotifications(messages);

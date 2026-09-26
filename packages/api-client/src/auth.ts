@@ -90,6 +90,7 @@ export interface NotificationPrefs {
   pushOnNewPost?: boolean;
   pushOnNewComment?: boolean;
   pushOnNewLike?: boolean;
+  pushOnStory?: boolean;
 }
 
 export interface UpdateMeBody extends NotificationPrefs {

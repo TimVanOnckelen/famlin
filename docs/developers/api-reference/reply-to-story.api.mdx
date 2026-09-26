@@ -1,0 +1,72 @@
+---
+id: reply-to-story
+title: "Send the author a private reply"
+description: "One reply per person, only while the story is live, never to your own"
+sidebar_label: "Send the author a private reply"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlV+GKGzcQfpVBf3J36OxLSX90KQWnXGlK0oS7CyHYJh7vjr3KaSVF0tq3NYY+RJ+wT1JGWvvO8TUU2h+FGIy9kkaa+Wb0zbcbYR15jMqaF5UohCenuxt7Ha3vhBQRl0EUY8HPioKYSlFRKL1ybCEK8doQJBtw5PkbrJFgje5gXStNEGuCwLuBCqDViiQYWpGHaKGzrQe7NhOTVgzgNdt1tgU0VbLENtbWQ4kGklEgAhXhz9//AGMj2FiTh4aaOfkgJ4bNeByrRpkwmBghhUOPDUXyHMhGGGxIFEJVQgrFETiMtZDC06dWeapEEX1LUoSypgZFsRGxc2wRoldmKbbbaV5MIT63VccrPrctrYlkIk+hc1qVCd/hx8CQbY63tvOPVMYDJ8b7TaZSOM9JipyAYvNw90PXpGiUeUlmGWtRPJWiwbvd07cXF9v04TOCsybkvb65uOCfw5y+57SkpIp/Ecs/dHorRekJI1WjR0NaWN9gFIWoMNJ5VA0JjiKqqHldKtRX3VXyNgf47LGYbvZlWGMAunMMswTrQcUnYV+Jec3gv4ubvLf+sbgO3fu5bdCce8IK55okRI8maEYFVgrTVZiNypJcPH+JZtnikmZQE1bk4WRGZjacGT07HYic4fsqyudP7wG7TAM7pJ4eI/VKhaDMUoIyK9SqkgdoeVrZW6qg9FSRiQr1V4PVs2OsfrURFrY1VWIk1MGCp9h6QxUsrAfsa44prUTzJDKBSQh2N/OEa1GFSKakfsWcwHk7p+rrqcLvHuUgQM2udImKFFXcMWKtwtd0R7dSNBRry63Z2ZB8535ViCE6NQy5LQ83qtoOd4wdyK923a71WhSijtGFYjhcYKOVGdAdNk7ToLTNUZDvd0T4U1oLFTltu4ZR5sYXqGy9il3afE7oyY9a9mc8fTh9zchncB8u2iPMDom+x/JzXnTkzKgXFKgBy5JCgGhvycDJLEfywWH8MBgMZhL6HgLKpESsaQ7o3ClYPzEIgUJQ1sAv725g4W0Dszevr28gYcgSY6jtUpnZAJ7bWAN6gkAmZu2CDcEau2JiZqOkRtRvqcwKeJ68hu+TUz/MWG5wwrj8ru4FwmVG+6AJPmh+yixsQqbPfY/76M0LIQXnMUNRtt6z6ecQXa7Id7tk5cwzX9tAIV+Wq8vrG94NWsOFOOOYZ4mu9tHxbKxpYuxioUqFGho7Z+3GcqpHMkAbaADvFOMD40fzMj0ZVrQizXcr8DmnE9MzH8xbpav7NqtMpGWWnQFwicqEmGcX2CjNvJiDGUzMxIy0hh47VpGhtI4qmHdwdrb0tnU7BVgrd3ZW7Ng2q1C+rzkQryJNzH4fA8k2wEk6UlE4TZZz0tYsIVq5U6Ge+FRjuQwAfeL7WGOcGJd07C2ZAVwTwfgtd84E7OjNi2M4ck9oY82dM5OVTB6teMCakI9cW88ttr+mScZuZbr+DSZi6zXsNR2qZATn1Qoj7cXbQa08rL//v2zvmSLSXRw6jSphkOhs01PgWKBTzCL9u4kURVL1OfipFDUTZjEWm80cA731ervl4U8teSawqRQr9IrJPNFZpQL/r0SxQB3oC+idXPXsfQp/52k/iIbTsELd8pOQ4pa6/PaxnW6lyN0hnZ4nfsxnnN+w+b3hUXfbyp1F7jhfXDt90ESY94QU8/7NpbEV23hcM3C4zk7aFHOi7zS2EbpvaKIQeU/+/AUaKv59
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Send the author a private reply"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/stories/{id}/reply"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+One reply per person, only while the story is live, never to your own
+story. Only you and the author can ever see it — not other members,
+and not admins.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./reply-to-story.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./reply-to-story.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./reply-to-story.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

@@ -338,6 +338,94 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Stories",
+      link: {
+        type: "doc",
+        id: "api-reference/stories",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/get-story-tray",
+          label: "The story tray",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-story",
+          label: "Share a story",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-story-highlights",
+          label: "List Highlights",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-story",
+          label: "Get one story",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-story",
+          label: "Delete your story",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/mark-story-viewed",
+          label: "Record that you've seen a story",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-story-views",
+          label: "Who has seen your story",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/react-to-story",
+          label: "React to a story",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-story-reactions",
+          label: "Who reacted to your story",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/reply-to-story",
+          label: "Send the author a private reply",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-story-replies",
+          label: "Private replies to your story",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/pin-story",
+          label: "Keep your story as a Highlight",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/unpin-story",
+          label: "Remove your story from Highlights",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Notifications",
       link: {
         type: "doc",
@@ -644,6 +732,42 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/chatmessagespage",
           label: "ChatMessagesPage",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/storyauthor",
+          label: "StoryAuthor",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/storymyreply",
+          label: "StoryMyReply",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/story",
+          label: "Story",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/storytray",
+          label: "StoryTray",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/storiespage",
+          label: "StoriesPage",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/storypinresult",
+          label: "StoryPinResult",
           className: "schema",
         },
         {

@@ -85,6 +85,7 @@ const userRow = z.object({
   pushOnNewComment: optionalBool,
   pushOnNewLike: optionalBool,
   pushOnChitchat: optionalBool,
+  pushOnStory: optionalBool,
 });
 
 const groupMemberRow = z.object({ id, groupId: id, userId: id, joinedAt: date });
@@ -95,6 +96,7 @@ const groupRow = z.object({
   description: nullableString,
   allowedPostTypes: z.array(z.string()).optional(),
   chitchatEnabled: optionalBool,
+  storiesEnabled: optionalBool,
   createdAt: date,
   members: z.array(groupMemberRow).default([]),
 });
@@ -209,6 +211,25 @@ const uploadRow = z.object({
   createdAt: date,
 });
 
+const storyReactionRow = z.object({ id, userId: id, type: z.enum(ReactionType).optional(), createdAt: date });
+
+// Only pinned stories (Highlights) are ever exported — live stories, views
+// and private replies are deliberately left out (see services/export.ts).
+// `expiresAt`/`crossStoryId` were added to the export after Highlights first
+// shipped in it, hence optional.
+const highlightRow = z.object({
+  id,
+  authorId: id,
+  groupId: id,
+  circleId: nullableString,
+  crossStoryId: nullableString,
+  imageUrl: z.string().min(1),
+  createdAt: date,
+  expiresAt: nullableDate,
+  pinnedAt: date,
+  reactions: z.array(storyReactionRow).default([]),
+});
+
 const manifestSchema = z.object({
   serverVersion: z.string(),
 });
@@ -230,6 +251,7 @@ const DATA_FILES = {
   mediaAlbumLinks: { file: 'data/media-album-links.json', schema: z.array(mediaAlbumLinkRow), required: false },
   mediaPersonLinks: { file: 'data/media-person-links.json', schema: z.array(mediaPersonLinkRow), required: false },
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
+  highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
 } as const;
 
 type DataKey = keyof typeof DATA_FILES;
@@ -458,6 +480,17 @@ async function insertAll(
   await tx.chatMessage.createMany({ data: parentsFirst(data.chatMessages, (m) => m.replyToMessageId) });
   await tx.chatRead.createMany({ data: data.chatReads });
   await tx.upload.createMany({ data: data.uploads });
+  await tx.story.createMany({
+    data: data.highlights.map(({ reactions: _reactions, expiresAt, ...story }) => ({
+      ...story,
+      // A Highlight has long since expired; an archive without the column
+      // gets the lifetime it would have had.
+      expiresAt: expiresAt ?? new Date(story.createdAt.getTime() + 24 * 60 * 60 * 1000),
+    })),
+  });
+  await tx.storyReaction.createMany({
+    data: data.highlights.flatMap((story) => story.reactions.map((r) => ({ ...r, storyId: story.id }))),
+  });
 
   return { adminUserId: adminUser.id };
 }
@@ -560,6 +593,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     mediaAlbumLinks: data.mediaAlbumLinks.length,
     mediaPersonLinks: data.mediaPersonLinks.length,
     uploads: data.uploads.length,
+    highlights: data.highlights.length,
     files: fileCount,
   };
 

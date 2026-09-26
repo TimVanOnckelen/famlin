@@ -25,6 +25,12 @@
 //    hashes are per-device/per-integration credentials, not family content.
 //  - `Notification`/`PushDeliveryLog`: internal delivery/telemetry history,
 //    not something a family needs in a portable export.
+//  - Live (unpinned) stories, story views and private story replies: a live
+//    story is about to be deleted anyway, and replies are private between a
+//    viewer and the author. Only pinned stories (Highlights) and their
+//    reactions are family content worth backing up — and a live story's
+//    photo is filtered out of the uploads/ directory below for the same
+//    reason.
 //
 // new ZipArchive({ store: true }) uses store (no deflate) rather than
 // compression: most of the archive's bytes are already-compressed photos/
@@ -34,6 +40,7 @@ import { ZipArchive, type Archiver } from 'archiver';
 import fs from 'fs';
 import { prisma } from '../db.js';
 import { uploadsDir } from '../config.js';
+import { uploadAssetKey } from './uploads.js';
 import pkg from '../../package.json' with { type: 'json' };
 import { RESTORE_WORKDIR_PREFIX } from './import.js';
 
@@ -55,6 +62,8 @@ export async function buildExportArchive(): Promise<Archiver> {
     mediaAlbumLinks,
     mediaPersonLinks,
     uploads,
+    highlights,
+    liveStories,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -71,6 +80,7 @@ export async function buildExportArchive(): Promise<Archiver> {
         pushOnNewComment: true,
         pushOnNewLike: true,
         pushOnChitchat: true,
+        pushOnStory: true,
       },
     }),
     prisma.group.findMany({
@@ -93,6 +103,22 @@ export async function buildExportArchive(): Promise<Archiver> {
     prisma.mediaAlbumLink.findMany(),
     prisma.mediaPersonLink.findMany(),
     prisma.upload.findMany(),
+    prisma.story.findMany({
+      where: { pinnedAt: { not: null } },
+      select: {
+        id: true,
+        authorId: true,
+        groupId: true,
+        circleId: true,
+        crossStoryId: true,
+        imageUrl: true,
+        createdAt: true,
+        expiresAt: true,
+        pinnedAt: true,
+        reactions: { select: { id: true, userId: true, type: true, createdAt: true } },
+      },
+    }),
+    prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
   ]);
 
   const archive: Archiver = new ZipArchive({ store: true });
@@ -114,6 +140,7 @@ export async function buildExportArchive(): Promise<Archiver> {
       mediaAlbumLinks: mediaAlbumLinks.length,
       mediaPersonLinks: mediaPersonLinks.length,
       uploads: uploads.length,
+      highlights: highlights.length,
     },
   };
 
@@ -130,16 +157,36 @@ export async function buildExportArchive(): Promise<Archiver> {
   archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' });
   archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' });
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' });
-  archive.append(JSON.stringify(uploads, null, 2), { name: 'data/uploads.json' });
+  archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' });
+
+  // A live story's photo shares the uploads/ directory with everything else,
+  // so skip every rendition of it (served copy, thumbnail, original, derived)
+  // by asset key — and its Upload row, so a restore doesn't recreate an
+  // authorization row for a file that isn't in the archive. A cross-post
+  // sibling that is pinned keeps the file in.
+  const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)));
+  const liveOnlyKeys = new Set(
+    liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key))
+  );
+  archive.append(
+    JSON.stringify(
+      uploads.filter((u) => !liveOnlyKeys.has(u.assetKey)),
+      null,
+      2
+    ),
+    { name: 'data/uploads.json' }
+  );
 
   // Fresh installs may not have an uploads directory yet — skip silently
   // rather than failing the whole export.
   if (fs.existsSync(uploadsDir)) {
     // Skips the scratch directory of a restore (services/import.ts) that is
     // in progress or was interrupted — it's a half-extracted archive, not
-    // family media.
+    // family media — and every rendition of a live story's photo.
     archive.directory(uploadsDir, 'uploads', (entry) =>
-      entry.name.startsWith(`uploads/${RESTORE_WORKDIR_PREFIX}`) ? false : entry
+      entry.name.startsWith(`uploads/${RESTORE_WORKDIR_PREFIX}`) || liveOnlyKeys.has(uploadAssetKey(entry.name))
+        ? false
+        : entry
     );
   }
 
