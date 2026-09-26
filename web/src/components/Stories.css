@@ -28,14 +28,14 @@
   padding: 0;
   cursor: pointer;
   flex-shrink: 0;
-  width: 68px;
+  width: 76px;
 }
 
 /* A seen author gets a quiet grey ring; unseen gets the brand gradient —
    the one signal the tray exists to give. */
 .story-ring {
   display: inline-flex;
-  padding: 3px;
+  padding: 5px;
   border-radius: 50%;
   background: var(--fam-border);
 }
