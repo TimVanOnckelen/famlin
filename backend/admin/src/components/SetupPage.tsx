@@ -15,6 +15,11 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // 'restore' swaps account creation for restoring a data export
+  // (POST /api/auth/setup/restore) — the same account fields double as the
+  // restoring admin's login.
+  const [mode, setMode] = useState<'create' | 'restore'>('create');
+  const [archive, setArchive] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,13 +30,21 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
       return;
     }
 
+    if (mode === 'restore' && !archive) {
+      setError(t('setup.restoreFailed'));
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const result = await api.setup({ email, name, password });
+      const result =
+        mode === 'restore' && archive
+          ? await api.restoreBackup(archive, { email, name, password })
+          : await api.setup({ email, name, password });
       localStorage.setItem('famlin_admin_token', result.token);
       onSetupComplete(result.user);
     } catch (err: any) {
-      setError(err.message || t('setup.setupFailed'));
+      setError(err.message || t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -44,9 +57,23 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
           <AppIcon size={80} />
         </div>
         <h1>{t('setup.title')}</h1>
-        <p>{t('setup.subtitle')}</p>
+        <p>{t(mode === 'restore' ? 'setup.restoreSubtitle' : 'setup.subtitle')}</p>
 
         <form onSubmit={handleSubmit}>
+          {mode === 'restore' && (
+            <>
+              <label>
+                {t('setup.restoreArchiveLabel')}
+                <input
+                  type="file"
+                  accept=".zip,application/zip"
+                  onChange={(e) => setArchive(e.target.files?.[0] ?? null)}
+                  required
+                />
+              </label>
+              <p className="hint">{t('setup.restoreAccountHint')}</p>
+            </>
+          )}
           <label>
             {t('common.name')}
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
@@ -75,10 +102,25 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
               required
             />
           </label>
+          {mode === 'restore' && <p className="hint">{t('setup.restoreAfterHint')}</p>}
           <button type="submit" disabled={isLoading}>
-            {isLoading ? t('common.loading') : t('setup.createAccountButton')}
+            {isLoading
+              ? t(mode === 'restore' ? 'setup.restoring' : 'common.loading')
+              : t(mode === 'restore' ? 'setup.restoreButton' : 'setup.createAccountButton')}
           </button>
         </form>
+
+        <button
+          type="button"
+          className="link-button"
+          disabled={isLoading}
+          onClick={() => {
+            setMode(mode === 'restore' ? 'create' : 'restore');
+            setError(null);
+          }}
+        >
+          {t(mode === 'restore' ? 'setup.modeCreate' : 'setup.modeRestore')}
+        </button>
 
         {error && <div className="error">{error}</div>}
       </div>

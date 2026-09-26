@@ -53,7 +53,16 @@
     "confirmPasswordLabel": "Confirm password",
     "passwordMismatch": "Passwords don't match.",
     "createAccountButton": "Create admin account",
-    "setupFailed": "Setup failed."
+    "setupFailed": "Setup failed.",
+    "modeCreate": "Start fresh",
+    "modeRestore": "Restore a backup",
+    "restoreSubtitle": "Moving servers or recovering? Upload a Famlin data export to bring back every family, post, photo and chat message.",
+    "restoreArchiveLabel": "Famlin export (.zip)",
+    "restoreAccountHint": "This becomes your admin login. If the backup already has an account with this email, that account is made admin and gets this password; otherwise a new admin account is created.",
+    "restoreAfterHint": "A backup never contains passwords or server settings. After restoring, set up sign-in (OIDC) and email again under Server settings — members then sign in with SSO, or you reset their passwords under Users.",
+    "restoreButton": "Restore backup",
+    "restoring": "Restoring... this can take a while for large backups.",
+    "restoreFailed": "Restore failed."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -291,7 +300,7 @@
     "playStoreUrl": "Google Play URL",
     "storeUrlsHint": "Optional. If set, the invite link page shows download buttons for people who don't have the app yet. Leave blank to hide them.",
     "dataExport": "Data export",
-    "dataExportDesc": "Download a zip of all family content — posts, comments, reactions, favorites, chat messages, the member list, and every uploaded photo/video. Server configuration and secrets (SMTP, OIDC, Immich, invite links, tokens) are never included.",
+    "dataExportDesc": "Download a zip of all family content — posts, comments, reactions, poll votes, favorites, chat messages, circles, the member list, and every uploaded photo/video. It can be restored onto a new, empty Famlin server from its first-run setup screen. Server configuration and secrets (SMTP, OIDC, Immich, passwords, invite links, tokens) are never included.",
     "dataExportDownload": "Download export",
     "dataExportDownloading": "Preparing export...",
     "oidc": "OIDC login",
