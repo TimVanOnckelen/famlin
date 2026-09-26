@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0](https://github.com/TimVanOnckelen/famlin/compare/v0.7.0...v0.8.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **security:** SSO logins whose ID token reports email_verified=false are now refused. If your identity provider allows self-registration or editable email addresses, make sure email verification is enabled there so affected family members can still sign in.
+
+### Features
+
+* **admin:** stories moderation tab and per-group stories toggle ([c3dea81](https://github.com/TimVanOnckelen/famlin/commit/c3dea81982dc174b2b9e956acdc0d16978344709)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+* **api-client:** stories module ([6de3ecd](https://github.com/TimVanOnckelen/famlin/commit/6de3ecd7de921d46cc1314f128e0b9bc6e2e511f)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+* **backend:** restore an admin data export into an empty instance ([fa6b3e6](https://github.com/TimVanOnckelen/famlin/commit/fa6b3e669227364daf75cd320be1dafc5ed027b3))
+* **backend:** stories with 24h expiry, private replies and group Highlights ([3d4df18](https://github.com/TimVanOnckelen/famlin/commit/3d4df188225051bbf76be711a11d862fff5406db)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+* **mobile:** story tray, composer with overlays, viewer and Highlights ([f5075a8](https://github.com/TimVanOnckelen/famlin/commit/f5075a8d4693e627909da77f7af3cd8a50b5de0e)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+* Stories — 24h ephemeral photos with group Highlights ([5921cf6](https://github.com/TimVanOnckelen/famlin/commit/5921cf62e4b25dcc5c66d1bd5e80a7326822acd5))
+* **web:** story tray, viewer with reactions and private replies, Highlights ([71d57b1](https://github.com/TimVanOnckelen/famlin/commit/71d57b17029323baf96f0c4d135676814813bbef)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+
+
+### Bug Fixes
+
+* **mobile:** never send the session token to a server named by an invite link ([cae1ca5](https://github.com/TimVanOnckelen/famlin/commit/cae1ca5b9b5dc65df0bdb92defde9d80def19516))
+* **security:** close media-token, OIDC email and upload re-scoping holes ([bf5931f](https://github.com/TimVanOnckelen/famlin/commit/bf5931f7b1c267360e173c5f3a18c69b78470910))
+* **web:** widen story bubbles and thicken the unseen ring ([7f87e01](https://github.com/TimVanOnckelen/famlin/commit/7f87e01f6fe2171f317b74863cf68fb91199c2eb)), closes [#157](https://github.com/TimVanOnckelen/famlin/issues/157)
+
 ## [0.7.0](https://github.com/TimVanOnckelen/famlin/compare/v0.6.6...v0.7.0) (2026-09-21)
 
 
