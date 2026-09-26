@@ -53,7 +53,7 @@ describe('client', () => {
     setUnauthorizedHandler(handler);
 
     const rejectedInterceptor = (api.interceptors.response as any).handlers[0].rejected;
-    const fakeError = { response: { status: 401 } };
+    const fakeError = { response: { status: 401 }, config: { headers: { Authorization: 'Bearer t' } } };
 
     await expect(rejectedInterceptor(fakeError)).rejects.toBe(fakeError);
 
@@ -69,6 +69,53 @@ describe('client', () => {
 
     const rejectedInterceptor = (api.interceptors.response as any).handlers[0].rejected;
     const fakeError = { response: { status: 500 } };
+
+    await expect(rejectedInterceptor(fakeError)).rejects.toBe(fakeError);
+
+    expect(fakeAdapter.removeItem).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  describe('session token scoping', () => {
+    async function requestHeaders(storage: Record<string, string>, currentServer: string) {
+      fakeAdapter.getItem.mockImplementation(async (key: string) => storage[key] ?? null);
+      const { api, setApiBaseUrl } = await import('../client');
+      setApiBaseUrl(currentServer);
+      const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;
+      const config = await fulfilled({ headers: {} });
+      return config.headers;
+    }
+
+    it('attaches the token when talking to the server it was stored with', async () => {
+      const headers = await requestHeaders(
+        { famlin_token: 'tok', famlin_server_url: 'https://family.example/' },
+        'https://family.example'
+      );
+      expect(headers.Authorization).toBe('Bearer tok');
+    });
+
+    it('withholds the token from any other server (e.g. one named by an invite link)', async () => {
+      const headers = await requestHeaders(
+        { famlin_token: 'tok', famlin_server_url: 'https://family.example' },
+        'https://attacker.example'
+      );
+      expect(headers.Authorization).toBeUndefined();
+    });
+
+    it('attaches the token when no server URL is stored (web/admin use their own origin)', async () => {
+      const headers = await requestHeaders({ famlin_token: 'tok' }, 'https://family.example');
+      expect(headers.Authorization).toBe('Bearer tok');
+    });
+  });
+
+  it('ignores a 401 for a request that did not carry the session token', async () => {
+    const { api, setUnauthorizedHandler } = await import('../client');
+
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+
+    const rejectedInterceptor = (api.interceptors.response as any).handlers[0].rejected;
+    const fakeError = { response: { status: 401 }, config: { headers: {} } };
 
     await expect(rejectedInterceptor(fakeError)).rejects.toBe(fakeError);
 
