@@ -25,6 +25,27 @@ A simple logical backup of just the database can also be taken with `pg_dump`:
 docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 ```
 
+### Restoring from a data export
+
+The admin UI's **Data export** (Server settings → General) is a second, independent kind of backup: one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
+
+1. Start the new server as usual (see [Server setup](./server-setup)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
+2. Open `/admin`. A fresh server shows the first-run setup screen; choose **Restore a backup**.
+3. Pick the export zip and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
+4. Wait for the upload and restore to finish — for a large photo library this takes a while.
+
+Restoring only works while the server has **no accounts at all**: it never merges into a server that's already in use, and it's refused once anyone has signed up.
+
+**What a restore does not bring back.** The export deliberately leaves out credentials and server configuration, so after restoring:
+
+- **Nobody else can sign in yet.** Passwords are never exported. Reconfigure OIDC/SSO under Server settings (members then sign in exactly as before, matched by email), and/or reset password-login members' passwords from the **Users** page.
+- **Server settings are blank** — OIDC, allowed emails, SMTP, Immich/local media connections, store links. Set them up again. Linked albums and people mappings *are* restored, and start working again once the media source is reconfigured with the same albums.
+- **Invite links, push tokens and API tokens are gone.** Create new invites as needed; the apps re-register for push on next sign-in; members recreate their API tokens.
+- **Every previous session is signed out**, including on devices that were logged in to the old server.
+- Notification history and the push delivery log start empty.
+
+Treat the export as a complement to the volume backups above, not a replacement: volumes restore *everything*, including settings and passwords; the export is the one you can restore without them.
+
 ## Updating
 
 ```bash
