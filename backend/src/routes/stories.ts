@@ -10,7 +10,7 @@ import {
 import { requireGroupMember } from '../plugins/auth.js';
 import { getUserGroupIds } from '../services/groups.js';
 import { getUserCircleIds, validateCircleTarget, visibleStoriesWhere } from '../services/circles.js';
-import { bindAssetsToScope, isUnboundUploadOwnedBy } from '../services/uploads.js';
+import { claimUnboundUpload, isUnboundUploadOwnedBy } from '../services/uploads.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { emitDomainEvent } from '../events.js';
 import { getT } from '../i18n/index.js';
@@ -162,7 +162,11 @@ export default async function storyRoutes(fastify: FastifyInstance) {
     const expiresAt = new Date(createdAt.getTime() + STORY_LIFETIME_MS);
     const crossStoryId = targets.length > 1 ? randomUUID() : null;
 
+    // The upload is claimed inside the transaction (a conditional update, not
+    // just the check above), so two concurrent requests can't both turn the
+    // same file into a story — the loser rolls back and gets the same 400.
     const created = await prisma.$transaction(async (tx) => {
+      if (!(await claimUnboundUpload(body.imageUrl, userId, circleId, tx))) return null;
       const rows = [];
       for (const groupId of targets) {
         rows.push(
@@ -172,9 +176,9 @@ export default async function storyRoutes(fastify: FastifyInstance) {
           })
         );
       }
-      await bindAssetsToScope([body.imageUrl], circleId, tx);
       return rows;
     });
+    if (!created) return reply.status(400).send({ error: t('errors.invalidStoryImage') });
 
     emitDomainEvent('story.created', {
       stories: created.map((s) => ({ storyId: s.id, groupId: s.groupId, groupName: s.group.name })),

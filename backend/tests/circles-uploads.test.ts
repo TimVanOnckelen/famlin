@@ -240,3 +240,71 @@ describe('circle media in the photo timeline', () => {
     expect(JSON.stringify(insiderRes.json().items)).toContain(assetUrl);
   });
 });
+
+describe('re-scoping someone else\'s upload', () => {
+  // Every attach site accepts any well-formed /uploads/ path, so the binding
+  // step itself has to refuse to change an upload it doesn't own or that's
+  // already bound — otherwise knowing a URL is enough to re-scope it.
+  it('cannot widen a circle photo to family-wide via an avatar', async () => {
+    const assetUrl = await upload(author);
+    await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupId: group.id, content: 'circle only', circleId: circle.id, uploadedAssetUrls: [assetUrl] },
+    });
+
+    // insider was in the circle and knows the URL; they then leave it.
+    await prisma.circleMember.deleteMany({ where: { circleId: circle.id, userId: insider.id } });
+    try {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/api/auth/me',
+        headers: authHeader(insider),
+        payload: { avatarUrl: assetUrl },
+      });
+      expect(res.statusCode).toBe(200);
+
+      for (const user of [insider, outsider]) {
+        const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) });
+        expect(seen.statusCode).toBe(404);
+      }
+    } finally {
+      await prisma.circleMember.create({ data: { circleId: circle.id, userId: insider.id } });
+    }
+  });
+
+  it('cannot narrow a family photo into a circle', async () => {
+    const assetUrl = await upload(outsider);
+    await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(outsider),
+      payload: { groupId: group.id, content: 'for everyone', uploadedAssetUrls: [assetUrl] },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupId: group.id, content: 'hide it', circleId: circle.id, uploadedAssetUrls: [assetUrl] },
+    });
+    expect(res.statusCode).toBe(200);
+
+    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) });
+    expect(seen.statusCode).toBe(200);
+  });
+
+  it("cannot bind another user's unattached draft", async () => {
+    const assetUrl = await upload(author);
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/auth/me',
+      headers: authHeader(insider),
+      payload: { avatarUrl: assetUrl },
+    });
+
+    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(insider) });
+    expect(seen.statusCode).toBe(404);
+  });
+});

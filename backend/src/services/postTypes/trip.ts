@@ -354,7 +354,7 @@ export const tripHandler: PostTypeHandler = {
         // Bind this check-in's photos to the post's audience in the same
         // transaction that stores them, so a circle-private post's media
         // isn't readable family-wide through its /uploads/ URL.
-        await bindAssetsToScope(metadata.photoUrls, post.circleId, tx);
+        await bindAssetsToScope(metadata.photoUrls, post.circleId, userId, tx);
 
         const invokedIndex = authorizedSiblings.findIndex((sibling) => sibling.id === post.id);
         const primary = created[invokedIndex] ?? created[0];

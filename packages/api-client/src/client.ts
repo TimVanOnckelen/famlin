@@ -8,8 +8,12 @@ import { getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
 let currentServerUrl: string | null = null;
 let currentBaseUrl: string | null = null;
 
+function normalizeServerUrl(serverUrl: string): string {
+  return serverUrl.trim().replace(/\/+$/, '');
+}
+
 export function setApiBaseUrl(serverUrl: string) {
-  const normalized = serverUrl.trim().replace(/\/+$/, '');
+  const normalized = normalizeServerUrl(serverUrl);
   currentServerUrl = normalized;
   currentBaseUrl = `${normalized}/api`;
 }
@@ -52,11 +56,24 @@ api.interceptors.request.use(async (config) => {
   // hardcoded default.
   config.baseURL = currentBaseUrl ?? undefined;
   const token = await getStorageAdapter().getItem(TOKEN_KEY);
-  if (token) {
+  if (token && (await tokenBelongsToCurrentServer())) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// The stored session token is only ever sent to the server it was issued by.
+// A consumer that remembers its server (mobile: saved together with the
+// token by setAuth) may still point the client somewhere else temporarily —
+// e.g. an invite deep link carrying its own `server` — and that other host
+// must not receive this session's bearer token: anyone can craft such a link
+// and point it at a server they control. Consumers that never store a server
+// URL (web/admin talk to their own origin) are unaffected.
+async function tokenBelongsToCurrentServer(): Promise<boolean> {
+  const stored = await getStorageAdapter().getItem(SERVER_URL_KEY);
+  if (!stored) return true;
+  return currentServerUrl !== null && normalizeServerUrl(stored) === currentServerUrl;
+}
 
 // Lets a consumer's auth store react to a 401 (expired/revoked session)
 // without this module importing that store directly, which would create a
@@ -70,7 +87,10 @@ export function setUnauthorizedHandler(fn: () => void) {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    // Only a 401 for a request that actually carried our token says anything
+    // about this session — a foreign server answering 401 must not be able to
+    // sign the user out of their own.
+    if (error.response?.status === 401 && error.config?.headers?.Authorization) {
       await getStorageAdapter().removeItem(TOKEN_KEY);
       unauthorizedHandler?.();
     }

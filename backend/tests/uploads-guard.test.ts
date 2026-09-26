@@ -63,7 +63,7 @@ describe('/uploads/ auth guard — non-canonical paths', () => {
     // These cases are about PATH NORMALIZATION on an ordinary family photo,
     // so bind it family-wide here rather than have every case read as the
     // uploader — that keeps them testing the hook, not the upload scope.
-    await bindAssetsToScope([url], null);
+    await bindAssetsToScope([url], null, uploader.id);
   });
 
   afterAll(async () => {

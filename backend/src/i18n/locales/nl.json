@@ -29,6 +29,7 @@
     "oidcNotConfigured": "OIDC-login is niet geconfigureerd",
     "invalidOidcToken": "Ongeldig OIDC-token",
     "oidcAccountNoEmail": "OIDC-account heeft geen e-mailadres",
+    "oidcEmailNotVerified": "Je identiteitsprovider heeft dit e-mailadres niet geverifieerd",
     "appleAccountNoEmail": "Je Apple-account heeft geen e-mailadres gedeeld, dus we kunnen geen Famlin-account aanmaken. Meld je opnieuw aan en kies ervoor je e-mailadres te delen.",
     "oidcExchangeFailed": "Aanmelden bij de identiteitsprovider is mislukt",
     "oidcHandoffExpired": "Aanmelding verlopen, probeer het opnieuw",
