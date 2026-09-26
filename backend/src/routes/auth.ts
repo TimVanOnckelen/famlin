@@ -54,6 +54,7 @@ const MIN_APP_VERSION = '0.1.0';
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
   no_email: 'errors.oidcAccountNoEmail',
+  email_not_verified: 'errors.oidcEmailNotVerified',
   not_allowed: 'errors.emailNotAllowed',
   exchange_failed: 'errors.oidcExchangeFailed',
 };
@@ -84,6 +85,8 @@ function oidcErrorToMobileCode(code: OidcError['code']): string {
       return 'oidc_not_configured';
     case 'no_email':
       return 'oidc_no_email';
+    case 'email_not_verified':
+      return 'oidc_email_not_verified';
     case 'not_allowed':
       return 'email_not_allowed';
     case 'exchange_failed':
@@ -680,7 +683,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // unbound upload readable only by its uploader — i.e. every other
     // member would see a broken avatar. See services/uploads.ts.
     if (body.avatarUrl) {
-      await bindAssetsToScope([body.avatarUrl], null);
+      await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
     }
 
     return sanitizeUser(user);

@@ -95,7 +95,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
     // this version (see the "later" list on the Circles issue) — so a chat
     // attachment binds family-wide.
     if (body.attachmentUrl) {
-      await bindAssetsToScope([body.attachmentUrl], null);
+      await bindAssetsToScope([body.attachmentUrl], null, request.user!.id);
     }
 
     // Fire-and-forget, same pattern as comment.created (routes/comments.ts) —
