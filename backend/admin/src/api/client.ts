@@ -7,6 +7,7 @@ import {
   DashboardStats,
   ModerationPost,
   ModerationComment,
+  ModerationStory,
   Invite,
   MediaAlbumSummary,
   MediaAlbumLink,
@@ -30,6 +31,7 @@ export type {
   DashboardStats,
   ModerationPost,
   ModerationComment,
+  ModerationStory,
   Invite,
   MediaAlbumSummary,
   MediaAlbumLink,
@@ -175,10 +177,25 @@ export const api = {
 
   getGroups: () => request<Group[]>('/api/admin/groups'),
 
-  createGroup: (data: { name: string; description?: string; allowedPostTypes?: string[]; chitchatEnabled?: boolean }) =>
+  createGroup: (data: {
+    name: string;
+    description?: string;
+    allowedPostTypes?: string[];
+    chitchatEnabled?: boolean;
+    storiesEnabled?: boolean;
+  }) =>
     request<Group>('/api/admin/groups', { method: 'POST', body: data }),
 
-  updateGroup: (id: string, data: { name: string; description?: string; allowedPostTypes?: string[]; chitchatEnabled?: boolean }) =>
+  updateGroup: (
+    id: string,
+    data: {
+      name: string;
+      description?: string;
+      allowedPostTypes?: string[];
+      chitchatEnabled?: boolean;
+      storiesEnabled?: boolean;
+    }
+  ) =>
     request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
 
   // Registry of post types (e.g. UPDATE, MILESTONE, POLL) — used by the group
@@ -251,6 +268,23 @@ export const api = {
   getContentComments: (params: ContentFilterParams = {}) => {
     const qs = contentQueryString(params);
     return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
+  },
+
+  // Stories have no free-text search (they're photos), so `q` is ignored.
+  getContentStories: (params: ContentFilterParams = {}) => {
+    const qs = contentQueryString({ ...params, q: undefined });
+    return request<Page<ModerationStory>>(`/api/admin/content/stories${qs ? `?${qs}` : ''}`);
+  },
+
+  deleteStory: (id: string) => request<void>(`/api/admin/content/stories/${id}`, { method: 'DELETE' }),
+
+  // /uploads/* needs the bearer token, which an <img src> can't send — fetch
+  // the thumbnail with it and hand back an object URL instead.
+  fetchUploadObjectUrl: async (uploadPath: string): Promise<string | null> => {
+    const token = getToken();
+    const res = await fetch(uploadPath, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) return null;
+    return URL.createObjectURL(await res.blob());
   },
 
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),

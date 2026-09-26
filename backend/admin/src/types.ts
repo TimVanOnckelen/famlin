@@ -32,6 +32,8 @@ export interface Group {
   // "all registered types allowed" — see PostTypeInfo / resolveAllowedPostTypes.
   allowedPostTypes?: string[];
   chitchatEnabled?: boolean;
+  // Stories on/off for this group — defaults to on (absent = older server).
+  storiesEnabled?: boolean;
 }
 
 // A registered post type, as reported by GET /api/admin/post-types.
@@ -152,6 +154,21 @@ export interface ModerationComment {
   editedAt: string | null;
   author: { id: string; name: string };
   post: { id: string; content: string | null; group: { id: string; name: string } };
+}
+
+// A story as listed by GET /api/admin/content/stories — live stories and
+// pinned Highlights only. Private replies are never exposed to admins.
+export interface ModerationStory {
+  id: string;
+  imageUrl: string;
+  createdAt: string;
+  expiresAt: string;
+  pinnedAt: string | null;
+  circleId: string | null;
+  author: { id: string; name: string };
+  group: { id: string; name: string };
+  viewCount: number;
+  reactionCount: number;
 }
 
 export interface PostPushResendResult {

@@ -137,7 +137,9 @@
       "allowedPostTypesHint": "Als alle vakjes zijn aangevinkt, worden later toegevoegde berichttypes automatisch toegestaan.",
       "allowedPostTypesError": "Selecteer minstens één berichttype.",
       "chitchatEnabled": "Groepschat inschakelen",
-      "chitchatEnabledHint": "Laat leden chatten met de hele groep in één gedeeld gesprek."
+      "chitchatEnabledHint": "Laat leden chatten met de hele groep in één gedeeld gesprek.",
+      "storiesEnabled": "Verhalen inschakelen",
+      "storiesEnabledHint": "Laat leden foto's delen die na 24 uur verdwijnen, of ze bewaren als hoogtepunten van de groep. Uitschakelen verbergt ook bestaande verhalen en hoogtepunten."
     },
     "save": "Opslaan",
     "add": "Toevoegen",
@@ -246,7 +248,15 @@
     "noResults": "Niets gevonden met deze filters.",
     "retriggerPush": "Pushmelding opnieuw versturen",
     "retriggerPushResult": "Pushmelding opnieuw verstuurd: {{successCount}} afgeleverd, {{failureCount}} mislukt, van {{tokenCount}} toestel(len) ({{recipientCount}} in aanmerking komende ontvanger(s)).",
-    "retriggerPushError": "Pushmelding opnieuw versturen mislukt: {{error}}"
+    "retriggerPushError": "Pushmelding opnieuw versturen mislukt: {{error}}",
+    "tabStories": "Verhalen",
+    "noStories": "Geen verhalen gevonden.",
+    "storyLive": "Zichtbaar tot {{time}}",
+    "storyHighlight": "Hoogtepunt",
+    "storyCircle": "Kring",
+    "viewsTooltip": "Weergaven",
+    "reactionsTooltip": "Reacties",
+    "storyPhoto": "Foto van het verhaal"
   },
   "pushLog": {
     "title": "Pushmeldingenlogboek",
@@ -269,7 +279,10 @@
       "new_like_comment": "Reactie op reactie",
       "mention": "Vermelding",
       "on_this_day": "Op deze dag",
-      "new_media_assets": "Nieuwe foto's"
+      "new_media_assets": "Nieuwe foto's",
+      "new_story": "Nieuw verhaal",
+      "story_reply": "Antwoord op verhaal",
+      "story_reaction": "Reactie op verhaal"
     }
   },
   "serverSettings": {

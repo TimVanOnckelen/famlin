@@ -1609,3 +1609,23 @@ h3 {
   border-top: 1px solid var(--border, #e2e8f0);
   padding-top: 10px;
 }
+
+/* Stories moderation tab — a small 9:16 thumbnail next to its status. */
+.story-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.story-thumb {
+  width: 36px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--fam-primary-tint);
+}
+
+.story-thumb-empty {
+  display: inline-block;
+}

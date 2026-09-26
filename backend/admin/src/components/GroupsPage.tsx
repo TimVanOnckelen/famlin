@@ -119,7 +119,13 @@ export function GroupsPage() {
     }
   }, [selectedId]);
 
-  const handleSubmitForm = async (values: { name: string; description: string; allowedPostTypes: string[]; chitchatEnabled: boolean }) => {
+  const handleSubmitForm = async (values: {
+    name: string;
+    description: string;
+    allowedPostTypes: string[];
+    chitchatEnabled: boolean;
+    storiesEnabled: boolean;
+  }) => {
     if (formGroup && formGroup.id) {
       await api.updateGroup(formGroup.id, values);
     } else {
@@ -548,7 +554,13 @@ export function GroupsPage() {
 interface GroupFormModalProps {
   group: Group;
   onClose: () => void;
-  onSubmit: (values: { name: string; description: string; allowedPostTypes: string[]; chitchatEnabled: boolean }) => Promise<void>;
+  onSubmit: (values: {
+    name: string;
+    description: string;
+    allowedPostTypes: string[];
+    chitchatEnabled: boolean;
+    storiesEnabled: boolean;
+  }) => Promise<void>;
 }
 
 function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
@@ -557,6 +569,8 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description || '');
   const [chitchatEnabled, setChitchatEnabled] = useState(group.chitchatEnabled ?? false);
+  // Unlike chat, stories default to on for a new group.
+  const [storiesEnabled, setStoriesEnabled] = useState(group.storiesEnabled ?? true);
   const [saving, setSaving] = useState(false);
 
   const [postTypes, setPostTypes] = useState<PostTypeInfo[]>([]);
@@ -604,7 +618,13 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
       // All boxes checked persists as [] so post types registered later are
       // automatically allowed; a partial selection persists the explicit list.
       const allowedPostTypes = checkedTypes.size === postTypes.length ? [] : Array.from(checkedTypes);
-      await onSubmit({ name: name.trim(), description: description.trim(), allowedPostTypes, chitchatEnabled });
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim(),
+        allowedPostTypes,
+        chitchatEnabled,
+        storiesEnabled,
+      });
     } finally {
       setSaving(false);
     }
@@ -660,6 +680,18 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
               <span>{t('groups.form.chitchatEnabled')}</span>
             </label>
             <p className="hint">{t('groups.form.chitchatEnabledHint')}</p>
+          </div>
+
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+              <input
+                type="checkbox"
+                checked={storiesEnabled}
+                onChange={(e) => setStoriesEnabled(e.target.checked)}
+              />
+              <span>{t('groups.form.storiesEnabled')}</span>
+            </label>
+            <p className="hint">{t('groups.form.storiesEnabledHint')}</p>
           </div>
 
           <div className="modal-actions">
