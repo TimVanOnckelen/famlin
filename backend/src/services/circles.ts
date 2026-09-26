@@ -42,6 +42,18 @@ export function visiblePostsWhere(groupIds: string[], circleIds: string[]): Pris
   };
 }
 
+// The Story counterpart of visiblePostsWhere — same fail-open warning, same
+// semantics. Stories additionally disappear with their group's
+// storiesEnabled toggle, so that's folded in here too rather than left to
+// each query to remember.
+export function visibleStoriesWhere(groupIds: string[], circleIds: string[]): Prisma.StoryWhereInput {
+  return {
+    groupId: { in: groupIds },
+    group: { storiesEnabled: true },
+    OR: [{ circleId: null }, { circleId: { in: circleIds } }],
+  };
+}
+
 // Convenience wrapper for the common case: resolve the caller's circles and
 // build the predicate in one step.
 export async function visiblePostsWhereFor(groupIds: string[], userId: string): Promise<Prisma.PostWhereInput> {

@@ -16,10 +16,16 @@ jest.mock('@/utils/storage', () => ({
   setPushToken: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/navigation/navigationRef', () => ({
+  navigate: jest.fn(),
+}));
+
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuthStore } from '@/stores/authStore';
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client';
 import { setPushToken } from '@/utils/storage';
+import { navigate } from '@/navigation/navigationRef';
+import * as Notifications from 'expo-notifications';
 
 describe('usePushNotifications', () => {
   beforeEach(() => {
@@ -67,5 +73,16 @@ describe('usePushNotifications', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(registerPushToken).not.toHaveBeenCalled();
+  });
+
+  it('opens the story viewer when a story notification is tapped', async () => {
+    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: null }));
+    (Notifications.getLastNotificationResponseAsync as jest.Mock).mockResolvedValueOnce({
+      notification: { request: { content: { data: { relatedPostId: null, relatedStoryId: 'story-9' } } } },
+    });
+
+    renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('StoryViewer', { storyId: 'story-9' }));
   });
 });

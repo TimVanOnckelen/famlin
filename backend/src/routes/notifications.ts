@@ -14,6 +14,12 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
             groupId: true,
           },
         },
+        story: {
+          select: {
+            id: true,
+            groupId: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,

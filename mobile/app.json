@@ -40,6 +40,13 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Famlin to access your photos so you can share them with your family.",
+          "cameraPermission": "Allow Famlin to use your camera so you can take photos for your family stories."
+        }
+      ],
+      [
         "expo-media-library",
         {
           "savePhotosPermission": "Allow Famlin to save photos to your library.",

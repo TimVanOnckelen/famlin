@@ -80,6 +80,14 @@ tags:
       Per-group chat (off by default, toggled by admins). A single central chat
       per group — not 1-on-1 messaging. When a milestone post is created in a
       group with chat enabled, a system message is auto-posted in the chat.
+  - name: Stories
+    description: |
+      Photos shared for 24 hours, Instagram-style. Same audience rules as posts
+      (one group, several, or one circle) plus the per-group `storiesEnabled`
+      toggle. Viewers can react and send one private reply; only the author
+      sees who viewed, reacted and replied. An author can pin a live story to
+      keep it forever as one of the group's Highlights; an unpinned story is
+      permanently deleted — photo included — once its 24 hours are up.
   - name: Notifications
     description: Your in-app notification history.
   - name: Uploads & media
@@ -278,6 +286,9 @@ paths:
                 pushOnNewComment: { type: boolean }
                 pushOnNewLike: { type: boolean }
                 pushOnChitchat: { type: boolean }
+                pushOnStory:
+                  type: boolean
+                  description: Opt-in push for other members' new stories (push only, off by default).
       responses:
         '200':
           description: Updated user
@@ -1713,6 +1724,465 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/stories:
+    get:
+      operationId: getStoryTray
+      tags: [Stories]
+      summary: The story tray
+      description: |
+        Every author with a live story in the selected groups, each with their
+        live stories oldest → newest (the order they play in). Your own
+        stories come first, then authors with something you haven't seen,
+        then the rest. A cross-posted story appears once. Not paginated — the
+        tray is bounded by the 24-hour window.
+      parameters:
+        - name: groupIds
+          in: query
+          schema: { type: string }
+          description: |
+            Comma-separated subset of your groups; omit for every group you
+            belong to. A group you aren't in is a 403.
+      responses:
+        '200':
+          description: The tray
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryTray'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+    post:
+      operationId: createStory
+      tags: [Stories]
+      summary: Share a story
+      description: |
+        `imageUrl` must be a photo you just uploaded via `POST /api/uploads`
+        and haven't attached to anything else (it is deleted from the server
+        when the story expires). Target one group (`groupId`), several
+        (`groupIds`, cross-posting), or one group narrowed to a circle
+        (`groupId` + `circleId`). Every target group must have
+        `storiesEnabled`. The story expires 24 hours after creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imageUrl]
+              properties:
+                imageUrl:
+                  type: string
+                  description: An `/uploads/<uuid>.<jpg|jpeg|png|gif|webp|heic|heif>` path.
+                  example: /uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg
+                groupId: { type: string }
+                groupIds:
+                  type: array
+                  items: { type: string }
+                  minItems: 1
+                  maxItems: 20
+                circleId:
+                  type: string
+                  nullable: true
+                  description: Narrows the audience to one of your circles in `groupId`. Can't be combined with several groups.
+      responses:
+        '200':
+          description: The created story (the first copy, for a cross-post)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        '400':
+          description: Invalid body, or `imageUrl` isn't a fresh upload of your own.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not a member of a target group or the circle, or a target group has stories turned off.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/highlights:
+    get:
+      operationId: listStoryHighlights
+      tags: [Stories]
+      summary: List Highlights
+      description: |
+        Every pinned story in the selected groups as one flat list, ordered by
+        the story's own date, newest first. Cursor-paginated.
+      parameters:
+        - name: groupIds
+          in: query
+          schema: { type: string }
+          description: |
+            Comma-separated subset of your groups; omit for every group you
+            belong to. A group you aren't in is a 403.
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of Highlights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoriesPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/stories/{id}:
+    get:
+      operationId: getStory
+      tags: [Stories]
+      summary: Get one story
+      description: A live story or a Highlight you can see (used to open a story from a notification).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The story
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found — also returned for a story you can't see, so a story's existence can't be probed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteStory
+      tags: [Stories]
+      summary: Delete your story
+      description: Permanent — removes every cross-posted copy and the photo. Author only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/view:
+    post:
+      operationId: markStoryViewed
+      tags: [Stories]
+      summary: Record that you've seen a story
+      description: |
+        Idempotent. Ignored for your own story and once the story has expired,
+        which freezes a Highlight's "seen by" list at its original 24 hours.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Recorded (or ignored)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found — also returned for a story you can't see, so a story's existence can't be probed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/views:
+    get:
+      operationId: listStoryViews
+      tags: [Stories]
+      summary: Who has seen your story
+      description: Author only. One entry per person across cross-posted copies, most recent first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Viewers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/StoryAuthor'
+                        - type: object
+                          properties:
+                            viewedAt: { type: string, format: date-time }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/reaction:
+    post:
+      operationId: reactToStory
+      tags: [Stories]
+      summary: React to a story
+      description: The same reaction again removes it; a different one replaces it. One reaction per person.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  $ref: '#/components/schemas/ReactionType'
+      responses:
+        '200':
+          description: Your reaction after the toggle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  myReaction:
+                    allOf:
+                      - $ref: '#/components/schemas/ReactionType'
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found — also returned for a story you can't see, so a story's existence can't be probed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/reactions:
+    get:
+      operationId: listStoryReactions
+      tags: [Stories]
+      summary: Who reacted to your story
+      description: Author only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Reactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/StoryAuthor'
+                        - type: object
+                          properties:
+                            type:
+                              $ref: '#/components/schemas/ReactionType'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/reply:
+    post:
+      operationId: replyToStory
+      tags: [Stories]
+      summary: Send the author a private reply
+      description: |
+        One reply per person, only while the story is live, never to your own
+        story. Only you and the author can ever see it — not other members,
+        and not admins.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '200':
+          description: Your reply
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryMyReply'
+        '400':
+          description: The story has expired, or it's your own story.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found — also returned for a story you can't see, so a story's existence can't be probed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: You already replied to this story.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/replies:
+    get:
+      operationId: listStoryReplies
+      tags: [Stories]
+      summary: Private replies to your story
+      description: Author only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Replies, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        fromUser:
+                          $ref: '#/components/schemas/StoryAuthor'
+                        content: { type: string }
+                        createdAt: { type: string, format: date-time }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/stories/{id}/pin:
+    post:
+      operationId: pinStory
+      tags: [Stories]
+      summary: Keep your story as a Highlight
+      description: Author only, and only while the story is live. Applies to every cross-posted copy.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Pinned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryPinResult'
+        '400':
+          description: The story has already expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: unpinStory
+      tags: [Stories]
+      summary: Remove your story from Highlights
+      description: |
+        On a live story this just unpins it. On an expired Highlight there is
+        nothing to fall back to, so it **deletes** the story (`deleted: true`).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Unpinned (or deleted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryPinResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found, or you aren't the story's author.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/notifications:
     get:
       operationId: listNotifications
@@ -2501,6 +2971,11 @@ components:
         pushOnChitchat:
           type: boolean
           description: Push notifications for new chat messages (email variant not supported).
+        pushOnStory:
+          type: boolean
+          description: |
+            Push notifications for other members' new stories — off by default,
+            at most one per author per group per day (email variant not supported).
 
     Group:
       type: object
@@ -2527,6 +3002,12 @@ components:
         chitchatEnabled:
           type: boolean
           description: Whether this group has chat enabled (off by default, admin-controlled).
+        storiesEnabled:
+          type: boolean
+          description: |
+            Whether members may post stories here (on by default,
+            admin-controlled). While off, the group's stories and Highlights
+            are hidden too.
 
     GroupMember:
       type: object
@@ -3044,6 +3525,122 @@ components:
           nullable: true
           description: Pass back as `?cursor=` for the next page; `null` on the last page.
 
+    StoryAuthor:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        avatarUrl:
+          type: string
+          nullable: true
+
+    StoryMyReply:
+      type: object
+      properties:
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    Story:
+      type: object
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        group:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+        circleId:
+          type: string
+          nullable: true
+        circle:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+        author:
+          $ref: '#/components/schemas/StoryAuthor'
+        imageUrl:
+          type: string
+          description: An `/uploads/...` path (read it like any other upload).
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        pinnedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set once the author kept it as a Highlight.
+        expired:
+          type: boolean
+          description: The 24 hours are up — only ever true on a Highlight.
+        isMine: { type: boolean }
+        seen: { type: boolean }
+        myReaction:
+          allOf:
+            - $ref: '#/components/schemas/ReactionType'
+          nullable: true
+        myReply:
+          allOf:
+            - $ref: '#/components/schemas/StoryMyReply'
+          nullable: true
+        stats:
+          type: object
+          nullable: true
+          description: Only on your own stories.
+          properties:
+            viewCount: { type: integer }
+            reactionCount: { type: integer }
+            replyCount: { type: integer }
+        sharedWithGroups:
+          type: array
+          description: Only on your own stories — every group a cross-posted story went to.
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+
+    StoryTray:
+      type: object
+      properties:
+        authors:
+          type: array
+          items:
+            type: object
+            properties:
+              author:
+                $ref: '#/components/schemas/StoryAuthor'
+              hasUnseen: { type: boolean }
+              latestAt: { type: string, format: date-time }
+              stories:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Story'
+
+    StoriesPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Story'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as `?cursor=` for the next page; `null` on the last page.
+
+    StoryPinResult:
+      type: object
+      properties:
+        pinnedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deleted:
+          type: boolean
+          description: True when unpinning an expired Highlight deleted it.
+
     ApiToken:
       type: object
       properties:
@@ -3080,12 +3677,22 @@ components:
         id: { type: string }
         type:
           type: string
-          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, `trip_checkin`, or `album_photo`.'
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, `trip_checkin`, `album_photo`, `new_story`, `story_reply`, or `story_reaction`.'
         message: { type: string }
         relatedPostId:
           type: string
           nullable: true
         post:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            groupId: { type: string }
+        relatedStoryId:
+          type: string
+          nullable: true
+          description: Set instead of `relatedPostId` for story notifications; `null` once the story is gone.
+        story:
           type: object
           nullable: true
           properties:

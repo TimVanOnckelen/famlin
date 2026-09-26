@@ -137,7 +137,8 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands"
-    }
+    },
+    "notifyNewStory": "Verhalen (alleen push)"
   },
   "apiTokens": {
     "menuItem": "API-tokens",
@@ -283,5 +284,49 @@
     "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
     "joinedOn": "Lid sinds {{date}}",
     "whoCanSee": "Wie kan berichten in {{circle}} zien?"
+  },
+  "stories": {
+    "trayLabel": "Verhalen",
+    "yourStory": "Jouw verhaal",
+    "open": "Bekijk het verhaal van {{name}}",
+    "openUnseen": "Bekijk het nieuwe verhaal van {{name}}",
+    "highlights": "Hoogtepunten",
+    "openHighlight": "Bekijk het hoogtepunt van {{name}}",
+    "moreHighlights": "Meer",
+    "viewerLabel": "Verhaal",
+    "highlightBadge": "Hoogtepunt",
+    "imageAlt": "Verhaal van {{name}}",
+    "previous": "Vorig verhaal",
+    "next": "Volgend verhaal",
+    "reactLabel": "Reageer op dit verhaal",
+    "reactions": {
+      "LIKE": "Leuk",
+      "LOVE": "Liefde",
+      "HAHA": "Haha",
+      "WOW": "Wauw",
+      "SAD": "Verdrietig",
+      "CARE": "Knuffel"
+    },
+    "replyPlaceholder": "Stuur {{name}} een privébericht…",
+    "replyLabel": "Privé-antwoord",
+    "sendReply": "Antwoord versturen",
+    "youReplied": "Jij antwoordde: \"{{content}}\"",
+    "replyFailed": "Je antwoord kon niet worden verstuurd.",
+    "seenBy_one": "Gezien door {{count}}",
+    "seenBy_other": "Gezien door {{count}}",
+    "reactionsCount_one": "{{count}} reactie",
+    "reactionsCount_other": "{{count}} reacties",
+    "repliesCount_one": "{{count}} antwoord",
+    "repliesCount_other": "{{count}} antwoorden",
+    "insightsLabel": "Activiteit op je verhaal",
+    "tabs": {
+      "views": "Kijkers",
+      "reactions": "Reacties",
+      "replies": "Antwoorden"
+    },
+    "noViews": "Nog niemand heeft dit verhaal gezien.",
+    "noReactions": "Nog geen reacties.",
+    "noReplies": "Nog geen antwoorden.",
+    "repliesPrivate": "Alleen jij ziet wie dit verhaal bekeek en welke antwoorden je kreeg."
   }
 }

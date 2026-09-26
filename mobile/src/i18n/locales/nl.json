@@ -350,7 +350,8 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands"
-    }
+    },
+    "notifyNewStory": "Verhalen"
   },
   "tabs": {
     "feed": "Feed",
@@ -469,5 +470,69 @@
     "membersHint": "Alleen deze mensen zien berichten die met deze kring gedeeld worden.",
     "membersLoadFailed": "De leden van deze kring konden niet geladen worden.",
     "joinedOn": "Lid sinds {{date}}"
+  },
+  "stories": {
+    "yourStory": "Jouw verhaal",
+    "addStory": "Verhaal toevoegen",
+    "viewYourStory": "Bekijk je verhaal",
+    "open": "Bekijk het verhaal van {{name}}",
+    "openUnseen": "Bekijk het nieuwe verhaal van {{name}}",
+    "highlights": "Hoogtepunten",
+    "openHighlight": "Bekijk het hoogtepunt van {{name}}",
+    "moreHighlights": "Meer",
+    "highlightBadge": "Hoogtepunt",
+    "previous": "Vorig verhaal",
+    "next": "Volgend verhaal",
+    "gone": "Dit verhaal is niet meer beschikbaar.",
+    "reactions": {
+      "LIKE": "Leuk",
+      "LOVE": "Liefde",
+      "HAHA": "Haha",
+      "WOW": "Wauw",
+      "SAD": "Verdrietig",
+      "CARE": "Knuffel"
+    },
+    "replyPlaceholder": "Stuur {{name}} een privébericht…",
+    "sendReply": "Antwoord versturen",
+    "youReplied": "Jij antwoordde: \"{{content}}\"",
+    "replyFailed": "Je antwoord kon niet worden verstuurd.",
+    "actionFailed": "Dat lukte niet. Probeer het opnieuw.",
+    "seenBy_one": "Gezien door {{count}}",
+    "seenBy_other": "Gezien door {{count}}",
+    "repliesCount_one": "{{count}} antwoord",
+    "repliesCount_other": "{{count}} antwoorden",
+    "tabs": {
+      "views": "Kijkers",
+      "reactions": "Reacties",
+      "replies": "Antwoorden"
+    },
+    "noViews": "Nog niemand heeft dit verhaal gezien.",
+    "noReactions": "Nog geen reacties.",
+    "noReplies": "Nog geen antwoorden.",
+    "repliesPrivate": "Alleen jij ziet wie dit verhaal bekeek en welke antwoorden je kreeg.",
+    "pin": "Bewaren als hoogtepunt",
+    "unpin": "Uit hoogtepunten halen",
+    "delete": "Verwijderen",
+    "deleteTitle": "Dit verhaal verwijderen?",
+    "deleteMessage": "Het verdwijnt voor iedereen, samen met de foto. Dit kan niet ongedaan worden gemaakt.",
+    "unpinDeleteTitle": "Dit hoogtepunt verwijderen?",
+    "unpinDeleteMessage": "Dit verhaal is al verlopen, dus als je het uit je hoogtepunten haalt, wordt het definitief verwijderd.",
+    "newStory": "Nieuw verhaal",
+    "takePhoto": "Maak een foto",
+    "chooseFromLibrary": "Kies uit je bibliotheek",
+    "expiresHint": "Verhalen verdwijnen na 24 uur, tenzij je ze bewaart als hoogtepunt.",
+    "noStoryGroups": "Geen van je families heeft verhalen aangezet.",
+    "permissionDenied": "Famlin heeft toestemming nodig om je camera of foto's te gebruiken.",
+    "back": "Kies een andere foto",
+    "addText": "Tekst toevoegen",
+    "addSticker": "Sticker toevoegen",
+    "draw": "Tekenen",
+    "undo": "Ongedaan maken",
+    "textPlaceholder": "Typ iets…",
+    "done": "Klaar",
+    "removeOverlay": "Dit uit je verhaal verwijderen?",
+    "remove": "Verwijderen",
+    "share": "Delen",
+    "shareFailed": "Je verhaal kon niet worden gedeeld."
   }
 }

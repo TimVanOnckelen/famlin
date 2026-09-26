@@ -1,0 +1,1 @@
+{"parameters":[{"name":"groupIds","in":"query","schema":{"type":"string"},"description":"Comma-separated subset of your groups; omit for every group you\nbelong to. A group you aren't in is a 403.\n"}]}

@@ -96,6 +96,8 @@ export const createGroupBodySchema = z.object({
   description: z.string().max(500).optional(),
   allowedPostTypes: allowedPostTypesSchema.optional(),
   chitchatEnabled: z.boolean().optional(),
+  // Defaults to true on create (unlike chitchat) — see Group.storiesEnabled.
+  storiesEnabled: z.boolean().optional(),
 });
 
 export const groupMemberBodySchema = z.object({
@@ -279,6 +281,7 @@ export const notificationPrefsSchema = z.object({
   pushOnNewComment: z.boolean().optional(),
   pushOnNewLike: z.boolean().optional(),
   pushOnChitchat: z.boolean().optional(),
+  pushOnStory: z.boolean().optional(),
 });
 
 // Clients always upload the photo first and pass back the resulting
@@ -303,6 +306,7 @@ export const adminUpdateGroupBodySchema = z.object({
   // Omitted = unchanged (plain boolean, no reset-to-default convention needed
   // like allowedPostTypes' empty-array case).
   chitchatEnabled: z.boolean().optional(),
+  storiesEnabled: z.boolean().optional(),
 });
 
 export const passwordLoginBodySchema = z.object({
@@ -404,6 +408,44 @@ export const createInviteBodySchema = z.object({
 export const paginationQuerySchema = z.object({
   cursor: z.string().optional(),
   take: z.coerce.number().int().min(1).max(100).default(30),
+});
+
+// A story is one PHOTO (video is out of scope for v1) — the same /uploads/
+// path shape as UPLOAD_PATH_REGEX, restricted to image extensions. Overlays
+// and stickers are flattened into the image on the device before upload.
+const STORY_IMAGE_PATH_REGEX =
+  /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp|heic|heif)$/;
+
+// Same audience shape as createPostBodySchema: legacy single `groupId`, or
+// `groupIds` for cross-posting, or one group + `circleId` — never a circle
+// combined with several groups.
+export const createStoryBodySchema = z
+  .object({
+    imageUrl: z.string().regex(STORY_IMAGE_PATH_REGEX, 'Must be an uploaded photo path'),
+    groupId: z.string().optional(),
+    groupIds: z.array(z.string()).min(1).max(20).optional(),
+    circleId: z.string().optional().nullable(),
+  })
+  .refine((data) => !!data.groupId || (data.groupIds && data.groupIds.length > 0), {
+    message: 'groupId or groupIds is required',
+    path: ['groupId'],
+  })
+  .refine((data) => !data.circleId || (data.groupIds ?? [data.groupId]).length === 1, {
+    message: 'circleId cannot be combined with cross-posting',
+    path: ['circleId'],
+  });
+
+export const storyReactionBodySchema = z.object({
+  type: reactionTypeSchema.default('LIKE'),
+});
+
+export const storyReplyBodySchema = z.object({
+  content: z.string().trim().min(1).max(500),
+});
+
+export const adminStoriesQuerySchema = paginationQuerySchema.extend({
+  groupId: z.string().optional(),
+  authorId: z.string().optional(),
 });
 
 export const searchPostsQuerySchema = paginationQuerySchema.extend({

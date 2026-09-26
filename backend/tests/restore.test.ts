@@ -147,6 +147,39 @@ describe('POST /api/auth/setup/restore', () => {
       data: { provider: 'immich', externalPersonId: 'p1', label: 'Grandma', userId: member.id },
     });
 
+    // Stories: a pinned Highlight (restored, with its reaction) and a live
+    // story (deliberately not exported — nor are views or private replies).
+    await prisma.group.update({ where: { id: group.id }, data: { storiesEnabled: false } });
+    await prisma.user.update({ where: { id: member.id }, data: { pushOnStory: true } });
+    const highlightKey = crypto.randomUUID();
+    const liveKey = crypto.randomUUID();
+    fs.writeFileSync(path.join(uploadsDir, `${highlightKey}.jpg`), 'highlight-bytes');
+    fs.writeFileSync(path.join(uploadsDir, `${liveKey}.jpg`), 'live-bytes');
+    await prisma.upload.create({ data: { assetKey: highlightKey, uploaderId: admin.id, bound: true } });
+    await prisma.upload.create({ data: { assetKey: liveKey, uploaderId: member.id, bound: true } });
+    const createdAt = new Date('2026-07-01T10:00:00Z');
+    const highlight = await prisma.story.create({
+      data: {
+        authorId: admin.id,
+        groupId: group.id,
+        imageUrl: `/uploads/${highlightKey}.jpg`,
+        createdAt,
+        expiresAt: new Date(createdAt.getTime() + 24 * 60 * 60 * 1000),
+        pinnedAt: new Date('2026-07-01T11:00:00Z'),
+      },
+    });
+    await prisma.storyReaction.create({ data: { storyId: highlight.id, userId: member.id, type: 'WOW' } });
+    await prisma.storyView.create({ data: { storyId: highlight.id, userId: member.id } });
+    await prisma.storyReply.create({ data: { storyId: highlight.id, fromUserId: member.id, content: 'private' } });
+    await prisma.story.create({
+      data: {
+        authorId: member.id,
+        groupId: group.id,
+        imageUrl: `/uploads/${liveKey}.jpg`,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
     // --- snapshot + export --------------------------------------------
     const snapshot = async () => ({
       users: await prisma.user.findMany({
@@ -166,7 +199,10 @@ describe('POST /api/auth/setup/restore', () => {
       chatReads: await prisma.chatRead.findMany({ orderBy: { id: 'asc' } }),
       mediaAlbumLinks: await prisma.mediaAlbumLink.findMany({ orderBy: { id: 'asc' } }),
       mediaPersonLinks: await prisma.mediaPersonLink.findMany({ orderBy: { id: 'asc' } }),
-      uploads: await prisma.upload.findMany({ orderBy: { id: 'asc' } }),
+      // The live story's Upload row is left out of the export with its photo.
+      uploads: await prisma.upload.findMany({ where: { assetKey: { not: liveKey } }, orderBy: { id: 'asc' } }),
+      stories: await prisma.story.findMany({ where: { pinnedAt: { not: null } }, orderBy: { id: 'asc' } }),
+      storyReactions: await prisma.storyReaction.findMany({ orderBy: { id: 'asc' } }),
     });
     const before = await snapshot();
 
@@ -178,6 +214,8 @@ describe('POST /api/auth/setup/restore', () => {
     await truncateAll();
     fs.rmSync(path.join(uploadsDir, `${assetKey}.jpg`));
     fs.rmSync(path.join(uploadsDir, 'originals', `${assetKey}.png`));
+    fs.rmSync(path.join(uploadsDir, `${highlightKey}.jpg`));
+    fs.rmSync(path.join(uploadsDir, `${liveKey}.jpg`));
 
     // --- restore, as the admin whose account is in the backup -----------
     const res = await restore({ email: 'Admin@Example.com', name: 'Ignored', password: 'new-password-1' }, archive);
@@ -201,7 +239,8 @@ describe('POST /api/auth/setup/restore', () => {
       chatReads: 1,
       mediaAlbumLinks: 1,
       mediaPersonLinks: 1,
-      uploads: 1,
+      uploads: 2,
+      highlights: 1,
     });
 
     const after = await snapshot();
@@ -210,6 +249,12 @@ describe('POST /api/auth/setup/restore', () => {
     // Files are back under their original paths.
     expect(fs.readFileSync(path.join(uploadsDir, `${assetKey}.jpg`), 'utf8')).toBe('fake-jpeg-bytes');
     expect(fs.readFileSync(path.join(uploadsDir, 'originals', `${assetKey}.png`), 'utf8')).toBe('fake-original-bytes');
+    expect(fs.readFileSync(path.join(uploadsDir, `${highlightKey}.jpg`), 'utf8')).toBe('highlight-bytes');
+    // A live story, its photo, and every view/private reply stay out of a restore.
+    expect(fs.existsSync(path.join(uploadsDir, `${liveKey}.jpg`))).toBe(false);
+    expect(await prisma.story.count({ where: { pinnedAt: null } })).toBe(0);
+    expect(await prisma.storyView.count()).toBe(0);
+    expect(await prisma.storyReply.count()).toBe(0);
     // ...and no scratch directory is left behind.
     expect(fs.readdirSync(uploadsDir).filter((n) => n.startsWith('.restore-'))).toEqual([]);
 

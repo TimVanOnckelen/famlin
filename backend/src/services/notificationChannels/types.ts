@@ -25,7 +25,17 @@ export type NotifyType =
   // `addPhotos` interaction) — push-only, reuses pushOnNewPost. Fires instead
   // of new_comment for a contribution comment (Comment.metadata.kind ===
   // 'album_photo'), same precedent as trip_checkin above.
-  | 'album_photo';
+  | 'album_photo'
+  // A new Story (routes/stories.ts) — push-only and OPT-IN via pushOnStory
+  // (default off), at most one per author per group per day (see the
+  // story.created handler in src/subscribers/notifications.ts). Tied to a
+  // story (relatedStoryId), never a post, like the two below.
+  | 'new_story'
+  // A private reply to the recipient's story — push-only, reuses
+  // pushOnNewComment.
+  | 'story_reply'
+  // A reaction on the recipient's story — push-only, reuses pushOnNewLike.
+  | 'story_reaction';
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().
@@ -39,6 +49,7 @@ export interface Recipient {
   pushOnNewComment: boolean;
   pushOnNewLike: boolean;
   pushOnChitchat: boolean;
+  pushOnStory: boolean;
 }
 
 export interface ChannelSendArgs {
@@ -51,6 +62,9 @@ export interface ChannelSendArgs {
   // null for event types with no associated post (currently only
   // new_media_assets, which is scoped to an album/group instead).
   postId: string | null;
+  // Set instead of postId for story notifications — lets the client's
+  // notification-tap handler open the story viewer.
+  storyId?: string | null;
   // Set only when an admin triggered this send manually (the "resend push"
   // content-moderation action) — omitted/undefined for every organic,
   // event-triggered send. Only the push channel acts on this (see

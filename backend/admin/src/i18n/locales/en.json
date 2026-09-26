@@ -146,7 +146,9 @@
       "allowedPostTypesHint": "When every box is checked, post types added later are allowed automatically.",
       "allowedPostTypesError": "Select at least one post type.",
       "chitchatEnabled": "Enable group chat",
-      "chitchatEnabledHint": "Lets members chat with the whole group in one shared conversation."
+      "chitchatEnabledHint": "Lets members chat with the whole group in one shared conversation.",
+      "storiesEnabled": "Enable stories",
+      "storiesEnabledHint": "Lets members share photos that disappear after 24 hours, or keep them as the group's Highlights. Turning this off also hides existing stories and Highlights."
     },
     "save": "Save",
     "add": "Add",
@@ -255,7 +257,15 @@
     "noResults": "Nothing matches your filters.",
     "retriggerPush": "Resend push notification",
     "retriggerPushResult": "Push notification resent: {{successCount}} delivered, {{failureCount}} failed, out of {{tokenCount}} device(s) ({{recipientCount}} eligible recipient(s)).",
-    "retriggerPushError": "Couldn't resend the push notification: {{error}}"
+    "retriggerPushError": "Couldn't resend the push notification: {{error}}",
+    "tabStories": "Stories",
+    "noStories": "No stories found.",
+    "storyLive": "Live until {{time}}",
+    "storyHighlight": "Highlight",
+    "storyCircle": "Circle",
+    "viewsTooltip": "Views",
+    "reactionsTooltip": "Reactions",
+    "storyPhoto": "Story photo"
   },
   "pushLog": {
     "title": "Push notification log",
@@ -278,7 +288,10 @@
       "new_like_comment": "Reaction on comment",
       "mention": "Mention",
       "on_this_day": "On this day",
-      "new_media_assets": "New photos"
+      "new_media_assets": "New photos",
+      "new_story": "New story",
+      "story_reply": "Story reply",
+      "story_reaction": "Story reaction"
     }
   },
   "serverSettings": {

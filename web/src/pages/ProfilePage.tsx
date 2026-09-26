@@ -133,11 +133,13 @@ export function ProfilePage({
   const notificationTypes: {
     labelKey: string;
     pushKey: keyof NotificationPrefs;
-    emailKey: keyof NotificationPrefs;
+    // Omitted for push-only types (stories never email).
+    emailKey?: keyof NotificationPrefs;
   }[] = [
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
+    { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
   ];
 
   function handleLanguageChange(lang: SupportedLanguage) {
@@ -192,7 +194,9 @@ export function ProfilePage({
               {showPush && <span className="profile-notification-col">{t('profile.push')}</span>}
               {showEmail && <span className="profile-notification-col">{t('profile.email')}</span>}
             </div>
-            {notificationTypes.map(({ labelKey, pushKey, emailKey }) => (
+            {notificationTypes
+              .filter(({ emailKey }) => showPush || emailKey)
+              .map(({ labelKey, pushKey, emailKey }) => (
               <div key={labelKey} className="profile-notification-row">
                 <span className="profile-setting-label profile-notification-label">{t(labelKey)}</span>
                 {showPush && (
@@ -207,7 +211,8 @@ export function ProfilePage({
                     />
                   </span>
                 )}
-                {showEmail && (
+                {showEmail && !emailKey && <span className="profile-notification-col" />}
+                {showEmail && emailKey && (
                   <span className="profile-notification-col">
                     <input
                       type="checkbox"

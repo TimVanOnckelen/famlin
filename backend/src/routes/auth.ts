@@ -17,6 +17,7 @@ import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config, uploadsDir } from '../config.js';
 import { bindAssetsToScope } from '../services/uploads.js';
+import { deleteStoriesWithMedia } from '../services/stories.js';
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js';
 import {
   appleLoginBodySchema,
@@ -718,6 +719,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.cannotDeleteLastAdminAccount') });
     }
 
+    // Stories cascade with the user, but their photos would stay on disk —
+    // delete them (media included) first.
+    await deleteStoriesWithMedia({ authorId: userId });
     await prisma.user.delete({ where: { id: userId } });
     invalidateSessionCache(userId);
     return { success: true };

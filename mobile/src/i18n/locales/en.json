@@ -350,7 +350,8 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands"
-    }
+    },
+    "notifyNewStory": "Stories"
   },
   "tabs": {
     "feed": "Feed",
@@ -469,5 +470,69 @@
     "membersHint": "Only these people can see posts shared with this circle.",
     "membersLoadFailed": "Couldn't load the members of this circle.",
     "joinedOn": "Joined {{date}}"
+  },
+  "stories": {
+    "yourStory": "Your story",
+    "addStory": "Add a story",
+    "viewYourStory": "View your story",
+    "open": "View {{name}}'s story",
+    "openUnseen": "View {{name}}'s new story",
+    "highlights": "Highlights",
+    "openHighlight": "View {{name}}'s highlight",
+    "moreHighlights": "More",
+    "highlightBadge": "Highlight",
+    "previous": "Previous story",
+    "next": "Next story",
+    "gone": "This story is no longer available.",
+    "reactions": {
+      "LIKE": "Like",
+      "LOVE": "Love",
+      "HAHA": "Haha",
+      "WOW": "Wow",
+      "SAD": "Sad",
+      "CARE": "Care"
+    },
+    "replyPlaceholder": "Reply privately to {{name}}…",
+    "sendReply": "Send reply",
+    "youReplied": "You replied: \"{{content}}\"",
+    "replyFailed": "Your reply couldn't be sent.",
+    "actionFailed": "That didn't work. Please try again.",
+    "seenBy_one": "Seen by {{count}}",
+    "seenBy_other": "Seen by {{count}}",
+    "repliesCount_one": "{{count}} reply",
+    "repliesCount_other": "{{count}} replies",
+    "tabs": {
+      "views": "Viewers",
+      "reactions": "Reactions",
+      "replies": "Replies"
+    },
+    "noViews": "Nobody has seen this story yet.",
+    "noReactions": "No reactions yet.",
+    "noReplies": "No replies yet.",
+    "repliesPrivate": "Only you can see who viewed this story and the replies you got.",
+    "pin": "Keep as Highlight",
+    "unpin": "Remove from Highlights",
+    "delete": "Delete",
+    "deleteTitle": "Delete this story?",
+    "deleteMessage": "It will be removed for everyone, together with its photo. This can't be undone.",
+    "unpinDeleteTitle": "Remove this Highlight?",
+    "unpinDeleteMessage": "This story has already expired, so removing it from Highlights deletes it for good.",
+    "newStory": "New story",
+    "takePhoto": "Take a photo",
+    "chooseFromLibrary": "Choose from library",
+    "expiresHint": "Stories disappear after 24 hours, unless you keep them as a Highlight.",
+    "noStoryGroups": "None of your families has stories turned on.",
+    "permissionDenied": "Famlin needs permission to use your camera or photos for this.",
+    "back": "Pick another photo",
+    "addText": "Add text",
+    "addSticker": "Add sticker",
+    "draw": "Draw",
+    "undo": "Undo",
+    "textPlaceholder": "Type something…",
+    "done": "Done",
+    "removeOverlay": "Remove this from your story?",
+    "remove": "Remove",
+    "share": "Share",
+    "shareFailed": "Your story couldn't be shared."
   }
 }

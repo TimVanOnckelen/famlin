@@ -121,6 +121,7 @@ export interface User {
     pushOnNewPost: boolean;
     pushOnNewComment: boolean;
     pushOnNewLike: boolean;
+    pushOnStory?: boolean;
 }
 export interface Group {
     id: string;
@@ -130,6 +131,7 @@ export interface Group {
     joinedAt?: string;
     allowedPostTypes?: string[];
     chitchatEnabled: boolean;
+    storiesEnabled?: boolean;
 }
 export interface Post {
     id: string;
@@ -205,10 +207,15 @@ export interface Notification {
     id: string;
     type: string;
     relatedPostId?: string | null;
+    relatedStoryId?: string | null;
     message: string;
     readAt?: string | null;
     createdAt: string;
     post?: {
+        id: string;
+        groupId: string;
+    } | null;
+    story?: {
         id: string;
         groupId: string;
     } | null;

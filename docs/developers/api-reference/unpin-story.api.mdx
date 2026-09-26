@@ -1,0 +1,71 @@
+---
+id: unpin-story
+title: "Remove your story from Highlights"
+description: "On a live story this just unpins it. On an expired Highlight there is"
+sidebar_label: "Remove your story from Highlights"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVsFuGzcQ/ZXBXCILGyktcloUBRTURVKkTWA7CApLyFK7Iy1j7pAhubJVYYF+RL+wX1IMubKdKO2phwI9SUtyOPPezLzhAa0jr6K2/KrBEnt2mi+j9XssMKptwPIa5VtTwFWBDYXaayfnscQ3DAqM3hEEMYHY6gAf+xAh3RNAxxnIIQa6c9pTAy/1tjV620aILXkCHZbMNraatxAtbJQxsFb1DURbQLCgI0ynDRmKFKZTMRp9Taq82pQQfU/V2WzJWKBTXnUUyUvkB2TVEZaoGyxQS8hOxRYL9PSpl3iwFOMCQ91Sp7A8YNw7sQjRa97iMKzkcHCWAwXZ//bZM/n5nIh3ApepgYn1MMZ1hgXWliNxFAPlnNF1Ynr+MYjV4dSrXX+kOgoML3mJOvvMly/iaXwFbqzvVMQSGxXpadQdYYHcG6PWhjK8QfKWYnp0wdpaQ0oo+xzKle8JblvinEOWxHw1f+OVkmMchgKjjuIwVcv+reYLCr2JOAyy+fzZN6es/axD0LwtQPNOGd0URy8FWA+edvaGGqg9NcRRK/PvEUreW/81Nj8P8GXfKX7qSTVCZgHRKw5GCeqdVqkYq0Vdk4tPXyve9mpLFbSkGvIwqYirecWmOsv8PJTc9eh/9UDaeVo4cvX8lKtfbISN7Tlzs7c9KE/8JD50xJMAqo+t9bP/BU9DgR3F1opq5VJM3R9bLHGunJ6HrFrzg26GudNS6YH87qgMvTdYYhujC+V8vlGd0TyjO9U5Q7Padicgf7W9B3vL8GM6Cw05Y/edsCwiEajuvY77dPmalCe/6CWa69Xj7UthPpP7+NA9wxIQjnqU2jQdOglmAY58sKwMqLqmECDaG2KYVBnJB6fih9lsVhXSPykTmlMibmkNyrkzsH7JCgKFoC3DT++vYONtB9XbN5dXkBiUcpobu9VczeCFja3UHATisepUR3Cr9uWSq0WqPP1bKrMSXqSo4bsU1PeVSLMkTPPGJqxjNkcmF29fYYGSmQyu7r0XWr8Efb4jvz/Sn3MpimEDhTx6Ls4vr+Q26FlKqxIUFfz5+x8P8cpubGnJdrPRtVYGOrvWhkBxc+QmQB9oBu+1IIbrrzK9mswb2pGRbgni52zJ0pW1Ylj32jTSo7leNEfa5hkbQG2V5hDz7kZ12kjjZjCzJS95YQyM3Qs6QKitowbWe5hOt972Djrq1uRDq910WsLRp2WzB+nADMTrSEu+v4ch2QaYJJeawlmyXJOxafAWyew4koGtJBaUF8WB2Kq4ZEc+Q5/BJRFcvwtpZreJ01M6YGN9EiTR7iw/RYpoJwuWQ3Z5a72I/Nh4IVVKgc6G2KkkVeMEv6DO7ijTlh8AqVrvx1H4sloODxr4X3ynjO0e6S7OnVE6wU6adBhV7BqV0yIF4+urwDI9Y0TKVgW2NkQ5dDisVaB33gyDLH/qyYsGrQrcKa/zI+D6gI0O8r/BcqNMoH8ga3IxCvAZ/F2c46JieSXulOnlCwu8oX1+bA2rocAs8Ml73sgj4JHJyWgSpbxX9R/OX59fneMw/AWZ4bhR
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Remove your story from Highlights"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/stories/{id}/pin"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+On a live story this just unpins it. On an expired Highlight there is
+nothing to fall back to, so it **deletes** the story (`deleted: true`).
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./unpin-story.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./unpin-story.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./unpin-story.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

@@ -77,6 +77,8 @@ export function NotificationsScreen() {
               markRead.mutate(item.id);
               if (item.relatedPostId) {
                 navigation.navigate('PostDetail', { postId: item.relatedPostId });
+              } else if (item.relatedStoryId) {
+                navigation.navigate('StoryViewer', { storyId: item.relatedStoryId });
               }
             }}
           >
