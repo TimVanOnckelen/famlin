@@ -30,7 +30,7 @@
     "@fastify/helmet": "^13.1.1",
     "@fastify/multipart": "^10.1.2",
     "@fastify/rate-limit": "^11.2.0",
-    "@fastify/static": "^10.1.4",
+    "@fastify/static": "^10.1.5",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "archiver": "^8.0.0",
