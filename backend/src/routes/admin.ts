@@ -1013,8 +1013,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       const file = await request.file({ limits: { fileSize: MAX_LOGO_BYTES, files: 1 } });
       if (!file) return reply.status(400).send({ error: t('errors.invalidLogo') });
       buffer = await file.toBuffer();
-    } catch (err: any) {
-      if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
+    } catch (err) {
+      if ((err as { code?: string } | null)?.code === 'FST_REQ_FILE_TOO_LARGE') {
         return reply.status(400).send({ error: t('errors.logoTooLarge') });
       }
       throw err;
