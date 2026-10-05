@@ -555,6 +555,16 @@ model Upload {
   // Set once the upload is attached to a post, comment, chat message or
   // avatar. Until then only the uploader can read it.
   bound      Boolean  @default(false)
+  // The group(s) whose members may read a bound upload (cross-posted media
+  // carries every target group). Like circleId, deliberately not a FK: a
+  // deleted group's id dangles and matches nobody, so its media never
+  // reverts to server-wide readable. Empty on a bound row = a legacy row
+  // bound before group scoping existed (still readable by any signed-in
+  // user until a backfill assigns its groups).
+  groupIds   String[] @default([])
+  // Explicitly readable by any authenticated user — user avatars, which
+  // appear across every group their owner belongs to.
+  serverWide Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   @@index([circleId])

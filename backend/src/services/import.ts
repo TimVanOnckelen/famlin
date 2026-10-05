@@ -210,6 +210,10 @@ const uploadRow = z.object({
   uploaderId: nullableString,
   circleId: nullableString,
   bound: z.boolean(),
+  // Absent from archives exported before uploads were group-scoped: such a
+  // row restores as a legacy bound row, exactly the state it was in.
+  groupIds: z.array(z.string()).default([]),
+  serverWide: z.boolean().default(false),
   createdAt: date,
 });
 

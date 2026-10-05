@@ -18,7 +18,7 @@ import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.j
 import { getT } from '../i18n/index.js';
 import { sanitizeUser, hashPassword } from '../services/users.js';
 import { config, uploadsDir } from '../config.js';
-import { bindAssetsToScope } from '../services/uploads.js';
+import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js';
 import { buildMemberExportArchive } from '../services/memberExport.js';
 import { deleteStoriesWithMedia } from '../services/stories.js';
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js';
@@ -682,12 +682,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
       data: body,
     });
 
-    // An avatar is visible to everyone the user shares a group with, so it's
-    // bound family-wide (circleId null). Without this it would stay an
-    // unbound upload readable only by its uploader — i.e. every other
-    // member would see a broken avatar. See services/uploads.ts.
+    // An avatar shows up in every group the user belongs to (and in groups
+    // they join later), so it's bound server-wide rather than to any group.
+    // Without this it would stay an unbound upload readable only by its
+    // uploader — i.e. every other member would see a broken avatar. See
+    // services/uploads.ts.
     if (body.avatarUrl) {
-      await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
+      await bindAssetsToScope([body.avatarUrl], SERVER_WIDE, request.user!.id);
     }
 
     return sanitizeUser(user);

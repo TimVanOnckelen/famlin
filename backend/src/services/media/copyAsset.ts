@@ -10,6 +10,7 @@ import { parseMediaAssetPath } from '../../types.js';
 // still display the photo/video (see the module doc comment below).
 import { uploadsDir } from '../../config.js';
 import { getMediaProvider } from './registry.js';
+import { recordServerCopy } from '../uploads.js';
 
 // Thrown for expected, user-facing failures so the route can map it to a
 // translated message instead of leaking fetch/fs internals (mirrors
@@ -30,13 +31,16 @@ export class CrossPostAssetCopyError extends Error {
 // exactly one group — so a sibling row in any *other* target group would 404
 // trying to display it. This copies each such asset's bytes into a plain
 // /uploads/ file (readable by any group, like a direct upload) and returns
-// the url rewrite every sibling should use instead.
+// the url rewrite every sibling should use instead. Each copy gets an Upload
+// row scoped to exactly `allowedGroupIds` (with the posting user as its
+// uploader), so /uploads/* serves it to those groups' members only.
 //
 // Plain /uploads/* urls already in `urls` are left out of the returned map
-// entirely — they're already group-agnostic, nothing to copy.
+// entirely — their audience is set by bindAssetsToScope, nothing to copy.
 export async function copyMediaAssetsToUploads(
   urls: string[],
-  allowedGroupIds: string[]
+  allowedGroupIds: string[],
+  uploaderId: string
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
   const writtenPaths: string[] = [];
@@ -87,6 +91,7 @@ export async function copyMediaAssetsToUploads(
         throw new CrossPostAssetCopyError('unavailable');
       }
 
+      await recordServerCopy(`/uploads/${filename}`, uploaderId, allowedGroupIds);
       result.set(url, `/uploads/${filename}`);
     }
   } catch (err) {

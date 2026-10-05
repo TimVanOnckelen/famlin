@@ -210,10 +210,11 @@ export async function buildApp() {
 
     // Authenticated is not the same as authorized: a Circle-scoped photo must
     // be unreadable to group members outside that circle even when they have
-    // the exact URL (see the Upload model in schema.prisma). canReadUpload
-    // resolves every rendition — display copy, -thumbnail, video poster, HEIC
-    // rendition — back to one Upload row, and returns true for the uploads
-    // that predate that table so existing media keeps working untouched.
+    // the exact URL, and so must a group's photos to members of other groups
+    // (see the Upload model in schema.prisma). canReadUpload resolves every
+    // rendition — display copy, -thumbnail, video poster, HEIC rendition —
+    // back to one Upload row, and returns true for the uploads that predate
+    // that table so existing media keeps working untouched.
     //
     // 404 rather than 403: whether a given file exists is itself information
     // a non-member shouldn't get, and it matches how a missing file behaves.

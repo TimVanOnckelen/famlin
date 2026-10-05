@@ -5,7 +5,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { buildTestApp, createUser, authHeader } from './helpers.js';
 import { uploadsDir } from '../src/config.js';
-import { bindAssetsToScope } from '../src/services/uploads.js';
+import { bindAssetsToScope, SERVER_WIDE } from '../src/services/uploads.js';
 
 function buildMultipartBody(filename: string, contentType: string, data: Buffer) {
   const boundary = '----FamlinGuardBoundary';
@@ -61,9 +61,9 @@ describe('/uploads/ auth guard — non-canonical paths', () => {
     // A freshly uploaded file is "unbound" and readable only by its uploader
     // until it's attached to a post/comment/avatar (see services/uploads.ts).
     // These cases are about PATH NORMALIZATION on an ordinary family photo,
-    // so bind it family-wide here rather than have every case read as the
+    // so bind it server-wide here rather than have every case read as the
     // uploader — that keeps them testing the hook, not the upload scope.
-    await bindAssetsToScope([url], null, uploader.id);
+    await bindAssetsToScope([url], SERVER_WIDE, uploader.id);
   });
 
   afterAll(async () => {
