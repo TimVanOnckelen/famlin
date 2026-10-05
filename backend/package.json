@@ -51,7 +51,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/archiver": "^8.0.0",
-    "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^26.6.2",
     "@types/nodemailer": "^6.4.15",
