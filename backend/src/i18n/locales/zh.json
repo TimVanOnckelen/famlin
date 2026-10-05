@@ -96,7 +96,10 @@
     "storyExpired": "限时动态已过期",
     "invalidStoryImage": "限时动态照片必须是你新上传的图片",
     "storyReplyExists": "你已回复过这条限时动态",
-    "cannotReplyToOwnStory": "不能回复自己的限时动态"
+    "cannotReplyToOwnStory": "不能回复自己的限时动态",
+    "unknownBrandPreset": "未知的颜色预设",
+    "invalidLogo": "徽标必须是 PNG、JPEG 或 WebP 图片",
+    "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",
@@ -122,7 +125,8 @@
     "emailBody": "{{message}}\n\n请在 Famlin 应用中查看。",
     "newStory": "{{author}} 在 {{group}} 分享了限时动态",
     "storyReply": "{{author}} 回复了你的限时动态：“{{excerpt}}”",
-    "storyReaction": "{{author}} 用 {{emoji}} 回应了你在 {{group}} 的限时动态"
+    "storyReaction": "{{author}} 用 {{emoji}} 回应了你在 {{group}} 的限时动态",
+    "emailSubjectBranded": "{{name}} 有新动态"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} 分享了成长时刻：{{milestoneTag}}",
@@ -147,7 +151,8 @@
     "appStore": "在 App Store 下载",
     "playStore": "在 Google Play 下载",
     "hint": "还未安装应用？请询问家庭管理员如何安装，再次打开此链接即可。",
-    "hintWithStores": "还未安装应用？请在下方下载，再次打开此链接即可。"
+    "hintWithStores": "还未安装应用？请在下方下载，再次打开此链接即可。",
+    "pageTitleBranded": "加入 {{group}} · {{name}}"
   },
   "landing": {
     "pageTitle": "Famlin",

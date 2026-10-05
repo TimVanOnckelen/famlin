@@ -421,5 +421,45 @@
     "addMember": "加入圈子",
     "confirmDelete": "删除圈子“{{name}}”？",
     "confirmDeleteWithPosts": "删除圈子“{{name}}”？这会永久删除其中的 {{count}} 条动态及相关内容，之后无法查看或恢复。"
+  },
+  "branding": {
+    "title": "品牌",
+    "navStatus": "名称、颜色、徽标",
+    "desc": "让这台 Famlin 服务器在移动应用和网页应用中呈现你家庭专属的外观。",
+    "publicNote": "徽标和家庭名称对任何打开此服务器地址的人都可见。",
+    "name": "家庭名称",
+    "nameHint": "显示在应用顶部和登录界面，并用作推送通知和电子邮件的标题。留空则保持“Famlin”。",
+    "color": "颜色",
+    "custom": "自定义",
+    "customColor": "自定义颜色（十六进制）",
+    "invalidColor": "请输入 6 位十六进制颜色，例如 #006e94。",
+    "adjusted": "{{from}} 对白色文字来说太浅，因此会加深为 {{to}} 以保持可读性。",
+    "shifted": "为了与你的品牌颜色区分开，这些帖子颜色也会随之改变：{{families}}。",
+    "logo": "徽标",
+    "uploadLogo": "上传徽标",
+    "replaceLogo": "更换徽标",
+    "removeLogo": "移除",
+    "uploading": "正在上传…",
+    "logoHint": "PNG、JPEG 或 WebP，最大 5 MB。正方形图片效果最佳。也会用作网页应用的浏览器图标。",
+    "preview": "预览",
+    "previewButton": "发布",
+    "appliesHint": "移动应用会在下次启动时应用更改。",
+    "families": {
+      "family": "家庭",
+      "circle": "圈子",
+      "milestone": "里程碑",
+      "trip": "旅行"
+    },
+    "presets": {
+      "teal": "青绿",
+      "ocean": "海洋",
+      "indigo": "靛蓝",
+      "plum": "梅紫",
+      "rose": "玫瑰",
+      "coral": "珊瑚",
+      "amber": "琥珀",
+      "forest": "森林",
+      "slate": "石板"
+    }
   }
 }
