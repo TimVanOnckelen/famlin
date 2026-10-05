@@ -15,20 +15,6 @@ import i18n, { initI18nLanguage } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { InviteScreen } from '@/screens/InviteScreen';
-import { MainTabs } from '@/navigation/MainTabs';
-import { PostDetailScreen } from '@/screens/PostDetailScreen';
-import { TripDetailScreen } from '@/screens/TripDetailScreen';
-import { AlbumDetailScreen } from '@/screens/AlbumDetailScreen';
-import { NewPostScreen } from '@/screens/NewPostScreen';
-import { NotificationsScreen } from '@/screens/NotificationsScreen';
-import { FavoritesScreen } from '@/screens/FavoritesScreen';
-import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
-import { SearchScreen } from '@/screens/SearchScreen';
-import { ChatScreen } from '@/screens/ChatScreen';
-import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen';
-import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
-import { StoryViewerScreen } from '@/screens/StoryViewerScreen';
-import { StoryComposerScreen } from '@/screens/StoryComposerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
 import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client';
@@ -36,6 +22,7 @@ import { fetchMe } from '@/api/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
 import { ensureFreshMediaToken } from '@/api/uploads';
+import { areScreensLoaded, prepareBrandingForMainScreens } from '@/branding';
 
 const Stack = createNativeStackNavigator();
 const queryClient = new QueryClient({
@@ -77,6 +64,24 @@ function AppContent() {
   const { user, setAuth, clearSession, isLoading, loadToken } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
   const [pendingInvite, setPendingInvite] = useState<{ token: string; server?: string } | null>(null);
+  // Per-family branding (issue #164): the authenticated screens are only
+  // required once the brand for this server is applied (or known to be
+  // cached) — see src/branding/.
+  const [brandReady, setBrandReady] = useState(areScreensLoaded());
+
+  useEffect(() => {
+    if (!user || brandReady) return;
+    let cancelled = false;
+    getServerUrl()
+      .then((url) => (url ? prepareBrandingForMainScreens(url) : undefined))
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setBrandReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, brandReady]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -152,7 +157,7 @@ function AppContent() {
     bootstrap();
   }, []);
 
-  if (!fontsLoaded || initializing || isLoading) {
+  if (!fontsLoaded || initializing || isLoading || (user && !brandReady)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -185,113 +190,9 @@ function AppContent() {
         {!user ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="PostDetail"
-              component={PostDetailScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="TripDetail"
-              component={TripDetailScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="AlbumDetail"
-              component={AlbumDetailScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="NewPost"
-              component={NewPostScreen}
-              options={{
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-              }}
-            />
-            <Stack.Screen
-              name="Notifications"
-              component={NotificationsScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="Favorites"
-              component={FavoritesScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="GroupMembers"
-              component={GroupMembersScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="Search"
-              component={SearchScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="Chat"
-              component={ChatScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="ChatGroupPicker"
-              component={ChatGroupPickerScreen}
-              options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }}
-            />
-            <Stack.Screen
-              name="ImageViewer"
-              component={ImageViewerScreen}
-              options={{
-                presentation: 'fullScreenModal',
-                animation: 'fade',
-              }}
-            />
-            <Stack.Screen
-              name="StoryViewer"
-              component={StoryViewerScreen}
-              options={{
-                presentation: 'fullScreenModal',
-                animation: 'fade',
-              }}
-            />
-            <Stack.Screen
-              name="StoryComposer"
-              component={StoryComposerScreen}
-              options={{
-                presentation: 'fullScreenModal',
-                animation: 'slide_from_bottom',
-              }}
-            />
-          </>
+          // Required lazily — see AuthenticatedScreens.tsx.
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          (require('@/navigation/AuthenticatedScreens') as typeof import('@/navigation/AuthenticatedScreens')).renderAuthenticatedScreens(Stack)
         )}
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
-import { AppIcon } from '@/components/Logo';
+import { BrandLogo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { colors } from '@/constants/colors';
 
@@ -24,7 +24,7 @@ export function PhotoCollage() {
       </View>
       <View style={[styles.polaroid, styles.center]}>
         <View style={[styles.photo, styles.photoLarge]}>
-          <AppIcon size={44} />
+          <BrandLogo size={44} />
         </View>
       </View>
     </View>

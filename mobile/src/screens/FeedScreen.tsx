@@ -14,7 +14,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/constants/colors';
-import { Logo } from '@/components/Logo';
+import { BrandLogo } from '@/components/Logo';
+import { getBranding } from '@/branding';
 import { Icon } from '@/components/Icon';
 import { PostCard } from '@/components/PostCard';
 import { EmptyState } from '@/components/EmptyState';
@@ -33,6 +34,7 @@ const postKeyExtractor = (item: Post) => item.id;
 
 export function FeedScreen() {
   const { t } = useTranslation();
+  const brandName = getBranding()?.name ?? null;
   const navigation = useNavigation<any>();
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
@@ -139,15 +141,22 @@ export function FeedScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <Logo size={36} />
+        <BrandLogo size={36} />
 
         {/* Single family: show its name so the context stays clear — the
             filter row below only appears with more than one family. */}
         <View style={styles.headerTitleWrapper}>
-          {hasGroups && groups!.length === 1 && (
+          {hasGroups && groups!.length === 1 ? (
             <Text style={styles.headerGroupName} numberOfLines={1}>
               {groups![0].name}
             </Text>
+          ) : (
+            // Otherwise the family's name from the server's branding, if set.
+            !!brandName && (
+              <Text style={styles.headerGroupName} numberOfLines={1}>
+                {brandName}
+              </Text>
+            )
           )}
         </View>
 

@@ -19,7 +19,8 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 
 import { colors } from '@/constants/colors';
-import { Logo } from '@/components/Logo';
+import { BrandLogo } from '@/components/Logo';
+import { getBranding } from '@/branding';
 import { Icon } from '@/components/Icon';
 import { EmptyState } from '@/components/EmptyState';
 import { MediaThumbnail } from '@/components/MediaThumbnail';
@@ -127,6 +128,7 @@ const AlbumStripTile = React.memo(function AlbumStripTile({
 
 export function PhotosScreen() {
   const { t } = useTranslation();
+  const brandName = getBranding()?.name ?? null;
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
 
@@ -295,14 +297,14 @@ export function PhotosScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Logo size={36} />
-        {hasGroups && groups!.length === 1 && (
+        <BrandLogo size={36} />
+        {(hasGroups && groups!.length === 1) || !!brandName ? (
           <View style={styles.headerTitleWrapper}>
             <Text style={styles.headerGroupName} numberOfLines={1}>
-              {groups![0].name}
+              {hasGroups && groups!.length === 1 ? groups![0].name : brandName}
             </Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* Group filter chips */}

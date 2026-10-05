@@ -1,5 +1,9 @@
 import React from 'react';
+import { Image } from 'react-native';
 import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, G } from 'react-native-svg';
+import { getBrandingAssetUrl } from '@famlin/api-client';
+import { colors } from '@/constants/colors';
+import { getBranding, getBrandingServerUrl } from '@/branding';
 
 interface LogoProps {
   size?: number;
@@ -20,15 +24,15 @@ export function Logo({ size = 48 }: LogoProps) {
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
         <LinearGradient id={gradientId} x1="0%" y1="0%" x2="85%" y2="100%">
-          <Stop offset="0" stopColor="#318ea2" />
-          <Stop offset="1" stopColor="#005480" />
+          <Stop offset="0" stopColor={colors.primaryLight} />
+          <Stop offset="1" stopColor={colors.primaryDark} />
         </LinearGradient>
       </Defs>
       <Rect width={size} height={size} rx={radius} fill={`url(#${gradientId})`} />
       <G transform={`translate(${offset}, ${offset}) scale(${scale})`}>
         <Path d={HOUSE_PATH} fill="white" />
-        <Circle cx="24" cy="20.5" r="2.6" fill="#006e94" />
-        <Path d={DOOR_PATH} fill="#006e94" />
+        <Circle cx="24" cy="20.5" r="2.6" fill={colors.primary} />
+        <Path d={DOOR_PATH} fill={colors.primary} />
       </G>
     </Svg>
   );
@@ -36,4 +40,20 @@ export function Logo({ size = 48 }: LogoProps) {
 
 export function AppIcon({ size = 200 }: LogoProps) {
   return <Logo size={size} />;
+}
+
+// The family's own logo when branding sets one (issue #164), else the Famlin
+// house mark in the brand's colors. Same footprint either way. The product
+// itself (profile's "App" section) keeps using <Logo /> directly.
+export function BrandLogo({ size = 48 }: LogoProps) {
+  const branding = getBranding();
+  if (!branding?.logoUrl) return <Logo size={size} />;
+  return (
+    <Image
+      source={{ uri: getBrandingAssetUrl(branding.logoUrl, getBrandingServerUrl() ?? undefined) }}
+      style={{ width: size, height: size, borderRadius: size * 0.22 }}
+      resizeMode="contain"
+      accessibilityIgnoresInvertColors
+    />
+  );
 }

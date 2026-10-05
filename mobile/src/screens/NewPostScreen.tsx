@@ -90,11 +90,11 @@ const POST_TYPE_ICON_BG: Record<string, string> = {
 // Colors for the swappable type chip at the top of the compose step — one
 // palette per type, echoing the type-chooser row it was picked from.
 const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg: string; text: string }> = {
-  UPDATE: { bg: colors.updateBg, border: '#f0c3ac', iconBg: colors.accent, text: '#8a3f22' },
+  UPDATE: { bg: colors.updateBg, border: colors.updateBorder, iconBg: colors.accent, text: colors.updateText },
   MILESTONE: { bg: colors.milestoneBg, border: colors.milestoneDivider, iconBg: colors.milestone, text: colors.milestoneText },
-  POLL: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
+  POLL: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
-  ALBUM: { bg: colors.primaryTint, border: '#a9dced', iconBg: colors.primary, text: colors.primaryDark },
+  ALBUM: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
 };
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
