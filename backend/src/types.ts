@@ -367,6 +367,24 @@ export const updateServerSettingsBodySchema = z.object({
   localMediaPath: z.union([z.literal(''), z.string().regex(/^\//, 'Must be an absolute path').max(500)]).optional(),
 });
 
+// Per-family branding (issue #164, services/branding/). `color` is only
+// meaningful — and then required — with `preset: 'custom'`; it's the admin's
+// own input, stored as-is (derivation and the AA adjustment run at read time).
+const brandColorSchema = z.string().regex(/^#?[0-9a-fA-F]{6}$/);
+const brandingPaletteBodySchema = z.object({
+  preset: z.string().min(1).max(40),
+  color: brandColorSchema.nullable().optional(),
+});
+const refineBranding = <T extends { preset: string; color?: string | null }>(v: T, ctx: z.RefinementCtx) => {
+  if (v.preset === 'custom' && !v.color) {
+    ctx.addIssue({ code: 'custom', path: ['color'], message: 'Required for a custom color' });
+  }
+};
+export const brandingPreviewBodySchema = brandingPaletteBodySchema.superRefine(refineBranding);
+export const updateBrandingBodySchema = brandingPaletteBodySchema
+  .extend({ name: z.string().max(40).default('') })
+  .superRefine(refineBranding);
+
 export const testImmichConnectionBodySchema = z.object({
   serverUrl: z.string().url(),
   apiKey: z.string().min(1),

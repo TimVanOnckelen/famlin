@@ -10,6 +10,7 @@ import pkg from '../../package.json' with { type: 'json' };
 import { prisma } from '../db.js';
 import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getOidcSettings, getAllSettings } from '../services/settings.js';
+import { getBranding } from '../services/branding/index.js';
 import { getValidInvite, consumeInvite } from '../services/invites.js';
 import { completeOidcLogin } from '../services/oidcLogin.js';
 import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js';
@@ -796,6 +797,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       appStoreUrl: settings.appStoreUrl || null,
       playStoreUrl: settings.playStoreUrl || null,
       readOnly: config.READ_ONLY,
+      // Per-family branding (issue #164), or null when unbranded. Additive:
+      // older clients ignore it. `hash` lets mobile detect a change cheaply.
+      branding: await getBranding(),
     };
   });
 }

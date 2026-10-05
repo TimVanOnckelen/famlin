@@ -2,6 +2,7 @@ import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { prisma } from '../../db.js';
 import i18n from '../../i18n/index.js';
 import type { ChannelSendArgs, NotificationChannel, NotifyType, Recipient } from './types.js';
+import { resolveBrandSettings } from '../branding/index.js';
 
 const expo = new Expo();
 
@@ -52,7 +53,10 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
   let failureCount = 0;
 
   if (validTokens.length > 0) {
-    const pushTitle = i18n.getFixedT(settings.defaultLanguage)('notifications.pushTitle');
+    // The family name, when the admin set one (issue #164) — server-side, so
+    // already-installed app versions show it too.
+    const pushTitle =
+      resolveBrandSettings(settings).name || i18n.getFixedT(settings.defaultLanguage)('notifications.pushTitle');
     const messages: ExpoPushMessage[] = validTokens.map((t) => ({
       to: t.token,
       sound: 'default',

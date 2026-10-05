@@ -18,7 +18,16 @@ export {
   setLanguageResolver,
 } from './client';
 
-export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo } from './auth';
+export type {
+  LoginResponse,
+  OidcConfig,
+  NotificationPrefs,
+  UpdateMeBody,
+  ServerInfo,
+  Branding,
+  BrandPalette,
+  BrandSemantic,
+} from './auth';
 export {
   fetchOidcConfig,
   loginWithOidc,
@@ -30,6 +39,7 @@ export {
   updateMe,
   fetchNotificationConfig,
   fetchServerInfo,
+  getBrandingAssetUrl,
   changePassword,
   deleteAccount,
   downloadMyExport,

@@ -21,6 +21,8 @@ import {
   PostPushResendResult,
   PushDeliveryLog,
   Circle,
+  AdminBranding,
+  DerivedBrand,
 } from '../types';
 
 export type {
@@ -45,6 +47,8 @@ export type {
   PostPushResendResult,
   PushDeliveryLog,
   Circle,
+  AdminBranding,
+  DerivedBrand,
 };
 
 export class ApiError extends Error {
@@ -333,6 +337,33 @@ export const api = {
   },
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
+
+  getBranding: () => request<AdminBranding>('/api/admin/branding'),
+
+  updateBranding: (data: { preset: string; color: string | null; name: string }) =>
+    request<AdminBranding>('/api/admin/branding', { method: 'PUT', body: data }),
+
+  previewBranding: (data: { preset: string; color: string | null }) =>
+    request<DerivedBrand>('/api/admin/branding/preview', { method: 'POST', body: data }),
+
+  // Multipart, so not through request() — see restoreBackup above.
+  uploadBrandingLogo: async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const token = getToken();
+    const res = await fetch('/api/admin/branding/logo', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code);
+    }
+    return res.json() as Promise<AdminBranding>;
+  },
+
+  deleteBrandingLogo: () => request<AdminBranding>('/api/admin/branding/logo', { method: 'DELETE' }),
 
   updateSettings: (data: Partial<ServerSettings>) =>
     request<ServerSettings>('/api/admin/settings', { method: 'PATCH', body: data }),

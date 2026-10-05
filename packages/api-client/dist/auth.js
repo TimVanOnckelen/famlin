@@ -9,6 +9,7 @@ exports.loginWithPassword = loginWithPassword;
 exports.fetchMe = fetchMe;
 exports.updateMe = updateMe;
 exports.fetchNotificationConfig = fetchNotificationConfig;
+exports.getBrandingAssetUrl = getBrandingAssetUrl;
 exports.fetchServerInfo = fetchServerInfo;
 exports.deleteAccount = deleteAccount;
 exports.downloadMyExport = downloadMyExport;
@@ -64,6 +65,11 @@ async function updateMe(data) {
 async function fetchNotificationConfig() {
     const response = await client_1.api.get('/auth/notification-config');
     return response.data;
+}
+// Absolute URL for a branding asset path, for clients (mobile) that don't
+// share the server's origin. Branding assets are public — no media token.
+function getBrandingAssetUrl(path, serverUrl = (0, client_1.getCurrentServerUrl)()) {
+    return serverUrl ? `${serverUrl.replace(/\/+$/, '')}${path}` : path;
 }
 async function fetchServerInfo() {
     const response = await client_1.api.get('/auth/server-info');

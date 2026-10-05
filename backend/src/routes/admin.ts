@@ -34,7 +34,21 @@ import {
   adminUpdateCircleBodySchema,
   circleMemberBodySchema,
   adminStoriesQuerySchema,
+  brandingPreviewBodySchema,
+  updateBrandingBodySchema,
 } from '../types.js';
+import {
+  BRAND_PRESETS,
+  BrandingError,
+  CUSTOM_PRESET,
+  MAX_LOGO_BYTES,
+  deleteLogo,
+  derivePalette,
+  getAdminBranding,
+  saveBrandSettings,
+  saveLogo,
+  seedFor,
+} from '../services/branding/index.js';
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
 import { buildExportArchive } from '../services/export.js';
 import { getT } from '../i18n/index.js';
@@ -954,6 +968,69 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const body = updateServerSettingsBodySchema.parse(request.body);
     return updateSettings(body);
+  });
+
+  // Per-family branding (issue #164, services/branding/). One brand per
+  // server; the palette is derived server-side so mobile and web can't drift.
+  fastify.get('/branding', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    return getAdminBranding();
+  });
+
+  fastify.put('/branding', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    const body = updateBrandingBodySchema.parse(request.body);
+    if (body.preset !== CUSTOM_PRESET && !(body.preset in BRAND_PRESETS)) {
+      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') });
+    }
+    return saveBrandSettings({
+      preset: body.preset,
+      color: body.preset === CUSTOM_PRESET ? body.color : null,
+      name: body.name,
+    });
+  });
+
+  // Live preview for the settings page: what a preset/custom color would
+  // derive to (contrast adjustment + semantic shifts), without saving.
+  fastify.post('/branding/preview', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    const body = brandingPreviewBodySchema.parse(request.body);
+    if (body.preset !== CUSTOM_PRESET && !(body.preset in BRAND_PRESETS)) {
+      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') });
+    }
+    return derivePalette(seedFor(body.preset, body.color ?? null));
+  });
+
+  fastify.post('/branding/logo', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    const t = getT(request);
+    if (!request.isMultipart()) {
+      return reply.status(400).send({ error: t('errors.invalidLogo') });
+    }
+
+    let buffer: Buffer;
+    try {
+      const file = await request.file({ limits: { fileSize: MAX_LOGO_BYTES, files: 1 } });
+      if (!file) return reply.status(400).send({ error: t('errors.invalidLogo') });
+      buffer = await file.toBuffer();
+    } catch (err: any) {
+      if (err?.code === 'FST_REQ_FILE_TOO_LARGE') {
+        return reply.status(400).send({ error: t('errors.logoTooLarge') });
+      }
+      throw err;
+    }
+
+    try {
+      return await saveLogo(buffer);
+    } catch (err) {
+      if (err instanceof BrandingError) return reply.status(400).send({ error: t(err.key) });
+      throw err;
+    }
+  });
+
+  fastify.delete('/branding/logo', async (request, reply) => {
+    if (requireAdmin(request, reply)) return;
+    return deleteLogo();
   });
 
   // Media integrations: each provider is one server-level connection

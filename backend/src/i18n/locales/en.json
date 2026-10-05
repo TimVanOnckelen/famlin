@@ -96,7 +96,10 @@
     "storyExpired": "This story has expired",
     "invalidStoryImage": "The story photo must be a new upload of your own",
     "storyReplyExists": "You already replied to this story",
-    "cannotReplyToOwnStory": "You can't reply to your own story"
+    "cannotReplyToOwnStory": "You can't reply to your own story",
+    "unknownBrandPreset": "Unknown color preset",
+    "invalidLogo": "The logo must be a PNG, JPEG or WebP image",
+    "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -122,7 +125,8 @@
     "emailBody": "{{message}}\n\nView it in the Famlin app.",
     "newStory": "{{author}} shared a story in {{group}}",
     "storyReply": "{{author}} replied to your story: \"{{excerpt}}\"",
-    "storyReaction": "{{author}} reacted {{emoji}} to your story in {{group}}"
+    "storyReaction": "{{author}} reacted {{emoji}} to your story in {{group}}",
+    "emailSubjectBranded": "New activity in {{name}}"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} shared a milestone: {{milestoneTag}}",
@@ -147,7 +151,8 @@
     "appStore": "Download on the App Store",
     "playStore": "Get it on Google Play",
     "hint": "Don't have the app yet? Ask your family admin how to install it, then tap this link again.",
-    "hintWithStores": "Don't have the app yet? Download it below, then tap this link again."
+    "hintWithStores": "Don't have the app yet? Download it below, then tap this link again.",
+    "pageTitleBranded": "Join {{group}} · {{name}}"
   },
   "landing": {
     "pageTitle": "Famlin",

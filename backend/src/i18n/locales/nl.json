@@ -96,7 +96,10 @@
     "storyExpired": "Dit verhaal is verlopen",
     "invalidStoryImage": "De foto van een verhaal moet een nieuwe upload van jezelf zijn",
     "storyReplyExists": "Je hebt al op dit verhaal gereageerd",
-    "cannotReplyToOwnStory": "Je kunt niet op je eigen verhaal reageren"
+    "cannotReplyToOwnStory": "Je kunt niet op je eigen verhaal reageren",
+    "unknownBrandPreset": "Onbekende kleurvoorinstelling",
+    "invalidLogo": "Het logo moet een PNG-, JPEG- of WebP-afbeelding zijn",
+    "logoTooLarge": "Het logo is te groot (max. 5 MB, 4096×4096 px)"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -122,7 +125,8 @@
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app.",
     "newStory": "{{author}} deelde een verhaal in {{group}}",
     "storyReply": "{{author}} reageerde op je verhaal: \"{{excerpt}}\"",
-    "storyReaction": "{{author}} reageerde met {{emoji}} op je verhaal in {{group}}"
+    "storyReaction": "{{author}} reageerde met {{emoji}} op je verhaal in {{group}}",
+    "emailSubjectBranded": "Nieuwe activiteit bij {{name}}"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} deelde een mijlpaal: {{milestoneTag}}",
@@ -147,7 +151,8 @@
     "appStore": "Downloaden in de App Store",
     "playStore": "Ophalen via Google Play",
     "hint": "Heb je de app nog niet? Vraag je familiebeheerder hoe je die installeert en tik daarna nogmaals op deze link.",
-    "hintWithStores": "Heb je de app nog niet? Download hem hieronder en tik daarna nogmaals op deze link."
+    "hintWithStores": "Heb je de app nog niet? Download hem hieronder en tik daarna nogmaals op deze link.",
+    "pageTitleBranded": "Word lid van {{group}} · {{name}}"
   },
   "landing": {
     "pageTitle": "Famlin",

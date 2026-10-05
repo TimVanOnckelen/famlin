@@ -41,6 +41,7 @@ import fs from 'fs';
 import { prisma } from '../db.js';
 import { uploadsDir } from '../config.js';
 import { uploadAssetKey } from './uploads.js';
+import { BRANDING_SETTING_KEYS } from './branding/index.js';
 import pkg from '../../package.json' with { type: 'json' };
 import { RESTORE_WORKDIR_PREFIX } from './import.js';
 
@@ -120,6 +121,13 @@ export async function buildExportArchive(): Promise<Archiver> {
     }),
     prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
   ]);
+  // Per-family branding is family identity, not server config: its Setting
+  // rows travel with the archive (the logo files ride along in
+  // uploads/branding/ below). Every other Setting row stays excluded.
+  const branding = await prisma.setting.findMany({
+    where: { key: { in: [...BRANDING_SETTING_KEYS] } },
+    select: { key: true, value: true },
+  });
 
   const archive: Archiver = new ZipArchive({ store: true });
 
@@ -141,6 +149,7 @@ export async function buildExportArchive(): Promise<Archiver> {
       mediaPersonLinks: mediaPersonLinks.length,
       uploads: uploads.length,
       highlights: highlights.length,
+      branding: branding.length,
     },
   };
 
@@ -158,6 +167,7 @@ export async function buildExportArchive(): Promise<Archiver> {
   archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' });
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' });
   archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' });
+  archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' });
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)

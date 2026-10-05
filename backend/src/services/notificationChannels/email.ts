@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import i18n from '../../i18n/index.js';
 import { getAllSettings } from '../settings.js';
 import type { NotificationChannel, NotifyType, Recipient } from './types.js';
+import { resolveBrandSettings } from '../branding/index.js';
 
 // Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
 // reuse the closest existing preference column, see the note there.
@@ -52,7 +53,10 @@ export const emailChannel: NotificationChannel = {
     if (!transporter) return;
 
     const t = i18n.getFixedT(settings.defaultLanguage);
-    const subject = t('notifications.emailSubject');
+    const brandName = resolveBrandSettings(settings).name;
+    const subject = brandName
+      ? t('notifications.emailSubjectBranded', { name: brandName })
+      : t('notifications.emailSubject');
     const body = t('notifications.emailBody', { message });
 
     // Send in parallel so one slow/hanging recipient doesn't serialize the rest.

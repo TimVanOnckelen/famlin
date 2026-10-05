@@ -10,6 +10,8 @@ import { createReadStream } from 'fs';
 import { ZodError } from 'zod';
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import { canReadUpload } from './services/uploads.js';
+import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js';
+import { injectBrandingIntoHtml } from './services/branding/css.js';
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { requestPathname } from './utils/requestPath.js';
@@ -185,9 +187,14 @@ export async function buildApp() {
     // feature — it's never served today, regardless of auth. The generated
     // HEIC renditions below are internal too: they're served under the
     // original upload's URL, never their own.
+    //
+    // The branding logo renditions live in uploads/branding/ for the volume
+    // and export, but they're public and served at /branding/* only — never
+    // through the auth-gated uploads path (and no Upload row exists for them).
     if (
       pathname.startsWith('/uploads/originals/') ||
-      pathname.startsWith(`/uploads/${DERIVED_DIR_NAME}/`)
+      pathname.startsWith(`/uploads/${DERIVED_DIR_NAME}/`) ||
+      pathname.startsWith(`/uploads/${BRANDING_DIR_NAME}/`)
     ) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') });
     }
@@ -237,6 +244,30 @@ export async function buildApp() {
   await fastify.register(staticPlugin, {
     root: uploadsDir,
     prefix: '/uploads/',
+  });
+
+  // Per-family branding logo + favicon (issue #164). Public on purpose: the
+  // login page shows them before anyone has a session — the admin UI warns
+  // the admin. Content-addressed file names (services/branding/), so they're
+  // cached forever; a new logo is a new URL.
+  fastify.get('/branding/:file', async (request, reply) => {
+    const { file } = request.params as { file: string };
+    if (!BRANDING_FILE_RE.test(file)) {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+    }
+    const filePath = path.join(brandingDir, file);
+    let size: number;
+    try {
+      size = (await fs.stat(filePath)).size;
+    } catch {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+    }
+    return reply
+      .header('content-type', 'image/png')
+      .header('content-length', String(size))
+      .header('cache-control', 'public, max-age=31536000, immutable')
+      .header('cross-origin-resource-policy', 'cross-origin')
+      .send(createReadStream(filePath));
   });
 
   // Read-only mode must be registered before auth routes so it can intercept
@@ -296,6 +327,17 @@ export async function buildApp() {
   // fall back to the original server-rendered landing page instead.
   const webDir = path.join(process.cwd(), 'dist', 'web');
   let webServed = false;
+  // The web SPA's index.html, with the family's branding (CSS token
+  // overrides, <title>, favicon) injected server-side so a branded server
+  // never flashes the default look before /server-info resolves. Read per
+  // request (it's small) so `vite build --watch` rebuilds are picked up.
+  const sendWebIndex = async (reply: import('fastify').FastifyReply) => {
+    const html = await fs.readFile(path.join(webDir, 'index.html'), 'utf8');
+    return reply
+      .type('text/html; charset=utf-8')
+      .header('cache-control', 'no-cache')
+      .send(injectBrandingIntoHtml(html, await getBranding()));
+  };
   try {
     // Check for index.html, not just the directory: the dev compose overlay
     // bind-mounts ./backend/dist/web, which creates an EMPTY directory on
@@ -307,11 +349,12 @@ export async function buildApp() {
       root: webDir,
       prefix: '/',
       decorateReply: false,
+      // index.html is never served raw: sendWebIndex() injects the brand.
+      index: false,
     });
 
-    fastify.get('/', async (_request, reply) => {
-      return reply.sendFile('index.html', webDir);
-    });
+    fastify.get('/', async (_request, reply) => sendWebIndex(reply));
+    fastify.get('/index.html', async (_request, reply) => sendWebIndex(reply));
 
     fastify.log.info('Web app served at /');
   } catch {
@@ -335,7 +378,7 @@ export async function buildApp() {
       !url.startsWith('/uploads/') &&
       !url.startsWith('/admin')
     ) {
-      return reply.sendFile('index.html', webDir);
+      return sendWebIndex(reply);
     }
     return reply.status(404).send({ error: getT(request)('errors.notFound') });
   });

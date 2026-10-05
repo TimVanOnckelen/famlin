@@ -2,13 +2,18 @@ import { FastifyInstance } from 'fastify';
 import { getValidInvite } from '../services/invites.js';
 import { getSetting } from '../services/settings.js';
 import i18n from '../i18n/index.js';
-import { escapeHtml, htmlPage as page } from '../utils/html-page.js';
+import { escapeHtml, htmlPage } from '../utils/html-page.js';
+import { getBranding } from '../services/branding/index.js';
 
 export default async function inviteLandingRoutes(fastify: FastifyInstance) {
   fastify.get('/invite/:token', async (request, reply) => {
     const { token } = request.params as { token: string };
     const lang = await getSetting('defaultLanguage');
     const t = i18n.getFixedT(lang);
+    // Fully branded (issue #164): this is the page people see in a chat
+    // link preview, so it carries the family's name, logo and colors.
+    const branding = await getBranding();
+    const page = (l: typeof lang, title: string, body: string) => htmlPage(l, title, body, branding);
 
     const { invite, reason } = await getValidInvite(token);
 
@@ -66,7 +71,9 @@ export default async function inviteLandingRoutes(fastify: FastifyInstance) {
     reply.type('text/html');
     return page(
       lang,
-      t('inviteLanding.pageTitle', { group: invite.group.name }),
+      branding?.name
+        ? t('inviteLanding.pageTitleBranded', { group: invite.group.name, name: branding.name })
+        : t('inviteLanding.pageTitle', { group: invite.group.name }),
       `<h1>${intro}</h1>
       <p>${t('inviteLanding.subtitle')}</p>
       <a class="button" href="${appLink}">${t('inviteLanding.openButton')}</a>

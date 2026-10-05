@@ -219,6 +219,53 @@ export interface ServerInfo {
   version: string;
 }
 
+// Per-family branding (issue #164). The palette is derived server-side; the
+// admin UI only previews what the server computes.
+export type BrandSemanticFamily = 'circle' | 'milestone' | 'trip';
+
+export interface DerivedBrand {
+  seed: string;
+  palette: {
+    primary: string;
+    primaryDark: string;
+    primaryLight: string;
+    primaryTint: string;
+    bg: string;
+    loginBgFrom: string;
+    loginBgTo: string;
+  };
+  semantic: Record<
+    | 'accent'
+    | 'updateBg'
+    | 'circle'
+    | 'circleDark'
+    | 'circleTint'
+    | 'milestone'
+    | 'milestoneBg'
+    | 'milestoneText'
+    | 'milestoneDivider'
+    | 'trip'
+    | 'tripDark'
+    | 'tripBg'
+    | 'tripTint'
+    | 'tripBorder',
+    string
+  >;
+  // True when the seed failed WCAG AA for white text and was darkened.
+  adjusted: boolean;
+  shifted: BrandSemanticFamily[];
+}
+
+export interface AdminBranding {
+  preset: string;
+  color: string | null;
+  name: string;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  presets: { id: string; color: string }[];
+  derived: DerivedBrand;
+}
+
 // A smaller, reusable audience inside one Group ("Grandparents", "Cousins").
 // Circles narrow group membership; they never widen it, so every circle
 // member is already a group member. Admin responses list every circle in the

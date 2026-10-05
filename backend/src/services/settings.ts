@@ -37,6 +37,14 @@ export interface ServerSettings {
   immichServerUrl: string;
   immichApiKey: string;
   localMediaPath: string;
+  // Per-family branding (services/branding/). Deliberately not writable via
+  // PATCH /api/admin/settings — only the validated /api/admin/branding routes
+  // set these.
+  brandPreset: string;
+  brandColor: string;
+  brandName: string;
+  // Content hash of the current logo renditions (uploadsDir/branding/), or ''.
+  brandLogo: string;
 }
 
 const SETTING_KEYS: (keyof ServerSettings)[] = [
@@ -60,6 +68,10 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'immichServerUrl',
   'immichApiKey',
   'localMediaPath',
+  'brandPreset',
+  'brandColor',
+  'brandName',
+  'brandLogo',
 ];
 
 function serializeValue(key: keyof ServerSettings, value: unknown): string {
@@ -135,6 +147,10 @@ async function loadAllSettings(): Promise<ServerSettings> {
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
+    brandPreset: parseValue('brandPreset', map.get('brandPreset') || ''),
+    brandColor: parseValue('brandColor', map.get('brandColor') || ''),
+    brandName: parseValue('brandName', map.get('brandName') || ''),
+    brandLogo: parseValue('brandLogo', map.get('brandLogo') || ''),
   };
 }
 
@@ -164,6 +180,12 @@ export async function updateSettings(partial: Partial<ServerSettings>) {
 
   settingsCache = null;
   return getAllSettings();
+}
+
+// For writers that bypass updateSettings() (the archive restore in
+// services/import.ts writes branding rows inside its own transaction).
+export function invalidateSettingsCache() {
+  settingsCache = null;
 }
 
 // Test-only escape hatch: the cache above is keyed purely on wall-clock time,
