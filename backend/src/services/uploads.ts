@@ -25,7 +25,22 @@ export function uploadAssetKey(pathOrFilename: string): string {
   return stem.endsWith(THUMBNAIL_SUFFIX) ? stem.slice(0, -THUMBNAIL_SUFFIX.length) : stem;
 }
 
-type UploadRow = { assetKey: string; uploaderId: string | null; circleId: string | null; bound: boolean };
+type UploadRow = {
+  assetKey: string;
+  uploaderId: string | null;
+  circleId: string | null;
+  bound: boolean;
+  groupIds: string[];
+  serverWide: boolean;
+};
+
+// Who an upload is for, as set by the site that attaches it:
+//   - a group scope: members of any of `groupIds` (every cross-post target),
+//     narrowed to one circle's members when `circleId` is set;
+//   - SERVER_WIDE: any authenticated user. Only user avatars use this — they
+//     show up in every group their owner belongs to.
+export type UploadScope = { groupIds: string[]; circleId?: string | null } | typeof SERVER_WIDE;
+export const SERVER_WIDE = 'server-wide' as const;
 
 // Every /uploads/ request pays this lookup, so the rows are cached and
 // invalidated on write (the getAllSettings pattern) rather than given a TTL:
@@ -54,7 +69,7 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
   if (rowCache.has(assetKey)) return rowCache.get(assetKey) ?? null;
   const row = await prisma.upload.findUnique({
     where: { assetKey },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true },
+    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true },
   });
   cacheRow(assetKey, row);
   return row;
@@ -62,20 +77,35 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
 
 // Can `userId` read the file at this /uploads/ path?
 //
-//   - no row at all -> yes. Uploads predating the Upload table have no row,
-//     and enforcement is deliberately forward-looking with no backfill, so
-//     existing deployments keep serving their media unchanged.
+//   - no row at all -> yes. Uploads predating the Upload table have no row
+//     and keep serving unchanged until a backfill gives them one (#184
+//     step 5 — failing closed here is a separate release, so a reference
+//     the backfill misses can't break live media).
 //   - circle-scoped -> only members of that circle. A dangling circleId (the
 //     circle was deleted) matches nobody, which is the intended fail-closed
 //     behaviour: a deleted circle's media must not revert to family-wide.
 //   - unbound       -> only the uploader. This is a composer draft that was
 //     never attached to a post, comment, message or avatar.
-//   - otherwise     -> any authenticated user, exactly as before Circles.
+//   - server-wide   -> any authenticated user (avatars).
+//   - group-scoped  -> only current members of at least one of its groups,
+//     so removing someone from a group revokes their media access along
+//     with their post access. Membership is checked live (like
+//     isCircleMember), not cached, so revocation is immediate.
+//   - otherwise     -> any authenticated user: a legacy row bound before
+//     group scoping existed, pending the same backfill as no-row uploads.
 export async function canReadUpload(pathOrFilename: string, userId: string): Promise<boolean> {
   const row = await getUploadRow(uploadAssetKey(pathOrFilename));
   if (!row) return true;
   if (row.circleId) return isCircleMember(row.circleId, userId);
   if (!row.bound) return row.uploaderId === userId;
+  if (row.serverWide) return true;
+  if (row.groupIds.length > 0) {
+    const membership = await prisma.groupMember.findFirst({
+      where: { userId, groupId: { in: row.groupIds } },
+      select: { id: true },
+    });
+    return !!membership;
+  }
   return true;
 }
 
@@ -95,8 +125,8 @@ export async function recordUpload(assetPath: string, uploaderId: string): Promi
 // THE single place an upload's audience is set. Called from every site that
 // attaches an upload to something a user can see — post create/edit, comment
 // create, chat message, avatar, circle avatar, and the trip check-in / album
-// photo interactions. Passing circleId null means "whole family", which is
-// what every non-circle attach site does.
+// photo interactions — with the group(s) the thing it's attached to lives in
+// (every sibling's group for a cross-post), plus its circle if it has one.
 //
 // An upload's audience is set exactly once, by its own uploader, when it is
 // first attached: only rows that are still unbound AND were uploaded by
@@ -105,17 +135,20 @@ export async function recordUpload(assetPath: string, uploaderId: string): Promi
 // a photo's URL could re-scope it — widen a circle-private photo to the whole
 // server (e.g. by setting it as their avatar after being removed from the
 // circle) or narrow someone else's family photo into a circle to hide it.
-// Referencing an already-bound upload again (re-sharing, editing a post that
-// keeps its photos) leaves its existing audience as-is, which can only fail
-// closed: a circle photo reused elsewhere stays circle-only.
+// Referencing an already-bound upload again leaves its audience as-is, with
+// one exception: the uploader re-sharing their own group-scoped photo into
+// another group's post/comment/chat ADDS that group (never replaces), so the
+// new audience can see it. Nothing else widens — a circle photo reused
+// elsewhere stays circle-only, a group photo set as an avatar doesn't become
+// server-wide, and a legacy row with no groups (currently readable by
+// everyone) isn't touched, since giving it one group would narrow it.
 //
-// Assets with no Upload row (server-side copies made by
-// services/media/copyAsset.ts, or uploads predating the table) are simply
-// not matched by the updateMany and stay on the legacy path — circle posts
-// are single-group only, so copyAsset never runs for one.
+// Assets with no Upload row (uploads predating the table) are simply not
+// matched and stay on the legacy path. Server-side copies made by
+// services/media/copyAsset.ts get their row from recordServerCopy below.
 export async function bindAssetsToScope(
   assetPaths: (string | null | undefined)[],
-  circleId: string | null,
+  scope: UploadScope,
   uploaderId: string,
   tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
 ): Promise<void> {
@@ -124,9 +157,46 @@ export async function bindAssetsToScope(
 
   await tx.upload.updateMany({
     where: { assetKey: { in: assetKeys }, uploaderId, bound: false },
-    data: { bound: true, circleId },
+    data: scopeData(scope),
   });
+
+  if (scope !== SERVER_WIDE && !scope.circleId) {
+    // One update per group keeps groupIds duplicate-free: a post edit
+    // re-binds every photo it keeps, with groups the rows already carry.
+    for (const groupId of new Set(scope.groupIds)) {
+      await tx.upload.updateMany({
+        where: {
+          assetKey: { in: assetKeys },
+          uploaderId,
+          bound: true,
+          circleId: null,
+          serverWide: false,
+          NOT: [{ groupIds: { isEmpty: true } }, { groupIds: { has: groupId } }],
+        },
+        data: { groupIds: { push: groupId } },
+      });
+    }
+  }
   invalidateUploadCache(assetKeys);
+}
+
+function scopeData(scope: UploadScope) {
+  return scope === SERVER_WIDE
+    ? { bound: true, serverWide: true, circleId: null, groupIds: [] }
+    : { bound: true, serverWide: false, circleId: scope.circleId ?? null, groupIds: [...new Set(scope.groupIds)] };
+}
+
+// Gives a file the server wrote itself (a cross-posted linked-album asset
+// copied by services/media/copyAsset.ts) an already-bound row scoped to the
+// groups it was copied for, so it doesn't take the no-row legacy path.
+export async function recordServerCopy(assetPath: string, uploaderId: string, groupIds: string[]): Promise<void> {
+  const assetKey = uploadAssetKey(assetPath);
+  await prisma.upload.upsert({
+    where: { assetKey },
+    create: { assetKey, uploaderId, ...scopeData({ groupIds }) },
+    update: {},
+  });
+  invalidateUploadCache([assetKey]);
 }
 
 // Is this upload a fresh, never-attached file that `userId` uploaded
@@ -172,7 +242,7 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
   invalidateUploadCache([assetKey]);
 }
 
-// Atomically binds one fresh upload to `circleId` on behalf of its uploader,
+// Atomically binds one fresh upload to `scope` on behalf of its uploader,
 // reporting whether it did. Unlike bindAssetsToScope (which silently leaves
 // an already-bound or someone else's upload alone), a caller that needs the
 // upload to be exclusively its own — a Story, whose photo is deleted from
@@ -181,13 +251,13 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
 export async function claimUnboundUpload(
   assetPath: string,
   uploaderId: string,
-  circleId: string | null,
+  scope: UploadScope,
   tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
 ): Promise<boolean> {
   const assetKey = uploadAssetKey(assetPath);
   const { count } = await tx.upload.updateMany({
     where: { assetKey, uploaderId, bound: false },
-    data: { bound: true, circleId },
+    data: scopeData(scope),
   });
   invalidateUploadCache([assetKey]);
   return count === 1;

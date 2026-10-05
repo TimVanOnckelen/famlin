@@ -606,10 +606,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     });
 
     // The circle's own avatar is readable by anyone who can see the circle,
-    // so it binds family-wide rather than to the circle itself — scoping it
-    // to the circle would be circular (you'd need to be a member to load the
-    // picture identifying the circle).
-    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
+    // so it binds to the circle's group rather than to the circle itself —
+    // scoping it to the circle would be circular (you'd need to be a member
+    // to load the picture identifying the circle).
+    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [id] }, request.user!.id);
 
     const { _count, ...rest } = circle;
     return { ...rest, memberCount: _count.members, postCount: _count.posts };
@@ -633,7 +633,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         include: { _count: { select: { members: true, posts: true } } },
       });
 
-      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], null, request.user!.id);
+      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [circle.groupId] }, request.user!.id);
 
       const { _count, ...rest } = circle;
       return { ...rest, memberCount: _count.members, postCount: _count.posts };

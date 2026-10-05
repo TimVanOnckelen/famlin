@@ -155,7 +155,7 @@ describe('POST /api/auth/setup/restore', () => {
     const liveKey = crypto.randomUUID();
     fs.writeFileSync(path.join(uploadsDir, `${highlightKey}.jpg`), 'highlight-bytes');
     fs.writeFileSync(path.join(uploadsDir, `${liveKey}.jpg`), 'live-bytes');
-    await prisma.upload.create({ data: { assetKey: highlightKey, uploaderId: admin.id, bound: true } });
+    await prisma.upload.create({ data: { assetKey: highlightKey, uploaderId: admin.id, bound: true, groupIds: [group.id] } });
     await prisma.upload.create({ data: { assetKey: liveKey, uploaderId: member.id, bound: true } });
     const createdAt = new Date('2026-07-01T10:00:00Z');
     const highlight = await prisma.story.create({

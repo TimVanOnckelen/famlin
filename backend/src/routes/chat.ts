@@ -93,9 +93,9 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
     // Group chat is group-wide by definition — there is no per-circle chat in
     // this version (see the "later" list on the Circles issue) — so a chat
-    // attachment binds family-wide.
+    // attachment binds to the whole group.
     if (body.attachmentUrl) {
-      await bindAssetsToScope([body.attachmentUrl], null, request.user!.id);
+      await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id);
     }
 
     // Fire-and-forget, same pattern as comment.created (routes/comments.ts) —

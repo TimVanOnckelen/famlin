@@ -342,12 +342,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
       });
 
       // Bind this post's photos to its audience so /uploads/* can authorize
-      // them (see services/uploads.ts). A null circleId marks them readable
-      // family-wide, which is what the unbound-until-attached rule needs
-      // even for ordinary posts.
+      // them (see services/uploads.ts): this group's members, narrowed to
+      // the circle's when it has one.
       await bindAssetsToScope(
         [...(body.uploadedAssetUrls ?? []), ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
-        circleId,
+        { groupIds: [groupId], circleId },
         request.user!.id
       );
 
@@ -380,7 +379,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const mediaUrls = assetUrls.filter((url) => parseMediaAssetPath(url) !== null);
     if (mediaUrls.length > 0) {
       try {
-        const copied = await copyMediaAssetsToUploads(mediaUrls, targets);
+        const copied = await copyMediaAssetsToUploads(mediaUrls, targets, request.user!.id);
         assetUrls = assetUrls.map((url) => copied.get(url) ?? url);
       } catch (err) {
         if (err instanceof CrossPostAssetCopyError) {
@@ -418,10 +417,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
     );
 
     // Cross-posts are never circle-scoped (the body schema rejects the
-    // combination), so their assets are always family-wide.
+    // combination), so their assets are readable by every target group.
     await bindAssetsToScope(
       [...assetUrls, ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
-      null,
+      { groupIds: targets },
       request.user!.id
     );
 
@@ -480,7 +479,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         const mediaUrls = uploadedAssetUrls.filter((url) => parseMediaAssetPath(url) !== null);
         if (mediaUrls.length > 0) {
           try {
-            const copied = await copyMediaAssetsToUploads(mediaUrls, siblingGroupIds);
+            const copied = await copyMediaAssetsToUploads(mediaUrls, siblingGroupIds, request.user!.id);
             uploadedAssetUrls = uploadedAssetUrls.map((url) => copied.get(url) ?? url);
           } catch (err) {
             if (err instanceof CrossPostAssetCopyError) {
@@ -503,9 +502,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
       });
 
       // Cross-posts are never circle-scoped, so any newly added photo is
-      // family-wide.
+      // readable by every sibling's group.
       if (uploadedAssetUrls) {
-        await bindAssetsToScope(uploadedAssetUrls, null, request.user!.id);
+        await bindAssetsToScope(uploadedAssetUrls, { groupIds: siblingGroupIds }, request.user!.id);
       }
 
       const current = await prisma.post.findUnique({
@@ -550,7 +549,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // post already had are bound already and are left untouched (see
     // bindAssetsToScope).
     if (body.uploadedAssetUrls) {
-      await bindAssetsToScope(body.uploadedAssetUrls, updated.circleId, request.user!.id);
+      await bindAssetsToScope(
+        body.uploadedAssetUrls,
+        { groupIds: [updated.groupId], circleId: updated.circleId },
+        request.user!.id
+      );
     }
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.

@@ -166,7 +166,7 @@ export default async function storyRoutes(fastify: FastifyInstance) {
     // just the check above), so two concurrent requests can't both turn the
     // same file into a story — the loser rolls back and gets the same 400.
     const created = await prisma.$transaction(async (tx) => {
-      if (!(await claimUnboundUpload(body.imageUrl, userId, circleId, tx))) return null;
+      if (!(await claimUnboundUpload(body.imageUrl, userId, { groupIds: targets, circleId }, tx))) return null;
       const rows = [];
       for (const groupId of targets) {
         rows.push(
