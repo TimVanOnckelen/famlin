@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fsp from 'fs/promises';
 import path from 'path';
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { uploadsDir } from '../../config.js';
 import { getAllSettings, updateSettings, type ServerSettings } from '../settings.js';
 import { isHexColor, normalizeHex } from './color.js';
@@ -155,7 +155,7 @@ export async function saveBrandSettings(input: { preset: string; color?: string 
 }
 
 async function removeLogoFiles(keep?: string) {
-  let entries: string[] = [];
+  let entries: string[];
   try {
     entries = await fsp.readdir(brandingDir);
   } catch {
@@ -171,17 +171,15 @@ async function removeLogoFiles(keep?: string) {
 export async function saveLogo(input: Buffer) {
   if (input.length > MAX_LOGO_BYTES) throw new BrandingError('errors.logoTooLarge');
 
-  let format: string | undefined;
-  let width = 0;
-  let height = 0;
+  let meta: Metadata;
   try {
-    const meta = await sharp(input, { limitInputPixels: MAX_LOGO_INPUT_PIXELS }).metadata();
-    format = meta.format;
-    width = meta.width ?? 0;
-    height = meta.height ?? 0;
+    meta = await sharp(input, { limitInputPixels: MAX_LOGO_INPUT_PIXELS }).metadata();
   } catch {
     throw new BrandingError('errors.invalidLogo');
   }
+  const { format } = meta;
+  const width = meta.width ?? 0;
+  const height = meta.height ?? 0;
   if (!format || !ALLOWED_LOGO_FORMATS.has(format) || !width || !height) {
     throw new BrandingError('errors.invalidLogo');
   }
