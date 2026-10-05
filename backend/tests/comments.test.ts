@@ -273,7 +273,7 @@ describe('comments routes', () => {
   describe('editing attachments', () => {
     // Creating through the route rather than the fixture so both attachment
     // columns are populated the way a real comment's are.
-    async function postComment(app: FastifyInstance, postId: string, user: any, payload: object) {
+    async function postComment(app: FastifyInstance, postId: string, user: Parameters<typeof authHeader>[0], payload: object) {
       const res = await app.inject({
         method: 'POST',
         url: `/api/posts/${postId}/comments`,

@@ -4,6 +4,10 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
 import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js';
 
+type TripTypeData = { travelerUserIds: string[]; closedAt: string | null; closedByUserId: string | null };
+type CheckinMetadata = { checkinId: string; place: string };
+type FeedItem = { id: string; type: string };
+
 // TRIP posts (services/postTypes/trip.ts): a living travel journal whose
 // check-ins are stored as Comment rows with a `metadata` discriminator
 // ({kind: 'trip_checkin', place, photoUrls}) so per-check-in
@@ -369,7 +373,7 @@ describe('TRIP posts', () => {
       expect(res.json().error).toBe('Every traveler must be a member of this group');
 
       const row = await prisma.post.findUniqueOrThrow({ where: { id: trip.id } });
-      expect((row.typeData as any).travelerUserIds).toEqual([]);
+      expect((row.typeData as TripTypeData).travelerUserIds).toEqual([]);
     });
 
     it('rejects setTravelers on a closed trip', async () => {
@@ -413,8 +417,8 @@ describe('TRIP posts', () => {
       expect(res.json().trip.closed).toBe(true);
 
       const row = await prisma.post.findUniqueOrThrow({ where: { id: trip.id } });
-      expect((row.typeData as any).closedAt).not.toBeNull();
-      expect((row.typeData as any).closedByUserId).toBe(author.id);
+      expect((row.typeData as TripTypeData).closedAt).not.toBeNull();
+      expect((row.typeData as TripTypeData).closedByUserId).toBe(author.id);
     });
 
     it('rejects closing an already-closed trip', async () => {
@@ -500,7 +504,7 @@ describe('TRIP posts', () => {
       expect(get.json().trip.durationDays).toBe(3);
 
       const row = await prisma.post.findUniqueOrThrow({ where: { id: trip.id } });
-      expect((row.typeData as any).closedAt).toBeNull();
+      expect((row.typeData as TripTypeData).closedAt).toBeNull();
     });
   });
 
@@ -537,7 +541,7 @@ describe('TRIP posts', () => {
 
       const list = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) });
       expect(list.statusCode).toBe(200);
-      const tripInFeed = list.json().items.find((p: any) => p.id === trip.id);
+      const tripInFeed = list.json().items.find((p: FeedItem) => p.id === trip.id);
       expect(tripInFeed.trip.stopCount).toBe(2);
       expect(tripInFeed.trip.photoCount).toBe(3);
       // Newest 3 check-in photos, newest first: Stop 2's photos (B, C) came
@@ -739,9 +743,9 @@ describe('TRIP posts', () => {
 
       const copyA = await prisma.comment.findFirstOrThrow({ where: { postId: a.id } });
       const copyB = await prisma.comment.findFirstOrThrow({ where: { postId: b.id } });
-      expect((copyA.metadata as any).checkinId).toBeDefined();
-      expect((copyA.metadata as any).checkinId).toBe((copyB.metadata as any).checkinId);
-      expect((copyB.metadata as any).place).toBe('Both groups');
+      expect((copyA.metadata as CheckinMetadata).checkinId).toBeDefined();
+      expect((copyA.metadata as CheckinMetadata).checkinId).toBe((copyB.metadata as CheckinMetadata).checkinId);
+      expect((copyB.metadata as CheckinMetadata).place).toBe('Both groups');
 
       const getB = await app.inject({ method: 'GET', url: `/api/posts/${b.id}`, headers: authHeader(author) });
       expect(getB.statusCode).toBe(200);
@@ -852,8 +856,8 @@ describe('TRIP posts', () => {
       expect(res.json().trip.closed).toBe(true);
 
       const rowB = await prisma.post.findUniqueOrThrow({ where: { id: b.id } });
-      expect((rowB.typeData as any).closedAt).not.toBeNull();
-      expect((rowB.typeData as any).closedByUserId).toBe(author.id);
+      expect((rowB.typeData as TripTypeData).closedAt).not.toBeNull();
+      expect((rowB.typeData as TripTypeData).closedByUserId).toBe(author.id);
 
       // And a check-in via the OTHER sibling is now rejected too.
       const checkin = await app.inject({
@@ -894,7 +898,7 @@ describe('TRIP posts', () => {
       expect(ok.statusCode).toBe(200);
 
       const rowB = await prisma.post.findUniqueOrThrow({ where: { id: b.id } });
-      expect((rowB.typeData as any).travelerUserIds).toEqual([traveler.id]);
+      expect((rowB.typeData as TripTypeData).travelerUserIds).toEqual([traveler.id]);
 
       // The new traveler can check in via EITHER sibling.
       const checkin = await app.inject({
@@ -957,7 +961,7 @@ describe('TRIP posts', () => {
 
       const feed = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) });
       expect(feed.statusCode).toBe(200);
-      const trips = feed.json().items.filter((p: any) => p.type === 'TRIP');
+      const trips = feed.json().items.filter((p: FeedItem) => p.type === 'TRIP');
       expect(trips).toHaveLength(1);
       expect(trips[0].trip.title).toBe('Cross trip');
     });

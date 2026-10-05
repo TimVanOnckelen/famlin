@@ -101,5 +101,5 @@ export interface PostTypeHandler {
    */
   collectAssets?(typeData: unknown): string[];
   /** Batch-attach computed fields to already-shaped posts of this type (mutate in place). ONE query per page, no N+1. */
-  enrichPosts?(posts: Array<Record<string, any> & { id: string; typeData?: unknown }>, viewerId: string): Promise<void>;
+  enrichPosts?(posts: Array<Record<string, unknown> & { id: string; typeData?: unknown }>, viewerId: string): Promise<void>;
 }

@@ -3,6 +3,9 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
 import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js';
 
+type PollOption = { id: string; voteCount: number };
+type PollTypeData = { options: PollOption[] };
+
 // Custom post types + polls (services/postTypes/) — Post.type is now an open
 // string discriminator validated by a PostTypeHandler registry, and
 // PostInteraction is the generic per-user-state table (votes today). See
@@ -51,8 +54,8 @@ describe('custom post types + polls', () => {
       expect(body.typeData.closesAt).toBeNull();
 
       const row = await prisma.post.findUniqueOrThrow({ where: { id: body.id } });
-      expect((row.typeData as any).options).toHaveLength(2);
-      expect((row.typeData as any).options[0].id).toBe(body.typeData.options[0].id);
+      expect((row.typeData as PollTypeData).options).toHaveLength(2);
+      expect((row.typeData as PollTypeData).options[0].id).toBe(body.typeData.options[0].id);
 
       // The enriched `poll` view is only attached by the list/GET-one seam,
       // not the create response (mirrors the existing `people: []` behavior
@@ -219,7 +222,7 @@ describe('custom post types + polls', () => {
       let body = vote1.json();
       expect(body.poll.myVoteOptionId).toBe(cats.id);
       expect(body.poll.totalVotes).toBe(1);
-      const catsOption = body.poll.options.find((o: any) => o.id === cats.id);
+      const catsOption = body.poll.options.find((o: PollOption) => o.id === cats.id);
       expect(catsOption.voteCount).toBe(1);
       expect(catsOption.voters).toEqual([{ id: voter.id, name: voter.name, avatarUrl: null }]);
 
@@ -234,8 +237,8 @@ describe('custom post types + polls', () => {
       body = vote2.json();
       expect(body.poll.myVoteOptionId).toBe(dogs.id);
       expect(body.poll.totalVotes).toBe(1);
-      expect(body.poll.options.find((o: any) => o.id === cats.id).voteCount).toBe(0);
-      expect(body.poll.options.find((o: any) => o.id === dogs.id).voteCount).toBe(1);
+      expect(body.poll.options.find((o: PollOption) => o.id === cats.id).voteCount).toBe(0);
+      expect(body.poll.options.find((o: PollOption) => o.id === dogs.id).voteCount).toBe(1);
 
       // Voting the same option again unvotes.
       const vote3 = await app.inject({
@@ -295,7 +298,7 @@ describe('custom post types + polls', () => {
 
       const rows = await prisma.postInteraction.findMany({ where: { postId: poll.id, userId: voter.id } });
       expect(rows.length).toBeLessThanOrEqual(1);
-      if (rows.length === 1) expect((rows[0].value as any).optionId).toBe(cats.id);
+      if (rows.length === 1) expect((rows[0].value as { optionId: string }).optionId).toBe(cats.id);
     });
 
     it('rejects a non-member voting, and a non-member cannot see the poll', async () => {
@@ -327,7 +330,7 @@ describe('custom post types + polls', () => {
       // backend must still enforce it once set.
       await prisma.post.update({
         where: { id: poll.id },
-        data: { typeData: { ...poll.typeData, closesAt: new Date(Date.now() - 60_000).toISOString() } as any },
+        data: { typeData: { ...poll.typeData, closesAt: new Date(Date.now() - 60_000).toISOString() } },
       });
 
       const res = await app.inject({
@@ -484,9 +487,9 @@ describe('custom post types + polls', () => {
 
       const list = await app.inject({ method: 'GET', url: '/api/groups', headers: authHeader(member) });
       expect(list.statusCode).toBe(200);
-      const byId = new Map(list.json().map((g: any) => [g.id, g]));
-      expect((byId.get(openGroup.id) as any).allowedPostTypes).toEqual(['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM']);
-      expect((byId.get(restrictedGroup.id) as any).allowedPostTypes).toEqual(['UPDATE']);
+      const byId = new Map(list.json().map((g: { id: string; allowedPostTypes: string[] }) => [g.id, g]));
+      expect((byId.get(openGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM']);
+      expect((byId.get(restrictedGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE']);
 
       const detail = await app.inject({ method: 'GET', url: `/api/groups/${restrictedGroup.id}`, headers: authHeader(member) });
       expect(detail.statusCode).toBe(200);
@@ -591,9 +594,9 @@ describe('custom post types + polls', () => {
       expect(postB.typeData).not.toBeNull();
       // Same option ids across siblings is intended (spec: "same option ids
       // across siblings is fine and intended").
-      expect((postA.typeData as any).options.map((o: any) => o.id)).toEqual((postB.typeData as any).options.map((o: any) => o.id));
+      expect((postA.typeData as PollTypeData).options.map((o: PollOption) => o.id)).toEqual((postB.typeData as PollTypeData).options.map((o: PollOption) => o.id));
 
-      const optionId = (postA.typeData as any).options[0].id;
+      const optionId = (postA.typeData as PollTypeData).options[0].id;
 
       const vote = await app.inject({
         method: 'POST',

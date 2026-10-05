@@ -23,7 +23,7 @@
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:docker": "sh scripts/test-in-docker.sh",
-    "lint": "eslint ."
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
