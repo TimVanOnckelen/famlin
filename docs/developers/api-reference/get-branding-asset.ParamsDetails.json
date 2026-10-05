@@ -1,0 +1,1 @@
+{"parameters":[{"name":"file","in":"path","required":true,"schema":{"type":"string","pattern":"^(logo|favicon)-[0-9a-f]{16}\\.png$"},"example":"logo-0123456789abcdef.png"}]}

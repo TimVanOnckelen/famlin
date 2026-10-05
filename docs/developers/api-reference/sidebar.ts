@@ -64,6 +64,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/get-branding-asset",
+          label: "Download the family's logo or favicon",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/get-notification-config",
           label: "Which notification channels the server has enabled",
           className: "api-method get",
@@ -608,6 +614,12 @@ const sidebar: SidebarsConfig = {
       type: "category",
       label: "Schemas",
       items: [
+        {
+          type: "doc",
+          id: "api-reference/schemas/branding",
+          label: "Branding",
+          className: "schema",
+        },
         {
           type: "doc",
           id: "api-reference/schemas/error",

@@ -469,6 +469,46 @@ paths:
                       When true, clients can browse but cannot post, comment,
                       upload, or make other modifications.
                     example: false
+                  branding:
+                    allOf:
+                      - $ref: '#/components/schemas/Branding'
+                    nullable: true
+                    description: >-
+                      The family's branding (name, logo, derived palette), or
+                      null when the server is unbranded — clients then keep
+                      the default Famlin look. Absent on servers that predate
+                      branding; treat that like null.
+
+  /branding/{file}:
+    get:
+      operationId: getBrandingAsset
+      tags: [Account]
+      summary: Download the family's logo or favicon
+      description: >-
+        Public, no authentication — the login page shows the logo before
+        anyone has signed in. Served only for the paths a `Branding` object's
+        `logoUrl`/`faviconUrl` carry; file names are content-addressed, so
+        responses are `Cache-Control: immutable` and a new logo is a new URL.
+        Never reachable under `/uploads/`.
+      security: []
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^(logo|favicon)-[0-9a-f]{16}\.png$'
+          example: logo-0123456789abcdef.png
+      responses:
+        '200':
+          description: The PNG rendition (logo ≤ 512 px, favicon 64 px)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/auth/notification-config:
     get:
@@ -2930,6 +2970,69 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    Branding:
+      type: object
+      description: >-
+        Per-family branding, set once per server by the admin. The palette is
+        derived server-side (one implementation for every client): the brand
+        color is darkened if needed so white text on `primary` meets WCAG AA,
+        and a semantic post-type color (circle, milestone, trip) moves to an
+        alternate hue when the brand would be hard to tell apart from it.
+      properties:
+        name:
+          type: string
+          nullable: true
+          maxLength: 40
+          description: The family's name, or null to keep "Famlin".
+          example: The Janssens
+        logoUrl:
+          type: string
+          nullable: true
+          description: Server-relative path of the logo, see `GET /branding/{file}`.
+          example: /branding/logo-0123456789abcdef.png
+        faviconUrl:
+          type: string
+          nullable: true
+          description: Server-relative path of the 64 px favicon rendition.
+          example: /branding/favicon-0123456789abcdef.png
+        palette:
+          type: object
+          description: Hex colors (`#rrggbb`).
+          properties:
+            primary: { type: string, example: '#7b3f8c' }
+            primaryDark: { type: string, example: '#632874' }
+            primaryLight: { type: string, example: '#955ea5' }
+            primaryTint: { type: string, example: '#f7e8fb' }
+            bg: { type: string, example: '#f9f3fa' }
+            loginBgFrom:
+              type: string
+              description: Login background gradient start (equal to `loginBgTo` = flat).
+              example: '#f9f3fa'
+            loginBgTo: { type: string, example: '#f7e8fb' }
+          required: [primary, primaryDark, primaryLight, primaryTint, bg, loginBgFrom, loginBgTo]
+        semantic:
+          type: object
+          description: Post-type colors, possibly shifted away from the brand hue. Hex colors.
+          properties:
+            accent: { type: string }
+            updateBg: { type: string }
+            circle: { type: string }
+            circleDark: { type: string }
+            circleTint: { type: string }
+            milestone: { type: string }
+            milestoneBg: { type: string }
+            milestoneText: { type: string }
+            milestoneDivider: { type: string }
+            trip: { type: string }
+            tripDark: { type: string }
+            tripBg: { type: string }
+            tripTint: { type: string }
+            tripBorder: { type: string }
+        hash:
+          type: string
+          description: Changes whenever anything above changes — a cheap way for clients to detect a new brand.
+          example: 3f2a9c0d1b7e4a55
+      required: [name, logoUrl, faviconUrl, palette, semantic, hash]
     Error:
       type: object
       properties:

@@ -65,6 +65,7 @@ The **Server settings** page's general section has a **Data export** card with a
 - Story **Highlights** (stories their authors kept) and their reactions. Live stories, who viewed them and private story replies are **not** included — a live story is deleted within 24 hours anyway, and replies are private between two people.
 - The member list (names, emails, avatars, admin status), group membership, and circles.
 - Every uploaded photo and video, including the original, unresized files — except the photos of live (not kept) stories.
+- Your [branding](./admin-configuration#branding) — family name, color and logo.
 
 It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
 

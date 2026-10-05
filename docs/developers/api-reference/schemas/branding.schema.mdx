@@ -1,0 +1,32 @@
+---
+id: branding
+title: "Branding"
+description: "Per-family branding, set once per server by the admin. The palette is derived server-side (one implementation for every client): the brand color is darkened if needed so white text on `primary` meets WCAG AA, and a semantic post-type color (circle, milestone, trip) moves to an alternate hue when the brand would be hard to tell apart from it."
+sidebar_label: "Branding"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"name":"The Janssens","logoUrl":"/branding/logo-0123456789abcdef.png","faviconUrl":"/branding/favicon-0123456789abcdef.png","palette":{"primary":"#7b3f8c","primaryDark":"#632874","primaryLight":"#955ea5","primaryTint":"#f7e8fb","bg":"#f9f3fa","loginBgFrom":"#f9f3fa","loginBgTo":"#f7e8fb"},"semantic":{"accent":"string","updateBg":"string","circle":"string","circleDark":"string","circleTint":"string","milestone":"string","milestoneBg":"string","milestoneText":"string","milestoneDivider":"string","trip":"string","tripDark":"string","tripBg":"string","tripTint":"string","tripBorder":"string"},"hash":"3f2a9c0d1b7e4a55"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Branding"}
+>
+</Heading>
+
+
+
+Per-family branding, set once per server by the admin. The palette is derived server-side (one implementation for every client): the brand color is darkened if needed so white text on `primary` meets WCAG AA, and a semantic post-type color (circle, milestone, trip) moves to an alternate hue when the brand would be hard to tell apart from it.
+
+<Schema
+  {...require("./branding.Schema.json")}
+>
+  
+</Schema>
+            

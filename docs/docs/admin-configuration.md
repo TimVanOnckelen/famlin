@@ -125,6 +125,26 @@ Mapped people also appear as tags on posts in the family feed, showing who's in 
 
 To remove a mapping, click the × next to it under **Mapped people**.
 
+## Branding
+
+You can give your Famlin server your family's own look: a **family name** ("The Janssens"), a **color**, and a **logo**. It's set once for the whole server, in `/admin` → Server settings → **Branding**, and applies in the mobile app and the web app. With nothing set, Famlin looks exactly as it always has.
+
+- **Family name** (up to 40 characters) appears in the app header and on the login screen, and becomes the title of push notifications and the subject of notification emails ("New activity in The Janssens"). Leave it empty to keep "Famlin".
+- **Color** — pick one of the curated presets, or choose **Custom** and enter any hex color. The live preview shows the result:
+  - If your color is too light for white text to stay readable on buttons, Famlin automatically darkens it until it meets the WCAG AA contrast ratio (4.5:1), and the settings page tells you which color it will actually use. Your original choice is what's saved, so you can always come back to it.
+  - Circle, milestone and trip posts each have their own color (coral, gold and blue). If your brand color is close to one of them, that post color automatically moves to a different hue, so a circle post can never be mistaken for a normal family post. The preview lists which ones changed.
+- **Logo** — PNG, JPEG or WebP, up to 5 MB (SVG isn't accepted). Famlin re-encodes it, resizes it to at most 512 px, and also uses it as the web app's browser icon. A square image works best.
+
+The login screen gets a soft gradient background derived from your color. It deliberately never shows a photo: everything before login is visible to anyone.
+
+:::caution Public by design
+The logo and family name are visible to anyone who opens your server's address — the login page has to show them before anyone has signed in. Don't put anything in them you wouldn't put on a doorbell.
+:::
+
+**When it shows up:** the web app picks up a change on the next page load. The mobile app applies the brand right after someone connects to your server, and picks up a later change the next time the app is started from scratch — it never changes colors while someone is using it. The app icon and store name can't change; they belong to the shared Famlin app. Mobile branding needs an app version with branding support; older installed apps keep the default look, but the push-notification title uses the family name on every version.
+
+The invite page that invite links open also shows the family name, logo and colors. Branding is included in the [data export](./managing-users-and-content) and comes back with a restore.
+
 ## Next steps
 
 Once your admin account and login method are set up, [invite family members](./inviting-family) to start using Famlin.
