@@ -33,11 +33,16 @@ export async function initI18nLanguage() {
     return;
   }
 
-  const locales = Localization.getLocales();
-  const deviceLang = locales[0]?.languageCode;
-  if (deviceLang === 'nl') {
-    await i18n.changeLanguage('nl');
-  }
+  await i18n.changeLanguage(getDeviceLanguage());
+}
+
+// First supported language in the device's preference order, so e.g. a
+// phone set to "German, then Dutch" opens in Dutch rather than English.
+export function getDeviceLanguage(): SupportedLanguage {
+  const match = Localization.getLocales()
+    .map((locale) => locale.languageCode)
+    .find((code): code is SupportedLanguage => !!code && SUPPORTED_LANGUAGES.includes(code as SupportedLanguage));
+  return match ?? DEFAULT_LANGUAGE;
 }
 
 export default i18n;

@@ -12,7 +12,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
 import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
 import { useAppleSignInAvailable } from '@/utils/appleLogin';
-import { getServerUrl, setServerUrl as persistServerUrl } from '@/utils/storage';
+import { getServerUrl, setLanguage, setServerUrl as persistServerUrl } from '@/utils/storage';
+import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
 import { setApiBaseUrl } from '@/api/client';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -33,7 +34,7 @@ function normalizeServerUrl(url: string): string {
 }
 
 export function LoginScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { setAuth } = useAuthStore();
   const [step, setStep] = useState<Step>('server');
   const [serverUrl, setServerUrlInput] = useState('');
@@ -128,6 +129,11 @@ export function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleLanguageChange(lang: SupportedLanguage) {
+    await i18n.changeLanguage(lang);
+    await setLanguage(lang);
   }
 
   return (
@@ -271,6 +277,27 @@ export function LoginScreen() {
             </Text>
           </Animated.View>
         )}
+
+        {/* Before sign-in there's no Profile tab yet, so the device-language
+            default needs its own way out here. */}
+        <View style={styles.languageRow} accessibilityRole="radiogroup" accessibilityLabel={t('profile.language')}>
+          {SUPPORTED_LANGUAGES.map((lang) => {
+            const selected = i18n.language === lang;
+            return (
+              <TouchableOpacity
+                key={lang}
+                style={[styles.languageChip, selected && styles.languageChipSelected]}
+                onPress={() => handleLanguageChange(lang)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+              >
+                <Text style={[styles.languageChipText, selected && styles.languageChipTextSelected]}>
+                  {t(`profile.languages.${lang}`)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -483,5 +510,30 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
+  },  languageRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 28,
+  },
+  languageChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  languageChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryTint,
+  },
+  languageChipText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  languageChipTextSelected: {
+    color: colors.primary,
   },
 });

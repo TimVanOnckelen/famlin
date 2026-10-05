@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppIcon } from './Logo';
+import { LanguageSelector } from './LanguageSelector';
 import { api, User } from '../api/client';
 
 interface SetupPageProps {
@@ -123,6 +124,8 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
         </button>
 
         {error && <div className="error">{error}</div>}
+
+        <LanguageSelector className="login-language" />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Logo } from './Logo';
 import { User } from '../types';
 import { api } from '../api/client';
-import i18n, { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '../i18n';
+import { LanguageSelector } from './LanguageSelector';
 
 interface LayoutProps {
   user: User;
@@ -12,7 +12,7 @@ interface LayoutProps {
 }
 
 export function Layout({ user, children }: LayoutProps) {
-  const { t, i18n: i18nInstance } = useTranslation();
+  const { t } = useTranslation();
   const [version, setVersion] = useState<string | null>(null);
 
   // Fail-soft, one-shot — a failed fetch just means no version line, same as
@@ -27,12 +27,6 @@ export function Layout({ user, children }: LayoutProps) {
   const handleLogout = () => {
     localStorage.removeItem('famlin_admin_token');
     window.location.href = '/admin';
-  };
-
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const lang = e.target.value as SupportedLanguage;
-    i18n.changeLanguage(lang);
-    storeLanguage(lang);
   };
 
   return (
@@ -55,20 +49,7 @@ export function Layout({ user, children }: LayoutProps) {
         <div className="user">
           <div>{user.name}</div>
           <div style={{ fontSize: '0.75rem' }}>{user.email}</div>
-          <label style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>
-            {t('layout.language')}
-            <select
-              value={i18nInstance.language}
-              onChange={handleLanguageChange}
-              style={{ marginLeft: '0.5rem' }}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <option key={lang} value={lang}>
-                  {LANGUAGE_NAMES[lang]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <LanguageSelector className="sidebar-language" />
           <button className="secondary" onClick={handleLogout}>
             {t('layout.logout')}
           </button>

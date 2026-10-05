@@ -134,6 +134,21 @@ body {
   color: var(--text-secondary);
 }
 
+.sidebar-language {
+  margin-top: 0.75rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.sidebar-language select {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
 .sidebar .user button {
   margin-top: 0.75rem;
   width: 100%;
@@ -454,6 +469,22 @@ input[type='checkbox'] {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
   font-weight: 600;
+}
+
+.login-language {
+  margin-top: 1.25rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.login-language select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
 }
 
 .login-box form {

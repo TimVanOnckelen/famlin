@@ -172,3 +172,28 @@
   text-align: center;
   line-height: 1.5;
 }
+
+/* ── Language ─────────────────────────────────────────────────────────────── */
+
+/* Before sign-in there's no profile page yet, so the login screen carries
+   its own picker — kept quiet, under the hint, like a footer control. */
+.login-language {
+  display: block;
+  margin: 14px auto 0;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--fam-border);
+  background: var(--fam-surface);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fam-text-muted);
+  cursor: pointer;
+}
+
+.login-language:focus {
+  outline: none;
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 3px var(--fam-primary-tint);
+}
