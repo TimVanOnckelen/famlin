@@ -339,6 +339,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/auth/me/export:
+    get:
+      operationId: exportMyData
+      tags: [Account]
+      summary: Download an export of your family content
+      description: |
+        Streams a zip archive of everything you can already see in the app:
+        every post in your groups (including other members' posts), the
+        comments and reactions on them, your own favorites, the chat of your
+        groups that have chat switched on, the profiles (id, name, email,
+        avatar) of the people you share a group with, and exactly the
+        uploaded photos/videos all of that references (display copies,
+        thumbnails and originals, under `uploads/`). JSON lives under
+        `data/`; `manifest.json` records the export time, server version and
+        row counts.
+
+        Circle-private posts in circles you are not a member of, other
+        groups' content, other members' favorites and notification
+        preferences, credentials, invites, tokens and notification history
+        are never included.
+
+        Rate-limited to 5 exports per user per hour.
+      responses:
+        '200':
+          description: Zip archive, streamed as it is built
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: '`attachment; filename="famlin-my-export-YYYY-MM-DD.zip"`'
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /api/auth/change-password:
     post:
       operationId: changePassword

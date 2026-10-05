@@ -31,6 +31,8 @@ export {
   fetchServerInfo,
   changePassword,
   deleteAccount,
+  downloadMyExport,
+  getMyExportRequest,
 } from './auth';
 
 export { compareVersions } from './version';
