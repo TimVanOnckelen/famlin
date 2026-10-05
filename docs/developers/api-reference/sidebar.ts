@@ -46,6 +46,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/export-my-data",
+          label: "Download an export of your family content",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/change-password",
           label: "Change your password",
           className: "api-method post",
