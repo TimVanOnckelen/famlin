@@ -2,7 +2,7 @@ import { getUploadUrl } from '@famlin/api-client';
 
 // Initial-avatar palette from the styleguide's "Initial avatars" pattern —
 // each member keeps one consistent color, derived from their name.
-const AVATAR_COLORS = ['#006e94', '#ed835e', '#4b8b5a', '#005480'];
+const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)'];
 
 function colorFor(name: string): string {
   let hash = 0;

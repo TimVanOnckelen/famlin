@@ -23,7 +23,7 @@
 }
 
 .post-card-milestone {
-  background: linear-gradient(145deg, #fff3dd, #ffe6c0);
+  background: linear-gradient(145deg, var(--fam-milestone-bg), var(--fam-milestone-bg-strong));
   border: 1.5px solid var(--fam-milestone);
   box-shadow: 0 3px 16px rgba(238, 177, 84, 0.28);
 }
@@ -57,7 +57,7 @@
   width: 16px;
   height: 16px;
   border-radius: 8px;
-  background: radial-gradient(circle at 35% 32%, #ffe6ad, #eeb154 55%, #b9791f 100%);
+  background: radial-gradient(circle at 35% 32%, var(--fam-milestone-light), var(--fam-milestone) 55%, var(--fam-milestone-deep) 100%);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
   z-index: 2;
   pointer-events: none;
@@ -71,7 +71,7 @@
   width: 68px;
   height: 24px;
   transform: translateX(-38px) rotate(-5deg);
-  background: linear-gradient(rgba(0, 110, 148, 0.4), rgba(0, 110, 148, 0.32));
+  background: linear-gradient(rgba(var(--fam-primary-rgb), 0.4), rgba(var(--fam-primary-rgb), 0.32));
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   z-index: 2;
   pointer-events: none;
@@ -159,7 +159,7 @@
   border-radius: var(--r-pill);
   font-size: 11px;
   font-weight: 800;
-  color: #5c3d0a;
+  color: var(--fam-milestone-text);
   letter-spacing: 0.3px;
   margin-bottom: 10px;
 }
@@ -449,7 +449,7 @@
 }
 
 .poll-option-mine .poll-option-fill {
-  background: rgba(0, 110, 148, 0.18);
+  background: rgba(var(--fam-primary-rgb), 0.18);
 }
 
 .poll-option-content {
@@ -544,7 +544,7 @@
 }
 
 .post-actions-milestone {
-  border-top-color: #eccf94;
+  border-top-color: var(--fam-milestone-divider);
 }
 
 .action-btn {
@@ -670,7 +670,7 @@
 }
 
 .post-card-milestone .comments-section {
-  border-top-color: #eccf94;
+  border-top-color: var(--fam-milestone-divider);
 }
 
 .comments-hint {
@@ -812,7 +812,7 @@
 
 /* The milestone card's own warm gradient, so the fade blends there too. */
 .post-card-milestone .comment-attachment-gallery-wrap::after {
-  background: linear-gradient(to right, rgba(255, 230, 192, 0), #ffe6c0);
+  background: linear-gradient(to right, transparent, var(--fam-milestone-bg-strong));
 }
 
 .comment-attachment-count {

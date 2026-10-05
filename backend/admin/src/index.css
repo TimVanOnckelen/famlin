@@ -1702,6 +1702,11 @@ h3 {
   cursor: pointer;
 }
 
+.branding-swatch:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--text);
+}
+
 .branding-swatch.active {
   border-color: var(--text);
   box-shadow: 0 0 0 1px var(--text);
@@ -1741,6 +1746,7 @@ h3 {
 }
 
 .branding-logo-row {
+  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;

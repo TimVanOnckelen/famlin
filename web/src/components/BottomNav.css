@@ -75,5 +75,5 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 110, 148, 0.4);
+  box-shadow: 0 4px 14px rgba(var(--fam-primary-rgb), 0.4);
 }

@@ -1,16 +1,33 @@
 /* Design tokens — from design/Famlin Styleguide.dc.html (Deep Teal palette).
-   Keep values in sync with that file; it is the source of truth. */
+   Keep values in sync with that file; it is the source of truth.
+   Per-family branding (issue #164) overrides the brand + semantic tokens
+   below (see utils/branding.ts) — so outside this file, use these variables
+   rather than hardcoding a brand, milestone, circle or trip hex. */
 :root {
   --fam-primary: #006e94;
   --fam-primary-dark: #005480;
+  --fam-primary-light: #318ea2;
+  /* --fam-primary as an "r, g, b" triplet, for rgba(var(--fam-primary-rgb), a). */
+  --fam-primary-rgb: 0, 110, 148;
   --fam-grad: linear-gradient(150deg, #318ea2, #005480);
   --fam-primary-tint: #daf3fe;
   --fam-accent: #ed835e;
+  /* Text on an accent-tinted surface (the poll chip). */
+  --fam-accent-ink: #a8492a;
+  --fam-update-bg: #fbe2d4;
   --fam-milestone: #eeb154;
+  --fam-milestone-bg: #fff3dd;
+  --fam-milestone-bg-strong: #ffe6c0;
+  --fam-milestone-light: #ffe6ad;
+  --fam-milestone-deep: #b9791f;
+  --fam-milestone-text: #5c3d0a;
+  --fam-milestone-ink: #8a5a12;
+  --fam-milestone-divider: #eccf94;
   /* TRIP post type accent — mirrors mobile's colors.trip* palette
      (mobile/src/constants/colors.ts), design/Famlin.dc.html section t6. */
   --fam-trip: #1f7fa3;
   --fam-trip-dark: #1a6484;
+  --fam-trip-bg: #eef7fb;
   --fam-trip-tint: #dcf0f7;
   --fam-trip-border: #bfe1ec;
 
@@ -23,6 +40,9 @@
   --fam-circle-tint: #fdeae2;
 
   --fam-bg: #edf7fb;
+  /* Login screen background — the page background, or a soft gradient of
+     the family's brand when branding is set (never a photo: it's public). */
+  --fam-login-bg: var(--fam-bg);
   --fam-surface: #ffffff;
   --fam-border: #d9e3e7;
   --fam-text-muted: #597784;
@@ -40,7 +60,7 @@
 
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
   --shadow-raised: 0 2px 12px rgba(0, 0, 0, 0.07);
-  --shadow-primary: 0 4px 14px rgba(0, 110, 148, 0.32);
+  --shadow-primary: 0 4px 14px rgba(var(--fam-primary-rgb), 0.32);
 }
 
 * {

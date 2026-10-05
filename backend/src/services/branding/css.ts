@@ -1,5 +1,6 @@
 import { hexToRgbTriplet } from './color.js';
 import type { PublicBranding } from './index.js';
+import { DEFAULT_SEMANTIC } from './palette.js';
 
 // CSS custom-property overrides for the web app's design tokens
 // (web/src/index.css). Mirrors brandingCssVars() in web/src/utils/branding.ts,
@@ -7,11 +8,12 @@ import type { PublicBranding } from './index.js';
 // index.html server-side so a branded server never flashes the default teal.
 export function brandingCssVars(branding: PublicBranding): Record<string, string> {
   const { palette: p, semantic: s } = branding;
-  return {
+  const vars: Record<string, string> = {
     '--fam-primary': p.primary,
     '--fam-primary-dark': p.primaryDark,
     '--fam-primary-light': p.primaryLight,
     '--fam-primary-tint': p.primaryTint,
+    '--fam-primary-rgb': hexToRgbTriplet(p.primary),
     '--fam-grad': `linear-gradient(150deg, ${p.primaryLight}, ${p.primaryDark})`,
     '--fam-bg': p.bg,
     '--fam-login-bg':
@@ -32,6 +34,19 @@ export function brandingCssVars(branding: PublicBranding): Record<string, string
     '--fam-circle-dark': s.circleDark,
     '--fam-circle-tint': s.circleTint,
   };
+  // Hand-picked extra milestone/accent shades in the web CSS only follow the
+  // brand when the server actually shifted that family; otherwise they keep
+  // their exact default values.
+  if (s.milestone !== DEFAULT_SEMANTIC.milestone) {
+    vars['--fam-milestone-bg-strong'] = `color-mix(in oklab, ${s.milestone} 30%, white)`;
+    vars['--fam-milestone-light'] = `color-mix(in oklab, ${s.milestone} 40%, white)`;
+    vars['--fam-milestone-deep'] = `color-mix(in oklab, ${s.milestone} 75%, black)`;
+    vars['--fam-milestone-ink'] = `color-mix(in oklab, ${s.milestoneText} 70%, ${s.milestone})`;
+  }
+  if (s.circle !== DEFAULT_SEMANTIC.circle) {
+    vars['--fam-accent-ink'] = s.circleDark;
+  }
+  return vars;
 }
 
 const escapeAttr = (v: string) =>
