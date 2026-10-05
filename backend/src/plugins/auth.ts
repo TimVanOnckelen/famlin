@@ -332,10 +332,10 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         return reply.status(401).send({ error: getT(request)('errors.sessionExpired') });
       }
 
-      const { tokenVersion, ...publicUser } = user;
+      const { tokenVersion: _tokenVersion, ...publicUser } = user;
       request.user = publicUser;
       request.authMethod = 'session';
-    } catch (err) {
+    } catch {
       return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
     }
   });

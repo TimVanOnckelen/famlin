@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin } from '@famlin/api-client';
 import { AppIcon } from './Logo';
+import { LanguageSelector } from './LanguageSelector';
 import { api, OidcConfig, User } from '../api/client';
 
 interface LoginPageProps {
@@ -150,6 +151,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           </>
         )}
         {error && <div className="error">{error}</div>}
+
+        <LanguageSelector className="login-language" />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import type { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 // Bcrypt cost factor for every password hash the app creates (login setup,
@@ -15,7 +16,7 @@ export async function hashPassword(plain: string): Promise<string> {
 // Fields safe to hand back to the user themselves — never includes
 // passwordHash or tokenVersion. Shared by every route that returns "the
 // current user" after login/register/invite acceptance.
-export function sanitizeUser(user: any) {
+export function sanitizeUser(user: User) {
   return {
     id: user.id,
     email: user.email,

@@ -144,8 +144,8 @@ export async function attachSharedWithGroups<
 // is allowed to propagate to the global error handler like any other route
 // failure, since (unlike an external media provider) PostInteraction is this
 // service's own database, not routine external flakiness.
-async function enrichPostTypes(shapedPosts: Array<Record<string, any> & { id: string; type: string }>, viewerId: string): Promise<void> {
-  const postsByType = new Map<string, Array<Record<string, any> & { id: string; type: string }>>();
+async function enrichPostTypes(shapedPosts: Array<Record<string, unknown> & { id: string; type: string }>, viewerId: string): Promise<void> {
+  const postsByType = new Map<string, Array<Record<string, unknown> & { id: string; type: string }>>();
   for (const post of shapedPosts) {
     const list = postsByType.get(post.type);
     if (list) list.push(post);

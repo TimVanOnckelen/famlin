@@ -1,4 +1,4 @@
-import { User } from './types';
+import { User, Group } from './types';
 export interface LoginResponse {
     token: string;
     user: User;
@@ -21,7 +21,7 @@ export declare function exchangeOidcMobileHandoff(code: string): Promise<LoginRe
 export declare function exchangeOidcCode(code: string, redirectUri: string, codeVerifier: string, inviteToken?: string): Promise<LoginResponse>;
 export declare function loginWithPassword(email: string, password: string, inviteToken?: string): Promise<LoginResponse>;
 export declare function fetchMe(): Promise<User & {
-    groups: any[];
+    groups: Group[];
 }>;
 export interface NotificationPrefs {
     emailOnNewPost?: boolean;

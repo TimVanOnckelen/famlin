@@ -1,3 +1,4 @@
+import { isRecordNotFound } from '../utils/prismaErrors.js';
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -641,9 +642,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
         invalidateSessionCache(id);
 
         return { success: true, user: sanitizeUser(user) };
-      } catch (err: any) {
+      } catch (err) {
         // Prisma "record not found" on update.
-        if (err?.code === 'P2025') {
+        if (isRecordNotFound(err)) {
           return reply.status(404).send({ error: t('errors.userNotFound') });
         }
         throw err;

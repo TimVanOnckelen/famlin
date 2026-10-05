@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import livereload from 'livereload';
 
-const workspaceRoot = path.resolve(__dirname, '..');
-const outDir = path.resolve(__dirname, '../backend/dist/web');
+const workspaceRoot = path.resolve(import.meta.dirname, '..');
+const outDir = path.resolve(import.meta.dirname, '../backend/dist/web');
 
 // Only for `npm run watch` (`vite build --watch`, see package.json), which
 // rebuilds outDir on every source change but — unlike the real `vite`/`vite
@@ -40,7 +40,7 @@ export default defineConfig({
     // Mirror tsconfig.json's "@/*" → "src/*" paths — Vite doesn't read
     // tsconfig path mappings itself.
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
   build: {
@@ -48,6 +48,18 @@ export default defineConfig({
     // container — the exact pattern backend/admin uses with ../dist/admin.
     outDir,
     emptyOutDir: true,
+    rolldownOptions: {
+      output: {
+        // Long-lived vendor chunks: an app-only release doesn't invalidate the
+        // browser's cached React/i18n code.
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules\/(react|react-dom|scheduler)\// },
+            { name: 'i18n-vendor', test: /node_modules\/(i18next|react-i18next)\// },
+          ],
+        },
+      },
+    },
     commonjsOptions: {
       // @famlin/api-client resolves through a workspace symlink to a real
       // path under packages/api-client/dist — outside node_modules, so it
@@ -70,6 +82,8 @@ export default defineConfig({
       allow: [workspaceRoot],
     },
     proxy: {
+      // So the dev server's origin can also reach the backend-served admin UI.
+      '/admin': { target: 'http://localhost:3000', changeOrigin: true },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

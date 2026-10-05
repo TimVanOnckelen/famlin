@@ -3,9 +3,12 @@ import { initReactI18next } from 'react-i18next';
 
 import en from './locales/en.json';
 import nl from './locales/nl.json';
+import zh from './locales/zh.json';
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+// Endonyms — shown as-is regardless of the current UI language.
+export const LANGUAGE_NAMES: Record<SupportedLanguage, string> = { en: 'English', nl: 'Nederlands', zh: '简体中文' };
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
 
 const LANGUAGE_KEY = 'famlin_admin_language';
@@ -13,6 +16,7 @@ const LANGUAGE_KEY = 'famlin_admin_language';
 const resources = {
   en: { translation: en },
   nl: { translation: nl },
+  zh: { translation: zh },
 };
 
 function getBrowserLanguage(): SupportedLanguage {
@@ -35,6 +39,12 @@ export function getInitialLanguage(): SupportedLanguage {
 export function storeLanguage(lang: SupportedLanguage): void {
   localStorage.setItem(LANGUAGE_KEY, lang);
 }
+
+// Keep screen readers and browser typography (CJK font selection) aligned
+// with the selected UI language.
+i18n.on('languageChanged', (language) => {
+  document.documentElement.lang = language;
+});
 
 i18n.use(initReactI18next).init({
   resources,

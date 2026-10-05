@@ -1,6 +1,6 @@
 import { api, getCurrentServerUrl } from './client';
 import { getStorageAdapter, TOKEN_KEY } from './storage';
-import { User } from './types';
+import { User, Group } from './types';
 
 export interface LoginResponse {
   token: string;
@@ -78,7 +78,7 @@ export async function loginWithPassword(email: string, password: string, inviteT
   return response.data;
 }
 
-export async function fetchMe(): Promise<User & { groups: any[] }> {
+export async function fetchMe(): Promise<User & { groups: Group[] }> {
   const response = await api.get('/auth/me');
   return response.data;
 }

@@ -62,7 +62,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'localMediaPath',
 ];
 
-function serializeValue(key: keyof ServerSettings, value: any): string {
+function serializeValue(key: keyof ServerSettings, value: unknown): string {
   if (key === 'allowedEmails') {
     // Normalize casing on write so a later case-sensitive comparison in
     // isEmailAllowed() can't miss an entry the admin typed with different
@@ -72,7 +72,8 @@ function serializeValue(key: keyof ServerSettings, value: any): string {
   return String(value ?? '');
 }
 
-function parseValue(key: keyof ServerSettings, value: string): any {
+function parseValue<K extends keyof ServerSettings>(key: K, value: string): ServerSettings[K];
+function parseValue(key: keyof ServerSettings, value: string): ServerSettings[keyof ServerSettings] {
   if (key === 'allowedEmails') {
     return value
       .split(',')

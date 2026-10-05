@@ -114,11 +114,11 @@ export interface DomainEvents {
 
 type Handler<K extends keyof DomainEvents> = (payload: DomainEvents[K]) => void | Promise<void>;
 
-const handlers = new Map<keyof DomainEvents, Handler<any>[]>();
+const handlers = new Map<keyof DomainEvents, Handler<keyof DomainEvents>[]>();
 
 export function onDomainEvent<K extends keyof DomainEvents>(event: K, handler: Handler<K>): void {
   const list = handlers.get(event) ?? [];
-  list.push(handler);
+  list.push(handler as Handler<keyof DomainEvents>);
   handlers.set(event, list);
 }
 

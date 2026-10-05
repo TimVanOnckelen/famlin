@@ -122,4 +122,33 @@ describe('client', () => {
     expect(fakeAdapter.removeItem).not.toHaveBeenCalled();
     expect(handler).not.toHaveBeenCalled();
   });
+
+  describe('Accept-Language', () => {
+    async function headersWith(resolver: (() => string | null | undefined) | null) {
+      const { api, setLanguageResolver } = await import('../client');
+      setLanguageResolver(resolver);
+      const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;
+      const config = await fulfilled({ headers: {} });
+      return config.headers;
+    }
+
+    it('sends the language the registered resolver reports', async () => {
+      expect((await headersWith(() => 'zh'))['Accept-Language']).toBe('zh');
+    });
+
+    it('reads the resolver per request, so a language switch applies immediately', async () => {
+      const { api, setLanguageResolver } = await import('../client');
+      let language = 'en';
+      setLanguageResolver(() => language);
+      const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;
+      expect((await fulfilled({ headers: {} })).headers['Accept-Language']).toBe('en');
+      language = 'nl';
+      expect((await fulfilled({ headers: {} })).headers['Accept-Language']).toBe('nl');
+    });
+
+    it('leaves the header alone without a resolver or language', async () => {
+      expect((await headersWith(null))['Accept-Language']).toBeUndefined();
+      expect((await headersWith(() => undefined))['Accept-Language']).toBeUndefined();
+    });
+  });
 });

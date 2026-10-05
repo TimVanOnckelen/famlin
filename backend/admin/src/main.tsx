@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { setStorageAdapter, setApiBaseUrl } from '@famlin/api-client';
+import { setStorageAdapter, setApiBaseUrl, setLanguageResolver } from '@famlin/api-client';
 import { adminLocalStorageAdapter } from './storageAdapter';
-import './i18n';
+import i18n from './i18n';
 import App from './App';
 import './index.css';
 
@@ -13,6 +13,9 @@ import './index.css';
 // vite.config.ts), same as web/'s equivalent setup in web/src/main.tsx.
 setStorageAdapter(adminLocalStorageAdapter);
 setApiBaseUrl(window.location.origin);
+// For the shared package's requests (OIDC login); api/client.ts's own fetch
+// wrapper sets the same header itself.
+setLanguageResolver(() => i18n.resolvedLanguage ?? i18n.language);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../db.js';
 import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
 import { getAllSettings, updateSettings } from '../services/settings.js';
@@ -56,7 +56,7 @@ import { deleteStoriesWithMedia } from '../services/stories.js';
 // the port (4 included it) and added host as the port-carrying property. An
 // origin built from hostname would silently drop the port on any deployment
 // not served on 80/443, producing invite links that don't resolve.
-function getPublicOrigin(request: any): string {
+function getPublicOrigin(request: FastifyRequest): string {
   return `${request.protocol}://${request.host}`;
 }
 
@@ -297,7 +297,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // post type — an unknown id would silently never match anything (empty ≠
   // unknown: an empty array deliberately means "all allowed"). Returns true
   // after sending the 400, mirroring requireAdmin's return-and-bail contract.
-  function rejectUnknownPostTypes(allowedPostTypes: string[] | undefined, request: any, reply: any): boolean {
+  function rejectUnknownPostTypes(allowedPostTypes: string[] | undefined, request: FastifyRequest, reply: FastifyReply): boolean {
     if (allowedPostTypes?.some((id) => !getPostTypeHandler(id))) {
       reply.status(400).send({ error: getT(request)('errors.unknownPostType') });
       return true;
@@ -415,7 +415,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           userId: body.userId,
         },
       });
-    } catch (err: any) {
+    } catch (err) {
       // Unique constraint: the user is already a member of this group.
       if (isUniqueConstraintViolation(err)) {
         return reply.status(409).send({ error: getT(request)('errors.userAlreadyMember') });
@@ -699,7 +699,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     try {
       await prisma.circleMember.create({ data: { circleId, userId: body.userId } });
-    } catch (err: any) {
+    } catch (err) {
       if (isUniqueConstraintViolation(err)) {
         return reply.status(409).send({ error: t('errors.userAlreadyCircleMember') });
       }
@@ -1038,7 +1038,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         },
       });
       return link;
-    } catch (err: any) {
+    } catch (err) {
       // Unique constraint: this album is already linked to this group.
       if (isUniqueConstraintViolation(err)) {
         return reply.status(409).send({ error: t('errors.mediaAlbumAlreadyLinked') });

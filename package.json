@@ -37,6 +37,7 @@
     "lint:web": "npm run lint --workspace=web",
     "lint:api-client": "npm run lint --workspace=packages/api-client",
     "lint:mobile": "cd mobile && npm run lint",
+    "check:locales": "node scripts/check-locales.mjs",
     "lint": "npm run lint:backend && npm run lint:admin && npm run lint:web && npm run lint:api-client && npm run lint:mobile"
   },
   "engines": {

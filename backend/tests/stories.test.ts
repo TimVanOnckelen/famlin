@@ -72,8 +72,10 @@ async function expire(storyId: string) {
   });
 }
 
-function trayStoryIds(res: { json: () => any }): string[] {
-  return res.json().authors.flatMap((a: any) => a.stories.map((s: any) => s.id));
+type StoryItem = { id: string; imageUrl: string; createdAt: string };
+
+function trayStoryIds(res: { json: () => { authors: { stories: StoryItem[] }[] } }): string[] {
+  return res.json().authors.flatMap((a) => a.stories.map((s) => s.id));
 }
 
 beforeAll(async () => {
@@ -216,13 +218,13 @@ describe('visibility', () => {
 
   it('shows a cross-posted story once to a member of both groups, and lists its groups to the author only', async () => {
     const story = (await createStory(author, { groupIds: [family.id, other.id] })).json();
-    expect(story.sharedWithGroups.map((g: any) => g.id).sort()).toEqual([family.id, other.id].sort());
+    expect(story.sharedWithGroups.map((g: { id: string }) => g.id).sort()).toEqual([family.id, other.id].sort());
 
     const asViewer = await app.inject({ method: 'GET', url: '/api/stories', headers: authHeader(viewer) });
     const viewerCopies = asViewer
       .json()
-      .authors.flatMap((a: any) => a.stories)
-      .filter((s: any) => s.imageUrl === story.imageUrl);
+      .authors.flatMap((a: { stories: StoryItem[] }) => a.stories)
+      .filter((s: StoryItem) => s.imageUrl === story.imageUrl);
     expect(viewerCopies).toHaveLength(1);
     expect(viewerCopies[0].sharedWithGroups).toBeUndefined();
     expect(viewerCopies[0].stats).toBeNull();
@@ -256,7 +258,7 @@ describe('views, reactions and replies', () => {
     await app.inject({ method: 'POST', url: `/api/stories/${story.id}/view`, headers: authHeader(viewer) });
 
     const views = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/views`, headers: authHeader(author) });
-    expect(views.json().items.map((v: any) => v.id)).toEqual([viewer.id]);
+    expect(views.json().items.map((v: { id: string }) => v.id)).toEqual([viewer.id]);
 
     const snooping = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/views`, headers: authHeader(viewer) });
     expect(snooping.statusCode).toBe(404);
@@ -318,7 +320,7 @@ describe('pinning, Highlights and expiry', () => {
     expect(pin.statusCode).toBe(200);
 
     const highlights = await app.inject({ method: 'GET', url: '/api/stories/highlights', headers: authHeader(viewer) });
-    expect(highlights.json().items.map((s: any) => s.id)).toContain(story.id);
+    expect(highlights.json().items.map((s: StoryItem) => s.id)).toContain(story.id);
 
     const late = (await createStory(author, { groupId: family.id })).json();
     await expire(late.id);
@@ -328,7 +330,7 @@ describe('pinning, Highlights and expiry', () => {
 
   it('orders Highlights by story date, newest first, as one flat list', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/stories/highlights', headers: authHeader(viewer) });
-    const dates = res.json().items.map((s: any) => new Date(s.createdAt).getTime());
+    const dates = res.json().items.map((s: StoryItem) => new Date(s.createdAt).getTime());
     expect(dates).toEqual([...dates].sort((a, b) => b - a));
   });
 
@@ -366,7 +368,7 @@ describe('pinning, Highlights and expiry', () => {
     // A view after expiry is ignored: the list is frozen.
     await app.inject({ method: 'POST', url: `/api/stories/${kept.id}/view`, headers: authHeader(insider) });
     const views = await app.inject({ method: 'GET', url: `/api/stories/${kept.id}/views`, headers: authHeader(author) });
-    expect(views.json().items.map((v: any) => v.id)).toEqual([viewer.id]);
+    expect(views.json().items.map((v: { id: string }) => v.id)).toEqual([viewer.id]);
     expect(fs.existsSync(path.join(uploadsDir, path.basename(kept.imageUrl)))).toBe(true);
   });
 
@@ -439,7 +441,7 @@ describe('admin', () => {
     const circleStory = (await createStory(author, { groupId: family.id, circleId: circle.id })).json();
 
     const list = await app.inject({ method: 'GET', url: '/api/admin/content/stories', headers: authHeader(admin) });
-    const ids = list.json().items.map((s: any) => s.id);
+    const ids = list.json().items.map((s: StoryItem) => s.id);
     expect(ids).toContain(visible.id);
     expect(ids).not.toContain(circleStory.id);
     expect(JSON.stringify(list.json())).not.toContain('Private note');
