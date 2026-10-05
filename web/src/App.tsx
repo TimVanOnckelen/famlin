@@ -10,10 +10,21 @@ import { ChatPage } from '@/pages/ChatPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
+import { useTranslation } from 'react-i18next';
+import { useBranding } from '@/hooks/useBranding';
+import { applyBranding } from '@/utils/branding';
 
 export default function App() {
   const { user, setAuth, clearSession, loadToken, isLoading, logout } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
+  const { t } = useTranslation();
+  const branding = useBranding();
+
+  // Per-family branding (issue #164). The server already injected it into
+  // index.html; this keeps the page in sync with /server-info afterwards.
+  useEffect(() => {
+    applyBranding(branding, t('common.appName'));
+  }, [branding, t]);
   // No client-side routing yet — the profile, photos, chat, and trip-detail
   // pages are simple view switches.
   const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip' | 'album'>('feed');

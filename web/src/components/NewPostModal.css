@@ -121,15 +121,15 @@
 
 .type-chip-milestone-active {
   border: 2px solid var(--fam-milestone);
-  background: #fff3dd;
-  color: #8a5a12;
+  background: var(--fam-milestone-bg);
+  color: var(--fam-milestone-ink);
   font-weight: 700;
 }
 
 .type-chip-poll-active {
   border: 2px solid var(--fam-accent);
-  background: #fdeae2;
-  color: #a8492a;
+  background: var(--fam-circle-tint);
+  color: var(--fam-accent-ink);
   font-weight: 700;
 }
 

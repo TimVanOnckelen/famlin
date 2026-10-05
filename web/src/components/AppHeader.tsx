@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { User, fetchChatUnreadCounts } from '@famlin/api-client';
-import { AppIcon } from '@/components/Logo';
+import { BrandIcon } from '@/components/Logo';
+import { useBranding } from '@/hooks/useBranding';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import './AppHeader.css';
@@ -24,6 +25,7 @@ export function AppHeader({
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
+  const branding = useBranding();
 
   // Owned here (rather than threaded down from the feed/photos pages) so the
   // unread dot works from either page without extra prop-drilling — every
@@ -41,8 +43,8 @@ export function AppHeader({
     <header className="app-header">
       <div className="app-header-inner">
         <div className="app-header-brand">
-          <AppIcon size={40} />
-          <span className="app-header-wordmark">{t('common.appName')}</span>
+          <BrandIcon size={40} />
+          <span className="app-header-wordmark">{branding?.name ?? t('common.appName')}</span>
         </div>
 
         <div className="app-header-actions">

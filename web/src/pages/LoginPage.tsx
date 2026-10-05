@@ -8,7 +8,8 @@ import {
   completeBrowserOidcLogin,
   clearBrowserOidcLogin,
 } from '@famlin/api-client';
-import { AppIcon } from '@/components/Logo';
+import { BrandIcon } from '@/components/Logo';
+import { useBranding } from '@/hooks/useBranding';
 import { useAuthStore } from '@/stores/authStore';
 import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n';
 import './LoginPage.css';
@@ -39,6 +40,7 @@ function PhotoCollage() {
 
 export function LoginPage() {
   const { t, i18n } = useTranslation();
+  const branding = useBranding();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -125,8 +127,8 @@ export function LoginPage() {
         <PhotoCollage />
 
         <div className="login-brand">
-          <AppIcon size={76} />
-          <h1 className="login-wordmark">{t('common.appName')}</h1>
+          <BrandIcon size={76} />
+          <h1 className="login-wordmark">{branding?.name ?? t('common.appName')}</h1>
           <p className="login-subtitle">{t('login.subtitle')}</p>
         </div>
 

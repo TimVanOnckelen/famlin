@@ -101,7 +101,7 @@ function PersonChip({ person }: { person: PostPerson }) {
 
   // Fallback avatar with first letter of the label when no image
   const firstLetter = person.label.charAt(0).toUpperCase();
-  const AVATAR_COLORS = ['#006e94', '#ed835e', '#4b8b5a', '#005480'];
+  const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)'];
   let hash = 0;
   for (let i = 0; i < person.label.length; i++) {
     hash = (hash * 31 + person.label.charCodeAt(i)) | 0;
