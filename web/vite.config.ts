@@ -82,6 +82,8 @@ export default defineConfig({
       allow: [workspaceRoot],
     },
     proxy: {
+      // So the dev server's origin can also reach the backend-served admin UI.
+      '/admin': { target: 'http://localhost:3000', changeOrigin: true },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
