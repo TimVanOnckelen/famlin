@@ -78,3 +78,5 @@ coverage/
 
 # Misc
 *.pem
+# Runtime media (default UPLOADS_DIR); also where a local test run writes fixtures
+backend/uploads/
