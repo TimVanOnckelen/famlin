@@ -10,7 +10,7 @@ interface AvatarProps {
   size?: number;
 }
 
-const AVATAR_COLORS = ['#006e94', '#318ea2', '#4b8b5a', '#005480', '#ed835e'];
+const AVATAR_COLORS = [colors.primary, colors.primaryLight, '#4b8b5a', colors.primaryDark, colors.accent];
 
 function getInitials(name: string) {
   return name

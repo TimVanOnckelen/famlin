@@ -1,10 +1,22 @@
+// Per-family branding (issue #164): these values are OVERWRITTEN IN PLACE by
+// applyBrandingToColors() (src/branding/) before any screen module is
+// required — see BrandedRoot and AuthenticatedScreens. That's why this is a
+// mutable object read at StyleSheet.create() time rather than a hook: every
+// module that builds styles from it must be loaded after the brand is
+// applied, and anything that captured it earlier keeps the default until the
+// next cold start. Don't hardcode a brand/semantic hex elsewhere — add a
+// token here so it follows the brand.
 export const colors = {
   primary: '#006e94',
   primaryDark: '#005480',
   primaryLight: '#318ea2',
   primaryTint: '#daf3fe',
+  // Border on a primary-tinted surface (the poll/album type chips).
+  primaryBorder: '#a9dced',
   accent: '#ed835e',
   updateBg: '#fbe2d4',
+  updateBorder: '#f0c3ac',
+  updateText: '#8a3f22',
   milestone: '#eeb154',
   milestoneBg: '#fff3dd',
   milestoneText: '#5c3d0a',
@@ -23,6 +35,9 @@ export const colors = {
   circleDark: '#a8482c',
   circleTint: '#fdeae2',
   bg: '#edf7fb',
+  // Login screen background: a gradient between these (equal = flat bg).
+  loginBgFrom: '#edf7fb',
+  loginBgTo: '#edf7fb',
   surface: '#ffffff',
   border: '#d9e3e7',
   textMuted: '#597784',
@@ -34,3 +49,6 @@ export const colors = {
   dangerBg: '#fdecea',
   white: '#FFFFFF',
 };
+
+// Today's look, untouched — what an unbranded server (or a reset) restores.
+export const DEFAULT_COLORS: Readonly<typeof colors> = Object.freeze({ ...colors });

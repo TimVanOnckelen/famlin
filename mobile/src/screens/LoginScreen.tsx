@@ -15,6 +15,8 @@ import { useAppleSignInAvailable } from '@/utils/appleLogin';
 import { getServerUrl, setLanguage, setServerUrl as persistServerUrl } from '@/utils/storage';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
 import { setApiBaseUrl } from '@/api/client';
+import { LoginBackground } from '@/components/LoginBackground';
+import { getBranding } from '@/branding';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -138,6 +140,7 @@ export function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LoginBackground />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -150,7 +153,7 @@ export function LoginScreen() {
         >
         <View style={styles.logoSection}>
           <PhotoCollage />
-          <Text style={styles.title}>{t('common.appName')}</Text>
+          <Text style={styles.title}>{getBranding()?.name ?? t('common.appName')}</Text>
           <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
         </View>
 
