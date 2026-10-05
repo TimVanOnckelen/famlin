@@ -12,7 +12,7 @@ Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the 
 
 From `/admin` → Server settings you can then configure everything below. The page is organised into four sections — **General**, **Sign-in & access**, **Notifications**, and **Media** — each showing a status indicator (configured / not set up) so you can see at a glance what still needs attention; changes across all sections are saved together with the save bar that appears at the bottom.
 
-- **Default language** (General) — used for server-rendered pages that don't have a signed-in user yet, currently the invite link landing page (`/invite/:token`). Defaults to English.
+- **Default language** (General) — used for server-rendered pages that don't have a signed-in user yet, currently the invite link landing page (`/invite/:token`). Choose English, Nederlands or 简体中文 (Simplified Chinese); defaults to English.
 - **App Store / Google Play URLs** (General) — optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps — [App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin) — so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
 - **OIDC / SSO** (Sign-in & access) — see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
 - **Allowed email addresses** (Sign-in & access) — restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.

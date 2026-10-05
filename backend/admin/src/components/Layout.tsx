@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Logo } from './Logo';
 import { User } from '../types';
 import { api } from '../api/client';
-import i18n, { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '../i18n';
+import i18n, { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '../i18n';
 
 interface LayoutProps {
   user: User;
@@ -64,7 +64,7 @@ export function Layout({ user, children }: LayoutProps) {
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang} value={lang}>
-                  {lang === 'en' ? 'English' : 'Nederlands'}
+                  {LANGUAGE_NAMES[lang]}
                 </option>
               ))}
             </select>

@@ -136,7 +136,8 @@
     "passwordChangeFailed": "Your password couldn't be changed. Try again.",
     "languages": {
       "en": "English",
-      "nl": "Nederlands"
+      "nl": "Nederlands",
+      "zh": "简体中文"
     },
     "notifyNewStory": "Stories (push only)"
   },

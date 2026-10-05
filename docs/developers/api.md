@@ -67,7 +67,7 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 
 **Requests and responses are JSON** (`Content-Type: application/json`), except file uploads (multipart) and media downloads. IDs are opaque strings (cuid). Timestamps are ISO 8601 in UTC, e.g. `"2026-07-08T09:00:00.000Z"`.
 
-**Errors** always have the shape `{ "error": "<message>" }`. Validation failures (400) add a `details` object describing the offending fields. Error messages are translated: send `Accept-Language: nl` for Dutch (default English).
+**Errors** always have the shape `{ "error": "<message>" }`. Validation failures (400) add a `details` object describing the offending fields. Error messages are translated: send `Accept-Language: nl` for Dutch or `Accept-Language: zh` for Simplified Chinese (default English).
 
 | Status | Meaning |
 | --- | --- |

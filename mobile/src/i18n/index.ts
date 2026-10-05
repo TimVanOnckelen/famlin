@@ -4,15 +4,17 @@ import * as Localization from 'expo-localization';
 
 import en from './locales/en.json';
 import nl from './locales/nl.json';
+import zh from './locales/zh.json';
 import { getLanguage } from '@/utils/storage';
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
 
 const resources = {
   en: { translation: en },
   nl: { translation: nl },
+  zh: { translation: zh },
 };
 
 i18n.use(initReactI18next).init({

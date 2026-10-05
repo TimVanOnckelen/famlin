@@ -3,14 +3,16 @@ import type { FastifyRequest } from 'fastify';
 
 import en from './locales/en.json' with { type: 'json' };
 import nl from './locales/nl.json' with { type: 'json' };
+import zh from './locales/zh.json' with { type: 'json' };
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl'] as const;
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en';
 
 const resources = {
   en: { translation: en },
   nl: { translation: nl },
+  zh: { translation: zh },
 };
 
 i18n.init({
