@@ -15,6 +15,7 @@ export {
   getCurrentMediaToken,
   initApiBaseUrl,
   setUnauthorizedHandler,
+  setLanguageResolver,
 } from './client';
 
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo } from './auth';

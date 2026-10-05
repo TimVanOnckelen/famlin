@@ -43,6 +43,17 @@ export async function initApiBaseUrl() {
   }
 }
 
+// Lets each consumer report its current UI language so the backend answers
+// with translated error messages in that language (`getT(request)` reads
+// Accept-Language). A resolver rather than a stored value because the
+// language can change at any time (profile/login language pickers), and this
+// package deliberately doesn't depend on any consumer's i18n instance.
+let languageResolver: (() => string | null | undefined) | null = null;
+
+export function setLanguageResolver(fn: (() => string | null | undefined) | null) {
+  languageResolver = fn;
+}
+
 export const api = axios.create({
   timeout: 15000,
   headers: {
@@ -55,6 +66,10 @@ api.interceptors.request.use(async (config) => {
   // baseURL unset so the request fails fast instead of silently hitting a
   // hardcoded default.
   config.baseURL = currentBaseUrl ?? undefined;
+  const language = languageResolver?.();
+  if (language) {
+    config.headers['Accept-Language'] = language;
+  }
   const token = await getStorageAdapter().getItem(TOKEN_KEY);
   if (token && (await tokenBelongsToCurrentServer())) {
     config.headers.Authorization = `Bearer ${token}`;

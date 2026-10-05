@@ -9,6 +9,7 @@ exports.getCurrentServerUrl = getCurrentServerUrl;
 exports.setMediaToken = setMediaToken;
 exports.getCurrentMediaToken = getCurrentMediaToken;
 exports.initApiBaseUrl = initApiBaseUrl;
+exports.setLanguageResolver = setLanguageResolver;
 exports.setUnauthorizedHandler = setUnauthorizedHandler;
 const axios_1 = __importDefault(require("axios"));
 const storage_1 = require("./storage");
@@ -46,6 +47,15 @@ async function initApiBaseUrl() {
         setApiBaseUrl(stored);
     }
 }
+// Lets each consumer report its current UI language so the backend answers
+// with translated error messages in that language (`getT(request)` reads
+// Accept-Language). A resolver rather than a stored value because the
+// language can change at any time (profile/login language pickers), and this
+// package deliberately doesn't depend on any consumer's i18n instance.
+let languageResolver = null;
+function setLanguageResolver(fn) {
+    languageResolver = fn;
+}
 exports.api = axios_1.default.create({
     timeout: 15000,
     headers: {
@@ -57,6 +67,10 @@ exports.api.interceptors.request.use(async (config) => {
     // baseURL unset so the request fails fast instead of silently hitting a
     // hardcoded default.
     config.baseURL = currentBaseUrl ?? undefined;
+    const language = languageResolver?.();
+    if (language) {
+        config.headers['Accept-Language'] = language;
+    }
     const token = await (0, storage_1.getStorageAdapter)().getItem(storage_1.TOKEN_KEY);
     if (token && (await tokenBelongsToCurrentServer())) {
         config.headers.Authorization = `Bearer ${token}`;

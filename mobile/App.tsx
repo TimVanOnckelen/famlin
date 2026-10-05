@@ -11,8 +11,7 @@ import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as Linking from 'expo-linking';
 
-import '@/i18n';
-import { initI18nLanguage } from '@/i18n';
+import i18n, { initI18nLanguage } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { InviteScreen } from '@/screens/InviteScreen';
@@ -32,7 +31,7 @@ import { StoryViewerScreen } from '@/screens/StoryViewerScreen';
 import { StoryComposerScreen } from '@/screens/StoryComposerScreen';
 import { colors } from '@/constants/colors';
 import { ActivityIndicator, View, AppState } from 'react-native';
-import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter } from '@/api/client';
+import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client';
 import { fetchMe } from '@/api/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
@@ -55,6 +54,10 @@ const queryClient = new QueryClient({
 // (initApiBaseUrl/loadToken below, or any request through the shared axios
 // client) — those all read/write via the registered adapter.
 setStorageAdapter(mobileStorageAdapter);
+// Backend error messages follow the app's UI language (stored choice or
+// device language, see initI18nLanguage) — React Native's HTTP stack sends
+// no Accept-Language of its own.
+setLanguageResolver(() => i18n.language);
 
 // Parses `famlin://invite/<token>?server=<url>` (from the /invite/:token web
 // landing page's "Open in the app" button). Returns null for any other URL.
