@@ -1,0 +1,69 @@
+---
+id: get-branding-asset
+title: "Download the family's logo or favicon"
+description: "Public, no authentication — the login page shows the logo before anyone has signed in. Served only for the paths a `Branding` object's `logoUrl`/`faviconUrl` carry; file names are content-addressed, so responses are `Cache-Control: immutable` and a new logo is a new URL. Never reachable under `/uploads/`."
+sidebar_label: "Download the family's logo or favicon"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVttu3DYQ/ZUBUSBeQ7tyUidt1KKAk7ppiiA1fEFQ7G6jkTSS2EgkQ1K7VrcC+tr3fkK/LF9SDKV16jjNQ5/7ZIvkzJw5PDyzO6ENWfRSq+eFSERF/olFVUhVnThHXkTCY+VEshQnea475cU6EgW53ErDUSIRZ13WyDwCpQE7X5PyMg8Z4d3vf4KvCRpdSQUGKwJX663bL2rIqNSWAFWvFUGNDpysFBUg1QIuyG6oAK2aHkptQ5RBXztASPcwU9DZL5T7ew5STnllmzROS9zIXCv+gByt7b+CUjYECltygJYg18qT8nMsCkvOURGB02DJGa3cdCZ9inlN86daeaubBGTbdh6zhlJAVQCCou3Yh3TT19X5iwW8pA1ZsIR5zaehUwVZSOPONBoLF6cLEQlHeWel70WyXEfCoMWWPFnmeicYp0gEYxaRkEwzdy4iYeltJy0VIvG2o0i4vKYWRbITvjcc47yVqhKc0nuyHPrzAYP8bSJlNl8ezR/jvFzv7j8aVquFUdVnYogEXWNrGs7Bx+dH9x98fvzw0RdfPsYsL6jkc2JYM4SJJK764OiI/9yWxGVNcPbyGVhShQxSCAjg3R9/wcP7D8BcRzChgUfHYK5nIhLTjXA22WJFMddLdp/osNS2RS8SkUmFthfDMAyROD46vovonJzubE6gtIdSd6q4XRGNaSbZxr84DvlI4VFpTK3lZ+PlSAFZq+3H8N2G8H3XoppbwoJFEYG3qFyDngrYSAzqTk/ynIyfv0BVdVhRCjUha+cgJZXGqWrS2UJwk+9lsJzqryPhpQ/XdxoWhpGOlnytp7c9qqIWiYiz6f3EOxbZEARpN3v9dbYRiai9Ny6J4xLbRqrFpI9Frts7zf2kOwt6q+C7cBYKMo3uW2aXJbMX+wVTOrKWEVqyJx3DuaGOK4pJ1Pw9HrpT7QQMWacVNoB5Ts6B129IwUE6Qn1t0L9eLBZpBLmlQLFUgeEtZYDGzEDblUJw5BzL84dXl1Ba3UJ69uPFJcRoZMxmFgfrShfwRPs6eIIj5UMmhy3BFvtkpVLuQlv5a9BPAk8Cavg6gPomXaxUuDOpSh16na5pourk7LmIBFM/Npd31jJvHzZ9uiHb7/kdLwvo2mh2K19LB+enF5ec7cZv0Mj0xoQDXt71Na2ULkuZS2yg1RkbI/vZxI2DztECXknuGJYfZXp9EBe0oYafgeM6s5XqdQc5Ksg62RTQ7wUhladqHDEOsEKpnB93S2xl099zUzOLlVqpk6bZWzObqsu1oQKyHg4PK6s7Ay21GVlXS3N4mMC+ZpgR/LTGRqz0tFI3eRSEWAcHoaQkNwuRGTVaVeB1FMJ8TZa4qtJ8sYCWfQJ8jX6lDNmxdZ5LBMsrJzm0DpzepSMMrNvjMAqINryglRtLbrV9QwVML8sFpUTCaOdbDB40DYJv9Vbx7AgFb3gLnqrt3ko/VMzuvcH9P6T/25CebMnTtY9NgzJcTzDH3eSkS7F3UhGJJAzsdSRq7Tzv7XYZOrqyzTDw8tuO7DTwN2gl1w12W0jH/xciKbFx9Il7PDifjH8G/wZvWkTVs61g0/GXiMQb6vc/KYb1EIlxtIT649Y4fP4R9H4Ms4ffDJJnp5diGP4G3GSVXg==
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Download the family's logo or favicon"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/branding/{file}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Public, no authentication — the login page shows the logo before anyone has signed in. Served only for the paths a `Branding` object's `logoUrl`/`faviconUrl` carry; file names are content-addressed, so responses are `Cache-Control: immutable` and a new logo is a new URL. Never reachable under `/uploads/`.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./get-branding-asset.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-branding-asset.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-branding-asset.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      
