@@ -46,7 +46,42 @@ export interface ServerInfo {
     appStoreUrl?: string | null;
     playStoreUrl?: string | null;
     readOnly?: boolean;
+    branding?: Branding | null;
 }
+export interface BrandPalette {
+    primary: string;
+    primaryDark: string;
+    primaryLight: string;
+    primaryTint: string;
+    bg: string;
+    loginBgFrom: string;
+    loginBgTo: string;
+}
+export interface BrandSemantic {
+    accent: string;
+    updateBg: string;
+    circle: string;
+    circleDark: string;
+    circleTint: string;
+    milestone: string;
+    milestoneBg: string;
+    milestoneText: string;
+    milestoneDivider: string;
+    trip: string;
+    tripDark: string;
+    tripBg: string;
+    tripTint: string;
+    tripBorder: string;
+}
+export interface Branding {
+    name: string | null;
+    logoUrl: string | null;
+    faviconUrl: string | null;
+    palette: BrandPalette;
+    semantic: BrandSemantic;
+    hash: string;
+}
+export declare function getBrandingAssetUrl(path: string, serverUrl?: string | null): string;
 export declare function fetchServerInfo(): Promise<ServerInfo>;
 export declare function deleteAccount(): Promise<void>;
 export declare function downloadMyExport(): Promise<Blob>;

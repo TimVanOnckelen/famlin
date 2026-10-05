@@ -421,5 +421,45 @@
     "addMember": "Add to circle",
     "confirmDelete": "Delete the circle \"{{name}}\"?",
     "confirmDeleteWithPosts": "Delete the circle \"{{name}}\"? This permanently deletes its {{count}} post(s) and everything on them. You cannot see or recover this content afterwards."
+  },
+  "branding": {
+    "title": "Branding",
+    "navStatus": "Name, color, logo",
+    "desc": "Give this Famlin server your family's own look in the mobile and web apps.",
+    "publicNote": "The logo and family name are visible to anyone who opens this server's address.",
+    "name": "Family name",
+    "nameHint": "Shown in the app header and on the login screen, and used as the title of push notifications and emails. Leave empty to keep \"Famlin\".",
+    "color": "Color",
+    "custom": "Custom",
+    "customColor": "Custom color (hex)",
+    "invalidColor": "Enter a 6-digit hex color, like #006e94.",
+    "adjusted": "{{from}} is too light for white text, so it's darkened to {{to}} to stay readable.",
+    "shifted": "So they stay distinguishable from your brand color, these post colors change too: {{families}}.",
+    "logo": "Logo",
+    "uploadLogo": "Upload logo",
+    "replaceLogo": "Replace logo",
+    "removeLogo": "Remove",
+    "uploading": "Uploading…",
+    "logoHint": "PNG, JPEG or WebP, up to 5 MB. A square image works best. Also used as the web app's browser icon.",
+    "preview": "Preview",
+    "previewButton": "Post",
+    "appliesHint": "Mobile apps pick up a change the next time they're started.",
+    "families": {
+      "family": "Family",
+      "circle": "Circle",
+      "milestone": "Milestone",
+      "trip": "Trip"
+    },
+    "presets": {
+      "teal": "Teal",
+      "ocean": "Ocean",
+      "indigo": "Indigo",
+      "plum": "Plum",
+      "rose": "Rose",
+      "coral": "Coral",
+      "amber": "Amber",
+      "forest": "Forest",
+      "slate": "Slate"
+    }
   }
 }

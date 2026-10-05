@@ -180,6 +180,18 @@ describe('POST /api/auth/setup/restore', () => {
       },
     });
 
+    // Branding travels with the family's content; other server config doesn't.
+    await prisma.setting.createMany({
+      data: [
+        { key: 'brandPreset', value: 'plum' },
+        { key: 'brandName', value: 'The Janssens' },
+        { key: 'brandLogo', value: '0123456789abcdef' },
+        { key: 'smtpPass', value: 'secret' },
+      ],
+    });
+    fs.mkdirSync(path.join(uploadsDir, 'branding'), { recursive: true });
+    fs.writeFileSync(path.join(uploadsDir, 'branding', 'logo-0123456789abcdef.png'), 'logo-bytes');
+
     // --- snapshot + export --------------------------------------------
     const snapshot = async () => ({
       users: await prisma.user.findMany({
@@ -203,6 +215,11 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: await prisma.upload.findMany({ where: { assetKey: { not: liveKey } }, orderBy: { id: 'asc' } }),
       stories: await prisma.story.findMany({ where: { pinnedAt: { not: null } }, orderBy: { id: 'asc' } }),
       storyReactions: await prisma.storyReaction.findMany({ orderBy: { id: 'asc' } }),
+      branding: await prisma.setting.findMany({
+        where: { key: { startsWith: 'brand' } },
+        orderBy: { key: 'asc' },
+        select: { key: true, value: true },
+      }),
     });
     const before = await snapshot();
 
@@ -216,6 +233,7 @@ describe('POST /api/auth/setup/restore', () => {
     fs.rmSync(path.join(uploadsDir, 'originals', `${assetKey}.png`));
     fs.rmSync(path.join(uploadsDir, `${highlightKey}.jpg`));
     fs.rmSync(path.join(uploadsDir, `${liveKey}.jpg`));
+    fs.rmSync(path.join(uploadsDir, 'branding'), { recursive: true });
 
     // --- restore, as the admin whose account is in the backup -----------
     const res = await restore({ email: 'Admin@Example.com', name: 'Ignored', password: 'new-password-1' }, archive);
@@ -241,9 +259,13 @@ describe('POST /api/auth/setup/restore', () => {
       mediaPersonLinks: 1,
       uploads: 2,
       highlights: 1,
+      branding: 3,
     });
 
     const after = await snapshot();
+    expect(await prisma.setting.findUnique({ where: { key: 'smtpPass' } })).toBeNull();
+    expect(fs.readFileSync(path.join(uploadsDir, 'branding', 'logo-0123456789abcdef.png'), 'utf8')).toBe('logo-bytes');
+    fs.rmSync(path.join(uploadsDir, 'branding'), { recursive: true });
     expect(after).toEqual(before);
 
     // Files are back under their original paths.

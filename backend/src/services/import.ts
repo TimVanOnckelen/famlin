@@ -26,6 +26,8 @@ import { pipeline } from 'stream/promises';
 import yauzl from 'yauzl';
 import { prisma } from '../db.js';
 import { uploadsDir } from '../config.js';
+import { invalidateSettingsCache } from './settings.js';
+import { BRANDING_SETTING_KEYS } from './branding/index.js';
 import pkg from '../../package.json' with { type: 'json' };
 
 export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty';
@@ -230,6 +232,13 @@ const highlightRow = z.object({
   reactions: z.array(storyReactionRow).default([]),
 });
 
+// Only the branding Setting keys are accepted — an archive can never write
+// credentials or other server config through this file.
+const brandingRow = z.object({
+  key: z.enum(BRANDING_SETTING_KEYS),
+  value: z.string().max(200),
+});
+
 const manifestSchema = z.object({
   serverVersion: z.string(),
 });
@@ -252,6 +261,7 @@ const DATA_FILES = {
   mediaPersonLinks: { file: 'data/media-person-links.json', schema: z.array(mediaPersonLinkRow), required: false },
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
   highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
+  branding: { file: 'data/branding.json', schema: z.array(brandingRow), required: false },
 } as const;
 
 type DataKey = keyof typeof DATA_FILES;
@@ -491,6 +501,9 @@ async function insertAll(
   await tx.storyReaction.createMany({
     data: data.highlights.flatMap((story) => story.reactions.map((r) => ({ ...r, storyId: story.id }))),
   });
+  for (const row of data.branding) {
+    await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row });
+  }
 
   return { adminUserId: adminUser.id };
 }
@@ -576,6 +589,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
   // Only now, with the rows committed, does anything touch the live media
   // directory.
   await installFiles(filesDir, uploadsDir);
+  if (data.branding.length > 0) invalidateSettingsCache();
 
   const counts: RestoreCounts = {
     users: data.users.length,
@@ -594,6 +608,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     mediaPersonLinks: data.mediaPersonLinks.length,
     uploads: data.uploads.length,
     highlights: data.highlights.length,
+    branding: data.branding.length,
     files: fileCount,
   };
 

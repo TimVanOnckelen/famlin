@@ -100,6 +100,14 @@ const paths: Record<string, ReactNode> = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </>
   ),
+  palette: (
+    <>
+      <path d="M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-2.5a1.5 1.5 0 0 0-1 2.6A1.5 1.5 0 0 1 12 22z" />
+      <circle cx="7.5" cy="10.5" r="1.2" />
+      <circle cx="12" cy="7" r="1.2" />
+      <circle cx="16.5" cy="10.5" r="1.2" />
+    </>
+  ),
   download: (
     <>
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

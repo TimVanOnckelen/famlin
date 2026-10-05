@@ -421,5 +421,45 @@
     "addMember": "Toevoegen aan kring",
     "confirmDelete": "De kring \"{{name}}\" verwijderen?",
     "confirmDeleteWithPosts": "De kring \"{{name}}\" verwijderen? Hiermee verdwijnen ook de {{count}} bericht(en) en alles wat erbij hoort, definitief. Je kunt deze inhoud daarna niet meer bekijken of herstellen."
+  },
+  "branding": {
+    "title": "Huisstijl",
+    "navStatus": "Naam, kleur, logo",
+    "desc": "Geef deze Famlin-server de eigen look van je familie in de mobiele app en de web-app.",
+    "publicNote": "Het logo en de familienaam zijn zichtbaar voor iedereen die het adres van deze server opent.",
+    "name": "Familienaam",
+    "nameHint": "Getoond in de kop van de app en op het inlogscherm, en gebruikt als titel van pushmeldingen en e-mails. Laat leeg om \"Famlin\" te behouden.",
+    "color": "Kleur",
+    "custom": "Eigen kleur",
+    "customColor": "Eigen kleur (hex)",
+    "invalidColor": "Vul een hexkleur van 6 tekens in, zoals #006e94.",
+    "adjusted": "{{from}} is te licht voor witte tekst en wordt daarom donkerder gemaakt tot {{to}}, zodat alles leesbaar blijft.",
+    "shifted": "Om te onderscheiden te blijven van je huisstijlkleur, veranderen ook deze berichtkleuren: {{families}}.",
+    "logo": "Logo",
+    "uploadLogo": "Logo uploaden",
+    "replaceLogo": "Logo vervangen",
+    "removeLogo": "Verwijderen",
+    "uploading": "Uploaden…",
+    "logoHint": "PNG, JPEG of WebP, maximaal 5 MB. Een vierkante afbeelding werkt het best. Wordt ook gebruikt als browsericoon van de web-app.",
+    "preview": "Voorbeeld",
+    "previewButton": "Plaatsen",
+    "appliesHint": "Mobiele apps nemen een wijziging over bij de volgende keer opstarten.",
+    "families": {
+      "family": "Familie",
+      "circle": "Kring",
+      "milestone": "Mijlpaal",
+      "trip": "Reis"
+    },
+    "presets": {
+      "teal": "Petrol",
+      "ocean": "Oceaan",
+      "indigo": "Indigo",
+      "plum": "Pruim",
+      "rose": "Roze",
+      "coral": "Koraal",
+      "amber": "Amber",
+      "forest": "Bos",
+      "slate": "Leisteen"
+    }
   }
 }

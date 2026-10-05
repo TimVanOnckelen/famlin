@@ -117,6 +117,61 @@ export interface ServerInfo {
   appStoreUrl?: string | null;
   playStoreUrl?: string | null;
   readOnly?: boolean;
+  // Per-family branding (issue #164). `null` on an unbranded server, absent
+  // on a server that predates the feature — treat both as "today's look".
+  branding?: Branding | null;
+}
+
+// The family's derived palette — computed server-side (one implementation
+// for every client), applied as-is: web overrides its CSS custom properties,
+// mobile its `colors` constants.
+export interface BrandPalette {
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  primaryTint: string;
+  bg: string;
+  // Login screen background: a gradient between these two (equal = flat).
+  loginBgFrom: string;
+  loginBgTo: string;
+}
+
+// Post-type colors, shifted to an alternate hue when the brand would collide
+// with them (so a circle post never looks like a normal family post).
+export interface BrandSemantic {
+  accent: string;
+  updateBg: string;
+  circle: string;
+  circleDark: string;
+  circleTint: string;
+  milestone: string;
+  milestoneBg: string;
+  milestoneText: string;
+  milestoneDivider: string;
+  trip: string;
+  tripDark: string;
+  tripBg: string;
+  tripTint: string;
+  tripBorder: string;
+}
+
+export interface Branding {
+  // The family's name ("The Janssens"), or null to keep "Famlin".
+  name: string | null;
+  // Public, server-relative paths (/branding/...) — resolve with
+  // getBrandingAssetUrl(). Content-addressed, so safe to cache forever.
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  palette: BrandPalette;
+  semantic: BrandSemantic;
+  // Changes whenever anything above changes.
+  hash: string;
+}
+
+// Absolute URL for a branding asset path, for clients (mobile) that don't
+// share the server's origin. Branding assets are public — no media token.
+export function getBrandingAssetUrl(path: string, serverUrl = getCurrentServerUrl()): string {
+  return serverUrl ? `${serverUrl.replace(/\/+$/, '')}${path}` : path;
 }
 
 export async function fetchServerInfo(): Promise<ServerInfo> {

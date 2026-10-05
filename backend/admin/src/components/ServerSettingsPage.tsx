@@ -4,8 +4,9 @@ import { api, ServerSettings, User } from '../api/client';
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n';
 import { Icon, IconName } from './Icon';
 import { PeopleMappingSection } from './PeopleMappingSection';
+import { BrandingSection } from './BrandingSection';
 
-type SectionId = 'general' | 'signin' | 'notifications' | 'media';
+type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media';
 
 interface SettingsCardProps {
   icon: IconName;
@@ -233,6 +234,12 @@ export function ServerSettingsPage() {
       status: { label: languageName },
     },
     {
+      id: 'branding',
+      icon: 'palette',
+      label: t('branding.title'),
+      status: { label: t('branding.navStatus') },
+    },
+    {
       id: 'signin',
       icon: 'key',
       label: t('serverSettings.signInAccess'),
@@ -296,7 +303,16 @@ export function ServerSettingsPage() {
         </nav>
 
         <div className="settings-content">
-          <form onSubmit={handleSubmit} className="settings-form">
+          {/* Branding saves through its own validated endpoint, so it lives
+              outside the generic settings form (and its save bar). */}
+          {activeSection === 'branding' && (
+            <div className="settings-form">
+              <SettingsCard icon="palette" title={t('branding.title')} desc={t('branding.desc')}>
+                <BrandingSection />
+              </SettingsCard>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="settings-form" hidden={activeSection === 'branding'}>
             {activeSection === 'general' && (
               <SettingsCard icon="globe" title={t('serverSettings.general')} desc={t('serverSettings.generalDesc')}>
                 <label>
