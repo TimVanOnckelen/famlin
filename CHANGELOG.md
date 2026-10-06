@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.8.1](https://github.com/TimVanOnckelen/famlin/compare/v0.8.0...v0.8.1) (2026-10-06)
+
+
+### Features
+
+* **branding:** per-family branding backend, API client and admin UI ([57c2be5](https://github.com/TimVanOnckelen/famlin/commit/57c2be51f7bbf11168bb6f38e906eca45fdda4ac))
+* **mobile:** apply per-family branding ([c943164](https://github.com/TimVanOnckelen/famlin/commit/c9431644e0b8a0491365361ef5c205cd57890e93))
+* **uploads:** scope /uploads/* reads to the media's group(s) ([d8fcaa1](https://github.com/TimVanOnckelen/famlin/commit/d8fcaa1918dd59419e81b97c797e69078b373434)), closes [#184](https://github.com/TimVanOnckelen/famlin/issues/184)
+* **web:** apply per-family branding ([ff74d14](https://github.com/TimVanOnckelen/famlin/commit/ff74d14e4bbde694defcb5fa25d3d87d75eb9201))
+* **web:** real URLs for every page, plus a /posts/:id permalink ([9018953](https://github.com/TimVanOnckelen/famlin/commit/9018953bfbbbb83a587d0f77b9adad9b58f0d804))
+
+
+### Bug Fixes
+
+* **api-client:** use node16 module resolution so TS 5 and TS 7 both build it ([426171b](https://github.com/TimVanOnckelen/famlin/commit/426171bf38cbfad1767613f37bf3a1a1ce4d204b))
+* **branding:** type the logo upload catch without `any` ([e69146d](https://github.com/TimVanOnckelen/famlin/commit/e69146d9c82c4366819b622d44ea004e660a0526))
+* **deps:** resolve Dependabot security alerts ([c5f8e39](https://github.com/TimVanOnckelen/famlin/commit/c5f8e391233a9f919f4013da32d64756c98d1080))
+* **docker:** actually compile sharp against the system libvips for HEIC ([c4b8711](https://github.com/TimVanOnckelen/famlin/commit/c4b87114a5e2208671e9547020bc7415f7be474b))
+* **docker:** keep libvips-cpp installed for the source-built sharp ([541a4f9](https://github.com/TimVanOnckelen/famlin/commit/541a4f980663dc14dd3e3916d06f948a6dbb99f9))
+* **docker:** pin sharp 0.34.5 so the image can decode HEIC ([9b90141](https://github.com/TimVanOnckelen/famlin/commit/9b90141fef4addab8d7923a5ba0a96ac50d9ee65))
+* **i18n:** add zh translations for branding strings ([fd9be46](https://github.com/TimVanOnckelen/famlin/commit/fd9be46c35fa3db82737e2d3405f777b0fc005c1))
+
 ## [0.8.0](https://github.com/TimVanOnckelen/famlin/compare/v0.7.0...v0.8.0) (2026-10-05)
 
 
