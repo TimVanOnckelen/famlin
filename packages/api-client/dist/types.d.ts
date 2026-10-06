@@ -1,4 +1,4 @@
-export declare const REACTION_TYPES: readonly ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "CARE"];
+export declare const REACTION_TYPES: readonly ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'];
 export type ReactionType = (typeof REACTION_TYPES)[number];
 export interface PostReactor {
     id: string;
