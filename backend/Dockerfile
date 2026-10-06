@@ -126,18 +126,21 @@ COPY backend/package.json backend/package-lock.json* ./
 # NODE_PATH/PATH. The prebuilt @img/sharp-* packages are then removed, so a
 # compile that didn't happen fails loudly — at the check below and in CI's
 # smoke test — instead of silently falling back to the no-HEIC binary again.
-# The compiled addon dynamically links against the vips/vips-heif runtime
-# libs, which stay installed; deleting just the .build-deps virtual group
-# keeps compilers out of the final image.
-RUN apk add --no-cache vips vips-heif
+# The compiled addon dynamically links against libvips-cpp (vips-cpp) as well
+# as vips/vips-heif — vips-cpp must be installed explicitly as a runtime
+# package, or `apk del .build-deps` removes it along with vips-dev, which only
+# pulls it in as a dependency. Deleting just the .build-deps virtual group
+# keeps compilers out of the final image. The HEIC check runs after that
+# cleanup on purpose, so it also catches a runtime library going missing.
+RUN apk add --no-cache vips vips-cpp vips-heif
 RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-dev \
     && npm install --prefix /tmp/sharp-build --no-save --no-audit --no-fund node-addon-api node-gyp \
     && NODE_PATH=/tmp/sharp-build/node_modules PATH="/tmp/sharp-build/node_modules/.bin:$PATH" \
        npm ci --omit=dev \
     && rm -rf node_modules/@img/sharp-linux* node_modules/@img/sharp-libvips-linux* \
               node_modules/sharp/src/build/Release/obj.target /tmp/sharp-build /root/.cache/node-gyp \
-    && node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }" \
     && apk del .build-deps
+RUN node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }"
 
 COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /app/dist ./dist
