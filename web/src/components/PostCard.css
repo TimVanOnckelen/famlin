@@ -301,6 +301,12 @@
   font-weight: 600;
   color: var(--fam-text-muted);
   margin-top: 2px;
+  text-decoration: none;
+}
+
+a.post-time:hover,
+a.post-time:focus-visible {
+  text-decoration: underline;
 }
 
 .post-meta {

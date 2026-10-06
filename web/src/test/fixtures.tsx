@@ -1,6 +1,7 @@
 import { ReactElement } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { Post, PostPoll, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client';
 
 export function makePost(overrides: Partial<Post> = {}): Post {
@@ -122,8 +123,9 @@ export function makeUser(overrides: Partial<User> = {}): User {
 }
 
 // Every component under test assumes a react-query provider; retries are off
-// so error paths settle immediately.
-export function renderWithQueryClient(ui: ReactElement) {
+// so error paths settle immediately. A MemoryRouter is there for components
+// that render router links (e.g. PostCard's permalink timestamp).
+export function renderWithQueryClient(ui: ReactElement, { route = '/' }: { route?: string } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -132,6 +134,10 @@ export function renderWithQueryClient(ui: ReactElement) {
   });
   return {
     queryClient,
-    ...render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>),
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+      </QueryClientProvider>
+    ),
   };
 }

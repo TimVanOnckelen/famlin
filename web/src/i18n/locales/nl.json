@@ -335,5 +335,11 @@
     "noReactions": "Nog geen reacties.",
     "noReplies": "Nog geen antwoorden.",
     "repliesPrivate": "Alleen jij ziet wie dit verhaal bekeek en welke antwoorden je kreeg."
+  },
+  "postDetail": {
+    "back": "Terug",
+    "backToFeed": "Terug naar de feed",
+    "notFound": "Dit bericht bestaat niet, of het is niet met jou gedeeld.",
+    "loadFailed": "Dit bericht kon niet geladen worden."
   }
 }

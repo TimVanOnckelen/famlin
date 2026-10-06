@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { ensureFreshMediaToken, fetchMe, setUnauthorizedHandler } from '@famlin/api-client';
+import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router';
+import { ensureFreshMediaToken, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
@@ -9,43 +10,38 @@ import { PhotosPage } from '@/pages/PhotosPage';
 import { ChatPage } from '@/pages/ChatPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
+import { PostDetailPage } from '@/pages/PostDetailPage';
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
 import { useTranslation } from 'react-i18next';
 import { useBranding } from '@/hooks/useBranding';
 import { applyBranding } from '@/utils/branding';
+import { paths, useAppNavigation } from '@/utils/routes';
 
 export default function App() {
-  const { user, setAuth, clearSession, loadToken, isLoading, logout } = useAuthStore();
+  const { user, setAuth, clearSession, loadToken, isLoading } = useAuthStore();
   const [initializing, setInitializing] = useState(true);
   const { t } = useTranslation();
   const branding = useBranding();
+  const navigate = useNavigate();
 
   // Per-family branding (issue #164). The server already injected it into
   // index.html; this keeps the page in sync with /server-info afterwards.
   useEffect(() => {
     applyBranding(branding, t('common.appName'));
   }, [branding, t]);
-  // No client-side routing yet — the profile, photos, chat, and trip-detail
-  // pages are simple view switches.
-  const [view, setView] = useState<'feed' | 'profile' | 'photos' | 'chat' | 'trip' | 'album'>('feed');
-  // Only meaningful while view === 'trip' — which post's trip is open.
-  const [tripPostId, setTripPostId] = useState<string | null>(null);
-  // Only meaningful while view === 'album' — which post's album is open, and
-  // which page it was opened from, so "back" returns there (an album is
-  // reachable from both the feed and the Photos tab's albums strip).
-  const [albumPostId, setAlbumPostId] = useState<string | null>(null);
-  const [albumOrigin, setAlbumOrigin] = useState<'feed' | 'photos'>('feed');
 
-  // A session ending on the profile view (logout or 401) shouldn't land the
-  // next login on the profile page.
+  // A session *ending* (logout or 401) shouldn't land the next login back on
+  // whatever page it ended on — e.g. the profile page. Only the transition
+  // from signed-in to signed-out resets the URL: a cold load without a
+  // session keeps its URL, so a shared /posts/:id link opened while logged
+  // out still lands on that post after logging in.
+  const previousUserRef = useRef<User | null>(null);
   useEffect(() => {
-    if (!user) {
-      setView('feed');
-      setTripPostId(null);
-      setAlbumPostId(null);
-      setAlbumOrigin('feed');
+    if (previousUserRef.current && !user) {
+      navigate(paths.feed, { replace: true });
     }
-  }, [user]);
+    previousUserRef.current = user;
+  }, [user, navigate]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -97,104 +93,135 @@ export default function App() {
     return <LoginPage />;
   }
 
-  if (view === 'profile') {
-    return (
-      <>
-        <ReadOnlyBanner />
-        <ProfilePage
-          user={user}
-          onBack={() => setView('feed')}
-          onOpenPhotos={() => setView('photos')}
-          onOpenChat={() => setView('chat')}
-          onLogout={() => logout()}
-        />
-      </>
-    );
-  }
-
-  if (view === 'photos') {
-    return (
-      <>
-        <ReadOnlyBanner />
-        <PhotosPage
-          user={user}
-          onOpenFeed={() => setView('feed')}
-          onOpenChat={() => setView('chat')}
-          onOpenProfile={() => setView('profile')}
-          onOpenAlbum={(postId) => {
-            setAlbumPostId(postId);
-            setAlbumOrigin('photos');
-            setView('album');
-          }}
-          onLogout={() => logout()}
-        />
-      </>
-    );
-  }
-
-  if (view === 'chat') {
-    return (
-      <>
-        <ReadOnlyBanner />
-        <ChatPage
-          user={user}
-          onBack={() => setView('feed')}
-          onOpenPhotos={() => setView('photos')}
-          onOpenProfile={() => setView('profile')}
-        />
-      </>
-    );
-  }
-
-  if (view === 'trip' && tripPostId) {
-    return (
-      <>
-        <ReadOnlyBanner />
-        <TripDetailPage
-          postId={tripPostId}
-          onBack={() => setView('feed')}
-          onOpenPhotos={() => setView('photos')}
-          onOpenChat={() => setView('chat')}
-          onOpenProfile={() => setView('profile')}
-        />
-      </>
-    );
-  }
-
-  if (view === 'album' && albumPostId) {
-    return (
-      <>
-        <ReadOnlyBanner />
-        <AlbumDetailPage
-          postId={albumPostId}
-          onBack={() => setView(albumOrigin)}
-          onOpenPhotos={() => setView('photos')}
-          onOpenChat={() => setView('chat')}
-          onOpenProfile={() => setView('profile')}
-        />
-      </>
-    );
-  }
-
   return (
     <>
+      <ScrollToTopOnNavigate />
       <ReadOnlyBanner />
-      <FeedPage
-        user={user}
-        onOpenProfile={() => setView('profile')}
-        onOpenPhotos={() => setView('photos')}
-        onOpenChat={() => setView('chat')}
-        onOpenTrip={(postId) => {
-          setTripPostId(postId);
-          setView('trip');
-        }}
-        onOpenAlbum={(postId) => {
-          setAlbumPostId(postId);
-          setAlbumOrigin('feed');
-          setView('album');
-        }}
-        onLogout={() => logout()}
-      />
+      <AppRoutes user={user} />
     </>
   );
+}
+
+// Every page was previously a view switch in this file; each one now owns a
+// path (see utils/routes.ts). The pages themselves still take plain
+// callbacks, so they stay router-agnostic and their tests don't need one.
+function AppRoutes({ user }: { user: User }) {
+  const { logout } = useAuthStore();
+  const nav = useAppNavigation();
+
+  return (
+    <Routes>
+      <Route
+        path={paths.feed}
+        element={
+          <FeedPage
+            user={user}
+            onOpenProfile={nav.toProfile}
+            onOpenPhotos={nav.toPhotos}
+            onOpenChat={nav.toChat}
+            onOpenTrip={nav.toTrip}
+            onOpenAlbum={nav.toAlbum}
+            onLogout={() => logout()}
+          />
+        }
+      />
+      <Route
+        path={paths.photos}
+        element={
+          <PhotosPage
+            user={user}
+            onOpenFeed={nav.toFeed}
+            onOpenChat={nav.toChat}
+            onOpenProfile={nav.toProfile}
+            onOpenAlbum={nav.toAlbum}
+            onLogout={() => logout()}
+          />
+        }
+      />
+      <Route
+        path={paths.chat}
+        element={
+          <ChatPage user={user} onBack={nav.toFeed} onOpenPhotos={nav.toPhotos} onOpenProfile={nav.toProfile} />
+        }
+      />
+      <Route
+        path={paths.profile}
+        element={
+          <ProfilePage
+            user={user}
+            onBack={nav.toFeed}
+            onOpenPhotos={nav.toPhotos}
+            onOpenChat={nav.toChat}
+            onLogout={() => logout()}
+          />
+        }
+      />
+      <Route path="/trips/:postId" element={<TripRoute />} />
+      <Route path="/albums/:postId" element={<AlbumRoute />} />
+      <Route path="/posts/:postId" element={<PostRoute />} />
+      <Route path="*" element={<Navigate to={paths.feed} replace />} />
+    </Routes>
+  );
+}
+
+function TripRoute() {
+  const { postId } = useParams<{ postId: string }>();
+  const nav = useAppNavigation();
+  return (
+    <TripDetailPage
+      key={postId}
+      postId={postId!}
+      onBack={nav.back}
+      onOpenFeed={nav.toFeed}
+      onOpenPhotos={nav.toPhotos}
+      onOpenChat={nav.toChat}
+      onOpenProfile={nav.toProfile}
+    />
+  );
+}
+
+function AlbumRoute() {
+  const { postId } = useParams<{ postId: string }>();
+  const nav = useAppNavigation();
+  return (
+    <AlbumDetailPage
+      key={postId}
+      postId={postId!}
+      onBack={nav.back}
+      onOpenFeed={nav.toFeed}
+      onOpenPhotos={nav.toPhotos}
+      onOpenChat={nav.toChat}
+      onOpenProfile={nav.toProfile}
+    />
+  );
+}
+
+function PostRoute() {
+  const { postId } = useParams<{ postId: string }>();
+  const nav = useAppNavigation();
+  return (
+    <PostDetailPage
+      key={postId}
+      postId={postId!}
+      onBack={nav.back}
+      onOpenFeed={nav.toFeed}
+      onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
+      onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+      onOpenPhotos={nav.toPhotos}
+      onOpenChat={nav.toChat}
+      onOpenProfile={nav.toProfile}
+    />
+  );
+}
+
+// BrowserRouter (unlike the data routers) has no <ScrollRestoration>; without
+// this, opening a trip from halfway down the feed lands halfway down the trip.
+// Back/forward (POP) is left alone so the browser can do its own thing.
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+  const navigationType = useNavigationType();
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, navigationType]);
+  return null;
 }

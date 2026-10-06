@@ -22,9 +22,7 @@ import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip'
 import './TripDetailPage.css';
 
 // Web's counterpart of mobile's TripDetailScreen — VIEWING ONLY (see
-// design/trip-tracker-brief.md and CLAUDE.md's web/ bullet on no
-// client-side routing): a `view` state in App.tsx opens this the same way
-// it opens ProfilePage/ChatPage, since a trip isn't a tab of its own.
+// design/trip-tracker-brief.md), routed at /trips/:postId (see App.tsx).
 // Composing check-ins, closing the trip, and editing travelers are
 // deliberately not here — those stay mobile/backend-only for now; this page
 // only reads post.trip + the post's comments (splitting check-ins from
@@ -33,12 +31,15 @@ import './TripDetailPage.css';
 export function TripDetailPage({
   postId,
   onBack,
+  onOpenFeed,
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
 }: {
   postId: string;
   onBack: () => void;
+  // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
+  onOpenFeed?: () => void;
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
@@ -197,7 +198,7 @@ export function TripDetailPage({
         )}
       </main>
 
-      <BottomNav active="feed" onFeed={onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
+      <BottomNav active="feed" onFeed={onOpenFeed ?? onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
 
       {lightbox && (
         <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />

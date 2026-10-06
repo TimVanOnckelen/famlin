@@ -26,6 +26,11 @@ describe('PostCard', () => {
     expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument();
   });
 
+  it('links the timestamp to the post permalink', () => {
+    renderWithQueryClient(<PostCard post={makePost({ id: 'post-42' })} />);
+    expect(screen.getByRole('link', { name: /ago|\d/ })).toHaveAttribute('href', '/posts/post-42');
+  });
+
   it('labels the post with its family when showGroup is set', () => {
     renderWithQueryClient(<PostCard post={makePost()} showGroup />);
     expect(screen.getByText('Familie de Vries')).toBeInTheDocument();
