@@ -321,8 +321,20 @@ jobs:
           exit 1
 
   docker:
-    name: Docker build
-    runs-on: ubuntu-latest
+    # Both architectures docker-publish.yml ships, each on a native runner —
+    # a green amd64-only build says nothing about arm64.
+    name: Docker build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            cache-scope: linux-amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            cache-scope: linux-arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -333,6 +345,25 @@ jobs:
           # backend/Dockerfile.
           context: .
           file: ./backend/Dockerfile
+          platforms: ${{ matrix.platform }}
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
+          tags: famlin-ci:test
+          # Same per-platform scopes as docker-publish.yml, so a release
+          # build reuses the layers CI already built.
+          cache-from: type=gha,scope=${{ matrix.cache-scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache-scope }}
+      # The native bits a build can't catch: sharp's from-source compile
+      # against the system libvips (with HEIC decode) and ffmpeg must actually
+      # load and run on this architecture.
+      - name: Smoke-test native dependencies
+        run: |
+          docker run --rm famlin-ci:test node -e "
+            const sharp = require('sharp');
+            // The prebuilt (no-HEIC) sharp also reports heif input, but for .avif
+            // only — the suffix list is what tells a real HEIC build apart.
+            const suffixes = sharp.format.heif.input.fileSuffix || [];
+            if (!suffixes.includes('.heic')) throw new Error('sharp lacks HEIC input support: ' + suffixes.join(','));
+            console.log('sharp ok, libvips', sharp.versions.vips);
+          "
+          docker run --rm famlin-ci:test ffmpeg -hide_banner -version | head -1
