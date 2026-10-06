@@ -12,6 +12,13 @@ on:
         description: Release tag to derive semver tags from (e.g. v1.2.3). Omit to derive from the git ref.
         type: string
         required: false
+    outputs:
+      image:
+        description: Image name without tag (ghcr.io/owner/repo, lowercase)
+        value: ${{ jobs.merge.outputs.image }}
+      digest:
+        description: Digest of the pushed multi-arch manifest list (sha256:...)
+        value: ${{ jobs.merge.outputs.digest }}
   workflow_dispatch:
 
 permissions:
@@ -91,6 +98,9 @@ jobs:
   merge:
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      digest: ${{ steps.inspect.outputs.digest }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -130,7 +140,11 @@ jobs:
             $(printf "$IMAGE@sha256:%s " *)
 
       - name: Inspect image
+        id: inspect
         env:
           IMAGE: ${{ steps.image.outputs.name }}
           VERSION: ${{ steps.meta.outputs.version }}
-        run: docker buildx imagetools inspect "$IMAGE:$VERSION"
+        run: |
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+          digest=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"

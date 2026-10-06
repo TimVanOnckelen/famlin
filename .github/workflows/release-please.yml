@@ -198,3 +198,84 @@ jobs:
             echo "</details>"
           } > final-notes.md
           gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file final-notes.md
+
+  # The release-please Release only carries the auto-generated source
+  # archives. Make it a real download page: attach a docker-compose.yml pinned
+  # to this exact version (+ .env.example), and append a "Downloads" section
+  # with the multi-arch image's pull command/digest and the mobile apps.
+  # Runs after enhance-release-notes because that job overwrites the whole
+  # body, and after publish-docker so the image is only advertised once it
+  # actually exists. `always()` keeps it running when the best-effort notes
+  # rewrite was skipped or failed.
+  release-assets:
+    needs: [release-please, publish-docker, mobile-changed, enhance-release-notes]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Attach version-pinned compose files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          mkdir -p assets
+          # Same file as the repo root, but defaulting to this release
+          # instead of the rolling `latest` tag (FAMLIN_VERSION still wins).
+          sed "s/\${FAMLIN_VERSION:-latest}/\${FAMLIN_VERSION:-$VERSION}/" docker-compose.yml > assets/docker-compose.yml
+          grep -q "FAMLIN_VERSION:-$VERSION}" assets/docker-compose.yml
+          # No leading dot: GitHub renames dotfile assets to default.<name>.
+          cp .env.example assets/env.example
+          gh release upload "$TAG_NAME" -R "$GITHUB_REPOSITORY" --clobber \
+            assets/docker-compose.yml assets/env.example
+
+      - name: Append downloads section to the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          IMAGE: ${{ needs.publish-docker.outputs.image }}
+          DIGEST: ${{ needs.publish-docker.outputs.digest }}
+          MOBILE_CHANGED: ${{ needs.mobile-changed.outputs.changed }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          MARKER='<!-- famlin-release-downloads -->'
+          # Strip a previous run's section so a re-run doesn't duplicate it.
+          gh release view "$TAG_NAME" -R "$GITHUB_REPOSITORY" --json body --jq .body \
+            | sed "/^$MARKER\$/,\$d" \
+            | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > notes.md
+          {
+            echo
+            echo "$MARKER"
+            echo "## 📦 Downloads"
+            echo
+            echo "### Server (Docker)"
+            echo
+            echo "Multi-arch image for \`linux/amd64\` and \`linux/arm64\` (Raspberry Pi 4/5, ARM NAS, Apple Silicon, ARM cloud VMs) — Docker picks the right one automatically."
+            echo
+            echo '```bash'
+            echo "docker pull $IMAGE:$VERSION"
+            echo '```'
+            echo
+            if [ -n "$DIGEST" ]; then
+              echo "Digest: \`$DIGEST\`"
+              echo
+            fi
+            echo "Upgrading an existing install: set \`FAMLIN_VERSION=$VERSION\` in your \`.env\` (or stay on \`latest\`), then \`docker compose pull && docker compose up -d\`. New install: download the \`docker-compose.yml\` (pinned to $VERSION) and \`env.example\` (save it as \`.env\`) attached below, and follow the [server setup guide](https://famlin.app/docs/server-setup)."
+            echo
+            echo "### Mobile apps"
+            echo
+            echo "- [App Store (iOS)](https://apps.apple.com/us/app/famlin/id6786783660)"
+            echo "- [Google Play (Android)](https://play.google.com/store/apps/details?id=be.xeweb.famlin)"
+            echo
+            if [ "$MOBILE_CHANGED" = "true" ]; then
+              echo "This release includes a new app version; it reaches the stores once store review completes."
+            else
+              echo "No app changes in this release — the current store version works with this server."
+            fi
+          } >> notes.md
+          gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file notes.md
