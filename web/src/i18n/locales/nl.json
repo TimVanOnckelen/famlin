@@ -8,7 +8,8 @@
     "cancel": "Annuleren",
     "close": "Sluiten",
     "retry": "Opnieuw proberen",
-    "edited": "bewerkt"
+    "edited": "bewerkt",
+    "back": "Terug"
   },
   "login": {
     "subtitle": "Jouw familie, dichterbij",
@@ -59,7 +60,13 @@
       "openCta": "Album openen →"
     },
     "circleFilterLabel": "Filter op kring",
-    "sharedWithCircle": "Gedeeld met {{circle}}"
+    "sharedWithCircle": "Gedeeld met {{circle}}",
+    "postCardLabel": "Bericht van {{author}}, {{time}}",
+    "sidePanelLabel": "Familiegegevens",
+    "onThisDayTitle": "Op deze dag",
+    "onThisDayCount_one": "{{count}} herinnering van deze dag",
+    "onThisDayCount_other": "{{count}} herinneringen van deze dag",
+    "membersTitle": "Gezinsleden"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -103,7 +110,6 @@
   },
   "profile": {
     "title": "Profiel",
-    "backToFeed": "Terug naar de feed",
     "changePhoto": "Profielfoto wijzigen",
     "photoUploadFailed": "Je foto kon niet geüpload worden. Probeer opnieuw.",
     "adminBadge": "Admin",
@@ -211,7 +217,6 @@
   },
   "chat": {
     "title": "Groepschat",
-    "backToFeed": "Terug naar de feed",
     "groupListLabel": "Chats",
     "noChatGroups": "Chat is nog niet ingeschakeld voor één van je families.",
     "empty": "Nog geen berichten — zeg hallo!",
@@ -239,7 +244,7 @@
   },
   "trip": {
     "detail": {
-      "backToFeed": "Terug naar de feed",
+      "headerTitle": "Reis",
       "activeBadge": "ACTIEF · DAG {{day}}",
       "closedBadge": "AFGESLOTEN",
       "sinceLabel": "{{author}} · sinds {{date}}",
@@ -271,7 +276,7 @@
     "addPhotosSubmit": "Toevoegen aan album",
     "addPhotosFailed": "Je foto's konden niet worden toegevoegd. Probeer het opnieuw.",
     "detail": {
-      "backToFeed": "Terug naar de feed",
+      "headerTitle": "Album",
       "badge": "GEDEELD ALBUM",
       "closedBadge": "AFGESLOTEN",
       "statsPhotos": "foto's",
@@ -337,9 +342,27 @@
     "repliesPrivate": "Alleen jij ziet wie dit verhaal bekeek en welke antwoorden je kreeg."
   },
   "postDetail": {
-    "back": "Terug",
+    "title": "Bericht",
     "backToFeed": "Terug naar de feed",
     "notFound": "Dit bericht bestaat niet, of het is niet met jou gedeeld.",
     "loadFailed": "Dit bericht kon niet geladen worden."
+  },
+  "a11y": {
+    "skipToContent": "Ga naar de inhoud"
+  },
+  "shortcuts": {
+    "title": "Sneltoetsen",
+    "goFeed": "Ga naar Feed",
+    "goPhotos": "Ga naar Foto's",
+    "goChat": "Ga naar Chat",
+    "goProfile": "Ga naar Profiel",
+    "newPost": "Nieuw bericht",
+    "openHelp": "Toon sneltoetsen",
+    "hint": "{{label}} ({{keys}})",
+    "nextPost": "Volgend bericht",
+    "prevPost": "Vorig bericht",
+    "openPost": "Bericht openen",
+    "likePost": "Bericht liken",
+    "favoritePost": "Bericht favorieten"
   }
 }

@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPost } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { BottomNav } from '@/components/BottomNav';
+import { fetchPost, User } from '@famlin/api-client';
+import { AppShell } from '@/components/AppShell';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { PostCard } from '@/components/PostCard';
 import './PostDetailPage.css';
 
@@ -12,8 +12,10 @@ import './PostDetailPage.css';
 // links to, and the URL people paste to each other. Renders the same
 // PostCard the feed does, with its comment thread already open. Trips and
 // albums already have richer pages of their own, so a permalink to one is
-// handed straight to /trips/:id or /albums/:id instead.
+// handed straight to /trips/:id or /albums/:id instead. AppShell always
+// keeps the Feed tab highlighted, like Trip/Album detail.
 export function PostDetailPage({
+  user,
   postId,
   onBack,
   onOpenFeed,
@@ -22,7 +24,9 @@ export function PostDetailPage({
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
+  onLogout,
 }: {
+  user: User;
   postId: string;
   onBack: () => void;
   onOpenFeed?: () => void;
@@ -31,6 +35,7 @@ export function PostDetailPage({
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
+  onLogout: () => void;
 }) {
   const { t } = useTranslation();
   // Same ['post', postId] key the trip/album pages use, and the one
@@ -75,22 +80,19 @@ export function PostDetailPage({
   }
 
   return (
-    <div className="post-detail-shell">
-      <main className="post-detail-column">
-        <button className="post-detail-back" onClick={onBack}>
-          <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-          {t('postDetail.back')}
-        </button>
+    <AppShell
+      user={user}
+      active="feed"
+      onFeed={onOpenFeed ?? onBack}
+      onPhotos={onOpenPhotos}
+      onChat={onOpenChat}
+      onProfile={onOpenProfile ?? (() => {})}
+      onLogout={onLogout}
+    >
+      <div className="post-detail-column">
+        <ScreenHeader title={t('postDetail.title')} onBack={onBack} />
         {body}
-      </main>
-
-      <BottomNav
-        active="feed"
-        onFeed={onOpenFeed ?? onBack}
-        onPhotos={onOpenPhotos}
-        onChat={onOpenChat}
-        onProfile={onOpenProfile ?? (() => {})}
-      />
-    </div>
+      </div>
+    </AppShell>
   );
 }

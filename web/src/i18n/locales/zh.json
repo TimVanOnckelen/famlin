@@ -8,7 +8,8 @@
     "cancel": "取消",
     "close": "关闭",
     "retry": "重试",
-    "edited": "已编辑"
+    "edited": "已编辑",
+    "back": "返回"
   },
   "login": {
     "subtitle": "记录生活，让家人更亲近",
@@ -37,6 +38,12 @@
     "sharedWith": "分享给 {{names}}",
     "circleFilterLabel": "按圈子筛选",
     "sharedWithCircle": "分享给 {{circle}}",
+    "postCardLabel": "{{author}} 发布的动态，{{time}}",
+    "sidePanelLabel": "家庭详情",
+    "onThisDayTitle": "那年今日",
+    "onThisDayCount_one": "往年今日的 {{count}} 个回忆",
+    "onThisDayCount_other": "往年今日的 {{count}} 个回忆",
+    "membersTitle": "家庭成员",
     "trip": {
       "activeBadge": "第 {{day}} 天 · 旅途中",
       "lastStopLabel": "上一站：",
@@ -103,7 +110,6 @@
   },
   "profile": {
     "title": "我的",
-    "backToFeed": "返回动态",
     "changePhoto": "更换头像",
     "photoUploadFailed": "头像上传失败，请重试。",
     "adminBadge": "管理员",
@@ -211,7 +217,6 @@
   },
   "chat": {
     "title": "聊天",
-    "backToFeed": "返回动态",
     "groupListLabel": "会话",
     "noChatGroups": "你的家庭尚未开启群聊。",
     "empty": "还没有消息，打个招呼吧！",
@@ -239,7 +244,7 @@
   },
   "trip": {
     "detail": {
-      "backToFeed": "返回动态",
+      "headerTitle": "旅行",
       "activeBadge": "旅途中 · 第 {{day}} 天",
       "closedBadge": "已结束",
       "sinceLabel": "{{author}} · 始于 {{date}}",
@@ -271,7 +276,7 @@
     "addPhotosSubmit": "添加到相册",
     "addPhotosFailed": "添加失败，请重试。",
     "detail": {
-      "backToFeed": "返回动态",
+      "headerTitle": "相册",
       "badge": "共享相册",
       "closedBadge": "已关闭",
       "statsPhotos": "张照片",
@@ -337,9 +342,27 @@
     "repliesPrivate": "只有你能看到浏览者和收到的回复。"
   },
   "postDetail": {
-    "back": "返回",
+    "title": "帖子",
     "backToFeed": "返回动态",
     "notFound": "此帖子不存在，或未与你分享。",
     "loadFailed": "无法加载此帖子。"
+  },
+  "a11y": {
+    "skipToContent": "跳转到主要内容"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "goFeed": "前往动态",
+    "goPhotos": "前往照片",
+    "goChat": "前往聊天",
+    "goProfile": "前往我的",
+    "newPost": "发新帖",
+    "openHelp": "显示键盘快捷键",
+    "hint": "{{label}}（{{keys}}）",
+    "nextPost": "下一条动态",
+    "prevPost": "上一条动态",
+    "openPost": "打开动态",
+    "likePost": "点赞动态",
+    "favoritePost": "收藏动态"
   }
 }

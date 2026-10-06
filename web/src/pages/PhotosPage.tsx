@@ -13,8 +13,7 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { isVideoUrl } from '@/utils/media';
-import { AppHeader } from '@/components/AppHeader';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { NewPostModal } from '@/components/NewPostModal';
@@ -140,20 +139,20 @@ export function PhotosPage({
   const allPhotoUrls = photos.map((p) => getUploadUrl(p.previewUrl));
 
   return (
-    <div className="photos-shell">
-      <AppHeader
-        user={user}
-        onNewPost={() => {
-          setComposerGroupId(activeGroupId);
-          setComposerAsset(null);
-          setComposerOpen(true);
-        }}
-        onProfile={onOpenProfile}
-        onApiTokens={() => {}}
-        onLogout={onLogout}
-      />
-
-      <main className="photos-column">
+    <AppShell
+      user={user}
+      active="photos"
+      onFeed={onOpenFeed ?? (() => {})}
+      onChat={onOpenChat}
+      onProfile={onOpenProfile}
+      onNewPost={() => {
+        setComposerGroupId(activeGroupId);
+        setComposerAsset(null);
+        setComposerOpen(true);
+      }}
+      onLogout={onLogout}
+    >
+      <div className="photos-column">
         {groups.length > 1 && (
           <div className="photos-filter" role="group" aria-label={t('photos.filterLabel')}>
             <button
@@ -252,19 +251,7 @@ export function PhotosPage({
         )}
 
         <div ref={sentinelRef} className="photos-sentinel" />
-      </main>
-
-      <BottomNav
-        active="photos"
-        onFeed={onOpenFeed ?? (() => {})}
-        onChat={onOpenChat}
-        onProfile={onOpenProfile}
-        onNewPost={() => {
-          setComposerGroupId(activeGroupId);
-          setComposerAsset(null);
-          setComposerOpen(true);
-        }}
-      />
+      </div>
 
       {lightboxOpen && (
         <Lightbox
@@ -285,7 +272,7 @@ export function PhotosPage({
           initialAsset={composerAsset}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
 

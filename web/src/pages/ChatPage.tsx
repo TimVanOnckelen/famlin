@@ -16,7 +16,8 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { Lightbox } from '@/components/Lightbox';
 import { formatRelativeDate } from '@/utils/time';
@@ -37,20 +38,20 @@ function dateKey(iso: string): string {
 // Web counterpart of mobile's per-group chitchat screen, desktop-styled: a
 // group picker (skipped when there's only one chitchat-enabled family) next
 // to the message panel, since the web app has no group-scoped URL routing.
-// No onLogout here — unlike ProfilePage this page has no user menu / logout
-// affordance of its own; onBack (mirroring ProfilePage's own back-button
-// shell) plus the small-screen BottomNav's Photos/Profile tabs are the only
-// navigation callbacks it needs.
+// Chat has no composer of its own, so AppShell gets no onNewPost — mirrors
+// mobile's FAB_TABS, which likewise hides the FAB on the Chat tab.
 export function ChatPage({
   user,
   onBack,
   onOpenPhotos,
   onOpenProfile,
+  onLogout,
 }: {
   user: User;
   onBack: () => void;
   onOpenPhotos?: () => void;
   onOpenProfile?: () => void;
+  onLogout: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -201,14 +202,16 @@ export function ChatPage({
   let lastDateKey = '';
 
   return (
-    <div className="chat-shell">
-      <main className="chat-column">
-        <button className="chat-back" onClick={onBack}>
-          <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-          {t('chat.backToFeed')}
-        </button>
-
-        <h1 className="chat-title">{t('chat.title')}</h1>
+    <AppShell
+      user={user}
+      active="chat"
+      onFeed={onBack}
+      onPhotos={onOpenPhotos}
+      onProfile={onOpenProfile ?? (() => {})}
+      onLogout={onLogout}
+    >
+      <div className="chat-column">
+        <ScreenHeader title={t('chat.title')} onBack={onBack} />
 
         {groupsQuery.isLoading && <div className="chat-hint">{t('common.loading')}</div>}
 
@@ -371,17 +374,10 @@ export function ChatPage({
             )}
           </div>
         )}
-      </main>
-
-      <BottomNav
-        active="chat"
-        onFeed={onBack}
-        onPhotos={onOpenPhotos}
-        onProfile={onOpenProfile ?? (() => {})}
-      />
+      </div>
 
       {lightboxUrl && <Lightbox assetUrls={[lightboxUrl]} initialIndex={0} onClose={() => setLightboxUrl(null)} />}
-    </div>
+    </AppShell>
   );
 }
 

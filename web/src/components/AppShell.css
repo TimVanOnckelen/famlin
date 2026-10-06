@@ -1,0 +1,240 @@
+.app-shell {
+  min-height: 100vh;
+}
+
+/* ── Skip link ───────────────────────────────────────────────────────────── */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--fam-primary);
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 12px 18px;
+  border-radius: var(--r-sm);
+}
+
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* ── Sidebar (wide screens) ─────────────────────────────────────────────── */
+
+.sidebar {
+  display: none;
+}
+
+.mobile-header {
+  display: none;
+}
+
+@media (min-width: 721px) {
+  /* A flex row (not a fixed-position overlay) so the sidebar naturally
+     starts below ReadOnlyBanner — a normal-flow sibling rendered above
+     AppShell in App.tsx — rather than always overlapping the viewport's top
+     edge the way `position: fixed` would. `position: sticky` then pins it
+     to the viewport once scrolled past, same as the old per-page sticky
+     header did above its own ReadOnlyBanner. */
+  .app-shell {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 240px;
+    background: var(--fam-surface);
+    border-right: 1px solid var(--fam-border);
+    padding: 20px 16px;
+    gap: 18px;
+    z-index: 25;
+    overflow-y: auto;
+  }
+
+  .app-shell-main {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Collapsed, icon-only rail — enough room for a comfortable click target
+   without the labels, which would otherwise wrap or get clipped. */
+@media (min-width: 721px) and (max-width: 1100px) {
+  .sidebar {
+    width: 76px;
+    align-items: center;
+    padding: 16px 10px;
+  }
+
+  .sidebar-wordmark,
+  .sidebar-label,
+  .user-menu-name-inline {
+    display: none;
+  }
+
+  .sidebar-new-post {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .sidebar-item {
+    justify-content: center;
+    width: 44px;
+    padding: 10px;
+  }
+
+  .sidebar-shortcuts-hint {
+    justify-content: center;
+  }
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.sidebar-wordmark {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--fam-primary);
+  letter-spacing: -0.6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-new-post {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 48px;
+  padding: 0 16px;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--r-md);
+  color: var(--fam-text-muted);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-item:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.sidebar-item-active {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.sidebar-item-badge {
+  position: absolute;
+  left: 26px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fam-accent);
+  border: 2px solid var(--fam-surface);
+}
+
+.sidebar-shortcuts-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--r-md);
+  color: var(--fam-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.sidebar-shortcuts-hint:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--fam-border);
+  padding-top: 12px;
+}
+
+/* ── Compact mobile header (≤720px) ─────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--fam-surface);
+    border-bottom: 1px solid var(--fam-border);
+  }
+
+  .app-shell-main {
+    /* Clears BottomNav (its own fixed height + safe-area padding) plus the
+       floating "+" FAB that overlaps its top edge. */
+    padding-bottom: 92px;
+  }
+}
+
+.mobile-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-header-wordmark {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--fam-primary);
+  letter-spacing: -0.8px;
+}
+
+.app-shell-main {
+  min-height: 100vh;
+}

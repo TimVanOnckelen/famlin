@@ -141,7 +141,13 @@ function AppRoutes({ user }: { user: User }) {
       <Route
         path={paths.chat}
         element={
-          <ChatPage user={user} onBack={nav.toFeed} onOpenPhotos={nav.toPhotos} onOpenProfile={nav.toProfile} />
+          <ChatPage
+            user={user}
+            onBack={nav.toFeed}
+            onOpenPhotos={nav.toPhotos}
+            onOpenProfile={nav.toProfile}
+            onLogout={() => logout()}
+          />
         }
       />
       <Route
@@ -156,52 +162,60 @@ function AppRoutes({ user }: { user: User }) {
           />
         }
       />
-      <Route path="/trips/:postId" element={<TripRoute />} />
-      <Route path="/albums/:postId" element={<AlbumRoute />} />
-      <Route path="/posts/:postId" element={<PostRoute />} />
+      <Route path="/trips/:postId" element={<TripRoute user={user} />} />
+      <Route path="/albums/:postId" element={<AlbumRoute user={user} />} />
+      <Route path="/posts/:postId" element={<PostRoute user={user} />} />
       <Route path="*" element={<Navigate to={paths.feed} replace />} />
     </Routes>
   );
 }
 
-function TripRoute() {
+function TripRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <TripDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }
 
-function AlbumRoute() {
+function AlbumRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <AlbumDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }
 
-function PostRoute() {
+function PostRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <PostDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
@@ -210,6 +224,7 @@ function PostRoute() {
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }

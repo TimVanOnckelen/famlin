@@ -1,7 +1,3 @@
-.chat-shell {
-  min-height: 100vh;
-}
-
 .chat-column {
   max-width: 1080px;
   margin: 0 auto;
@@ -9,26 +5,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.chat-back {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--fam-primary);
-  cursor: pointer;
-}
-
-.chat-title {
-  font-size: 27px;
-  font-weight: 900;
-  color: var(--fam-primary);
 }
 
 /* ── Loading / empty states ─────────────────────────────────────────────── */
@@ -474,11 +450,6 @@
 }
 
 @media (max-width: 720px) {
-  /* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
-  .chat-column {
-    padding-bottom: 100px;
-  }
-
   .chat-layout {
     flex-direction: column;
   }

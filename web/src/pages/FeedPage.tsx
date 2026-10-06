@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { fetchGroups, fetchMyCircles, fetchPosts, User } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
-import { AppHeader } from '@/components/AppHeader';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
 import { PostCard } from '@/components/PostCard';
 import { NewPostModal } from '@/components/NewPostModal';
-import { ApiTokensModal } from '@/components/ApiTokensModal';
 import { StoryTray } from '@/components/StoryTray';
 import './FeedPage.css';
 
@@ -37,7 +35,6 @@ export function FeedPage({
   // filters mean different things: groups widen the pool, circles narrow it.
   const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
-  const [apiTokensOpen, setApiTokensOpen] = useState(false);
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const groups = groupsQuery.data ?? [];
@@ -104,18 +101,17 @@ export function FeedPage({
   const showGroupOnCards = effectiveGroupCount > 1;
 
   return (
-    <div className="feed-shell">
-      <AppHeader
-        user={user}
-        onNewPost={() => setComposerOpen(true)}
-        onProfile={onOpenProfile}
-        onPhotos={onOpenPhotos}
-        onChat={onOpenChat}
-        onApiTokens={() => setApiTokensOpen(true)}
-        onLogout={onLogout}
-      />
-
-      <main className="feed-column">
+    <AppShell
+      user={user}
+      active="feed"
+      onFeed={() => {}}
+      onPhotos={onOpenPhotos}
+      onChat={onOpenChat}
+      onProfile={onOpenProfile}
+      onNewPost={() => setComposerOpen(true)}
+      onLogout={onLogout}
+    >
+      <div className="feed-column">
         {groups.length > 1 && (
           <div className="feed-filter" role="group" aria-label={t('feed.filterLabel')}>
             <button
@@ -197,16 +193,7 @@ export function FeedPage({
             {postsQuery.isFetchingNextPage ? t('common.loading') : t('feed.loadMore')}
           </button>
         )}
-      </main>
-
-      <BottomNav
-        active="feed"
-        onFeed={() => {}}
-        onPhotos={onOpenPhotos}
-        onChat={onOpenChat}
-        onProfile={onOpenProfile}
-        onNewPost={() => setComposerOpen(true)}
-      />
+      </div>
 
       {composerOpen && (
         <NewPostModal
@@ -215,8 +202,6 @@ export function FeedPage({
           onClose={() => setComposerOpen(false)}
         />
       )}
-
-      {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
-    </div>
+    </AppShell>
   );
 }

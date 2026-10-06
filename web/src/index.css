@@ -91,6 +91,16 @@ input {
   font-family: inherit;
 }
 
+/* Global keyboard-focus ring. Anything that wants a different (but still
+   visible) focus treatment overrides `outline` on its own `:focus`/
+   `:focus-visible` rule rather than suppressing it outright — see the
+   CLAUDE.md web/ bullet on keyboard navigation: no `outline: none` without a
+   replacement should ever land in this app's CSS. */
+:focus-visible {
+  outline: 2px solid var(--fam-primary);
+  outline-offset: 2px;
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 
 .btn {
