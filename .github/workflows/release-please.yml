@@ -131,6 +131,71 @@ jobs:
     with:
       tag_name: ${{ needs.release-please.outputs.tag_name }}
 
+  # A sideloadable Android APK attached to the Release, for people without
+  # Google Play (de-Googled phones, F-Droid users). Same production profile
+  # as the store build but buildType apk (mobile/eas.json's `apk` profile).
+  # Note it's signed with the EAS upload keystore, while the Play version is
+  # re-signed by Play App Signing — so the two can't be installed over each
+  # other. Gated on mobile-changed like the store build (each one costs an
+  # EAS build); releases without app changes link the latest APK instead,
+  # see release-assets.
+  build-apk:
+    needs: [release-please, mobile-changed]
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.mobile-changed.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      # Same native-dependency gate as the store build in mobile-build.yml.
+      - name: Check dependency versions match the Expo SDK
+        working-directory: mobile
+        run: npx expo install --check
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK
+        working-directory: mobile
+        run: |
+          eas build \
+            --platform android \
+            --profile apk \
+            --non-interactive \
+            --wait \
+            --json > "$RUNNER_TEMP/eas-build.json"
+          url=$(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl // empty' "$RUNNER_TEMP/eas-build.json")
+          if [ -z "$url" ]; then
+            echo "::error::EAS build finished without an artifact URL"
+            cat "$RUNNER_TEMP/eas-build.json"
+            exit 1
+          fi
+          echo "ARTIFACT_URL=$url" >> "$GITHUB_ENV"
+
+      - name: Attach APK to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          apk="$RUNNER_TEMP/famlin-${TAG_NAME#v}.apk"
+          curl -fsSL "$ARTIFACT_URL" -o "$apk"
+          gh release upload "$TAG_NAME" -R "$GITHUB_REPOSITORY" --clobber "$apk"
+
   # Rewrite the GitHub Release body into human-readable notes (highlights +
   # breaking changes) using GitHub Models — authenticated by the workflow's
   # own GITHUB_TOKEN via the `models: read` permission, no extra secrets.
@@ -208,7 +273,7 @@ jobs:
   # actually exists. `always()` keeps it running when the best-effort notes
   # rewrite was skipped or failed.
   release-assets:
-    needs: [release-please, publish-docker, mobile-changed, enhance-release-notes]
+    needs: [release-please, publish-docker, mobile-changed, build-apk, enhance-release-notes]
     if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -243,6 +308,13 @@ jobs:
           MOBILE_CHANGED: ${{ needs.mobile-changed.outputs.changed }}
         run: |
           VERSION="${TAG_NAME#v}"
+          # The APK on this release, or (no app changes / APK build failed)
+          # the newest earlier release that has one.
+          APK_TAG=""; APK_NAME=""
+          for tag in $(gh release list -R "$GITHUB_REPOSITORY" --limit 30 --json tagName --jq '.[].tagName' || true); do
+            name=$(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith(".apk"))][0] // empty' || true)
+            if [ -n "$name" ]; then APK_TAG="$tag"; APK_NAME="$name"; break; fi
+          done
           MARKER='<!-- famlin-release-downloads -->'
           # Strip a previous run's section so a re-run doesn't duplicate it.
           gh release view "$TAG_NAME" -R "$GITHUB_REPOSITORY" --json body --jq .body \
@@ -271,6 +343,16 @@ jobs:
             echo
             echo "- [App Store (iOS)](https://apps.apple.com/us/app/famlin/id6786783660)"
             echo "- [Google Play (Android)](https://play.google.com/store/apps/details?id=be.xeweb.famlin)"
+            if [ -n "$APK_TAG" ]; then
+              apk_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$APK_TAG/$APK_NAME"
+              if [ "$APK_TAG" = "$TAG_NAME" ]; then
+                echo "- [Android APK]($apk_url) (\`$APK_NAME\`, attached below) — for phones without Google Play"
+              else
+                echo "- [Android APK]($apk_url) (from $APK_TAG, the latest release with app changes) — for phones without Google Play"
+              fi
+              echo
+              echo "> The APK and the Google Play version are signed differently, so you can't install one over the other — uninstall first when switching (you'll need to sign in again)."
+            fi
             echo
             if [ "$MOBILE_CHANGED" = "true" ]; then
               echo "This release includes a new app version; it reaches the stores once store review completes."
