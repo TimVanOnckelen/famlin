@@ -9,6 +9,7 @@ This guide covers running Famlin **in production, for your family** — on a Syn
 ## Requirements
 
 - Docker and Docker Compose (v2 CLI plugin, i.e. `docker compose`, not the standalone `docker-compose`).
+- An `x86_64` (`amd64`) or `arm64` host. The published image is multi-arch, so the same `ghcr.io/timvanonckelen/famlin` tag runs natively on a regular server as well as on a Raspberry Pi 4/5 (64-bit OS), an ARM-based NAS, an Apple Silicon Mac, or an ARM cloud VM — Docker picks the right variant automatically.
 - A domain or subdomain pointed at the server (e.g. `famlin.yourdomain.com`), if you want to expose Famlin outside your local network.
 - A reverse proxy that can terminate TLS — Traefik, Nginx, Caddy, or your NAS's built-in reverse proxy all work.
 
