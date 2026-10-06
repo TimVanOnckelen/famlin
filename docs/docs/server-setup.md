@@ -24,6 +24,8 @@ mkdir famlin && cd famlin
 curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.yml
 ```
 
+Every [GitHub release](https://github.com/TimVanOnckelen/famlin/releases) also carries a `docker-compose.yml` pinned to that exact version, plus `env.example`, as downloadable assets — handy if you'd rather install a specific version than track `latest`.
+
 (Or clone the repository if you'd rather have the whole history, or want to [build the image from source](./maintenance#building-from-source-instead) instead.)
 
 For reference — or to paste directly if your setup wants compose content rather than a URL (e.g. Synology Container Manager's manual-entry mode, see below) — here's the file as of this writing. It pulls `famlin-backend` straight from `ghcr.io/timvanonckelen/famlin`, no build step involved:
