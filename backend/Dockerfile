@@ -111,28 +111,29 @@ RUN apk add --no-cache openssl ffmpeg
 COPY backend/package.json backend/package-lock.json* ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
 # camera format) — sharp's own prebuilt binaries deliberately ship without it
-# (patent-encumbered HEVC decoder), so sharp has to be compiled against the
-# system libvips instead.
+# (patent-encumbered HEVC decoder), so sharp is compiled against the system
+# libvips here instead.
 #
-# That compile must be triggered explicitly: sharp >= 0.34 has no install
-# script, so `npm ci` alone always just picks the prebuilt @img/sharp-* binary
-# (no HEIC) even with vips-dev present. The build needs node-addon-api and
-# node-gyp, installed into a throwaway prefix rather than the app's tree.
-# SHARP_FORCE_GLOBAL_LIBVIPS is required because sharp's minimum libvips
-# (package.json `config.libvips`) tracks its own prebuilt patch release, which
-# Alpine's package can trail by a few patch versions within the same minor.
-# The prebuilt @img/sharp-* packages are then removed, so a broken compile
-# fails loudly at load time (and in CI's smoke test) instead of silently
-# falling back to the no-HEIC binary again. The compiled addon dynamically
-# links against the vips/vips-heif runtime libs, which stay installed;
-# deleting just the .build-deps virtual group keeps compilers out of the image.
+# sharp's install script builds from source on its own when it finds a
+# globally-installed libvips at least as new as its `config.libvips` minimum —
+# which is why backend/package.json pins sharp to 0.34.5 (needs libvips
+# >= 8.17.3): 0.35.x needs 8.18.7+, newer than Alpine 3.24's 8.18.2, and then
+# silently falls back to the no-HEIC prebuilt. Unpin once the Alpine release
+# under node:22-alpine ships a libvips that satisfies the newer sharp.
+#
+# The source build needs node-addon-api and node-gyp, installed into a
+# throwaway prefix (not the app's dependency tree) and exposed via
+# NODE_PATH/PATH. The prebuilt @img/sharp-* packages are then removed, so a
+# compile that didn't happen fails loudly — at the check below and in CI's
+# smoke test — instead of silently falling back to the no-HEIC binary again.
+# The compiled addon dynamically links against the vips/vips-heif runtime
+# libs, which stay installed; deleting just the .build-deps virtual group
+# keeps compilers out of the final image.
 RUN apk add --no-cache vips vips-heif
 RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-dev \
-    && npm ci --omit=dev \
     && npm install --prefix /tmp/sharp-build --no-save --no-audit --no-fund node-addon-api node-gyp \
-    && (cd node_modules/sharp \
-        && NODE_PATH=/tmp/sharp-build/node_modules PATH="/tmp/sharp-build/node_modules/.bin:$PATH" \
-           SHARP_FORCE_GLOBAL_LIBVIPS=1 node install/build.js) \
+    && NODE_PATH=/tmp/sharp-build/node_modules PATH="/tmp/sharp-build/node_modules/.bin:$PATH" \
+       npm ci --omit=dev \
     && rm -rf node_modules/@img/sharp-linux* node_modules/@img/sharp-libvips-linux* \
               node_modules/sharp/src/build/Release/obj.target /tmp/sharp-build /root/.cache/node-gyp \
     && node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }" \

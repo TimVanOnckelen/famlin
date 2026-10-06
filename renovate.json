@@ -34,6 +34,11 @@
       "enabled": false
     },
     {
+      "description": "sharp >= 0.35 needs libvips 8.18.7+, newer than the Alpine release under node:22-alpine ships (8.18.2), and then silently loses HEIC decoding in the Docker image — see the sharp comment in backend/Dockerfile. Lift once Alpine's libvips catches up.",
+      "matchPackageNames": ["sharp"],
+      "allowedVersions": "<0.35.0"
+    },
+    {
       "matchManagers": ["github-actions"],
       "groupName": "github actions"
     }
