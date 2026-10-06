@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { SHORTCUTS } from './shortcuts';
 
 // Phase 2's feed-only shortcuts, registered at module load so the "?" help
@@ -35,9 +35,11 @@ export function useFeedKeyboardNav({
 }) {
   const cardsRef = useRef(new Map<string, HTMLElement>());
   const postIdsRef = useRef(postIds);
-  postIdsRef.current = postIds;
   const handlersRef = useRef({ onOpen, onLike, onFavorite });
-  handlersRef.current = { onOpen, onLike, onFavorite };
+  useLayoutEffect(() => {
+    postIdsRef.current = postIds;
+    handlersRef.current = { onOpen, onLike, onFavorite };
+  });
 
   function registerCard(id: string, el: HTMLElement | null) {
     if (el) cardsRef.current.set(id, el);

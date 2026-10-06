@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { NavView } from '@/components/AppShell';
 
 export interface KeyboardShortcutHandlers {
@@ -20,7 +20,9 @@ const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', u
 // exactly once per mount regardless of how often the caller's props change.
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+  useLayoutEffect(() => {
+    handlersRef.current = handlers;
+  });
 
   useEffect(() => {
     let pendingG = false;

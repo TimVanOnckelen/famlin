@@ -27,7 +27,12 @@ export function UserMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Read from the DOM inside event handlers rather than collecting refs
+  // during render.
+  function menuItems(): HTMLButtonElement[] {
+    return Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +50,7 @@ export function UserMenu({
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        const items = itemRefs.current.filter((el): el is HTMLButtonElement => !!el);
+        const items = menuItems();
         if (items.length === 0) return;
         const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
         const delta = e.key === 'ArrowDown' ? 1 : -1;
@@ -55,7 +60,7 @@ export function UserMenu({
 
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
-    itemRefs.current[0]?.focus();
+    menuItems()[0]?.focus();
 
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
@@ -70,9 +75,9 @@ export function UserMenu({
   }
 
   const items = [
-    { key: 'profile', label: t('profile.title'), onClick: () => pick(onProfile) },
-    { key: 'apiTokens', label: t('apiTokens.menuItem'), onClick: () => pick(onApiTokens) },
-    { key: 'logout', label: t('common.logout'), onClick: () => pick(onLogout) },
+    { key: 'profile', label: t('profile.title'), action: onProfile },
+    { key: 'apiTokens', label: t('apiTokens.menuItem'), action: onApiTokens },
+    { key: 'logout', label: t('common.logout'), action: onLogout },
   ];
 
   return (
@@ -96,16 +101,13 @@ export function UserMenu({
             <div className="user-menu-name">{user.name}</div>
             <div className="user-menu-email">{user.email}</div>
           </div>
-          {items.map((item, i) => (
+          {items.map((item) => (
             <button
               key={item.key}
-              ref={(el) => {
-                itemRefs.current[i] = el;
-              }}
               type="button"
               role="menuitem"
               className="user-menu-item"
-              onClick={item.onClick}
+              onClick={() => pick(item.action)}
             >
               {item.label}
             </button>
