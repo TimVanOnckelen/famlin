@@ -10,10 +10,10 @@ describe('stories', () => {
   });
 
   it('sends the group filter as a comma-separated groupIds param', async () => {
-    const client = await import('../client');
+    const client = await import('../client.js');
     (client.api.get as any).mockResolvedValue({ data: { authors: [] } });
 
-    const { fetchStoryTray } = await import('../stories');
+    const { fetchStoryTray } = await import('../stories.js');
     await fetchStoryTray(['g1', 'g2']);
     expect(client.api.get).toHaveBeenCalledWith('/stories', { params: { groupIds: 'g1,g2' } });
 
@@ -22,19 +22,19 @@ describe('stories', () => {
   });
 
   it('pages Highlights with a cursor', async () => {
-    const client = await import('../client');
+    const client = await import('../client.js');
     (client.api.get as any).mockResolvedValue({ data: { items: [], nextCursor: null } });
 
-    const { fetchStoryHighlights } = await import('../stories');
+    const { fetchStoryHighlights } = await import('../stories.js');
     await fetchStoryHighlights(['g1'], 'cur');
     expect(client.api.get).toHaveBeenCalledWith('/stories/highlights', { params: { groupIds: 'g1', cursor: 'cur' } });
   });
 
   it('posts a reaction and a reply', async () => {
-    const client = await import('../client');
+    const client = await import('../client.js');
     (client.api.post as any).mockResolvedValue({ data: { myReaction: 'LOVE' } });
 
-    const { reactToStory, replyToStory } = await import('../stories');
+    const { reactToStory, replyToStory } = await import('../stories.js');
     expect(await reactToStory('s1', 'LOVE')).toEqual({ myReaction: 'LOVE' });
     expect(client.api.post).toHaveBeenCalledWith('/stories/s1/reaction', { type: 'LOVE' });
 
@@ -43,7 +43,7 @@ describe('stories', () => {
   });
 
   it('isStoryLive compares expiresAt against now', async () => {
-    const { isStoryLive } = await import('../stories');
+    const { isStoryLive } = await import('../stories.js');
     const now = new Date('2026-01-01T12:00:00Z');
     expect(isStoryLive({ expiresAt: '2026-01-01T12:00:01Z' }, now)).toBe(true);
     expect(isStoryLive({ expiresAt: '2026-01-01T11:59:59Z' }, now)).toBe(false);
