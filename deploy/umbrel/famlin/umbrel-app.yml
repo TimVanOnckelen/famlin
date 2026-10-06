@@ -1,0 +1,50 @@
+manifestVersion: 1
+id: famlin
+storage:
+  dataRoot: data
+category: social
+name: Famlin
+version: "0.9.0"
+tagline: A private place to share family updates, photos and milestones
+description: >-
+  Famlin is a private, self-hosted family updates app: a calm, ad-free feed for posts, photos, comments, reactions and milestones, shared only with the people you invite.
+
+
+  ⚠️ On first launch, Famlin opens a one-time setup screen at /admin to create the first (admin) account. Complete it right after installing — until that account exists, anyone who can reach this app could claim it.
+
+
+  Family members join through invite links you create in the admin panel, and can use Famlin in the browser or through the free iOS and Android apps by entering this server's address. Famlin has its own login, so the Umbrel login is not required to open it — that's what lets family members and the mobile apps connect.
+
+
+  Features:
+
+  - A shared family feed with photos, videos, comments and reactions
+
+  - Milestones, polls, trip journals and shared albums
+
+  - Several families (groups) and private circles on one server
+
+  - 24-hour stories with highlights
+
+  - Optional per-family chat
+
+  - Link Immich albums or a local photo folder
+
+  - Single sign-on (OIDC, e.g. Authentik, Keycloak, Google) or local passwords
+
+  - Push and email notifications
+
+  - Full export of all family content and media
+releaseNotes: ""
+developer: Tim Van Onckelen
+website: https://famlin.app
+dependencies: []
+repo: https://github.com/TimVanOnckelen/famlin
+support: https://github.com/TimVanOnckelen/famlin/issues
+port: 3264
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+submitter: Tim Van Onckelen
+submission: https://github.com/getumbrel/umbrel-apps/pull/TODO

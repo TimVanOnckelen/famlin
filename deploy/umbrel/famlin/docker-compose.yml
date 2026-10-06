@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: famlin_server_1
+      APP_PORT: 3000
+      # Famlin has its own accounts and is used by family members who have no
+      # Umbrel login, plus the iOS/Android apps, which can't send Umbrel auth
+      # cookies — same posture as Immich.
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    # TODO: replace with the first multi-arch (amd64 + arm64) release and its
+    # manifest-list digest — see deploy/umbrel/README.md.
+    image: ghcr.io/timvanonckelen/famlin:0.9.0@sha256:TODO
+    # The image runs as its bundled `node` user (UID/GID 1000), which matches
+    # the ownership umbrelOS gives ${APP_DATA_DIR}.
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://famlin:${APP_FAMLIN_DB_PASSWORD}@famlin_db_1:5432/famlin?schema=public
+      JWT_SECRET: ${APP_FAMLIN_JWT_SECRET}
+    volumes:
+      - ${APP_DATA_DIR}/data/uploads:/app/uploads
+
+  db:
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: on-failure
+    environment:
+      POSTGRES_USER: famlin
+      POSTGRES_PASSWORD: ${APP_FAMLIN_DB_PASSWORD}
+      POSTGRES_DB: famlin
+    volumes:
+      - ${APP_DATA_DIR}/data/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U famlin -d famlin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

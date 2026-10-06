@@ -14,6 +14,15 @@ This guide covers running Famlin **in production, for your family** — on a Syn
 
 Famlin ships as a single backend container (Fastify API + the family-facing web app at `/` + the admin UI at `/admin`, all served from the same process) plus a Postgres container. Family members can use the web app in a browser or the mobile app over HTTPS; there's nothing else to run server-side.
 
+## One-click platforms
+
+Running [umbrelOS](https://umbrel.com) or [Coolify](https://coolify.io)? Ready-made packages live in [`deploy/`](https://github.com/TimVanOnckelen/famlin/tree/main/deploy) in the repository. Both run the same image and Postgres setup as the compose file below, and generate the database password and `JWT_SECRET` for you.
+
+- **Coolify**: create a *Docker Compose Empty* resource, paste [`deploy/coolify/famlin.yaml`](https://github.com/TimVanOnckelen/famlin/blob/main/deploy/coolify/famlin.yaml) and deploy. Coolify assigns the domain and handles TLS.
+- **Umbrel**: install Famlin from the Umbrel App Store once it's listed. It runs on port `3264` (e.g. `http://umbrel.local:3264`) and skips the Umbrel login, so family members and the mobile apps can reach it with their Famlin accounts.
+
+Either way, open `/admin` right after the first start. A fresh install shows a one-time setup screen there to create the first (admin) account. Then carry on with [Admin configuration](./admin-configuration).
+
 ## 1. Get the files onto the server
 
 `docker-compose.yml` runs the pre-built backend image from `ghcr.io/timvanonckelen/famlin`, so you only need the compose file itself — no source checkout required:

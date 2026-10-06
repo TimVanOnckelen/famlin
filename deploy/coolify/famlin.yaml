@@ -1,0 +1,45 @@
+# documentation: https://famlin.app/docs/
+# slogan: A private, self-hosted place to share family updates, photos and milestones.
+# category: social
+# tags: family,photos,social,feed,private,self-hosted
+# logo: svgs/famlin.svg
+# port: 3000
+
+services:
+  famlin:
+    image: ghcr.io/timvanonckelen/famlin:${FAMLIN_VERSION:-latest}
+    environment:
+      - SERVICE_URL_FAMLIN_3000
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@postgresql:5432/${POSTGRES_DB:-famlin}?schema=public
+      - JWT_SECRET=$SERVICE_PASSWORD_64_JWT
+      # Coolify always fronts the app with its Traefik/Caddy proxy, which sets
+      # X-Forwarded-Proto/-Host — needed for correct https invite links and
+      # OIDC redirect URIs.
+      - TRUST_PROXY=true
+    volumes:
+      - famlin-uploads:/app/uploads
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/auth/server-info"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  postgresql:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - POSTGRES_DB=${POSTGRES_DB:-famlin}
+    volumes:
+      - famlin-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
