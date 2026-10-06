@@ -19,35 +19,35 @@ describe('client', () => {
       setItem: vi.fn().mockResolvedValue(undefined),
       removeItem: vi.fn().mockResolvedValue(undefined),
     };
-    const { setStorageAdapter } = await import('../storage');
+    const { setStorageAdapter } = await import('../storage.js');
     setStorageAdapter(fakeAdapter);
   });
 
   it('has no server URL until setApiBaseUrl/initApiBaseUrl has run', async () => {
-    const { getCurrentServerUrl } = await import('../client');
+    const { getCurrentServerUrl } = await import('../client.js');
     expect(getCurrentServerUrl()).toBeNull();
   });
 
   it('setApiBaseUrl normalizes a trailing slash and getCurrentServerUrl reflects it', async () => {
-    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client');
+    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client.js');
     setApiBaseUrl('http://example.com/');
     expect(getCurrentServerUrl()).toBe('http://example.com');
   });
 
   it('setApiBaseUrl strips repeated trailing slashes, not just one', async () => {
-    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client');
+    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client.js');
     setApiBaseUrl('http://example.com//');
     expect(getCurrentServerUrl()).toBe('http://example.com');
   });
 
   it('setApiBaseUrl trims whitespace', async () => {
-    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client');
+    const { setApiBaseUrl, getCurrentServerUrl } = await import('../client.js');
     setApiBaseUrl('  http://example.com  ');
     expect(getCurrentServerUrl()).toBe('http://example.com');
   });
 
   it('on a 401, the response interceptor removes the token and calls the unauthorized handler', async () => {
-    const { api, setUnauthorizedHandler } = await import('../client');
+    const { api, setUnauthorizedHandler } = await import('../client.js');
 
     const handler = vi.fn();
     setUnauthorizedHandler(handler);
@@ -62,7 +62,7 @@ describe('client', () => {
   });
 
   it('on a non-401 error, neither removeItem nor the unauthorized handler is called', async () => {
-    const { api, setUnauthorizedHandler } = await import('../client');
+    const { api, setUnauthorizedHandler } = await import('../client.js');
 
     const handler = vi.fn();
     setUnauthorizedHandler(handler);
@@ -79,7 +79,7 @@ describe('client', () => {
   describe('session token scoping', () => {
     async function requestHeaders(storage: Record<string, string>, currentServer: string) {
       fakeAdapter.getItem.mockImplementation(async (key: string) => storage[key] ?? null);
-      const { api, setApiBaseUrl } = await import('../client');
+      const { api, setApiBaseUrl } = await import('../client.js');
       setApiBaseUrl(currentServer);
       const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;
       const config = await fulfilled({ headers: {} });
@@ -109,7 +109,7 @@ describe('client', () => {
   });
 
   it('ignores a 401 for a request that did not carry the session token', async () => {
-    const { api, setUnauthorizedHandler } = await import('../client');
+    const { api, setUnauthorizedHandler } = await import('../client.js');
 
     const handler = vi.fn();
     setUnauthorizedHandler(handler);
@@ -125,7 +125,7 @@ describe('client', () => {
 
   describe('Accept-Language', () => {
     async function headersWith(resolver: (() => string | null | undefined) | null) {
-      const { api, setLanguageResolver } = await import('../client');
+      const { api, setLanguageResolver } = await import('../client.js');
       setLanguageResolver(resolver);
       const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;
       const config = await fulfilled({ headers: {} });
@@ -137,7 +137,7 @@ describe('client', () => {
     });
 
     it('reads the resolver per request, so a language switch applies immediately', async () => {
-      const { api, setLanguageResolver } = await import('../client');
+      const { api, setLanguageResolver } = await import('../client.js');
       let language = 'en';
       setLanguageResolver(() => language);
       const fulfilled = (api.interceptors.request as any).handlers[0].fulfilled;

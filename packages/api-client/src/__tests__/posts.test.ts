@@ -14,11 +14,11 @@ describe('posts', () => {
 
   describe('interactWithPost', () => {
     it('POSTs { key, value } to /posts/:postId/interactions and returns the full post', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-1', type: 'POLL' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { interactWithPost } = await import('../posts');
+      const { interactWithPost } = await import('../posts.js');
       const result = await interactWithPost('post-1', 'vote', { optionId: 'opt-1' });
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-1/interactions', {
@@ -29,11 +29,11 @@ describe('posts', () => {
     });
 
     it('omits value from the payload (as undefined) when not provided', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-2', type: 'POLL' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { interactWithPost } = await import('../posts');
+      const { interactWithPost } = await import('../posts.js');
       await interactWithPost('post-2', 'some-key');
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-2/interactions', {
@@ -45,11 +45,11 @@ describe('posts', () => {
 
   describe('votePoll', () => {
     it('delegates to interactWithPost with key "vote" and { optionId }', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-3', type: 'POLL' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { votePoll } = await import('../posts');
+      const { votePoll } = await import('../posts.js');
       const result = await votePoll('post-3', 'opt-2');
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-3/interactions', {
@@ -62,11 +62,11 @@ describe('posts', () => {
 
   describe('checkInTrip', () => {
     it('delegates to interactWithPost with key "checkin" and the check-in body', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-4', type: 'TRIP' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { checkInTrip } = await import('../posts');
+      const { checkInTrip } = await import('../posts.js');
       const result = await checkInTrip('post-4', { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] });
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-4/interactions', {
@@ -79,11 +79,11 @@ describe('posts', () => {
 
   describe('closeTrip', () => {
     it('delegates to interactWithPost with key "close" and no value', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-5', type: 'TRIP' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { closeTrip } = await import('../posts');
+      const { closeTrip } = await import('../posts.js');
       const result = await closeTrip('post-5');
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-5/interactions', {
@@ -96,11 +96,11 @@ describe('posts', () => {
 
   describe('setTripTravelers', () => {
     it('delegates to interactWithPost with key "setTravelers" and { userIds }', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-6', type: 'TRIP' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { setTripTravelers } = await import('../posts');
+      const { setTripTravelers } = await import('../posts.js');
       const result = await setTripTravelers('post-6', ['u1', 'u2']);
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-6/interactions', {
@@ -111,11 +111,11 @@ describe('posts', () => {
     });
 
     it('sends an empty list to clear all co-travelers', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-7', type: 'TRIP' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { setTripTravelers } = await import('../posts');
+      const { setTripTravelers } = await import('../posts.js');
       await setTripTravelers('post-7', []);
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-7/interactions', {
@@ -127,11 +127,11 @@ describe('posts', () => {
 
   describe('addAlbumPhotos', () => {
     it('delegates to interactWithPost with key "addPhotos" and the contribution body', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-8', type: 'ALBUM' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { addAlbumPhotos } = await import('../posts');
+      const { addAlbumPhotos } = await import('../posts.js');
       const result = await addAlbumPhotos('post-8', { photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'], caption: 'By the lake' });
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-8/interactions', {
@@ -144,11 +144,11 @@ describe('posts', () => {
 
   describe('closeAlbum', () => {
     it('delegates to interactWithPost with key "close" and no value', async () => {
-      const client = await import('../client');
+      const client = await import('../client.js');
       const fakePost = { id: 'post-9', type: 'ALBUM' };
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
-      const { closeAlbum } = await import('../posts');
+      const { closeAlbum } = await import('../posts.js');
       const result = await closeAlbum('post-9');
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-9/interactions', {
