@@ -1,12 +1,6 @@
 /* Album detail page (pages/AlbumDetailPage) — the read + contribute view of a
-   collaborative photo album, opened as an App.tsx `view` state like
-   TripDetailPage. Reuses the shared design tokens. */
-
-.album-detail-shell {
-  min-height: 100vh;
-  background: var(--fam-bg);
-  padding-bottom: 80px;
-}
+   collaborative photo album, routed at /albums/:postId like TripDetailPage.
+   Reuses the shared design tokens. */
 
 .album-detail-column {
   max-width: 720px;
@@ -19,24 +13,6 @@
   text-align: center;
   color: var(--fam-text-muted);
   font-weight: 600;
-}
-
-.album-detail-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  color: var(--fam-primary-dark);
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 8px;
-}
-
-.album-detail-back:hover {
-  text-decoration: underline;
 }
 
 /* ── Cover ──────────────────────────────────────────────────────────────── */

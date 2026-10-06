@@ -1,7 +1,7 @@
 /* Trip feed card (postTypes/TripFeedCard) — a distinct "postcard" treatment
    from the regular post-card-inner: a teal tint/border for the active
    variant, a plain surface for the closed (diary) variant, reusing
-   post-card/post-card-inner's masonry positioning + shadow/radius. */
+   post-card/post-card-inner's flat positioning + shadow/radius. */
 
 .trip-card-inner {
   border-color: var(--fam-trip-border);

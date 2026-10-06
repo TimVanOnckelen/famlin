@@ -1,10 +1,6 @@
 /* Trip detail page — desktop-widened editorial layout (design t6, screens
-   6c/6d): a wider column than the feed's masonry cards so the check-in
+   6c/6d): a wider column than the feed's own cards so the check-in
    timeline reads comfortably at desktop widths. */
-
-.trip-detail-shell {
-  min-height: 100vh;
-}
 
 .trip-detail-column {
   max-width: 760px;
@@ -13,26 +9,6 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-@media (max-width: 720px) {
-  .trip-detail-column {
-    padding-bottom: 112px;
-  }
-}
-
-.trip-detail-back {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--fam-primary);
-  cursor: pointer;
 }
 
 .trip-detail-hint {

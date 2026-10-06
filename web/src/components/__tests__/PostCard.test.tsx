@@ -47,6 +47,24 @@ describe('PostCard', () => {
     expect(screen.getByText('Emma turns 5! 🎉')).toBeInTheDocument();
   });
 
+  it('does not render the comment thread by default (feed usage)', () => {
+    renderWithQueryClient(<PostCard post={makePost()} />);
+    expect(screen.queryByPlaceholderText('Write a comment…')).not.toBeInTheDocument();
+  });
+
+  it('renders the full comment thread when showComments is set (detail page/modal usage)', async () => {
+    renderWithQueryClient(<PostCard post={makePost()} showComments />);
+    expect(await screen.findByPlaceholderText('Write a comment…')).toBeInTheDocument();
+  });
+
+  it('renders no scrapbook decoration (no washi tape or milestone pin)', () => {
+    const { container } = renderWithQueryClient(
+      <PostCard post={makePost({ type: 'MILESTONE', content: 'Emma turns 5!', uploadedAssetUrls: ['/uploads/a.jpg'] })} />
+    );
+    expect(container.querySelector('.post-tape')).not.toBeInTheDocument();
+    expect(container.querySelector('.post-pin')).not.toBeInTheDocument();
+  });
+
   it('shows the photo hero with the floating author chip for photo posts', () => {
     const { container } = renderWithQueryClient(
       <PostCard post={makePost({ uploadedAssetUrls: ['/uploads/a.jpg'] })} />

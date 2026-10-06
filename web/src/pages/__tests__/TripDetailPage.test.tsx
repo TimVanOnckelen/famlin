@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { TripDetailPage } from '@/pages/TripDetailPage';
-import { makeComment, makePost, makeTrip, renderWithQueryClient } from '@/test/fixtures';
+import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures';
 import { fetchComments, fetchPost } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -43,7 +43,7 @@ describe('TripDetailPage', () => {
       makeComment({ id: 'com-1', authorId: 'user-2', content: 'Have a great trip!' }),
     ]);
 
-    const { container } = renderWithQueryClient(<TripDetailPage postId="trip-1" onBack={() => {}} />);
+    const { container } = renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByText('Road trip Italy')).toBeInTheDocument();
     expect(screen.getByText('Timeline · newest first')).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('TripDetailPage', () => {
       }),
     ]);
 
-    const { container } = renderWithQueryClient(<TripDetailPage postId="trip-1" onBack={() => {}} />);
+    const { container } = renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByText('Diary · oldest first')).toBeInTheDocument();
     const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent);
@@ -110,7 +110,7 @@ describe('TripDetailPage', () => {
     vi.mocked(fetchPost).mockResolvedValue(post);
     vi.mocked(fetchComments).mockResolvedValue([]);
 
-    renderWithQueryClient(<TripDetailPage postId="trip-1" onBack={() => {}} />);
+    renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByText('The trip has begun…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /check-in/i })).not.toBeInTheDocument();

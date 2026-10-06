@@ -1,17 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import {
-  Post,
-  PostPerson,
-  ReactionType,
-  REACTION_TYPES,
-  reactToPost,
-  toggleFavoritePost,
-  getUploadUrl,
-  patchPostInCaches,
-} from '@famlin/api-client';
+import { Post, PostPerson, REACTION_TYPES, getUploadUrl } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
@@ -22,6 +12,7 @@ import { ShimmerImage } from '@/components/ShimmerImage';
 import { postTypeRenderers } from '@/components/postTypes';
 import { TripFeedCard } from '@/components/postTypes/TripFeedCard';
 import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard';
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
 import { paths } from '@/utils/routes';
@@ -136,14 +127,16 @@ export function PostCard({
   showGroup = false,
   onOpenTrip,
   onOpenAlbum,
-  initialCommentsOpen = false,
+  showComments = false,
 }: {
   post: Post;
   showGroup?: boolean;
   onOpenTrip?: (postId: string) => void;
   onOpenAlbum?: (postId: string) => void;
-  // The single-post page (/posts/:id) opens with the thread already showing.
-  initialCommentsOpen?: boolean;
+  // The single-post page/modal shows the full thread unconditionally; the
+  // feed shows only the comment-count line (clicking it opens that page) —
+  // there is no inline expand/collapse any more (issue: web redesign phase 2).
+  showComments?: boolean;
 }) {
   // TRIP posts get a wholesale-different card (different hero source, no
   // inline comments, a "follow/view diary" CTA instead of a comment button)
@@ -162,64 +155,29 @@ export function PostCard({
     return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />;
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} initialCommentsOpen={initialCommentsOpen} />;
+  return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} />;
 }
 
 function DefaultPostCard({
   post,
   showGroup = false,
-  initialCommentsOpen = false,
+  showComments = false,
 }: {
   post: Post;
   showGroup?: boolean;
-  initialCommentsOpen?: boolean;
+  showComments?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
   const hasPhotos = post.uploadedAssetUrls.length > 0;
   // Unknown/absent types fall back to the plain rendering below (required
   // forward-compat behavior); milestone stays its own hardcoded branch and is
   // never looked up here.
   const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
-  const [commentsOpen, setCommentsOpen] = useState(initialCommentsOpen);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const reactMutation = useMutation({
-    mutationFn: (type: ReactionType) => reactToPost(post.id, type),
-    onMutate: async (type) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const nextReaction = post.myReaction === type ? null : type;
-      patchPostInCaches(queryClient, post.id, (p) => {
-        const reactions = { ...p.reactions };
-        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
-        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
-        return {
-          ...p,
-          myReaction: nextReaction,
-          reactions,
-          likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
-          likedByMe: nextReaction !== null,
-        };
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-  });
-
-  const favoriteMutation = useMutation({
-    mutationFn: () => toggleFavoritePost(post.id),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const nextFavorited = !post.favoritedByMe;
-      patchPostInCaches(queryClient, post.id, (p) => ({ ...p, favoritedByMe: nextFavorited }));
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
+  const reactMutation = useReactToPost(post);
+  const favoriteMutation = useToggleFavorite(post);
 
   const timeLine = `${formatRelativeDate(post.createdAt, i18n.language)}${
     post.editedAt ? ` · ${t('common.edited')}` : ''
@@ -268,9 +226,11 @@ function DefaultPostCard({
   );
 
   return (
-    <article className="post-card">
-      {isMilestone && <span className="post-pin" aria-hidden />}
-      {hasPhotos && !isMilestone && <span className="post-tape" aria-hidden />}
+    // A plain div, not <article>: when rendered from the feed, FeedPage wraps
+    // every card (default/trip/album alike) in its own focusable element with
+    // role="article" — a second, nested landmark here would be redundant (and
+    // ambiguous for role-based test/assistive-tech queries).
+    <div className="post-card">
       <div className={`post-card-inner${isMilestone && !hasPhotos ? ' post-card-milestone' : ''}`}>
         {hasPhotos && heroUrl && (
           <div className="post-hero">
@@ -394,13 +354,20 @@ function DefaultPostCard({
               </div>
             </div>
 
-            <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
+            {/* No onClick of its own: in the feed, FeedPage's card wrapper
+                opens the post detail on a click anywhere that isn't another
+                interactive child (reactions/photos/links) — this button is
+                one of the things deliberately included in that, via its
+                `post-comments-btn` class (see FeedPage.tsx). On the detail
+                page/modal (showComments true, no such wrapper) it's just the
+                count, already shown below. */}
+            <button className="action-btn post-comments-btn">
               <Icon name="message-square" size={18} />
               {t('feed.comments', { count: post.commentCount })}
             </button>
           </div>
 
-          {commentsOpen && <CommentsSection post={post} />}
+          {showComments && <CommentsSection post={post} />}
         </div>
       </div>
 
@@ -411,6 +378,6 @@ function DefaultPostCard({
           onClose={() => setLightboxIndex(null)}
         />
       )}
-    </article>
+    </div>
   );
 }

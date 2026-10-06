@@ -1,45 +1,53 @@
-.feed-shell {
-  min-height: 100vh;
+/* Single centered column (~600–640px), like mobile's feed list, plus a sticky
+   side panel on very wide screens (see .feed-side-panel / FeedSidePanel.tsx). */
+.feed-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 24px 24px 96px;
 }
 
 .feed-column {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px 24px 96px;
+  width: 100%;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* ── Memory wall — playful multi-column masonry ─────────────────────────── */
-
 .feed-grid {
-  columns: 2;
-  column-gap: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-@media (max-width: 680px) {
-  .feed-grid {
-    columns: 1;
-  }
+/* A post card plus the focusable/keyboard-navigable chrome around it (j/k/o/
+   l/f — see hooks/useFeedKeyboardNav.ts). Click handling here (not inside
+   PostCard) is what lets the same delegated click cover the comment button,
+   comment count and plain card body while skipping reactions/photos/links —
+   see the onClick in FeedPage.tsx for the exact rule. */
+.feed-card {
+  cursor: pointer;
+  border-radius: var(--r-lg);
 }
 
-/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
-@media (max-width: 720px) {
-  .feed-column {
-    padding-bottom: 112px;
-  }
-}
-
-/* ── Family filter (multi-select chips) ─────────────────────────────────── */
+/* ── Family/circle filter (multi-select chips) — one horizontally scrolling
+   row each, like mobile's FlatList, rather than wrapping. ──────────────── */
 
 .feed-filter {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 
 .filter-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
   padding: 8px 16px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--fam-border);
@@ -118,4 +126,25 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+/* The right side panel (FeedSidePanel.tsx) only has room on very wide
+   screens — hidden below 1200px rather than reflowing under the feed, since
+   its content (On this day / family members) is a bonus, not core feed
+   content. Always rendered (so its data fetches regardless of viewport,
+   same as everything else on this page); CSS alone decides visibility. */
+.feed-side-panel {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .feed-side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 24px;
+  }
 }

@@ -1,7 +1,3 @@
-.profile-shell {
-  min-height: 100vh;
-}
-
 .profile-column {
   max-width: 620px;
   margin: 0 auto;
@@ -9,33 +5,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
-@media (max-width: 720px) {
-  .profile-column {
-    padding-bottom: 112px;
-  }
-}
-
-.profile-back {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--fam-primary);
-  cursor: pointer;
-}
-
-.profile-title {
-  font-size: 27px;
-  font-weight: 900;
-  color: var(--fam-primary);
 }
 
 /* ── Profile card ────────────────────────────────────────────────────────── */

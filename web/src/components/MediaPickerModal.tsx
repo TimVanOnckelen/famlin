@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { ShimmerImage } from '@/components/ShimmerImage';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import './MediaPickerModal.css';
 
 // Picks photos/videos from the group's linked albums, whatever media source
@@ -28,6 +29,8 @@ export function MediaPickerModal({
   const [chosenLinkId, setChosenLinkId] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const cardRef = useRef<HTMLDivElement>(null);
+  useModalFocus(cardRef, onClose);
 
   const albumsQuery = useQuery({
     queryKey: ['media-albums', groupId],
@@ -78,7 +81,12 @@ export function MediaPickerModal({
       role="dialog"
       aria-modal
     >
-      <div className="modal-card media-picker-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-card media-picker-card"
+        ref={cardRef}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="modal-title">{t('mediaPicker.title')}</h2>
 
         {albumsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}

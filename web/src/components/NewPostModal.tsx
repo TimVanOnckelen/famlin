@@ -16,6 +16,7 @@ import { Icon } from '@/components/Icon';
 import { MediaPickerModal } from '@/components/MediaPickerModal';
 import { ShimmerImage } from '@/components/ShimmerImage';
 import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import './NewPostModal.css';
 
 // The post types this composer knows how to build, in chip order.
@@ -71,6 +72,14 @@ export function NewPostModal({
   );
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Esc closes the composer and focus is trapped/restored, matching every
+  // other modal's expected keyboard behavior. The media picker rendered
+  // below is a DOM sibling (not a descendant) of this form, each with its
+  // own keydown listener attached directly to its own container — so while
+  // the picker is open and holds focus, its Esc/Tab handling fires instead
+  // of this one's, with no explicit coordination needed between the two.
+  useModalFocus(formRef, onClose);
 
   // The linked-album picker targets a single group; when cross-posting to
   // several, drive it off the first one picked — the server copies
@@ -221,7 +230,13 @@ export function NewPostModal({
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
-      <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+      <form
+        className="modal-card"
+        ref={formRef}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+      >
         <h2 className="modal-title">{t('newPost.title')}</h2>
 
         {groups.length > 1 && (

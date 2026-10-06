@@ -95,6 +95,8 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // Per-family branding logo/favicon, served publicly by the backend.
+      '/branding': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
 });

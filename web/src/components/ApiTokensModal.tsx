@@ -1,7 +1,8 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createApiToken, fetchApiTokens, revokeApiToken, CreatedApiToken } from '@famlin/api-client';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import './ApiTokensModal.css';
 
 // Developer personal access tokens — deliberately a web-only surface (the
@@ -17,6 +18,8 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
   // it's ever visible, so it stays on screen until the modal closes.
   const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null);
   const [copied, setCopied] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  useModalFocus(cardRef, onClose);
 
   const tokensQuery = useQuery({ queryKey: ['api-tokens'], queryFn: fetchApiTokens });
 
@@ -54,7 +57,12 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
-      <div className="modal-card api-tokens-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-card api-tokens-card"
+        ref={cardRef}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="modal-title">{t('apiTokens.title')}</h2>
         <p className="api-tokens-intro">
           {t('apiTokens.intro')}{' '}

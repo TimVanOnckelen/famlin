@@ -1,7 +1,3 @@
-.photos-shell {
-  min-height: 100vh;
-}
-
 .photos-column {
   max-width: 1200px;
   margin: 0 auto;
@@ -212,13 +208,6 @@
 @media (max-width: 480px) {
   .photos-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
-@media (max-width: 720px) {
-  .photos-column {
-    padding-bottom: 112px;
   }
 }
 

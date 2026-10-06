@@ -1,16 +1,12 @@
 /* Post card — from the styleguide's "Post card" and "Photo-first patterns"
-   sections: white 18px-radius cards, photos edge-to-edge with the author chip
-   floating on top, milestones on an amber gradient with the badge pill.
-   The "memory wall" masonry feed (Famlin Web App mockup) layers a playful
-   pinned/taped treatment on top: .post-card is the untransformed positioning
-   context (so the decorative pin/tape and the Lightbox's fixed overlay stay
-   correct), .post-card-inner carries the actual rotation/hover so it never
-   becomes a containing block for the Lightbox's position:fixed. */
+   sections: flat white 18px-radius cards with a subtle shadow, photos
+   edge-to-edge with the author chip floating on top, milestones on an amber
+   tint with the badge pill and a 1.5px border. Matches mobile's PostCard
+   (mobile/src/components/PostCard.tsx) rather than a "memory wall" scrapbook
+   treatment — no masonry columns, tilt or washi-tape/pin decoration. */
 
 .post-card {
   position: relative;
-  break-inside: avoid;
-  margin-bottom: 22px;
 }
 
 .post-card-inner {
@@ -19,72 +15,18 @@
   box-shadow: var(--shadow-card);
   border: 1px solid #edf1f3;
   overflow: hidden;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease;
 }
 
 .post-card-milestone {
-  background: linear-gradient(145deg, var(--fam-milestone-bg), var(--fam-milestone-bg-strong));
+  background: var(--fam-milestone-bg);
   border: 1.5px solid var(--fam-milestone);
-  box-shadow: 0 3px 16px rgba(238, 177, 84, 0.28);
 }
 
-/* Gentle alternating tilt, straightened + lifted on hover — the masonry wall
-   should feel like memories pinned to a board, not a rigid grid. */
-.post-card:nth-of-type(4n+1) .post-card-inner {
-  transform: rotate(-0.6deg);
-}
-.post-card:nth-of-type(4n+2) .post-card-inner {
-  transform: rotate(0.5deg);
-}
-.post-card:nth-of-type(4n+3) .post-card-inner {
-  transform: rotate(-0.4deg);
-}
-.post-card:nth-of-type(4n+4) .post-card-inner {
-  transform: rotate(0.7deg);
-}
-
-.post-card:hover .post-card-inner {
-  transform: rotate(0deg) translateY(-3px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
-}
-
-/* Milestone "candle" pin, floating above the card. */
-.post-pin {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 16px;
-  border-radius: 8px;
-  background: radial-gradient(circle at 35% 32%, var(--fam-milestone-light), var(--fam-milestone) 55%, var(--fam-milestone-deep) 100%);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Washi-tape strip on standard photo posts. */
-.post-tape {
-  position: absolute;
-  top: -13px;
-  left: 50%;
-  width: 68px;
-  height: 24px;
-  transform: translateX(-38px) rotate(-5deg);
-  background: linear-gradient(rgba(var(--fam-primary-rgb), 0.4), rgba(var(--fam-primary-rgb), 0.32));
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.post-card:nth-of-type(3n+2) .post-tape {
-  transform: translateX(-30px) rotate(6deg);
-  background: linear-gradient(rgba(237, 131, 94, 0.42), rgba(237, 131, 94, 0.34));
-}
-
-.post-card:nth-of-type(3n+3) .post-tape {
-  transform: translateX(-34px) rotate(-3deg);
-  background: linear-gradient(rgba(75, 139, 90, 0.4), rgba(75, 139, 90, 0.32));
+/* Subtle lift on hover/keyboard-focus — no tilt, no translateY. */
+.post-card:hover .post-card-inner,
+.feed-card:focus-visible .post-card-inner {
+  box-shadow: var(--shadow-raised);
 }
 
 .post-body {

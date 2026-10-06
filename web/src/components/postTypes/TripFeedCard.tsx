@@ -118,7 +118,7 @@ export function TripFeedCard({
 
   if (trip.closed) {
     return (
-      <article className="post-card">
+      <div className="post-card">
         <div className="post-card-inner trip-card-inner">
           <TripClosedCollage
             collagePhotoUrls={trip.collagePhotoUrls}
@@ -155,14 +155,14 @@ export function TripFeedCard({
             {reactionRow}
           </div>
         </div>
-      </article>
+      </div>
     );
   }
 
   const heroUrl = trip.collagePhotoUrls[0] || trip.coverPhotoUrl;
 
   return (
-    <article className="post-card">
+    <div className="post-card">
       <div className="post-card-inner trip-card-inner">
         <button
           type="button"
@@ -217,7 +217,7 @@ export function TripFeedCard({
           {reactionRow}
         </div>
       </div>
-    </article>
+    </div>
   );
 }
 

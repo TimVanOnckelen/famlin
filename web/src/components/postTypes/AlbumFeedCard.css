@@ -1,5 +1,5 @@
 /* Album feed card (postTypes/AlbumFeedCard) — a collaborative photo album.
-   Reuses post-card/post-card-inner's masonry positioning + shadow/radius,
+   Reuses post-card/post-card-inner's flat positioning + shadow/radius,
    with a teal (primary) accent to distinguish it from the trip card. */
 
 .album-card-inner {
