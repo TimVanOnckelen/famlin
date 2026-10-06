@@ -1,0 +1,61 @@
+/* Single-post permalink page (/posts/:postId) — one feed card, centred in a
+   column about as wide as a card reads comfortably. */
+
+.post-detail-shell {
+  min-height: 100vh;
+}
+
+.post-detail-column {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 720px) {
+  .post-detail-column {
+    padding: 16px 16px 112px;
+  }
+}
+
+.post-detail-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.post-detail-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  text-align: center;
+  padding: 32px 0;
+}
+
+.post-detail-hint p {
+  margin: 0;
+}
+
+.post-detail-retry {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--fam-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}

@@ -335,5 +335,11 @@
     "noReactions": "暂无回应。",
     "noReplies": "暂无回复。",
     "repliesPrivate": "只有你能看到浏览者和收到的回复。"
+  },
+  "postDetail": {
+    "back": "返回",
+    "backToFeed": "返回动态",
+    "notFound": "此帖子不存在，或未与你分享。",
+    "loadFailed": "无法加载此帖子。"
   }
 }

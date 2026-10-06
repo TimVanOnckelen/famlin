@@ -335,5 +335,11 @@
     "noReactions": "No reactions yet.",
     "noReplies": "No replies yet.",
     "repliesPrivate": "Only you can see who viewed this story and the replies you got."
+  },
+  "postDetail": {
+    "back": "Back",
+    "backToFeed": "Back to the feed",
+    "notFound": "This post doesn't exist, or it isn't shared with you.",
+    "loadFailed": "This post couldn't be loaded."
   }
 }

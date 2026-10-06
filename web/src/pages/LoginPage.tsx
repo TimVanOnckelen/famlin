@@ -10,7 +10,9 @@ import {
 } from '@famlin/api-client';
 import { BrandIcon } from '@/components/Logo';
 import { useBranding } from '@/hooks/useBranding';
+import { useNavigate } from 'react-router';
 import { useAuthStore } from '@/stores/authStore';
+import { rememberReturnPath, takeReturnPath } from '@/utils/routes';
 import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n';
 import './LoginPage.css';
 
@@ -42,6 +44,7 @@ export function LoginPage() {
   const { t, i18n } = useTranslation();
   const branding = useBranding();
   const { setAuth } = useAuthStore();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,8 @@ export function LoginPage() {
     // tell the user, instead of silently landing back on the form.
     if (providerError) {
       clearBrowserOidcLogin();
-      window.history.replaceState({}, '', window.location.pathname);
+      takeReturnPath();
+      navigate(window.location.pathname, { replace: true });
       setError(t('login.ssoLoginFailed'));
       return;
     }
@@ -78,13 +82,17 @@ export function LoginPage() {
       setIsSsoLoading(true);
       try {
         const result = await completeBrowserOidcLogin(code!, state, getOidcRedirectUri());
+        // Drop ?code=&state= from the URL and restore the deep link the user
+        // started from (see rememberReturnPath) before the app takes over —
+        // setAuth unmounts this page.
+        navigate(takeReturnPath() ?? window.location.pathname, { replace: true });
         await setAuth(result.user, result.token);
       } catch (err: any) {
         // err.message is an untranslated slug from the shared helper — show
         // the backend's translated error when there is one, else the generic.
         setError(err.response?.data?.error || t('login.ssoLoginFailed'));
+        navigate(window.location.pathname, { replace: true });
       } finally {
-        window.history.replaceState({}, '', window.location.pathname);
         setIsSsoLoading(false);
       }
     }
@@ -100,6 +108,7 @@ export function LoginPage() {
     setError(null);
     try {
       const url = await startBrowserOidcLogin(oidcConfig, getOidcRedirectUri());
+      rememberReturnPath(window.location.pathname + window.location.search + window.location.hash);
       window.location.assign(url);
     } catch {
       setError(t('login.ssoLoginFailed'));

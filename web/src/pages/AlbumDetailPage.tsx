@@ -23,12 +23,15 @@ import './AlbumDetailPage.css';
 export function AlbumDetailPage({
   postId,
   onBack,
+  onOpenFeed,
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
 }: {
   postId: string;
   onBack: () => void;
+  // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
+  onOpenFeed?: () => void;
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
@@ -190,7 +193,7 @@ export function AlbumDetailPage({
         </section>
       </main>
 
-      <BottomNav active="feed" onFeed={onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
+      <BottomNav active="feed" onFeed={onOpenFeed ?? onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
 
       {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}
 

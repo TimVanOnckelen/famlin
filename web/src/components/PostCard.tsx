@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import {
   Post,
   PostPerson,
@@ -23,6 +24,7 @@ import { TripFeedCard } from '@/components/postTypes/TripFeedCard';
 import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard';
 import { formatRelativeDate } from '@/utils/time';
 import { isVideoUrl } from '@/utils/media';
+import { paths } from '@/utils/routes';
 import './PostCard.css';
 
 // Past this many photos the collage becomes a horizontally scrolling gallery
@@ -134,11 +136,14 @@ export function PostCard({
   showGroup = false,
   onOpenTrip,
   onOpenAlbum,
+  initialCommentsOpen = false,
 }: {
   post: Post;
   showGroup?: boolean;
   onOpenTrip?: (postId: string) => void;
   onOpenAlbum?: (postId: string) => void;
+  // The single-post page (/posts/:id) opens with the thread already showing.
+  initialCommentsOpen?: boolean;
 }) {
   // TRIP posts get a wholesale-different card (different hero source, no
   // inline comments, a "follow/view diary" CTA instead of a comment button)
@@ -157,10 +162,18 @@ export function PostCard({
     return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />;
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} />;
+  return <DefaultPostCard post={post} showGroup={showGroup} initialCommentsOpen={initialCommentsOpen} />;
 }
 
-function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
+function DefaultPostCard({
+  post,
+  showGroup = false,
+  initialCommentsOpen = false,
+}: {
+  post: Post;
+  showGroup?: boolean;
+  initialCommentsOpen?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const isMilestone = post.type === 'MILESTONE';
@@ -169,7 +182,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   // forward-compat behavior); milestone stays its own hardcoded branch and is
   // never looked up here.
   const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(initialCommentsOpen);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const reactMutation = useMutation({
@@ -211,6 +224,13 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   const timeLine = `${formatRelativeDate(post.createdAt, i18n.language)}${
     post.editedAt ? ` · ${t('common.edited')}` : ''
   }`;
+  // The timestamp is the post's permalink (/posts/:id) — the link people copy
+  // to share a post, the same convention as most social feeds.
+  const timeLink = (
+    <Link className="post-time" to={paths.post(post.id)} title={new Date(post.createdAt).toLocaleString(i18n.language)}>
+      {timeLine}
+    </Link>
+  );
   // When the feed spans several families, label each post with its group.
   // Both context chips travel together: which family the post is in (when the
   // feed spans several) and which Circle it was shared with (when it wasn't
@@ -307,7 +327,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 <div>
                   <div className="post-author-name">{post.author.name}</div>
                   <div className="post-meta">
-                    <span className="post-time">{timeLine}</span>
+                    {timeLink}
                     {groupChip}
                   </div>
                 </div>
@@ -324,7 +344,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           )}
           {hasPhotos && (
             <div className="post-meta">
-              <span className="post-time">{timeLine}</span>
+              {timeLink}
               {groupChip}
             </div>
           )}
