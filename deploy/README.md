@@ -21,8 +21,9 @@ following the repo's `umbrel-package-app` guidance:
 
 ### Submitting
 
-1. Cut a Famlin release **after** the multi-arch build change landed (earlier
-   images are amd64-only and fail Umbrel's `image.architecture` lint).
+1. Cut a Famlin release **after** the multi-arch build
+   ([#197](https://github.com/TimVanOnckelen/famlin/pull/197)) has landed. Earlier
+   images are amd64-only and fail Umbrel's `image.architecture` lint.
 2. Get the release's manifest-list digest:
    ```sh
    docker buildx imagetools inspect ghcr.io/timvanonckelen/famlin:<version>
