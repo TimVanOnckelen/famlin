@@ -108,18 +108,6 @@ export function AppShell({
           <span className="sidebar-wordmark">{brandName}</span>
         </div>
 
-        {onNewPost && (
-          <button
-            type="button"
-            className="btn btn-primary sidebar-new-post"
-            onClick={onNewPost}
-            title={t('shortcuts.hint', { label: t('feed.newPost'), keys: 'n' })}
-          >
-            <Icon name="plus" size={18} color="white" strokeWidth={2.5} />
-            <span className="sidebar-label">{t('feed.newPost')}</span>
-          </button>
-        )}
-
         <ul className="sidebar-nav">
           {navItems
             .filter((item) => item.show)
@@ -141,14 +129,26 @@ export function AppShell({
             ))}
         </ul>
 
+        {onNewPost && (
+          <button
+            type="button"
+            className="btn btn-primary sidebar-new-post"
+            onClick={onNewPost}
+            title={t('shortcuts.hint', { label: t('feed.newPost'), keys: 'n' })}
+          >
+            <Icon name="plus" size={18} color="white" strokeWidth={2.5} />
+            <span className="sidebar-label">{t('feed.newPost')}</span>
+          </button>
+        )}
+
         <button
           type="button"
           className="sidebar-shortcuts-hint"
           onClick={() => setShortcutsOpen(true)}
           title={t('shortcuts.openHelp')}
         >
-          <span className="sidebar-label">{t('shortcuts.openHelp')}</span>
           <kbd className="shortcut-key">?</kbd>
+          <span className="sidebar-label">{t('shortcuts.openHelp')}</span>
         </button>
 
         <div className="sidebar-footer">

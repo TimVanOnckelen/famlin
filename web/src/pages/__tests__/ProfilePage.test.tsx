@@ -99,13 +99,14 @@ describe('ProfilePage', () => {
     );
   });
 
-  it('navigates back and logs out', async () => {
+  it('has no back button (a top-level tab) and navigates to the feed via the nav', async () => {
     const user = userEvent.setup();
     const onBack = vi.fn();
     const onLogout = vi.fn();
     renderWithQueryClient(<ProfilePage user={makeUser()} onBack={onBack} onLogout={onLogout} />);
 
-    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Feed' })[0]);
     expect(onBack).toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Log out' }));

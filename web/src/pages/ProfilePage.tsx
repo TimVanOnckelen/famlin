@@ -183,7 +183,7 @@ export function ProfilePage({
       onLogout={onLogout}
     >
       <div className="profile-column">
-        <ScreenHeader title={t('profile.title')} onBack={onBack} />
+        <ScreenHeader title={t('profile.title')} />
 
         <section className="profile-card">
           <button

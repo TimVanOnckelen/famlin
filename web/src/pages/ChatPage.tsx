@@ -211,7 +211,7 @@ export function ChatPage({
       onLogout={onLogout}
     >
       <div className="chat-column">
-        <ScreenHeader title={t('chat.title')} onBack={onBack} />
+        <ScreenHeader title={t('chat.title')} />
 
         {groupsQuery.isLoading && <div className="chat-hint">{t('common.loading')}</div>}
 

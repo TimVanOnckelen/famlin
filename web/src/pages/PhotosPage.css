@@ -9,16 +9,15 @@
 
 /* ── Family filter (single-select chips) ─────────────────────────────────── */
 
-.photos-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+.photos-filter,
 .photos-person-filter {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 
 /* ── Shared albums strip ────────────────────────────────────────────────── */
@@ -233,6 +232,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.photo-tile-button .shimmer-frame {
+  width: 100%;
+  height: 100%;
 }
 
 .photo-tile-image {

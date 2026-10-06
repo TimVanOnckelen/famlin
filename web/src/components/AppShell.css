@@ -98,7 +98,6 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
 }
 
 .sidebar-item {
@@ -143,8 +142,10 @@
 .sidebar-shortcuts-hint {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-top: auto;
+  white-space: nowrap;
   width: 100%;
   padding: 8px 12px;
   border: none;
