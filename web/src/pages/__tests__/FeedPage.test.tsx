@@ -1,5 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useLocation } from 'react-router';
 import { FeedPage } from '@/pages/FeedPage';
 import { makePost, makeUser, renderWithQueryClient } from '@/test/fixtures';
 import { fetchGroups, fetchMyCircles, fetchPosts } from '@famlin/api-client';
@@ -10,6 +11,15 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   fetchMyCircles: vi.fn(),
   fetchPosts: vi.fn(),
 }));
+
+// Surfaces the router's current location as text, so a test can assert on
+// the background-location navigation FeedPage's card click/keyboard-open do
+// (useOpenPostModal, utils/routes.ts) without needing the real App.tsx route
+// tree (which renders PostDetailModal) mounted alongside it.
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="location-probe">{location.pathname}|{JSON.stringify(location.state)}</div>;
+}
 
 const groups = [
   { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
@@ -109,5 +119,84 @@ describe('FeedPage', () => {
     vi.mocked(fetchPosts).mockResolvedValue({ items: [makePost()], nextCursor: 'cursor-2' });
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     expect(await screen.findByRole('button', { name: 'Show more' })).toBeInTheDocument();
+  });
+
+  describe('opening the post detail modal', () => {
+    it('clicking a card opens the detail modal over the feed (background-location navigation)', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(
+        <>
+          <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+          <LocationProbe />
+        </>
+      );
+
+      const card = await screen.findByRole('article');
+      await user.click(card);
+
+      const probe = screen.getByTestId('location-probe');
+      expect(probe.textContent).toContain('/posts/post-1');
+      expect(probe.textContent).toContain('backgroundLocation');
+    });
+
+    it('clicking the comment count also opens the detail modal', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(
+        <>
+          <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+          <LocationProbe />
+        </>
+      );
+
+      await user.click(await screen.findByRole('button', { name: /comments/ }));
+
+      expect(screen.getByTestId('location-probe').textContent).toContain('/posts/post-1');
+    });
+
+    it('does not open the modal when clicking the reaction button', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(
+        <>
+          <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+          <LocationProbe />
+        </>
+      );
+
+      await user.click(await screen.findByRole('button', { name: /^0$/ }));
+
+      expect(screen.getByTestId('location-probe').textContent).toBe('/|null');
+    });
+  });
+
+  describe('keyboard navigation (j/k/o)', () => {
+    it('j/k move focus between cards and o opens the focused one', async () => {
+      vi.mocked(fetchPosts).mockResolvedValue({
+        items: [makePost({ id: 'post-1' }), makePost({ id: 'post-2', content: 'Second post' })],
+        nextCursor: null,
+      });
+      const user = userEvent.setup();
+      renderWithQueryClient(
+        <>
+          <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+          <LocationProbe />
+        </>
+      );
+
+      await screen.findByText('Second post');
+      const cards = screen.getAllByRole('article');
+      expect(cards).toHaveLength(2);
+
+      await user.keyboard('j');
+      expect(cards[0]).toHaveFocus();
+
+      await user.keyboard('j');
+      expect(cards[1]).toHaveFocus();
+
+      await user.keyboard('k');
+      expect(cards[0]).toHaveFocus();
+
+      await user.keyboard('o');
+      expect(screen.getByTestId('location-probe').textContent).toContain('/posts/post-1');
+    });
   });
 });

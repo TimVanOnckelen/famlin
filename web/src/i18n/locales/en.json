@@ -8,7 +8,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "retry": "Try again",
-    "edited": "edited"
+    "edited": "edited",
+    "back": "Back"
   },
   "login": {
     "subtitle": "Your family, closer",
@@ -59,7 +60,13 @@
       "openCta": "Open album →"
     },
     "circleFilterLabel": "Filter by circle",
-    "sharedWithCircle": "Shared with {{circle}}"
+    "sharedWithCircle": "Shared with {{circle}}",
+    "postCardLabel": "Post by {{author}}, {{time}}",
+    "sidePanelLabel": "Family details",
+    "onThisDayTitle": "On this day",
+    "onThisDayCount_one": "{{count}} memory from this day",
+    "onThisDayCount_other": "{{count}} memories from this day",
+    "membersTitle": "Family members"
   },
   "comments": {
     "placeholder": "Write a comment…",
@@ -103,7 +110,6 @@
   },
   "profile": {
     "title": "Profile",
-    "backToFeed": "Back to the feed",
     "changePhoto": "Change profile photo",
     "photoUploadFailed": "Your photo couldn't be uploaded. Try again.",
     "adminBadge": "Admin",
@@ -211,7 +217,6 @@
   },
   "chat": {
     "title": "Chitchat",
-    "backToFeed": "Back to the feed",
     "groupListLabel": "Chats",
     "noChatGroups": "Chat isn't enabled for any of your families yet.",
     "empty": "No messages yet — say hi!",
@@ -239,7 +244,7 @@
   },
   "trip": {
     "detail": {
-      "backToFeed": "Back to the feed",
+      "headerTitle": "Trip",
       "activeBadge": "ACTIVE · DAY {{day}}",
       "closedBadge": "CLOSED",
       "sinceLabel": "{{author}} · since {{date}}",
@@ -271,7 +276,7 @@
     "addPhotosSubmit": "Add to album",
     "addPhotosFailed": "Your photos couldn't be added. Try again.",
     "detail": {
-      "backToFeed": "Back to the feed",
+      "headerTitle": "Album",
       "badge": "SHARED ALBUM",
       "closedBadge": "CLOSED",
       "statsPhotos": "photos",
@@ -337,9 +342,29 @@
     "repliesPrivate": "Only you can see who viewed this story and the replies you got."
   },
   "postDetail": {
-    "back": "Back",
+    "title": "Post",
     "backToFeed": "Back to the feed",
     "notFound": "This post doesn't exist, or it isn't shared with you.",
-    "loadFailed": "This post couldn't be loaded."
+    "loadFailed": "This post couldn't be loaded.",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "goFeed": "Go to Feed",
+    "goPhotos": "Go to Photos",
+    "goChat": "Go to Chat",
+    "goProfile": "Go to Profile",
+    "newPost": "New post",
+    "openHelp": "Show keyboard shortcuts",
+    "hint": "{{label}} ({{keys}})",
+    "nextPost": "Next post",
+    "prevPost": "Previous post",
+    "openPost": "Open post",
+    "likePost": "Like post",
+    "favoritePost": "Favorite post"
   }
 }

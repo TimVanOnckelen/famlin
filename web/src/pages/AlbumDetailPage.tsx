@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches } from '@famlin/api-client';
+import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches, User } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -15,19 +16,23 @@ import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album';
 import './AlbumDetailPage.css';
 
 // Web's album detail — the read + contribute view of a collaborative photo
-// album (opened as an App.tsx `view` state, like TripDetailPage). Unlike the
-// deliberately view-only trip page, an album is inherently collaborative, so
-// this page carries the contribute affordance: any group member can add
-// photos, and the author can close the album. Photos live on the album's
-// contribution comments (utils/album.ts splits them from ordinary comments).
+// album, routed at /albums/:postId (see App.tsx). AppShell always keeps the
+// Feed tab highlighted here, like TripDetailPage. Unlike the deliberately
+// view-only trip page, an album is inherently collaborative, so this page
+// carries the contribute affordance: any group member can add photos, and
+// the author can close the album. Photos live on the album's contribution
+// comments (utils/album.ts splits them from ordinary comments).
 export function AlbumDetailPage({
+  user,
   postId,
   onBack,
   onOpenFeed,
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
+  onLogout,
 }: {
+  user: User;
   postId: string;
   onBack: () => void;
   // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
@@ -35,6 +40,7 @@ export function AlbumDetailPage({
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
+  onLogout: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -60,38 +66,40 @@ export function AlbumDetailPage({
     },
   });
 
-  if (postQuery.isLoading || commentsQuery.isLoading) {
+  function shell(children: ReactNode) {
     return (
-      <div className="album-detail-shell">
-        <main className="album-detail-column">
-          <BackLink onBack={onBack} />
-          <div className="album-detail-hint">{t('common.loading')}</div>
-        </main>
-      </div>
+      <AppShell
+        user={user}
+        active="feed"
+        onFeed={onOpenFeed ?? onBack}
+        onPhotos={onOpenPhotos}
+        onChat={onOpenChat}
+        onProfile={onOpenProfile ?? (() => {})}
+        onLogout={onLogout}
+      >
+        <div className="album-detail-column">
+          <ScreenHeader title={t('album.detail.headerTitle')} onBack={onBack} />
+          {children}
+        </div>
+      </AppShell>
     );
   }
 
+  if (postQuery.isLoading || commentsQuery.isLoading) {
+    return shell(<div className="album-detail-hint">{t('common.loading')}</div>);
+  }
+
   if (!post || !album) {
-    return (
-      <div className="album-detail-shell">
-        <main className="album-detail-column">
-          <BackLink onBack={onBack} />
-          <div className="album-detail-hint">{t('feed.loadFailed')}</div>
-        </main>
-      </div>
-    );
+    return shell(<div className="album-detail-hint">{t('feed.loadFailed')}</div>);
   }
 
   const coverUrl = album.coverPhotoUrl || album.collagePhotoUrls[0] || null;
   const isAuthor = currentUserId === post.authorId;
   const photoUrls = photos.map((p) => p.url);
 
-  return (
-    <div className="album-detail-shell">
-      <main className="album-detail-column">
-        <BackLink onBack={onBack} />
-
-        <div className="album-detail-cover">
+  return shell(
+    <>
+      <div className="album-detail-cover">
           {coverUrl ? (
             <ShimmerImage src={getUploadUrl(coverUrl)} className="album-detail-cover-media" loading="eager" />
           ) : (
@@ -191,23 +199,10 @@ export function AlbumDetailPage({
           </h2>
           <CommentsSection post={post} filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
         </section>
-      </main>
 
-      <BottomNav active="feed" onFeed={onOpenFeed ?? onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
+        {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}
 
-      {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}
-
-      {lightbox && <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />}
-    </div>
-  );
-}
-
-function BackLink({ onBack }: { onBack: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <button className="album-detail-back" onClick={onBack}>
-      <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-      {t('album.detail.backToFeed')}
-    </button>
+        {lightbox && <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />}
+    </>
   );
 }

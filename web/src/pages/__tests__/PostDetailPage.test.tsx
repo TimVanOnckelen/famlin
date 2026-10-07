@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { PostDetailPage } from '@/pages/PostDetailPage';
-import { makeComment, makePost, makeTrip, renderWithQueryClient } from '@/test/fixtures';
+import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures';
 import { fetchComments, fetchPost } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -30,7 +30,7 @@ describe('PostDetailPage', () => {
     vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'post-7', commentCount: 1 }));
     vi.mocked(fetchComments).mockResolvedValue([makeComment({ postId: 'post-7', content: 'Gorgeous!' })]);
 
-    renderWithQueryClient(<PostDetailPage postId="post-7" onBack={() => {}} />);
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-7" onBack={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByText('Lovely day in the garden.')).toBeInTheDocument();
     expect(await screen.findByText('Gorgeous!')).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe('PostDetailPage', () => {
     vi.mocked(fetchPost).mockRejectedValue(httpError(status));
     const onOpenFeed = vi.fn();
 
-    renderWithQueryClient(<PostDetailPage postId="gone" onBack={() => {}} onOpenFeed={onOpenFeed} />);
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="gone" onBack={() => {}} onOpenFeed={onOpenFeed} onLogout={() => {}} />);
 
     expect(await screen.findByText("This post doesn't exist, or it isn't shared with you.")).toBeInTheDocument();
     screen.getByRole('button', { name: 'Back to the feed' }).click();
@@ -50,7 +50,7 @@ describe('PostDetailPage', () => {
 
   it('offers a retry when the post fails to load for another reason', async () => {
     vi.mocked(fetchPost).mockRejectedValue(httpError(500));
-    renderWithQueryClient(<PostDetailPage postId="post-1" onBack={() => {}} />);
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-1" onBack={() => {}} onLogout={() => {}} />);
     expect(await screen.findByText(/This post couldn't be loaded/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
@@ -59,7 +59,7 @@ describe('PostDetailPage', () => {
     vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'trip-1', type: 'TRIP', trip: makeTrip() }));
     const onOpenTrip = vi.fn();
 
-    renderWithQueryClient(<PostDetailPage postId="trip-1" onBack={() => {}} onOpenTrip={onOpenTrip} />);
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onOpenTrip={onOpenTrip} onLogout={() => {}} />);
 
     await vi.waitFor(() => expect(onOpenTrip).toHaveBeenCalledWith('trip-1'));
   });

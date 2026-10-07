@@ -1,0 +1,71 @@
+/* Visibility/positioning for .feed-side-panel itself lives in FeedPage.css
+   (it's only ever rendered from there); this covers the panel's own content. */
+
+.side-panel-section {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+}
+
+.side-panel-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin: 0 0 12px;
+}
+
+.side-panel-on-this-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+
+.side-panel-on-this-day:hover {
+  background: var(--fam-primary-tint);
+}
+
+.side-panel-on-this-day-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side-panel-on-this-day-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-body);
+}
+
+.side-panel-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.side-panel-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fam-text-body);
+}

@@ -39,6 +39,16 @@
   font-family: inherit;
 }
 
+.bottom-nav-item:hover {
+  color: var(--fam-primary);
+}
+
+.bottom-nav-item:focus-visible {
+  outline: 2px solid var(--fam-primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
 .bottom-nav-item-active {
   color: var(--fam-primary);
 }
@@ -64,7 +74,9 @@
 .bottom-nav-fab {
   position: absolute;
   right: 18px;
-  top: -22px;
+  /* Floats clear above the tab bar like mobile's FAB, rather than
+     overlapping the Profile tab. */
+  top: -68px;
   width: 52px;
   height: 52px;
   border-radius: 50%;
@@ -76,4 +88,9 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(var(--fam-primary-rgb), 0.4);
+}
+
+.bottom-nav-fab:focus-visible {
+  outline: 2px solid var(--fam-primary-dark);
+  outline-offset: 2px;
 }

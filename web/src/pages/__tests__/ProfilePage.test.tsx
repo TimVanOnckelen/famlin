@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { makeUser, renderWithQueryClient } from '@/test/fixtures';
@@ -48,11 +48,14 @@ describe('ProfilePage', () => {
   });
 
   it('shows the user identity and server version', async () => {
-    renderWithQueryClient(
+    const { container } = renderWithQueryClient(
       <ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />
     );
-    expect(screen.getByText('Grandpa John')).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    // "Grandpa John" also appears in AppShell's sidebar user menu now, so
+    // scope to the profile card itself.
+    const profileCard = container.querySelector('.profile-card') as HTMLElement;
+    expect(within(profileCard).getByText('Grandpa John')).toBeInTheDocument();
+    expect(within(profileCard).getByText('john@example.com')).toBeInTheDocument();
     expect(await screen.findByText('Server version 1.2.3')).toBeInTheDocument();
   });
 
@@ -96,13 +99,14 @@ describe('ProfilePage', () => {
     );
   });
 
-  it('navigates back and logs out', async () => {
+  it('has no back button (a top-level tab) and navigates to the feed via the nav', async () => {
     const user = userEvent.setup();
     const onBack = vi.fn();
     const onLogout = vi.fn();
     renderWithQueryClient(<ProfilePage user={makeUser()} onBack={onBack} onLogout={onLogout} />);
 
-    await user.click(screen.getByRole('button', { name: 'Back to the feed' }));
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: 'Feed' })[0]);
     expect(onBack).toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Log out' }));

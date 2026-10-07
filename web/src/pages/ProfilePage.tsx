@@ -14,7 +14,8 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useAuthStore } from '@/stores/authStore';
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n';
 import './ProfilePage.css';
@@ -172,14 +173,17 @@ export function ProfilePage({
   }
 
   return (
-    <div className="profile-shell">
-      <main className="profile-column">
-        <button className="profile-back" onClick={onBack}>
-          <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-          {t('profile.backToFeed')}
-        </button>
-
-        <h1 className="profile-title">{t('profile.title')}</h1>
+    <AppShell
+      user={user}
+      active="profile"
+      onFeed={onBack}
+      onPhotos={onOpenPhotos}
+      onChat={onOpenChat}
+      onProfile={() => {}}
+      onLogout={onLogout}
+    >
+      <div className="profile-column">
+        <ScreenHeader title={t('profile.title')} />
 
         <section className="profile-card">
           <button
@@ -431,9 +435,7 @@ export function ProfilePage({
             </form>
           )}
         </section>
-      </main>
-
-      <BottomNav active="profile" onFeed={onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={() => {}} />
-    </div>
+      </div>
+    </AppShell>
   );
 }

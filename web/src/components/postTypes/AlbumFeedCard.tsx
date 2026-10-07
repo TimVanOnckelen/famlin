@@ -70,7 +70,7 @@ export function AlbumFeedCard({
   const heroUrls = album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
 
   return (
-    <article className="post-card">
+    <div className="post-card">
       <div className="post-card-inner album-card-inner">
         <AlbumCollage
           urls={heroUrls}
@@ -153,7 +153,7 @@ export function AlbumFeedCard({
       </div>
 
       {contributeOpen && <AddAlbumPhotosModal postId={post.id} onClose={() => setContributeOpen(false)} />}
-    </article>
+    </div>
   );
 }
 

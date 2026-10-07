@@ -11,6 +11,7 @@ import { ChatPage } from '@/pages/ChatPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
+import { PostDetailModal } from '@/components/PostDetailModal';
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
 import { useTranslation } from 'react-i18next';
 import { useBranding } from '@/hooks/useBranding';
@@ -105,103 +106,151 @@ export default function App() {
 // Every page was previously a view switch in this file; each one now owns a
 // path (see utils/routes.ts). The pages themselves still take plain
 // callbacks, so they stay router-agnostic and their tests don't need one.
+//
+// The post-detail view uses react-router's "background location" modal
+// pattern: FeedPage (via useOpenPostModal, utils/routes.ts) navigates to
+// /posts/:id with `state: { backgroundLocation }` instead of a plain push.
+// When that state is present, the *first* <Routes> below renders whatever
+// was at backgroundLocation (the feed, underneath), and the second <Routes>
+// — matched against the real current location — renders PostDetailModal as
+// an overlay on top of it. A fresh load or refresh of /posts/:id carries no
+// such state, so it falls through to the first <Routes> instead and renders
+// the full PostDetailPage, unchanged from before this existed.
 function AppRoutes({ user }: { user: User }) {
   const { logout } = useAuthStore();
   const nav = useAppNavigation();
+  const location = useLocation();
+  const backgroundLocation = (location.state as { backgroundLocation?: typeof location } | null)?.backgroundLocation;
 
   return (
-    <Routes>
-      <Route
-        path={paths.feed}
-        element={
-          <FeedPage
-            user={user}
-            onOpenProfile={nav.toProfile}
-            onOpenPhotos={nav.toPhotos}
-            onOpenChat={nav.toChat}
-            onOpenTrip={nav.toTrip}
-            onOpenAlbum={nav.toAlbum}
-            onLogout={() => logout()}
-          />
-        }
-      />
-      <Route
-        path={paths.photos}
-        element={
-          <PhotosPage
-            user={user}
-            onOpenFeed={nav.toFeed}
-            onOpenChat={nav.toChat}
-            onOpenProfile={nav.toProfile}
-            onOpenAlbum={nav.toAlbum}
-            onLogout={() => logout()}
-          />
-        }
-      />
-      <Route
-        path={paths.chat}
-        element={
-          <ChatPage user={user} onBack={nav.toFeed} onOpenPhotos={nav.toPhotos} onOpenProfile={nav.toProfile} />
-        }
-      />
-      <Route
-        path={paths.profile}
-        element={
-          <ProfilePage
-            user={user}
-            onBack={nav.toFeed}
-            onOpenPhotos={nav.toPhotos}
-            onOpenChat={nav.toChat}
-            onLogout={() => logout()}
-          />
-        }
-      />
-      <Route path="/trips/:postId" element={<TripRoute />} />
-      <Route path="/albums/:postId" element={<AlbumRoute />} />
-      <Route path="/posts/:postId" element={<PostRoute />} />
-      <Route path="*" element={<Navigate to={paths.feed} replace />} />
-    </Routes>
+    <>
+      <Routes location={backgroundLocation ?? location}>
+        <Route
+          path={paths.feed}
+          element={
+            <FeedPage
+              user={user}
+              onOpenProfile={nav.toProfile}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenTrip={nav.toTrip}
+              onOpenAlbum={nav.toAlbum}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.photos}
+          element={
+            <PhotosPage
+              user={user}
+              onOpenFeed={nav.toFeed}
+              onOpenChat={nav.toChat}
+              onOpenProfile={nav.toProfile}
+              onOpenAlbum={nav.toAlbum}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.chat}
+          element={
+            <ChatPage
+              user={user}
+              onBack={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenProfile={nav.toProfile}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.profile}
+          element={
+            <ProfilePage
+              user={user}
+              onBack={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route path="/trips/:postId" element={<TripRoute user={user} />} />
+        <Route path="/albums/:postId" element={<AlbumRoute user={user} />} />
+        <Route path="/posts/:postId" element={<PostRoute user={user} />} />
+        <Route path="*" element={<Navigate to={paths.feed} replace />} />
+      </Routes>
+
+      {backgroundLocation && (
+        <Routes>
+          <Route path="/posts/:postId" element={<PostDetailModalRoute />} />
+        </Routes>
+      )}
+    </>
   );
 }
 
-function TripRoute() {
+function PostDetailModalRoute() {
   const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
+  const nav = useAppNavigation();
+  return (
+    <PostDetailModal
+      postId={postId!}
+      onClose={() => navigate(-1)}
+      onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
+      onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+    />
+  );
+}
+
+function TripRoute({ user }: { user: User }) {
+  const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <TripDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }
 
-function AlbumRoute() {
+function AlbumRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <AlbumDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }
 
-function PostRoute() {
+function PostRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>();
+  const { logout } = useAuthStore();
   const nav = useAppNavigation();
   return (
     <PostDetailPage
       key={postId}
+      user={user}
       postId={postId!}
       onBack={nav.back}
       onOpenFeed={nav.toFeed}
@@ -210,6 +259,7 @@ function PostRoute() {
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onLogout={() => logout()}
     />
   );
 }

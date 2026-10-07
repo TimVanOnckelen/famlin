@@ -1,7 +1,3 @@
-.photos-shell {
-  min-height: 100vh;
-}
-
 .photos-column {
   max-width: 1200px;
   margin: 0 auto;
@@ -13,16 +9,15 @@
 
 /* ── Family filter (single-select chips) ─────────────────────────────────── */
 
-.photos-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+.photos-filter,
 .photos-person-filter {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 
 /* ── Shared albums strip ────────────────────────────────────────────────── */
@@ -215,13 +210,6 @@
   }
 }
 
-/* Clear the fixed bottom tab bar (BottomNav.css) once it takes over. */
-@media (max-width: 720px) {
-  .photos-column {
-    padding-bottom: 112px;
-  }
-}
-
 /* ── Photo tile ─────────────────────────────────────────────────────────── */
 
 .photo-tile {
@@ -244,6 +232,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.photo-tile-button .shimmer-frame {
+  width: 100%;
+  height: 100%;
 }
 
 .photo-tile-image {

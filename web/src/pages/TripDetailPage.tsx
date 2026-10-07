@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Comment,
+  User,
   fetchPost,
   fetchComments,
   createComment,
@@ -12,7 +13,8 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { BottomNav } from '@/components/BottomNav';
+import { AppShell } from '@/components/AppShell';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -23,19 +25,24 @@ import './TripDetailPage.css';
 
 // Web's counterpart of mobile's TripDetailScreen — VIEWING ONLY (see
 // design/trip-tracker-brief.md), routed at /trips/:postId (see App.tsx).
-// Composing check-ins, closing the trip, and editing travelers are
-// deliberately not here — those stay mobile/backend-only for now; this page
-// only reads post.trip + the post's comments (splitting check-ins from
-// trip-level comments client-side, see utils/trip.ts) and lets members
-// react to / reply on individual check-ins and comment on the trip overall.
+// AppShell always keeps the Feed tab highlighted here — a trip is only ever
+// opened from the feed. Composing check-ins, closing the trip, and editing
+// travelers are deliberately not here — those stay mobile/backend-only for
+// now; this page only reads post.trip + the post's comments (splitting
+// check-ins from trip-level comments client-side, see utils/trip.ts) and
+// lets members react to / reply on individual check-ins and comment on the
+// trip overall.
 export function TripDetailPage({
+  user,
   postId,
   onBack,
   onOpenFeed,
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
+  onLogout,
 }: {
+  user: User;
   postId: string;
   onBack: () => void;
   // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
@@ -43,6 +50,7 @@ export function TripDetailPage({
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
+  onLogout: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
@@ -63,37 +71,39 @@ export function TripDetailPage({
   );
   const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed]);
 
-  if (postQuery.isLoading || commentsQuery.isLoading) {
+  function shell(children: ReactNode) {
     return (
-      <div className="trip-detail-shell">
-        <main className="trip-detail-column">
-          <BackLink onBack={onBack} />
-          <div className="trip-detail-hint">{t('common.loading')}</div>
-        </main>
-      </div>
+      <AppShell
+        user={user}
+        active="feed"
+        onFeed={onOpenFeed ?? onBack}
+        onPhotos={onOpenPhotos}
+        onChat={onOpenChat}
+        onProfile={onOpenProfile ?? (() => {})}
+        onLogout={onLogout}
+      >
+        <div className="trip-detail-column">
+          <ScreenHeader title={t('trip.detail.headerTitle')} onBack={onBack} />
+          {children}
+        </div>
+      </AppShell>
     );
   }
 
+  if (postQuery.isLoading || commentsQuery.isLoading) {
+    return shell(<div className="trip-detail-hint">{t('common.loading')}</div>);
+  }
+
   if (!post || !trip) {
-    return (
-      <div className="trip-detail-shell">
-        <main className="trip-detail-column">
-          <BackLink onBack={onBack} />
-          <div className="trip-detail-hint">{t('feed.loadFailed')}</div>
-        </main>
-      </div>
-    );
+    return shell(<div className="trip-detail-hint">{t('feed.loadFailed')}</div>);
   }
 
   const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0] || null;
   const travelers = trip.travelers ?? [];
 
-  return (
-    <div className="trip-detail-shell">
-      <main className="trip-detail-column">
-        <BackLink onBack={onBack} />
-
-        <div className="trip-detail-cover">
+  return shell(
+    <>
+      <div className="trip-detail-cover">
           {coverUrl ? (
             <ShimmerImage src={getUploadUrl(coverUrl)} className="trip-detail-cover-media" loading="eager" />
           ) : (
@@ -196,24 +206,11 @@ export function TripDetailPage({
             })}
           </div>
         )}
-      </main>
 
-      <BottomNav active="feed" onFeed={onOpenFeed ?? onBack} onPhotos={onOpenPhotos} onChat={onOpenChat} onProfile={onOpenProfile ?? (() => {})} />
-
-      {lightbox && (
-        <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
-      )}
-    </div>
-  );
-}
-
-function BackLink({ onBack }: { onBack: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <button className="trip-detail-back" onClick={onBack}>
-      <Icon name="chevron-left" size={16} strokeWidth={2.5} />
-      {t('trip.detail.backToFeed')}
-    </button>
+        {lightbox && (
+          <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
+        )}
+    </>
   );
 }
 

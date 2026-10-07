@@ -27,8 +27,8 @@ export function BottomNav({
 }) {
   const { t } = useTranslation();
 
-  // Same ['chat-unread'] cache entry AppHeader polls — sharing the key means
-  // this doesn't add a second network poll on top of AppHeader's own.
+  // Same ['chat-unread'] cache entry AppShell's sidebar polls — sharing the
+  // key means this doesn't add a second network poll on top of its own.
   const unreadQuery = useQuery({
     queryKey: ['chat-unread'],
     queryFn: fetchChatUnreadCounts,
@@ -42,6 +42,7 @@ export function BottomNav({
       <button
         className={`bottom-nav-item${active === 'feed' ? ' bottom-nav-item-active' : ''}`}
         onClick={onFeed}
+        aria-current={active === 'feed' ? 'page' : undefined}
       >
         <Icon name="home" size={22} />
         <span>{t('tabs.feed')}</span>
@@ -51,6 +52,7 @@ export function BottomNav({
         <button
           className={`bottom-nav-item${active === 'photos' ? ' bottom-nav-item-active' : ''}`}
           onClick={onPhotos ?? (() => {})}
+          aria-current={active === 'photos' ? 'page' : undefined}
         >
           <Icon name="grid" size={22} />
           <span>{t('tabs.photos')}</span>
@@ -61,6 +63,7 @@ export function BottomNav({
         <button
           className={`bottom-nav-item${active === 'chat' ? ' bottom-nav-item-active' : ''}`}
           onClick={onChat ?? (() => {})}
+          aria-current={active === 'chat' ? 'page' : undefined}
         >
           <span className="bottom-nav-icon-wrap">
             <Icon name="message-square" size={22} />
@@ -73,6 +76,7 @@ export function BottomNav({
       <button
         className={`bottom-nav-item${active === 'profile' ? ' bottom-nav-item-active' : ''}`}
         onClick={onProfile}
+        aria-current={active === 'profile' ? 'page' : undefined}
       >
         <Icon name="user" size={22} />
         <span>{t('tabs.profile')}</span>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
 // The web app's URL map (issue #124). The backend's not-found handler already
 // serves index.html for every GET outside /api, /uploads and /admin, so any of
@@ -45,6 +45,16 @@ export function useAppNavigation() {
     }),
     [navigate]
   );
+}
+
+// Opens a post's detail as a modal over whatever page is currently showing
+// (App.tsx's background-location routes — see the Routes/Route wiring
+// there), rather than navigating to /posts/:id as a full page. Used by the
+// feed's cards/keyboard shortcuts and the side panel's "On this day" banner.
+export function useOpenPostModal() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (postId: string) => navigate(paths.post(postId), { state: { backgroundLocation: location } });
 }
 
 const RETURN_TO_KEY = 'famlin.web.returnTo';
