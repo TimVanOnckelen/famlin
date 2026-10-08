@@ -200,8 +200,6 @@ export function NewPostModal({
   function addFiles(list: FileList | null) {
     if (!list) return;
     setFiles((prev) => [...prev, ...Array.from(list)]);
-    // Allow re-picking the same file after removing it.
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function updatePollOption(index: number, value: string) {
@@ -453,7 +451,21 @@ export function NewPostModal({
           onChange={(e) => addFiles(e.target.files)}
         />
         <div className="attach-actions">
-          <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              // Clear before opening the picker, so the same file can be
+              // re-picked after removal. Clearing in the change handler
+              // instead races Chromium's input+change event pair: the first
+              // handler run wipes the value (which resets the FileList) and
+              // the second run reads an empty list, silently dropping the
+              // picked photos. Firefox only fires one event, which is why
+              // the old code worked there.
+              if (fileInputRef.current) fileInputRef.current.value = '';
+              fileInputRef.current?.click();
+            }}
+          >
             <Icon name="image" size={18} />
             {t('newPost.addPhotos')}
           </button>
