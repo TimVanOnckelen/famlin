@@ -1,12 +1,13 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppShell } from '@/components/AppShell';
 import { makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchChatUnreadCounts, fetchServerInfo } from '@famlin/api-client';
+import { fetchChatUnreadCounts, fetchGroups, fetchServerInfo } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchChatUnreadCounts: vi.fn(),
+  fetchGroups: vi.fn(),
   fetchServerInfo: vi.fn(),
 }));
 
@@ -14,6 +15,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null });
   vi.mocked(fetchChatUnreadCounts).mockResolvedValue({});
+  // Most tests don't care about family-scoped tab hiding — give the shell a
+  // member of one family by default.
+  vi.mocked(fetchGroups).mockResolvedValue([
+    { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
+  ]);
 });
 
 function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
@@ -79,6 +85,25 @@ describe('AppShell navigation', () => {
   it('hides the Chat tab when the current page passes no onChat and isn\'t chat', () => {
     renderShell({ onChat: undefined });
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
+  });
+
+  it('hides the family-scoped Photos and Chat tabs for a user in no families', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    renderShell();
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Photos' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
+    // Feed and Profile stay.
+    expect(screen.getAllByRole('button', { name: 'Feed' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Profile' }).length).toBeGreaterThan(0);
+  });
+
+  it('keeps the tab being viewed visible for a groupless user, hiding the other family-scoped one', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    renderShell({ active: 'photos' });
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument());
+    expect(screen.getAllByRole('button', { name: 'Photos' }).length).toBeGreaterThan(0);
   });
 
   it('keeps the Chat tab visible while already on it, even with no onChat callback', async () => {

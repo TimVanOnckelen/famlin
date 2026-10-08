@@ -33,6 +33,7 @@
     "comments_other": "{{count}} comments",
     "peopleInPost": "People in this post",
     "empty": "No posts yet — share the first update with your family!",
+    "noGroups": "You're not part of any family yet — there are no posts to see and you can't create any. Ask your family's admin to add you.",
     "loadMore": "Show more",
     "loadFailed": "The feed couldn't be loaded.",
     "sharedWith": "Shared with {{names}}",

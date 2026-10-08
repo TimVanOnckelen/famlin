@@ -33,6 +33,7 @@
     "comments_other": "{{count}} reacties",
     "peopleInPost": "Personen in dit bericht",
     "empty": "Nog geen berichten — deel de eerste update met je familie!",
+    "noGroups": "Je zit nog in geen enkele familie — er zijn geen berichten om te zien en je kunt er geen maken. Vraag de beheerder van je familie om je toe te voegen.",
     "loadMore": "Toon meer",
     "loadFailed": "De feed kon niet geladen worden.",
     "sharedWith": "Gedeeld met {{names}}",

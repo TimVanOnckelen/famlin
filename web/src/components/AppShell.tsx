@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { User, fetchChatUnreadCounts } from '@famlin/api-client';
+import { User, fetchChatUnreadCounts, fetchGroups } from '@famlin/api-client';
 import { BrandIcon } from '@/components/Logo';
 import { useBranding } from '@/hooks/useBranding';
 import { Icon, IconName } from '@/components/Icon';
@@ -66,10 +66,23 @@ export function AppShell({
   });
   const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0);
 
+  // Photos and Chat are family-scoped surfaces: a user in no families has
+  // nothing to see in either, so both tabs collapse for them (Feed and
+  // Profile remain). Shares the ['groups'] cache key the pages fetch with —
+  // no extra network request. Until the query answers (loading or failed)
+  // reads as "has groups", so the nav never flickers away on a slow
+  // response; the tab currently being viewed also never disappears.
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
+  const hasGroups = (groupsQuery.data?.length ?? 1) > 0;
+  const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos');
+  const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat');
+  const photosNav = showPhotosTab ? onPhotos : undefined;
+  const chatNav = showChatTab ? onChat : undefined;
+
   function goTo(view: NavView) {
     if (view === 'feed') onFeed();
-    else if (view === 'photos') onPhotos?.();
-    else if (view === 'chat') onChat?.();
+    else if (view === 'photos') photosNav?.();
+    else if (view === 'chat') chatNav?.();
     else onProfile();
   }
 
@@ -83,15 +96,15 @@ export function AppShell({
 
   const navItems: { view: NavView; icon: IconName; label: string; keys: string; onClick?: () => void; badge?: boolean; show: boolean }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
-    { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: onPhotos, show: !!onPhotos || active === 'photos' },
+    { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: photosNav, show: showPhotosTab },
     {
       view: 'chat',
       icon: 'message-square',
       label: t('tabs.chat'),
       keys: 'g c',
-      onClick: onChat,
+      onClick: chatNav,
       badge: hasUnreadChat,
-      show: !!onChat || active === 'chat',
+      show: showChatTab,
     },
     { view: 'profile', icon: 'user', label: t('tabs.profile'), keys: 'g u', onClick: onProfile, show: true },
   ];
@@ -183,8 +196,8 @@ export function AppShell({
       <BottomNav
         active={active}
         onFeed={onFeed}
-        onPhotos={onPhotos}
-        onChat={onChat}
+        onPhotos={photosNav}
+        onChat={chatNav}
         onProfile={onProfile}
         onNewPost={onNewPost}
       />

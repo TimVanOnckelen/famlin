@@ -145,11 +145,17 @@ export function PhotosPage({
       onFeed={onOpenFeed ?? (() => {})}
       onChat={onOpenChat}
       onProfile={onOpenProfile}
-      onNewPost={() => {
-        setComposerGroupId(activeGroupId);
-        setComposerAsset(null);
-        setComposerOpen(true);
-      }}
+      // Same no-family rule as the feed: no groups → no composer to open, so
+      // the shell hides its "New post" button/FAB entirely.
+      onNewPost={
+        groups.length > 0
+          ? () => {
+              setComposerGroupId(activeGroupId);
+              setComposerAsset(null);
+              setComposerOpen(true);
+            }
+          : undefined
+      }
       onLogout={onLogout}
     >
       <div className="photos-column">

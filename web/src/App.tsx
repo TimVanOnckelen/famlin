@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router';
-import { ensureFreshMediaToken, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client';
+import { ensureFreshMediaToken, fetchGroups, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeedPage } from '@/pages/FeedPage';
@@ -142,26 +143,30 @@ function AppRoutes({ user }: { user: User }) {
         <Route
           path={paths.photos}
           element={
-            <PhotosPage
-              user={user}
-              onOpenFeed={nav.toFeed}
-              onOpenChat={nav.toChat}
-              onOpenProfile={nav.toProfile}
-              onOpenAlbum={nav.toAlbum}
-              onLogout={() => logout()}
-            />
+            <RequireGroups>
+              <PhotosPage
+                user={user}
+                onOpenFeed={nav.toFeed}
+                onOpenChat={nav.toChat}
+                onOpenProfile={nav.toProfile}
+                onOpenAlbum={nav.toAlbum}
+                onLogout={() => logout()}
+              />
+            </RequireGroups>
           }
         />
         <Route
           path={paths.chat}
           element={
-            <ChatPage
-              user={user}
-              onBack={nav.toFeed}
-              onOpenPhotos={nav.toPhotos}
-              onOpenProfile={nav.toProfile}
-              onLogout={() => logout()}
-            />
+            <RequireGroups>
+              <ChatPage
+                user={user}
+                onBack={nav.toFeed}
+                onOpenPhotos={nav.toPhotos}
+                onOpenProfile={nav.toProfile}
+                onLogout={() => logout()}
+              />
+            </RequireGroups>
           }
         />
         <Route
@@ -189,6 +194,20 @@ function AppRoutes({ user }: { user: User }) {
       )}
     </>
   );
+}
+
+// /photos and /chat are family-scoped surfaces: a user in no families has
+// nothing to see on either, so direct navigation there is sent home exactly
+// like an unknown path (the `*` route above). Shares the ['groups'] cache
+// key AppShell and the feed/photos pages fetch with — no extra network
+// request. Until the query answers, the page renders as-is, so a slow
+// response never flash-redirects a user who does have families.
+function RequireGroups({ children }: { children: ReactNode }) {
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
+  if (groupsQuery.isSuccess && groupsQuery.data.length === 0) {
+    return <Navigate to={paths.feed} replace />;
+  }
+  return <>{children}</>;
 }
 
 function PostDetailModalRoute() {

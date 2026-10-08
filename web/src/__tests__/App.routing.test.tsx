@@ -3,13 +3,14 @@ import userEvent from '@testing-library/user-event';
 import App from '@/App';
 import { useAuthStore } from '@/stores/authStore';
 import { makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchMe } from '@famlin/api-client';
+import { fetchGroups, fetchMe } from '@famlin/api-client';
 
 // Routing only: every page is a stub that names itself and exposes the
 // callbacks App.tsx wires up, so these tests pin the URL map and the
 // session-reset rule without depending on any page's own data fetching.
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
+  fetchGroups: vi.fn(),
   fetchMe: vi.fn(),
   ensureFreshMediaToken: vi.fn(),
   fetchServerInfo: vi.fn().mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null }),
@@ -82,6 +83,12 @@ function signedOut() {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(fetchMe).mockResolvedValue(me);
+  // RequireGroups (/photos, /chat) and the family-scoped tab hiding read the
+  // ['groups'] cache — most tests don't care, so default to a member of one
+  // family and override to [] in the groupless tests.
+  vi.mocked(fetchGroups).mockResolvedValue([
+    { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
+  ]);
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
 
@@ -104,6 +111,14 @@ describe('App routing', () => {
     signIn();
     renderWithQueryClient(<App />, { route: '/no/such/page' });
     expect(await screen.findByText('feed page')).toBeInTheDocument();
+  });
+
+  it.each(['/photos', '/chat'])('sends a groupless user from %s to the feed', async (route) => {
+    signIn();
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    renderWithQueryClient(<App />, { route });
+    expect(await screen.findByText('feed page')).toBeInTheDocument();
+    expect(screen.queryByText(/(photos|chat) page/)).not.toBeInTheDocument();
   });
 
   it('navigates between pages and back', async () => {

@@ -115,6 +115,16 @@ describe('FeedPage', () => {
     expect(await screen.findByText(/No posts yet/)).toBeInTheDocument();
   });
 
+  it('explains the no-family state and drops every New post affordance for groupless users', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null });
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+
+    expect(await screen.findByText(/not part of any family/)).toBeInTheDocument();
+    // Neither the feed empty state's button nor the shell's sidebar one.
+    expect(screen.queryByRole('button', { name: 'New post' })).not.toBeInTheDocument();
+  });
+
   it('offers Show more only when a next cursor exists', async () => {
     vi.mocked(fetchPosts).mockResolvedValue({ items: [makePost()], nextCursor: 'cursor-2' });
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);

@@ -107,6 +107,12 @@ export function FeedPage({
 
   const posts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
+  // A member of no families can neither see nor create posts: the shell
+  // drops every "New post" affordance (sidebar button, FAB, `n` shortcut —
+  // they all hang off this optional prop) and the feed's empty state explains
+  // why instead of offering a composer that would have no family to post into.
+  const hasGroups = groups.length > 0;
+
   // Preselect the composer's group when the filter narrows to exactly one.
   const composerDefaultGroupId =
     selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
@@ -164,7 +170,7 @@ export function FeedPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onProfile={onOpenProfile}
-      onNewPost={() => setComposerOpen(true)}
+      onNewPost={hasGroups ? () => setComposerOpen(true) : undefined}
       onLogout={onLogout}
     >
       <div className="feed-layout">
@@ -224,12 +230,18 @@ export function FeedPage({
           {postsQuery.isSuccess && posts.length === 0 && (
             <div className="feed-empty">
               <div className="feed-empty-icon" aria-hidden>
-                <Icon name="camera" size={40} strokeWidth={1.5} />
+                <Icon name={groupsQuery.isSuccess && !hasGroups ? 'users' : 'camera'} size={40} strokeWidth={1.5} />
               </div>
-              <p>{t('feed.empty')}</p>
-              <button className="btn btn-primary" onClick={() => setComposerOpen(true)}>
-                {t('feed.newPost')}
-              </button>
+              {groupsQuery.isSuccess && !hasGroups ? (
+                <p>{t('feed.noGroups')}</p>
+              ) : (
+                <>
+                  <p>{t('feed.empty')}</p>
+                  <button className="btn btn-primary" onClick={() => setComposerOpen(true)}>
+                    {t('feed.newPost')}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
