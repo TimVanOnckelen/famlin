@@ -28,7 +28,7 @@
 }
 
 .post-detail-modal-close {
-  position: sticky;
+  position: absolute;
   top: 12px;
   left: 100%;
   transform: translateX(-48px);
@@ -183,12 +183,6 @@
    sit on top of the card's favorite button. */
 .post-detail-modal:not(.post-detail-modal-with-media) .post-detail-modal-body {
   padding-top: 40px;
-}
-
-@media (min-width: 900px) {
-  .post-detail-modal-with-media .post-detail-modal-body {
-    padding-top: 56px;
-  }
 }
 
 /* The modal is the card — don't draw a second card inside it. */

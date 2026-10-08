@@ -51,12 +51,6 @@
   border-bottom: 1px solid var(--fam-border);
 }
 
-.album-badge-closed {
-  background: transparent;
-  border: 1.5px solid var(--fam-primary);
-  color: var(--fam-primary-dark);
-}
-
 .album-detail-title {
   font-size: 26px;
   font-weight: 900;
@@ -95,20 +89,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.album-detail-contributors-stack {
-  display: flex;
-}
-
-.album-detail-contributor-face {
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--fam-surface);
-  margin-left: -8px;
-}
-
-.album-detail-contributor-face:first-child {
-  margin-left: 0;
 }
 
 .album-detail-contributors-text {

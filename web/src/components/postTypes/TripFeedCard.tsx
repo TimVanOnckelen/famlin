@@ -10,6 +10,7 @@ import {
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
+import { Badge } from '@/components/Badge';
 import { Icon } from '@/components/Icon';
 import { CircleBadge } from '@/components/CircleBadge';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -128,10 +129,10 @@ export function TripFeedCard({
           />
           <div className="post-body trip-card-body">
             <div className="trip-card-badge-row">
-              <span className="trip-badge trip-badge-closed">
+              <Badge color="info" variant="outline">
                 <Icon name="briefcase" size={12} strokeWidth={2.2} />
                 {t('feed.trip.closedBadge')}
-              </span>
+              </Badge>
               {groupChip}
             </div>
             <h3 className="trip-card-title">{trip.title}</h3>
@@ -187,10 +188,10 @@ export function TripFeedCard({
             </div>
           )}
           {trip.dayNumber != null && (
-            <span className="trip-badge trip-badge-active trip-card-hero-badge">
+            <Badge color="info" className="trip-card-hero-badge">
               <Icon name="briefcase" size={12} strokeWidth={2.2} />
               {t('feed.trip.activeBadge', { day: trip.dayNumber })}
-            </span>
+            </Badge>
           )}
           <span className="trip-card-hero-author">
             <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={32} />

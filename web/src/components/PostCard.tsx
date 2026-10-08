@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { Post, PostPerson, REACTION_TYPES, getUploadUrl } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
+import { Badge } from '@/components/Badge';
 import { Icon } from '@/components/Icon';
 import { CircleBadge } from '@/components/CircleBadge';
 import { CommentsSection } from '@/components/CommentsSection';
@@ -251,10 +252,10 @@ function DefaultPostCard({
               <span>{post.author.name}</span>
             </div>
             {isMilestone && (
-              <span className="milestone-badge milestone-badge-overlay">
+              <Badge color="warning" className="milestone-badge-overlay">
                 <Icon name="gift" size={13} strokeWidth={2.2} />
                 {t('feed.milestoneBadge')}
-              </span>
+              </Badge>
             )}
             <div className="post-hero-top-right">
               {isCollage && (
@@ -277,10 +278,10 @@ function DefaultPostCard({
           {!hasPhotos && (
             <>
               {isMilestone && (
-                <span className="milestone-badge">
+                <Badge color="warning" className="post-milestone-badge">
                   <Icon name="gift" size={13} strokeWidth={2.2} />
                   {t('feed.milestoneBadge')}
-                </span>
+                </Badge>
               )}
               <div className="post-author-row">
                 <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={44} />

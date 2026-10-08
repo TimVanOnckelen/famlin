@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches, User } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
+import { Badge } from '@/components/Badge';
+import { AvatarStack } from '@/components/AvatarStack';
 import { AppShell } from '@/components/AppShell';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { CommentsSection } from '@/components/CommentsSection';
@@ -110,10 +111,10 @@ export function AlbumDetailPage({
         </div>
 
         <section className="album-detail-header">
-          <span className={`album-badge ${album.closed ? 'album-badge-closed' : ''}`}>
+          <Badge variant={album.closed ? 'outline' : 'solid'}>
             <Icon name="image" size={12} strokeWidth={2.2} />
             {album.closed ? t('album.detail.closedBadge') : t('album.detail.badge')}
-          </span>
+          </Badge>
           <h1 className="album-detail-title">{album.title}</h1>
           {post.content && <p className="album-detail-description">{post.content}</p>}
 
@@ -130,13 +131,7 @@ export function AlbumDetailPage({
 
           {album.contributors.length > 0 && (
             <div className="album-detail-contributors" aria-label={t('album.detail.contributorsLabel')}>
-              <div className="album-detail-contributors-stack">
-                {album.contributors.slice(0, 6).map((contributor) => (
-                  <span key={contributor.id} className="album-detail-contributor-face">
-                    <Avatar name={contributor.name} avatarUrl={contributor.avatarUrl} size={26} />
-                  </span>
-                ))}
-              </div>
+              <AvatarStack people={album.contributors} size={26} max={6} />
               <span className="album-detail-contributors-text">
                 {t('album.detail.contributedBy', { names: album.contributors.map((c) => c.name).join(', ') })}
               </span>

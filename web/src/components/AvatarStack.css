@@ -1,0 +1,7 @@
+.avatar-stack {
+  display: inline-flex;
+}
+
+.avatar-stack > * + * {
+  margin-left: var(--avatar-stack-overlap, -8px);
+}

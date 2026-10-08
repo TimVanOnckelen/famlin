@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
-import { Avatar } from '@/components/Avatar';
+import { AvatarStack } from '@/components/AvatarStack';
+import { Badge } from '@/components/Badge';
 import { Icon } from '@/components/Icon';
 import { CircleBadge } from '@/components/CircleBadge';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -80,10 +81,10 @@ export function AlbumFeedCard({
         />
         <div className="post-body album-card-body">
           <div className="album-card-badge-row">
-            <span className="album-badge">
+            <Badge variant={album.closed ? 'outline' : 'solid'}>
               <Icon name="image" size={12} strokeWidth={2.2} />
               {album.closed ? t('feed.album.closedBadge') : t('feed.album.badge')}
-            </span>
+            </Badge>
             {groupChip}
           </div>
           <button type="button" className="album-card-title album-card-title-btn" onClick={() => onOpenAlbum?.(post.id)}>
@@ -95,13 +96,7 @@ export function AlbumFeedCard({
 
           {album.contributors.length > 0 && (
             <div className="album-card-contributors" aria-label={t('feed.album.contributorsLabel')}>
-              <div className="album-card-contributors-stack">
-                {album.contributors.slice(0, 5).map((contributor) => (
-                  <span key={contributor.id} className="album-card-contributor-face">
-                    <Avatar name={contributor.name} avatarUrl={contributor.avatarUrl} size={26} />
-                  </span>
-                ))}
-              </div>
+              <AvatarStack people={album.contributors} size={26} />
               <span className="album-card-contributors-text">
                 {t('feed.album.contributedBy', {
                   name: album.contributors[0].name,

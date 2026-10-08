@@ -23,16 +23,19 @@ export function Avatar({
   name,
   avatarUrl,
   size = 44,
+  ring = false,
 }: {
   name: string;
   avatarUrl?: string | null;
   size?: number;
+  ring?: boolean;
 }) {
   const style: React.CSSProperties = {
     width: size,
     height: size,
     borderRadius: size / 2,
     flexShrink: 0,
+    ...(ring && { border: '2px solid var(--fam-surface)', boxSizing: 'border-box' }),
   };
 
   if (avatarUrl) {

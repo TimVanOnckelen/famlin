@@ -207,6 +207,12 @@
   min-height: 100vh;
 }
 
+@media (max-width: 720px) {
+  .app-shell-main {
+    min-height: calc(100dvh - 61px);
+  }
+}
+
 /* Must stay last: overrides the base .sidebar-* rules above at equal
    specificity, so it only wins by coming later in the file. */
 /* Collapsed, icon-only rail — enough room for a comfortable click target
