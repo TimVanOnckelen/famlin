@@ -203,6 +203,33 @@
   letter-spacing: -0.8px;
 }
 
+/* Quick links to non-tab pages (favorites today, search/notifications
+   next) — icon-only buttons, same hit area as the old avatar trigger. */
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-header-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  border-radius: var(--r-md);
+  color: var(--fam-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobile-header-action:hover {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+
 .app-shell-main {
   min-height: 100vh;
 }

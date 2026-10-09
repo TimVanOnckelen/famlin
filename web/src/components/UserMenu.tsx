@@ -4,21 +4,17 @@ import { User } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
 import './UserMenu.css';
 
-// The avatar menu (profile / API tokens / logout) — used both by Sidebar's
-// footer (wide screens) and AppShell's compact mobile header (≤720px), so
-// the two variants only differ in trigger styling (full-width name row vs.
-// icon-only), not behavior: opens on click, closes on Esc or an outside
-// click, arrow-key navigable while open, and returns focus to the trigger
-// on close.
+// The avatar menu (profile / API tokens / logout) — AppShell's sidebar
+// footer. It used to render in the compact mobile header too, but that
+// header dropped the avatar (profile has its own BottomNav tab; the menu's
+// unique items live on ProfilePage), so the sidebar is its only home.
 export function UserMenu({
   user,
-  variant,
   onProfile,
   onApiTokens,
   onLogout,
 }: {
   user: User;
-  variant: 'sidebar' | 'header';
   onProfile: () => void;
   onApiTokens: () => void;
   onLogout: () => void;
@@ -81,7 +77,7 @@ export function UserMenu({
   ];
 
   return (
-    <div className={`user-menu user-menu-${variant}`} ref={rootRef}>
+    <div className="user-menu user-menu-sidebar" ref={rootRef}>
       <button
         ref={triggerRef}
         type="button"
@@ -91,8 +87,8 @@ export function UserMenu({
         aria-label={user.name}
         onClick={() => setOpen((v) => !v)}
       >
-        <Avatar name={user.name} avatarUrl={user.avatarUrl} size={variant === 'sidebar' ? 36 : 40} />
-        {variant === 'sidebar' && <span className="user-menu-name-inline">{user.name}</span>}
+        <Avatar name={user.name} avatarUrl={user.avatarUrl} size={36} />
+        <span className="user-menu-name-inline">{user.name}</span>
       </button>
 
       {open && (

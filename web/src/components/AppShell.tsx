@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import './AppShell.css';
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'profile';
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile';
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -20,8 +20,8 @@ export type NavView = 'feed' | 'photos' | 'chat' | 'profile';
 // 721–1100px), or today's compact top header + BottomNav at ≤720px.
 //
 // Deliberately mirrors BottomNav's own prop shape (onFeed/onPhotos/onChat/
-// onProfile/onNewPost, each an optional-except-the-current-tab plain
-// callback) rather than inventing a `navigate(view)` abstraction — pages
+// onFavorites/onProfile/onNewPost, each an optional-except-the-current-tab
+// plain callback) rather than inventing a `navigate(view)` abstraction — pages
 // stay router-agnostic (App.tsx is the only place that knows about
 // react-router, see utils/routes.ts) and this keeps every page's existing
 // prop contract and tests unchanged; AppShell is a drop-in replacement for
@@ -35,6 +35,7 @@ export function AppShell({
   onFeed,
   onPhotos,
   onChat,
+  onFavorites,
   onProfile,
   onNewPost,
   onLogout,
@@ -45,6 +46,7 @@ export function AppShell({
   onFeed: () => void;
   onPhotos?: () => void;
   onChat?: () => void;
+  onFavorites?: () => void;
   onProfile: () => void;
   onNewPost?: () => void;
   onLogout: () => void;
@@ -70,6 +72,7 @@ export function AppShell({
     if (view === 'feed') onFeed();
     else if (view === 'photos') onPhotos?.();
     else if (view === 'chat') onChat?.();
+    else if (view === 'favorites') onFavorites?.();
     else onProfile();
   }
 
@@ -83,6 +86,7 @@ export function AppShell({
 
   const navItems: { view: NavView; icon: IconName; label: string; keys: string; onClick?: () => void; badge?: boolean; show: boolean }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
+    { view: 'favorites', icon: 'bookmark', label: t('tabs.favorites'), keys: 'g b', onClick: onFavorites, show: !!onFavorites || active === 'favorites' },
     { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: onPhotos, show: !!onPhotos || active === 'photos' },
     {
       view: 'chat',
@@ -152,28 +156,27 @@ export function AppShell({
         </button>
 
         <div className="sidebar-footer">
-          <UserMenu
-            user={user}
-            variant="sidebar"
-            onProfile={onProfile}
-            onApiTokens={() => setApiTokensOpen(true)}
-            onLogout={onLogout}
-          />
+          <UserMenu user={user} onProfile={onProfile} onApiTokens={() => setApiTokensOpen(true)} onLogout={onLogout} />
         </div>
       </nav>
-
       <header className="mobile-header">
         <div className="mobile-header-brand">
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        <UserMenu
-          user={user}
-          variant="header"
-          onProfile={onProfile}
-          onApiTokens={() => setApiTokensOpen(true)}
-          onLogout={onLogout}
-        />
+        {onFavorites && (
+          <div className="mobile-header-actions">
+            <button
+              type="button"
+              className="mobile-header-action"
+              onClick={onFavorites}
+              aria-label={t('tabs.favorites')}
+              title={t('shortcuts.hint', { label: t('tabs.favorites'), keys: 'g b' })}
+            >
+              <Icon name="bookmark" size={20} />
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="app-shell-main" id="main-content">

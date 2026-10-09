@@ -23,6 +23,13 @@
     "ssoLoginFailed": "SSO-login is mislukt",
     "invitationOnly": "Enkel beschikbaar voor familieleden met een uitnodiging"
   },
+  "favorites": {
+    "title": "Favorieten",
+    "emptyTitle": "Nog geen favorieten",
+    "emptySubtitle": "Berichten die je als bladwijzer markeert, verschijnen hier.",
+    "loadMore": "Toon meer",
+    "loadFailed": "Favorieten konden niet geladen worden."
+  },
   "feed": {
     "filterLabel": "Filter op familie",
     "allFamilies": "Alle families",
@@ -121,6 +128,7 @@
     "notifyNewLike": "Likes",
     "settings": "Instellingen",
     "language": "Taal",
+    "apiTokensDescription": "Persoonlijke toegangstokens voor je eigen scripts en integraties.",
     "languageDescription": "Kies je voorkeurstaal",
     "server": "Server",
     "connectedTo": "Verbonden met",
@@ -237,7 +245,8 @@
     "feed": "Feed",
     "photos": "Foto's",
     "profile": "Profiel",
-    "chat": "Chat"
+    "chat": "Chat",
+    "favorites": "Favorieten"
   },
   "demo": {
     "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
@@ -357,6 +366,7 @@
     "goFeed": "Ga naar Feed",
     "goPhotos": "Ga naar Foto's",
     "goChat": "Ga naar Chat",
+    "goFavorites": "Ga naar Favorieten",
     "goProfile": "Ga naar Profiel",
     "newPost": "Nieuw bericht",
     "openHelp": "Toon sneltoetsen",

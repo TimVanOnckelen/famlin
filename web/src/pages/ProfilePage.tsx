@@ -16,6 +16,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { AppShell } from '@/components/AppShell';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { ApiTokensModal } from '@/components/ApiTokensModal';
 import { useAuthStore } from '@/stores/authStore';
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n';
 import './ProfilePage.css';
@@ -29,12 +30,14 @@ export function ProfilePage({
   onBack,
   onOpenPhotos,
   onOpenChat,
+  onOpenFavorites,
   onLogout,
 }: {
   user: User;
   onBack: () => void;
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
+  onOpenFavorites?: () => void;
   onLogout: () => void;
 }) {
   const { t, i18n: i18nInstance } = useTranslation();
@@ -49,6 +52,10 @@ export function ProfilePage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // The avatar menu's API-tokens entry, mirrored here: the compact mobile
+  // header has no avatar anymore, so the profile is where tokens are managed
+  // on narrow screens (the sidebar footer menu still has them on wide ones).
+  const [apiTokensOpen, setApiTokensOpen] = useState(false);
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
@@ -179,6 +186,7 @@ export function ProfilePage({
       onFeed={onBack}
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
+      onFavorites={onOpenFavorites}
       onProfile={() => {}}
       onLogout={onLogout}
     >
@@ -276,6 +284,15 @@ export function ProfilePage({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="profile-setting-row">
+            <div>
+              <div className="profile-setting-label">{t('apiTokens.menuItem')}</div>
+              <div className="profile-setting-desc">{t('profile.apiTokensDescription')}</div>
+            </div>
+            <button className="btn btn-secondary" onClick={() => setApiTokensOpen(true)}>
+              {t('apiTokens.menuItem')}
+            </button>
           </div>
         </section>
 
@@ -436,6 +453,8 @@ export function ProfilePage({
           )}
         </section>
       </div>
+
+      {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
     </AppShell>
   );
 }

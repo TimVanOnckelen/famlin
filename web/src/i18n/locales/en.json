@@ -23,6 +23,13 @@
     "ssoLoginFailed": "SSO login failed",
     "invitationOnly": "Only available for family members with an invitation"
   },
+  "favorites": {
+    "title": "Favorites",
+    "emptyTitle": "No favorites yet",
+    "emptySubtitle": "Posts you bookmark will show up here.",
+    "loadMore": "Show more",
+    "loadFailed": "Favorites couldn't be loaded."
+  },
   "feed": {
     "filterLabel": "Filter by family",
     "allFamilies": "All families",
@@ -121,6 +128,7 @@
     "notifyNewLike": "Likes",
     "settings": "Settings",
     "language": "Language",
+    "apiTokensDescription": "Personal access tokens for your own scripts and integrations.",
     "languageDescription": "Choose your preferred language",
     "server": "Server",
     "connectedTo": "Connected to",
@@ -237,7 +245,8 @@
     "feed": "Feed",
     "photos": "Photos",
     "profile": "Profile",
-    "chat": "Chat"
+    "chat": "Chat",
+    "favorites": "Favorites"
   },
   "demo": {
     "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
@@ -357,6 +366,7 @@
     "goFeed": "Go to Feed",
     "goPhotos": "Go to Photos",
     "goChat": "Go to Chat",
+    "goFavorites": "Go to Favorites",
     "goProfile": "Go to Profile",
     "newPost": "New post",
     "openHelp": "Show keyboard shortcuts",

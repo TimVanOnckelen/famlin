@@ -34,6 +34,7 @@ vi.mock('@/pages/ProfilePage', () => ({
 }));
 vi.mock('@/pages/PhotosPage', () => ({ PhotosPage: () => <div>photos page</div> }));
 vi.mock('@/pages/ChatPage', () => ({ ChatPage: () => <div>chat page</div> }));
+vi.mock('@/pages/FavoritesPage', () => ({ FavoritesPage: () => <div>favorites page</div> }));
 vi.mock('@/pages/TripDetailPage', () => ({
   TripDetailPage: (p: { postId: string; onBack: () => void }) => (
     <div>
@@ -91,6 +92,7 @@ describe('App routing', () => {
     ['/photos', 'photos page'],
     ['/chat', 'chat page'],
     ['/profile', 'profile page'],
+    ['/favorites', 'favorites page'],
     ['/trips/trip-1', 'trip page trip-1'],
     ['/albums/album-1', 'album page album-1'],
     ['/posts/post-1', 'post page post-1'],
