@@ -15,175 +15,148 @@
 
 > ⚠️ **Very early stage.** Famlin is under active development and not yet stable. Expect breaking changes, rough edges, and incomplete features. **Use at your own risk** — do not rely on it for anything you're not prepared to lose or rebuild.
 
-Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend, an Expo React Native mobile app, and a desktop-focused web app.
+**Private, self-hosted family updates — your family, on your own server.**
 
-- **Self-hosted** — run it on your own server (e.g. Synology NAS, VPS, or home server).
-- **Private by default** — every post belongs to exactly one group, and only group members can see it.
-- **Mobile first** — iOS and Android app built with Expo.
-- **Web app** — family members can also follow along in the browser, served at `/` from the same container.
-- **Admin web UI** — manage users, groups, and server settings from `/admin`.
+Famlin is a small social network for one family (or a few related ones): share updates, photos and videos, milestones, polls and trips with the people who matter, without handing any of it to a social media company. You run it on your own hardware, and only the people you invite can get in.
+
+- **Self-hosted** — one Docker Compose stack on a NAS, a VPS or a home server.
+- **Private by default** — a post is only visible to members of the families it was shared with, and a *circle* narrows that further to a smaller group within one family.
+- **Apps everywhere** — free official [iOS](https://apps.apple.com/us/app/famlin/id6786783660) and [Android](https://play.google.com/store/apps/details?id=be.xeweb.famlin) apps, a web app served from the same server, and an admin UI at `/admin`.
+
+## Features
+
+- **One feed, several families** — belong to more than one family and filter between them, or share a post with several at once.
+- **More than plain posts** — milestones that stand out, polls for family decisions, trips as a shared travel journal with check-ins, and shared albums anyone in the family can add to.
+- **Stories** — a photo that's visible for 24 hours, with reactions and private replies. Pin the good ones as Highlights.
+- **Reactions, comments and @mentions**, with photos and videos in comments too.
+- **Family chat** — an optional group chat per family.
+- **Your photos, your storage** — uploads stay on your server, and you can link existing albums from [Immich](https://immich.app) or a local folder.
+- **Flexible login** — email and password, any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, …), or Sign in with Apple. Invite links make joining easy.
+- **Your brand** — set your family's name, color and logo.
+- **Multilingual** — English, Dutch and Simplified Chinese.
+- **Export and restore** — download everything as one archive, and restore it into a fresh server.
 
 📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
 
-📱 Get the app: **[App Store](https://apps.apple.com/us/app/famlin/id6786783660)** · **[Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)** — both ask for your server's address on first launch, so the same download works for every deployment.
-
 ## Table of contents
 
-- [Quick start](#quick-start)
+- [Get the app](#get-the-app)
+- [Self-hosting](#self-hosting)
+- [Development](#development)
 - [Project structure](#project-structure)
-- [Useful commands](#useful-commands)
-- [Production deployment](#production-deployment)
-- [App Store / Play Store builds](#app-store--play-store-builds)
-- [OIDC / SSO login](#oidc--sso-login)
-- [Contributing](#contributing)
+- [Community](#community)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
-## Quick start
+## Get the app
 
-You only need Docker to run the backend locally.
+The official apps are free. Both ask for your server's address on first launch, so the same download works for every Famlin server.
 
-### 1. Environment variables
+- [**App Store**](https://apps.apple.com/us/app/famlin/id6786783660) (iOS)
+- [**Google Play**](https://play.google.com/store/apps/details?id=be.xeweb.famlin) (Android)
+- **Android without Google Play** — download the `.apk` from the [latest release](https://github.com/TimVanOnckelen/famlin/releases/latest). It's signed differently from the Play Store version, so uninstall one before installing the other.
 
-Copy the example file in the project root and edit the values:
+Family members who'd rather not install anything can open your server's address in a browser.
 
-```bash
-cp .env.example .env
-```
+## Self-hosting
 
-Fill in at least the following in `.env`:
-
-- `JWT_SECRET` — a long random string (≥ 32 characters)
-
-> For **local backend development without Docker** you can also use `backend/.env`. In Docker the values from the root `.env` are used.
-
-### 2. Start the backend
+You need a machine with Docker. Famlin ships as a pre-built multi-arch image (`linux/amd64` + `linux/arm64`) at [`ghcr.io/timvanonckelen/famlin`](https://github.com/TimVanOnckelen/famlin/pkgs/container/famlin), so no source checkout is needed.
 
 ```bash
-docker compose up --build
+mkdir famlin && cd famlin
+curl -LO https://github.com/TimVanOnckelen/famlin/releases/latest/download/docker-compose.yml
+curl -L -o .env https://github.com/TimVanOnckelen/famlin/releases/latest/download/env.example
+# edit .env: set JWT_SECRET (32+ random characters) and POSTGRES_PASSWORD
+docker compose up -d
 ```
 
-The API is then available at http://localhost:3000.
+Then open `http://your-server:3000/admin`. A fresh install has no users, so you'll see a one-time setup screen to create your admin account. From there you create your family, invite people, and optionally set up SSO, email and media integrations.
 
-### 3. Seed the database (sample data)
+For production, put Famlin behind a reverse proxy with HTTPS (and set `TRUST_PROXY=true` in `.env` when you do), and make sure the `famlin-db-data` and `famlin-uploads` volumes are part of your backups.
 
-In a second terminal:
+Read more in the docs:
+
+- [Server setup](https://famlin.app/docs/server-setup) — reverse proxies, Synology Container Manager, and a read-only demo mode
+- [Admin configuration](https://famlin.app/docs/admin-configuration) — SSO (including Google and Apple), Immich and local folders, branding
+- [Inviting family](https://famlin.app/docs/inviting-family) and [Managing users and content](https://famlin.app/docs/managing-users-and-content)
+- [Maintenance](https://famlin.app/docs/maintenance) — updates, pinning a version, backups, and building from source
+
+## Development
+
+You need Docker and Node.js (`^20.19.0` or `>=22.12.0`). The full guide is the [developer quick start](https://famlin.app/docs/developers/quick-start).
+
+```bash
+cp .env.example .env    # set JWT_SECRET and POSTGRES_PASSWORD
+docker compose up --build    # backend on http://localhost:3000, hot reload via docker-compose.override.yml
+```
+
+In a second terminal, load sample data (a "Familie de Vries" family; log in as `admin@example.com` / `test123456`):
 
 ```bash
 docker compose exec famlin-backend npx prisma db seed
 ```
 
-This creates a group "Familie de Vries" with sample users and posts.
-
-### 4. Run the web app
-
-The member-facing web app (`web/`) and its shared API layer (`packages/api-client`) are npm workspaces at the repo root:
+**Web app** — `web/` and the shared `packages/api-client` are npm workspaces at the repo root:
 
 ```bash
-npm install       # repo root — links and builds @famlin/api-client
-npm run dev:web   # Vite dev server on http://localhost:5174, /api proxied to the backend
+npm install        # repo root: links and builds @famlin/api-client
+npm run dev:web    # Vite dev server on http://localhost:5174, /api proxied to the backend
 ```
 
-(Or `npm run build:web` to have the backend container itself serve the bundled app at http://localhost:3000/ — see the [Quick start](https://famlin.app/docs/developers/quick-start) guide.)
-
-### 5. Test the mobile app
-
-If you have Node installed locally (and the backend is already running in Docker):
+**Mobile app** — uses a development build (`expo-dev-client`), not Expo Go:
 
 ```bash
-npm install      # repo root first — mobile's @famlin/api-client file: dependency
-                 # needs the workspace install to build
+npm install        # repo root first: mobile's @famlin/api-client dependency is built by it
 cd mobile
 cp .env.example .env
 npm install
-npm run ios      # or npm run android
+npm run ios        # or: npm run android (needs Xcode / Android Studio)
 ```
 
-Scan the QR code with the Camera app (iOS) or the Expo Go app (Android).
+Leaving the server field empty at login uses `EXPO_PUBLIC_API_URL` from `mobile/.env`: `http://localhost:3000` on the iOS simulator, `http://10.0.2.2:3000` on the Android emulator.
 
-> The backend server address is not hardcoded. At login the user enters the address themselves (for example `https://famlin.yourdomain.com`). For local development `http://localhost:3000` is used automatically if the field is left empty.
->
-> SSO login is configured entirely on the server (see [OIDC / SSO login](#oidc--sso-login)) — the mobile app and admin UI discover it automatically, no build-time client IDs needed.
+**Tests** — `cd backend && npm run test:docker` runs the backend suite inside the dev container against a separate test database. `npm test` in `web/`, `mobile/` and `packages/api-client/` runs their unit tests.
+
+Useful commands:
+
+```bash
+docker compose logs -f famlin-backend                                        # follow backend logs
+docker compose down -v && docker compose up --build                          # reset the database
+docker compose exec famlin-backend npx prisma migrate dev --name description # create a migration
+docker compose exec famlin-backend npx prisma studio                         # browse the database
+```
 
 ## Project structure
 
 ```
 famlin/
-  backend/                       Fastify API, Prisma schema, Docker image
-    admin/                       React + Vite admin UI
-  mobile/                        Expo React Native app
-  web/                           React + Vite member-facing web app (served at /)
-  packages/api-client/           shared API/data layer for mobile + web
-  docker-compose.yml             production/standard backend stack
-  docker-compose.override.yml    local development with hot reload
+  backend/                 Fastify + Prisma API, Docker image
+    admin/                 React + Vite admin UI (served at /admin)
+  web/                     React + Vite member-facing web app (served at /)
+  mobile/                  Expo React Native app (iOS + Android)
+  packages/api-client/     shared API/data layer for web + mobile
+  docs/                    Docusaurus documentation (famlin.app/docs)
+  website/                 landing page (famlin.app)
+  design/                  styleguide, the source of the design tokens
+  docker-compose.yml       production stack (pre-built image)
+  docker-compose.override.yml  local development with hot reload
 ```
 
-## Useful commands
+The [architecture overview](https://famlin.app/docs/developers/architecture) explains how the pieces fit together, and there's an [API reference](https://famlin.app/docs/developers/api) for building your own scripts and integrations.
 
-```bash
-# Follow backend logs
-docker compose logs -f famlin-backend
+## Community
 
-# Reset the database
-docker compose down -v
-docker compose up --build
+- 💬 **Questions and self-hosting help** — [GitHub Discussions](https://github.com/TimVanOnckelen/famlin/discussions)
+- 🐛 **Bugs and feature requests** — [open an issue](https://github.com/TimVanOnckelen/famlin/issues/new/choose)
+- 🔒 **Security issues** — please report them privately, see [SECURITY.md](SECURITY.md)
 
-# Create a Prisma migration
-docker compose exec famlin-backend npx prisma migrate dev --name description
+### Contributing
 
-# Open Prisma Studio
-docker compose exec famlin-backend npx prisma studio
-```
+Contributions are welcome, whether that's code, docs, translations or bug reports. Before opening a pull request, please read:
 
-## Production deployment
-
-`docker-compose.yml` runs the pre-built backend image from [`ghcr.io/timvanonckelen/famlin`](https://github.com/TimVanOnckelen/famlin/pkgs/container/famlin), published on every release — no source checkout needed on the server.
-
-1. Point your reverse proxy (Traefik, Nginx, Caddy, etc.) to Famlin on port 3000.
-2. Use `docker-compose.yml` without `docker-compose.override.yml`.
-3. Place your `.env` on the server.
-4. Make sure `famlin-db-data` is in your existing Docker data folder so it is included in your backups.
-
-See [Server setup](https://famlin.app/docs/server-setup) for the full walkthrough, and [Maintenance](https://famlin.app/docs/maintenance) for pinning a version or building from source instead.
-
-After the containers start, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then configure OIDC/SSO, allowed emails, and SMTP settings.
-
-## App Store / Play Store builds
-
-```bash
-cd mobile
-npx eas build --platform ios
-npx eas build --platform android
-```
-
-Make sure you have:
-
-- created an EAS project (`eas init`)
-- an Apple Developer account + certificates for iOS
-- a Google Play Console listing for Android
-
-## OIDC / SSO login
-
-Famlin supports login via any standards-compliant OpenID Connect provider (Google, Microsoft Entra ID, Authentik, Keycloak, Auth0, ...) alongside email/password. It's entirely optional and configured from `/admin` — no rebuild or client-side env vars required.
-
-1. In your identity provider, register Famlin as a **public/native client** (no client secret) with **PKCE** enabled.
-2. Add these redirect URIs:
-   - Mobile app: `famlin://` (the app's URL scheme, see `mobile/app.config.js`)
-   - Admin UI: `https://your-famlin-domain/admin/`
-3. In `/admin` → Server settings, fill in:
-   - **Issuer URL** — e.g. `https://accounts.google.com` or `https://auth.example.com/application/o/famlin/`
-   - **Client ID**
-   - **Scopes** — defaults to `openid email profile`
-   - **Display name** — shown on the login button (e.g. "Google", "Authentik")
-4. Optionally restrict which emails may sign in via **Allowed email addresses**.
-
-> In Expo Go during local development the redirect URI is `exp://...` instead of `famlin://`. Use a local Expo development build or an EAS build to test the full SSO flow against your provider's redirect URI allowlist.
-
-## Contributing
-
-Contributions are welcome! Please read:
-- [CONTRIBUTING.md](CONTRIBUTING.md) — general contribution guidelines
-- [AI-GUIDELINES.md](AI-GUIDELINES.md) — how to responsibly use AI when working on Famlin
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute
+- [AI-GUIDELINES.md](AI-GUIDELINES.md) — how to use AI responsibly when working on Famlin
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ### Contributors
 
