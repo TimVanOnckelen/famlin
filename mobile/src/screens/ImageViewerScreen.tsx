@@ -1,3 +1,5 @@
+import { LivePhotoMedia } from '@/components/LivePhotoMedia';
+import { useUploadProcessing } from '@/hooks/useUploadProcessing';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -36,6 +38,21 @@ import { REACTION_EMOJI } from '@/constants/reactions';
 import { formatRelativeDate } from '@/i18n/utils';
 import { useAuthStore } from '@/stores/authStore';
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
+
+function ProcessingPage({ url, width, children }: { url: string; width: number; children: React.ReactNode }) {
+  const state = useUploadProcessing(url);
+  const { t } = useTranslation();
+  if (state.pending || state.failed) {
+    return <View style={[styles.page, { width, alignItems: 'center', justifyContent: 'center' }]}>
+      {!state.failed && <ActivityIndicator color="white" />}
+      <Text style={{ color: 'white', padding: 16 }}>{t(state.failed ? 'media.processingFailed' : 'media.processing')}</Text>
+    </View>;
+  }
+  if (state.kind === 'livePhoto' && state.videoUrl) {
+    return <View style={[styles.page, { width }]}><LivePhotoMedia imageUrl={url} videoUrl={state.videoUrl} style={styles.image} /></View>;
+  }
+  return children;
+}
 
 function VideoPage({
   url,
@@ -567,7 +584,8 @@ export function ImageViewerScreen() {
             style={styles.scrollView}
           >
             {urls.map((url: string, index: number) =>
-              isVideoUrl(url) ? (
+              <ProcessingPage key={`${url}-${index}`} url={url} width={width}>
+              {isVideoUrl(url) ? (
                 <VideoPage
                   key={`${url}-${index}`}
                   url={url}
@@ -584,7 +602,8 @@ export function ImageViewerScreen() {
                   onZoomChange={handleZoomChange}
                   accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
                 />
-              )
+              )}
+              </ProcessingPage>
             )}
           </ScrollView>
 

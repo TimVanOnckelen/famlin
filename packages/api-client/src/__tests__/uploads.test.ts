@@ -62,14 +62,14 @@ describe('uploads', () => {
       );
     });
 
-    it('leaves gif and video paths unchanged even when variant is "thumbnail"', async () => {
+    it('leaves GIF unchanged and derives video poster URLs for thumbnails', async () => {
       const client = await import('../client.js');
       (client.getCurrentServerUrl as any).mockReturnValue('http://example.com');
       (client.getCurrentMediaToken as any).mockReturnValue('tok123');
 
       const { getUploadUrl } = await import('../uploads.js');
       expect(getUploadUrl('/uploads/abc.gif', 'thumbnail')).toBe('http://example.com/uploads/abc.gif?token=tok123');
-      expect(getUploadUrl('/uploads/abc.mp4', 'thumbnail')).toBe('http://example.com/uploads/abc.mp4?token=tok123');
+      expect(getUploadUrl('/uploads/abc.mp4', 'thumbnail')).toBe('http://example.com/uploads/abc-thumbnail.jpg?token=tok123');
     });
 
     it('returns the plain path when no variant is passed, unchanged from before', async () => {
@@ -83,6 +83,21 @@ describe('uploads', () => {
   });
 
   describe('uploadFiles', () => {
+    it('reports transmitted bytes and waits for a known total', async () => {
+      const client = await import('../client.js');
+      (client.api.post as any).mockResolvedValue({ data: { urls: ['/uploads/a.jpg'] } });
+      const { uploadFiles } = await import('../uploads.js');
+      const progress = vi.fn();
+      await uploadFiles([new File(['a'], 'a.jpg')], progress);
+      const config = (client.api.post as any).mock.calls[0][2];
+      config.onUploadProgress({ loaded: 5 });
+      expect(progress).not.toHaveBeenCalled();
+      config.onUploadProgress({ loaded: 5, total: 10 });
+      expect(progress).toHaveBeenLastCalledWith(0.5);
+      config.onUploadProgress({ loaded: 11, total: 10 });
+      expect(progress).toHaveBeenLastCalledWith(1);
+    });
+
     it('posts the batch as multipart, clearing the JSON content type', async () => {
       const client = await import('../client.js');
       (client.api.post as any).mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } });
@@ -106,6 +121,21 @@ describe('uploads', () => {
       // A photo/video upload must not be held to the JSON-API timeout.
       expect(config.timeout).toBe(UPLOAD_TIMEOUT_MS);
       expect(UPLOAD_TIMEOUT_MS).toBeGreaterThan(60_000);
+    });
+  });
+
+  describe('uploadFilesInSession', () => {
+    it('sends draft context to upload and preserves its normalized media response', async () => {
+      const client = await import('../client.js');
+      const response = { urls: ['/uploads/video.mp4'], sessionMedia: [{ url: '/uploads/photo.jpg', videoUrl: '/uploads/video.mp4', kind: 'livePhoto', status: 'queued', thumbnailUrl: '/uploads/photo-thumbnail.jpg' }] };
+      (client.api.post as any).mockResolvedValue({ data: response });
+      const { uploadFilesInSession } = await import('../uploads.js');
+      expect(await uploadFilesInSession([new File(['v'], 'IMG_1234.MOV')], 'draft-id', ['removed-id'])).toEqual(response);
+      const [route, body, config] = (client.api.post as any).mock.calls[0];
+      expect(route).toBe('/uploads');
+      expect(body.getAll('file')).toHaveLength(1);
+      expect(config.headers['X-Upload-Session-Id']).toBe('draft-id');
+      expect(JSON.parse(config.headers['X-Upload-Session-Exclude'])).toEqual(['removed-id']);
     });
   });
 

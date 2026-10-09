@@ -1,13 +1,14 @@
-import { screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NewPostModal } from '@/components/NewPostModal';
 import { renderWithQueryClient } from '@/test/fixtures';
-import { addAlbumPhotos, createPost, getGroupMediaAlbums, getMediaAlbumAssets } from '@famlin/api-client';
+import { uploadFilesInSession, addAlbumPhotos, createPost, getGroupMediaAlbums, getMediaAlbumAssets, getUploadUrl } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   getGroupMediaAlbums: vi.fn(),
   getMediaAlbumAssets: vi.fn(),
+  uploadFilesInSession: vi.fn(),
   createPost: vi.fn(),
   addAlbumPhotos: vi.fn(),
 }));
@@ -42,10 +43,186 @@ const mediaAssets = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal('URL', Object.assign(URL, {
+    createObjectURL: vi.fn(() => 'blob:preview'),
+    revokeObjectURL: vi.fn(),
+  }));
   vi.mocked(createPost).mockResolvedValue({} as never);
 });
 
 describe('NewPostModal', () => {
+  it('merges photo and MOV selected separately in one session and posts only the photo', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const photoUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg';
+    const videoUrl = '/uploads/22222222-2222-4222-8222-222222222222.mp4';
+    vi.mocked(uploadFilesInSession)
+      .mockResolvedValueOnce({ urls: [photoUrl], sessionMedia: [{ url: photoUrl, kind: 'image', status: 'queued', thumbnailUrl: null }] })
+      .mockResolvedValueOnce({ urls: [videoUrl], sessionMedia: [{ url: photoUrl, videoUrl, kind: 'livePhoto', status: 'queued', thumbnailUrl: null }] });
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const photo = new File(['photo'], 'IMG_1234.HEIC', { type: 'image/heic' });
+    const video = new File(['video'], 'IMG_1234.MOV', { type: 'video/quicktime' });
+    await user.upload(input, photo);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Post' })).toBeEnabled());
+    await user.upload(input, video);
+    await waitFor(() => expect(screen.getByLabelText('Live Photo')).toBeInTheDocument());
+    expect(container.querySelectorAll('.photo-preview')).toHaveLength(1);
+    const calls = vi.mocked(uploadFilesInSession).mock.calls;
+    expect(calls[0][1]).toBe(calls[1][1]);
+    expect(calls[0][0]).toEqual([photo]); expect(calls[1][0]).toEqual([video]);
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ uploadedAssetUrls: [photoUrl] }));
+  });
+
+  it('shows the Live Photo upload indicator until a separately selected MOV finishes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const photoUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg';
+    const videoUrl = '/uploads/22222222-2222-4222-8222-222222222222.mp4';
+    let finish!: (value: { urls: string[]; sessionMedia: { url: string; videoUrl: string; kind: 'livePhoto'; status: 'queued'; thumbnailUrl: null }[] }) => void;
+    vi.mocked(uploadFilesInSession).mockResolvedValueOnce({ urls: [photoUrl], sessionMedia: [] })
+      .mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await user.upload(input, new File(['p'], 'IMG_1234.HEIC', { type: 'image/heic' }));
+    await user.upload(input, new File(['v'], 'IMG_1234.MOV', { type: 'video/quicktime' }));
+    expect(container.querySelectorAll('.photo-preview')).toHaveLength(1);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await act(async () => finish({ urls: [videoUrl], sessionMedia: [{ url: photoUrl, videoUrl, kind: 'livePhoto', status: 'queued', thumbnailUrl: null }] }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post' })).toBeEnabled();
+  });
+
+  it('preserves a confirmed pair when concurrent uploads respond out of order', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const photoUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg';
+    const videoUrl = '/uploads/22222222-2222-4222-8222-222222222222.mp4';
+    let finishPhoto!: (result: { urls: string[]; sessionMedia: { url: string; kind: 'image'; status: 'queued'; thumbnailUrl: null }[] }) => void;
+    vi.mocked(uploadFilesInSession).mockImplementation(([file]) => file.name.endsWith('.HEIC')
+      ? new Promise((resolve) => { finishPhoto = resolve; })
+      : Promise.resolve({ urls: [videoUrl], sessionMedia: [{ url: photoUrl, videoUrl, kind: 'livePhoto', status: 'queued', thumbnailUrl: null }] }));
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, [new File(['p'], 'IMG_1234.HEIC', { type: 'image/heic' }), new File(['v'], 'IMG_1234.MOV', { type: 'video/quicktime' })]);
+    await act(async () => finishPhoto({ urls: [photoUrl], sessionMedia: [{ url: photoUrl, kind: 'image', status: 'queued', thumbnailUrl: null }] }));
+    expect(container.querySelectorAll('.photo-preview')).toHaveLength(1);
+    expect(screen.getByLabelText('Live Photo')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ uploadedAssetUrls: [photoUrl] }));
+  });
+
+  it('removes both components from the session when a Live Photo preview is removed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const photoUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg';
+    const videoUrl = '/uploads/22222222-2222-4222-8222-222222222222.mp4';
+    vi.mocked(uploadFilesInSession).mockImplementation(async (files) => !files.length ? { urls: [], sessionMedia: [] } : files[0].name.endsWith('.HEIC')
+      ? { urls: [photoUrl], sessionMedia: [] }
+      : { urls: [videoUrl], sessionMedia: [{ url: photoUrl, videoUrl, kind: 'livePhoto', status: 'queued', thumbnailUrl: null }] });
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, [new File(['p'], 'IMG_1234.HEIC', { type: 'image/heic' }), new File(['v'], 'IMG_1234.MOV', { type: 'video/quicktime' })]);
+    await user.click(screen.getByRole('button', { name: /Remove photo/ }));
+    expect(container.querySelectorAll('.photo-preview')).toHaveLength(0);
+    expect(uploadFilesInSession).toHaveBeenLastCalledWith([], expect.any(String), ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222']);
+  });
+
+  it('keeps two previews when the session reports that the files are unrelated', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    vi.mocked(uploadFilesInSession).mockImplementation(async ([file]) => ({ urls: [file.name.endsWith('.MOV') ? '/uploads/live.mp4' : '/uploads/live.jpg'], sessionMedia: [] }));
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, [
+      new File(['photo'], 'IMG_1234.HEIC', { type: 'image/heic' }),
+      new File(['video'], 'IMG_1234.MOV', { type: 'video/quicktime' }),
+    ]);
+    await waitFor(() => expect(container.querySelectorAll('.photo-preview')).toHaveLength(2));
+    expect(screen.queryByLabelText('Live Photo')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Video')).toBeInTheDocument();
+  });
+
+  it('uploads on selection, shows a loading indicator and publishes the returned URLs without uploading again', async () => {
+    let finish!: (result: { urls: string[] }) => void;
+    vi.mocked(uploadFilesInSession).mockImplementation(() => {
+      return new Promise((resolve) => { finish = resolve; });
+    });
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    await user.type(screen.getByRole('textbox'), 'Hello');
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['photo'], 'photo.jpg', { type: 'image/jpeg' }));
+    expect(uploadFilesInSession).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
+    expect(createPost).not.toHaveBeenCalled();
+    await act(async () => finish({ urls: ['/uploads/photo.jpg'] }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    const preview = screen.getByRole('img', { name: 'photo.jpg' });
+    expect(preview).toHaveAttribute('src', getUploadUrl('/uploads/photo.jpg', 'thumbnail'));
+    fireEvent.error(preview);
+    expect(preview).toHaveAttribute('src', getUploadUrl('/uploads/photo.jpg'));
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ uploadedAssetUrls: ['/uploads/photo.jpg'] }));
+    expect(uploadFilesInSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('uploads each selected photo separately and keeps successful uploads when another fails', async () => {
+    const finish: ((result: { urls: string[] }) => void)[] = [];
+    const fail: ((error: Error) => void)[] = [];
+    vi.mocked(uploadFilesInSession).mockImplementation(() => new Promise((resolve, reject) => {
+      finish.push(resolve);
+      fail.push(reject);
+    }));
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    const photos = ['a.jpg', 'b.jpg'].map((name) => new File(['photo'], name, { type: 'image/jpeg' }));
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, photos);
+    expect(uploadFilesInSession).toHaveBeenCalledTimes(2);
+    expect(uploadFilesInSession).toHaveBeenNthCalledWith(1, [photos[0]], expect.any(String), []);
+    expect(uploadFilesInSession).toHaveBeenNthCalledWith(2, [photos[1]], expect.any(String), []);
+    expect(screen.getAllByRole('status')).toHaveLength(2);
+    await act(async () => finish[0]({ urls: ['/uploads/a.jpg'] }));
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await act(async () => fail[1](new Error('Offline')));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ uploadedAssetUrls: ['/uploads/a.jpg'] }));
+  });
+
+  it('keeps a removed pending photo out of the post after the upload finishes', async () => {
+    let finish!: (result: { urls: string[] }) => void;
+    vi.mocked(uploadFilesInSession).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    await user.type(screen.getByRole('textbox'), 'Hello');
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['photo'], 'photo.jpg', { type: 'image/jpeg' }));
+    await user.click(screen.getByRole('button', { name: /Remove photo/ }));
+    await act(async () => finish({ urls: ['/uploads/photo.jpg'] }));
+    await user.click(screen.getByRole('button', { name: 'Post' }));
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ uploadedAssetUrls: [] }));
+  });
+
+  it('shows an upload error and allows selecting the photo again', async () => {
+    vi.mocked(uploadFilesInSession).mockRejectedValueOnce(new Error('Offline')).mockResolvedValueOnce({ urls: ['/uploads/photo.jpg'] });
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
+    const user = userEvent.setup();
+    const { container } = renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const photo = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' });
+    await user.upload(input, photo);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Photo upload failed');
+    expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Add photos' }));
+    await user.upload(input, photo);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Post' })).toBeEnabled());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('hides the album-picker option when the group has no linked albums', async () => {
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
     renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />);

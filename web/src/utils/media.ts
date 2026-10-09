@@ -17,7 +17,7 @@ export function isVideoUrl(assetUrl: string): boolean {
 const UNDECODABLE_IMAGE_TYPES = ['image/heic', 'image/heif'];
 const UNDECODABLE_IMAGE_EXTENSIONS = ['.heic', '.heif'];
 
-export function isBrowserDecodableImage(file: File): boolean {
+export function isBrowserDecodableImage(file: Pick<File, 'name' | 'type'>): boolean {
   // Chrome on some platforms reports an empty type for .heic, so the filename
   // is the more reliable of the two signals — check both.
   if (UNDECODABLE_IMAGE_TYPES.includes(file.type.toLowerCase())) return false;
@@ -27,7 +27,7 @@ export function isBrowserDecodableImage(file: File): boolean {
 
 // The format badge shown on that placeholder — the file's extension, or a
 // generic label for a file whose name carries none.
-export function fileFormatLabel(file: File): string {
+export function fileFormatLabel(file: Pick<File, 'name'>): string {
   const dotIndex = file.name.lastIndexOf('.');
   return dotIndex > 0 ? file.name.slice(dotIndex + 1).toUpperCase() : 'IMG';
 }

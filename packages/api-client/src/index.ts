@@ -71,6 +71,9 @@ export {
   refreshMediaToken,
   ensureFreshMediaToken,
   uploadFiles,
+  fetchUploadProcessing,
+  uploadFilesInSession,
+  uploadKey,
   UPLOAD_TIMEOUT_MS,
 } from './uploads';
 
@@ -198,3 +201,7 @@ export {
 
 export type { Circle, CircleMember } from './types';
 export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';
+
+export type { UploadProcessing } from './uploads';
+
+export type { UploadResult, UploadSessionMedia } from './uploads';

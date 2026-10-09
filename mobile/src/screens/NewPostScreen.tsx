@@ -461,8 +461,8 @@ export function NewPostScreen() {
         <Text style={styles.headerTitle}>{t('newPost.title')}</Text>
         <TouchableOpacity
           style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-          onPress={() => createPostMutation.mutate()}
-          disabled={!canSubmit}
+          onPress={() => { if (!uploading && !createPostMutation.isPending) createPostMutation.mutate(); }}
+          disabled={!canSubmit || uploading || createPostMutation.isPending}
         >
           <Text style={styles.postButtonText}>{t('newPost.postButton')}</Text>
         </TouchableOpacity>
@@ -803,14 +803,7 @@ export function NewPostScreen() {
                 const isVideo = isVideoUrl(asset.url);
                 return (
                   <View key={asset.url} style={styles.selectedAsset}>
-                    {isVideo ? (
-                      <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
-                    ) : (
-                      <Image
-                        source={{ uri: getUploadUrl(asset.url) }}
-                        style={styles.selectedAssetImage}
-                      />
-                    )}
+                    <Image source={{ uri: getUploadUrl(asset.url, 'thumbnail') }} style={styles.selectedAssetImage} />
                     {isVideo && (
                       <View style={styles.videoBadge} pointerEvents="none">
                         <Icon name="play" size={14} color={colors.white} />

@@ -1,3 +1,6 @@
+import { vi, expect } from 'vitest';
+import { invalidateUploadCache } from '../src/services/uploads.js';
+import type { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { buildApp } from '../src/app.js';
 import { prisma } from '../src/db.js';
@@ -83,4 +86,14 @@ export async function createComment(overrides: { postId: string; authorId: strin
       attachmentUrl: overrides.attachmentUrl,
     },
   });
+}
+
+export async function waitForUploadReady(app: FastifyInstance, url: string, user: Parameters<typeof authHeader>[0]) {
+  const assetKey = url.split('/').pop()!.split('.')[0];
+  await vi.waitFor(async () => {
+    const response = await app.inject({ method: 'GET', url: `/api/uploads/status/${assetKey}`, headers: authHeader(user) });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().status).toBe('ready');
+  }, { timeout: 10000, interval: 250 });
+  invalidateUploadCache([assetKey]);
 }

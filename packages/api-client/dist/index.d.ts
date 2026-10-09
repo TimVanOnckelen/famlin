@@ -11,7 +11,7 @@ export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS, } from './uploads';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, fetchUploadProcessing, uploadFilesInSession, uploadKey, UPLOAD_TIMEOUT_MS, } from './uploads';
 export type { ReactionType, User, Group, Post, PostPerson, PostReactor, PostType, PollOptionResult, PostPoll, PollCreateData, TripTypeData, TripTraveler, TripLatestCheckin, TripEnrichment, TripCheckinMetadata, AlbumTypeData, AlbumContributor, AlbumLatestContribution, AlbumEnrichment, AlbumPhotoMetadata, Comment, Notification, } from './types';
 export { REACTION_TYPES } from './types';
 export { patchPostInCaches } from './postCache';
@@ -33,3 +33,5 @@ export type { Story, StoryAuthor, StoryTray, StoryTrayAuthor, StoryHighlightsPag
 export { fetchStoryTray, fetchStoryHighlights, fetchStory, createStory, markStoryViewed, fetchStoryViews, reactToStory, fetchStoryReactions, replyToStory, fetchStoryReplies, pinStory, unpinStory, deleteStory, isStoryLive, } from './stories';
 export type { Circle, CircleMember } from './types';
 export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';
+export type { UploadProcessing } from './uploads';
+export type { UploadResult, UploadSessionMedia } from './uploads';

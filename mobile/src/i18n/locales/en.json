@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Pause Live Photo", "playLivePhoto": "Play Live Photo", "processing": "Media is processing…", "processingFailed": "Media processing failed"},
   "common": {
     "loading": "Loading...",
     "tryAgain": "Try again",

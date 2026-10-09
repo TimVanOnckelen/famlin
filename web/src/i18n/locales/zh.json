@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "实况照片", "video": "视频", "pauseLivePhoto": "暂停实况照片", "playLivePhoto": "播放实况照片", "playVideo": "播放视频", "processing": "媒体正在处理中…", "processingFailed": "媒体处理失败"},
   "common": {
     "appName": "Famlin",
     "loading": "加载中…",
@@ -82,6 +83,8 @@
     "photoCount_other": "{{count}} 张照片"
   },
   "newPost": {
+    "draftAudienceChanged": "保存的分享对象已不可用。发布前请重新选择家庭或圈子。",
+    "uploadFailed": "照片上传失败。请重新选择照片。",
     "title": "发布动态",
     "group": "家庭群组",
     "groupHint": "选择要分享的一个或多个家庭。",

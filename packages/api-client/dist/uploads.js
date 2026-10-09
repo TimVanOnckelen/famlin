@@ -3,15 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UPLOAD_TIMEOUT_MS = void 0;
 exports.getUploadUrl = getUploadUrl;
 exports.uploadFiles = uploadFiles;
+exports.uploadFilesInSession = uploadFilesInSession;
 exports.refreshMediaToken = refreshMediaToken;
 exports.ensureFreshMediaToken = ensureFreshMediaToken;
+exports.uploadKey = uploadKey;
+exports.fetchUploadProcessing = fetchUploadProcessing;
 const client_1 = require("./client");
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
 // never get one. Uploads made before that feature shipped also won't have
 // one even if their extension is in this set; callers should fall back to
 // the plain (non-variant) URL on a load error for that case.
-const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.m4v', '.webm']);
 function toThumbnailPath(path) {
     const dotIndex = path.lastIndexOf('.');
     const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : '';
@@ -41,16 +44,7 @@ function getUploadUrl(path, variant) {
 // minutes on mobile data, and an aborted upload surfaces to the user as an
 // opaque "Network Error". Every upload call site must pass this.
 exports.UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
-// Browser file upload — the single place web posts to /api/uploads, so the
-// two things that silently break it live in one spot:
-//   - Content-Type must be cleared. The shared client defaults to
-//     application/json, and axios ≥1 *serializes FormData to JSON* when the
-//     content type says JSON (`{"file":{}}`), so the bytes never leave the
-//     browser and the route answers 406 "the request is not multipart".
-//     Undefined lets the browser generate `multipart/form-data; boundary=...`
-//     itself (mobile's uploadMedia clears it for the same reason).
-//   - The default timeout is far too short for real photos/videos.
-async function uploadFiles(files) {
+async function sendUpload(files, onProgress, sessionId, excludedKeys = []) {
     const formData = new FormData();
     // The upload route walks every file part in the request, so one round trip
     // covers the whole batch (same as mobile's uploadMedia).
@@ -58,10 +52,22 @@ async function uploadFiles(files) {
         formData.append('file', file);
     }
     const response = await client_1.api.post('/uploads', formData, {
-        headers: { 'Content-Type': undefined },
+        headers: { 'Content-Type': undefined, ...(sessionId ? { 'X-Upload-Session-Id': sessionId } : {}), ...(excludedKeys.length ? { 'X-Upload-Session-Exclude': JSON.stringify(excludedKeys) } : {}) },
         timeout: exports.UPLOAD_TIMEOUT_MS,
+        onUploadProgress: onProgress
+            ? (event) => {
+                if (event.total)
+                    onProgress(Math.min(1, event.loaded / event.total));
+            }
+            : undefined,
     });
-    return response.data.urls;
+    return response.data;
+}
+async function uploadFiles(files, onProgress) {
+    return (await sendUpload(files, onProgress)).urls;
+}
+async function uploadFilesInSession(files, sessionId, excludedKeys = []) {
+    return sendUpload(files, undefined, sessionId, excludedKeys);
 }
 let mediaTokenFetchedAt = null;
 const MEDIA_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
@@ -98,4 +104,11 @@ async function ensureFreshMediaToken() {
     if (!(0, client_1.getCurrentMediaToken)() || isStale) {
         await refreshMediaToken();
     }
+}
+function uploadKey(url) {
+    return url.match(/\/uploads\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-thumbnail)?\.[a-z0-9]+(?:\?|$)/i)?.[1] ?? null;
+}
+async function fetchUploadProcessing(assetKey) {
+    const response = await client_1.api.get(`/uploads/status/${assetKey}`);
+    return response.data;
 }

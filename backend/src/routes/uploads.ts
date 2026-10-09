@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { readLivePhotoIdentifier, reconcileUploadSession } from '../services/livePhotos.js';
 import { FastifyInstance } from 'fastify';
 import fs from 'fs/promises';
 import path from 'path';
@@ -7,13 +9,9 @@ import { createMediaToken } from '../plugins/auth.js';
 import { prisma } from '../db.js';
 import { getT } from '../i18n/index.js';
 import { uploadsDir } from '../config.js';
-import {
-  isConvertibleImage,
-  isPosterableVideo,
-  generateDisplayVariant,
-  generateVideoPoster,
-} from '../services/uploadVariants.js';
-import { recordUpload } from '../services/uploads.js';
+import { isConvertibleImage, isPosterableVideo } from '../services/uploadVariants.js';
+import { uploadAssetKey, invalidateUploadCache, canReadUpload } from '../services/uploads.js';
+import { createUploadPreview, startUploadWorker } from '../services/uploadProcessing.js';
 
 const ALLOWED_EXTENSIONS = new Set([
   '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
@@ -21,17 +19,44 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 export default async function uploadRoutes(fastify: FastifyInstance) {
+  let stopWorker: (() => Promise<void>) | undefined;
+  fastify.addHook('onReady', async () => { stopWorker = startUploadWorker(fastify.log); });
+  fastify.addHook('onClose', async () => { await stopWorker?.(); });
+
+  fastify.get<{ Params: { assetKey: string } }>('/status/:assetKey', { preHandler: [fastify.authenticate], config: { rateLimit: { max: 1200, timeWindow: '1 minute' } } }, async (request, reply) => {
+    const { assetKey } = request.params;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assetKey) ||
+        !(await canReadUpload(`/uploads/${assetKey}.jpg`, request.user!.id))) {
+      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+    }
+    const upload = await prisma.upload.findUnique({ where: { assetKey }, include: { motionUpload: true } });
+    reply.header('cache-control', 'no-store');
+    const motion = upload?.motionUpload;
+    const statuses = [upload?.processingStatus ?? 'ready', ...(motion ? [motion.processingStatus] : [])];
+    const status = statuses.includes('failed') ? 'failed' : statuses.includes('processing') ? 'processing' : statuses.includes('queued') ? 'queued' : 'ready';
+    return { status, url: upload?.mediaUrl ?? null, thumbnailUrl: upload?.thumbnailUrl ?? null,
+      kind: motion ? 'livePhoto' : isPosterableVideo(path.extname(upload?.mediaUrl ?? '')) ? 'video' : 'image', videoUrl: motion?.mediaUrl ?? null };
+  });
   fastify.post(
     '/',
     { preHandler: [fastify.authenticate], config: { rateLimit: { max: 60, timeWindow: '10 minutes' } } },
     async (request, reply) => {
       const t = getT(request);
+      const sessionId = z.string().uuid().optional().parse(request.headers['x-upload-session-id']);
+      const excludedKeys = z.string().transform((value, context) => {
+        try { return JSON.parse(value); }
+        catch { context.addIssue({ code: 'custom', message: 'Invalid upload session exclusions' }); return z.NEVER; }
+      }).pipe(z.array(z.string().uuid()).max(1000)).parse(String(request.headers['x-upload-session-exclude'] ?? '[]'));
       const parts = request.parts();
       const writtenPaths: string[] = [];
+      const sourceDirectories: string[] = [];
       const uploadedUrls: string[] = [];
+      const media: { url: string; thumbnailUrl: string | null; status: string }[] = [];
+      const jobs: { assetKey: string; sourceFilename: string; uploadSessionId: string | null; livePhotoIdentifier: string | null; mediaKind: string; mediaUrl: string; thumbnailUrl: string | null }[] = [];
 
       async function cleanup() {
         await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})));
+        await Promise.all(sourceDirectories.map((p) => fs.rmdir(p).catch(() => {})));
       }
 
       try {
@@ -45,84 +70,46 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
             }
             const uuid = randomUUID();
 
-            if (isConvertibleImage(ext)) {
-              // The true original is kept for a possible future "download
-              // original" feature but is never served (see the /uploads/
-              // onRequest hook in app.ts) — everything else derives from it.
-              const originalPath = path.join(uploadsDir, 'originals', `${uuid}${ext}`);
-
-              // Record the path before writing so a mid-stream failure (client
-              // abort, disk error) still gets cleaned up by the catch below.
-              writtenPaths.push(originalPath);
-              await pipeline(part.file, (await fs.open(originalPath, 'w')).createWriteStream());
-
-              if (part.file.truncated) {
-                await cleanup();
-                return reply.status(413).send({ error: t('errors.fileTooLarge') });
-              }
-
-              const displayFilename = `${uuid}.jpg`;
-              const displayPath = path.join(uploadsDir, displayFilename);
-              const thumbnailPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
-
-              // Only the display copy blocks the response — it's the one URL
-              // this route actually returns. The 400px thumbnail keeps
-              // generating after we've moved on (not tracked in writtenPaths,
-              // so a later part's failure in this same batch won't clean it
-              // up — an accepted, harmless orphan-file trade-off for not
-              // serializing every photo's full resize cost into one request).
-              const { display, thumbnail } = generateDisplayVariant(originalPath, displayPath, thumbnailPath);
-              thumbnail.catch((err) => request.log.warn({ err, thumbnailPath }, 'background thumbnail generation failed'));
-
-              try {
-                await display;
-                writtenPaths.push(displayPath);
-                uploadedUrls.push(`/uploads/${displayFilename}`);
-              } catch {
-                // sharp couldn't decode this file (corrupt/unsupported) — fall
-                // back to serving the raw upload as-is, exactly like before
-                // this feature existed, instead of stranding it unreachably
-                // in originals/. Wait for the background thumbnail attempt
-                // (almost certainly failing for the same reason) first, so it
-                // can't write a stray file after originalPath is renamed away.
-                await thumbnail.catch(() => {});
-                await fs.unlink(displayPath).catch(() => {});
-                await fs.unlink(thumbnailPath).catch(() => {});
-                const fallbackFilename = `${uuid}${ext}`;
-                const fallbackPath = path.join(uploadsDir, fallbackFilename);
-                await fs.rename(originalPath, fallbackPath);
-                writtenPaths[writtenPaths.indexOf(originalPath)] = fallbackPath;
-                uploadedUrls.push(`/uploads/${fallbackFilename}`);
-              }
-            } else {
-              const filename = `${uuid}${ext}`;
-              const filepath = path.join(uploadsDir, filename);
-
-              writtenPaths.push(filepath);
-              await pipeline(part.file, (await fs.open(filepath, 'w')).createWriteStream());
-
-              if (part.file.truncated) {
-                await cleanup();
-                return reply.status(413).send({ error: t('errors.fileTooLarge') });
-              }
-
-              uploadedUrls.push(`/uploads/${filename}`);
-
-              // Best-effort poster frame for video grid/list tiles. Not
-              // awaited — ffmpeg (up to a 30s timeout) would otherwise block
-              // the response for every video in the batch, and the poster
-              // doesn't affect the URL this route returns either way. A
-              // missing poster (ffmpeg absent, undecodable video, or just
-              // not finished yet) means clients fall back to rendering the
-              // video itself for that tile, as before this feature existed.
-              if (isPosterableVideo(ext)) {
-                const posterPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
-                generateVideoPoster(filepath, posterPath).catch((err) => {
-                  request.log.warn({ err, posterPath }, 'background video poster generation failed');
-                  fs.unlink(posterPath).catch(() => {});
-                });
-              }
+            const video = isPosterableVideo(ext);
+            const processMedia = video || isConvertibleImage(ext);
+            const sourceFilename = processMedia ? `${uuid}/${path.basename(part.filename.replace(/\\/g, '/'))}` : `${uuid}${ext}`;
+            const sourcePath = path.join(uploadsDir, ...(processMedia ? ['originals'] : []), sourceFilename);
+            if (processMedia) {
+              const sourceDirectory = path.dirname(sourcePath);
+              await fs.mkdir(sourceDirectory, { recursive: true });
+              sourceDirectories.push(sourceDirectory);
             }
+            writtenPaths.push(sourcePath);
+            await pipeline(part.file, (await fs.open(sourcePath, 'w')).createWriteStream());
+            if (part.file.truncated) {
+              await cleanup();
+              return reply.status(413).send({ error: t('errors.fileTooLarge') });
+            }
+            const url = `/uploads/${uuid}${processMedia ? (video ? '.mp4' : '.jpg') : ext}`;
+            let thumbnailUrl: string | null = null;
+            if (processMedia) {
+              const previewPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`);
+              writtenPaths.push(previewPath);
+              try {
+                await createUploadPreview(sourcePath, previewPath, video);
+                thumbnailUrl = `/uploads/${uuid}-thumbnail.jpg`;
+              } catch (error) {
+                request.log.warn({ err: error }, 'Upload preview generation failed');
+                await fs.unlink(previewPath).catch(() => {});
+              }
+              let livePhotoIdentifier: string | null = null;
+              let uploadSessionId = sessionId ?? null;
+              if (sessionId && /\.(heic|heif|jpe?g|mov)$/i.test(sourceFilename)) {
+                try { livePhotoIdentifier = await readLivePhotoIdentifier(sourceFilename); }
+                catch (error) {
+                  request.log.warn({ err: error }, 'Live Photo metadata unavailable; leaving file separate');
+                  uploadSessionId = null;
+                }
+              }
+              jobs.push({ assetKey: uuid, sourceFilename, uploadSessionId, livePhotoIdentifier, mediaKind: video ? 'video' : 'image', mediaUrl: url, thumbnailUrl });
+            }
+            uploadedUrls.push(url);
+            media.push({ url, thumbnailUrl, status: processMedia ? 'queued' : 'ready' });
           }
         }
       } catch (err) {
@@ -130,14 +117,25 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         throw err;
       }
 
-      // Register each file so /uploads/* can authorize reads of it later
-      // (see the Upload model in schema.prisma). The row starts unbound, so
-      // until the client attaches the file to a post/comment/message/avatar
-      // only the uploader can read it back — which is exactly what a composer
-      // draft should be.
-      await Promise.all(uploadedUrls.map((url) => recordUpload(url, request.user!.id)));
-
-      return { urls: uploadedUrls };
+      try {
+        // Publish jobs only after every source has been saved and authorized.
+        await prisma.$transaction(async (tx) => {
+          for (const url of uploadedUrls) {
+            const job = jobs.find((item) => item.mediaUrl === url);
+            if (job) {
+              await tx.upload.create({ data: { ...job, uploaderId: request.user!.id, processingStatus: 'queued' } });
+            } else {
+              await tx.upload.create({ data: { assetKey: uploadAssetKey(url), uploaderId: request.user!.id, mediaUrl: url, uploadSessionId: sessionId ?? null } });
+            }
+          }
+        });
+        invalidateUploadCache(uploadedUrls.map(uploadAssetKey));
+      } catch (error) {
+        await cleanup();
+        throw error;
+      }
+      const sessionMedia = sessionId ? await reconcileUploadSession(sessionId, request.user!.id, excludedKeys) : undefined;
+      return { urls: uploadedUrls, media, ...(sessionMedia ? { sessionMedia } : {}) };
     }
   );
 
