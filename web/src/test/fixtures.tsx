@@ -125,13 +125,19 @@ export function makeUser(overrides: Partial<User> = {}): User {
 // Every component under test assumes a react-query provider; retries are off
 // so error paths settle immediately. A MemoryRouter is there for components
 // that render router links (e.g. PostCard's permalink timestamp).
-export function renderWithQueryClient(ui: ReactElement, { route = '/' }: { route?: string } = {}) {
-  const queryClient = new QueryClient({
+export function createTestQueryClient() {
+  return new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
+}
+
+export function renderWithQueryClient(
+  ui: ReactElement,
+  { route = '/', queryClient = createTestQueryClient() }: { route?: string; queryClient?: QueryClient } = {}
+) {
   return {
     queryClient,
     ...render(

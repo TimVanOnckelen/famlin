@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppShell } from '@/components/AppShell';
-import { makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchChatUnreadCounts, fetchGroups, fetchServerInfo } from '@famlin/api-client';
+import { createTestQueryClient, makeUser, renderWithQueryClient } from '@/test/fixtures';
+import { fetchChatUnreadCounts, fetchGroups, fetchServerInfo, Group } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -22,13 +22,17 @@ beforeEach(() => {
   ]);
 });
 
-function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
+function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}, seedGroups?: Group[]) {
   const onFeed = vi.fn();
   const onPhotos = vi.fn();
   const onChat = vi.fn();
   const onProfile = vi.fn();
   const onNewPost = vi.fn();
   const onLogout = vi.fn();
+  const queryClient = createTestQueryClient();
+  // App.tsx's bootstrap seeds ['groups'] before the first route renders;
+  // tests that pin the first-render (no-flicker) behavior pass seedGroups.
+  if (seedGroups) queryClient.setQueryData(['groups'], seedGroups);
   const utils = renderWithQueryClient(
     <AppShell
       user={makeUser()}
@@ -42,7 +46,8 @@ function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
       {...overrides}
     >
       <div>page content</div>
-    </AppShell>
+    </AppShell>,
+    { queryClient }
   );
   return { ...utils, onFeed, onPhotos, onChat, onProfile, onNewPost, onLogout };
 }
@@ -96,6 +101,28 @@ describe('AppShell navigation', () => {
     // Feed and Profile stay.
     expect(screen.getAllByRole('button', { name: 'Feed' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: 'Profile' }).length).toBeGreaterThan(0);
+  });
+
+  it('collapses the family-scoped tabs on the very first render when the bootstrapped groups list is empty', () => {
+    // Cold load after App.tsx's bootstrap seeded ['groups'] with []. No
+    // waitFor on purpose: the tabs must never be in the DOM at all — that is
+    // the no-flicker guarantee.
+    renderShell({}, []);
+
+    expect(screen.queryByRole('button', { name: 'Photos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Feed' }).length).toBeGreaterThan(0);
+  });
+
+  it('shows the family-scoped tabs on the very first render from the bootstrapped groups list', () => {
+    // Same cold load, for a member of a family: the tabs are there before
+    // any fetch answers — no flash-in either.
+    renderShell({}, [
+      { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
+    ]);
+
+    expect(screen.getAllByRole('button', { name: 'Photos' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Chat' }).length).toBeGreaterThan(0);
   });
 
   it('keeps the tab being viewed visible for a groupless user, hiding the other family-scoped one', async () => {

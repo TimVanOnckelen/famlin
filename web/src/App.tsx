@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import axios from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router';
 import { ensureFreshMediaToken, fetchGroups, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
@@ -38,12 +38,14 @@ export default function App() {
   // session keeps its URL, so a shared /posts/:id link opened while logged
   // out still lands on that post after logging in.
   const previousUserRef = useRef<User | null>(null);
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (previousUserRef.current && !user) {
+      queryClient.clear();
       navigate(paths.feed, { replace: true });
     }
     previousUserRef.current = user;
-  }, [user, navigate]);
+  }, [user, navigate, queryClient]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -70,7 +72,11 @@ export default function App() {
       try {
         const token = await loadToken();
         if (token) {
-          const me = await fetchMe();
+          const [me, groups] = await Promise.all([
+            fetchMe(),
+            fetchGroups().catch(() => null),
+          ]);
+          if (groups) queryClient.setQueryData(['groups'], groups);
           await setAuth(me, token);
         }
       } catch (err) {
@@ -199,9 +205,10 @@ function AppRoutes({ user }: { user: User }) {
 // /photos and /chat are family-scoped surfaces: a user in no families has
 // nothing to see on either, so direct navigation there is sent home exactly
 // like an unknown path (the `*` route above). Shares the ['groups'] cache
-// key AppShell and the feed/photos pages fetch with — no extra network
-// request. Until the query answers, the page renders as-is, so a slow
-// response never flash-redirects a user who does have families.
+// key AppShell and the feed/photos pages fetch with, seeded by the bootstrap
+// fetch (App.tsx) — so a groupless user's cold load redirects before
+// PhotosPage/ChatPage render at all, and a user who does have families is
+// never flash-redirected while a fetch is in flight.
 function RequireGroups({ children }: { children: ReactNode }) {
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   if (groupsQuery.isSuccess && groupsQuery.data.length === 0) {

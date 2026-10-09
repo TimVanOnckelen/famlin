@@ -68,10 +68,12 @@ export function AppShell({
 
   // Photos and Chat are family-scoped surfaces: a user in no families has
   // nothing to see in either, so both tabs collapse for them (Feed and
-  // Profile remain). Shares the ['groups'] cache key the pages fetch with —
-  // no extra network request. Until the query answers (loading or failed)
-  // reads as "has groups", so the nav never flickers away on a slow
-  // response; the tab currently being viewed also never disappears.
+  // Profile remain). Shares the ['groups'] cache key the pages fetch with,
+  // seeded by App.tsx's parallel bootstrap fetch — so a groupless user's
+  // tabs are collapsed from the very first render, no flash. Until the query
+  // answers (loading or failed) reads as "has groups", so the nav never
+  // hides tabs it might have to show back; the tab currently being viewed
+  // also never disappears.
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const hasGroups = (groupsQuery.data?.length ?? 1) > 0;
   const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos');
