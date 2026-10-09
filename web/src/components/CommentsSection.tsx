@@ -199,8 +199,6 @@ export function CommentsSection({
       }));
       return [...old, ...added];
     });
-    // Let the same file be picked again after it's removed.
-    e.target.value = '';
   }
 
   function submit(e: FormEvent) {
@@ -282,7 +280,13 @@ export function CommentsSection({
           <button
             type="button"
             className="comment-attach-button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              // Clear before opening the picker (re-pick support) — see the
+              // matching comment in NewPostModal for why it must not happen
+              // in the change handler.
+              if (fileInputRef.current) fileInputRef.current.value = '';
+              fileInputRef.current?.click();
+            }}
             disabled={pending.length >= MAX_COMMENT_ATTACHMENTS}
             aria-label={t('comments.addAttachment')}
           >

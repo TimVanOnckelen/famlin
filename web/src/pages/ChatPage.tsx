@@ -347,7 +347,13 @@ export function ChatPage({
                     <button
                       type="button"
                       className="chat-attach-button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => {
+                        // Clear before opening the picker, so the same file
+                        // can be re-picked after sending/removing it —
+                        // never in the change handler (see NewPostModal).
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        fileInputRef.current?.click();
+                      }}
                       aria-label={t('chat.addAttachment')}
                     >
                       <Icon name="image" size={18} />
