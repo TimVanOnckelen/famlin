@@ -9,11 +9,12 @@ slug: /
 
 # Famlin
 
-Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend and an Expo React Native mobile app.
+Private, self-hosted family updates app. Built with a Fastify + Prisma + Postgres backend, an Expo React Native mobile app, and a web app.
 
 - **Self-hosted** — run it on your own server (e.g. Synology NAS, VPS, or home server).
-- **Private by default** — every post belongs to exactly one group, and only group members can see it.
+- **Private by default** — a post is only visible to members of the families it was shared with, and a *circle* narrows that further to a smaller group within one family.
 - **Mobile first** — iOS and Android app built with Expo.
+- **Web app** — family members can also follow along in the browser, served at `/` from the same server.
 - **Admin web UI** — manage users, groups, and server settings from `/admin`.
 - **Multilingual** — English, Dutch, and Simplified Chinese (简体中文) across the apps, the web app, and the admin UI; each person picks their own language, defaulting to their device or browser language.
 
