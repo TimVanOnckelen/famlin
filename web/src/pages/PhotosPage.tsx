@@ -24,6 +24,7 @@ export function PhotosPage({
   onOpenFeed,
   onOpenChat,
   onOpenProfile,
+  onOpenFavorites,
   onOpenAlbum,
   onLogout,
 }: {
@@ -31,6 +32,7 @@ export function PhotosPage({
   onOpenFeed?: () => void;
   onOpenChat?: () => void;
   onOpenProfile: () => void;
+  onOpenFavorites?: () => void;
   onOpenAlbum?: (postId: string) => void;
   onLogout: () => void;
 }) {
@@ -144,6 +146,7 @@ export function PhotosPage({
       active="photos"
       onFeed={onOpenFeed ?? (() => {})}
       onChat={onOpenChat}
+      onFavorites={onOpenFavorites}
       onProfile={onOpenProfile}
       onNewPost={() => {
         setComposerGroupId(activeGroupId);

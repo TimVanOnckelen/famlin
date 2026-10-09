@@ -4,7 +4,7 @@ import { fetchChatUnreadCounts } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import './BottomNav.css';
 
-type BottomNavTab = 'feed' | 'photos' | 'chat' | 'profile';
+type BottomNavTab = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile';
 
 // The app-like bottom tab bar shown on small screens (see BottomNav.css's
 // media query) — mirrors mobile's MainTabs.tsx: Feed/Photos/Chat/Profile

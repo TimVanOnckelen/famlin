@@ -1,0 +1,76 @@
+/* Single centered column, same measure as the feed. */
+.favorites-column {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card chrome mirrors the feed's .feed-card: the click target is the wrapper
+   (delegated rule in FavoritesPage.tsx), PostCard stays untouched. */
+.favorites-card {
+  cursor: pointer;
+  border-radius: var(--r-lg);
+}
+
+.favorites-hint {
+  text-align: center;
+  color: var(--fam-text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 24px 0;
+}
+
+.favorites-retry {
+  border: none;
+  background: none;
+  color: var(--fam-primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.favorites-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.favorites-empty-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorites-empty-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+  margin: 0 0 4px;
+}
+
+.favorites-empty-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fam-text-muted);
+  margin: 0;
+}
+
+.favorites-load-more {
+  align-self: center;
+}

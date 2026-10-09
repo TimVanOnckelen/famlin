@@ -23,6 +23,13 @@
     "ssoLoginFailed": "单点登录失败",
     "invitationOnly": "仅限收到邀请的家庭成员加入"
   },
+  "favorites": {
+    "title": "收藏",
+    "emptyTitle": "还没有收藏",
+    "emptySubtitle": "你收藏的帖子会显示在这里。",
+    "loadMore": "加载更多",
+    "loadFailed": "收藏加载失败。"
+  },
   "feed": {
     "filterLabel": "按家庭筛选",
     "allFamilies": "全部家庭",
@@ -121,6 +128,7 @@
     "notifyNewLike": "点赞",
     "settings": "设置",
     "language": "语言",
+    "apiTokensDescription": "用于你自己的脚本和集成的个人访问令牌。",
     "languageDescription": "选择你偏好的界面语言",
     "server": "服务器",
     "connectedTo": "已连接至",
@@ -237,7 +245,8 @@
     "feed": "动态",
     "photos": "照片",
     "profile": "我的",
-    "chat": "聊天"
+    "chat": "聊天",
+    "favorites": "收藏"
   },
   "demo": {
     "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
@@ -357,6 +366,7 @@
     "goFeed": "前往动态",
     "goPhotos": "前往照片",
     "goChat": "前往聊天",
+    "goFavorites": "前往收藏",
     "goProfile": "前往我的",
     "newPost": "发新帖",
     "openHelp": "显示键盘快捷键",
