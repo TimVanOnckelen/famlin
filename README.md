@@ -185,6 +185,14 @@ Contributions are welcome! Please read:
 - [CONTRIBUTING.md](CONTRIBUTING.md) — general contribution guidelines
 - [AI-GUIDELINES.md](AI-GUIDELINES.md) — how to responsibly use AI when working on Famlin
 
+### Contributors
+
+Thanks to everyone who has contributed to Famlin!
+
+<a href="https://github.com/TimVanOnckelen/famlin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=TimVanOnckelen/famlin" alt="Famlin contributors" />
+</a>
+
 ## Troubleshooting
 
 ### `npm install` in `mobile/` fails with `tsc: command not found`
