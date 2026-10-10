@@ -8,7 +8,6 @@ import {
   fetchComments,
   createComment,
   reactToComment,
-  getUploadUrl,
   patchPostInCaches,
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
@@ -19,8 +18,7 @@ import { AppShell } from '@/components/AppShell';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { CommentsSection } from '@/components/CommentsSection';
 import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { isVideoUrl } from '@/utils/media';
+import { UploadMedia } from '@/components/UploadMedia';
 import { formatDayMonth, formatTime } from '@/utils/time';
 import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip';
 import './TripDetailPage.css';
@@ -107,7 +105,7 @@ export function TripDetailPage({
     <>
       <div className="trip-detail-cover">
           {coverUrl ? (
-            <ShimmerImage src={getUploadUrl(coverUrl)} className="trip-detail-cover-media" loading="eager" />
+            <UploadMedia url={coverUrl} className="trip-detail-cover-media" />
           ) : (
             <div className="trip-detail-cover-placeholder" aria-hidden>
               <Icon name="briefcase" size={48} strokeWidth={1.5} />
@@ -298,11 +296,7 @@ function CheckinTimelineItem({
                 className="trip-timeline-photo-tile"
                 onClick={() => onOpenPhotos(photoUrls, index)}
               >
-                {isVideoUrl(url) ? (
-                  <video src={getUploadUrl(url)} muted preload="metadata" />
-                ) : (
-                  <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
-                )}
+                <UploadMedia url={url} thumbnail />
               </button>
             ))}
           </div>

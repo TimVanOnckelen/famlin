@@ -6,17 +6,15 @@ import {
   REACTION_TYPES,
   reactToPost,
   patchPostInCaches,
-  getUploadUrl,
 } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
 import { Icon } from '@/components/Icon';
 import { CircleBadge } from '@/components/CircleBadge';
-import { ShimmerImage } from '@/components/ShimmerImage';
+import { UploadMedia } from '@/components/UploadMedia';
 import { formatTime } from '@/utils/time';
 import { formatTripDateRange } from '@/utils/trip';
-import { isVideoUrl } from '@/utils/media';
 import '../PostCard.css';
 import './TripFeedCard.css';
 
@@ -165,23 +163,15 @@ export function TripFeedCard({
   return (
     <div className="post-card">
       <div className="post-card-inner trip-card-inner">
-        <button
-          type="button"
+        <div role="button" tabIndex={0}
+      onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.currentTarget.click(); } }}
+
           className="trip-card-hero"
           onClick={() => onOpenTrip?.(post.id)}
           aria-label={`${trip.title} — ${openLabel}`}
         >
           {heroUrl ? (
-            isVideoUrl(heroUrl) ? (
-              <video src={getUploadUrl(heroUrl)} className="trip-card-hero-media" muted preload="metadata" />
-            ) : (
-              <ShimmerImage
-                src={getUploadUrl(heroUrl, 'thumbnail')}
-                fallbackSrc={getUploadUrl(heroUrl)}
-                className="trip-card-hero-media"
-                loading="lazy"
-              />
-            )
+            <UploadMedia url={heroUrl} thumbnail className="trip-card-hero-media" />
           ) : (
             <div className="trip-card-hero-placeholder" aria-hidden>
               <Icon name="briefcase" size={40} strokeWidth={1.5} />
@@ -196,7 +186,7 @@ export function TripFeedCard({
           <span className="trip-card-hero-author">
             <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={32} />
           </span>
-        </button>
+        </div>
         <div className="post-body trip-card-body">
           <div className="trip-card-badge-row">
             <button type="button" className="trip-card-title trip-card-title-btn" onClick={() => onOpenTrip?.(post.id)}>
@@ -241,11 +231,12 @@ function TripClosedCollage({
 }) {
   if (collagePhotoUrls.length === 0) {
     return (
-      <button type="button" className="trip-card-collage" onClick={onOpen} aria-label={label}>
+      <div role="button" tabIndex={0}
+      onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.currentTarget.click(); } }}  className="trip-card-collage" onClick={onOpen} aria-label={label}>
         <div className="trip-card-hero-placeholder" aria-hidden>
           <Icon name="briefcase" size={40} strokeWidth={1.5} />
         </div>
-      </button>
+      </div>
     );
   }
 
@@ -256,11 +247,7 @@ function TripClosedCollage({
     <button type="button" className="trip-card-collage" onClick={onOpen} aria-label={label}>
       {cells.map((url, i) => (
         <span key={i} className="trip-card-collage-tile">
-          {isVideoUrl(url) ? (
-            <video src={getUploadUrl(url)} muted preload="metadata" />
-          ) : (
-            <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
-          )}
+          <UploadMedia url={url} thumbnail />
           {i === 3 && overflow > 0 && <span className="trip-card-collage-more">+{overflow}</span>}
         </span>
       ))}

@@ -1,7 +1,12 @@
+import { LivePhotoMedia } from './LivePhotoMedia';
+import { useUploadProcessing } from '@/hooks/useUploadProcessing';
 import React, { useState } from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
+
+import { useTranslation } from 'react-i18next';
+import { getUploadUrl } from '@famlin/api-client';
 
 import { Icon } from '@/components/Icon';
 import { isVideoUrl, getVideoPosterUrl } from '@/utils/media';
@@ -49,8 +54,22 @@ function VideoThumbnail({ url, style }: MediaThumbnailProps) {
 }
 
 export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps) {
+  const state = useUploadProcessing(url);
+  const { t } = useTranslation();
   const [fellBack, setFellBack] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
+
+  if (state.pending || state.failed) {
+    return <View style={[style as StyleProp<ViewStyle>, styles.processing]}>
+      {state.thumbnailUrl && <Image source={{ uri: getUploadUrl(state.thumbnailUrl) }} style={[StyleSheet.absoluteFill, { opacity: 0.25 }]} contentFit="cover" />}
+      {!state.failed && <ActivityIndicator />}
+      <Text style={styles.processingText}>{t(state.failed ? 'media.processingFailed' : 'media.processing')}</Text>
+    </View>;
+  }
+
+  if (state.kind === 'livePhoto' && state.videoUrl) {
+    return <LivePhotoMedia imageUrl={url} videoUrl={state.videoUrl} style={style as StyleProp<ViewStyle>} />;
+  }
 
   if (isVideoUrl(url)) {
     const posterUrl = getVideoPosterUrl(url);
@@ -96,6 +115,8 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
 }
 
 const styles = StyleSheet.create({
+  processing: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#e6eeea', minHeight: 80 },
+  processingText: { padding: 8, textAlign: 'center', color: '#253b33', fontSize: 12 },
   playBadgeWrapper: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

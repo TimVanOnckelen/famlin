@@ -5,7 +5,7 @@ import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from '.
 // never get one. Uploads made before that feature shipped also won't have
 // one even if their extension is in this set; callers should fall back to
 // the plain (non-variant) URL on a load error for that case.
-const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.m4v', '.webm']);
 
 function toThumbnailPath(path: string): string {
   const dotIndex = path.lastIndexOf('.');
@@ -46,18 +46,37 @@ export const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 //     Undefined lets the browser generate `multipart/form-data; boundary=...`
 //     itself (mobile's uploadMedia clears it for the same reason).
 //   - The default timeout is far too short for real photos/videos.
-export async function uploadFiles(files: File[]): Promise<string[]> {
+export interface UploadSessionMedia extends UploadProcessing { url: string }
+export interface UploadResult {
+  urls: string[];
+  sessionMedia?: UploadSessionMedia[];
+}
+
+async function sendUpload(files: File[], onProgress?: (fraction: number) => void, sessionId?: string, excludedKeys: string[] = []): Promise<UploadResult> {
   const formData = new FormData();
   // The upload route walks every file part in the request, so one round trip
   // covers the whole batch (same as mobile's uploadMedia).
   for (const file of files) {
     formData.append('file', file);
   }
-  const response = await api.post<{ urls: string[] }>('/uploads', formData, {
-    headers: { 'Content-Type': undefined },
+  const response = await api.post<UploadResult>('/uploads', formData, {
+    headers: { 'Content-Type': undefined, ...(sessionId ? { 'X-Upload-Session-Id': sessionId } : {}), ...(excludedKeys.length ? { 'X-Upload-Session-Exclude': JSON.stringify(excludedKeys) } : {}) },
     timeout: UPLOAD_TIMEOUT_MS,
+    onUploadProgress: onProgress
+      ? (event) => {
+          if (event.total) onProgress(Math.min(1, event.loaded / event.total));
+        }
+      : undefined,
   });
-  return response.data.urls;
+  return response.data;
+}
+
+export async function uploadFiles(files: File[], onProgress?: (fraction: number) => void): Promise<string[]> {
+  return (await sendUpload(files, onProgress)).urls;
+}
+
+export async function uploadFilesInSession(files: File[], sessionId: string, excludedKeys: string[] = []): Promise<UploadResult> {
+  return sendUpload(files, undefined, sessionId, excludedKeys);
 }
 
 let mediaTokenFetchedAt: number | null = null;
@@ -96,4 +115,21 @@ export async function ensureFreshMediaToken(): Promise<void> {
   if (!getCurrentMediaToken() || isStale) {
     await refreshMediaToken();
   }
+}
+
+export interface UploadProcessing {
+  kind?: 'image' | 'video' | 'livePhoto';
+  videoUrl?: string | null;
+  status: 'queued' | 'processing' | 'ready' | 'failed';
+  url: string | null;
+  thumbnailUrl: string | null;
+}
+
+export function uploadKey(url: string): string | null {
+  return url.match(/\/uploads\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-thumbnail)?\.[a-z0-9]+(?:\?|$)/i)?.[1] ?? null;
+}
+
+export async function fetchUploadProcessing(assetKey: string): Promise<UploadProcessing> {
+  const response = await api.get<UploadProcessing>(`/uploads/status/${assetKey}`);
+  return response.data;
 }

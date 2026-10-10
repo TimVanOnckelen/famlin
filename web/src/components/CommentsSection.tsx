@@ -11,15 +11,14 @@ import {
   createComment,
   reactToComment,
   groupCommentAttachments,
-  getUploadUrl,
   patchPostInCaches,
 } from '@famlin/api-client';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
+import { UploadMedia } from '@/components/UploadMedia';
 import { formatRelativeDate } from '@/utils/time';
-import { fileFormatLabel, isBrowserDecodableImage, isVideoUrl } from '@/utils/media';
+import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media';
 
 // Up to this many photos on one comment card lay out as a wrapping grid;
 // beyond it the card becomes a horizontally scrolling gallery instead, so a
@@ -68,19 +67,16 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
       : 'comment-attachment';
 
   const tiles = attachments.map(({ url, commentId }, index) => (
-    <button
+    <div role="button" tabIndex={0}
+      onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.currentTarget.click(); } }}
       key={`${commentId}-${url}`}
-      type="button"
+
       className="comment-attachment-tile"
       onClick={() => setLightboxIndex(index)}
       aria-label={t('comments.viewAttachment')}
     >
-      {isVideoUrl(url) ? (
-        <video src={getUploadUrl(url)} muted preload="metadata" />
-      ) : (
-        <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
-      )}
-    </button>
+      <UploadMedia url={url} thumbnail />
+    </div>
   ));
 
   return (

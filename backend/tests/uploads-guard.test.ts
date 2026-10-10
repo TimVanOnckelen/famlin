@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import fsp from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
-import { buildTestApp, createUser, authHeader } from './helpers.js';
+import { waitForUploadReady, buildTestApp, createUser, authHeader } from './helpers.js';
 import { uploadsDir } from '../src/config.js';
 import { bindAssetsToScope, SERVER_WIDE } from '../src/services/uploads.js';
 
@@ -55,6 +55,7 @@ describe('/uploads/ auth guard — non-canonical paths', () => {
     });
     expect(res.statusCode).toBe(200);
     const url: string = res.json().urls[0];
+  await waitForUploadReady(app, url, uploader);
     uuid = url.match(/\/uploads\/([0-9a-f-]{36})\.jpg$/)![1];
     filename = `${uuid}.jpg`;
 

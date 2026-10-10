@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import fsp from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
-import { buildTestApp, createUser, authHeader, createGroup, addMember } from './helpers.js';
+import { waitForUploadReady, buildTestApp, createUser, authHeader, createGroup, addMember } from './helpers.js';
 import { prisma } from '../src/db.js';
 import { uploadsDir } from '../src/config.js';
 import { uploadAssetKey } from '../src/services/uploads.js';
@@ -47,6 +47,7 @@ async function upload(user: { id: string; email: string; name: string; isAdmin: 
   });
   expect(res.statusCode).toBe(200);
   const url: string = res.json().urls[0];
+  await waitForUploadReady(app, url, user);
   createdKeys.push(uploadAssetKey(url));
   return url;
 }

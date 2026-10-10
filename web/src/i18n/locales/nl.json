@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Live Photo pauzeren", "playLivePhoto": "Live Photo afspelen", "playVideo": "Video afspelen", "processing": "Media wordt verwerkt…", "processingFailed": "Verwerken van media mislukt"},
   "common": {
     "appName": "Famlin",
     "loading": "Bezig...",
@@ -82,6 +83,8 @@
     "photoCount_other": "{{count}} foto’s"
   },
   "newPost": {
+    "draftAudienceChanged": "Het opgeslagen publiek is niet meer beschikbaar. Kies opnieuw een familie of kring voordat je plaatst.",
+    "uploadFailed": "Foto uploaden mislukt. Selecteer de foto’s opnieuw.",
     "title": "Nieuw bericht",
     "group": "Groep",
     "groupHint": "Kies één of meer families om dit bericht mee te delen.",

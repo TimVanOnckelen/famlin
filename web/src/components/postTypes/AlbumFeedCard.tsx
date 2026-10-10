@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
+import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { AvatarStack } from '@/components/AvatarStack';
 import { Badge } from '@/components/Badge';
 import { Icon } from '@/components/Icon';
 import { CircleBadge } from '@/components/CircleBadge';
-import { ShimmerImage } from '@/components/ShimmerImage';
+import { UploadMedia } from '@/components/UploadMedia';
 import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
-import { isVideoUrl } from '@/utils/media';
 import '../PostCard.css';
 import './AlbumFeedCard.css';
 
@@ -188,11 +187,7 @@ function AlbumCollage({
     >
       {visible.map((url, i) => (
         <span key={`${url}-${i}`} className="album-card-collage-tile">
-          {isVideoUrl(url) ? (
-            <video src={getUploadUrl(url)} muted preload="metadata" />
-          ) : (
-            <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
-          )}
+          <UploadMedia url={url} thumbnail />
           {i === visible.length - 1 && overflow > 0 && <span className="album-card-collage-more">+{overflow}</span>}
         </span>
       ))}

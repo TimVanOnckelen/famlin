@@ -32,6 +32,7 @@ type UploadRow = {
   bound: boolean;
   groupIds: string[];
   serverWide: boolean;
+  livePhoto?: { assetKey: string } | null;
 };
 
 // Who an upload is for, as set by the site that attaches it:
@@ -69,7 +70,7 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
   if (rowCache.has(assetKey)) return rowCache.get(assetKey) ?? null;
   const row = await prisma.upload.findUnique({
     where: { assetKey },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true },
+    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true, livePhoto: { select: { assetKey: true } } },
   });
   cacheRow(assetKey, row);
   return row;
@@ -96,6 +97,7 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
 export async function canReadUpload(pathOrFilename: string, userId: string): Promise<boolean> {
   const row = await getUploadRow(uploadAssetKey(pathOrFilename));
   if (!row) return true;
+  if (row.livePhoto) return canReadUpload(`/uploads/${row.livePhoto.assetKey}.jpg`, userId);
   if (row.circleId) return isCircleMember(row.circleId, userId);
   if (!row.bound) return row.uploaderId === userId;
   if (row.serverWide) return true;
@@ -154,6 +156,12 @@ export async function bindAssetsToScope(
 ): Promise<void> {
   const assetKeys = [...new Set(assetPaths.filter((p): p is string => !!p).map(uploadAssetKey))];
   if (assetKeys.length === 0) return;
+  const livePhotos = await prisma.upload.findMany({ where: { assetKey: { in: assetKeys } }, select: { motionAssetKey: true, livePhoto: { select: { assetKey: true } } } });
+  for (const photo of livePhotos) {
+    for (const related of [photo.motionAssetKey, photo.livePhoto?.assetKey]) {
+      if (related && !assetKeys.includes(related)) assetKeys.push(related);
+    }
+  }
 
   await tx.upload.updateMany({
     where: { assetKey: { in: assetKeys }, uploaderId, bound: false },
@@ -182,8 +190,8 @@ export async function bindAssetsToScope(
 
 function scopeData(scope: UploadScope) {
   return scope === SERVER_WIDE
-    ? { bound: true, serverWide: true, circleId: null, groupIds: [] }
-    : { bound: true, serverWide: false, circleId: scope.circleId ?? null, groupIds: [...new Set(scope.groupIds)] };
+    ? { bound: true, uploadSessionId: null, serverWide: true, circleId: null, groupIds: [] }
+    : { bound: true, uploadSessionId: null, serverWide: false, circleId: scope.circleId ?? null, groupIds: [...new Set(scope.groupIds)] };
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset
@@ -213,7 +221,7 @@ export async function isUnboundUploadOwnedBy(assetPath: string, userId: string):
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 // Every extension routes/uploads.ts can have written an original under.
-const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
+const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.mp4', '.mov', '.m4v', '.webm'];
 
 // Permanently removes every file one upload produced — the served copy, its
 // -thumbnail.jpg, the never-served original, and any cached HEIC rendition
@@ -228,6 +236,8 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
   // bare uuid rather than trust every future caller.
   if (!UUID_REGEX.test(assetKey)) return;
 
+  const livePhoto = await prisma.upload.findUnique({ where: { assetKey }, include: { motionUpload: true } });
+  if (livePhoto?.motionUpload?.mediaUrl) await deleteUploadFiles(livePhoto.motionUpload.mediaUrl);
   const served = path.basename(assetPath);
   const candidates = [
     path.join(uploadsDir, served),
@@ -237,6 +247,7 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
     path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
   ];
   await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})));
+  await fsp.rm(path.join(uploadsDir, 'originals', assetKey), { recursive: true, force: true });
 
   await prisma.upload.deleteMany({ where: { assetKey } });
   invalidateUploadCache([assetKey]);
@@ -260,5 +271,12 @@ export async function claimUnboundUpload(
     data: scopeData(scope),
   });
   invalidateUploadCache([assetKey]);
+  if (count === 1) {
+    const photo = await prisma.upload.findUnique({ where: { assetKey }, select: { motionAssetKey: true } });
+    if (photo?.motionAssetKey) {
+      await tx.upload.updateMany({ where: { assetKey: photo.motionAssetKey, uploaderId, bound: false }, data: scopeData(scope) });
+      invalidateUploadCache([photo.motionAssetKey]);
+    }
+  }
   return count === 1;
 }
