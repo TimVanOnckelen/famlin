@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useLocation } from 'react-router';
 import { FeedPage } from '@/pages/FeedPage';
-import { makePost, makeUser, renderWithQueryClient } from '@/test/fixtures';
+import { createTestQueryClient, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures';
 import { fetchGroups, fetchMyCircles, fetchPosts } from '@famlin/api-client';
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -113,6 +113,38 @@ describe('FeedPage', () => {
     vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null });
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
     expect(await screen.findByText(/No posts yet/)).toBeInTheDocument();
+  });
+
+  it('explains the no-family state and drops every New post affordance for groupless users', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null });
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+
+    expect(await screen.findByText(/not part of any family/)).toBeInTheDocument();
+    // Neither the feed empty state's button nor the shell's sidebar one.
+    expect(screen.queryByRole('button', { name: 'New post' })).not.toBeInTheDocument();
+  });
+
+  it('drops the New post affordance on the very first render for a bootstrapped-groupless cold load', () => {
+    // App.tsx's bootstrap seeded ['groups'] with [] before the first route
+    // rendered — no waitFor: the composer affordance must never flash in for
+    // a user in no families.
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(['groups'], []);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />, { queryClient });
+
+    expect(screen.queryByRole('button', { name: 'New post' })).not.toBeInTheDocument();
+  });
+
+  it('renders the family filter on the very first render from the bootstrapped groups list', () => {
+    // A member of families gets their filter chips before any fetch answers —
+    // the cold load costs them nothing.
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(['groups'], groups);
+    renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />, { queryClient });
+
+    expect(screen.getByRole('button', { name: 'Familie de Vries' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Neefjes' })).toBeInTheDocument();
   });
 
   it('offers Show more only when a next cursor exists', async () => {
