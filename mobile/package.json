@@ -1,6 +1,6 @@
 {
   "name": "famlin-mobile",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "main": "index.js",
   "description": "Expo React Native mobile app for Famlin",
