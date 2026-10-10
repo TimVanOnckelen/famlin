@@ -47,6 +47,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   famlin-backend:
     # Pre-built, versioned image published on every GitHub release.
@@ -67,6 +72,18 @@ services:
       - famlin-uploads:/app/uploads
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   famlin-db-data:
@@ -116,6 +133,8 @@ Check that both containers are healthy:
 docker compose ps
 docker compose logs -f famlin-backend
 ```
+
+`docker compose ps` should show both containers as `healthy` once startup (including migrations) finishes. `famlin-backend`'s healthcheck polls `GET /health`, which answers `200` only when the database is reachable and the uploads volume is writable, and `503` otherwise. The response never says which check failed; that's in `docker compose logs famlin-backend`. Both containers rotate their logs (3 × 10 MB each), so a long-running install doesn't slowly fill its disk.
 
 The API is now listening on port 3000 inside the Docker network (and on the host, per the `ports:` mapping in `docker-compose.yml`).
 

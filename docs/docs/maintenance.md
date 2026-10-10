@@ -55,6 +55,10 @@ docker compose -f docker-compose.yml up -d
 
 The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember.
 
+When stopped or updated, the backend finishes requests already in progress (an upload mid-write, say) for up to 30 seconds (`stop_grace_period` in `docker-compose.yml`) before it exits.
+
+**Keep your `docker-compose.yml` up to date too.** `pull` only updates the image, not your copy of the compose file. Releases occasionally improve the compose file itself (for example the backend healthcheck, log rotation and shutdown grace period). Compare yours against the [repository's `docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml), or the one attached to each release, after updating.
+
 If you pinned `FAMLIN_VERSION` in `.env` (see below), bump it before pulling so you get the version you expect rather than a moved `latest` tag.
 
 If you're [building from source](#building-from-source-instead) instead of running the pre-built image, update with `git pull && docker compose up -d --build` instead.
@@ -117,6 +121,8 @@ Make sure the database and user already exist — Famlin does not create the dat
 ## Troubleshooting
 
 **Containers won't start / `JWT_SECRET is required`** — `docker-compose.yml` fails fast if `JWT_SECRET` isn't set. Confirm `.env` is in the same directory you run `docker compose` from.
+
+**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or the uploads volume isn't writable. The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
 
 **Migrations fail on startup** — check `docker compose logs famlin-backend`. This usually means the `famlin-db` container isn't reachable yet or `DATABASE_URL` doesn't match its credentials.
 

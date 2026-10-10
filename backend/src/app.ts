@@ -6,7 +6,7 @@ import multipart from '@fastify/multipart';
 import staticPlugin from '@fastify/static';
 import path from 'path';
 import fs from 'fs/promises';
-import { createReadStream } from 'fs';
+import { createReadStream, constants as fsConstants } from 'fs';
 import { ZodError } from 'zod';
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
 import { canReadUpload } from './services/uploads.js';
@@ -16,6 +16,7 @@ import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
 import readOnlyPlugin from './plugins/readOnly.js';
 import { requestPathname } from './utils/requestPath.js';
 import { config, uploadsDir } from './config.js';
+import { prisma } from './db.js';
 import { getT } from './i18n/index.js';
 import { registerNotificationSubscriber } from './subscribers/notifications.js';
 
@@ -384,7 +385,29 @@ export async function buildApp() {
     return reply.status(404).send({ error: getT(request)('errors.notFound') });
   });
 
-  fastify.get('/health', async () => ({ status: 'ok' }));
+  // Polled by the container healthcheck (docker-compose.yml) every 30s, so
+  // it's exempt from rate limiting and its request logs are suppressed. It's
+  // public and unauthenticated: the response carries only ok/error, and which
+  // check failed goes to the server log, never to the caller.
+  fastify.get(
+    '/health',
+    { logLevel: config.NODE_ENV === 'test' ? 'silent' : 'warn', config: { rateLimit: false } },
+    async (request, reply) => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch (err) {
+        request.log.error({ err }, 'health check failed: database unreachable');
+        return reply.status(503).send({ status: 'error' });
+      }
+      try {
+        await fs.access(uploadsDir, fsConstants.W_OK);
+      } catch (err) {
+        request.log.error({ err }, 'health check failed: uploads directory not writable');
+        return reply.status(503).send({ status: 'error' });
+      }
+      return { status: 'ok' };
+    }
+  );
 
   return fastify;
 }

@@ -157,4 +157,7 @@ USER node
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# `exec` makes node replace the shell as PID 1, so it receives docker stop's
+# SIGTERM and shuts down gracefully (src/server.ts) — a shell as PID 1
+# doesn't forward signals, and node got SIGKILLed after the grace period.
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/server.js"]

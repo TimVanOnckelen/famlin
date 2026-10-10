@@ -17,6 +17,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    # Docker's default json-file driver never rotates, which slowly fills the
+    # disk on a long-running install (a NAS especially).
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   famlin-backend:
     # Pre-built, versioned image published by .github/workflows/docker-publish.yml
@@ -42,6 +49,25 @@ services:
       - famlin-uploads:/app/uploads
     ports:
       - "3000:3000"
+    # /health checks the database and the uploads volume (200 or 503). The
+    # start period covers schema migrations, which run before the server
+    # listens.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    # Time to finish in-flight requests (an upload mid-write) on docker stop
+    # or an update, before Docker kills the server.
+    stop_grace_period: 30s
+    # Docker's default json-file driver never rotates, which slowly fills the
+    # disk on a long-running install (a NAS especially).
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   famlin-db-data:

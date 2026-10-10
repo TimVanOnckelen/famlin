@@ -57,7 +57,7 @@ services:
       sh -c "
         npx prisma migrate deploy &&
         node dist/prisma/seed.js &&
-        node dist/server.js
+        exec node dist/server.js
       "
 
 volumes:
