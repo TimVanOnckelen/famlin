@@ -282,10 +282,12 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
               onPress={() => favoriteMutation.mutate()}
               disabled={favoriteMutation.isPending}
               accessibilityLabel={t('feed.favorite')}
+              accessibilityState={{ selected: !!post.favoritedByMe }}
             >
               <Icon
                 name="bookmark"
                 size={16}
+                filled={!!post.favoritedByMe}
                 color={post.favoritedByMe ? colors.primary : colors.textMuted}
               />
             </TouchableOpacity>
@@ -320,10 +322,12 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
                 disabled={favoriteMutation.isPending}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityLabel={t('feed.favorite')}
+                accessibilityState={{ selected: !!post.favoritedByMe }}
               >
                 <Icon
                   name="bookmark"
                   size={20}
+                  filled={!!post.favoritedByMe}
                   color={post.favoritedByMe ? colors.primary : colors.textMuted}
                 />
               </TouchableOpacity>

@@ -410,6 +410,7 @@ function PhotoActionsBar({
               <Icon
                 name="bookmark"
                 size={22}
+                filled={!!post.favoritedByMe}
                 color={post.favoritedByMe ? colors.primary : colors.white}
               />
             </TouchableOpacity>

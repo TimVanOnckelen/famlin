@@ -659,10 +659,12 @@ export function PostDetailScreen() {
                   onPress={() => favoriteMutation.mutate()}
                   disabled={favoriteMutation.isPending}
                   accessibilityLabel={t('postDetail.favorite')}
+                  accessibilityState={{ selected: !!post.favoritedByMe }}
                 >
                   <Icon
                     name="bookmark"
                     size={18}
+                    filled={!!post.favoritedByMe}
                     color={post.favoritedByMe ? colors.primary : colors.textMuted}
                   />
                 </TouchableOpacity>
