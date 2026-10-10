@@ -19,6 +19,8 @@
     "web"
   ],
   "scripts": {
+    "install:all": "npm i && npm --prefix backend i && npm --prefix backend/admin i && npm --prefix mobile i && npm --prefix docs i",
+    "clean:all": "rm -rf node_modules web/node_modules backend/node_modules backend/admin/node_modules mobile/node_modules docs/node_modules packages/*/node_modules backend/dist web/dist mobile/dist mobile/build mobile/web-build mobile/.expo docs/build docs/.docusaurus",
     "dev:backend": "cd backend && npm run dev",
     "test:backend": "cd backend && npm test",
     "dev:admin": "cd backend/admin && npm run dev",

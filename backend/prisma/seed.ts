@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient, type ReactionType } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
@@ -5,8 +6,13 @@ import bcrypt from 'bcryptjs';
 // Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
 // rather than importing src/config.ts, so the Dockerfile's standalone
 // `tsc prisma/seed.ts` compile for the demo image stays self-contained.
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required. Set it in backend/.env or the process environment.');
+}
+
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString: databaseUrl }),
 });
 
 async function main() {
