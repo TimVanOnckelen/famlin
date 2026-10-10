@@ -41,6 +41,11 @@ describe('GET /health', () => {
   });
 
   it('is not rate limited', async () => {
+    // Control: other routes carry the rate-limit header, so its absence below
+    // means /health is exempt rather than that the header never exists.
+    const other = await app.inject({ method: 'GET', url: '/api/auth/setup-status' });
+    expect(other.headers['x-ratelimit-limit']).toBeDefined();
+
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.headers['x-ratelimit-limit']).toBeUndefined();
   });
