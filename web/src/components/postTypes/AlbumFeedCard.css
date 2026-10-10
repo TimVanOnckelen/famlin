@@ -90,20 +90,6 @@
 
 /* ── Badge ──────────────────────────────────────────────────────────────── */
 
-.album-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 13px;
-  border-radius: var(--r-pill);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  background: var(--fam-primary);
-  color: white;
-}
-
 .album-card-badge-row {
   display: flex;
   align-items: center;
@@ -143,20 +129,6 @@
   align-items: center;
   gap: 8px;
   margin-top: 6px;
-}
-
-.album-card-contributors-stack {
-  display: flex;
-}
-
-.album-card-contributor-face {
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--fam-surface);
-  margin-left: -8px;
-}
-
-.album-card-contributor-face:first-child {
-  margin-left: 0;
 }
 
 .album-card-contributors-text {

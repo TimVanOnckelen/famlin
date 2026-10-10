@@ -13,6 +13,8 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { AvatarStack } from '@/components/AvatarStack';
+import { Badge } from '@/components/Badge';
 import { AppShell } from '@/components/AppShell';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { CommentsSection } from '@/components/CommentsSection';
@@ -114,10 +116,10 @@ export function TripDetailPage({
         </div>
 
         <section className="trip-detail-header">
-          <span className={`trip-badge ${trip.closed ? 'trip-badge-closed' : 'trip-badge-active'}`}>
+          <Badge color="info" variant={trip.closed ? 'outline' : 'solid'}>
             <Icon name="briefcase" size={12} strokeWidth={2.2} />
             {trip.closed ? t('trip.detail.closedBadge') : t('trip.detail.activeBadge', { day: trip.dayNumber ?? 1 })}
-          </span>
+          </Badge>
           <h1 className="trip-detail-title">{trip.title}</h1>
           {trip.destination && <div className="trip-detail-destination">→ {trip.destination}</div>}
 
@@ -145,13 +147,7 @@ export function TripDetailPage({
 
           {travelers.length > 0 && (
             <div className="trip-detail-travelers" aria-label={t('trip.detail.travelersRowLabel')}>
-              <div className="trip-detail-travelers-stack">
-                {travelers.slice(0, 5).map((traveler) => (
-                  <span key={traveler.id} className="trip-detail-traveler-face">
-                    <Avatar name={traveler.name} avatarUrl={traveler.avatarUrl} size={26} />
-                  </span>
-                ))}
-              </div>
+              <AvatarStack people={travelers} size={26} />
               <span className="trip-detail-travelers-text">
                 {t('trip.detail.travelersWith', { names: travelers.map((traveler) => traveler.name).join(', ') })}
               </span>

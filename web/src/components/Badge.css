@@ -1,0 +1,39 @@
+.badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 13px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background: var(--fam-primary);
+  color: white;
+}
+
+.badge-info {
+  background: var(--fam-trip);
+  color: white;
+}
+
+.badge-warning {
+  background: var(--fam-milestone);
+  color: var(--fam-milestone-text);
+}
+
+.badge-outline.badge-primary {
+  background: transparent;
+  border: 1.5px solid var(--fam-primary);
+  color: var(--fam-primary-dark);
+}
+
+.badge-outline.badge-info {
+  background: transparent;
+  border: 1.5px solid var(--fam-trip-border);
+  color: var(--fam-trip-dark);
+}

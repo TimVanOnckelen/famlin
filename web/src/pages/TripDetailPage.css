@@ -102,21 +102,6 @@
   margin-top: 12px;
 }
 
-.trip-detail-travelers-stack {
-  display: flex;
-}
-
-.trip-detail-traveler-face {
-  display: block;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--fam-surface);
-  margin-left: -8px;
-}
-
-.trip-detail-traveler-face:first-child {
-  margin-left: 0;
-}
-
 .trip-detail-travelers-text {
   font-size: 13.5px;
   font-weight: 600;

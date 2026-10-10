@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Post, votePoll, patchPostInCaches } from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
+import { AvatarStack } from '@/components/AvatarStack';
 import { Icon } from '@/components/Icon';
 import '../PostCard.css';
 
@@ -56,15 +56,7 @@ export function PollCardBody({ post }: { post: Post }) {
                     <span className="poll-option-count">{t('poll.votes', { count: option.voteCount })}</span>
                   </span>
                 </span>
-                {option.voters.length > 0 && (
-                  <span className="poll-option-voters">
-                    {option.voters.slice(0, 5).map((voter) => (
-                      <span key={voter.id} className="poll-voter-avatar">
-                        <Avatar name={voter.name} avatarUrl={voter.avatarUrl} size={20} />
-                      </span>
-                    ))}
-                  </span>
-                )}
+                {option.voters.length > 0 && <AvatarStack people={option.voters} size={20} />}
               </span>
             </button>
           );

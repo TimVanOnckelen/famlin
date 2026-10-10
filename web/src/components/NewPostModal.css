@@ -102,6 +102,9 @@
 }
 
 .type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 8px 16px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--fam-border);
@@ -162,6 +165,7 @@
 
 .poll-option-input {
   flex: 1;
+  min-width: 0;
   border-radius: var(--r-sm);
   border: 1.5px solid var(--fam-border);
   background: var(--fam-surface);

@@ -16,6 +16,7 @@ import {
 } from '@famlin/api-client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { AvatarStack } from '@/components/AvatarStack';
 import { AppShell } from '@/components/AppShell';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { ShimmerImage } from '@/components/ShimmerImage';
@@ -250,11 +251,7 @@ export function ChatPage({
               <section className="chat-panel">
                 <header className="chat-panel-header">
                   <div className="chat-panel-avatars">
-                    {members.slice(0, 3).map((member) => (
-                      <span key={member.id} className="chat-avatar-overlap">
-                        <Avatar name={member.name} avatarUrl={member.avatarUrl} size={38} />
-                      </span>
-                    ))}
+                    <AvatarStack people={members} size={38} max={3} overlap={12} />
                   </div>
                   <div className="chat-panel-heading">
                     <div className="chat-panel-name">{activeGroup.name}</div>

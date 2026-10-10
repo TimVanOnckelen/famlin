@@ -92,17 +92,7 @@
 
 /* ── Milestone badge ────────────────────────────────────────────────────── */
 
-.milestone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--fam-milestone);
-  padding: 4px 13px;
-  border-radius: var(--r-pill);
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--fam-milestone-text);
-  letter-spacing: 0.3px;
+.post-milestone-badge {
   margin-bottom: 10px;
 }
 
@@ -447,21 +437,6 @@ a.post-time:focus-visible {
 .poll-option-pct {
   color: var(--fam-primary-dark);
   font-weight: 800;
-}
-
-.poll-option-voters {
-  display: flex;
-}
-
-.poll-voter-avatar {
-  display: block;
-  border-radius: 50%;
-  border: 2px solid var(--fam-surface);
-  margin-left: -8px;
-}
-
-.poll-voter-avatar:first-child {
-  margin-left: 0;
 }
 
 .poll-footer {
@@ -897,6 +872,7 @@ a.post-time:focus-visible {
 
 .comment-input {
   flex: 1;
+  min-width: 0;
   background: var(--fam-bg);
   border: 1.5px solid var(--fam-border);
   border-radius: 22px;
