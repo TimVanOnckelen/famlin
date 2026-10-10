@@ -111,6 +111,14 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
+      # Upload integration tests generate MOV fixtures and verify the
+      # background H.264 conversion with ffmpeg and ffprobe.
+      - name: Install media processing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -hide_banner -version
+          ffprobe -hide_banner -version
       - name: Install dependencies
         working-directory: backend
         run: npm ci
