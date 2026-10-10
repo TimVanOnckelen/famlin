@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 // The real Feather set pulls in expo-font's native loader; a stub glyph is
-// enough to tell the outline path apart from the filled SVG one.
+// enough to tell the Feather font path apart from the SVG one.
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
   return { Feather: ({ name }: { name: string }) => <Text testID={`feather-${name}`}>{name}</Text> };
@@ -19,10 +19,11 @@ describe('Icon', () => {
     expect(queryByTestId('feather-bookmark')).toBeNull();
   });
 
-  it('draws the outline glyph when not filled', async () => {
+  it('draws the outline as the same SVG when not filled', async () => {
     const { queryByTestId } = await render(<Icon name="bookmark" />);
     expect(queryByTestId('icon-bookmark-filled')).toBeNull();
-    expect(queryByTestId('feather-bookmark')).not.toBeNull();
+    expect(queryByTestId('icon-bookmark-outline')).not.toBeNull();
+    expect(queryByTestId('feather-bookmark')).toBeNull();
   });
 
   it('ignores filled for icons without a filled variant', async () => {

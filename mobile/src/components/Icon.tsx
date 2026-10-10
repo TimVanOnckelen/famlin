@@ -33,24 +33,27 @@ interface IconProps {
   name: IconName;
   size?: number;
   color?: string;
-  /** Only for icons with a meaningful "on" state (a saved bookmark); ignored for others. */
+  /** Only for icons with a meaningful "on" state (a saved bookmark, a pinned story); ignored for others. */
   filled?: boolean;
 }
 
 export function Icon({ name, size = 24, color = colors.textTitle, filled = false }: IconProps) {
-  const fillablePath = filled ? FILLABLE_PATHS[name] : undefined;
+  // A fillable icon draws both states as SVG, so toggling `filled` keeps the
+  // exact same box — the Feather font glyph's line-height differs from `size`,
+  // which would make the icon jump on toggle.
+  const fillablePath = FILLABLE_PATHS[name];
   if (fillablePath) {
     return (
       <Svg
         width={size}
         height={size}
         viewBox="0 0 24 24"
-        fill={color}
+        fill={filled ? color : 'none'}
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        testID={`icon-${name}-filled`}
+        testID={filled ? `icon-${name}-filled` : `icon-${name}-outline`}
       >
         <Path d={fillablePath} />
       </Svg>

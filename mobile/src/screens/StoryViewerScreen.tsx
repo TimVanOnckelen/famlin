@@ -300,7 +300,12 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
                   disabled={pin.isPending}
                   accessibilityLabel={story.pinnedAt ? t('stories.unpin') : t('stories.pin')}
                 >
-                  <Icon name="bookmark" size={22} color={story.pinnedAt ? colors.milestone : colors.white} />
+                  <Icon
+                    name="bookmark"
+                    size={22}
+                    filled={!!story.pinnedAt}
+                    color={story.pinnedAt ? colors.milestone : colors.white}
+                  />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
