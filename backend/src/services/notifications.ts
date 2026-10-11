@@ -1,22 +1,22 @@
-import { prisma } from '../db.js';
-import { getAllSettings } from './settings.js';
-import i18n from '../i18n/index.js';
-import { notificationChannels } from './notificationChannels/index.js';
-import { pushChannel, sendPush } from './notificationChannels/push.js';
-import type { NotifyType, Recipient } from './notificationChannels/types.js';
-import { filterRecipientsByCircle } from './circles.js';
+import { prisma } from '../db.js'
+import { getAllSettings } from './settings.js'
+import i18n from '../i18n/index.js'
+import { notificationChannels } from './notificationChannels/index.js'
+import { pushChannel, sendPush } from './notificationChannels/push.js'
+import type { NotifyType, Recipient } from './notificationChannels/types.js'
+import { filterRecipientsByCircle } from './circles.js'
 
-export type { NotifyType, Recipient } from './notificationChannels/types.js';
+export type { NotifyType, Recipient } from './notificationChannels/types.js'
 // Re-exported for callers that only need the SMTP transport (not a full
 // notification), so they don't have to know channels moved.
-export { createTransporter } from './notificationChannels/email.js';
+export { createTransporter } from './notificationChannels/email.js'
 
 // No real user has this id, so notifyGroup's sender-exclusion filter never
 // excludes anyone — used by system-generated notifications (on-this-day,
 // new-media-assets) that aren't "from" any group member.
-export const SYSTEM_SENDER_ID = '__system__';
+export const SYSTEM_SENDER_ID = '__system__'
 
-const EXCERPT_MAX_LENGTH = 80;
+const EXCERPT_MAX_LENGTH = 80
 
 // Trims a post/comment body down to a short quote for notification text.
 // Collapses newlines so a multi-line post doesn't blow up a one-line
@@ -24,10 +24,10 @@ const EXCERPT_MAX_LENGTH = 80;
 // with no text of its own (a plain emoji, like reactionEmoji below, needs no
 // translation) rather than leaving the notification with an empty `""`.
 export function excerptText(content?: string | null, fallback = ''): string {
-  if (!content) return fallback;
-  const collapsed = content.replace(/\s+/g, ' ').trim();
-  if (!collapsed) return fallback;
-  return collapsed.length > EXCERPT_MAX_LENGTH ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…` : collapsed;
+  if (!content) return fallback
+  const collapsed = content.replace(/\s+/g, ' ').trim()
+  if (!collapsed) return fallback
+  return collapsed.length > EXCERPT_MAX_LENGTH ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…` : collapsed
 }
 
 // Mirrors mobile's constants/reactions.ts REACTION_EMOJI — kept as a small
@@ -39,10 +39,10 @@ const REACTION_EMOJI: Record<string, string> = {
   WOW: '😮',
   SAD: '😢',
   CARE: '🥰',
-};
+}
 
 export function reactionEmoji(type: string): string {
-  return REACTION_EMOJI[type] ?? REACTION_EMOJI.LIKE;
+  return REACTION_EMOJI[type] ?? REACTION_EMOJI.LIKE
 }
 
 // Maps each event to the i18next key (under `notifications.`) used to render
@@ -68,7 +68,7 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   new_story: 'notifications.newStory',
   story_reply: 'notifications.storyReply',
   story_reaction: 'notifications.storyReaction',
-};
+}
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
 // no text — these types fall back to a "media" variant of their template
@@ -78,29 +78,29 @@ const MEDIA_MESSAGE_KEY: Partial<Record<NotifyType, string>> = {
   new_post: 'notifications.newPostMedia',
   new_like_post: 'notifications.newLikePostMedia',
   on_this_day: 'notifications.onThisDayMedia',
-};
+}
 
 function resolveMessageKey(type: NotifyType, params: Record<string, string | number>): string {
-  const hasExcerpt = typeof params.excerpt === 'string' && params.excerpt.trim().length > 0;
-  if (!hasExcerpt && MEDIA_MESSAGE_KEY[type]) return MEDIA_MESSAGE_KEY[type]!;
-  return MESSAGE_KEY[type];
+  const hasExcerpt = typeof params.excerpt === 'string' && params.excerpt.trim().length > 0
+  if (!hasExcerpt && MEDIA_MESSAGE_KEY[type]) return MEDIA_MESSAGE_KEY[type]!
+  return MESSAGE_KEY[type]
 }
 
 interface NotifyOptions {
-  type: NotifyType;
-  senderId: string;
+  type: NotifyType
+  senderId: string
   // Omitted (or null) for event types with no associated post — currently
   // only new_media_assets, which is scoped to an album/group instead of a
   // single post.
-  postId?: string | null;
+  postId?: string | null
   // Set instead of postId for story notifications (new_story, story_reply,
   // story_reaction). Circle-filtered exactly like postId below.
-  storyId?: string | null;
+  storyId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
-  params: Record<string, string | number>;
-  recipientIds: string[];
+  params: Record<string, string | number>
+  recipientIds: string[]
   // Opt-in bundling: when set, a recipient who already has a `type` +
   // `postId` Notification row created at/after this timestamp gets that row
   // UPDATED in place (new message, marked unread again, createdAt refreshed
@@ -109,16 +109,16 @@ interface NotifyOptions {
   // such existing row gets the normal create-row-and-deliver path. Today
   // this only backs trip check-in bundling (see subscribers/notifications.ts)
   // but is generic enough for a future same-day-digest need.
-  bundleSince?: Date;
+  bundleSince?: Date
 }
 
 async function notify(options: NotifyOptions) {
-  const { type, senderId, params, recipientIds, bundleSince } = options;
-  const postId = options.postId ?? null;
-  const storyId = options.storyId ?? null;
+  const { type, senderId, params, recipientIds, bundleSince } = options
+  const postId = options.postId ?? null
+  const storyId = options.storyId ?? null
 
-  let ids = [...new Set(recipientIds)].filter((id) => id !== senderId);
-  if (ids.length === 0) return;
+  let ids = [...new Set(recipientIds)].filter((id) => id !== senderId)
+  if (ids.length === 0) return
 
   // Circle privacy is enforced HERE, once, rather than at each of the half
   // dozen places that assemble a recipient list (group fan-out, thread
@@ -131,15 +131,15 @@ async function notify(options: NotifyOptions) {
   // A notification with no postId (nothing to leak) skips the query entirely,
   // as does a post that isn't circle-scoped.
   if (postId) {
-    const post = await prisma.post.findUnique({ where: { id: postId }, select: { circleId: true } });
-    ids = await filterRecipientsByCircle(post?.circleId ?? null, ids);
-    if (ids.length === 0) return;
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { circleId: true } })
+    ids = await filterRecipientsByCircle(post?.circleId ?? null, ids)
+    if (ids.length === 0) return
   }
   // Same rule for a circle-scoped story.
   if (storyId) {
-    const story = await prisma.story.findUnique({ where: { id: storyId }, select: { circleId: true } });
-    ids = await filterRecipientsByCircle(story?.circleId ?? null, ids);
-    if (ids.length === 0) return;
+    const story = await prisma.story.findUnique({ where: { id: storyId }, select: { circleId: true } })
+    ids = await filterRecipientsByCircle(story?.circleId ?? null, ids)
+    if (ids.length === 0) return
   }
 
   const recipients: Recipient[] = await prisma.user.findMany({
@@ -156,17 +156,17 @@ async function notify(options: NotifyOptions) {
       pushOnChitchat: true,
       pushOnStory: true,
     },
-  });
-  if (recipients.length === 0) return;
+  })
+  if (recipients.length === 0) return
 
-  const settings = await getAllSettings();
-  const t = i18n.getFixedT(settings.defaultLanguage);
-  const message = t(resolveMessageKey(type, params), params);
+  const settings = await getAllSettings()
+  const t = i18n.getFixedT(settings.defaultLanguage)
+  const message = t(resolveMessageKey(type, params), params)
 
   // Recipients who already have a bundle-eligible row get it updated
   // instead of a new one created (and no channel delivery below) — everyone
   // else falls through to the normal create + deliver path.
-  let updateRecipientIds = new Set<string>();
+  let updateRecipientIds = new Set<string>()
   if (bundleSince && postId) {
     const existing = await prisma.notification.findMany({
       where: {
@@ -176,17 +176,17 @@ async function notify(options: NotifyOptions) {
         createdAt: { gte: bundleSince },
       },
       select: { id: true, userId: true },
-    });
+    })
     if (existing.length > 0) {
-      updateRecipientIds = new Set(existing.map((row) => row.userId));
+      updateRecipientIds = new Set(existing.map((row) => row.userId))
       await prisma.notification.updateMany({
         where: { id: { in: existing.map((row) => row.id) } },
         data: { message, readAt: null, createdAt: new Date() },
-      });
+      })
     }
   }
 
-  const createRecipients = recipients.filter((r) => !updateRecipientIds.has(r.id));
+  const createRecipients = recipients.filter((r) => !updateRecipientIds.has(r.id))
 
   // The in-app history row is written unconditionally (for non-bundled
   // recipients) — channels below are the optional deliveries of it.
@@ -199,7 +199,7 @@ async function notify(options: NotifyOptions) {
         relatedStoryId: storyId,
         message,
       })),
-    });
+    })
   }
 
   // Channels run in parallel and each failure is trapped, so one broken
@@ -209,73 +209,73 @@ async function notify(options: NotifyOptions) {
   // spamming one push per stop.
   await Promise.all(
     notificationChannels.map(async (channel) => {
-      if (!channel.isEnabled(settings)) return;
-      const wanted = createRecipients.filter((r) => channel.wants(r, type));
-      if (wanted.length === 0) return;
+      if (!channel.isEnabled(settings)) return
+      const wanted = createRecipients.filter((r) => channel.wants(r, type))
+      if (wanted.length === 0) return
       try {
-        await channel.send({ type, recipients: wanted, message, settings, postId, storyId });
+        await channel.send({ type, recipients: wanted, message, settings, postId, storyId })
       } catch (err) {
-        console.error(`Notification channel "${channel.id}" failed`, err);
+        console.error(`Notification channel "${channel.id}" failed`, err)
       }
     })
-  );
+  )
 }
 
 // Notifies every other member of a group — used for events that concern the
 // whole group (new post, new comment).
 export async function notifyGroup(options: {
-  type: NotifyType;
-  groupId: string;
-  senderId: string;
-  postId?: string | null;
+  type: NotifyType
+  groupId: string
+  senderId: string
+  postId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
-  params: Record<string, string | number>;
+  params: Record<string, string | number>
 }) {
-  const { groupId, ...rest } = options;
+  const { groupId, ...rest } = options
   const members = await prisma.groupMember.findMany({
     where: { groupId, userId: { not: options.senderId } },
-  });
+  })
 
-  await notify({ ...rest, recipientIds: members.map((m) => m.userId) });
+  await notify({ ...rest, recipientIds: members.map((m) => m.userId) })
 }
 
 // Notifies a single user — used for events that only concern one person
 // (e.g. someone liking their post).
 export async function notifyUser(options: {
-  type: NotifyType;
-  userId: string;
-  senderId: string;
-  postId?: string | null;
-  storyId?: string | null;
+  type: NotifyType
+  userId: string
+  senderId: string
+  postId?: string | null
+  storyId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
-  params: Record<string, string | number>;
+  params: Record<string, string | number>
 }) {
-  const { userId, ...rest } = options;
-  await notify({ ...rest, recipientIds: [userId] });
+  const { userId, ...rest } = options
+  await notify({ ...rest, recipientIds: [userId] })
 }
 
 // Notifies an explicit set of users — used for events that concern people
 // engaged with a specific thread (the post's author and anyone who has
 // already commented on it), rather than the whole group.
 export async function notifyUsers(options: {
-  type: NotifyType;
-  userIds: string[];
-  senderId: string;
-  postId?: string | null;
-  storyId?: string | null;
+  type: NotifyType
+  userIds: string[]
+  senderId: string
+  postId?: string | null
+  storyId?: string | null
   // Extra keys beyond author/group (e.g. `count` for on-this-day's
   // "N years ago" pluralization) are simply ignored by templates that don't
   // reference them, so this stays permissive rather than per-type.
-  params: Record<string, string | number>;
+  params: Record<string, string | number>
   // See NotifyOptions.bundleSince above.
-  bundleSince?: Date;
+  bundleSince?: Date
 }) {
-  const { userIds, ...rest } = options;
-  await notify({ ...rest, recipientIds: userIds });
+  const { userIds, ...rest } = options
+  await notify({ ...rest, recipientIds: userIds })
 }
 
 // Thrown for expected, user-facing push-send failures so routes can map them
@@ -287,16 +287,16 @@ export class PushNotificationError extends Error {
     public code: string,
     message?: string
   ) {
-    super(message ?? code);
-    this.name = 'PushNotificationError';
+    super(message ?? code)
+    this.name = 'PushNotificationError'
   }
 }
 
 export interface PostPushResendResult {
-  recipientCount: number;
-  tokenCount: number;
-  successCount: number;
-  failureCount: number;
+  recipientCount: number
+  tokenCount: number
+  successCount: number
+  failureCount: number
 }
 
 // Admin-only manual resend of a post's "new post" push notification — e.g. a
@@ -317,18 +317,18 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
       author: { select: { name: true } },
       group: { select: { name: true } },
     },
-  });
-  if (!post) return null;
+  })
+  if (!post) return null
 
-  const settings = await getAllSettings();
+  const settings = await getAllSettings()
   if (!settings.pushNotificationsEnabled) {
-    throw new PushNotificationError('pushNotificationsDisabled');
+    throw new PushNotificationError('pushNotificationsDisabled')
   }
 
   const members = await prisma.groupMember.findMany({
     where: { groupId: post.groupId, userId: { not: post.authorId } },
     select: { userId: true },
-  });
+  })
 
   // This resend does NOT go through notify(), so it has to apply the circle
   // narrowing itself — a push renders its excerpt on the lock screen, so
@@ -338,9 +338,9 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
   const recipientIds = await filterRecipientsByCircle(
     post.circleId,
     members.map((m) => m.userId)
-  );
+  )
   if (recipientIds.length === 0) {
-    return { recipientCount: 0, tokenCount: 0, successCount: 0, failureCount: 0 };
+    return { recipientCount: 0, tokenCount: 0, successCount: 0, failureCount: 0 }
   }
 
   const recipients: Recipient[] = await prisma.user.findMany({
@@ -357,16 +357,16 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
       pushOnChitchat: true,
       pushOnStory: true,
     },
-  });
+  })
 
-  const wanted = recipients.filter((r) => pushChannel.wants(r, 'new_post'));
+  const wanted = recipients.filter((r) => pushChannel.wants(r, 'new_post'))
   if (wanted.length === 0) {
-    return { recipientCount: recipients.length, tokenCount: 0, successCount: 0, failureCount: 0 };
+    return { recipientCount: recipients.length, tokenCount: 0, successCount: 0, failureCount: 0 }
   }
 
-  const params = { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) };
-  const t = i18n.getFixedT(settings.defaultLanguage);
-  const message = t(resolveMessageKey('new_post', params), params);
+  const params = { author: post.author.name, group: post.group.name, excerpt: excerptText(post.content) }
+  const t = i18n.getFixedT(settings.defaultLanguage)
+  const message = t(resolveMessageKey('new_post', params), params)
 
   const result = await sendPush({
     type: 'new_post',
@@ -375,7 +375,7 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
     settings,
     postId: post.id,
     triggeredByAdminId,
-  });
+  })
 
-  return { recipientCount: recipients.length, ...result };
+  return { recipientCount: recipients.length, ...result }
 }

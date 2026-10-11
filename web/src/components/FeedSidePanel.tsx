@@ -1,9 +1,9 @@
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { fetchGroupMembers, fetchOnThisDay } from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import './FeedSidePanel.css';
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { fetchGroupMembers, fetchOnThisDay } from '@famlin/api-client'
+import { Avatar } from '@/components/Avatar'
+import { Icon } from '@/components/Icon'
+import './FeedSidePanel.css'
 
 // Large-screen-only extra content (≥1200px — see .feed-side-panel in
 // FeedPage.css), filling the space a single centered feed column leaves
@@ -15,21 +15,21 @@ import './FeedSidePanel.css';
 // when several (or no) families are selected, and hides either section on
 // its own if it comes back empty.
 export function FeedSidePanel({ groupId, onOpenPost }: { groupId: string; onOpenPost: (postId: string) => void }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   const onThisDayQuery = useQuery({
     queryKey: ['onThisDay', groupId],
     queryFn: () => fetchOnThisDay(groupId),
-  });
+  })
   const membersQuery = useQuery({
     queryKey: ['group-members', groupId],
     queryFn: () => fetchGroupMembers(groupId),
-  });
+  })
 
-  const onThisDay = onThisDayQuery.data ?? [];
-  const members = membersQuery.data ?? [];
+  const onThisDay = onThisDayQuery.data ?? []
+  const members = membersQuery.data ?? []
 
-  if (onThisDay.length === 0 && members.length === 0) return null;
+  if (onThisDay.length === 0 && members.length === 0) return null
 
   return (
     <aside className="feed-side-panel" aria-label={t('feed.sidePanelLabel')}>
@@ -61,5 +61,5 @@ export function FeedSidePanel({ groupId, onOpenPost }: { groupId: string; onOpen
         </section>
       )}
     </aside>
-  );
+  )
 }

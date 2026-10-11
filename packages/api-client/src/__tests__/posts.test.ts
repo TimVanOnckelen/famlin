@@ -1,164 +1,164 @@
 // posts.ts is stateless (no module-level singletons), but we still mock
 // `../client`'s `api` the same way __tests__/uploads.test.ts does, so these
 // tests never touch a real network.
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 vi.mock('../client', () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+}))
 
 describe('posts', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   describe('interactWithPost', () => {
     it('POSTs { key, value } to /posts/:postId/interactions and returns the full post', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-1', type: 'POLL' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-1', type: 'POLL' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { interactWithPost } = await import('../posts.js');
-      const result = await interactWithPost('post-1', 'vote', { optionId: 'opt-1' });
+      const { interactWithPost } = await import('../posts.js')
+      const result = await interactWithPost('post-1', 'vote', { optionId: 'opt-1' })
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-1/interactions', {
         key: 'vote',
         value: { optionId: 'opt-1' },
-      });
-      expect(result).toBe(fakePost);
-    });
+      })
+      expect(result).toBe(fakePost)
+    })
 
     it('omits value from the payload (as undefined) when not provided', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-2', type: 'POLL' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-2', type: 'POLL' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { interactWithPost } = await import('../posts.js');
-      await interactWithPost('post-2', 'some-key');
+      const { interactWithPost } = await import('../posts.js')
+      await interactWithPost('post-2', 'some-key')
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-2/interactions', {
         key: 'some-key',
         value: undefined,
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('votePoll', () => {
     it('delegates to interactWithPost with key "vote" and { optionId }', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-3', type: 'POLL' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-3', type: 'POLL' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { votePoll } = await import('../posts.js');
-      const result = await votePoll('post-3', 'opt-2');
+      const { votePoll } = await import('../posts.js')
+      const result = await votePoll('post-3', 'opt-2')
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-3/interactions', {
         key: 'vote',
         value: { optionId: 'opt-2' },
-      });
-      expect(result).toBe(fakePost);
-    });
-  });
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
 
   describe('checkInTrip', () => {
     it('delegates to interactWithPost with key "checkin" and the check-in body', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-4', type: 'TRIP' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-4', type: 'TRIP' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { checkInTrip } = await import('../posts.js');
-      const result = await checkInTrip('post-4', { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] });
+      const { checkInTrip } = await import('../posts.js')
+      const result = await checkInTrip('post-4', { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] })
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-4/interactions', {
         key: 'checkin',
         value: { place: 'Bologna', text: 'Lunch!', photoUrls: ['/uploads/a.jpg'] },
-      });
-      expect(result).toBe(fakePost);
-    });
-  });
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
 
   describe('closeTrip', () => {
     it('delegates to interactWithPost with key "close" and no value', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-5', type: 'TRIP' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-5', type: 'TRIP' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { closeTrip } = await import('../posts.js');
-      const result = await closeTrip('post-5');
+      const { closeTrip } = await import('../posts.js')
+      const result = await closeTrip('post-5')
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-5/interactions', {
         key: 'close',
         value: undefined,
-      });
-      expect(result).toBe(fakePost);
-    });
-  });
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
 
   describe('setTripTravelers', () => {
     it('delegates to interactWithPost with key "setTravelers" and { userIds }', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-6', type: 'TRIP' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-6', type: 'TRIP' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { setTripTravelers } = await import('../posts.js');
-      const result = await setTripTravelers('post-6', ['u1', 'u2']);
+      const { setTripTravelers } = await import('../posts.js')
+      const result = await setTripTravelers('post-6', ['u1', 'u2'])
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-6/interactions', {
         key: 'setTravelers',
         value: { userIds: ['u1', 'u2'] },
-      });
-      expect(result).toBe(fakePost);
-    });
+      })
+      expect(result).toBe(fakePost)
+    })
 
     it('sends an empty list to clear all co-travelers', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-7', type: 'TRIP' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-7', type: 'TRIP' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { setTripTravelers } = await import('../posts.js');
-      await setTripTravelers('post-7', []);
+      const { setTripTravelers } = await import('../posts.js')
+      await setTripTravelers('post-7', [])
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-7/interactions', {
         key: 'setTravelers',
         value: { userIds: [] },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('addAlbumPhotos', () => {
     it('delegates to interactWithPost with key "addPhotos" and the contribution body', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-8', type: 'ALBUM' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-8', type: 'ALBUM' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { addAlbumPhotos } = await import('../posts.js');
+      const { addAlbumPhotos } = await import('../posts.js')
       const result = await addAlbumPhotos('post-8', {
         photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'],
         caption: 'By the lake',
-      });
+      })
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-8/interactions', {
         key: 'addPhotos',
         value: { photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'], caption: 'By the lake' },
-      });
-      expect(result).toBe(fakePost);
-    });
-  });
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
 
   describe('closeAlbum', () => {
     it('delegates to interactWithPost with key "close" and no value', async () => {
-      const client = await import('../client.js');
-      const fakePost = { id: 'post-9', type: 'ALBUM' };
-      (client.api.post as any).mockResolvedValue({ data: fakePost });
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-9', type: 'ALBUM' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
 
-      const { closeAlbum } = await import('../posts.js');
-      const result = await closeAlbum('post-9');
+      const { closeAlbum } = await import('../posts.js')
+      const result = await closeAlbum('post-9')
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-9/interactions', {
         key: 'close',
         value: undefined,
-      });
-      expect(result).toBe(fakePost);
-    });
-  });
-});
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
+})

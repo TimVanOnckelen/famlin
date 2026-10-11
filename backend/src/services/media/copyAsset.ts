@@ -1,16 +1,16 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { pipeline } from 'stream/promises';
-import { randomUUID } from 'crypto';
-import { prisma } from '../../db.js';
-import { parseMediaAssetPath } from '../../types.js';
+import path from 'path'
+import fs from 'fs/promises'
+import { pipeline } from 'stream/promises'
+import { randomUUID } from 'crypto'
+import { prisma } from '../../db.js'
+import { parseMediaAssetPath } from '../../types.js'
 // Same uploads directory routes/uploads.ts writes into — a copied asset ends
 // up indistinguishable from a directly-uploaded one, which is the point: it
 // lets a cross-posted sibling in a group without the source album linked
 // still display the photo/video (see the module doc comment below).
-import { uploadsDir } from '../../config.js';
-import { getMediaProvider } from './registry.js';
-import { recordServerCopy } from '../uploads.js';
+import { uploadsDir } from '../../config.js'
+import { getMediaProvider } from './registry.js'
+import { recordServerCopy } from '../uploads.js'
 
 // Thrown for expected, user-facing failures so the route can map it to a
 // translated message instead of leaking fetch/fs internals (mirrors
@@ -20,8 +20,8 @@ import { recordServerCopy } from '../uploads.js';
 // covers a provider read/write failure.
 export class CrossPostAssetCopyError extends Error {
   constructor(public code: 'forbidden' | 'unavailable') {
-    super(`cross-post asset copy failed: ${code}`);
-    this.name = 'CrossPostAssetCopyError';
+    super(`cross-post asset copy failed: ${code}`)
+    this.name = 'CrossPostAssetCopyError'
   }
 }
 
@@ -42,62 +42,62 @@ export async function copyMediaAssetsToUploads(
   allowedGroupIds: string[],
   uploaderId: string
 ): Promise<Map<string, string>> {
-  const result = new Map<string, string>();
-  const writtenPaths: string[] = [];
+  const result = new Map<string, string>()
+  const writtenPaths: string[] = []
 
   try {
     for (const url of urls) {
-      const parsed = parseMediaAssetPath(url);
-      if (!parsed) continue;
+      const parsed = parseMediaAssetPath(url)
+      if (!parsed) continue
 
-      const link = await prisma.mediaAlbumLink.findUnique({ where: { id: parsed.linkId } });
+      const link = await prisma.mediaAlbumLink.findUnique({ where: { id: parsed.linkId } })
       if (!link || !allowedGroupIds.includes(link.groupId)) {
-        throw new CrossPostAssetCopyError('forbidden');
+        throw new CrossPostAssetCopyError('forbidden')
       }
 
-      const provider = getMediaProvider(link.provider);
+      const provider = getMediaProvider(link.provider)
       if (!provider) {
-        throw new CrossPostAssetCopyError('unavailable');
+        throw new CrossPostAssetCopyError('unavailable')
       }
 
-      let inAlbum: boolean;
+      let inAlbum: boolean
       try {
-        inAlbum = await provider.isAssetInAlbum(link.externalAlbumId, parsed.assetId);
+        inAlbum = await provider.isAssetInAlbum(link.externalAlbumId, parsed.assetId)
       } catch {
-        throw new CrossPostAssetCopyError('unavailable');
+        throw new CrossPostAssetCopyError('unavailable')
       }
       if (!inAlbum) {
-        throw new CrossPostAssetCopyError('forbidden');
+        throw new CrossPostAssetCopyError('forbidden')
       }
 
-      let asset: { stream: NodeJS.ReadableStream; contentType?: string };
+      let asset: { stream: NodeJS.ReadableStream; contentType?: string }
       try {
-        asset = await provider.readAsset(link.externalAlbumId, parsed.assetId, 'original');
+        asset = await provider.readAsset(link.externalAlbumId, parsed.assetId, 'original')
       } catch {
-        throw new CrossPostAssetCopyError('unavailable');
+        throw new CrossPostAssetCopyError('unavailable')
       }
 
       // Reuses the real bytes' extension (as embedded in the proxy url this
       // post already carries) rather than trusting asset.contentType, same
       // as parseMediaAssetPath's own regex validation.
-      const ext = path.extname(url);
-      const filename = `${randomUUID()}${ext}`;
-      const filepath = path.join(uploadsDir, filename);
-      writtenPaths.push(filepath);
+      const ext = path.extname(url)
+      const filename = `${randomUUID()}${ext}`
+      const filepath = path.join(uploadsDir, filename)
+      writtenPaths.push(filepath)
 
       try {
-        await pipeline(asset.stream, (await fs.open(filepath, 'w')).createWriteStream());
+        await pipeline(asset.stream, (await fs.open(filepath, 'w')).createWriteStream())
       } catch {
-        throw new CrossPostAssetCopyError('unavailable');
+        throw new CrossPostAssetCopyError('unavailable')
       }
 
-      await recordServerCopy(`/uploads/${filename}`, uploaderId, allowedGroupIds);
-      result.set(url, `/uploads/${filename}`);
+      await recordServerCopy(`/uploads/${filename}`, uploaderId, allowedGroupIds)
+      result.set(url, `/uploads/${filename}`)
     }
   } catch (err) {
-    await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})));
-    throw err;
+    await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})))
+    throw err
   }
 
-  return result;
+  return result
 }

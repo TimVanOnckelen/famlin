@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   fetchAlbumPosts,
   fetchGroups,
@@ -10,14 +10,14 @@ import {
   PhotoItem,
   Post,
   User,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { isVideoUrl } from '@/utils/media';
-import { AppShell } from '@/components/AppShell';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { NewPostModal } from '@/components/NewPostModal';
-import './PhotosPage.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { isVideoUrl } from '@/utils/media'
+import { AppShell } from '@/components/AppShell'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { NewPostModal } from '@/components/NewPostModal'
+import './PhotosPage.css'
 
 export function PhotosPage({
   user,
@@ -28,36 +28,36 @@ export function PhotosPage({
   onOpenAlbum,
   onLogout,
 }: {
-  user: User;
-  onOpenFeed?: () => void;
-  onOpenChat?: () => void;
-  onOpenProfile: () => void;
-  onOpenFavorites?: () => void;
-  onOpenAlbum?: (postId: string) => void;
-  onLogout: () => void;
+  user: User
+  onOpenFeed?: () => void
+  onOpenChat?: () => void
+  onOpenProfile: () => void
+  onOpenFavorites?: () => void
+  onOpenAlbum?: (postId: string) => void
+  onLogout: () => void
 }) {
-  const { t, i18n } = useTranslation();
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [composerGroupId, setComposerGroupId] = useState<string | null>(null);
-  const [composerAsset, setComposerAsset] = useState<PhotoItem | null>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const { t, i18n } = useTranslation()
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [composerGroupId, setComposerGroupId] = useState<string | null>(null)
+  const [composerAsset, setComposerAsset] = useState<PhotoItem | null>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
-  const groups = groupsQuery.data ?? [];
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
+  const groups = groupsQuery.data ?? []
 
   // Default to first group if user has groups
-  const activeGroupId = selectedGroupId ?? groups[0]?.id ?? null;
+  const activeGroupId = selectedGroupId ?? groups[0]?.id ?? null
 
   const peopleQuery = useQuery({
     queryKey: ['media-people', activeGroupId],
     queryFn: () => getGroupMediaPeople(activeGroupId!),
     enabled: activeGroupId !== null,
-  });
-  const people = peopleQuery.data ?? [];
+  })
+  const people = peopleQuery.data ?? []
 
   // The group's shared (collaborative ALBUM) posts, shown as a strip above the
   // timeline — without this they're only reachable by scrolling the feed until
@@ -67,8 +67,8 @@ export function PhotosPage({
     queryKey: ['album-posts', activeGroupId],
     queryFn: () => fetchAlbumPosts({ groupIds: [activeGroupId!] }),
     enabled: activeGroupId !== null,
-  });
-  const albums = albumsQuery.data?.items ?? [];
+  })
+  const albums = albumsQuery.data?.items ?? []
 
   const photosQuery = useInfiniteQuery({
     queryKey: ['photos', activeGroupId, selectedPersonId],
@@ -80,65 +80,65 @@ export function PhotosPage({
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: activeGroupId !== null,
-  });
+  })
 
-  const photos = photosQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  const photos = photosQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   // Group photos by month+year
   const groupedByMonth = photos.reduce(
     (acc, photo) => {
-      const date = new Date(photo.takenAt);
+      const date = new Date(photo.takenAt)
       const monthKey = date.toLocaleDateString(i18n.language, {
         year: 'numeric',
         month: 'long',
-      });
-      if (!acc[monthKey]) acc[monthKey] = [];
-      acc[monthKey].push(photo);
-      return acc;
+      })
+      if (!acc[monthKey]) acc[monthKey] = []
+      acc[monthKey].push(photo)
+      return acc
     },
     {} as Record<string, PhotoItem[]>
-  );
+  )
 
-  const monthKeys = Object.keys(groupedByMonth);
+  const monthKeys = Object.keys(groupedByMonth)
 
   // Infinite scroll sentinel
   const handleObserve = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0]?.isIntersecting && photosQuery.hasNextPage && !photosQuery.isFetchingNextPage) {
-        photosQuery.fetchNextPage();
+        photosQuery.fetchNextPage()
       }
     },
     [photosQuery]
-  );
+  )
 
   // Intersection observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(handleObserve, {
       rootMargin: '100px',
-    });
+    })
     if (sentinelRef.current) {
-      observer.observe(sentinelRef.current);
+      observer.observe(sentinelRef.current)
     }
-    return () => observer.disconnect();
-  }, [handleObserve]);
+    return () => observer.disconnect()
+  }, [handleObserve])
 
   const openLightbox = (photo: PhotoItem) => {
-    const index = photos.indexOf(photo);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
+    const index = photos.indexOf(photo)
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
 
   const handleShareToFeed = (photo: PhotoItem) => {
     // For album photos, open the composer with this photo preselected
     if (photo.source === 'album') {
-      setComposerGroupId(activeGroupId);
-      setComposerAsset(photo);
-      setComposerOpen(true);
+      setComposerGroupId(activeGroupId)
+      setComposerAsset(photo)
+      setComposerOpen(true)
     }
-  };
+  }
 
   // URLs for lightbox (all loaded photos)
-  const allPhotoUrls = photos.map((p) => getUploadUrl(p.previewUrl));
+  const allPhotoUrls = photos.map((p) => getUploadUrl(p.previewUrl))
 
   return (
     <AppShell
@@ -153,9 +153,9 @@ export function PhotosPage({
       onNewPost={
         groups.length > 0
           ? () => {
-              setComposerGroupId(activeGroupId);
-              setComposerAsset(null);
-              setComposerOpen(true);
+              setComposerGroupId(activeGroupId)
+              setComposerAsset(null)
+              setComposerOpen(true)
             }
           : undefined
       }
@@ -271,14 +271,14 @@ export function PhotosPage({
           groups={groups.filter((g) => g.id === composerGroupId)}
           defaultGroupId={composerGroupId}
           onClose={() => {
-            setComposerOpen(false);
-            setComposerAsset(null);
+            setComposerOpen(false)
+            setComposerAsset(null)
           }}
           initialAsset={composerAsset}
         />
       )}
     </AppShell>
-  );
+  )
 }
 
 // One album in the Photos tab's albums strip: a 2×2 collage of the album's
@@ -288,14 +288,14 @@ export function PhotosPage({
 // wayfinding strip, not a feed card; everything else lives one click away in
 // AlbumDetailPage.
 function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
-  const { t } = useTranslation();
-  const album = post.album;
-  if (!album) return null;
+  const { t } = useTranslation()
+  const album = post.album
+  if (!album) return null
 
   const urls =
-    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
-  const visible = urls.slice(0, 4);
-  const overflow = Math.max(0, album.photoCount - visible.length);
+    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : []
+  const visible = urls.slice(0, 4)
+  const overflow = Math.max(0, album.photoCount - visible.length)
 
   return (
     <button type="button" className="photos-album-tile" onClick={onOpen}>
@@ -325,20 +325,20 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
         {t('feed.album.stats', { photos: album.photoCount, contributors: album.contributorCount })}
       </span>
     </button>
-  );
+  )
 }
 
 interface PhotoTileProps {
-  photo: PhotoItem;
-  onOpen: () => void;
-  onShare: () => void;
+  photo: PhotoItem
+  onOpen: () => void
+  onShare: () => void
 }
 
 function PhotoTile({ photo, onOpen, onShare }: PhotoTileProps) {
-  const { t } = useTranslation();
-  const [showActions, setShowActions] = useState(false);
-  const src = getUploadUrl(photo.thumbnailUrl);
-  const isVideo = photo.type === 'VIDEO';
+  const { t } = useTranslation()
+  const [showActions, setShowActions] = useState(false)
+  const src = getUploadUrl(photo.thumbnailUrl)
+  const isVideo = photo.type === 'VIDEO'
 
   return (
     <div className="photo-tile" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
@@ -359,5 +359,5 @@ function PhotoTile({ photo, onOpen, onShare }: PhotoTileProps) {
         </div>
       )}
     </div>
-  );
+  )
 }

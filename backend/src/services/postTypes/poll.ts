@@ -1,10 +1,10 @@
-import { randomUUID } from 'crypto';
-import { z } from 'zod';
-import { Prisma } from '@prisma/client';
-import { prisma } from '../../db.js';
-import { PostTypeError } from './types.js';
-import type { PostTypeHandler } from './types.js';
-import { isRecordNotFound } from '../../utils/prismaErrors.js';
+import { randomUUID } from 'crypto'
+import { z } from 'zod'
+import { Prisma } from '@prisma/client'
+import { prisma } from '../../db.js'
+import { PostTypeError } from './types.js'
+import type { PostTypeHandler } from './types.js'
+import { isRecordNotFound } from '../../utils/prismaErrors.js'
 
 // Client-sent typeData shape at create time (routes/posts.ts POST /). The
 // question itself lives in `content` — not here — so search, notification
@@ -17,31 +17,31 @@ const pollTypeDataSchema = z.object({
   // API-only in v1 — no composer UI builds this yet, but the backend
   // enforces it once set (see interact() below).
   closesAt: z.string().datetime().optional(),
-});
+})
 
 interface PollOption {
-  id: string;
-  text: string;
+  id: string
+  text: string
 }
 
 // The persisted shape of Post.typeData for a POLL post — options carry a
 // stable id assigned at creation (see transformCreate), since options are
 // immutable afterward and votes reference an option by id, not by index/text.
 interface PersistedPollTypeData {
-  options: PollOption[];
-  closesAt: string | null;
+  options: PollOption[]
+  closesAt: string | null
 }
 
 interface VoteValue {
-  optionId: string;
+  optionId: string
 }
 
 function isVoteValue(value: unknown): value is VoteValue {
-  return !!value && typeof value === 'object' && typeof (value as Record<string, unknown>).optionId === 'string';
+  return !!value && typeof value === 'object' && typeof (value as Record<string, unknown>).optionId === 'string'
 }
 
 function isPollClosed(typeData: PersistedPollTypeData): boolean {
-  return typeData.closesAt !== null && new Date(typeData.closesAt).getTime() < Date.now();
+  return typeData.closesAt !== null && new Date(typeData.closesAt).getTime() < Date.now()
 }
 
 // Decisions already made (see the spec this was built from): votes are
@@ -56,45 +56,45 @@ export const pollHandler: PostTypeHandler = {
 
   validateCreate({ content }) {
     if (!content?.trim()) {
-      throw new PostTypeError('pollQuestionRequired');
+      throw new PostTypeError('pollQuestionRequired')
     }
   },
 
   // Assigns each option a stable id at creation time — no add/remove/edit of
   // options after creation in v1.
   transformCreate(typeData): PersistedPollTypeData {
-    const parsed = typeData as z.infer<typeof pollTypeDataSchema>;
+    const parsed = typeData as z.infer<typeof pollTypeDataSchema>
     return {
       options: parsed.options.map((option) => ({ id: randomUUID(), text: option.text })),
       closesAt: parsed.closesAt ?? null,
-    };
+    }
   },
 
   async interact({ post, userId, key, value }) {
     if (key !== 'vote' || !isVoteValue(value)) {
-      throw new PostTypeError('invalidInteraction');
+      throw new PostTypeError('invalidInteraction')
     }
 
-    const typeData = post.typeData as PersistedPollTypeData | null;
+    const typeData = post.typeData as PersistedPollTypeData | null
     if (!typeData) {
       // A POLL post with no typeData would be a data-integrity bug, not a
       // user mistake — but this is reachable in principle (a corrupted row),
       // so fail the same way an unknown interaction does rather than throw.
-      throw new PostTypeError('invalidInteraction');
+      throw new PostTypeError('invalidInteraction')
     }
 
     if (isPollClosed(typeData)) {
-      throw new PostTypeError('pollClosed');
+      throw new PostTypeError('pollClosed')
     }
 
     if (!typeData.options.some((option) => option.id === value.optionId)) {
-      throw new PostTypeError('invalidPollOption');
+      throw new PostTypeError('invalidPollOption')
     }
 
     const existing = await prisma.postInteraction.findUnique({
       where: { postId_userId_key: { postId: post.id, userId, key: 'vote' } },
-    });
-    const existingOptionId = (existing?.value as VoteValue | undefined)?.optionId;
+    })
+    const existingOptionId = (existing?.value as VoteValue | undefined)?.optionId
 
     if (existing && existingOptionId === value.optionId) {
       // Tapping the same option again removes the vote (unvote). A
@@ -102,9 +102,9 @@ export const pollHandler: PostTypeHandler = {
       // P2025 in that case is still the idempotent "unvoted" outcome this
       // request should see, not a 500.
       try {
-        await prisma.postInteraction.delete({ where: { id: existing.id } });
+        await prisma.postInteraction.delete({ where: { id: existing.id } })
       } catch (err) {
-        if (!isRecordNotFound(err)) throw err;
+        if (!isRecordNotFound(err)) throw err
       }
     } else {
       // No existing vote, or switching to a different option — both are
@@ -117,7 +117,7 @@ export const pollHandler: PostTypeHandler = {
         where: { postId_userId_key: { postId: post.id, userId, key: 'vote' } },
         create: { postId: post.id, userId, key: 'vote', value: value as unknown as Prisma.InputJsonValue },
         update: { value: value as unknown as Prisma.InputJsonValue },
-      });
+      })
     }
   },
 
@@ -131,31 +131,31 @@ export const pollHandler: PostTypeHandler = {
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
       // Oldest first, so each option's `voters` list is in vote order.
       orderBy: { createdAt: 'asc' },
-    });
+    })
 
-    const votesByPostId = new Map<string, typeof votes>();
+    const votesByPostId = new Map<string, typeof votes>()
     for (const vote of votes) {
-      const list = votesByPostId.get(vote.postId);
-      if (list) list.push(vote);
-      else votesByPostId.set(vote.postId, [vote]);
+      const list = votesByPostId.get(vote.postId)
+      if (list) list.push(vote)
+      else votesByPostId.set(vote.postId, [vote])
     }
 
     for (const post of posts) {
-      const typeData = post.typeData as PersistedPollTypeData | null;
-      if (!typeData) continue;
+      const typeData = post.typeData as PersistedPollTypeData | null
+      if (!typeData) continue
 
-      const postVotes = votesByPostId.get(post.id) ?? [];
-      let myVoteOptionId: string | null = null;
+      const postVotes = votesByPostId.get(post.id) ?? []
+      let myVoteOptionId: string | null = null
 
       const options = typeData.options.map((option) => {
         const voters = postVotes
           .filter((vote) => (vote.value as unknown as VoteValue).optionId === option.id)
-          .map((vote) => vote.user);
+          .map((vote) => vote.user)
         if (voters.some((voter) => voter.id === viewerId)) {
-          myVoteOptionId = option.id;
+          myVoteOptionId = option.id
         }
-        return { id: option.id, text: option.text, voteCount: voters.length, voters };
-      });
+        return { id: option.id, text: option.text, voteCount: voters.length, voters }
+      })
 
       post.poll = {
         options,
@@ -163,7 +163,7 @@ export const pollHandler: PostTypeHandler = {
         myVoteOptionId,
         closesAt: typeData.closesAt,
         closed: isPollClosed(typeData),
-      };
+      }
     }
   },
-};
+}

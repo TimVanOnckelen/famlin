@@ -1,7 +1,7 @@
-import type { Comment, ReactionType } from './types';
+import type { Comment, ReactionType } from './types'
 
 /** Mirrors MAX_COMMENT_ATTACHMENTS in the backend's types.ts. */
-export const MAX_COMMENT_ATTACHMENTS = 10;
+export const MAX_COMMENT_ATTACHMENTS = 10
 
 /**
  * The photos/videos a comment carries, as an array — regardless of whether
@@ -11,8 +11,8 @@ export const MAX_COMMENT_ATTACHMENTS = 10;
  * older backend.
  */
 export function commentAttachments(comment: Pick<Comment, 'attachmentUrl' | 'attachmentUrls'>): string[] {
-  if (comment.attachmentUrls?.length) return comment.attachmentUrls;
-  return comment.attachmentUrl ? [comment.attachmentUrl] : [];
+  if (comment.attachmentUrls?.length) return comment.attachmentUrls
+  return comment.attachmentUrl ? [comment.attachmentUrl] : []
 }
 
 /**
@@ -23,15 +23,15 @@ export function commentAttachments(comment: Pick<Comment, 'attachmentUrl' | 'att
  */
 export interface CommentGroup {
   /** Stable list key — the lead comment's id. */
-  key: string;
+  key: string
   /** The comments in this group, oldest first. Length >= 1. */
-  comments: Comment[];
+  comments: Comment[]
   /** comments[0] — owns the author, the timestamp and the reply target. */
-  lead: Comment;
+  lead: Comment
   /** Every attachment across the group, in order, tagged with its comment. */
-  attachments: { url: string; commentId: string }[];
+  attachments: { url: string; commentId: string }[]
   /** True once the group merged more than one comment. */
-  isBundle: boolean;
+  isBundle: boolean
   /**
    * Reactions on the comment the card's reaction button acts on — NOT the sum
    * across the bundle. Summing counts one person twice when they reacted to
@@ -40,20 +40,20 @@ export interface CommentGroup {
    * target's own count keeps the number and the button describing the same
    * thing.
    */
-  likeCount: number;
+  likeCount: number
   /** The first reaction the current user left anywhere in the group. */
-  myReaction: ReactionType | null;
+  myReaction: ReactionType | null
   /**
    * Which comment a reaction tap acts on: the one the user already reacted
    * to (so tapping again removes exactly that reaction), otherwise the lead.
    */
-  reactionTargetId: string;
+  reactionTargetId: string
   /** createdAt of the newest comment in the group. */
-  latestCreatedAt: string;
+  latestCreatedAt: string
 }
 
 /** Two photo comments further apart than this are separate moments. */
-const DEFAULT_BUNDLE_WINDOW_MS = 10 * 60 * 1000;
+const DEFAULT_BUNDLE_WINDOW_MS = 10 * 60 * 1000
 
 /**
  * Only a photo-only, user-authored comment bundles. A comment with text keeps
@@ -62,24 +62,24 @@ const DEFAULT_BUNDLE_WINDOW_MS = 10 * 60 * 1000;
  * those have their own rendering and their own metadata.
  */
 function isBundleable(comment: Comment): boolean {
-  return !comment.content?.trim() && !comment.metadata && commentAttachments(comment).length > 0;
+  return !comment.content?.trim() && !comment.metadata && commentAttachments(comment).length > 0
 }
 
 function canMerge(previous: Comment, next: Comment, windowMs: number): boolean {
-  if (!isBundleable(previous) || !isBundleable(next)) return false;
-  if (previous.authorId !== next.authorId) return false;
+  if (!isBundleable(previous) || !isBundleable(next)) return false
+  if (previous.authorId !== next.authorId) return false
   // A bundle is one card in one place in the thread, so everything in it must
   // sit at the same level and be pinned to the same asset.
-  if ((previous.parentId ?? null) !== (next.parentId ?? null)) return false;
-  if ((previous.assetUrl ?? null) !== (next.assetUrl ?? null)) return false;
-  const gap = new Date(next.createdAt).getTime() - new Date(previous.createdAt).getTime();
-  return Number.isFinite(gap) && Math.abs(gap) <= windowMs;
+  if ((previous.parentId ?? null) !== (next.parentId ?? null)) return false
+  if ((previous.assetUrl ?? null) !== (next.assetUrl ?? null)) return false
+  const gap = new Date(next.createdAt).getTime() - new Date(previous.createdAt).getTime()
+  return Number.isFinite(gap) && Math.abs(gap) <= windowMs
 }
 
 function toGroup(comments: Comment[]): CommentGroup {
-  const lead = comments[0];
-  const reacted = comments.find((c) => c.myReaction);
-  const reactionTarget = reacted ?? lead;
+  const lead = comments[0]
+  const reacted = comments.find((c) => c.myReaction)
+  const reactionTarget = reacted ?? lead
   return {
     key: lead.id,
     comments,
@@ -90,7 +90,7 @@ function toGroup(comments: Comment[]): CommentGroup {
     myReaction: reactionTarget.myReaction,
     reactionTargetId: reactionTarget.id,
     latestCreatedAt: comments[comments.length - 1].createdAt,
-  };
+  }
 }
 
 /**
@@ -100,17 +100,17 @@ function toGroup(comments: Comment[]): CommentGroup {
  * position of its first comment.
  */
 export function groupCommentAttachments(comments: Comment[], options?: { windowMs?: number }): CommentGroup[] {
-  const windowMs = options?.windowMs ?? DEFAULT_BUNDLE_WINDOW_MS;
-  const groups: Comment[][] = [];
+  const windowMs = options?.windowMs ?? DEFAULT_BUNDLE_WINDOW_MS
+  const groups: Comment[][] = []
 
   for (const comment of comments) {
-    const current = groups[groups.length - 1];
+    const current = groups[groups.length - 1]
     if (current && canMerge(current[current.length - 1], comment, windowMs)) {
-      current.push(comment);
+      current.push(comment)
     } else {
-      groups.push([comment]);
+      groups.push([comment])
     }
   }
 
-  return groups.map(toGroup);
+  return groups.map(toGroup)
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -10,29 +10,29 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { getUploadUrl } from '@/api/uploads';
-import { isVideoUrl } from '@/utils/media';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { getUploadUrl } from '@/api/uploads'
+import { isVideoUrl } from '@/utils/media'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 
 // Matches the server's cap on a check-in's photoUrls array (routes/posts.ts
 // interaction schema) — enforced here too so uploads never succeed only to
 // have the interaction request rejected afterwards.
-const MAX_CHECKIN_PHOTOS = 10;
+const MAX_CHECKIN_PHOTOS = 10
 
 interface CheckInComposerModalProps {
-  visible: boolean;
-  tripTitle: string;
-  dayNumber: number;
-  submitting: boolean;
-  onCancel: () => void;
-  onSubmit: (data: { place: string; text?: string; photoUrls: string[] }) => void;
+  visible: boolean
+  tripTitle: string
+  dayNumber: number
+  submitting: boolean
+  onCancel: () => void
+  onSubmit: (data: { place: string; text?: string; photoUrls: string[] }) => void
 }
 
 // The "+ Check-in" modal (design 6f) — minimal on purpose (place is the only
@@ -45,22 +45,22 @@ export function CheckInComposerModal({
   onCancel,
   onSubmit,
 }: CheckInComposerModalProps) {
-  const { t } = useTranslation();
-  const [place, setPlace] = useState('');
-  const [text, setText] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const { t } = useTranslation()
+  const [place, setPlace] = useState('')
+  const [text, setText] = useState('')
+  const [photoUrls, setPhotoUrls] = useState<string[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     if (visible) {
-      setPlace('');
-      setText('');
-      setPhotoUrls([]);
-      setPendingCount(0);
+      setPlace('')
+      setText('')
+      setPhotoUrls([])
+      setPendingCount(0)
     }
-  }, [visible]);
+  }, [visible])
 
-  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photoUrls.length;
+  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photoUrls.length
 
   const { pick, uploading, progress } = usePickAndUploadMedia({
     pickerOptions: {
@@ -73,24 +73,24 @@ export function CheckInComposerModal({
     includeIndexInName: true,
     onPicked: (assets) => setPendingCount(assets.length),
     onError: () => setPendingCount(0),
-  });
+  })
 
   async function pickPhotos() {
-    const result = await pick();
-    setPendingCount(0);
+    const result = await pick()
+    setPendingCount(0)
     // Defensive slice: selectionLimit already caps a single pick at the
     // remaining slot count, but this guards against picks racing each other.
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_CHECKIN_PHOTOS));
+    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_CHECKIN_PHOTOS))
   }
 
   function removePhoto(url: string) {
-    setPhotoUrls((prev) => prev.filter((u) => u !== url));
+    setPhotoUrls((prev) => prev.filter((u) => u !== url))
   }
 
   function handleSubmit() {
-    const trimmedPlace = place.trim();
-    if (!trimmedPlace) return;
-    onSubmit({ place: trimmedPlace, text: text.trim() || undefined, photoUrls });
+    const trimmedPlace = place.trim()
+    if (!trimmedPlace) return
+    onSubmit({ place: trimmedPlace, text: text.trim() || undefined, photoUrls })
   }
 
   function handleCancel() {
@@ -98,13 +98,13 @@ export function CheckInComposerModal({
       Alert.alert(t('common.cancel'), undefined, [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.done'), style: 'destructive', onPress: onCancel },
-      ]);
-      return;
+      ])
+      return
     }
-    onCancel();
+    onCancel()
   }
 
-  const canSubmit = place.trim().length > 0 && !submitting && !uploading;
+  const canSubmit = place.trim().length > 0 && !submitting && !uploading
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleCancel}>
@@ -157,7 +157,7 @@ export function CheckInComposerModal({
 
           <View style={styles.photoGrid}>
             {photoUrls.map((url) => {
-              const isVideo = isVideoUrl(url);
+              const isVideo = isVideoUrl(url)
               return (
                 <View key={url} style={styles.photoTile}>
                   <Image source={{ uri: getUploadUrl(url) }} style={styles.photoImage} />
@@ -170,7 +170,7 @@ export function CheckInComposerModal({
                     <Icon name="x" size={12} color={colors.white} />
                   </TouchableOpacity>
                 </View>
-              );
+              )
             })}
             {Array.from({ length: pendingCount }).map((_, i) => (
               <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
@@ -190,7 +190,7 @@ export function CheckInComposerModal({
         </ScrollView>
       </SafeAreaView>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -336,4 +336,4 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: colors.tripDark,
   },
-});
+})

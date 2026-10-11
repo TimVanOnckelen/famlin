@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
 
-import { BrandLogo } from '@/components/Logo';
-import { Icon } from '@/components/Icon';
-import { colors } from '@/constants/colors';
+import { BrandLogo } from '@/components/Logo'
+import { Icon } from '@/components/Icon'
+import { colors } from '@/constants/colors'
 
 // "Photo-collage arrival" from the styleguide: three tilted polaroid frames
 // (−8° / −2° / +7°) over a soft primary-tint glow, instead of one static
@@ -28,7 +28,7 @@ export function PhotoCollage() {
         </View>
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -90,4 +90,4 @@ const styles = StyleSheet.create({
     width: 66,
     height: 66,
   },
-});
+})

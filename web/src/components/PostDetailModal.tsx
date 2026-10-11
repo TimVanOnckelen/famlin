@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { fetchPost, getUploadUrl } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { PostCard } from '@/components/PostCard';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { useModalFocus } from '@/hooks/useModalFocus';
-import { isVideoUrl } from '@/utils/media';
-import './PostDetailModal.css';
+import { useEffect, useRef, useState } from 'react'
+import axios from 'axios'
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { fetchPost, getUploadUrl } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { PostCard } from '@/components/PostCard'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import { isVideoUrl } from '@/utils/media'
+import './PostDetailModal.css'
 
 // The feed's post-detail view (phase 2 of the web redesign): opened over the
 // feed as a large modal via react-router's background-location pattern (see
@@ -27,50 +27,50 @@ export function PostDetailModal({
   onOpenTrip,
   onOpenAlbum,
 }: {
-  postId: string;
-  onClose: () => void;
-  onOpenTrip?: (postId: string) => void;
-  onOpenAlbum?: (postId: string) => void;
+  postId: string
+  onClose: () => void
+  onOpenTrip?: (postId: string) => void
+  onOpenAlbum?: (postId: string) => void
 }) {
-  const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useModalFocus(dialogRef, onClose);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { t } = useTranslation()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useModalFocus(dialogRef, onClose)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   // One photo at a time in the media pane, like mobile's swipeable viewer;
   // ←/→ step through it (unless focus is in the comment composer).
-  const [mediaIndex, setMediaIndex] = useState(0);
+  const [mediaIndex, setMediaIndex] = useState(0)
 
   // Same ['post', postId] key PostDetailPage/TripDetailPage/AlbumDetailPage
   // use, and the one patchPostInCaches updates, so reactions/favorites made
   // here or on the feed stay in sync.
-  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) });
-  const post = postQuery.data;
+  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
+  const post = postQuery.data
 
   useEffect(() => {
-    if (post?.type === 'TRIP' && onOpenTrip) onOpenTrip(post.id);
-    else if (post?.type === 'ALBUM' && onOpenAlbum) onOpenAlbum(post.id);
-  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum]);
+    if (post?.type === 'TRIP' && onOpenTrip) onOpenTrip(post.id)
+    else if (post?.type === 'ALBUM' && onOpenAlbum) onOpenAlbum(post.id)
+  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum])
 
   // The API answers 404 (or 403) for a post that doesn't exist *or* that the
   // viewer can't see — deliberately indistinguishable, so this is too.
   const notFound =
     axios.isAxiosError(postQuery.error) &&
-    (postQuery.error.response?.status === 404 || postQuery.error.response?.status === 403);
+    (postQuery.error.response?.status === 404 || postQuery.error.response?.status === 403)
 
-  const hasMedia = !!post && post.uploadedAssetUrls.length > 0 && post.type !== 'TRIP' && post.type !== 'ALBUM';
-  const mediaCount = hasMedia ? post.uploadedAssetUrls.length : 0;
+  const hasMedia = !!post && post.uploadedAssetUrls.length > 0 && post.type !== 'TRIP' && post.type !== 'ALBUM'
+  const mediaCount = hasMedia ? post.uploadedAssetUrls.length : 0
 
   useEffect(() => {
-    if (mediaCount < 2 || lightboxIndex !== null) return;
+    if (mediaCount < 2 || lightboxIndex !== null) return
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest('input, textarea, [contenteditable="true"]')) return;
-      if (e.key === 'ArrowLeft') setMediaIndex((i) => Math.max(0, i - 1));
-      else if (e.key === 'ArrowRight') setMediaIndex((i) => Math.min(mediaCount - 1, i + 1));
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [mediaCount, lightboxIndex]);
+      const target = e.target as HTMLElement | null
+      if (target && target.closest('input, textarea, [contenteditable="true"]')) return
+      if (e.key === 'ArrowLeft') setMediaIndex((i) => Math.max(0, i - 1))
+      else if (e.key === 'ArrowRight') setMediaIndex((i) => Math.min(mediaCount - 1, i + 1))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mediaCount, lightboxIndex])
 
   return (
     <div className="modal-overlay post-detail-overlay" onClick={onClose}>
@@ -107,8 +107,8 @@ export function PostDetailModal({
         {post && hasMedia && (
           <div className="post-detail-modal-media">
             {(() => {
-              const urls = post.uploadedAssetUrls;
-              const url = urls[mediaIndex] ?? urls[0];
+              const urls = post.uploadedAssetUrls
+              const url = urls[mediaIndex] ?? urls[0]
               return (
                 <>
                   {isVideoUrl(url) ? (
@@ -153,7 +153,7 @@ export function PostDetailModal({
                     </>
                   )}
                 </>
-              );
+              )
             })()}
           </div>
         )}
@@ -173,5 +173,5 @@ export function PostDetailModal({
         />
       )}
     </div>
-  );
+  )
 }

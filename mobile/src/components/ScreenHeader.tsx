@@ -1,27 +1,27 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
 
 interface ScreenHeaderProps {
-  title: string;
-  onBack: () => void;
+  title: string
+  onBack: () => void
   /** Centers the title, giving the back button and the right-side slot
    * matching fixed widths so it truly centers (GroupMembersScreen,
    * SearchScreen, both of which show a dynamic-length title). Off by
    * default: the title just sits between the back button and the
    * right-side slot without being forced to center (FavoritesScreen,
    * NotificationsScreen, PostDetailScreen). */
-  centered?: boolean;
+  centered?: boolean
   /** Custom right-side content, e.g. NotificationsScreen's "mark all read"
    * button. Defaults to an invisible spacer that balances the back button. */
-  right?: React.ReactNode;
+  right?: React.ReactNode
 }
 
 export function ScreenHeader({ title, onBack, centered = false, right }: ScreenHeaderProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <View style={styles.header}>
@@ -34,7 +34,7 @@ export function ScreenHeader({ title, onBack, centered = false, right }: ScreenH
       </Text>
       {right !== undefined ? right : <View style={[styles.headerRight, centered && styles.headerRightCentered]} />}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -78,4 +78,4 @@ const styles = StyleSheet.create({
   headerRightCentered: {
     width: 90,
   },
-});
+})

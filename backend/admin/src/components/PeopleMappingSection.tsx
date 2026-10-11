@@ -1,148 +1,148 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, ApiError, MediaPerson, MediaPersonLink, User } from '../api/client';
-import { Icon } from './Icon';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, ApiError, MediaPerson, MediaPersonLink, User } from '../api/client'
+import { Icon } from './Icon'
 
 interface PeopleMappingSectionProps {
-  users: User[];
+  users: User[]
 }
 
-const UNMAPPED_PREVIEW_COUNT = 18;
+const UNMAPPED_PREVIEW_COUNT = 18
 
 export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
-  const { t } = useTranslation();
-  const [people, setPeople] = useState<MediaPerson[]>([]);
-  const [peopleLinks, setPeopleLinks] = useState<MediaPersonLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [personQuery, setPersonQuery] = useState('');
-  const [showAllUnmapped, setShowAllUnmapped] = useState(false);
+  const { t } = useTranslation()
+  const [people, setPeople] = useState<MediaPerson[]>([])
+  const [peopleLinks, setPeopleLinks] = useState<MediaPersonLink[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [personQuery, setPersonQuery] = useState('')
+  const [showAllUnmapped, setShowAllUnmapped] = useState(false)
 
   // Form state for adding/editing a mapping
-  const [selectedPerson, setSelectedPerson] = useState<MediaPerson | null>(null);
-  const [personLabel, setPersonLabel] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [saving, setSaving] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState<MediaPerson | null>(null)
+  const [personLabel, setPersonLabel] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData()
+  }, [])
 
   const loadData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
       const [peopleRes, linksRes] = await Promise.all([
         api.getMediaPeople('immich').catch((err) => {
           if (err instanceof ApiError && err.code === 'not_configured') {
-            return []; // Provider not configured
+            return [] // Provider not configured
           }
-          throw err;
+          throw err
         }),
         api.getMediaPersonLinks(),
-      ]);
-      setPeople(peopleRes || []);
-      setPeopleLinks(linksRes);
+      ])
+      setPeople(peopleRes || [])
+      setPeopleLinks(linksRes)
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      setError(message);
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      setError(message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSelectPerson = (person: MediaPerson) => {
-    setSelectedPerson(person);
+    setSelectedPerson(person)
     // Prefill label with person's name if not already mapped
-    const existing = peopleLinks.find((l) => l.externalPersonId === person.id && l.provider === 'immich');
+    const existing = peopleLinks.find((l) => l.externalPersonId === person.id && l.provider === 'immich')
     if (existing) {
-      setPersonLabel(existing.label);
-      setSelectedUserId(existing.user?.id || '');
+      setPersonLabel(existing.label)
+      setSelectedUserId(existing.user?.id || '')
     } else {
-      setPersonLabel(person.name);
-      setSelectedUserId('');
+      setPersonLabel(person.name)
+      setSelectedUserId('')
     }
-  };
+  }
 
   const handleSaveMapping = async () => {
-    if (!selectedPerson || !personLabel.trim()) return;
+    if (!selectedPerson || !personLabel.trim()) return
 
-    setSaving(true);
+    setSaving(true)
     try {
       await api.createMediaPersonLink({
         provider: 'immich',
         externalPersonId: selectedPerson.id,
         label: personLabel.trim(),
         userId: selectedUserId || undefined,
-      });
-      await loadData();
-      setSelectedPerson(null);
-      setPersonLabel('');
-      setSelectedUserId('');
+      })
+      await loadData()
+      setSelectedPerson(null)
+      setPersonLabel('')
+      setSelectedUserId('')
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('media.peopleMapping.saveError', { error: message }));
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      alert(t('media.peopleMapping.saveError', { error: message }))
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleRemoveMapping = async (link: MediaPersonLink) => {
-    if (!confirm(t('media.peopleMapping.removeConfirm', { name: link.label }))) return;
+    if (!confirm(t('media.peopleMapping.removeConfirm', { name: link.label }))) return
 
     try {
-      await api.deleteMediaPersonLink(link.id);
-      await loadData();
+      await api.deleteMediaPersonLink(link.id)
+      await loadData()
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('media.peopleMapping.removeError', { error: message }));
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      alert(t('media.peopleMapping.removeError', { error: message }))
     }
-  };
+  }
 
   interface MappedGroup {
-    key: string;
-    label: string;
-    user: MediaPersonLink['user'];
-    links: MediaPersonLink[];
+    key: string
+    label: string
+    user: MediaPersonLink['user']
+    links: MediaPersonLink[]
   }
 
   const mappedGroups: MappedGroup[] = (() => {
-    const map = new Map<string, MappedGroup>();
+    const map = new Map<string, MappedGroup>()
     for (const link of peopleLinks) {
-      const key = `${link.provider}::${link.label}`;
-      const group = map.get(key);
+      const key = `${link.provider}::${link.label}`
+      const group = map.get(key)
       if (group) {
-        group.links.push(link);
-        if (!group.user && link.user) group.user = link.user;
+        group.links.push(link)
+        if (!group.user && link.user) group.user = link.user
       } else {
-        map.set(key, { key, label: link.label, user: link.user, links: [link] });
+        map.set(key, { key, label: link.label, user: link.user, links: [link] })
       }
     }
-    return Array.from(map.values());
-  })();
+    return Array.from(map.values())
+  })()
 
   const distinctLabels = Array.from(
     new Set(peopleLinks.filter((l) => l.provider === 'immich').map((l) => l.label))
-  ).sort((a, b) => a.localeCompare(b));
+  ).sort((a, b) => a.localeCompare(b))
 
   const mergeCandidate = selectedPerson
     ? peopleLinks.find(
         (l) => l.provider === 'immich' && l.label === personLabel.trim() && l.externalPersonId !== selectedPerson.id
       )
-    : undefined;
+    : undefined
 
-  const mappedPersonIds = new Set(peopleLinks.map((l) => l.externalPersonId));
+  const mappedPersonIds = new Set(peopleLinks.map((l) => l.externalPersonId))
   const unmappedPeople = people
     .filter((p) => !mappedPersonIds.has(p.id))
     .sort((a, b) => {
-      if (!!a.name !== !!b.name) return a.name ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-  const query = personQuery.trim().toLowerCase();
-  const filteredUnmapped = query ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query)) : unmappedPeople;
-  const visibleUnmapped = showAllUnmapped ? filteredUnmapped : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT);
+      if (!!a.name !== !!b.name) return a.name ? -1 : 1
+      return a.name.localeCompare(b.name)
+    })
+  const query = personQuery.trim().toLowerCase()
+  const filteredUnmapped = query ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query)) : unmappedPeople
+  const visibleUnmapped = showAllUnmapped ? filteredUnmapped : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT)
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>;
+  if (loading) return <div className="loading">{t('common.loading')}</div>
 
   if (error && people.length === 0) {
     return (
@@ -155,7 +155,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
           <div className="error">{error}</div>
         )}
       </div>
-    );
+    )
   }
 
   return (
@@ -176,8 +176,8 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
             {mappedGroups.map((group) => {
               if (group.links.length === 1) {
                 // Single link — looks like a plain mapped-person card, same as before grouping existed.
-                const link = group.links[0];
-                const person = people.find((p) => p.id === link.externalPersonId);
+                const link = group.links[0]
+                const person = people.find((p) => p.id === link.externalPersonId)
                 return (
                   <li key={group.key} className="member-card">
                     {person?.thumbnailDataUri && (
@@ -212,7 +212,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                       <Icon name="x" size={14} />
                     </button>
                   </li>
-                );
+                )
               }
 
               // Multiple provider-persons share this label — merged everywhere member-facing.
@@ -238,7 +238,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                     {group.user && <span className="member-card-sub">{group.user.email}</span>}
                     <ul className="person-link-rows">
                       {group.links.map((link) => {
-                        const person = people.find((p) => p.id === link.externalPersonId);
+                        const person = people.find((p) => p.id === link.externalPersonId)
                         return (
                           <li key={link.id} className="person-link-row">
                             {person?.thumbnailDataUri ? (
@@ -258,12 +258,12 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                               <Icon name="x" size={12} />
                             </button>
                           </li>
-                        );
+                        )
                       })}
                     </ul>
                   </span>
                 </li>
-              );
+              )
             })}
           </ul>
         </>
@@ -303,8 +303,8 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                       onChange={(e) => setPersonLabel(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSaveMapping();
+                          e.preventDefault()
+                          handleSaveMapping()
                         }
                       }}
                       list="person-label-options"
@@ -358,7 +358,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   value={personQuery}
                   onChange={(e) => setPersonQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.preventDefault();
+                    if (e.key === 'Enter') e.preventDefault()
                   }}
                   placeholder={t('media.peopleMapping.searchPlaceholder')}
                   aria-label={t('media.peopleMapping.searchPlaceholder')}
@@ -406,5 +406,5 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
         </div>
       )}
     </div>
-  );
+  )
 }

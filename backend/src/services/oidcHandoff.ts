@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import type { sanitizeUser } from './users.js';
+import crypto from 'crypto'
+import type { sanitizeUser } from './users.js'
 
 // The mobile OIDC callback (GET /oidc/mobile-callback) can't hand the Famlin
 // session token back to the app via the famlin:// redirect's query string
@@ -10,33 +10,33 @@ import type { sanitizeUser } from './users.js';
 // single-instance, matching the other short-lived caches in this codebase
 // (discoveryCache, sessionCache) — Famlin doesn't run multiple backend
 // replicas behind a shared store.
-const HANDOFF_TTL_MS = 2 * 60 * 1000;
+const HANDOFF_TTL_MS = 2 * 60 * 1000
 
 interface HandoffEntry {
-  token: string;
-  user: ReturnType<typeof sanitizeUser>;
-  expiresAt: number;
+  token: string
+  user: ReturnType<typeof sanitizeUser>
+  expiresAt: number
 }
 
-const handoffs = new Map<string, HandoffEntry>();
+const handoffs = new Map<string, HandoffEntry>()
 
 function sweepExpired() {
-  const now = Date.now();
+  const now = Date.now()
   for (const [code, entry] of handoffs) {
-    if (entry.expiresAt < now) handoffs.delete(code);
+    if (entry.expiresAt < now) handoffs.delete(code)
   }
 }
 
 export function createOidcHandoff(result: { token: string; user: HandoffEntry['user'] }): string {
-  sweepExpired();
-  const code = crypto.randomBytes(32).toString('base64url');
-  handoffs.set(code, { ...result, expiresAt: Date.now() + HANDOFF_TTL_MS });
-  return code;
+  sweepExpired()
+  const code = crypto.randomBytes(32).toString('base64url')
+  handoffs.set(code, { ...result, expiresAt: Date.now() + HANDOFF_TTL_MS })
+  return code
 }
 
 export function consumeOidcHandoff(code: string): { token: string; user: HandoffEntry['user'] } | null {
-  const entry = handoffs.get(code);
-  handoffs.delete(code); // single-use regardless of outcome
-  if (!entry || entry.expiresAt < Date.now()) return null;
-  return { token: entry.token, user: entry.user };
+  const entry = handoffs.get(code)
+  handoffs.delete(code) // single-use regardless of outcome
+  if (!entry || entry.expiresAt < Date.now()) return null
+  return { token: entry.token, user: entry.user }
 }

@@ -1,50 +1,50 @@
-import { prisma } from '../db.js';
-import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n/index.js';
+import { prisma } from '../db.js'
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, SupportedLanguage } from '../i18n/index.js'
 
 // The official pre-built apps — used as the default `playStoreUrl`/`appStoreUrl`
 // for deployments that haven't configured one, so self-hosters get a working
 // download link without having to build and distribute their own via EAS.
 // A self-hoster shipping their own build overrides these with their own
 // listing, or clears the field to hide the download button entirely.
-const DEFAULT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=be.xeweb.famlin';
-const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/us/app/famlin/id6786783660';
+const DEFAULT_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=be.xeweb.famlin'
+const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/us/app/famlin/id6786783660'
 
 // The bundle identifier of the official pre-built Famlin app (see
 // mobile/app.config.js). Sign in with Apple identity tokens carry the signing
 // app's bundle id as their audience, so this is the default value every
 // deployment verifies against — a self-hoster shipping their own EAS build
 // under a different bundle id adds theirs to the appleBundleIds setting.
-const DEFAULT_APPLE_BUNDLE_ID = 'be.xeweb.famlin';
+const DEFAULT_APPLE_BUNDLE_ID = 'be.xeweb.famlin'
 
 export interface ServerSettings {
-  defaultLanguage: SupportedLanguage;
-  appStoreUrl: string;
-  playStoreUrl: string;
-  allowedEmails: string[];
-  oidcName: string;
-  oidcIssuer: string;
-  oidcClientId: string;
-  oidcClientSecret: string;
-  oidcScopes: string;
-  appleBundleIds: string;
-  smtpHost: string;
-  smtpPort: number;
-  smtpUser: string;
-  smtpPass: string;
-  smtpFrom: string;
-  pushNotificationsEnabled: boolean;
-  emailNotificationsEnabled: boolean;
-  immichServerUrl: string;
-  immichApiKey: string;
-  localMediaPath: string;
+  defaultLanguage: SupportedLanguage
+  appStoreUrl: string
+  playStoreUrl: string
+  allowedEmails: string[]
+  oidcName: string
+  oidcIssuer: string
+  oidcClientId: string
+  oidcClientSecret: string
+  oidcScopes: string
+  appleBundleIds: string
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpPass: string
+  smtpFrom: string
+  pushNotificationsEnabled: boolean
+  emailNotificationsEnabled: boolean
+  immichServerUrl: string
+  immichApiKey: string
+  localMediaPath: string
   // Per-family branding (services/branding/). Deliberately not writable via
   // PATCH /api/admin/settings — only the validated /api/admin/branding routes
   // set these.
-  brandPreset: string;
-  brandColor: string;
-  brandName: string;
+  brandPreset: string
+  brandColor: string
+  brandName: string
   // Content hash of the current logo renditions (uploadsDir/branding/), or ''.
-  brandLogo: string;
+  brandLogo: string
 }
 
 const SETTING_KEYS: (keyof ServerSettings)[] = [
@@ -72,49 +72,49 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'brandColor',
   'brandName',
   'brandLogo',
-];
+]
 
 function serializeValue(key: keyof ServerSettings, value: unknown): string {
   if (key === 'allowedEmails') {
     // Normalize casing on write so a later case-sensitive comparison in
     // isEmailAllowed() can't miss an entry the admin typed with different
     // capitalization than the OIDC/login email arrives in.
-    return Array.isArray(value) ? value.map((v) => String(v).toLowerCase().trim()).join(',') : String(value);
+    return Array.isArray(value) ? value.map((v) => String(v).toLowerCase().trim()).join(',') : String(value)
   }
-  return String(value ?? '');
+  return String(value ?? '')
 }
 
-function parseValue<K extends keyof ServerSettings>(key: K, value: string): ServerSettings[K];
+function parseValue<K extends keyof ServerSettings>(key: K, value: string): ServerSettings[K]
 function parseValue(key: keyof ServerSettings, value: string): ServerSettings[keyof ServerSettings] {
   if (key === 'allowedEmails') {
     return value
       .split(',')
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
   }
   if (key === 'smtpPort') {
-    const n = parseInt(value, 10);
-    return isNaN(n) ? 587 : n;
+    const n = parseInt(value, 10)
+    return isNaN(n) ? 587 : n
   }
   if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled') {
-    return value !== 'false';
+    return value !== 'false'
   }
   if (key === 'defaultLanguage') {
-    return SUPPORTED_LANGUAGES.includes(value as SupportedLanguage) ? value : DEFAULT_LANGUAGE;
+    return SUPPORTED_LANGUAGES.includes(value as SupportedLanguage) ? value : DEFAULT_LANGUAGE
   }
-  return value;
+  return value
 }
 
 // Settings are read on nearly every request (auth, notifications, i18n
 // fallback, invite pages, ...) but change rarely — cache briefly so a burst
 // of activity doesn't turn into a `Setting` table read per request. Cleared
 // eagerly by updateSettings() so admin changes still take effect immediately.
-let settingsCache: { value: ServerSettings; expiresAt: number } | null = null;
-const SETTINGS_CACHE_TTL_MS = 10_000;
+let settingsCache: { value: ServerSettings; expiresAt: number } | null = null
+const SETTINGS_CACHE_TTL_MS = 10_000
 
 async function loadAllSettings(): Promise<ServerSettings> {
-  const rows = await prisma.setting.findMany();
-  const map = new Map(rows.map((r) => [r.key, r.value]));
+  const rows = await prisma.setting.findMany()
+  const map = new Map(rows.map((r) => [r.key, r.value]))
 
   return {
     defaultLanguage: parseValue('defaultLanguage', map.get('defaultLanguage') || DEFAULT_LANGUAGE),
@@ -148,39 +148,39 @@ async function loadAllSettings(): Promise<ServerSettings> {
     brandColor: parseValue('brandColor', map.get('brandColor') || ''),
     brandName: parseValue('brandName', map.get('brandName') || ''),
     brandLogo: parseValue('brandLogo', map.get('brandLogo') || ''),
-  };
+  }
 }
 
 export async function getAllSettings(): Promise<ServerSettings> {
   if (settingsCache && settingsCache.expiresAt > Date.now()) {
-    return settingsCache.value;
+    return settingsCache.value
   }
 
-  const value = await loadAllSettings();
-  settingsCache = { value, expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS };
-  return value;
+  const value = await loadAllSettings()
+  settingsCache = { value, expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS }
+  return value
 }
 
 export async function updateSettings(partial: Partial<ServerSettings>) {
-  const entries = Object.entries(partial).filter(([key]) => SETTING_KEYS.includes(key as keyof ServerSettings));
+  const entries = Object.entries(partial).filter(([key]) => SETTING_KEYS.includes(key as keyof ServerSettings))
 
   for (const [key, value] of entries) {
-    const serialized = serializeValue(key as keyof ServerSettings, value);
+    const serialized = serializeValue(key as keyof ServerSettings, value)
     await prisma.setting.upsert({
       where: { key },
       update: { value: serialized },
       create: { key, value: serialized },
-    });
+    })
   }
 
-  settingsCache = null;
-  return getAllSettings();
+  settingsCache = null
+  return getAllSettings()
 }
 
 // For writers that bypass updateSettings() (the archive restore in
 // services/import.ts writes branding rows inside its own transaction).
 export function invalidateSettingsCache() {
-  settingsCache = null;
+  settingsCache = null
 }
 
 // Test-only escape hatch: the cache above is keyed purely on wall-clock time,
@@ -188,40 +188,40 @@ export function invalidateSettingsCache() {
 // updateSettings()) would otherwise keep serving a previous test's cached
 // values for up to SETTINGS_CACHE_TTL_MS.
 export function __resetSettingsCacheForTests() {
-  settingsCache = null;
+  settingsCache = null
 }
 
 export async function getSetting<K extends keyof ServerSettings>(key: K): Promise<ServerSettings[K]> {
-  const settings = await getAllSettings();
-  return settings[key];
+  const settings = await getAllSettings()
+  return settings[key]
 }
 
 export async function isEmailAllowed(email: string): Promise<boolean> {
-  const allowed = await getSetting('allowedEmails');
-  if (allowed.length === 0) return true;
-  return allowed.includes(email.toLowerCase().trim());
+  const allowed = await getSetting('allowedEmails')
+  if (allowed.length === 0) return true
+  return allowed.includes(email.toLowerCase().trim())
 }
 
 export interface OidcSettings {
-  name: string;
-  issuer: string;
-  clientId: string;
+  name: string
+  issuer: string
+  clientId: string
   // Only present for providers (e.g. Google) that reject a secretless PKCE
   // exchange — see exchangeOidcCode() in plugins/auth.ts. Never returned by
   // the public GET /api/auth/oidc-config endpoint.
-  clientSecret: string;
-  scopes: string;
+  clientSecret: string
+  scopes: string
 }
 
 export async function getOidcSettings(): Promise<OidcSettings> {
-  const settings = await getAllSettings();
+  const settings = await getAllSettings()
   return {
     name: settings.oidcName,
     issuer: settings.oidcIssuer.trim().replace(/\/$/, ''),
     clientId: settings.oidcClientId.trim(),
     clientSecret: settings.oidcClientSecret.trim(),
     scopes: settings.oidcScopes,
-  };
+  }
 }
 
 // Sign in with Apple needs no per-deployment registration: the audience it
@@ -231,36 +231,36 @@ export async function getOidcSettings(): Promise<OidcSettings> {
 // bundle id, since Apple scopes those per developer account) can add it.
 // Comma-separated; the default is always accepted alongside any extras.
 export async function getAppleSettings(): Promise<{ bundleIds: string[] }> {
-  const settings = await getAllSettings();
+  const settings = await getAllSettings()
   const extra = settings.appleBundleIds
     .split(',')
     .map((id) => id.trim())
-    .filter(Boolean);
-  return { bundleIds: [...new Set([DEFAULT_APPLE_BUNDLE_ID, ...extra])] };
+    .filter(Boolean)
+  return { bundleIds: [...new Set([DEFAULT_APPLE_BUNDLE_ID, ...extra])] }
 }
 
 export interface ImmichSettings {
-  serverUrl: string;
-  apiKey: string;
-  configured: boolean;
+  serverUrl: string
+  apiKey: string
+  configured: boolean
 }
 
 export async function getImmichSettings(): Promise<ImmichSettings> {
-  const settings = await getAllSettings();
-  const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '');
-  const apiKey = settings.immichApiKey.trim();
-  return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey };
+  const settings = await getAllSettings()
+  const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '')
+  const apiKey = settings.immichApiKey.trim()
+  return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey }
 }
 
 export interface LocalMediaSettings {
   // Absolute path (inside the container) whose immediate subdirectories are
   // the linkable "albums" of the local-folder media provider.
-  rootPath: string;
-  configured: boolean;
+  rootPath: string
+  configured: boolean
 }
 
 export async function getLocalMediaSettings(): Promise<LocalMediaSettings> {
-  const settings = await getAllSettings();
-  const rootPath = settings.localMediaPath.trim().replace(/\/+$/, '');
-  return { rootPath, configured: !!rootPath };
+  const settings = await getAllSettings()
+  const rootPath = settings.localMediaPath.trim().replace(/\/+$/, '')
+  return { rootPath, configured: !!rootPath }
 }

@@ -1,44 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { Avatar } from '@/components/Avatar';
-import { PostLocationPreview } from '@/components/PostLocationPreview';
-import { ReactionPicker } from '@/components/ReactionPicker';
-import { ReactionsModal } from '@/components/ReactionsModal';
-import { ReactorStack } from '@/components/ReactorStack';
-import { Scrim } from '@/components/Scrim';
-import { postTypeRenderers } from '@/components/postTypes';
-import { TripCard } from '@/components/TripCard';
-import { AlbumCard } from '@/components/AlbumCard';
-import { Post, PostPerson, ReactionType } from '@/types';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { getUploadUrl } from '@/api/uploads';
-import { formatRelativeDate } from '@/i18n/utils';
-import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
-import { CircleTag } from './CircleTag';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { Avatar } from '@/components/Avatar'
+import { PostLocationPreview } from '@/components/PostLocationPreview'
+import { ReactionPicker } from '@/components/ReactionPicker'
+import { ReactionsModal } from '@/components/ReactionsModal'
+import { ReactorStack } from '@/components/ReactorStack'
+import { Scrim } from '@/components/Scrim'
+import { postTypeRenderers } from '@/components/postTypes'
+import { TripCard } from '@/components/TripCard'
+import { AlbumCard } from '@/components/AlbumCard'
+import { Post, PostPerson, ReactionType } from '@/types'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { getUploadUrl } from '@/api/uploads'
+import { formatRelativeDate } from '@/i18n/utils'
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
+import { CircleTag } from './CircleTag'
 
-const AVATAR_COLORS = [colors.primary, colors.primaryLight, '#4b8b5a', colors.primaryDark, colors.accent];
+const AVATAR_COLORS = [colors.primary, colors.primaryLight, '#4b8b5a', colors.primaryDark, colors.accent]
 
 function getPersonAvatarInitial(label: string) {
-  return label.charAt(0).toUpperCase();
+  return label.charAt(0).toUpperCase()
 }
 
 function getPersonAvatarColor(label: string) {
-  let hash = 0;
+  let hash = 0
   for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+    hash = label.charCodeAt(i) + ((hash << 5) - hash)
   }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
 // Past this many photos the collage becomes a horizontally scrolling gallery
 // instead, matching the post detail screen and the comment cards.
-const COLLAGE_MAX_PHOTOS = 4;
+const COLLAGE_MAX_PHOTOS = 4
 
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
@@ -58,7 +58,7 @@ function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (i
           </TouchableOpacity>
         ))}
       </View>
-    );
+    )
   }
 
   // More photos than the collage can show at once: scroll them sideways so
@@ -77,11 +77,11 @@ function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (i
           </TouchableOpacity>
         ))}
       </ScrollView>
-    );
+    )
   }
 
-  const stackUrls = urls.slice(1, 3);
-  const extraCount = urls.length - 3;
+  const stackUrls = urls.slice(1, 3)
+  const extraCount = urls.length - 3
 
   return (
     <View style={styles.collageRow}>
@@ -106,15 +106,15 @@ function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (i
         ))}
       </View>
     </View>
-  );
+  )
 }
 
 function PersonChip({ person }: { person: PostPerson }) {
-  const displayName = person.userName || person.label;
-  const avatarUrl = person.userAvatarUrl;
+  const displayName = person.userName || person.label
+  const avatarUrl = person.userAvatarUrl
 
   if (avatarUrl) {
-    const isExternal = avatarUrl.startsWith('http');
+    const isExternal = avatarUrl.startsWith('http')
     return (
       <View style={styles.personChip}>
         <MediaThumbnail
@@ -126,11 +126,11 @@ function PersonChip({ person }: { person: PostPerson }) {
           {person.label}
         </Text>
       </View>
-    );
+    )
   }
 
-  const initial = getPersonAvatarInitial(person.label);
-  const bgColor = getPersonAvatarColor(person.label);
+  const initial = getPersonAvatarInitial(person.label)
+  const bgColor = getPersonAvatarColor(person.label)
 
   return (
     <View style={styles.personChip}>
@@ -141,7 +141,7 @@ function PersonChip({ person }: { person: PostPerson }) {
         {person.label}
       </Text>
     </View>
-  );
+  )
 }
 
 // Memoized so a cache patch from a like/favorite tap (patchPostInCaches
@@ -155,37 +155,37 @@ export const PostCard = React.memo(function PostCard({ post, showGroup = false }
   // precedent as web's PostCard. This wrapper itself calls no hooks, so
   // branching here on post.type can never violate the rules of hooks.
   if (post.type === 'TRIP') {
-    return <TripCard post={post} showGroup={showGroup} />;
+    return <TripCard post={post} showGroup={showGroup} />
   }
 
   // ALBUM posts likewise get their own card (collage hero, contributor stack,
   // an "Add photos"/"Open album" CTA) — its photo contributions live as
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
-    return <AlbumCard post={post} showGroup={showGroup} />;
+    return <AlbumCard post={post} showGroup={showGroup} />
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} />;
-});
+  return <DefaultPostCard post={post} showGroup={showGroup} />
+})
 
 function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const isMilestone = post.type === 'MILESTONE';
-  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
-  const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const isMilestone = post.type === 'MILESTONE'
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false)
+  const [reactionsModalOpen, setReactionsModalOpen] = useState(false)
 
-  const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url));
-  const fullscreenUrls = allPhotoUrls;
+  const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url))
+  const fullscreenUrls = allPhotoUrls
 
-  const likeMutation = useReactToPost(post);
+  const likeMutation = useReactToPost(post)
 
   function selectReaction(type: ReactionType) {
-    setReactionPickerOpen(false);
-    likeMutation.mutate(type);
+    setReactionPickerOpen(false)
+    likeMutation.mutate(type)
   }
 
-  const favoriteMutation = useToggleFavorite(post);
+  const favoriteMutation = useToggleFavorite(post)
 
   function openFullscreen(index: number) {
     navigation.navigate('ImageViewer', {
@@ -193,16 +193,16 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       assetUrls: post.uploadedAssetUrls,
       postId: post.id,
       initialIndex: index,
-    });
+    })
   }
 
   function openDetail() {
-    navigation.navigate('PostDetail', { postId: post.id });
+    navigation.navigate('PostDetail', { postId: post.id })
   }
 
-  const hasPhotos = allPhotoUrls.length > 0;
-  const reactors = post.recentReactors ?? [];
-  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
+  const hasPhotos = allPhotoUrls.length > 0
+  const reactors = post.recentReactors ?? []
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody
   // Both context tags travel together: which family this post belongs to
   // (shown when the surrounding list spans several — multi-group feed,
   // favorites) and which Circle it was shared with (when it wasn't shared
@@ -218,7 +218,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       )}
       <CircleTag post={post} />
     </>
-  );
+  )
 
   return (
     <View style={[styles.postCard, isMilestone && !hasPhotos && styles.milestoneCard]}>
@@ -407,7 +407,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       />
       <ReactionsModal postId={reactionsModalOpen ? post.id : null} onClose={() => setReactionsModalOpen(false)} />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -705,4 +705,4 @@ const styles = StyleSheet.create({
     color: colors.textTitle,
     maxWidth: 120,
   },
-});
+})

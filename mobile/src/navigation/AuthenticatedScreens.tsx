@@ -1,20 +1,20 @@
-import React from 'react';
-import type { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { markScreensLoaded } from '@/branding';
-import { MainTabs } from '@/navigation/MainTabs';
-import { PostDetailScreen } from '@/screens/PostDetailScreen';
-import { TripDetailScreen } from '@/screens/TripDetailScreen';
-import { AlbumDetailScreen } from '@/screens/AlbumDetailScreen';
-import { NewPostScreen } from '@/screens/NewPostScreen';
-import { NotificationsScreen } from '@/screens/NotificationsScreen';
-import { FavoritesScreen } from '@/screens/FavoritesScreen';
-import { GroupMembersScreen } from '@/screens/GroupMembersScreen';
-import { SearchScreen } from '@/screens/SearchScreen';
-import { ChatScreen } from '@/screens/ChatScreen';
-import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen';
-import { ImageViewerScreen } from '@/screens/ImageViewerScreen';
-import { StoryViewerScreen } from '@/screens/StoryViewerScreen';
-import { StoryComposerScreen } from '@/screens/StoryComposerScreen';
+import React from 'react'
+import type { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { markScreensLoaded } from '@/branding'
+import { MainTabs } from '@/navigation/MainTabs'
+import { PostDetailScreen } from '@/screens/PostDetailScreen'
+import { TripDetailScreen } from '@/screens/TripDetailScreen'
+import { AlbumDetailScreen } from '@/screens/AlbumDetailScreen'
+import { NewPostScreen } from '@/screens/NewPostScreen'
+import { NotificationsScreen } from '@/screens/NotificationsScreen'
+import { FavoritesScreen } from '@/screens/FavoritesScreen'
+import { GroupMembersScreen } from '@/screens/GroupMembersScreen'
+import { SearchScreen } from '@/screens/SearchScreen'
+import { ChatScreen } from '@/screens/ChatScreen'
+import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen'
+import { ImageViewerScreen } from '@/screens/ImageViewerScreen'
+import { StoryViewerScreen } from '@/screens/StoryViewerScreen'
+import { StoryComposerScreen } from '@/screens/StoryComposerScreen'
 
 // Every screen behind login, in its own module so App can require() it
 // lazily: on a first connect the family's branding is fetched and applied
@@ -22,9 +22,9 @@ import { StoryComposerScreen } from '@/screens/StoryComposerScreen';
 // StyleSheet.create() calls — are evaluated. Importing any of them
 // statically from App (or from a module the login screen loads) would bake
 // in the default palette until the next cold start.
-markScreensLoaded();
+markScreensLoaded()
 
-type Stack = ReturnType<typeof createNativeStackNavigator>;
+type Stack = ReturnType<typeof createNativeStackNavigator>
 
 export function renderAuthenticatedScreens(Stack: Stack) {
   return (
@@ -136,5 +136,5 @@ export function renderAuthenticatedScreens(Stack: Stack) {
         }}
       />
     </>
-  );
+  )
 }

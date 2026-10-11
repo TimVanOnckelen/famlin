@@ -1,68 +1,68 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../db.js';
-import { emitDomainEvent } from '../events.js';
-import { requireGroupMember } from '../plugins/auth.js';
-import { getT } from '../i18n/index.js';
-import { reactionBodySchema } from '../types.js';
-import { reactionCounts } from '../services/reactions.js';
-import { isRecordNotFound } from '../utils/prismaErrors.js';
-import { canViewPostCircle } from '../services/circles.js';
+import { FastifyInstance } from 'fastify'
+import { prisma } from '../db.js'
+import { emitDomainEvent } from '../events.js'
+import { requireGroupMember } from '../plugins/auth.js'
+import { getT } from '../i18n/index.js'
+import { reactionBodySchema } from '../types.js'
+import { reactionCounts } from '../services/reactions.js'
+import { isRecordNotFound } from '../utils/prismaErrors.js'
+import { canViewPostCircle } from '../services/circles.js'
 
 export default async function likeRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/reactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
 
-    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true, circleId: true } });
+    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true, circleId: true } })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     const likes = await prisma.like.findMany({
       where: { postId },
       select: { type: true, user: { select: { id: true, name: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
-    });
+    })
 
-    return { items: likes.map((like) => ({ ...like.user, type: like.type })) };
-  });
+    return { items: likes.map((like) => ({ ...like.user, type: like.type })) }
+  })
 
   fastify.post('/posts/:postId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
-    const { type } = reactionBodySchema.parse(request.body ?? {});
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
+    const { type } = reactionBodySchema.parse(request.body ?? {})
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { group: { select: { id: true, name: true } } },
-    });
+    })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     const existing = await prisma.like.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
-    });
+    })
 
-    let myReaction: string | null;
+    let myReaction: string | null
 
     if (existing && existing.type === type) {
       // Tapping the same reaction again removes it. A concurrent duplicate
@@ -70,11 +70,11 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       // row — P2025 in that case is still the idempotent "removed" outcome
       // this tap should see, not a 500.
       try {
-        await prisma.like.delete({ where: { id: existing.id } });
+        await prisma.like.delete({ where: { id: existing.id } })
       } catch (err) {
-        if (!isRecordNotFound(err)) throw err;
+        if (!isRecordNotFound(err)) throw err
       }
-      myReaction = null;
+      myReaction = null
     } else {
       // No existing reaction, or switching to a different one — both are
       // upsert-shaped. Using upsert (rather than a separate update/create
@@ -85,8 +85,8 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         where: { postId_userId: { postId, userId: request.user!.id } },
         create: { postId, userId: request.user!.id, type },
         update: { type },
-      });
-      myReaction = type;
+      })
+      myReaction = type
     }
 
     if (myReaction) {
@@ -101,50 +101,50 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         reactorId: request.user!.id,
         reactorName: request.user!.name,
         reactionType: type,
-      });
+      })
     }
 
-    const counts = await reactionCounts({ postId });
-    return { myReaction, counts };
-  });
+    const counts = await reactionCounts({ postId })
+    return { myReaction, counts }
+  })
 
   fastify.post('/comments/:commentId/like', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { commentId } = request.params as { commentId: string };
-    const { type } = reactionBodySchema.parse(request.body ?? {});
+    const t = getT(request)
+    const { commentId } = request.params as { commentId: string }
+    const { type } = reactionBodySchema.parse(request.body ?? {})
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
       include: { post: { include: { group: { select: { id: true, name: true } } } } },
-    });
+    })
 
     if (!comment) {
-      return reply.status(404).send({ error: t('errors.commentNotFound') });
+      return reply.status(404).send({ error: t('errors.commentNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, comment.post.groupId)) return;
+    if (await requireGroupMember(request, reply, comment.post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     const existing = await prisma.like.findUnique({
       where: { commentId_userId: { commentId, userId: request.user!.id } },
-    });
+    })
 
-    let myReaction: string | null;
+    let myReaction: string | null
 
     if (existing && existing.type === type) {
       // See the postId_userId branch above for why P2025 here is idempotent
       // success rather than an error.
       try {
-        await prisma.like.delete({ where: { id: existing.id } });
+        await prisma.like.delete({ where: { id: existing.id } })
       } catch (err) {
-        if (!isRecordNotFound(err)) throw err;
+        if (!isRecordNotFound(err)) throw err
       }
-      myReaction = null;
+      myReaction = null
     } else {
       // See the postId_userId branch above for why upsert (not
       // update-or-create) is what closes the create/create race.
@@ -152,8 +152,8 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         where: { commentId_userId: { commentId, userId: request.user!.id } },
         create: { commentId, userId: request.user!.id, type },
         update: { type },
-      });
-      myReaction = type;
+      })
+      myReaction = type
     }
 
     if (myReaction) {
@@ -168,10 +168,10 @@ export default async function likeRoutes(fastify: FastifyInstance) {
         reactorId: request.user!.id,
         reactorName: request.user!.name,
         reactionType: type,
-      });
+      })
     }
 
-    const counts = await reactionCounts({ commentId });
-    return { myReaction, counts };
-  });
+    const counts = await reactionCounts({ commentId })
+    return { myReaction, counts }
+  })
 }

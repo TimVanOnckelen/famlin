@@ -1,19 +1,19 @@
-import { FastifyInstance } from 'fastify';
-import { authenticateMediaRequest, requireGroupMember } from '../plugins/auth.js';
-import { isGroupMember } from '../services/groups.js';
-import { immichProvider } from '../services/media/immich.js';
+import { FastifyInstance } from 'fastify'
+import { authenticateMediaRequest, requireGroupMember } from '../plugins/auth.js'
+import { isGroupMember } from '../services/groups.js'
+import { immichProvider } from '../services/media/immich.js'
 import {
   authorizeAndStreamAsset,
   findAlbumLinkOrNotFound,
   findGroupAlbumLinks,
   listAndMapAlbumAssets,
   respondWithAlbumList,
-} from '../services/media/routeHelpers.js';
-import { parseMediaAssetPath } from '../types.js';
-import { getT } from '../i18n/index.js';
+} from '../services/media/routeHelpers.js'
+import { parseMediaAssetPath } from '../types.js'
+import { getT } from '../i18n/index.js'
 
-const IMMICH_ASSET_URL_PREFIX = '/api/immich/assets';
-const NOT_FOUND_KEY = 'errors.immichAlbumLinkNotFound';
+const IMMICH_ASSET_URL_PREFIX = '/api/immich/assets'
+const NOT_FOUND_KEY = 'errors.immichAlbumLinkNotFound'
 
 // Legacy Immich-only member routes, kept for compatibility: the asset URL
 // shape (/api/immich/assets/...) is stored in existing posts'
@@ -24,13 +24,13 @@ const NOT_FOUND_KEY = 'errors.immichAlbumLinkNotFound';
 // lives in services/media/routeHelpers.ts.
 export default async function immichRoutes(fastify: FastifyInstance) {
   fastify.get('/groups/:groupId/albums', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { groupId } = request.params as { groupId: string };
+    const t = getT(request)
+    const { groupId } = request.params as { groupId: string }
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
-    const links = await findGroupAlbumLinks(groupId, 'immich');
-    if (links.length === 0) return [];
+    const links = await findGroupAlbumLinks(groupId, 'immich')
+    if (links.length === 0) return []
 
     // Per-link lookup rather than the full-instance catalog — a group
     // typically has one or two linked albums, so this doesn't scale with
@@ -41,43 +41,43 @@ export default async function immichRoutes(fastify: FastifyInstance) {
       resolveProvider: () => immichProvider,
       failSoft: false,
       includeProviderField: false,
-    });
-  });
+    })
+  })
 
   fastify.get('/albums/:linkId/assets', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { linkId } = request.params as { linkId: string };
+    const t = getT(request)
+    const { linkId } = request.params as { linkId: string }
 
-    const found = await findAlbumLinkOrNotFound(linkId, { providerFilter: 'immich', notFoundErrorKey: NOT_FOUND_KEY });
-    if (!found.ok) return reply.status(found.status).send({ error: t(found.errorKey) });
-    const { link } = found;
+    const found = await findAlbumLinkOrNotFound(linkId, { providerFilter: 'immich', notFoundErrorKey: NOT_FOUND_KEY })
+    if (!found.ok) return reply.status(found.status).send({ error: t(found.errorKey) })
+    const { link } = found
 
-    if (await requireGroupMember(request, reply, link.groupId)) return;
+    if (await requireGroupMember(request, reply, link.groupId)) return
 
-    return listAndMapAlbumAssets(immichProvider, link, IMMICH_ASSET_URL_PREFIX, reply, t);
-  });
+    return listAndMapAlbumAssets(immichProvider, link, IMMICH_ASSET_URL_PREFIX, reply, t)
+  })
 
   // No fastify.authenticate here: this is loaded as an <Image>/<Video> `uri`,
   // which can't send custom headers, so it must accept the same dual auth
   // (session token or media token) that gates /uploads/* — see
   // authenticateMediaRequest in plugins/auth.ts.
   fastify.get('/assets/:linkId/:assetId/:variantExt', async (request, reply) => {
-    const t = getT(request);
-    const userId = await authenticateMediaRequest(request);
-    if (!userId) return reply.status(401).send({ error: t('errors.unauthorized') });
+    const t = getT(request)
+    const userId = await authenticateMediaRequest(request)
+    if (!userId) return reply.status(401).send({ error: t('errors.unauthorized') })
 
-    const { linkId, assetId, variantExt } = request.params as { linkId: string; assetId: string; variantExt: string };
-    const parsed = parseMediaAssetPath(`${IMMICH_ASSET_URL_PREFIX}/${linkId}/${assetId}/${variantExt}`);
+    const { linkId, assetId, variantExt } = request.params as { linkId: string; assetId: string; variantExt: string }
+    const parsed = parseMediaAssetPath(`${IMMICH_ASSET_URL_PREFIX}/${linkId}/${assetId}/${variantExt}`)
     if (!parsed) {
-      return reply.status(404).send({ error: t(NOT_FOUND_KEY) });
+      return reply.status(404).send({ error: t(NOT_FOUND_KEY) })
     }
 
-    const found = await findAlbumLinkOrNotFound(linkId, { providerFilter: 'immich', notFoundErrorKey: NOT_FOUND_KEY });
-    if (!found.ok) return reply.status(found.status).send({ error: t(found.errorKey) });
-    const { link } = found;
+    const found = await findAlbumLinkOrNotFound(linkId, { providerFilter: 'immich', notFoundErrorKey: NOT_FOUND_KEY })
+    if (!found.ok) return reply.status(found.status).send({ error: t(found.errorKey) })
+    const { link } = found
 
     if (!(await isGroupMember(link.groupId, userId))) {
-      return reply.status(403).send({ error: t('errors.notGroupMember') });
+      return reply.status(403).send({ error: t('errors.notGroupMember') })
     }
 
     return authorizeAndStreamAsset(
@@ -89,6 +89,6 @@ export default async function immichRoutes(fastify: FastifyInstance) {
       request.headers.range,
       NOT_FOUND_KEY,
       t
-    );
-  });
+    )
+  })
 }

@@ -1,18 +1,18 @@
-import { ReactNode, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { User, fetchChatUnreadCounts, fetchGroups } from '@famlin/api-client';
-import { BrandIcon } from '@/components/Logo';
-import { useBranding } from '@/hooks/useBranding';
-import { Icon, IconName } from '@/components/Icon';
-import { UserMenu } from '@/components/UserMenu';
-import { ApiTokensModal } from '@/components/ApiTokensModal';
-import { ShortcutsDialog } from '@/components/ShortcutsDialog';
-import { BottomNav } from '@/components/BottomNav';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import './AppShell.css';
+import { ReactNode, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { User, fetchChatUnreadCounts, fetchGroups } from '@famlin/api-client'
+import { BrandIcon } from '@/components/Logo'
+import { useBranding } from '@/hooks/useBranding'
+import { Icon, IconName } from '@/components/Icon'
+import { UserMenu } from '@/components/UserMenu'
+import { ApiTokensModal } from '@/components/ApiTokensModal'
+import { ShortcutsDialog } from '@/components/ShortcutsDialog'
+import { BottomNav } from '@/components/BottomNav'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import './AppShell.css'
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile';
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile'
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -41,21 +41,21 @@ export function AppShell({
   onLogout,
   children,
 }: {
-  user: User;
-  active: NavView;
-  onFeed: () => void;
-  onPhotos?: () => void;
-  onChat?: () => void;
-  onFavorites?: () => void;
-  onProfile: () => void;
-  onNewPost?: () => void;
-  onLogout: () => void;
-  children: ReactNode;
+  user: User
+  active: NavView
+  onFeed: () => void
+  onPhotos?: () => void
+  onChat?: () => void
+  onFavorites?: () => void
+  onProfile: () => void
+  onNewPost?: () => void
+  onLogout: () => void
+  children: ReactNode
 }) {
-  const { t } = useTranslation();
-  const branding = useBranding();
-  const [apiTokensOpen, setApiTokensOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const { t } = useTranslation()
+  const branding = useBranding()
+  const [apiTokensOpen, setApiTokensOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   // Same ['chat-unread'] cache key + `enabled: !!onChat` convention the old
   // top header/BottomNav used — skipped on ChatPage itself, which doesn't
@@ -65,8 +65,8 @@ export function AppShell({
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
     enabled: !!onChat,
-  });
-  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0);
+  })
+  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
 
   // Photos, Chat and Favorites are family-scoped surfaces: a user in no
   // families has nothing to see in any of them, so all three collapse for
@@ -76,39 +76,39 @@ export function AppShell({
   // flash. Until the query answers (loading or failed) reads as "has
   // groups", so the nav never hides tabs it might have to show back; the
   // tab currently being viewed also never disappears.
-  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
-  const hasGroups = (groupsQuery.data?.length ?? 1) > 0;
-  const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos');
-  const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat');
-  const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites');
-  const photosNav = showPhotosTab ? onPhotos : undefined;
-  const chatNav = showChatTab ? onChat : undefined;
-  const favoritesNav = showFavoritesNav ? onFavorites : undefined;
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
+  const hasGroups = (groupsQuery.data?.length ?? 1) > 0
+  const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos')
+  const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat')
+  const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites')
+  const photosNav = showPhotosTab ? onPhotos : undefined
+  const chatNav = showChatTab ? onChat : undefined
+  const favoritesNav = showFavoritesNav ? onFavorites : undefined
 
   function goTo(view: NavView) {
-    if (view === 'feed') onFeed();
-    else if (view === 'photos') photosNav?.();
-    else if (view === 'chat') chatNav?.();
-    else if (view === 'favorites') favoritesNav?.();
-    else onProfile();
+    if (view === 'feed') onFeed()
+    else if (view === 'photos') photosNav?.()
+    else if (view === 'chat') chatNav?.()
+    else if (view === 'favorites') favoritesNav?.()
+    else onProfile()
   }
 
   useKeyboardShortcuts({
     onNavigate: goTo,
     onNewPost,
     onHelp: () => setShortcutsOpen(true),
-  });
+  })
 
-  const brandName = branding?.name ?? t('common.appName');
+  const brandName = branding?.name ?? t('common.appName')
 
   const navItems: {
-    view: NavView;
-    icon: IconName;
-    label: string;
-    keys: string;
-    onClick?: () => void;
-    badge?: boolean;
-    show: boolean;
+    view: NavView
+    icon: IconName
+    label: string
+    keys: string
+    onClick?: () => void
+    badge?: boolean
+    show: boolean
   }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
     {
@@ -130,7 +130,7 @@ export function AppShell({
       show: showChatTab,
     },
     { view: 'profile', icon: 'user', label: t('tabs.profile'), keys: 'g u', onClick: onProfile, show: true },
-  ];
+  ]
 
   return (
     <div className="app-shell">
@@ -227,5 +227,5 @@ export function AppShell({
       {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
       {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
     </div>
-  );
+  )
 }

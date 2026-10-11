@@ -1,31 +1,31 @@
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import fsp from 'fs/promises';
-import path from 'path';
-import sharp from 'sharp';
+import { execFile } from 'child_process'
+import { promisify } from 'util'
+import fsp from 'fs/promises'
+import path from 'path'
+import sharp from 'sharp'
 
-const execFileAsync = promisify(execFile);
+const execFileAsync = promisify(execFile)
 
 // Source extensions sharp can decode and re-encode into a smaller display
 // copy. Deliberately excludes .gif (resizing without `{ animated: true }`
 // collapses it to a first-frame still, breaking chat GIF reactions) and every
 // video extension (no image pipeline applies).
-const CONVERTIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+const CONVERTIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'])
 
 export function isConvertibleImage(ext: string): boolean {
-  return CONVERTIBLE_EXTENSIONS.has(ext.toLowerCase());
+  return CONVERTIBLE_EXTENSIONS.has(ext.toLowerCase())
 }
 
 // Video extensions ffmpeg can extract a poster frame from — the video half of
 // routes/uploads.ts's ALLOWED_EXTENSIONS.
-const POSTERABLE_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov', '.m4v', '.webm']);
+const POSTERABLE_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov', '.m4v', '.webm'])
 
 export function isPosterableVideo(ext: string): boolean {
-  return POSTERABLE_VIDEO_EXTENSIONS.has(ext.toLowerCase());
+  return POSTERABLE_VIDEO_EXTENSIONS.has(ext.toLowerCase())
 }
 
-const DISPLAY_WIDTH = 1920;
-const THUMBNAIL_WIDTH = 400;
+const DISPLAY_WIDTH = 1920
+const THUMBNAIL_WIDTH = 400
 
 // Decodes the original once and branches into two independent resize/output
 // pipelines via sharp's clone() — cheaper than calling sharp(originalPath)
@@ -39,19 +39,19 @@ export async function generateUploadVariants(
   displayPath: string,
   thumbnailPath: string
 ): Promise<void> {
-  const image = sharp(originalPath).rotate();
+  const image = sharp(originalPath).rotate()
 
   await image
     .clone()
     .resize({ width: DISPLAY_WIDTH, height: DISPLAY_WIDTH, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 85 })
-    .toFile(displayPath);
+    .toFile(displayPath)
 
   await image
     .clone()
     .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_WIDTH, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 80 })
-    .toFile(thumbnailPath);
+    .toFile(thumbnailPath)
 }
 
 // Upload-route variant of the pair above: starts both resize pipelines from
@@ -68,23 +68,23 @@ export function generateDisplayVariant(
   displayPath: string,
   thumbnailPath: string
 ): { display: Promise<void>; thumbnail: Promise<void> } {
-  const image = sharp(originalPath).rotate();
+  const image = sharp(originalPath).rotate()
 
   const thumbnail = image
     .clone()
     .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_WIDTH, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toFile(thumbnailPath)
-    .then(() => {});
+    .then(() => {})
 
   const display = image
     .clone()
     .resize({ width: DISPLAY_WIDTH, height: DISPLAY_WIDTH, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 85 })
     .toFile(displayPath)
-    .then(() => {});
+    .then(() => {})
 
-  return { display, thumbnail };
+  return { display, thumbnail }
 }
 
 // Extracts a poster frame from an uploaded video into the same
@@ -111,7 +111,7 @@ export async function generateVideoPoster(videoPath: string, posterPath: string)
       posterPath,
     ],
     { timeout: 30_000 }
-  );
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -129,21 +129,20 @@ export async function generateVideoPoster(videoPath: string, posterPath: string)
 // same generateUploadVariants() a fresh upload runs (so the two can't drift
 // apart) and cached in uploads/derived/, inside the uploads volume.
 
-export const DERIVED_DIR_NAME = 'derived';
+export const DERIVED_DIR_NAME = 'derived'
 
-const HEIC_EXTENSIONS = ['.heic', '.heif'];
+const HEIC_EXTENSIONS = ['.heic', '.heif']
 
 // Only the exact filename shape routes/uploads.ts writes — which also keeps
 // anything path-traversal-ish from ever reaching the fs/sharp calls below.
-const UPLOAD_FILENAME_RE =
-  /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(-thumbnail)?(\.[a-z0-9]+)$/i;
+const UPLOAD_FILENAME_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(-thumbnail)?(\.[a-z0-9]+)$/i
 
 async function exists(filePath: string): Promise<boolean> {
   try {
-    await fsp.access(filePath);
-    return true;
+    await fsp.access(filePath)
+    return true
   } catch {
-    return false;
+    return false
   }
 }
 
@@ -153,79 +152,79 @@ async function exists(filePath: string): Promise<boolean> {
 // sharp build without HEIF support, a corrupt file, an unwritable cache dir),
 // so those keep being served as the raw stored bytes exactly as before.
 export async function resolveHeicRendition(uploadsDir: string, requestedFile: string): Promise<string | null> {
-  const match = UPLOAD_FILENAME_RE.exec(requestedFile);
-  if (!match) return null;
-  const [, uuid, isThumbnail, rawExt] = match;
-  const ext = rawExt.toLowerCase();
+  const match = UPLOAD_FILENAME_RE.exec(requestedFile)
+  if (!match) return null
+  const [, uuid, isThumbnail, rawExt] = match
+  const ext = rawExt.toLowerCase()
 
-  let sourcePath: string | null = null;
+  let sourcePath: string | null = null
   if (!isThumbnail) {
-    if (HEIC_EXTENSIONS.includes(ext)) sourcePath = path.join(uploadsDir, `${uuid}${ext}`);
+    if (HEIC_EXTENSIONS.includes(ext)) sourcePath = path.join(uploadsDir, `${uuid}${ext}`)
   } else if (ext === '.jpg' && !(await exists(path.join(uploadsDir, requestedFile)))) {
     // Only an upload that never got a thumbnail generated concerns us, so a
     // real one on disk wins and the ordinary path costs a single stat.
     for (const heicExt of HEIC_EXTENSIONS) {
-      const candidate = path.join(uploadsDir, `${uuid}${heicExt}`);
+      const candidate = path.join(uploadsDir, `${uuid}${heicExt}`)
       if (await exists(candidate)) {
-        sourcePath = candidate;
-        break;
+        sourcePath = candidate
+        break
       }
     }
   }
-  if (!sourcePath) return null;
+  if (!sourcePath) return null
 
-  const derivedDir = path.join(uploadsDir, DERIVED_DIR_NAME);
-  const ready = await ensureRenditions(sourcePath, derivedDir, uuid);
-  if (!ready) return null;
-  return path.join(derivedDir, isThumbnail ? `${uuid}-thumbnail.jpg` : `${uuid}.jpg`);
+  const derivedDir = path.join(uploadsDir, DERIVED_DIR_NAME)
+  const ready = await ensureRenditions(sourcePath, derivedDir, uuid)
+  if (!ready) return null
+  return path.join(derivedDir, isThumbnail ? `${uuid}-thumbnail.jpg` : `${uuid}.jpg`)
 }
 
 // Decoding a 12MP HEIC costs hundreds of milliseconds, and one photo can be
 // requested twice at once (a grid tile and the hero it opens into) — collapse
 // concurrent misses onto a single generateUploadVariants() call, which itself
 // produces both renditions from one decode.
-const inFlight = new Map<string, Promise<boolean>>();
+const inFlight = new Map<string, Promise<boolean>>()
 
 function ensureRenditions(sourcePath: string, derivedDir: string, uuid: string): Promise<boolean> {
-  const pending = inFlight.get(uuid);
-  if (pending) return pending;
+  const pending = inFlight.get(uuid)
+  if (pending) return pending
 
-  const work = generateRenditions(sourcePath, derivedDir, uuid).finally(() => inFlight.delete(uuid));
-  inFlight.set(uuid, work);
-  return work;
+  const work = generateRenditions(sourcePath, derivedDir, uuid).finally(() => inFlight.delete(uuid))
+  inFlight.set(uuid, work)
+  return work
 }
 
 async function generateRenditions(sourcePath: string, derivedDir: string, uuid: string): Promise<boolean> {
-  let sourceStat;
+  let sourceStat
   try {
-    sourceStat = await fsp.stat(sourcePath);
+    sourceStat = await fsp.stat(sourcePath)
   } catch {
-    return false;
+    return false
   }
 
-  const displayPath = path.join(derivedDir, `${uuid}.jpg`);
-  const thumbnailPath = path.join(derivedDir, `${uuid}-thumbnail.jpg`);
+  const displayPath = path.join(derivedDir, `${uuid}.jpg`)
+  const thumbnailPath = path.join(derivedDir, `${uuid}-thumbnail.jpg`)
   try {
     // Both are written together, so the display copy's freshness stands for
     // the pair.
-    const cached = await fsp.stat(displayPath);
-    if (cached.mtimeMs >= sourceStat.mtimeMs) return true;
+    const cached = await fsp.stat(displayPath)
+    if (cached.mtimeMs >= sourceStat.mtimeMs) return true
   } catch {
     // cache miss
   }
 
-  const suffix = `${process.pid}.${Date.now()}.tmp`;
-  const displayTmp = `${displayPath}.${suffix}`;
-  const thumbnailTmp = `${thumbnailPath}.${suffix}`;
+  const suffix = `${process.pid}.${Date.now()}.tmp`
+  const displayTmp = `${displayPath}.${suffix}`
+  const thumbnailTmp = `${thumbnailPath}.${suffix}`
   try {
-    await fsp.mkdir(derivedDir, { recursive: true });
-    await generateUploadVariants(sourcePath, displayTmp, thumbnailTmp);
+    await fsp.mkdir(derivedDir, { recursive: true })
+    await generateUploadVariants(sourcePath, displayTmp, thumbnailTmp)
     // Atomic swaps so a concurrent reader never sees a half-written file.
-    await fsp.rename(displayTmp, displayPath);
-    await fsp.rename(thumbnailTmp, thumbnailPath);
-    return true;
+    await fsp.rename(displayTmp, displayPath)
+    await fsp.rename(thumbnailTmp, thumbnailPath)
+    return true
   } catch {
-    await Promise.all([fsp.unlink(displayTmp).catch(() => {}), fsp.unlink(thumbnailTmp).catch(() => {})]);
-    return false;
+    await Promise.all([fsp.unlink(displayTmp).catch(() => {}), fsp.unlink(thumbnailTmp).catch(() => {})])
+    return false
   }
 }

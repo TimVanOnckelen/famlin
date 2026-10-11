@@ -1,6 +1,6 @@
-import { ChangeEvent, FormEvent, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChangeEvent, FormEvent, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   uploadFiles,
   Post,
@@ -13,24 +13,24 @@ import {
   groupCommentAttachments,
   getUploadUrl,
   patchPostInCaches,
-} from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { formatRelativeDate } from '@/utils/time';
-import { fileFormatLabel, isBrowserDecodableImage, isVideoUrl } from '@/utils/media';
+} from '@famlin/api-client'
+import { Avatar } from '@/components/Avatar'
+import { Icon } from '@/components/Icon'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { formatRelativeDate } from '@/utils/time'
+import { fileFormatLabel, isBrowserDecodableImage, isVideoUrl } from '@/utils/media'
 
 // Up to this many photos on one comment card lay out as a wrapping grid;
 // beyond it the card becomes a horizontally scrolling gallery instead, so a
 // long photo burst never pushes the rest of the thread down the page.
-const GRID_MAX_TILES = 4;
+const GRID_MAX_TILES = 4
 
 function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: boolean }) {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const { lead, attachments } = group;
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const { lead, attachments } = group
 
   // Basic reaction toggle — the full per-emoji picker stays a post-level
   // affordance for now, matching the calm comment row in mobile. Sending back
@@ -41,7 +41,7 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
   const likeMutation = useMutation({
     mutationFn: () => reactToComment(group.reactionTargetId, group.myReaction ?? 'LIKE'),
     onMutate: () => {
-      const reacted = !!group.myReaction;
+      const reacted = !!group.myReaction
       queryClient.setQueryData<Comment[]>(['comments', lead.postId], (old) =>
         old?.map((c) =>
           c.id === group.reactionTargetId
@@ -53,19 +53,19 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
               }
             : c
         )
-      );
+      )
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', lead.postId] });
+      queryClient.invalidateQueries({ queryKey: ['comments', lead.postId] })
     },
-  });
+  })
 
-  const isGallery = attachments.length > GRID_MAX_TILES;
+  const isGallery = attachments.length > GRID_MAX_TILES
   const layout = isGallery
     ? 'comment-attachment-gallery'
     : attachments.length > 1
       ? 'comment-attachment-grid'
-      : 'comment-attachment';
+      : 'comment-attachment'
 
   const tiles = attachments.map(({ url, commentId }, index) => (
     <button
@@ -81,7 +81,7 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
         <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
       )}
     </button>
-  ));
+  ))
 
   return (
     <div className={`comment${isReply ? ' comment-reply' : ''}`}>
@@ -127,14 +127,14 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
         />
       )}
     </div>
-  );
+  )
 }
 
 export function CommentsSection({
   post,
   filterComments,
 }: {
-  post: Post;
+  post: Post
   // Applied to the fetched list before splitting it into top-level/replies —
   // used by TripDetailPage's "Reacties op de reis" section to hide check-in
   // comments (metadata.kind === 'trip_checkin') from that section: their
@@ -143,67 +143,67 @@ export function CommentsSection({
   // (it's only called for what's left in topLevel), so they're excluded too
   // without any extra filtering. Omitted = show everything, unchanged from
   // before this prop existed.
-  filterComments?: (comments: Comment[]) => Comment[];
+  filterComments?: (comments: Comment[]) => Comment[]
 }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [draft, setDraft] = useState('');
-  const [pending, setPending] = useState<{ file: File; previewUrl: string }[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [draft, setDraft] = useState('')
+  const [pending, setPending] = useState<{ file: File; previewUrl: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const commentsQuery = useQuery({
     queryKey: ['comments', post.id],
     queryFn: () => fetchComments(post.id),
-  });
+  })
 
   const createMutation = useMutation({
     mutationFn: async ({ content, files }: { content: string; files: File[] }) => {
-      const attachmentUrls = files.length ? await uploadFiles(files) : undefined;
-      return createComment(post.id, { content: content || undefined, attachmentUrls });
+      const attachmentUrls = files.length ? await uploadFiles(files) : undefined
+      return createComment(post.id, { content: content || undefined, attachmentUrls })
     },
     onSuccess: (created) => {
-      setDraft('');
-      clearAttachments();
-      queryClient.setQueryData<Comment[]>(['comments', post.id], (old) => (old ? [...old, created] : [created]));
-      patchPostInCaches(queryClient, post.id, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
+      setDraft('')
+      clearAttachments()
+      queryClient.setQueryData<Comment[]>(['comments', post.id], (old) => (old ? [...old, created] : [created]))
+      patchPostInCaches(queryClient, post.id, (p) => ({ ...p, commentCount: p.commentCount + 1 }))
     },
-  });
+  })
 
   function clearAttachments() {
-    pending.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-    setPending([]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    pending.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+    setPending([])
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function removeAttachment(index: number) {
     setPending((old) => {
-      const removed = old[index];
-      if (removed) URL.revokeObjectURL(removed.previewUrl);
-      return old.filter((_, i) => i !== index);
-    });
-    if (fileInputRef.current) fileInputRef.current.value = '';
+      const removed = old[index]
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return old.filter((_, i) => i !== index)
+    })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function pickAttachments(e: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
     setPending((old) => {
       // Picking again adds to what's already staged; anything past the
       // server's per-comment cap is dropped rather than failing the send.
-      const room = MAX_COMMENT_ATTACHMENTS - old.length;
+      const room = MAX_COMMENT_ATTACHMENTS - old.length
       const added = files.slice(0, Math.max(0, room)).map((file) => ({
         file,
         previewUrl: URL.createObjectURL(file),
-      }));
-      return [...old, ...added];
-    });
+      }))
+      return [...old, ...added]
+    })
   }
 
   function submit(e: FormEvent) {
-    e.preventDefault();
-    const content = draft.trim();
+    e.preventDefault()
+    const content = draft.trim()
     if ((content || pending.length) && !createMutation.isPending) {
-      createMutation.mutate({ content, files: pending.map((item) => item.file) });
+      createMutation.mutate({ content, files: pending.map((item) => item.file) })
     }
   }
 
@@ -211,11 +211,11 @@ export function CommentsSection({
   // replies. Grouping collapses runs of photo-only comments by the same author
   // into one card (see groupCommentAttachments) — replies are grouped the same
   // way within their own thread.
-  const rawComments = commentsQuery.data ?? [];
-  const comments = filterComments ? filterComments(rawComments) : rawComments;
-  const topLevelGroups = groupCommentAttachments(comments.filter((c) => !c.parentId));
+  const rawComments = commentsQuery.data ?? []
+  const comments = filterComments ? filterComments(rawComments) : rawComments
+  const topLevelGroups = groupCommentAttachments(comments.filter((c) => !c.parentId))
   const replyGroupsFor = (group: CommentGroup) =>
-    groupCommentAttachments(comments.filter((c) => group.comments.some((parent) => parent.id === c.parentId)));
+    groupCommentAttachments(comments.filter((c) => group.comments.some((parent) => parent.id === c.parentId)))
 
   return (
     <div className="comments-section">
@@ -278,8 +278,8 @@ export function CommentsSection({
               // Clear before opening the picker (re-pick support) — see the
               // matching comment in NewPostModal for why it must not happen
               // in the change handler.
-              if (fileInputRef.current) fileInputRef.current.value = '';
-              fileInputRef.current?.click();
+              if (fileInputRef.current) fileInputRef.current.value = ''
+              fileInputRef.current?.click()
             }}
             disabled={pending.length >= MAX_COMMENT_ATTACHMENTS}
             aria-label={t('comments.addAttachment')}
@@ -304,5 +304,5 @@ export function CommentsSection({
       </form>
       {createMutation.isError && <div className="comments-hint">{t('comments.sendFailed')}</div>}
     </div>
-  );
+  )
 }

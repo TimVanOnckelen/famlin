@@ -9,10 +9,10 @@
 // parent directories, so running `eslint .` from inside `web/` or
 // `packages/api-client/` picks this file up automatically as long as
 // those packages don't have a config file of their own.
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import reactHooks from 'eslint-plugin-react-hooks';
-import globals from 'globals';
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import reactHooks from 'eslint-plugin-react-hooks'
+import globals from 'globals'
 
 export default tseslint.config(
   {
@@ -86,4 +86,4 @@ export default tseslint.config(
       globals: { ...globals.node, ...globals.browser },
     },
   }
-);
+)

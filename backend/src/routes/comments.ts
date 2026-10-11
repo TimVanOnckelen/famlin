@@ -1,32 +1,32 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../db.js';
-import { createCommentBodySchema, normalizeCommentAttachments, updateCommentBodySchema } from '../types.js';
-import { emitDomainEvent } from '../events.js';
-import { requireGroupMember } from '../plugins/auth.js';
-import { shapeComment } from '../services/comments.js';
-import { getT } from '../i18n/index.js';
-import { handlerCommentSiblingKey } from '../services/postTypes/registry.js';
-import { canViewPostCircle } from '../services/circles.js';
-import { bindAssetsToScope } from '../services/uploads.js';
+import { FastifyInstance } from 'fastify'
+import { prisma } from '../db.js'
+import { createCommentBodySchema, normalizeCommentAttachments, updateCommentBodySchema } from '../types.js'
+import { emitDomainEvent } from '../events.js'
+import { requireGroupMember } from '../plugins/auth.js'
+import { shapeComment } from '../services/comments.js'
+import { getT } from '../i18n/index.js'
+import { handlerCommentSiblingKey } from '../services/postTypes/registry.js'
+import { canViewPostCircle } from '../services/circles.js'
+import { bindAssetsToScope } from '../services/uploads.js'
 
 export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
-    const { assetUrl } = request.query as { assetUrl?: string };
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
+    const { assetUrl } = request.query as { assetUrl?: string }
 
-    const post = await prisma.post.findUnique({ where: { id: postId } });
+    const post = await prisma.post.findUnique({ where: { id: postId } })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     const comments = await prisma.comment.findMany({
@@ -40,52 +40,52 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         likes: { select: { type: true, userId: true } },
       },
       orderBy: { createdAt: 'asc' },
-    });
+    })
 
-    return comments.map((comment) => shapeComment(comment, request.user!.id));
-  });
+    return comments.map((comment) => shapeComment(comment, request.user!.id))
+  })
 
   fastify.post('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
-    const body = createCommentBodySchema.parse(request.body);
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
+    const body = createCommentBodySchema.parse(request.body)
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { group: { select: { id: true, name: true } } },
-    });
+    })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    let assetUrl = body.assetUrl;
+    let assetUrl = body.assetUrl
 
     if (body.parentId) {
-      const parent = await prisma.comment.findUnique({ where: { id: body.parentId } });
+      const parent = await prisma.comment.findUnique({ where: { id: body.parentId } })
       if (!parent || parent.postId !== postId) {
-        return reply.status(404).send({ error: t('errors.parentCommentNotFound') });
+        return reply.status(404).send({ error: t('errors.parentCommentNotFound') })
       }
       // A reply stays attached to whatever the thread it's replying to is
       // pinned to (a specific photo, or the post itself) — the client can't
       // override that.
-      assetUrl = parent.assetUrl ?? undefined;
+      assetUrl = parent.assetUrl ?? undefined
     } else if (assetUrl && !post.uploadedAssetUrls.includes(assetUrl)) {
-      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
+      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') })
     }
 
     // attachmentUrls is the real column; attachmentUrl keeps mirroring its
     // first entry so clients built before multi-attachment comments still
     // render (the first photo of) a multi-photo comment.
-    const attachmentUrls = normalizeCommentAttachments(body);
+    const attachmentUrls = normalizeCommentAttachments(body)
 
     const comment = await prisma.comment.create({
       data: {
@@ -102,12 +102,12 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         _count: { select: { likes: true } },
         likes: { select: { type: true, userId: true } },
       },
-    });
+    })
 
     // A comment's own photos inherit the post's audience: its group, and its
     // circle if it has one — a photo replied onto a circle-private post must
     // not be readable family-wide.
-    await bindAssetsToScope(attachmentUrls, { groupIds: [post.groupId], circleId: post.circleId }, request.user!.id);
+    await bindAssetsToScope(attachmentUrls, { groupIds: [post.groupId], circleId: post.circleId }, request.user!.id)
 
     // Handlers run fire-and-forget (see events.ts) — the notifications
     // subscriber decides who in the thread gets told (and re-validates the
@@ -127,50 +127,50 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       // Always null here — the public route's body schema doesn't accept a
       // client-sent metadata field (see createCommentBodySchema in types.ts).
       metadata: comment.metadata,
-    });
+    })
 
     // A brand new comment has no likes yet, so this is the same shape as the
     // hand-built { likeCount: 0, likedByMe: false, myReaction: null,
     // reactions: {} } object it replaces — just routed through the same
     // shapeComment every other comment-returning endpoint uses.
-    return shapeComment(comment, request.user!.id);
-  });
+    return shapeComment(comment, request.user!.id)
+  })
 
   fastify.patch('/comments/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = updateCommentBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = updateCommentBodySchema.parse(request.body)
 
     const comment = await prisma.comment.findUnique({
       where: { id },
       include: { post: { select: { groupId: true, crossPostId: true, circleId: true } } },
-    });
+    })
 
     if (!comment) {
-      return reply.status(404).send({ error: t('errors.commentNotFound') });
+      return reply.status(404).send({ error: t('errors.commentNotFound') })
     }
 
     if (comment.authorId !== request.user!.id) {
-      return reply.status(403).send({ error: t('errors.notAuthorized') });
+      return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
     // Editing writes into the group, so it requires *current* membership.
-    if (await requireGroupMember(request, reply, comment.post.groupId)) return;
+    if (await requireGroupMember(request, reply, comment.post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const editedAt = new Date();
+    const editedAt = new Date()
 
     // Attachments are replaced wholesale when the client sends them and left
     // untouched when it doesn't, so a text-only edit (every pre-existing
     // client) never has to resend the photo list.
-    const attachmentsProvided = body.attachmentUrls !== undefined || body.attachmentUrl !== undefined;
-    const attachmentUrls = attachmentsProvided ? normalizeCommentAttachments(body) : comment.attachmentUrls;
-    const content = body.content === undefined ? comment.content : body.content.trim();
+    const attachmentsProvided = body.attachmentUrls !== undefined || body.attachmentUrl !== undefined
+    const attachmentUrls = attachmentsProvided ? normalizeCommentAttachments(body) : comment.attachmentUrls
+    const content = body.content === undefined ? comment.content : body.content.trim()
 
     // A handler-authored comment keeps its photos in metadata.photoUrls, not
     // attachmentUrls (services/postTypes/trip.ts, album.ts) — rewriting the
@@ -179,7 +179,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // photos through their own interactions, so reject it outright rather
     // than half-applying it. Their text still edits (and fans out) below.
     if (attachmentsProvided && comment.metadata !== null) {
-      return reply.status(400).send({ error: t('errors.commentAttachmentsNotEditable') });
+      return reply.status(400).send({ error: t('errors.commentAttachmentsNotEditable') })
     }
 
     // The same "content or attachments" rule createCommentBodySchema enforces,
@@ -189,7 +189,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // handler-authored comment, whose emptiness its own handler defines
     // (a TRIP check-in is a place, with text and photos both optional).
     if (comment.metadata === null && !content && attachmentUrls.length === 0) {
-      return reply.status(400).send({ error: t('errors.commentContentRequired') });
+      return reply.status(400).send({ error: t('errors.commentContentRequired') })
     }
 
     // A handler-authored Comment (a TRIP check-in, an ALBUM photo
@@ -200,11 +200,11 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // SAME content out to every sibling copy (INCLUDING this one, via one
     // updateMany) — otherwise the caption/text diverges across groups.
     // Mirrors the author-delete fan-out below.
-    const siblingKey = handlerCommentSiblingKey(comment.metadata);
+    const siblingKey = handlerCommentSiblingKey(comment.metadata)
     if (siblingKey && comment.post.crossPostId) {
       const siblingIds = (
         await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
-      ).map((p) => p.id);
+      ).map((p) => p.id)
       await prisma.comment.updateMany({
         where: {
           postId: { in: siblingIds },
@@ -212,7 +212,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
           metadata: { path: siblingKey.path, equals: siblingKey.value },
         },
         data: { content, editedAt },
-      });
+      })
     } else {
       await prisma.comment.update({
         where: { id },
@@ -224,7 +224,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
           // renders (the first photo of) an edited comment.
           ...(attachmentsProvided ? { attachmentUrl: attachmentUrls[0] ?? null, attachmentUrls } : {}),
         },
-      });
+      })
     }
 
     const updated = await prisma.comment.findUniqueOrThrow({
@@ -234,26 +234,26 @@ export default async function commentRoutes(fastify: FastifyInstance) {
         _count: { select: { likes: true } },
         likes: { select: { type: true, userId: true } },
       },
-    });
+    })
 
-    return shapeComment(updated, request.user!.id);
-  });
+    return shapeComment(updated, request.user!.id)
+  })
 
   fastify.delete('/comments/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
     const comment = await prisma.comment.findUnique({
       where: { id },
       include: { post: { select: { crossPostId: true } } },
-    });
+    })
 
     if (!comment) {
-      return reply.status(404).send({ error: t('errors.commentNotFound') });
+      return reply.status(404).send({ error: t('errors.commentNotFound') })
     }
 
     if (comment.authorId !== request.user!.id && !request.user!.isAdmin) {
-      return reply.status(403).send({ error: t('errors.notAuthorized') });
+      return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
     // A handler-authored Comment (a TRIP check-in, an ALBUM photo
@@ -263,22 +263,22 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // copy — mirroring how an author's post DELETE fans out to siblings
     // (routes/posts.ts). An admin moderating someone else's stays per-group
     // (single row), consistent with admin post moderation.
-    const siblingKey = handlerCommentSiblingKey(comment.metadata);
+    const siblingKey = handlerCommentSiblingKey(comment.metadata)
     if (comment.authorId === request.user!.id && siblingKey && comment.post.crossPostId) {
       const siblingIds = (
         await prisma.post.findMany({ where: { crossPostId: comment.post.crossPostId }, select: { id: true } })
-      ).map((p) => p.id);
+      ).map((p) => p.id)
       await prisma.comment.deleteMany({
         where: {
           postId: { in: siblingIds },
           authorId: comment.authorId,
           metadata: { path: siblingKey.path, equals: siblingKey.value },
         },
-      });
+      })
     } else {
-      await prisma.comment.delete({ where: { id } });
+      await prisma.comment.delete({ where: { id } })
     }
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 }

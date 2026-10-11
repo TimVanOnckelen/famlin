@@ -1,4 +1,4 @@
-import { Comment } from '@/types';
+import { Comment } from '@/types'
 
 // Mobile helpers for the ALBUM post type — mirrors web's utils/album.ts. An
 // album's photos live on its photo-contribution comments (metadata.kind ===
@@ -6,8 +6,8 @@ import { Comment } from '@/types';
 // (Comment.content); ordinary comments on the album have no metadata.
 
 export interface AlbumPhoto {
-  url: string;
-  comment: Comment;
+  url: string
+  comment: Comment
 }
 
 // Flattens a post's album-photo contribution comments into a single
@@ -16,19 +16,19 @@ export interface AlbumPhoto {
 export function collectAlbumPhotos(comments: Comment[]): AlbumPhoto[] {
   const contributions = comments
     .filter((c) => !c.parentId && c.metadata?.kind === 'album_photo')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
-  const photos: AlbumPhoto[] = [];
+  const photos: AlbumPhoto[] = []
   for (const comment of contributions) {
-    const urls = comment.metadata?.kind === 'album_photo' ? comment.metadata.photoUrls : [];
+    const urls = comment.metadata?.kind === 'album_photo' ? comment.metadata.photoUrls : []
     for (const url of urls) {
-      photos.push({ url, comment });
+      photos.push({ url, comment })
     }
   }
-  return photos;
+  return photos
 }
 
 // The album's ordinary comments — everything that isn't a photo contribution.
 export function isAlbumDiscussionComment(comment: Comment): boolean {
-  return comment.metadata?.kind !== 'album_photo';
+  return comment.metadata?.kind !== 'album_photo'
 }

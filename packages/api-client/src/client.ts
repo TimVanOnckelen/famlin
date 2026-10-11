@@ -1,45 +1,45 @@
-import axios from 'axios';
-import { getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
+import axios from 'axios'
+import { getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage'
 
 // The base URL comes from initApiBaseUrl() (stored server) or
 // setApiBaseUrl() (login/invite flow) — there is deliberately no hardcoded
 // localhost fallback here: silently targeting localhost when neither of
 // those has run yet would mask real failures instead of surfacing them.
-let currentServerUrl: string | null = null;
-let currentBaseUrl: string | null = null;
+let currentServerUrl: string | null = null
+let currentBaseUrl: string | null = null
 
 function normalizeServerUrl(serverUrl: string): string {
-  return serverUrl.trim().replace(/\/+$/, '');
+  return serverUrl.trim().replace(/\/+$/, '')
 }
 
 export function setApiBaseUrl(serverUrl: string) {
-  const normalized = normalizeServerUrl(serverUrl);
-  currentServerUrl = normalized;
-  currentBaseUrl = `${normalized}/api`;
+  const normalized = normalizeServerUrl(serverUrl)
+  currentServerUrl = normalized
+  currentBaseUrl = `${normalized}/api`
 }
 
 export function getCurrentServerUrl(): string | null {
-  return currentServerUrl;
+  return currentServerUrl
 }
 
 // A short-lived, narrow-scope token (separate from the main session token)
 // used only to authorize GETs under /uploads — cached in memory so
 // getUploadUrl() can stay synchronous for use directly in <Image>/<Video>
 // source props. See uploads.ts and the backend's onRequest hook in app.ts.
-let currentMediaToken: string | null = null;
+let currentMediaToken: string | null = null
 
 export function setMediaToken(token: string | null) {
-  currentMediaToken = token;
+  currentMediaToken = token
 }
 
 export function getCurrentMediaToken(): string | null {
-  return currentMediaToken;
+  return currentMediaToken
 }
 
 export async function initApiBaseUrl() {
-  const stored = await getStorageAdapter().getItem(SERVER_URL_KEY);
+  const stored = await getStorageAdapter().getItem(SERVER_URL_KEY)
   if (stored) {
-    setApiBaseUrl(stored);
+    setApiBaseUrl(stored)
   }
 }
 
@@ -48,10 +48,10 @@ export async function initApiBaseUrl() {
 // Accept-Language). A resolver rather than a stored value because the
 // language can change at any time (profile/login language pickers), and this
 // package deliberately doesn't depend on any consumer's i18n instance.
-let languageResolver: (() => string | null | undefined) | null = null;
+let languageResolver: (() => string | null | undefined) | null = null
 
 export function setLanguageResolver(fn: (() => string | null | undefined) | null) {
-  languageResolver = fn;
+  languageResolver = fn
 }
 
 export const api = axios.create({
@@ -59,23 +59,23 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-});
+})
 
 api.interceptors.request.use(async (config) => {
   // If neither initApiBaseUrl() nor setApiBaseUrl() has run yet, leave
   // baseURL unset so the request fails fast instead of silently hitting a
   // hardcoded default.
-  config.baseURL = currentBaseUrl ?? undefined;
-  const language = languageResolver?.();
+  config.baseURL = currentBaseUrl ?? undefined
+  const language = languageResolver?.()
   if (language) {
-    config.headers['Accept-Language'] = language;
+    config.headers['Accept-Language'] = language
   }
-  const token = await getStorageAdapter().getItem(TOKEN_KEY);
+  const token = await getStorageAdapter().getItem(TOKEN_KEY)
   if (token && (await tokenBelongsToCurrentServer())) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
 // The stored session token is only ever sent to the server it was issued by.
 // A consumer that remembers its server (mobile: saved together with the
@@ -85,18 +85,18 @@ api.interceptors.request.use(async (config) => {
 // and point it at a server they control. Consumers that never store a server
 // URL (web/admin talk to their own origin) are unaffected.
 async function tokenBelongsToCurrentServer(): Promise<boolean> {
-  const stored = await getStorageAdapter().getItem(SERVER_URL_KEY);
-  if (!stored) return true;
-  return currentServerUrl !== null && normalizeServerUrl(stored) === currentServerUrl;
+  const stored = await getStorageAdapter().getItem(SERVER_URL_KEY)
+  if (!stored) return true
+  return currentServerUrl !== null && normalizeServerUrl(stored) === currentServerUrl
 }
 
 // Lets a consumer's auth store react to a 401 (expired/revoked session)
 // without this module importing that store directly, which would create a
 // circular import (the store already imports setApiBaseUrl from here).
-let unauthorizedHandler: (() => void) | null = null;
+let unauthorizedHandler: (() => void) | null = null
 
 export function setUnauthorizedHandler(fn: () => void) {
-  unauthorizedHandler = fn;
+  unauthorizedHandler = fn
 }
 
 api.interceptors.response.use(
@@ -106,9 +106,9 @@ api.interceptors.response.use(
     // about this session — a foreign server answering 401 must not be able to
     // sign the user out of their own.
     if (error.response?.status === 401 && error.config?.headers?.Authorization) {
-      await getStorageAdapter().removeItem(TOKEN_KEY);
-      unauthorizedHandler?.();
+      await getStorageAdapter().removeItem(TOKEN_KEY)
+      unauthorizedHandler?.()
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)

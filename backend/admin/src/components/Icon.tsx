@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from 'react'
 
 const paths: Record<string, ReactNode> = {
   users: (
@@ -111,13 +111,13 @@ const paths: Record<string, ReactNode> = {
       <line x1="12" y1="15" x2="12" y2="3" />
     </>
   ),
-};
+}
 
-export type IconName = keyof typeof paths;
+export type IconName = keyof typeof paths
 
 interface IconProps {
-  name: IconName;
-  size?: number;
+  name: IconName
+  size?: number
 }
 
 // Minimal hand-rolled Feather-style icon set (no icon-font/library
@@ -137,5 +137,5 @@ export function Icon({ name, size = 16 }: IconProps) {
     >
       {paths[name]}
     </svg>
-  );
+  )
 }

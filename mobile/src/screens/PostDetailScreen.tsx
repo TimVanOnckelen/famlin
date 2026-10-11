@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -10,26 +10,26 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
-import { Avatar } from '@/components/Avatar';
-import { PostLocationPreview } from '@/components/PostLocationPreview';
-import { ReactionPicker } from '@/components/ReactionPicker';
-import { ReactionsModal } from '@/components/ReactionsModal';
-import { ReactorStack } from '@/components/ReactorStack';
-import { Scrim } from '@/components/Scrim';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { postTypeRenderers } from '@/components/postTypes';
-import { Comment, ReactionType } from '@/types';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
+import { Avatar } from '@/components/Avatar'
+import { PostLocationPreview } from '@/components/PostLocationPreview'
+import { ReactionPicker } from '@/components/ReactionPicker'
+import { ReactionsModal } from '@/components/ReactionsModal'
+import { ReactorStack } from '@/components/ReactorStack'
+import { Scrim } from '@/components/Scrim'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { postTypeRenderers } from '@/components/postTypes'
+import { Comment, ReactionType } from '@/types'
 import {
   fetchPost,
   fetchComments,
@@ -47,65 +47,65 @@ import {
   // Aliased: this screen already has a `commentAttachments` state variable
   // for the comment being composed, which is a different thing entirely.
   commentAttachments as commentAttachmentUrls,
-} from '@famlin/api-client';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { getUploadUrl } from '@/api/uploads';
-import { formatRelativeDate } from '@/i18n/utils';
-import { useAuthStore } from '@/stores/authStore';
-import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+} from '@famlin/api-client'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { getUploadUrl } from '@/api/uploads'
+import { formatRelativeDate } from '@/i18n/utils'
+import { useAuthStore } from '@/stores/authStore'
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 
 // Matches a trailing "@partial-name" at the end of the text being typed —
 // deliberately only the end, not anywhere in the string, since that's the
 // only place a user is actively composing a mention.
-const TRAILING_MENTION_REGEX = /(?:^|\s)@([\p{L}\d_]*)$/u;
+const TRAILING_MENTION_REGEX = /(?:^|\s)@([\p{L}\d_]*)$/u
 
 // Up to this many photos on one comment card lay out as a wrapping grid;
 // beyond it the card becomes a horizontally scrolling gallery instead, so a
 // long photo burst never pushes the rest of the thread off the screen.
-const COMMENT_GRID_MAX_TILES = 4;
+const COMMENT_GRID_MAX_TILES = 4
 
 // Same rule for the post's own photos: up to four (hero included) lay out as
 // the wrapping grid, more than that scrolls sideways.
-const POST_GRID_MAX_PHOTOS = 4;
+const POST_GRID_MAX_PHOTOS = 4
 
 /** Mirrors uploadedAssetUrls' max in the backend's updatePostBodySchema. */
-const MAX_POST_ASSETS = 20;
+const MAX_POST_ASSETS = 20
 
 export function PostDetailScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
-  const route = useRoute<any>();
-  const { postId } = route.params;
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
-  const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
-  const [isEditingPost, setIsEditingPost] = useState(false);
-  const [editPostContent, setEditPostContent] = useState('');
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const insets = useSafeAreaInsets()
+  const route = useRoute<any>()
+  const { postId } = route.params
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const [commentText, setCommentText] = useState('')
+  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null)
+  const [isEditingPost, setIsEditingPost] = useState(false)
+  const [editPostContent, setEditPostContent] = useState('')
   // The post's photos as the edit has them so far — seeded from the post when
   // editing starts, then added to and removed from until save, which sends
   // the whole list. Pending entries are local URIs whose upload is still in
   // flight, shown with a spinner and not yet part of the list being saved.
-  const [editPostAssets, setEditPostAssets] = useState<string[]>([]);
-  const [editPostPendingAssets, setEditPostPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
-  const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false);
-  const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null);
-  const [reactionsModalOpen, setReactionsModalOpen] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([]);
+  const [editPostAssets, setEditPostAssets] = useState<string[]>([])
+  const [editPostPendingAssets, setEditPostPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([])
+  const [postReactionPickerOpen, setPostReactionPickerOpen] = useState(false)
+  const [reactionPickerCommentId, setReactionPickerCommentId] = useState<string | null>(null)
+  const [reactionsModalOpen, setReactionsModalOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const [selectedMentions, setSelectedMentions] = useState<{ id: string; name: string }[]>([])
   // Staged attachments for the comment being written — a local preview each,
   // with uploadedUrl filled in once its upload lands.
   const [commentAttachments, setCommentAttachments] = useState<
     { uri: string; isVideo: boolean; uploadedUrl?: string }[]
-  >([]);
-  const uploadedAttachmentUrls = commentAttachments.map((a) => a.uploadedUrl).filter((url): url is string => !!url);
+  >([])
+  const uploadedAttachmentUrls = commentAttachments.map((a) => a.uploadedUrl).filter((url): url is string => !!url)
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
     queryFn: () => fetchPost(postId),
-  });
+  })
 
   // TRIP posts have their own detail screen (cover/timeline/check-ins) —
   // any navigation that lands here for one instead (a notification, a chat
@@ -113,30 +113,30 @@ export function PostDetailScreen() {
   // this screen's generic UPDATE/MILESTONE/POLL layout for it.
   useEffect(() => {
     if (post?.type === 'TRIP') {
-      navigation.replace('TripDetail', { postId });
+      navigation.replace('TripDetail', { postId })
     } else if (post?.type === 'ALBUM') {
-      navigation.replace('AlbumDetail', { postId });
+      navigation.replace('AlbumDetail', { postId })
     }
-  }, [post?.type, postId]);
+  }, [post?.type, postId])
 
   const { data: comments, refetch } = useQuery({
     queryKey: ['comments', postId],
     queryFn: () => fetchComments(postId),
-  });
+  })
 
   const { data: groupMembers } = useQuery<GroupMember[]>({
     queryKey: ['groupMembers', post?.groupId],
     queryFn: () => fetchGroupMembers(post!.groupId),
     enabled: !!post?.groupId,
-  });
+  })
 
   // Shared optimistic mutations — same intent as the previous local
   // invalidate-only variants, but the caches now update immediately like
   // they do from PostCard / the image viewer. The action buttons only render
   // once `post` is loaded (the screen returns null until then), so the
   // non-null assertion never bites at mutate time.
-  const likeMutation = useReactToPost(post!);
-  const favoriteMutation = useToggleFavorite(post!);
+  const likeMutation = useReactToPost(post!)
+  const favoriteMutation = useToggleFavorite(post!)
 
   const commentMutation = useMutation({
     mutationFn: ({
@@ -145,55 +145,55 @@ export function PostDetailScreen() {
       mentionedUserIds,
       attachmentUrls,
     }: {
-      content: string;
-      parentId?: string;
-      mentionedUserIds?: string[];
-      attachmentUrls?: string[];
+      content: string
+      parentId?: string
+      mentionedUserIds?: string[]
+      attachmentUrls?: string[]
     }) => createComment(postId, { content: content || undefined, parentId, mentionedUserIds, attachmentUrls }),
     onSuccess: () => {
-      setCommentText('');
-      setReplyingTo(null);
-      setSelectedMentions([]);
-      setMentionQuery(null);
-      setCommentAttachments([]);
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setCommentText('')
+      setReplyingTo(null)
+      setSelectedMentions([])
+      setMentionQuery(null)
+      setCommentAttachments([])
+      refetch()
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'))
     },
-  });
+  })
 
   const likeCommentMutation = useMutation({
     mutationFn: ({ commentId, type }: { commentId: string; type: ReactionType }) => reactToComment(commentId, type),
     onSuccess: () => refetch(),
-  });
+  })
 
   const editPostMutation = useMutation({
     mutationFn: ({ content, uploadedAssetUrls }: { content: string; uploadedAssetUrls: string[] }) =>
       updatePost(postId, { content, uploadedAssetUrls }),
     onSuccess: () => {
-      setIsEditingPost(false);
-      setEditPostPendingAssets([]);
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setIsEditingPost(false)
+      setEditPostPendingAssets([])
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'))
     },
-  });
+  })
 
   const deletePostMutation = useMutation({
     mutationFn: () => deletePost(postId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      navigation.goBack();
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      navigation.goBack()
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'))
     },
-  });
+  })
 
   const editCommentMutation = useMutation({
     // attachmentUrls is always sent (never undefined) because the edit UI
@@ -201,42 +201,42 @@ export function PostDetailScreen() {
     mutationFn: ({ id, content, attachmentUrls }: { id: string; content: string; attachmentUrls: string[] }) =>
       updateComment(id, { content, attachmentUrls }),
     onSuccess: () => {
-      refetch();
+      refetch()
       // An edit can now change a comment's photos, so refresh the post the
       // same way deleting a comment does rather than only the thread.
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.editFailed'))
     },
-  });
+  })
 
   const deleteCommentMutation = useMutation({
     // Takes a list because a bundled photo card stands for several comments —
     // deleting it removes exactly the ones it shows.
     mutationFn: (commentIds: string[]) => Promise.all(commentIds.map((id) => deleteComment(id))),
     onSuccess: () => {
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      refetch()
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'))
     },
-  });
+  })
 
   // Runs of photo-only comments by the same author collapse into one card
   // (see groupCommentAttachments) — both at top level and within a thread.
   const repliesByParentId = useMemo(() => {
-    const map = new Map<string, Comment[]>();
+    const map = new Map<string, Comment[]>()
     for (const comment of comments || []) {
-      if (!comment.parentId) continue;
-      const list = map.get(comment.parentId) || [];
-      list.push(comment);
-      map.set(comment.parentId, list);
+      if (!comment.parentId) continue
+      const list = map.get(comment.parentId) || []
+      list.push(comment)
+      map.set(comment.parentId, list)
     }
-    return map;
-  }, [comments]);
+    return map
+  }, [comments])
 
   // A bundle stands for several comments, so its replies are everything
   // hanging off any of them, back in chronological order.
@@ -245,32 +245,32 @@ export function PostDetailScreen() {
       group.comments
         .flatMap((comment) => repliesByParentId.get(comment.id) || [])
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    );
+    )
 
   const topLevelGroups = useMemo(
     () => groupCommentAttachments((comments || []).filter((comment: Comment) => !comment.parentId)),
     [comments]
-  );
+  )
 
   function submitComment() {
-    const trimmed = commentText.trim();
-    if (!trimmed && !uploadedAttachmentUrls.length) return;
+    const trimmed = commentText.trim()
+    if (!trimmed && !uploadedAttachmentUrls.length) return
     // Only mention someone whose "@name" is still actually present in the
     // final text — if the user deleted it after picking it from the list,
     // don't notify them.
-    const mentionedUserIds = selectedMentions.filter((m) => commentText.includes(`@${m.name}`)).map((m) => m.id);
+    const mentionedUserIds = selectedMentions.filter((m) => commentText.includes(`@${m.name}`)).map((m) => m.id)
     commentMutation.mutate({
       content: trimmed,
       parentId: replyingTo?.id,
       mentionedUserIds,
       attachmentUrls: uploadedAttachmentUrls,
-    });
+    })
   }
 
-  const attachmentRoom = MAX_COMMENT_ATTACHMENTS - commentAttachments.length;
+  const attachmentRoom = MAX_COMMENT_ATTACHMENTS - commentAttachments.length
   // How many placeholders the batch in flight appended, so a failed upload
   // removes exactly those and leaves earlier picks alone.
-  const attachmentBatchSize = useRef(0);
+  const attachmentBatchSize = useRef(0)
 
   const {
     pick: pickAttachmentMedia,
@@ -288,18 +288,18 @@ export function PostDetailScreen() {
     // Show the local previews (with the uploading overlay) while the upload
     // is in flight; drop them again if it fails.
     onPicked: (assets) => {
-      attachmentBatchSize.current = assets.length;
-      setCommentAttachments((old) => [...old, ...assets.map((asset) => ({ uri: asset.uri, isVideo: asset.isVideo }))]);
+      attachmentBatchSize.current = assets.length
+      setCommentAttachments((old) => [...old, ...assets.map((asset) => ({ uri: asset.uri, isVideo: asset.isVideo }))])
     },
     onError: () => {
-      setCommentAttachments((old) => old.slice(0, Math.max(0, old.length - attachmentBatchSize.current)));
+      setCommentAttachments((old) => old.slice(0, Math.max(0, old.length - attachmentBatchSize.current)))
     },
-  });
+  })
 
   async function pickCommentAttachments() {
-    if (attachmentRoom <= 0) return;
-    const result = await pickAttachmentMedia();
-    if (!result) return;
+    if (attachmentRoom <= 0) return
+    const result = await pickAttachmentMedia()
+    if (!result) return
     // Swap the placeholders this batch added for the uploaded versions.
     setCommentAttachments((old) => [
       ...old.slice(0, Math.max(0, old.length - result.assets.length)),
@@ -308,17 +308,17 @@ export function PostDetailScreen() {
         isVideo: asset.isVideo,
         uploadedUrl: result.urls[index],
       })),
-    ]);
+    ])
   }
 
   function removeCommentAttachment(index: number) {
-    setCommentAttachments((old) => old.filter((_, i) => i !== index));
+    setCommentAttachments((old) => old.filter((_, i) => i !== index))
   }
 
   // Same pick-then-upload flow as the composer's, for photos added while
   // editing the post. Removing one is local until save — nothing is deleted
   // from the server, the saved list just stops referring to it.
-  const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length;
+  const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length
 
   const {
     pick: pickEditPostMedia,
@@ -334,51 +334,51 @@ export function PostDetailScreen() {
     },
     includeIndexInName: true,
     onPicked: setEditPostPendingAssets,
-  });
+  })
 
   async function pickEditPostAssets() {
-    if (editPostAssetRoom <= 0) return;
-    const result = await pickEditPostMedia();
-    if (result) setEditPostAssets((prev) => [...prev, ...result.urls]);
-    setEditPostPendingAssets([]);
+    if (editPostAssetRoom <= 0) return
+    const result = await pickEditPostMedia()
+    if (result) setEditPostAssets((prev) => [...prev, ...result.urls])
+    setEditPostPendingAssets([])
   }
 
   function removeEditPostAsset(url: string) {
-    setEditPostAssets((prev) => prev.filter((u) => u !== url));
+    setEditPostAssets((prev) => prev.filter((u) => u !== url))
   }
 
   function handleCommentTextChange(text: string) {
-    setCommentText(text);
-    const match = text.match(TRAILING_MENTION_REGEX);
-    setMentionQuery(match ? match[1] : null);
+    setCommentText(text)
+    const match = text.match(TRAILING_MENTION_REGEX)
+    setMentionQuery(match ? match[1] : null)
   }
 
   function selectMention(member: GroupMember) {
     const replaced = commentText.replace(
       TRAILING_MENTION_REGEX,
       (matched) => (matched.startsWith(' ') ? ' ' : '') + `@${member.name} `
-    );
-    setCommentText(replaced);
+    )
+    setCommentText(replaced)
     setSelectedMentions((prev) =>
       prev.some((m) => m.id === member.id) ? prev : [...prev, { id: member.id, name: member.name }]
-    );
-    setMentionQuery(null);
+    )
+    setMentionQuery(null)
   }
 
   const mentionSuggestions = (groupMembers || []).filter(
     (m) => mentionQuery !== null && m.id !== user?.id && m.name.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
+  )
 
-  if (!post) return null;
+  if (!post) return null
 
-  const isMilestone = post.type === 'MILESTONE';
+  const isMilestone = post.type === 'MILESTONE'
 
-  const allPhotoUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url));
-  const allPhotoThumbUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url, 'thumbnail'));
-  const fullscreenUrls = allPhotoUrls;
-  const hasPhotos = allPhotoUrls.length > 0;
-  const reactors = post.recentReactors ?? [];
-  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
+  const allPhotoUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url))
+  const allPhotoThumbUrls = post.uploadedAssetUrls.map((url: string) => getUploadUrl(url, 'thumbnail'))
+  const fullscreenUrls = allPhotoUrls
+  const hasPhotos = allPhotoUrls.length > 0
+  const reactors = post.recentReactors ?? []
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody
 
   function openFullscreen(index: number) {
     navigation.navigate('ImageViewer', {
@@ -386,28 +386,28 @@ export function PostDetailScreen() {
       assetUrls: post!.uploadedAssetUrls,
       postId: post!.id,
       initialIndex: index,
-    });
+    })
   }
 
-  const isOwnPost = post.authorId === user?.id;
+  const isOwnPost = post.authorId === user?.id
 
   function startEditPost() {
-    setEditPostContent(post!.content || '');
-    setEditPostAssets(post!.uploadedAssetUrls);
-    setEditPostPendingAssets([]);
-    setIsEditingPost(true);
+    setEditPostContent(post!.content || '')
+    setEditPostAssets(post!.uploadedAssetUrls)
+    setEditPostPendingAssets([])
+    setIsEditingPost(true)
   }
 
   function cancelEditPost() {
-    setIsEditingPost(false);
-    setEditPostPendingAssets([]);
+    setIsEditingPost(false)
+    setEditPostPendingAssets([])
   }
 
   function confirmDeletePost() {
     Alert.alert(t('postDetail.deletePostConfirmTitle'), t('postDetail.deletePostConfirmMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deletePostMutation.mutate() },
-    ]);
+    ])
   }
 
   function openPostMenu() {
@@ -415,12 +415,12 @@ export function PostDetailScreen() {
       { text: t('postDetail.editPost'), onPress: startEditPost },
       { text: t('postDetail.deletePost'), style: 'destructive', onPress: confirmDeletePost },
       { text: t('common.cancel'), style: 'cancel' },
-    ]);
+    ])
   }
 
   // A post can be photos-only or text-only, but not neither — and it's the
   // edit's own photo list that decides, not the one currently on screen.
-  const canSavePostEdit = editPostContent.trim().length > 0 || editPostAssets.length > 0;
+  const canSavePostEdit = editPostContent.trim().length > 0 || editPostAssets.length > 0
 
   // While editing, the photo strip in the editor IS the post's photo list —
   // the read-only hero and gallery would show a stale second copy of it (and
@@ -428,7 +428,7 @@ export function PostDetailScreen() {
   // hero doubles as the screen's chrome when there are photos, so everything
   // keyed off it (the safe-area top edge, the header, the floating back
   // button, the sheet's overlap) has to follow the same flag.
-  const showHeroPhoto = hasPhotos && !isEditingPost;
+  const showHeroPhoto = hasPhotos && !isEditingPost
 
   return (
     <SafeAreaView
@@ -801,22 +801,22 @@ export function PostDetailScreen() {
       <ReactionPicker
         visible={postReactionPickerOpen}
         onSelect={(type) => {
-          setPostReactionPickerOpen(false);
-          likeMutation.mutate(type);
+          setPostReactionPickerOpen(false)
+          likeMutation.mutate(type)
         }}
         onClose={() => setPostReactionPickerOpen(false)}
       />
       <ReactionPicker
         visible={reactionPickerCommentId !== null}
         onSelect={(type) => {
-          if (reactionPickerCommentId) likeCommentMutation.mutate({ commentId: reactionPickerCommentId, type });
-          setReactionPickerCommentId(null);
+          if (reactionPickerCommentId) likeCommentMutation.mutate({ commentId: reactionPickerCommentId, type })
+          setReactionPickerCommentId(null)
         }}
         onClose={() => setReactionPickerCommentId(null)}
       />
       <ReactionsModal postId={reactionsModalOpen ? postId : null} onClose={() => setReactionsModalOpen(false)} />
     </SafeAreaView>
-  );
+  )
 }
 
 function CommentItem({
@@ -829,16 +829,16 @@ function CommentItem({
   onEdit,
   onDelete,
 }: {
-  group: CommentGroup;
-  replyGroups: CommentGroup[];
-  currentUserId?: string;
-  onLike: (commentId: string, type: ReactionType) => void;
-  onLongPressLike: (commentId: string) => void;
-  onReply: (comment: Comment) => void;
-  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
-  onDelete: (commentIds: string[]) => void;
+  group: CommentGroup
+  replyGroups: CommentGroup[]
+  currentUserId?: string
+  onLike: (commentId: string, type: ReactionType) => void
+  onLongPressLike: (commentId: string) => void
+  onReply: (comment: Comment) => void
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>
+  onDelete: (commentIds: string[]) => void
 }) {
-  const { lead } = group;
+  const { lead } = group
   return (
     <View style={styles.commentItem}>
       <Avatar name={lead.author.name} avatarUrl={lead.author.avatarUrl} size={38} />
@@ -875,7 +875,7 @@ function CommentItem({
         )}
       </View>
     </View>
-  );
+  )
 }
 
 function CommentBody({
@@ -887,29 +887,29 @@ function CommentBody({
   onEdit,
   onDelete,
 }: {
-  group: CommentGroup;
-  isOwn: boolean;
-  onLike: (type: ReactionType) => void;
-  onLongPressLike: () => void;
-  onReply: () => void;
-  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>;
-  onDelete: (commentIds: string[]) => void;
+  group: CommentGroup
+  isOwn: boolean
+  onLike: (type: ReactionType) => void
+  onLongPressLike: () => void
+  onReply: () => void
+  onEdit: (commentId: string, content: string, attachmentUrls: string[]) => Promise<unknown>
+  onDelete: (commentIds: string[]) => void
 }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const comment = group.lead;
-  const attachmentUrls = group.attachments.map((attachment) => attachment.url);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.content);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const comment = group.lead
+  const attachmentUrls = group.attachments.map((attachment) => attachment.url)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(comment.content)
   // The comment's photos as the edit has them so far, same wholesale-replace
   // contract as the post editor above. Editing is only offered on a
   // single-comment card (see the Edit button below), so these are exactly
   // this comment's own attachments.
-  const [editAttachments, setEditAttachments] = useState<string[]>([]);
-  const [editPendingAttachments, setEditPendingAttachments] = useState<{ uri: string; isVideo: boolean }[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [editAttachments, setEditAttachments] = useState<string[]>([])
+  const [editPendingAttachments, setEditPendingAttachments] = useState<{ uri: string; isVideo: boolean }[]>([])
+  const [saving, setSaving] = useState(false)
 
-  const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length;
+  const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length
 
   const {
     pick: pickEditMedia,
@@ -925,38 +925,38 @@ function CommentBody({
     },
     includeIndexInName: true,
     onPicked: setEditPendingAttachments,
-  });
+  })
 
   async function pickEditAttachments() {
-    if (editAttachmentRoom <= 0) return;
-    const result = await pickEditMedia();
-    if (result) setEditAttachments((prev) => [...prev, ...result.urls]);
-    setEditPendingAttachments([]);
+    if (editAttachmentRoom <= 0) return
+    const result = await pickEditMedia()
+    if (result) setEditAttachments((prev) => [...prev, ...result.urls])
+    setEditPendingAttachments([])
   }
 
   function startEdit() {
-    setEditText(comment.content);
-    setEditAttachments(commentAttachmentUrls(comment));
-    setEditPendingAttachments([]);
-    setIsEditing(true);
+    setEditText(comment.content)
+    setEditAttachments(commentAttachmentUrls(comment))
+    setEditPendingAttachments([])
+    setIsEditing(true)
   }
 
   function cancelEdit() {
-    setIsEditing(false);
-    setEditPendingAttachments([]);
+    setIsEditing(false)
+    setEditPendingAttachments([])
   }
 
-  const canSaveEdit = !!editText.trim() || editAttachments.length > 0;
+  const canSaveEdit = !!editText.trim() || editAttachments.length > 0
 
   async function saveEdit() {
-    if (!canSaveEdit) return;
-    setSaving(true);
+    if (!canSaveEdit) return
+    setSaving(true)
     try {
-      await onEdit(comment.id, editText.trim(), editAttachments);
-      setIsEditing(false);
-      setEditPendingAttachments([]);
+      await onEdit(comment.id, editText.trim(), editAttachments)
+      setIsEditing(false)
+      setEditPendingAttachments([])
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
@@ -965,7 +965,7 @@ function CommentBody({
     // about to go rather than silently deleting more than the user sees.
     const message = group.isBundle
       ? t('postDetail.deletePhotoCommentsConfirmMessage', { count: group.comments.length })
-      : t('postDetail.deleteCommentConfirmMessage');
+      : t('postDetail.deleteCommentConfirmMessage')
     Alert.alert(t('postDetail.deleteCommentConfirmTitle'), message, [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -973,14 +973,14 @@ function CommentBody({
         style: 'destructive',
         onPress: () => onDelete(group.comments.map((c) => c.id)),
       },
-    ]);
+    ])
   }
 
   function openViewer(index: number) {
     navigation.navigate('ImageViewer', {
       urls: attachmentUrls.map((url) => getUploadUrl(url)),
       initialIndex: index,
-    });
+    })
   }
 
   if (isEditing) {
@@ -1034,7 +1034,7 @@ function CommentBody({
           </TouchableOpacity>
         </View>
       </View>
-    );
+    )
   }
 
   return (
@@ -1140,7 +1140,7 @@ function CommentBody({
         )}
       </View>
     </>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -1703,4 +1703,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textTitle,
   },
-});
+})

@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 
 // The web app's URL map (issue #124). The backend's not-found handler already
 // serves index.html for every GET outside /api, /uploads and /admin, so any of
@@ -13,7 +13,7 @@ export const paths = {
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
   album: (postId: string) => `/albums/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
-} as const;
+} as const
 
 // True when the previous history entry belongs to this app session, so
 // navigate(-1) stays inside the app. react-router's BrowserRouter keeps an
@@ -21,8 +21,8 @@ export const paths = {
 // on and survives `replace` navigations (e.g. the post-login redirect), which
 // location.key does not.
 function canGoBackInApp(): boolean {
-  const idx = (window.history.state as { idx?: number } | null)?.idx;
-  return typeof idx === 'number' && idx > 0;
+  const idx = (window.history.state as { idx?: number } | null)?.idx
+  return typeof idx === 'number' && idx > 0
 }
 
 // The callbacks App.tsx hands to every page. `back` is a real browser back
@@ -30,7 +30,7 @@ function canGoBackInApp(): boolean {
 // Photos tab returns there, and one opened from the feed returns to the
 // feed), and the feed otherwise — e.g. a pasted /trips/:id link.
 export function useAppNavigation() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   return useMemo(
     () => ({
       toFeed: () => navigate(paths.feed),
@@ -41,12 +41,12 @@ export function useAppNavigation() {
       toTrip: (postId: string, opts?: { replace?: boolean }) => navigate(paths.trip(postId), opts),
       toAlbum: (postId: string, opts?: { replace?: boolean }) => navigate(paths.album(postId), opts),
       back: () => {
-        if (canGoBackInApp()) navigate(-1);
-        else navigate(paths.feed, { replace: true });
+        if (canGoBackInApp()) navigate(-1)
+        else navigate(paths.feed, { replace: true })
       },
     }),
     [navigate]
-  );
+  )
 }
 
 // Opens a post's detail as a modal over whatever page is currently showing
@@ -54,16 +54,16 @@ export function useAppNavigation() {
 // there), rather than navigating to /posts/:id as a full page. Used by the
 // feed's cards/keyboard shortcuts and the side panel's "On this day" banner.
 export function useOpenPostModal() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  return (postId: string) => navigate(paths.post(postId), { state: { backgroundLocation: location } });
+  const navigate = useNavigate()
+  const location = useLocation()
+  return (postId: string) => navigate(paths.post(postId), { state: { backgroundLocation: location } })
 }
 
-const RETURN_TO_KEY = 'famlin.web.returnTo';
+const RETURN_TO_KEY = 'famlin.web.returnTo'
 
 // Only same-app paths — never a scheme or a protocol-relative "//host".
 function isSafeReturnPath(path: string | null): path is string {
-  return !!path && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\');
+  return !!path && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')
 }
 
 // The OIDC redirect_uri is always the app root (it has to match what's
@@ -71,8 +71,8 @@ function isSafeReturnPath(path: string | null): path is string {
 // stashed here before leaving for the provider and restored afterwards.
 export function rememberReturnPath(path: string) {
   try {
-    if (isSafeReturnPath(path) && path !== paths.feed) sessionStorage.setItem(RETURN_TO_KEY, path);
-    else sessionStorage.removeItem(RETURN_TO_KEY);
+    if (isSafeReturnPath(path) && path !== paths.feed) sessionStorage.setItem(RETURN_TO_KEY, path)
+    else sessionStorage.removeItem(RETURN_TO_KEY)
   } catch {
     // Storage blocked — the user just lands on the feed instead.
   }
@@ -80,10 +80,10 @@ export function rememberReturnPath(path: string) {
 
 export function takeReturnPath(): string | null {
   try {
-    const path = sessionStorage.getItem(RETURN_TO_KEY);
-    sessionStorage.removeItem(RETURN_TO_KEY);
-    return isSafeReturnPath(path) ? path : null;
+    const path = sessionStorage.getItem(RETURN_TO_KEY)
+    sessionStorage.removeItem(RETURN_TO_KEY)
+    return isSafeReturnPath(path) ? path : null
   } catch {
-    return null;
+    return null
   }
 }

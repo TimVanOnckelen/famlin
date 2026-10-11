@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Logo } from './Logo';
-import { User } from '../types';
-import { api } from '../api/client';
-import { LanguageSelector } from './LanguageSelector';
+import { useEffect, useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Logo } from './Logo'
+import { User } from '../types'
+import { api } from '../api/client'
+import { LanguageSelector } from './LanguageSelector'
 
 interface LayoutProps {
-  user: User;
-  children: React.ReactNode;
+  user: User
+  children: React.ReactNode
 }
 
 export function Layout({ user, children }: LayoutProps) {
-  const { t } = useTranslation();
-  const [version, setVersion] = useState<string | null>(null);
+  const { t } = useTranslation()
+  const [version, setVersion] = useState<string | null>(null)
 
   // Fail-soft, one-shot — a failed fetch just means no version line, same as
   // DashboardPage's update-check.
@@ -21,13 +21,13 @@ export function Layout({ user, children }: LayoutProps) {
     api
       .getServerInfo()
       .then((info) => setVersion(info.version))
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+  }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem('famlin_admin_token');
-    window.location.href = '/admin';
-  };
+    localStorage.removeItem('famlin_admin_token')
+    window.location.href = '/admin'
+  }
 
   return (
     <div className="app-layout">
@@ -60,5 +60,5 @@ export function Layout({ user, children }: LayoutProps) {
       </aside>
       <main className="main">{children}</main>
     </div>
-  );
+  )
 }

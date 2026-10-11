@@ -1,19 +1,19 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { FastifyInstance } from 'fastify';
-import fsp from 'fs/promises';
-import path from 'path';
-import sharp from 'sharp';
-import { buildTestApp, createUser, authHeader, createGroup, addMember } from './helpers.js';
-import { prisma } from '../src/db.js';
-import { uploadsDir } from '../src/config.js';
-import { uploadAssetKey } from '../src/services/uploads.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import type { FastifyInstance } from 'fastify'
+import fsp from 'fs/promises'
+import path from 'path'
+import sharp from 'sharp'
+import { buildTestApp, createUser, authHeader, createGroup, addMember } from './helpers.js'
+import { prisma } from '../src/db.js'
+import { uploadsDir } from '../src/config.js'
+import { uploadAssetKey } from '../src/services/uploads.js'
 
 // The issue's hardest requirement: a non-member "must not be able to access
 // its content through a direct API or media URL". Feed filtering is not
 // enough — these exercise /uploads/* itself, with the exact URL in hand.
 
 function multipart(filename: string, data: Buffer) {
-  const boundary = '----FamlinCirclesBoundary';
+  const boundary = '----FamlinCirclesBoundary'
   const body = Buffer.concat([
     Buffer.from(
       `--${boundary}\r\n` +
@@ -22,44 +22,44 @@ function multipart(filename: string, data: Buffer) {
     ),
     data,
     Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]);
-  return { body, contentType: `multipart/form-data; boundary=${boundary}` };
+  ])
+  return { body, contentType: `multipart/form-data; boundary=${boundary}` }
 }
 
-let app: FastifyInstance;
-let author: Awaited<ReturnType<typeof createUser>>;
-let insider: Awaited<ReturnType<typeof createUser>>;
-let outsider: Awaited<ReturnType<typeof createUser>>;
-let group: Awaited<ReturnType<typeof createGroup>>;
-let circle: { id: string };
-const createdKeys: string[] = [];
+let app: FastifyInstance
+let author: Awaited<ReturnType<typeof createUser>>
+let insider: Awaited<ReturnType<typeof createUser>>
+let outsider: Awaited<ReturnType<typeof createUser>>
+let group: Awaited<ReturnType<typeof createGroup>>
+let circle: { id: string }
+const createdKeys: string[] = []
 
 async function upload(user: { id: string; email: string; name: string; isAdmin: boolean }): Promise<string> {
   const image = await sharp({ create: { width: 30, height: 30, channels: 3, background: { r: 9, g: 9, b: 9 } } })
     .jpeg()
-    .toBuffer();
-  const { body, contentType } = multipart('circle.jpg', image);
+    .toBuffer()
+  const { body, contentType } = multipart('circle.jpg', image)
   const res = await app.inject({
     method: 'POST',
     url: '/api/uploads',
     headers: { ...authHeader(user), 'content-type': contentType },
     payload: body,
-  });
-  expect(res.statusCode).toBe(200);
-  const url: string = res.json().urls[0];
-  createdKeys.push(uploadAssetKey(url));
-  return url;
+  })
+  expect(res.statusCode).toBe(200)
+  const url: string = res.json().urls[0]
+  createdKeys.push(uploadAssetKey(url))
+  return url
 }
 
 beforeAll(async () => {
-  app = await buildTestApp();
+  app = await buildTestApp()
 
-  author = await createUser({ name: 'Photo Author' });
-  insider = await createUser({ name: 'Photo Insider' });
-  outsider = await createUser({ name: 'Photo Outsider' });
+  author = await createUser({ name: 'Photo Author' })
+  insider = await createUser({ name: 'Photo Insider' })
+  outsider = await createUser({ name: 'Photo Outsider' })
 
-  group = await createGroup({ name: 'Photo Family' });
-  for (const u of [author, insider, outsider]) await addMember(group.id, u.id);
+  group = await createGroup({ name: 'Photo Family' })
+  for (const u of [author, insider, outsider]) await addMember(group.id, u.id)
 
   circle = await prisma.circle.create({
     data: {
@@ -67,23 +67,23 @@ beforeAll(async () => {
       name: 'Private Album Circle',
       members: { create: [{ userId: author.id }, { userId: insider.id }] },
     },
-  });
-});
+  })
+})
 
 afterAll(async () => {
-  const entries = await fsp.readdir(uploadsDir).catch(() => [] as string[]);
+  const entries = await fsp.readdir(uploadsDir).catch(() => [] as string[])
   await Promise.all(
     entries
       .filter((f) => createdKeys.some((key) => f.startsWith(key)))
       .map((f) => fsp.unlink(path.join(uploadsDir, f)).catch(() => {}))
-  );
+  )
   await Promise.all(
     createdKeys.map((key) => fsp.unlink(path.join(uploadsDir, 'originals', `${key}.jpg`)).catch(() => {}))
-  );
-  await prisma.group.deleteMany({ where: { id: group.id } });
-  await prisma.user.deleteMany({ where: { id: { in: [author.id, insider.id, outsider.id] } } });
-  await app.close();
-});
+  )
+  await prisma.group.deleteMany({ where: { id: group.id } })
+  await prisma.user.deleteMany({ where: { id: { in: [author.id, insider.id, outsider.id] } } })
+  await app.close()
+})
 
 describe('uploadAssetKey', () => {
   // Getting this wrong leaves thumbnails unprotected — which is the whole
@@ -95,15 +95,15 @@ describe('uploadAssetKey', () => {
     ['/uploads/abc.heic', 'abc'],
     ['abc-thumbnail.jpg', 'abc'],
   ])('maps %s to %s', (input, expected) => {
-    expect(uploadAssetKey(input)).toBe(expected);
-  });
-});
+    expect(uploadAssetKey(input)).toBe(expected)
+  })
+})
 
 describe('circle-scoped media', () => {
-  let circleAssetUrl: string;
+  let circleAssetUrl: string
 
   beforeAll(async () => {
-    circleAssetUrl = await upload(author);
+    circleAssetUrl = await upload(author)
     const res = await app.inject({
       method: 'POST',
       url: '/api/posts',
@@ -114,104 +114,104 @@ describe('circle-scoped media', () => {
         circleId: circle.id,
         uploadedAssetUrls: [circleAssetUrl],
       },
-    });
-    expect(res.statusCode).toBe(200);
-  });
+    })
+    expect(res.statusCode).toBe(200)
+  })
 
   it('serves the photo to a circle member', async () => {
-    const res = await app.inject({ method: 'GET', url: circleAssetUrl, headers: authHeader(insider) });
-    expect(res.statusCode).toBe(200);
-  });
+    const res = await app.inject({ method: 'GET', url: circleAssetUrl, headers: authHeader(insider) })
+    expect(res.statusCode).toBe(200)
+  })
 
   it('refuses the photo to a group member outside the circle, with the exact URL', async () => {
-    const res = await app.inject({ method: 'GET', url: circleAssetUrl, headers: authHeader(outsider) });
-    expect(res.statusCode).toBe(404);
-  });
+    const res = await app.inject({ method: 'GET', url: circleAssetUrl, headers: authHeader(outsider) })
+    expect(res.statusCode).toBe(404)
+  })
 
   it('refuses the thumbnail rendition too', async () => {
-    const thumbnailUrl = circleAssetUrl.replace(/\.jpg$/, '-thumbnail.jpg');
-    const res = await app.inject({ method: 'GET', url: thumbnailUrl, headers: authHeader(outsider) });
-    expect(res.statusCode).toBe(404);
-  });
+    const thumbnailUrl = circleAssetUrl.replace(/\.jpg$/, '-thumbnail.jpg')
+    const res = await app.inject({ method: 'GET', url: thumbnailUrl, headers: authHeader(outsider) })
+    expect(res.statusCode).toBe(404)
+  })
 
   it('still refuses after the circle is deleted, rather than reverting to family-wide', async () => {
     const doomed = await prisma.circle.create({
       data: { groupId: group.id, name: 'Doomed Media', members: { create: [{ userId: author.id }] } },
-    });
-    const assetUrl = await upload(author);
+    })
+    const assetUrl = await upload(author)
     await app.inject({
       method: 'POST',
       url: '/api/posts',
       headers: authHeader(author),
       payload: { groupId: group.id, content: 'doomed', circleId: doomed.id, uploadedAssetUrls: [assetUrl] },
-    });
+    })
 
-    await prisma.circle.delete({ where: { id: doomed.id } });
+    await prisma.circle.delete({ where: { id: doomed.id } })
 
     // The Upload row's circleId is deliberately not a foreign key, so it
     // survives the cascade as a dangling id that matches nobody. Fail-closed
     // is the right direction: a deleted circle's media must not become
     // readable family-wide.
     for (const user of [author, outsider]) {
-      const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) });
-      expect(res.statusCode).toBe(404);
+      const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) })
+      expect(res.statusCode).toBe(404)
     }
-  });
-});
+  })
+})
 
 describe('whole-family media is unaffected', () => {
   it('serves a normal post photo to every group member', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     await app.inject({
       method: 'POST',
       url: '/api/posts',
       headers: authHeader(author),
       payload: { groupId: group.id, content: 'family photo', uploadedAssetUrls: [assetUrl] },
-    });
+    })
 
     for (const user of [insider, outsider]) {
-      const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) });
-      expect(res.statusCode).toBe(200);
+      const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) })
+      expect(res.statusCode).toBe(200)
     }
-  });
+  })
 
   it('serves an upload that predates the Upload table to anyone', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     // Simulate a deployment upgrading with existing media: no Upload row.
-    await prisma.upload.deleteMany({ where: { assetKey: uploadAssetKey(assetUrl) } });
+    await prisma.upload.deleteMany({ where: { assetKey: uploadAssetKey(assetUrl) } })
 
-    const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) });
-    expect(res.statusCode).toBe(200);
-  });
+    const res = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) })
+    expect(res.statusCode).toBe(200)
+  })
 
   it('keeps an unattached upload readable only by its uploader', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
 
-    const own = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(author) });
-    expect(own.statusCode).toBe(200);
+    const own = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(author) })
+    expect(own.statusCode).toBe(200)
 
-    const other = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(insider) });
-    expect(other.statusCode).toBe(404);
-  });
+    const other = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(insider) })
+    expect(other.statusCode).toBe(404)
+  })
 
   it('serves an avatar to everyone once set', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     const res = await app.inject({
       method: 'PATCH',
       url: '/api/auth/me',
       headers: authHeader(author),
       payload: { avatarUrl: assetUrl },
-    });
-    expect(res.statusCode).toBe(200);
+    })
+    expect(res.statusCode).toBe(200)
 
-    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) });
-    expect(seen.statusCode).toBe(200);
-  });
-});
+    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) })
+    expect(seen.statusCode).toBe(200)
+  })
+})
 
 describe('circle media in the photo timeline', () => {
   it('omits circle photos for an outsider but includes them for a member', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     await app.inject({
       method: 'POST',
       url: '/api/posts',
@@ -222,89 +222,89 @@ describe('circle media in the photo timeline', () => {
         circleId: circle.id,
         uploadedAssetUrls: [assetUrl],
       },
-    });
+    })
 
     const outsiderRes = await app.inject({
       method: 'GET',
       url: `/api/media/groups/${group.id}/photos`,
       headers: authHeader(outsider),
-    });
-    expect(outsiderRes.statusCode).toBe(200);
-    expect(JSON.stringify(outsiderRes.json().items)).not.toContain(assetUrl);
+    })
+    expect(outsiderRes.statusCode).toBe(200)
+    expect(JSON.stringify(outsiderRes.json().items)).not.toContain(assetUrl)
 
     const insiderRes = await app.inject({
       method: 'GET',
       url: `/api/media/groups/${group.id}/photos`,
       headers: authHeader(insider),
-    });
-    expect(JSON.stringify(insiderRes.json().items)).toContain(assetUrl);
-  });
-});
+    })
+    expect(JSON.stringify(insiderRes.json().items)).toContain(assetUrl)
+  })
+})
 
 describe("re-scoping someone else's upload", () => {
   // Every attach site accepts any well-formed /uploads/ path, so the binding
   // step itself has to refuse to change an upload it doesn't own or that's
   // already bound — otherwise knowing a URL is enough to re-scope it.
   it('cannot widen a circle photo to family-wide via an avatar', async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     await app.inject({
       method: 'POST',
       url: '/api/posts',
       headers: authHeader(author),
       payload: { groupId: group.id, content: 'circle only', circleId: circle.id, uploadedAssetUrls: [assetUrl] },
-    });
+    })
 
     // insider was in the circle and knows the URL; they then leave it.
-    await prisma.circleMember.deleteMany({ where: { circleId: circle.id, userId: insider.id } });
+    await prisma.circleMember.deleteMany({ where: { circleId: circle.id, userId: insider.id } })
     try {
       const res = await app.inject({
         method: 'PATCH',
         url: '/api/auth/me',
         headers: authHeader(insider),
         payload: { avatarUrl: assetUrl },
-      });
-      expect(res.statusCode).toBe(200);
+      })
+      expect(res.statusCode).toBe(200)
 
       for (const user of [insider, outsider]) {
-        const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) });
-        expect(seen.statusCode).toBe(404);
+        const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(user) })
+        expect(seen.statusCode).toBe(404)
       }
     } finally {
-      await prisma.circleMember.create({ data: { circleId: circle.id, userId: insider.id } });
+      await prisma.circleMember.create({ data: { circleId: circle.id, userId: insider.id } })
     }
-  });
+  })
 
   it('cannot narrow a family photo into a circle', async () => {
-    const assetUrl = await upload(outsider);
+    const assetUrl = await upload(outsider)
     await app.inject({
       method: 'POST',
       url: '/api/posts',
       headers: authHeader(outsider),
       payload: { groupId: group.id, content: 'for everyone', uploadedAssetUrls: [assetUrl] },
-    });
+    })
 
     const res = await app.inject({
       method: 'POST',
       url: '/api/posts',
       headers: authHeader(author),
       payload: { groupId: group.id, content: 'hide it', circleId: circle.id, uploadedAssetUrls: [assetUrl] },
-    });
-    expect(res.statusCode).toBe(200);
+    })
+    expect(res.statusCode).toBe(200)
 
-    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) });
-    expect(seen.statusCode).toBe(200);
-  });
+    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(outsider) })
+    expect(seen.statusCode).toBe(200)
+  })
 
   it("cannot bind another user's unattached draft", async () => {
-    const assetUrl = await upload(author);
+    const assetUrl = await upload(author)
     await app.inject({
       method: 'PATCH',
       url: '/api/auth/me',
       headers: authHeader(insider),
       payload: { avatarUrl: assetUrl },
-    });
+    })
 
-    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(insider) });
-    expect(seen.statusCode).toBe(404);
-  });
-});
+    const seen = await app.inject({ method: 'GET', url: assetUrl, headers: authHeader(insider) })
+    expect(seen.statusCode).toBe(404)
+  })
+})

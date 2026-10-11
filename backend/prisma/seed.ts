@@ -1,22 +1,22 @@
-import 'dotenv/config';
-import { PrismaClient, type ReactionType } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import bcrypt from 'bcryptjs';
+import 'dotenv/config'
+import { PrismaClient, type ReactionType } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import bcrypt from 'bcryptjs'
 
 // Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
 // rather than importing src/config.ts, so the Dockerfile's standalone
 // `tsc prisma/seed.ts` compile for the demo image stays self-contained.
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is required. Set it in backend/.env or the process environment.');
+  throw new Error('DATABASE_URL is required. Set it in backend/.env or the process environment.')
 }
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl }),
-});
+})
 
 async function main() {
-  const testPasswordHash = await bcrypt.hash('test123456', 12);
+  const testPasswordHash = await bcrypt.hash('test123456', 12)
 
   // Users: one admin + one regular test account, plus a fictional family.
   const users = await Promise.all([
@@ -69,9 +69,9 @@ async function main() {
       update: {},
       create: { email: 'emma@example.com', name: 'Emma' },
     }),
-  ]);
+  ])
 
-  const [admin, testUser, opa, oma, mama, papa, sophie, emma] = users;
+  const [admin, testUser, opa, oma, mama, papa, sophie, emma] = users
 
   // Two groups so the demo shows the multi-family experience.
   const familyGroup = await prisma.group.upsert({
@@ -82,7 +82,7 @@ async function main() {
       name: 'Familie de Vries',
       description: 'Onze familiegroep',
     },
-  });
+  })
 
   const weekendGroup = await prisma.group.upsert({
     where: { id: 'seed-weekend-group' },
@@ -92,25 +92,25 @@ async function main() {
       name: 'Weekendje Ardennen',
       description: 'Plannen en foto’s van ons weekendje weg',
     },
-  });
+  })
 
   // Memberships.
-  const familyMemberIds = [admin.id, testUser.id, opa.id, oma.id, mama.id, papa.id, sophie.id, emma.id];
+  const familyMemberIds = [admin.id, testUser.id, opa.id, oma.id, mama.id, papa.id, sophie.id, emma.id]
   for (const userId of familyMemberIds) {
     await prisma.groupMember.upsert({
       where: { groupId_userId: { groupId: familyGroup.id, userId } },
       update: {},
       create: { groupId: familyGroup.id, userId },
-    });
+    })
   }
 
-  const weekendMemberIds = [admin.id, testUser.id, mama.id, papa.id, sophie.id, emma.id];
+  const weekendMemberIds = [admin.id, testUser.id, mama.id, papa.id, sophie.id, emma.id]
   for (const userId of weekendMemberIds) {
     await prisma.groupMember.upsert({
       where: { groupId_userId: { groupId: weekendGroup.id, userId } },
       update: {},
       create: { groupId: weekendGroup.id, userId },
-    });
+    })
   }
 
   // Posts for the family group.
@@ -125,7 +125,7 @@ async function main() {
       type: 'MILESTONE',
       milestoneTag: '🎂 Verjaardag',
     },
-  });
+  })
 
   await prisma.post.upsert({
     where: { id: 'seed-post-2' },
@@ -137,7 +137,7 @@ async function main() {
       content: 'Vandaag lekker in de tuin gewerkt. De tomaten staan er prachtig bij dit jaar! 🍅',
       type: 'UPDATE',
     },
-  });
+  })
 
   await prisma.post.upsert({
     where: { id: 'seed-post-3' },
@@ -149,7 +149,7 @@ async function main() {
       content: "Zondag zo'n heerlijk familiediner gehad. Iedereen aanwezig — zo fijn! 💛",
       type: 'UPDATE',
     },
-  });
+  })
 
   const pollPost = await prisma.post.upsert({
     where: { id: 'seed-post-poll' },
@@ -169,18 +169,18 @@ async function main() {
         closesAt: null,
       },
     },
-  });
+  })
 
   // A few reactions on posts.
-  await seedReaction({ postId: 'seed-post-1', userId: oma.id, type: 'LOVE' as ReactionType });
-  await seedReaction({ postId: 'seed-post-1', userId: mama.id, type: 'LIKE' as ReactionType });
-  await seedReaction({ postId: 'seed-post-2', userId: sophie.id, type: 'CARE' as ReactionType });
-  await seedReaction({ postId: 'seed-post-poll', userId: mama.id, type: 'LIKE' as ReactionType });
+  await seedReaction({ postId: 'seed-post-1', userId: oma.id, type: 'LOVE' as ReactionType })
+  await seedReaction({ postId: 'seed-post-1', userId: mama.id, type: 'LIKE' as ReactionType })
+  await seedReaction({ postId: 'seed-post-2', userId: sophie.id, type: 'CARE' as ReactionType })
+  await seedReaction({ postId: 'seed-post-poll', userId: mama.id, type: 'LIKE' as ReactionType })
 
   // Some poll votes via PostInteraction.
-  await seedVote({ postId: pollPost.id, userId: mama.id, optionId: 'opt-1' });
-  await seedVote({ postId: pollPost.id, userId: oma.id, optionId: 'opt-2' });
-  await seedVote({ postId: pollPost.id, userId: sophie.id, optionId: 'opt-1' });
+  await seedVote({ postId: pollPost.id, userId: mama.id, optionId: 'opt-1' })
+  await seedVote({ postId: pollPost.id, userId: oma.id, optionId: 'opt-2' })
+  await seedVote({ postId: pollPost.id, userId: sophie.id, optionId: 'opt-1' })
 
   // Comments on posts.
   await seedComment({
@@ -188,27 +188,27 @@ async function main() {
     postId: 'seed-post-1',
     authorId: oma.id,
     content: 'Gefeliciteerd lieve Emma! 🎈 Opa en ik komen zondag langs.',
-  });
+  })
   await seedComment({
     id: 'seed-comment-2',
     postId: 'seed-post-1',
     authorId: mama.id,
     content: 'Dankjewel mam, tot zondag!',
     parentId: 'seed-comment-1',
-  });
+  })
   await seedComment({
     id: 'seed-comment-3',
     postId: 'seed-post-2',
     authorId: papa.id,
     content: 'Die tomaten zien er inderdaad goed uit, opa!',
-  });
+  })
 
   // Trip post for the weekend group.
-  const today = new Date();
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 1);
-  const endDate = new Date(today);
-  endDate.setDate(today.getDate() + 2);
+  const today = new Date()
+  const startDate = new Date(today)
+  startDate.setDate(today.getDate() - 1)
+  const endDate = new Date(today)
+  endDate.setDate(today.getDate() + 2)
 
   const tripPost = await prisma.post.upsert({
     where: { id: 'seed-post-trip' },
@@ -230,7 +230,7 @@ async function main() {
         closedByUserId: null,
       },
     },
-  });
+  })
 
   // A couple of trip check-ins as comments with metadata.
   await seedTripCheckin({
@@ -240,7 +240,7 @@ async function main() {
     text: 'Aangekomen! Het huisje is perfect.',
     place: 'La Roche-en-Ardenne',
     checkinId: 'checkin-a',
-  });
+  })
   await seedTripCheckin({
     id: 'seed-checkin-2',
     postId: tripPost.id,
@@ -248,18 +248,18 @@ async function main() {
     text: 'Lekker gewandeld vandaag.',
     place: 'Bois de La Roche',
     checkinId: 'checkin-b',
-  });
+  })
 
   // Favorites.
-  await seedFavorite({ postId: 'seed-post-1', userId: oma.id });
-  await seedFavorite({ postId: 'seed-post-trip', userId: sophie.id });
+  await seedFavorite({ postId: 'seed-post-1', userId: oma.id })
+  await seedFavorite({ postId: 'seed-post-trip', userId: sophie.id })
 
-  console.log('✅ Seed data created');
-  console.log(`   Groups: ${familyGroup.name}, ${weekendGroup.name}`);
-  console.log(`   Family members: ${familyMemberIds.length}`);
-  console.log('   Test accounts:');
-  console.log('     - admin@example.com / test123456 (admin)');
-  console.log('     - test@example.com / test123456');
+  console.log('✅ Seed data created')
+  console.log(`   Groups: ${familyGroup.name}, ${weekendGroup.name}`)
+  console.log(`   Family members: ${familyMemberIds.length}`)
+  console.log('   Test accounts:')
+  console.log('     - admin@example.com / test123456 (admin)')
+  console.log('     - test@example.com / test123456')
 }
 
 async function seedReaction({ postId, userId, type }: { postId: string; userId: string; type: ReactionType }) {
@@ -267,7 +267,7 @@ async function seedReaction({ postId, userId, type }: { postId: string; userId: 
     where: { postId_userId: { postId, userId } },
     update: {},
     create: { postId, userId, type },
-  });
+  })
 }
 
 async function seedVote({ postId, userId, optionId }: { postId: string; userId: string; optionId: string }) {
@@ -280,7 +280,7 @@ async function seedVote({ postId, userId, optionId }: { postId: string; userId: 
       key: 'vote',
       value: { optionId },
     },
-  });
+  })
 }
 
 async function seedComment({
@@ -290,17 +290,17 @@ async function seedComment({
   content,
   parentId,
 }: {
-  id: string;
-  postId: string;
-  authorId: string;
-  content: string;
-  parentId?: string;
+  id: string
+  postId: string
+  authorId: string
+  content: string
+  parentId?: string
 }) {
   await prisma.comment.upsert({
     where: { id },
     update: {},
     create: { id, postId, authorId, content, parentId },
-  });
+  })
 }
 
 async function seedTripCheckin({
@@ -311,12 +311,12 @@ async function seedTripCheckin({
   place,
   checkinId,
 }: {
-  id: string;
-  postId: string;
-  authorId: string;
-  text: string;
-  place: string;
-  checkinId: string;
+  id: string
+  postId: string
+  authorId: string
+  text: string
+  place: string
+  checkinId: string
 }) {
   await prisma.comment.upsert({
     where: { id },
@@ -328,7 +328,7 @@ async function seedTripCheckin({
       content: text,
       metadata: { kind: 'trip_checkin', checkinId, place, photoUrls: [] },
     },
-  });
+  })
 }
 
 async function seedFavorite({ postId, userId }: { postId: string; userId: string }) {
@@ -336,14 +336,14 @@ async function seedFavorite({ postId, userId }: { postId: string; userId: string
     where: { postId_userId: { postId, userId } },
     update: {},
     create: { postId, userId },
-  });
+  })
 }
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

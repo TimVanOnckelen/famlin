@@ -1,6 +1,6 @@
 export interface ShortcutEntry {
-  keys: string[];
-  labelKey: string;
+  keys: string[]
+  labelKey: string
 }
 
 // The canonical list of global keyboard shortcuts, rendered by
@@ -18,4 +18,4 @@ export const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['g', 'u'], labelKey: 'shortcuts.goProfile' },
   { keys: ['n'], labelKey: 'shortcuts.newPost' },
   { keys: ['?'], labelKey: 'shortcuts.openHelp' },
-];
+]

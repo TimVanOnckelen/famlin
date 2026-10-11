@@ -1,6 +1,6 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   REACTION_TYPES,
   ReactionType,
@@ -13,15 +13,15 @@ import {
   markStoryViewed,
   reactToStory,
   replyToStory,
-} from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { formatRelativeDate } from '@/utils/time';
-import './Stories.css';
+} from '@famlin/api-client'
+import { Avatar } from '@/components/Avatar'
+import { Icon } from '@/components/Icon'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { formatRelativeDate } from '@/utils/time'
+import './Stories.css'
 
 // How long one story stays on screen before advancing, like Instagram.
-export const STORY_DURATION_MS = 5000;
+export const STORY_DURATION_MS = 5000
 
 // Full-screen story player. `sequences` is a list of story runs — one per
 // author for the tray, a single run for the Highlights row — and the viewer
@@ -36,120 +36,120 @@ export function StoryViewer({
   startIndex = 0,
   onClose,
 }: {
-  sequences: Story[][];
-  startSequence?: number;
-  startIndex?: number;
-  onClose: () => void;
+  sequences: Story[][]
+  startSequence?: number
+  startIndex?: number
+  onClose: () => void
 }) {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const [position, setPosition] = useState({ seq: startSequence, idx: startIndex });
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const [position, setPosition] = useState({ seq: startSequence, idx: startIndex })
   // Local overrides for what the viewer changed (reaction/reply), so the UI
   // updates instantly without refetching the whole tray.
-  const [overrides, setOverrides] = useState<Record<string, Partial<Story>>>({});
-  const [elapsed, setElapsed] = useState(0);
-  const [hovering, setHovering] = useState(false);
-  const [typing, setTyping] = useState(false);
-  const [insightsOpen, setInsightsOpen] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [replyError, setReplyError] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, Partial<Story>>>({})
+  const [elapsed, setElapsed] = useState(0)
+  const [hovering, setHovering] = useState(false)
+  const [typing, setTyping] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [replyError, setReplyError] = useState<string | null>(null)
 
-  const base = sequences[position.seq]?.[position.idx];
-  const story = base ? { ...base, ...overrides[base.id] } : undefined;
-  const storyId = story?.id;
-  const paused = hovering || typing || insightsOpen;
+  const base = sequences[position.seq]?.[position.idx]
+  const story = base ? { ...base, ...overrides[base.id] } : undefined
+  const storyId = story?.id
+  const paused = hovering || typing || insightsOpen
 
   const goNext = useCallback(() => {
-    setElapsed(0);
-    setInsightsOpen(false);
-    const { seq, idx } = position;
-    if (idx + 1 < (sequences[seq]?.length ?? 0)) setPosition({ seq, idx: idx + 1 });
-    else if (seq + 1 < sequences.length) setPosition({ seq: seq + 1, idx: 0 });
-    else onClose();
-  }, [position, sequences, onClose]);
+    setElapsed(0)
+    setInsightsOpen(false)
+    const { seq, idx } = position
+    if (idx + 1 < (sequences[seq]?.length ?? 0)) setPosition({ seq, idx: idx + 1 })
+    else if (seq + 1 < sequences.length) setPosition({ seq: seq + 1, idx: 0 })
+    else onClose()
+  }, [position, sequences, onClose])
 
   const goPrev = useCallback(() => {
-    setElapsed(0);
-    setInsightsOpen(false);
-    const { seq, idx } = position;
-    if (idx > 0) setPosition({ seq, idx: idx - 1 });
-    else if (seq > 0) setPosition({ seq: seq - 1, idx: (sequences[seq - 1]?.length ?? 1) - 1 });
-  }, [position, sequences]);
+    setElapsed(0)
+    setInsightsOpen(false)
+    const { seq, idx } = position
+    if (idx > 0) setPosition({ seq, idx: idx - 1 })
+    else if (seq > 0) setPosition({ seq: seq - 1, idx: (sequences[seq - 1]?.length ?? 1) - 1 })
+  }, [position, sequences])
 
   // Record the "seen by" receipt once per story shown. The server ignores it
   // for your own story and for an expired Highlight, so no need to check.
-  const viewedRef = useRef(new Set<string>());
+  const viewedRef = useRef(new Set<string>())
   useEffect(() => {
-    if (!story || viewedRef.current.has(story.id)) return;
-    viewedRef.current.add(story.id);
-    markStoryViewed(story.id).catch(() => {});
-  }, [story]);
+    if (!story || viewedRef.current.has(story.id)) return
+    viewedRef.current.add(story.id)
+    markStoryViewed(story.id).catch(() => {})
+  }, [story])
 
   // Auto-advance, paused while hovering, typing a reply or reading insights.
   useEffect(() => {
-    if (paused || !storyId) return;
-    let previousTime = performance.now();
-    let frame: number;
+    if (paused || !storyId) return
+    let previousTime = performance.now()
+    let frame: number
     function tick(now: number) {
-      const delta = now - previousTime;
-      previousTime = now;
-      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta));
-      frame = window.requestAnimationFrame(tick);
+      const delta = now - previousTime
+      previousTime = now
+      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta))
+      frame = window.requestAnimationFrame(tick)
     }
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, [paused, storyId]);
+    frame = window.requestAnimationFrame(tick)
+    return () => window.cancelAnimationFrame(frame)
+  }, [paused, storyId])
 
   useEffect(() => {
-    if (elapsed >= STORY_DURATION_MS) goNext();
-  }, [elapsed, goNext]);
+    if (elapsed >= STORY_DURATION_MS) goNext()
+  }, [elapsed, goNext])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (typing) return;
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') goPrev();
-      if (e.key === 'ArrowRight') goNext();
+      if (typing) return
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') goPrev()
+      if (e.key === 'ArrowRight') goNext()
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, onClose, typing]);
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [goNext, goPrev, onClose, typing])
 
   // The tray's seen state (and a new reaction/reply) is stale once closed.
   useEffect(() => {
     return () => {
-      queryClient.invalidateQueries({ queryKey: ['stories'] });
-    };
-  }, [queryClient]);
+      queryClient.invalidateQueries({ queryKey: ['stories'] })
+    }
+  }, [queryClient])
 
   const react = useMutation({
     mutationFn: (type: ReactionType) => reactToStory(story!.id, type),
     onSuccess: ({ myReaction }) => {
-      setOverrides((o) => ({ ...o, [story!.id]: { ...o[story!.id], myReaction } }));
+      setOverrides((o) => ({ ...o, [story!.id]: { ...o[story!.id], myReaction } }))
     },
-  });
+  })
 
   const reply = useMutation({
     mutationFn: (content: string) => replyToStory(story!.id, content),
     onSuccess: (sent) => {
-      setOverrides((o) => ({ ...o, [story!.id]: { ...o[story!.id], myReply: sent } }));
-      setReplyText('');
-      setReplyError(null);
-      setTyping(false);
+      setOverrides((o) => ({ ...o, [story!.id]: { ...o[story!.id], myReply: sent } }))
+      setReplyText('')
+      setReplyError(null)
+      setTyping(false)
     },
     onError: () => setReplyError(t('stories.replyFailed')),
-  });
+  })
 
-  if (!story) return null;
+  if (!story) return null
 
-  const run = sequences[position.seq] ?? [];
-  const live = isStoryLive(story);
-  const progress = Math.min(1, elapsed / STORY_DURATION_MS);
+  const run = sequences[position.seq] ?? []
+  const live = isStoryLive(story)
+  const progress = Math.min(1, elapsed / STORY_DURATION_MS)
 
   function submitReply(e: FormEvent) {
-    e.preventDefault();
-    const content = replyText.trim();
-    if (content) reply.mutate(content);
+    e.preventDefault()
+    const content = replyText.trim()
+    if (content) reply.mutate(content)
   }
 
   return (
@@ -257,18 +257,18 @@ export function StoryViewer({
         {insightsOpen && story.isMine && <StoryInsights storyId={story.id} onClose={() => setInsightsOpen(false)} />}
       </div>
     </div>
-  );
+  )
 }
 
 // Author-only panel: who viewed, who reacted with what, and the private
 // replies — all three lists are 404 for anyone else server-side.
 function StoryInsights({ storyId, onClose }: { storyId: string; onClose: () => void }) {
-  const { t, i18n } = useTranslation();
-  const [tab, setTab] = useState<'views' | 'reactions' | 'replies'>('views');
+  const { t, i18n } = useTranslation()
+  const [tab, setTab] = useState<'views' | 'reactions' | 'replies'>('views')
 
-  const views = useQuery({ queryKey: ['story-views', storyId], queryFn: () => fetchStoryViews(storyId) });
-  const reactions = useQuery({ queryKey: ['story-reactions', storyId], queryFn: () => fetchStoryReactions(storyId) });
-  const replies = useQuery({ queryKey: ['story-replies', storyId], queryFn: () => fetchStoryReplies(storyId) });
+  const views = useQuery({ queryKey: ['story-views', storyId], queryFn: () => fetchStoryViews(storyId) })
+  const reactions = useQuery({ queryKey: ['story-reactions', storyId], queryFn: () => fetchStoryReactions(storyId) })
+  const replies = useQuery({ queryKey: ['story-replies', storyId], queryFn: () => fetchStoryReplies(storyId) })
 
   return (
     <div className="story-insights" role="dialog" aria-label={t('stories.insightsLabel')}>
@@ -330,5 +330,5 @@ function StoryInsights({ storyId, onClose }: { storyId: string; onClose: () => v
       )}
       <p className="story-insights-privacy">{t('stories.repliesPrivate')}</p>
     </div>
-  );
+  )
 }

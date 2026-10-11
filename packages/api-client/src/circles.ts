@@ -1,5 +1,5 @@
-import { api } from './client';
-import { Circle, CircleMember } from './types';
+import { api } from './client'
+import { Circle, CircleMember } from './types'
 
 // Member-facing Circle calls. Circles are FULLY PRIVATE: the server only
 // ever returns the circles the caller is actually in, so there is no "list
@@ -9,17 +9,17 @@ import { Circle, CircleMember } from './types';
 // the admin UI.
 
 export async function fetchMyCircles(groupId: string): Promise<Circle[]> {
-  const response = await api.get<{ items: Circle[] }>('/circles', { params: { groupId } });
-  return response.data.items;
+  const response = await api.get<{ items: Circle[] }>('/circles', { params: { groupId } })
+  return response.data.items
 }
 
 export async function fetchCircleMembers(circleId: string): Promise<CircleMember[]> {
-  const response = await api.get<{ items: CircleMember[] }>(`/circles/${circleId}/members`);
-  return response.data.items;
+  const response = await api.get<{ items: CircleMember[] }>(`/circles/${circleId}/members`)
+  return response.data.items
 }
 
 // Leaving a circle never removes you from the family group behind it —
 // you simply stop seeing that circle's content. Rejoining requires an admin.
 export async function leaveCircle(circleId: string): Promise<void> {
-  await api.delete(`/circles/${circleId}/members/me`);
+  await api.delete(`/circles/${circleId}/members/me`)
 }

@@ -1,20 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, Modal, Pressable, FlatList, ActivityIndicator } from 'react-native'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { fetchPostReactions, PostReactor } from '@famlin/api-client';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { fetchPostReactions, PostReactor } from '@famlin/api-client'
 
 // Who reacted with what, opened by tapping the ReactorStack avatars on a
 // post — a bottom sheet rather than the full-screen pickers elsewhere, since
 // this is a quick disclosure, not a navigation flow (see ReactionPicker.tsx
 // for the same shape used on long-press).
 export function ReactionsModal({ postId, onClose }: { postId: string | null; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   const {
     data: reactors,
@@ -24,7 +24,7 @@ export function ReactionsModal({ postId, onClose }: { postId: string | null; onC
     queryKey: ['postReactions', postId],
     queryFn: () => fetchPostReactions(postId!),
     enabled: postId !== null,
-  });
+  })
 
   return (
     <Modal transparent visible={postId !== null} animationType="slide" onRequestClose={onClose}>
@@ -68,7 +68,7 @@ export function ReactionsModal({ postId, onClose }: { postId: string | null; onC
         </Pressable>
       </Pressable>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -127,4 +127,4 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 20,
   },
-});
+})

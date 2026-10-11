@@ -1,4 +1,4 @@
-import type { ServerSettings } from '../settings.js';
+import type { ServerSettings } from '../settings.js'
 
 // The closed set of notification event types — Notification.type in the DB is
 // a plain string, so this union is its single source of truth.
@@ -35,41 +35,41 @@ export type NotifyType =
   // pushOnNewComment.
   | 'story_reply'
   // A reaction on the recipient's story — push-only, reuses pushOnNewLike.
-  | 'story_reaction';
+  | 'story_reaction'
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().
 export interface Recipient {
-  id: string;
-  email: string;
-  emailOnNewPost: boolean;
-  emailOnNewComment: boolean;
-  emailOnNewLike: boolean;
-  pushOnNewPost: boolean;
-  pushOnNewComment: boolean;
-  pushOnNewLike: boolean;
-  pushOnChitchat: boolean;
-  pushOnStory: boolean;
+  id: string
+  email: string
+  emailOnNewPost: boolean
+  emailOnNewComment: boolean
+  emailOnNewLike: boolean
+  pushOnNewPost: boolean
+  pushOnNewComment: boolean
+  pushOnNewLike: boolean
+  pushOnChitchat: boolean
+  pushOnStory: boolean
 }
 
 export interface ChannelSendArgs {
-  type: NotifyType;
+  type: NotifyType
   // Already narrowed to the recipients whose preferences opted into this
   // channel for this type (see wants()) — send() delivers to all of them.
-  recipients: Recipient[];
-  message: string;
-  settings: ServerSettings;
+  recipients: Recipient[]
+  message: string
+  settings: ServerSettings
   // null for event types with no associated post (currently only
   // new_media_assets, which is scoped to an album/group instead).
-  postId: string | null;
+  postId: string | null
   // Set instead of postId for story notifications — lets the client's
   // notification-tap handler open the story viewer.
-  storyId?: string | null;
+  storyId?: string | null
   // Set only when an admin triggered this send manually (the "resend push"
   // content-moderation action) — omitted/undefined for every organic,
   // event-triggered send. Only the push channel acts on this (see
   // PushDeliveryLog); other channels ignore it.
-  triggeredByAdminId?: string | null;
+  triggeredByAdminId?: string | null
 }
 
 // A delivery mechanism for notifications. The in-app Notification row is NOT
@@ -78,13 +78,13 @@ export interface ChannelSendArgs {
 // (push, email, and whatever integration comes next). One file per channel in
 // this directory, registered in ./index.ts.
 export interface NotificationChannel {
-  id: string;
+  id: string
   // Server-level switch (admin settings) — checked once per notify() call.
-  isEnabled(settings: ServerSettings): boolean;
+  isEnabled(settings: ServerSettings): boolean
   // Per-recipient preference for this event type.
-  wants(recipient: Recipient, type: NotifyType): boolean;
+  wants(recipient: Recipient, type: NotifyType): boolean
   // Must not throw for per-recipient failures — log and continue, so one bad
   // address/token never blocks the rest. notify() additionally traps a
   // channel-level throw so one broken channel can't stop the others.
-  send(args: ChannelSendArgs): Promise<void>;
+  send(args: ChannelSendArgs): Promise<void>
 }

@@ -1,8 +1,8 @@
-import nodemailer from 'nodemailer';
-import i18n from '../../i18n/index.js';
-import { getAllSettings } from '../settings.js';
-import type { NotificationChannel, NotifyType, Recipient } from './types.js';
-import { resolveBrandSettings } from '../branding/index.js';
+import nodemailer from 'nodemailer'
+import i18n from '../../i18n/index.js'
+import { getAllSettings } from '../settings.js'
+import type { NotificationChannel, NotifyType, Recipient } from './types.js'
+import { resolveBrandSettings } from '../branding/index.js'
 
 // Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
 // reuse the closest existing preference column, see the note there.
@@ -17,12 +17,12 @@ const EMAIL_PREF_FIELD: Partial<Record<NotifyType, 'emailOnNewPost' | 'emailOnNe
   mention: 'emailOnNewComment',
   on_this_day: 'emailOnNewPost',
   new_media_assets: 'emailOnNewPost',
-};
+}
 
 export async function createTransporter(settings?: Awaited<ReturnType<typeof getAllSettings>>) {
-  const resolved = settings ?? (await getAllSettings());
+  const resolved = settings ?? (await getAllSettings())
   if (!resolved.smtpHost || !resolved.smtpUser || !resolved.smtpPass) {
-    return null;
+    return null
   }
 
   return nodemailer.createTransport({
@@ -33,31 +33,31 @@ export async function createTransporter(settings?: Awaited<ReturnType<typeof get
       user: resolved.smtpUser,
       pass: resolved.smtpPass,
     },
-  });
+  })
 }
 
 export const emailChannel: NotificationChannel = {
   id: 'email',
 
   isEnabled(settings) {
-    return settings.emailNotificationsEnabled;
+    return settings.emailNotificationsEnabled
   },
 
   wants(recipient: Recipient, type: NotifyType) {
-    const field = EMAIL_PREF_FIELD[type];
-    return field ? recipient[field] : false;
+    const field = EMAIL_PREF_FIELD[type]
+    return field ? recipient[field] : false
   },
 
   async send({ recipients, message, settings }) {
-    const transporter = await createTransporter(settings);
-    if (!transporter) return;
+    const transporter = await createTransporter(settings)
+    if (!transporter) return
 
-    const t = i18n.getFixedT(settings.defaultLanguage);
-    const brandName = resolveBrandSettings(settings).name;
+    const t = i18n.getFixedT(settings.defaultLanguage)
+    const brandName = resolveBrandSettings(settings).name
     const subject = brandName
       ? t('notifications.emailSubjectBranded', { name: brandName })
-      : t('notifications.emailSubject');
-    const body = t('notifications.emailBody', { message });
+      : t('notifications.emailSubject')
+    const body = t('notifications.emailBody', { message })
 
     // Send in parallel so one slow/hanging recipient doesn't serialize the rest.
     await Promise.all(
@@ -71,6 +71,6 @@ export const emailChannel: NotificationChannel = {
           })
           .catch((err) => console.error('Failed to send email', err))
       )
-    );
+    )
   },
-};
+}

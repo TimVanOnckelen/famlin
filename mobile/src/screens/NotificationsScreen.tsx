@@ -1,20 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { EmptyState } from '@/components/EmptyState';
-import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@famlin/api-client';
-import { formatDateTime } from '@/i18n/utils';
+import { colors } from '@/constants/colors'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@famlin/api-client'
+import { formatDateTime } from '@/i18n/utils'
 
 export function NotificationsScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const queryClient = useQueryClient();
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const queryClient = useQueryClient()
 
   const {
     data: notifications,
@@ -24,29 +24,29 @@ export function NotificationsScreen() {
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
     refetchInterval: 30000,
-  });
+  })
 
   useFocusEffect(
     React.useCallback(() => {
-      refetch();
+      refetch()
     }, [refetch])
-  );
+  )
 
   const markRead = useMutation({
     mutationFn: (id: string) => markNotificationRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] })
     },
-  });
+  })
 
   const markAllRead = useMutation({
     mutationFn: markAllNotificationsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] })
     },
-  });
+  })
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,11 +69,11 @@ export function NotificationsScreen() {
           <TouchableOpacity
             style={[styles.notificationItem, !item.readAt && styles.unreadItem]}
             onPress={() => {
-              markRead.mutate(item.id);
+              markRead.mutate(item.id)
               if (item.relatedPostId) {
-                navigation.navigate('PostDetail', { postId: item.relatedPostId });
+                navigation.navigate('PostDetail', { postId: item.relatedPostId })
               } else if (item.relatedStoryId) {
-                navigation.navigate('StoryViewer', { storyId: item.relatedStoryId });
+                navigation.navigate('StoryViewer', { storyId: item.relatedStoryId })
               }
             }}
           >
@@ -87,7 +87,7 @@ export function NotificationsScreen() {
         ListEmptyComponent={<EmptyState title={t('notifications.empty')} titleStyle={styles.emptyText} />}
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -150,4 +150,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textMuted,
   },
-});
+})

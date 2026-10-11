@@ -1,15 +1,15 @@
-import fsp from 'fs/promises';
-import path from 'path';
-import { prisma } from '../db.js';
-import { uploadsDir } from '../config.js';
-import { isCircleMember } from './circles.js';
-import { DERIVED_DIR_NAME } from './uploadVariants.js';
+import fsp from 'fs/promises'
+import path from 'path'
+import { prisma } from '../db.js'
+import { uploadsDir } from '../config.js'
+import { isCircleMember } from './circles.js'
+import { DERIVED_DIR_NAME } from './uploadVariants.js'
 
 // Authorization for /uploads/* — see the Upload model in schema.prisma for
 // why a reverse index table is the only practical way to answer "who is
 // allowed to read this file".
 
-const THUMBNAIL_SUFFIX = '-thumbnail';
+const THUMBNAIL_SUFFIX = '-thumbnail'
 
 // Maps any rendition of an upload back to the single key that identifies it:
 //   uploads/<uuid>.jpg            -> <uuid>
@@ -19,60 +19,60 @@ const THUMBNAIL_SUFFIX = '-thumbnail';
 // Getting this wrong would leave thumbnails unprotected, which is the whole
 // asset at 400px — tests/circles-uploads.test.ts pins every rendition shape.
 export function uploadAssetKey(pathOrFilename: string): string {
-  const filename = pathOrFilename.split('/').pop() ?? '';
-  const dot = filename.lastIndexOf('.');
-  const stem = dot === -1 ? filename : filename.slice(0, dot);
-  return stem.endsWith(THUMBNAIL_SUFFIX) ? stem.slice(0, -THUMBNAIL_SUFFIX.length) : stem;
+  const filename = pathOrFilename.split('/').pop() ?? ''
+  const dot = filename.lastIndexOf('.')
+  const stem = dot === -1 ? filename : filename.slice(0, dot)
+  return stem.endsWith(THUMBNAIL_SUFFIX) ? stem.slice(0, -THUMBNAIL_SUFFIX.length) : stem
 }
 
 type UploadRow = {
-  assetKey: string;
-  uploaderId: string | null;
-  circleId: string | null;
-  bound: boolean;
-  groupIds: string[];
-  serverWide: boolean;
-};
+  assetKey: string
+  uploaderId: string | null
+  circleId: string | null
+  bound: boolean
+  groupIds: string[]
+  serverWide: boolean
+}
 
 // Who an upload is for, as set by the site that attaches it:
 //   - a group scope: members of any of `groupIds` (every cross-post target),
 //     narrowed to one circle's members when `circleId` is set;
 //   - SERVER_WIDE: any authenticated user. Only user avatars use this — they
 //     show up in every group their owner belongs to.
-export type UploadScope = { groupIds: string[]; circleId?: string | null } | typeof SERVER_WIDE;
-export const SERVER_WIDE = 'server-wide' as const;
+export type UploadScope = { groupIds: string[]; circleId?: string | null } | typeof SERVER_WIDE
+export const SERVER_WIDE = 'server-wide' as const
 
 // Every /uploads/ request pays this lookup, so the rows are cached and
 // invalidated on write (the getAllSettings pattern) rather than given a TTL:
 // a stale "unbound" row would make a freshly posted photo unreadable to
 // everyone else until it expired.
-const rowCache = new Map<string, UploadRow | null>();
-const ROW_CACHE_MAX = 5000;
+const rowCache = new Map<string, UploadRow | null>()
+const ROW_CACHE_MAX = 5000
 
 function cacheRow(assetKey: string, row: UploadRow | null): void {
   // Cheap bound on memory: an LRU would be better, but this cache exists to
   // absorb repeat hits on a feed's worth of images, and dropping the oldest
   // insert is good enough for that.
   if (rowCache.size >= ROW_CACHE_MAX) {
-    const oldest = rowCache.keys().next().value;
-    if (oldest !== undefined) rowCache.delete(oldest);
+    const oldest = rowCache.keys().next().value
+    if (oldest !== undefined) rowCache.delete(oldest)
   }
-  rowCache.set(assetKey, row);
+  rowCache.set(assetKey, row)
 }
 
 export function invalidateUploadCache(assetKeys?: string[]): void {
-  if (!assetKeys) return rowCache.clear();
-  for (const key of assetKeys) rowCache.delete(key);
+  if (!assetKeys) return rowCache.clear()
+  for (const key of assetKeys) rowCache.delete(key)
 }
 
 async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
-  if (rowCache.has(assetKey)) return rowCache.get(assetKey) ?? null;
+  if (rowCache.has(assetKey)) return rowCache.get(assetKey) ?? null
   const row = await prisma.upload.findUnique({
     where: { assetKey },
     select: { assetKey: true, uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true },
-  });
-  cacheRow(assetKey, row);
-  return row;
+  })
+  cacheRow(assetKey, row)
+  return row
 }
 
 // Can `userId` read the file at this /uploads/ path?
@@ -94,32 +94,32 @@ async function getUploadRow(assetKey: string): Promise<UploadRow | null> {
 //   - otherwise     -> any authenticated user: a legacy row bound before
 //     group scoping existed, pending the same backfill as no-row uploads.
 export async function canReadUpload(pathOrFilename: string, userId: string): Promise<boolean> {
-  const row = await getUploadRow(uploadAssetKey(pathOrFilename));
-  if (!row) return true;
-  if (row.circleId) return isCircleMember(row.circleId, userId);
-  if (!row.bound) return row.uploaderId === userId;
-  if (row.serverWide) return true;
+  const row = await getUploadRow(uploadAssetKey(pathOrFilename))
+  if (!row) return true
+  if (row.circleId) return isCircleMember(row.circleId, userId)
+  if (!row.bound) return row.uploaderId === userId
+  if (row.serverWide) return true
   if (row.groupIds.length > 0) {
     const membership = await prisma.groupMember.findFirst({
       where: { userId, groupId: { in: row.groupIds } },
       select: { id: true },
-    });
-    return !!membership;
+    })
+    return !!membership
   }
-  return true;
+  return true
 }
 
 // Called by POST /api/uploads for every file it writes. The row starts
 // unbound: until the client actually attaches it to something, only the
 // uploader can read it back.
 export async function recordUpload(assetPath: string, uploaderId: string): Promise<void> {
-  const assetKey = uploadAssetKey(assetPath);
+  const assetKey = uploadAssetKey(assetPath)
   await prisma.upload.upsert({
     where: { assetKey },
     create: { assetKey, uploaderId },
     update: {},
-  });
-  invalidateUploadCache([assetKey]);
+  })
+  invalidateUploadCache([assetKey])
 }
 
 // THE single place an upload's audience is set. Called from every site that
@@ -152,13 +152,13 @@ export async function bindAssetsToScope(
   uploaderId: string,
   tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
 ): Promise<void> {
-  const assetKeys = [...new Set(assetPaths.filter((p): p is string => !!p).map(uploadAssetKey))];
-  if (assetKeys.length === 0) return;
+  const assetKeys = [...new Set(assetPaths.filter((p): p is string => !!p).map(uploadAssetKey))]
+  if (assetKeys.length === 0) return
 
   await tx.upload.updateMany({
     where: { assetKey: { in: assetKeys }, uploaderId, bound: false },
     data: scopeData(scope),
-  });
+  })
 
   if (scope !== SERVER_WIDE && !scope.circleId) {
     // One update per group keeps groupIds duplicate-free: a post edit
@@ -174,29 +174,29 @@ export async function bindAssetsToScope(
           NOT: [{ groupIds: { isEmpty: true } }, { groupIds: { has: groupId } }],
         },
         data: { groupIds: { push: groupId } },
-      });
+      })
     }
   }
-  invalidateUploadCache(assetKeys);
+  invalidateUploadCache(assetKeys)
 }
 
 function scopeData(scope: UploadScope) {
   return scope === SERVER_WIDE
     ? { bound: true, serverWide: true, circleId: null, groupIds: [] }
-    : { bound: true, serverWide: false, circleId: scope.circleId ?? null, groupIds: [...new Set(scope.groupIds)] };
+    : { bound: true, serverWide: false, circleId: scope.circleId ?? null, groupIds: [...new Set(scope.groupIds)] }
 }
 
 // Gives a file the server wrote itself (a cross-posted linked-album asset
 // copied by services/media/copyAsset.ts) an already-bound row scoped to the
 // groups it was copied for, so it doesn't take the no-row legacy path.
 export async function recordServerCopy(assetPath: string, uploaderId: string, groupIds: string[]): Promise<void> {
-  const assetKey = uploadAssetKey(assetPath);
+  const assetKey = uploadAssetKey(assetPath)
   await prisma.upload.upsert({
     where: { assetKey },
     create: { assetKey, uploaderId, ...scopeData({ groupIds }) },
     update: {},
-  });
-  invalidateUploadCache([assetKey]);
+  })
+  invalidateUploadCache([assetKey])
 }
 
 // Is this upload a fresh, never-attached file that `userId` uploaded
@@ -207,13 +207,13 @@ export async function isUnboundUploadOwnedBy(assetPath: string, userId: string):
   const row = await prisma.upload.findUnique({
     where: { assetKey: uploadAssetKey(assetPath) },
     select: { uploaderId: true, bound: true },
-  });
-  return !!row && row.uploaderId === userId && !row.bound;
+  })
+  return !!row && row.uploaderId === userId && !row.bound
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // Every extension routes/uploads.ts can have written an original under.
-const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'];
+const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif']
 
 // Permanently removes every file one upload produced — the served copy, its
 // -thumbnail.jpg, the never-served original, and any cached HEIC rendition
@@ -222,24 +222,24 @@ const ORIGINAL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', 
 // Missing files are fine (a thumbnail that never generated, an original that
 // was already a .jpg), so each unlink is best-effort.
 export async function deleteUploadFiles(assetPath: string): Promise<void> {
-  const assetKey = uploadAssetKey(assetPath);
+  const assetKey = uploadAssetKey(assetPath)
   // The path was validated against UPLOAD_PATH_REGEX on the way in, but this
   // helper builds filesystem paths from it — refuse anything that isn't a
   // bare uuid rather than trust every future caller.
-  if (!UUID_REGEX.test(assetKey)) return;
+  if (!UUID_REGEX.test(assetKey)) return
 
-  const served = path.basename(assetPath);
+  const served = path.basename(assetPath)
   const candidates = [
     path.join(uploadsDir, served),
     path.join(uploadsDir, `${assetKey}-thumbnail.jpg`),
     ...ORIGINAL_EXTENSIONS.map((ext) => path.join(uploadsDir, 'originals', `${assetKey}${ext}`)),
     path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}.jpg`),
     path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
-  ];
-  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})));
+  ]
+  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})))
 
-  await prisma.upload.deleteMany({ where: { assetKey } });
-  invalidateUploadCache([assetKey]);
+  await prisma.upload.deleteMany({ where: { assetKey } })
+  invalidateUploadCache([assetKey])
 }
 
 // Atomically binds one fresh upload to `scope` on behalf of its uploader,
@@ -254,11 +254,11 @@ export async function claimUnboundUpload(
   scope: UploadScope,
   tx: { upload: { updateMany: typeof prisma.upload.updateMany } } = prisma
 ): Promise<boolean> {
-  const assetKey = uploadAssetKey(assetPath);
+  const assetKey = uploadAssetKey(assetPath)
   const { count } = await tx.upload.updateMany({
     where: { assetKey, uploaderId, bound: false },
     data: scopeData(scope),
-  });
-  invalidateUploadCache([assetKey]);
-  return count === 1;
+  })
+  invalidateUploadCache([assetKey])
+  return count === 1
 }

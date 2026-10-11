@@ -1,31 +1,31 @@
-import { prisma } from '../../db.js';
-import { getMediaProvider } from './registry.js';
-import { resolvePersonFilterForAlbum } from './personFilter.js';
-import type { MediaAssetSummary } from './types.js';
-import { visiblePostsWhereFor } from '../circles.js';
+import { prisma } from '../../db.js'
+import { getMediaProvider } from './registry.js'
+import { resolvePersonFilterForAlbum } from './personFilter.js'
+import type { MediaAssetSummary } from './types.js'
+import { visiblePostsWhereFor } from '../circles.js'
 
 // The merged, capture-date-ordered photo feed backing
 // GET /api/media/groups/:groupId/photos — see routes/media.ts.
 export interface PhotoItem {
-  id: string;
-  source: 'album' | 'post';
-  type: 'IMAGE' | 'VIDEO';
-  takenAt: string;
-  width: number | null;
-  height: number | null;
-  thumbnailUrl: string;
-  previewUrl: string;
-  originalUrl: string;
-  albumName?: string;
-  linkId?: string;
-  assetId?: string;
-  postId?: string;
+  id: string
+  source: 'album' | 'post'
+  type: 'IMAGE' | 'VIDEO'
+  takenAt: string
+  width: number | null
+  height: number | null
+  thumbnailUrl: string
+  previewUrl: string
+  originalUrl: string
+  albumName?: string
+  linkId?: string
+  assetId?: string
+  postId?: string
   // For an album asset that a post embeds (picked via the linked-album
   // picker): the exact media-proxy URL stored in that post's
   // uploadedAssetUrls. Clients need the verbatim string to pin comments to
   // the photo (Comment.assetUrl matches by exact value). Only set together
   // with postId on source: 'album' items.
-  postAssetUrl?: string;
+  postAssetUrl?: string
 }
 
 // --- Per-album asset listing cache -----------------------------------------
@@ -45,51 +45,51 @@ export interface PhotoItem {
 // album ever waits on the provider crawl — new assets show up one page-load
 // after the TTL instead of making that page-load slow.
 interface AlbumAssetsCacheEntry {
-  assets: MediaAssetSummary[];
-  expiresAt: number;
+  assets: MediaAssetSummary[]
+  expiresAt: number
 }
-const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000;
-const albumAssetsCache = new Map<string, AlbumAssetsCacheEntry>();
-const albumAssetsRefreshing = new Set<string>();
+const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000
+const albumAssetsCache = new Map<string, AlbumAssetsCacheEntry>()
+const albumAssetsRefreshing = new Set<string>()
 
 async function fetchAndCacheAlbumAssets(
   key: string,
   provider: string,
   externalAlbumId: string
 ): Promise<MediaAssetSummary[]> {
-  const mediaProvider = getMediaProvider(provider);
-  if (!mediaProvider) return [];
+  const mediaProvider = getMediaProvider(provider)
+  if (!mediaProvider) return []
 
-  const assets = await mediaProvider.listAlbumAssets(externalAlbumId);
-  albumAssetsCache.set(key, { assets, expiresAt: Date.now() + ALBUM_ASSETS_CACHE_TTL_MS });
-  return assets;
+  const assets = await mediaProvider.listAlbumAssets(externalAlbumId)
+  albumAssetsCache.set(key, { assets, expiresAt: Date.now() + ALBUM_ASSETS_CACHE_TTL_MS })
+  return assets
 }
 
 async function listAlbumAssetsCached(provider: string, externalAlbumId: string): Promise<MediaAssetSummary[]> {
-  const key = `${provider}:${externalAlbumId}`;
-  const cached = albumAssetsCache.get(key);
+  const key = `${provider}:${externalAlbumId}`
+  const cached = albumAssetsCache.get(key)
   if (cached) {
     if (cached.expiresAt <= Date.now() && !albumAssetsRefreshing.has(key)) {
-      albumAssetsRefreshing.add(key);
+      albumAssetsRefreshing.add(key)
       fetchAndCacheAlbumAssets(key, provider, externalAlbumId)
         .catch((err) => {
           // Keep serving the stale entry; the next request retries.
-          console.warn(`photoTimeline: background refresh failed for ${key}:`, err);
+          console.warn(`photoTimeline: background refresh failed for ${key}:`, err)
         })
-        .finally(() => albumAssetsRefreshing.delete(key));
+        .finally(() => albumAssetsRefreshing.delete(key))
     }
-    return cached.assets;
+    return cached.assets
   }
 
-  return fetchAndCacheAlbumAssets(key, provider, externalAlbumId);
+  return fetchAndCacheAlbumAssets(key, provider, externalAlbumId)
 }
 
 // Test-only escape hatch, mirrors __clearPersonTagCacheForTests — lets a test
 // force a fresh crawl instead of waiting out the 60s TTL or leaking a stale
 // entry into another test file.
 export function __clearPhotoTimelineCacheForTests(): void {
-  albumAssetsCache.clear();
-  albumAssetsRefreshing.clear();
+  albumAssetsCache.clear()
+  albumAssetsRefreshing.clear()
 }
 
 // --- Keyset cursor -----------------------------------------------------
@@ -100,19 +100,19 @@ export function __clearPhotoTimelineCacheForTests(): void {
 // in-memory list sorted by an effective timestamp, so the cursor instead
 // encodes a (timestamp, id) position in that merged, sorted list.
 function encodeCursor(takenAt: string, id: string): string {
-  return Buffer.from(`${takenAt}|${id}`, 'utf8').toString('base64url');
+  return Buffer.from(`${takenAt}|${id}`, 'utf8').toString('base64url')
 }
 
 function decodeCursor(cursor: string): { takenAt: string; id: string } | null {
-  let decoded: string;
+  let decoded: string
   try {
-    decoded = Buffer.from(cursor, 'base64url').toString('utf8');
+    decoded = Buffer.from(cursor, 'base64url').toString('utf8')
   } catch {
-    return null;
+    return null
   }
-  const sep = decoded.lastIndexOf('|');
-  if (sep === -1) return null;
-  return { takenAt: decoded.slice(0, sep), id: decoded.slice(sep + 1) };
+  const sep = decoded.lastIndexOf('|')
+  if (sep === -1) return null
+  return { takenAt: decoded.slice(0, sep), id: decoded.slice(sep + 1) }
 }
 
 const UPLOAD_EXTENSION_TYPE: Record<string, 'IMAGE' | 'VIDEO'> = {
@@ -127,15 +127,15 @@ const UPLOAD_EXTENSION_TYPE: Record<string, 'IMAGE' | 'VIDEO'> = {
   mov: 'VIDEO',
   m4v: 'VIDEO',
   webm: 'VIDEO',
-};
+}
 
 function uploadAssetType(url: string): 'IMAGE' | 'VIDEO' {
-  const ext = url.split('.').pop()?.toLowerCase() ?? '';
-  return UPLOAD_EXTENSION_TYPE[ext] ?? 'IMAGE';
+  const ext = url.split('.').pop()?.toLowerCase() ?? ''
+  return UPLOAD_EXTENSION_TYPE[ext] ?? 'IMAGE'
 }
 
 export type PhotoTimelineResult =
-  { ok: true; items: PhotoItem[]; nextCursor: string | null } | { ok: false; status: number; errorKey: string };
+  { ok: true; items: PhotoItem[]; nextCursor: string | null } | { ok: false; status: number; errorKey: string }
 
 // Builds one group's merged photo timeline: every asset across the group's
 // linked media albums, plus every directly-uploaded (/uploads/...) photo on
@@ -156,8 +156,8 @@ export async function getGroupPhotoTimeline(
   // (while another linked album's provider is) just contributes zero photos
   // for that album below rather than erroring the whole request.
   if (options.personId) {
-    const anyMapping = await prisma.mediaPersonLink.findFirst({ where: { externalPersonId: options.personId } });
-    if (!anyMapping) return { ok: false, status: 404, errorKey: 'errors.mediaPersonLinkNotFound' };
+    const anyMapping = await prisma.mediaPersonLink.findFirst({ where: { externalPersonId: options.personId } })
+    if (!anyMapping) return { ok: false, status: 404, errorKey: 'errors.mediaPersonLinkNotFound' }
   }
 
   const [links, posts] = await Promise.all([
@@ -173,7 +173,7 @@ export async function getGroupPhotoTimeline(
       },
       select: { id: true, createdAt: true, uploadedAssetUrls: true },
     }),
-  ]);
+  ])
 
   // Posts that embed a provider asset via its media-proxy URL (picked from
   // the linked-album picker). Maps `${linkId}:${assetId}` to the embedding
@@ -181,18 +181,18 @@ export async function getGroupPhotoTimeline(
   // post context — that's what lets clients offer like/comment/favorite on
   // an album photo that was posted. First post wins if several embed the
   // same asset.
-  const postByProxyAsset = new Map<string, { postId: string; assetUrl: string }>();
-  const MEDIA_PROXY_URL_RE = /^\/api\/(?:media|immich)\/assets\/([^/]+)\/([^/]+)\//;
+  const postByProxyAsset = new Map<string, { postId: string; assetUrl: string }>()
+  const MEDIA_PROXY_URL_RE = /^\/api\/(?:media|immich)\/assets\/([^/]+)\/([^/]+)\//
   for (const post of posts) {
     for (const url of post.uploadedAssetUrls) {
-      const match = MEDIA_PROXY_URL_RE.exec(url);
-      if (!match) continue;
-      const key = `${match[1]}:${match[2]}`;
-      if (!postByProxyAsset.has(key)) postByProxyAsset.set(key, { postId: post.id, assetUrl: url });
+      const match = MEDIA_PROXY_URL_RE.exec(url)
+      if (!match) continue
+      const key = `${match[1]}:${match[2]}`
+      if (!postByProxyAsset.has(key)) postByProxyAsset.set(key, { postId: post.id, assetUrl: url })
     }
   }
 
-  const items: PhotoItem[] = [];
+  const items: PhotoItem[] = []
 
   // Album side — per-link fail-soft: a failing provider/album (network
   // error, misconfigured source, deleted album) logs and contributes zero
@@ -200,29 +200,29 @@ export async function getGroupPhotoTimeline(
   // and the personTags.ts fail-soft doctrine.
   await Promise.all(
     links.map(async (link) => {
-      let personAssetIds: Set<string> | null = null;
+      let personAssetIds: Set<string> | null = null
       if (options.personId) {
         try {
-          const result = await resolvePersonFilterForAlbum(link, options.personId);
+          const result = await resolvePersonFilterForAlbum(link, options.personId)
           // Not ok here means either "this provider has no such mapping" or
           // "this provider can't filter by person at all" — neither is a
           // request-level error at the group level (see the comment above);
           // this album simply contributes nothing to a person-filtered
           // timeline.
-          if (!result.ok) return;
-          personAssetIds = result.assetIds;
+          if (!result.ok) return
+          personAssetIds = result.assetIds
         } catch (err) {
-          console.warn(`photoTimeline: person filter failed for album link ${link.id}:`, err);
-          return;
+          console.warn(`photoTimeline: person filter failed for album link ${link.id}:`, err)
+          return
         }
       }
 
       try {
-        const assets = await listAlbumAssetsCached(link.provider, link.externalAlbumId);
+        const assets = await listAlbumAssetsCached(link.provider, link.externalAlbumId)
         for (const asset of assets) {
-          if (personAssetIds && !personAssetIds.has(asset.id)) continue;
-          const takenAt = asset.takenAt ?? asset.addedAt ?? new Date(0).toISOString();
-          const postRef = postByProxyAsset.get(`${link.id}:${asset.id}`);
+          if (personAssetIds && !personAssetIds.has(asset.id)) continue
+          const takenAt = asset.takenAt ?? asset.addedAt ?? new Date(0).toISOString()
+          const postRef = postByProxyAsset.get(`${link.id}:${asset.id}`)
           items.push({
             id: `album:${link.id}:${asset.id}`,
             source: 'album',
@@ -237,13 +237,13 @@ export async function getGroupPhotoTimeline(
             linkId: link.id,
             assetId: asset.id,
             ...(postRef ? { postId: postRef.postId, postAssetUrl: postRef.assetUrl } : {}),
-          });
+          })
         }
       } catch (err) {
-        console.warn(`photoTimeline: failed to list assets for album link ${link.id}:`, err);
+        console.warn(`photoTimeline: failed to list assets for album link ${link.id}:`, err)
       }
     })
-  );
+  )
 
   // Post-upload side — excluded entirely when person-filtering, since a
   // direct upload carries no face-tag data to filter on.
@@ -256,7 +256,7 @@ export async function getGroupPhotoTimeline(
         // picked from the linked-album picker — it's already covered by the
         // album side above, so including it again here would duplicate it
         // in the merged feed.
-        if (!url.startsWith('/uploads/')) return;
+        if (!url.startsWith('/uploads/')) return
         items.push({
           id: `post:${post.id}:${index}`,
           source: 'post',
@@ -270,8 +270,8 @@ export async function getGroupPhotoTimeline(
           previewUrl: url,
           originalUrl: url,
           postId: post.id,
-        });
-      });
+        })
+      })
     }
   }
 
@@ -279,13 +279,13 @@ export async function getGroupPhotoTimeline(
   // between items sharing an exact timestamp (e.g. several uploads on the
   // same post).
   items.sort((a, b) => {
-    if (a.takenAt !== b.takenAt) return a.takenAt < b.takenAt ? 1 : -1;
-    return a.id < b.id ? 1 : -1;
-  });
+    if (a.takenAt !== b.takenAt) return a.takenAt < b.takenAt ? 1 : -1
+    return a.id < b.id ? 1 : -1
+  })
 
-  let startIndex = 0;
+  let startIndex = 0
   if (options.cursor) {
-    const decoded = decodeCursor(options.cursor);
+    const decoded = decodeCursor(options.cursor)
     // An unparseable cursor is treated as "start from the top" rather than a
     // 400 — cursors are opaque to clients, so a malformed one can only come
     // from a stale/corrupted value, and refusing the whole request over it
@@ -293,15 +293,15 @@ export async function getGroupPhotoTimeline(
     if (decoded) {
       startIndex = items.findIndex(
         (item) => item.takenAt < decoded.takenAt || (item.takenAt === decoded.takenAt && item.id < decoded.id)
-      );
-      if (startIndex === -1) startIndex = items.length;
+      )
+      if (startIndex === -1) startIndex = items.length
     }
   }
 
-  const page = items.slice(startIndex, startIndex + options.take);
-  const hasMore = startIndex + options.take < items.length;
-  const last = page[page.length - 1];
-  const nextCursor = hasMore && last ? encodeCursor(last.takenAt, last.id) : null;
+  const page = items.slice(startIndex, startIndex + options.take)
+  const hasMore = startIndex + options.take < items.length
+  const last = page[page.length - 1]
+  const nextCursor = hasMore && last ? encodeCursor(last.takenAt, last.id) : null
 
-  return { ok: true, items: page, nextCursor };
+  return { ok: true, items: page, nextCursor }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -10,143 +10,143 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import * as WebBrowser from 'expo-web-browser'
+import { useTranslation } from 'react-i18next'
 
-import { Icon } from '@/components/Icon';
-import { AppleSignInButton } from '@/components/AppleSignInButton';
-import { PhotoCollage } from '@/components/PhotoCollage';
-import { colors } from '@/constants/colors';
-import { useAuthStore } from '@/stores/authStore';
-import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth';
-import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
-import { useAppleSignInAvailable } from '@/utils/appleLogin';
-import { getServerUrl, setLanguage, setServerUrl as persistServerUrl } from '@/utils/storage';
-import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
-import { setApiBaseUrl } from '@/api/client';
-import { LoginBackground } from '@/components/LoginBackground';
-import { getBranding } from '@/branding';
+import { Icon } from '@/components/Icon'
+import { AppleSignInButton } from '@/components/AppleSignInButton'
+import { PhotoCollage } from '@/components/PhotoCollage'
+import { colors } from '@/constants/colors'
+import { useAuthStore } from '@/stores/authStore'
+import { fetchOidcConfig, loginWithPassword, OidcConfig } from '@/api/auth'
+import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin'
+import { useAppleSignInAvailable } from '@/utils/appleLogin'
+import { getServerUrl, setLanguage, setServerUrl as persistServerUrl } from '@/utils/storage'
+import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
+import { setApiBaseUrl } from '@/api/client'
+import { LoginBackground } from '@/components/LoginBackground'
+import { getBranding } from '@/branding'
 
-WebBrowser.maybeCompleteAuthSession();
+WebBrowser.maybeCompleteAuthSession()
 
-type Step = 'server' | 'credentials';
+type Step = 'server' | 'credentials'
 
 // Public help page — what Famlin is, how to get a server address, and how to
 // reach the developer. Also the App Store listing's support URL.
-const SUPPORT_URL = 'https://famlin.app/support/';
+const SUPPORT_URL = 'https://famlin.app/support/'
 
 function normalizeServerUrl(url: string): string {
-  let trimmed = url.trim();
-  if (!trimmed) return '';
+  let trimmed = url.trim()
+  if (!trimmed) return ''
   if (!/^https?:\/\//i.test(trimmed)) {
-    trimmed = `https://${trimmed}`;
+    trimmed = `https://${trimmed}`
   }
-  return trimmed.replace(/\/$/, '');
+  return trimmed.replace(/\/$/, '')
 }
 
 export function LoginScreen() {
-  const { t, i18n } = useTranslation();
-  const { setAuth } = useAuthStore();
-  const [step, setStep] = useState<Step>('server');
-  const [serverUrl, setServerUrlInput] = useState('');
-  const [ssoConfig, setSsoConfig] = useState<OidcConfig | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSsoLoading, setIsSsoLoading] = useState(false);
-  const [isCheckingServer, setIsCheckingServer] = useState(false);
+  const { t, i18n } = useTranslation()
+  const { setAuth } = useAuthStore()
+  const [step, setStep] = useState<Step>('server')
+  const [serverUrl, setServerUrlInput] = useState('')
+  const [ssoConfig, setSsoConfig] = useState<OidcConfig | null>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSsoLoading, setIsSsoLoading] = useState(false)
+  const [isCheckingServer, setIsCheckingServer] = useState(false)
 
-  const appleAvailable = useAppleSignInAvailable();
-  const showApple = appleAvailable && !!ssoConfig?.appleSignInEnabled;
+  const appleAvailable = useAppleSignInAvailable()
+  const showApple = appleAvailable && !!ssoConfig?.appleSignInEnabled
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     getServerUrl().then((stored) => {
       if (stored) {
-        setServerUrlInput(stored);
+        setServerUrlInput(stored)
       }
-    });
-  }, []);
+    })
+  }, [])
 
   useEffect(() => {
-    fadeAnim.setValue(0);
+    fadeAnim.setValue(0)
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 260,
       useNativeDriver: true,
-    }).start();
-  }, [step]);
+    }).start()
+  }, [step])
 
   async function handleContinue() {
-    const normalized = normalizeServerUrl(serverUrl);
+    const normalized = normalizeServerUrl(serverUrl)
     if (!normalized) {
-      Alert.alert(t('login.alerts.serverAddressMissingTitle'), t('login.alerts.serverAddressMissingMessage'));
-      return;
+      Alert.alert(t('login.alerts.serverAddressMissingTitle'), t('login.alerts.serverAddressMissingMessage'))
+      return
     }
 
-    setApiBaseUrl(normalized);
-    setIsCheckingServer(true);
+    setApiBaseUrl(normalized)
+    setIsCheckingServer(true)
     try {
-      const config = await fetchOidcConfig();
-      setSsoConfig(config);
-      setServerUrlInput(normalized);
-      await persistServerUrl(normalized);
-      setStep('credentials');
+      const config = await fetchOidcConfig()
+      setSsoConfig(config)
+      setServerUrlInput(normalized)
+      await persistServerUrl(normalized)
+      setStep('credentials')
     } catch (err: any) {
-      Alert.alert(t('login.alerts.serverUnreachableTitle'), t('login.alerts.serverUnreachableMessage'));
+      Alert.alert(t('login.alerts.serverUnreachableTitle'), t('login.alerts.serverUnreachableMessage'))
     } finally {
-      setIsCheckingServer(false);
+      setIsCheckingServer(false)
     }
   }
 
   function handleChangeServer() {
-    setStep('server');
+    setStep('server')
   }
 
   async function handleSsoLogin() {
-    setApiBaseUrl(serverUrl);
-    setIsSsoLoading(true);
+    setApiBaseUrl(serverUrl)
+    setIsSsoLoading(true)
     try {
-      const config = ssoConfig ?? (await fetchOidcConfig());
+      const config = ssoConfig ?? (await fetchOidcConfig())
       if (!config.enabled) {
-        Alert.alert(t('login.alerts.loginFailedTitle'), t('login.ssoNotConfigured'));
-        return;
+        Alert.alert(t('login.alerts.loginFailedTitle'), t('login.ssoNotConfigured'))
+        return
       }
 
-      const loginResult = await performOidcLogin(config);
-      await setAuth(loginResult.user, loginResult.token, serverUrl);
+      const loginResult = await performOidcLogin(config)
+      await setAuth(loginResult.user, loginResult.token, serverUrl)
     } catch (err: any) {
-      if (err instanceof OidcCancelledError) return;
-      Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      if (err instanceof OidcCancelledError) return
+      Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setIsSsoLoading(false);
+      setIsSsoLoading(false)
     }
   }
 
   async function handlePasswordLogin() {
     if (!email.trim() || !password) {
-      Alert.alert(t('login.alerts.loginFailedTitle'), t('login.alerts.enterEmailAndPassword'));
-      return;
+      Alert.alert(t('login.alerts.loginFailedTitle'), t('login.alerts.enterEmailAndPassword'))
+      return
     }
 
-    setApiBaseUrl(serverUrl);
-    setIsLoading(true);
+    setApiBaseUrl(serverUrl)
+    setIsLoading(true)
     try {
-      const result = await loginWithPassword(email.trim(), password);
-      await setAuth(result.user, result.token, serverUrl);
+      const result = await loginWithPassword(email.trim(), password)
+      await setAuth(result.user, result.token, serverUrl)
     } catch (err: any) {
-      Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
   async function handleLanguageChange(lang: SupportedLanguage) {
-    await i18n.changeLanguage(lang);
-    await setLanguage(lang);
+    await i18n.changeLanguage(lang)
+    await setLanguage(lang)
   }
 
   return (
@@ -289,7 +289,7 @@ export function LoginScreen() {
             default needs its own way out here. */}
           <View style={styles.languageRow} accessibilityRole="radiogroup" accessibilityLabel={t('profile.language')}>
             {SUPPORTED_LANGUAGES.map((lang) => {
-              const selected = i18n.language === lang;
+              const selected = i18n.language === lang
               return (
                 <TouchableOpacity
                   key={lang}
@@ -302,13 +302,13 @@ export function LoginScreen() {
                     {t(`profile.languages.${lang}`)}
                   </Text>
                 </TouchableOpacity>
-              );
+              )
             })}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -544,4 +544,4 @@ const styles = StyleSheet.create({
   languageChipTextSelected: {
     color: colors.primary,
   },
-});
+})

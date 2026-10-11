@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -12,20 +12,20 @@ import {
   ScrollView,
   StatusBar,
   LayoutChangeEvent,
-} from 'react-native';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import Svg, { Path } from 'react-native-svg';
-import { captureRef } from 'react-native-view-shot';
-import { Group, createStory, fetchGroups, fetchMyCircles } from '@famlin/api-client';
+} from 'react-native'
+import { Image } from 'expo-image'
+import * as ImagePicker from 'expo-image-picker'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import Svg, { Path } from 'react-native-svg'
+import { captureRef } from 'react-native-view-shot'
+import { Group, createStory, fetchGroups, fetchMyCircles } from '@famlin/api-client'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { uploadMedia } from '@/api/uploads';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { uploadMedia } from '@/api/uploads'
 import {
   ComposerState,
   EMPTY_COMPOSER,
@@ -38,89 +38,87 @@ import {
   storyAudienceBody,
   strokeToPath,
   undo,
-} from '@/utils/stories';
+} from '@/utils/stories'
 
-const PALETTE = ['#FFFFFF', '#0F222A', colors.primary, colors.accent, colors.milestone, '#4B8B5A', '#E05A4C'];
+const PALETTE = ['#FFFFFF', '#0F222A', colors.primary, colors.accent, colors.milestone, '#4B8B5A', '#E05A4C']
 // Stickers are user content, like reactions, so native emoji are the right
 // rendering here (see the note in components/Icon.tsx).
-const STICKERS = ['❤️', '😂', '🎉', '🥳', '😍', '👶', '🎂', '🌞', '🏖️', '⚽', '🐶', '🌸', '✨', '👍', '🙏', '🏡'];
-const STROKE_WIDTH = 6;
+const STICKERS = ['❤️', '😂', '🎉', '🥳', '😍', '👶', '🎂', '🌞', '🏖️', '⚽', '🐶', '🌸', '✨', '👍', '🙏', '🏡']
+const STROKE_WIDTH = 6
 // Every story is flattened to a 1080x1920 JPEG, the size a phone screen
 // shows it at, so overlays land where the author put them on every device.
-const OUTPUT = { width: 1080, height: 1920 };
+const OUTPUT = { width: 1080, height: 1920 }
 
-type Mode = 'move' | 'draw';
+type Mode = 'move' | 'draw'
 
 // Compose a story: take or pick a photo, decorate it with text, emoji
 // stickers and freehand drawing, pick who sees it, share. The overlays are
 // flattened into the photo on the device (react-native-view-shot), so the
 // server and the web viewer only ever get a plain JPEG.
 export function StoryComposerScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const queryClient = useQueryClient();
-  const defaultGroupIds: string[] = route.params?.defaultGroupIds ?? [];
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const queryClient = useQueryClient()
+  const defaultGroupIds: string[] = route.params?.defaultGroupIds ?? []
 
-  const canvasRef = useRef<View>(null);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [composer, setComposer] = useState<ComposerState>(EMPTY_COMPOSER);
-  const [canvas, setCanvas] = useState({ width: 0, height: 0 });
-  const [mode, setMode] = useState<Mode>('move');
-  const [color, setColor] = useState(PALETTE[0]);
-  const [textDraft, setTextDraft] = useState<string | null>(null);
-  const [stickersOpen, setStickersOpen] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const canvasRef = useRef<View>(null)
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [composer, setComposer] = useState<ComposerState>(EMPTY_COMPOSER)
+  const [canvas, setCanvas] = useState({ width: 0, height: 0 })
+  const [mode, setMode] = useState<Mode>('move')
+  const [color, setColor] = useState(PALETTE[0])
+  const [textDraft, setTextDraft] = useState<string | null>(null)
+  const [stickersOpen, setStickersOpen] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
-  const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
-  const storyGroups = useMemo(() => (groups ?? []).filter((g: Group) => g.storiesEnabled), [groups]);
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[] | null>(null);
+  const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
+  const storyGroups = useMemo(() => (groups ?? []).filter((g: Group) => g.storiesEnabled), [groups])
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[] | null>(null)
   // Default audience: the feed's family filter if it points at story-enabled
   // families, otherwise the first family that has stories on.
   const effectiveGroupIds =
     selectedGroupIds ??
     (() => {
-      const fromFilter = defaultGroupIds.filter((id) => storyGroups.some((g) => g.id === id));
-      return fromFilter.length > 0 ? fromFilter : storyGroups.slice(0, 1).map((g) => g.id);
-    })();
-  const [circleId, setCircleId] = useState<string | null>(null);
+      const fromFilter = defaultGroupIds.filter((id) => storyGroups.some((g) => g.id === id))
+      return fromFilter.length > 0 ? fromFilter : storyGroups.slice(0, 1).map((g) => g.id)
+    })()
+  const [circleId, setCircleId] = useState<string | null>(null)
 
-  const singleGroupId = effectiveGroupIds.length === 1 ? effectiveGroupIds[0] : null;
+  const singleGroupId = effectiveGroupIds.length === 1 ? effectiveGroupIds[0] : null
   const { data: circles } = useQuery({
     queryKey: ['circles', singleGroupId],
     queryFn: () => fetchMyCircles(singleGroupId!),
     enabled: !!singleGroupId,
-  });
+  })
 
   function toggleGroup(id: string) {
-    const next = effectiveGroupIds.includes(id)
-      ? effectiveGroupIds.filter((g) => g !== id)
-      : [...effectiveGroupIds, id];
-    setSelectedGroupIds(next);
+    const next = effectiveGroupIds.includes(id) ? effectiveGroupIds.filter((g) => g !== id) : [...effectiveGroupIds, id]
+    setSelectedGroupIds(next)
     // A circle belongs to one family and can't be combined with several.
-    setCircleId(null);
+    setCircleId(null)
   }
 
   async function pick(source: 'camera' | 'library') {
     const permission =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+        : await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (permission.status !== 'granted') {
-      Alert.alert(t('stories.permissionDenied'));
-      return;
+      Alert.alert(t('stories.permissionDenied'))
+      return
     }
     const options: ImagePicker.ImagePickerOptions = {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.9,
-    };
+    }
     const result =
       source === 'camera'
         ? await ImagePicker.launchCameraAsync(options)
-        : await ImagePicker.launchImageLibraryAsync(options);
+        : await ImagePicker.launchImageLibraryAsync(options)
     if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-      setComposer(EMPTY_COMPOSER);
+      setPhotoUri(result.assets[0].uri)
+      setComposer(EMPTY_COMPOSER)
     }
   }
 
@@ -132,36 +130,36 @@ export function StoryComposerScreen() {
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderGrant: (e) => {
-          const { locationX, locationY } = e.nativeEvent;
-          setComposer((s) => startStroke(s, color, STROKE_WIDTH, [locationX, locationY]));
+          const { locationX, locationY } = e.nativeEvent
+          setComposer((s) => startStroke(s, color, STROKE_WIDTH, [locationX, locationY]))
         },
         onPanResponderMove: (e) => {
-          const { locationX, locationY } = e.nativeEvent;
-          setComposer((s) => extendStroke(s, [locationX, locationY]));
+          const { locationX, locationY } = e.nativeEvent
+          setComposer((s) => extendStroke(s, [locationX, locationY]))
         },
       }),
     [color]
-  );
+  )
 
   function onCanvasLayout(e: LayoutChangeEvent) {
-    const { width, height } = e.nativeEvent.layout;
-    setCanvas({ width, height });
+    const { width, height } = e.nativeEvent.layout
+    setCanvas({ width, height })
   }
 
   async function share() {
-    const audience = storyAudienceBody(effectiveGroupIds, circleId);
-    if (!photoUri || !audience) return;
-    setSharing(true);
+    const audience = storyAudienceBody(effectiveGroupIds, circleId)
+    if (!photoUri || !audience) return
+    setSharing(true)
     try {
-      const uri = await captureRef(canvasRef, { format: 'jpg', quality: 0.9, result: 'tmpfile', ...OUTPUT });
-      const [imageUrl] = await uploadMedia([{ uri, name: 'story.jpg', type: 'image/jpeg' }]);
-      await createStory({ imageUrl, ...audience });
-      queryClient.invalidateQueries({ queryKey: ['stories'] });
-      navigation.goBack();
+      const uri = await captureRef(canvasRef, { format: 'jpg', quality: 0.9, result: 'tmpfile', ...OUTPUT })
+      const [imageUrl] = await uploadMedia([{ uri, name: 'story.jpg', type: 'image/jpeg' }])
+      await createStory({ imageUrl, ...audience })
+      queryClient.invalidateQueries({ queryKey: ['stories'] })
+      navigation.goBack()
     } catch (err: any) {
-      Alert.alert(t('stories.shareFailed'), err?.response?.data?.error ?? undefined);
+      Alert.alert(t('stories.shareFailed'), err?.response?.data?.error ?? undefined)
     } finally {
-      setSharing(false);
+      setSharing(false)
     }
   }
 
@@ -198,7 +196,7 @@ export function StoryComposerScreen() {
           )}
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -216,8 +214,8 @@ export function StoryComposerScreen() {
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {
-              setMode('move');
-              setTextDraft('');
+              setMode('move')
+              setTextDraft('')
             }}
             accessibilityLabel={t('stories.addText')}
           >
@@ -226,8 +224,8 @@ export function StoryComposerScreen() {
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {
-              setMode('move');
-              setStickersOpen(true);
+              setMode('move')
+              setStickersOpen(true)
             }}
             accessibilityLabel={t('stories.addSticker')}
           >
@@ -311,7 +309,7 @@ export function StoryComposerScreen() {
       <View style={styles.bottom}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {storyGroups.map((g) => {
-            const active = effectiveGroupIds.includes(g.id);
+            const active = effectiveGroupIds.includes(g.id)
             return (
               <TouchableOpacity
                 key={g.id}
@@ -321,11 +319,11 @@ export function StoryComposerScreen() {
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>{g.name}</Text>
               </TouchableOpacity>
-            );
+            )
           })}
           {!!singleGroupId &&
             (circles ?? []).map((c) => {
-              const active = circleId === c.id;
+              const active = circleId === c.id
               return (
                 <TouchableOpacity
                   key={c.id}
@@ -336,7 +334,7 @@ export function StoryComposerScreen() {
                   <Icon name="users" size={13} color={active ? colors.white : colors.circleDark} />
                   <Text style={[styles.chipText, { color: active ? colors.white : colors.circleDark }]}>{c.name}</Text>
                 </TouchableOpacity>
-              );
+              )
             })}
         </ScrollView>
         <TouchableOpacity
@@ -380,8 +378,8 @@ export function StoryComposerScreen() {
           <TouchableOpacity
             style={styles.shareButton}
             onPress={() => {
-              setComposer((s) => addOverlay(s, 'text', textDraft ?? '', color));
-              setTextDraft(null);
+              setComposer((s) => addOverlay(s, 'text', textDraft ?? '', color))
+              setTextDraft(null)
             }}
           >
             <Text style={styles.shareText}>{t('stories.done')}</Text>
@@ -397,8 +395,8 @@ export function StoryComposerScreen() {
               key={sticker}
               style={styles.stickerOption}
               onPress={() => {
-                setComposer((s) => addOverlay(s, 'sticker', sticker, color));
-                setStickersOpen(false);
+                setComposer((s) => addOverlay(s, 'sticker', sticker, color))
+                setStickersOpen(false)
               }}
             >
               <Text style={styles.stickerOptionText}>{sticker}</Text>
@@ -407,7 +405,7 @@ export function StoryComposerScreen() {
         </View>
       </Modal>
     </SafeAreaView>
-  );
+  )
 }
 
 // A text or sticker overlay the author can drag around, and long-press to
@@ -420,15 +418,15 @@ function DraggableOverlay({
   onMove,
   onRemove,
 }: {
-  item: OverlayItem;
-  canvas: { width: number; height: number };
-  disabled: boolean;
-  onMove: (dx: number, dy: number) => void;
-  onRemove: () => void;
+  item: OverlayItem
+  canvas: { width: number; height: number }
+  disabled: boolean
+  onMove: (dx: number, dy: number) => void
+  onRemove: () => void
 }) {
-  const last = useRef({ dx: 0, dy: 0 });
-  const moveRef = useRef(onMove);
-  moveRef.current = onMove;
+  const last = useRef({ dx: 0, dy: 0 })
+  const moveRef = useRef(onMove)
+  moveRef.current = onMove
   const responder = useMemo(
     () =>
       PanResponder.create({
@@ -437,16 +435,16 @@ function DraggableOverlay({
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 4,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {
-          last.current = { dx: 0, dy: 0 };
+          last.current = { dx: 0, dy: 0 }
         },
         onPanResponderMove: (_e, g) => {
-          moveRef.current(g.dx - last.current.dx, g.dy - last.current.dy);
-          last.current = { dx: g.dx, dy: g.dy };
+          moveRef.current(g.dx - last.current.dx, g.dy - last.current.dy)
+          last.current = { dx: g.dx, dy: g.dy }
         },
       }),
     []
-  );
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  )
+  const [size, setSize] = useState({ width: 0, height: 0 })
 
   return (
     <View
@@ -466,7 +464,7 @@ function DraggableOverlay({
         )}
       </TouchableOpacity>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -667,4 +665,4 @@ const styles = StyleSheet.create({
   stickerOptionText: {
     fontSize: 38,
   },
-});
+})

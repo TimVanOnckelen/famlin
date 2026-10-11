@@ -6,11 +6,11 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=16`,
       { headers: { 'User-Agent': 'FamlinApp (self-hosted family app)' } }
-    );
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.display_name || null;
+    )
+    if (!response.ok) return null
+    const data = await response.json()
+    return data?.display_name || null
   } catch {
-    return null;
+    return null
   }
 }

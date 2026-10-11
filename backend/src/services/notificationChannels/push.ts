@@ -1,15 +1,15 @@
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
-import { prisma } from '../../db.js';
-import i18n from '../../i18n/index.js';
-import type { ChannelSendArgs, NotificationChannel, NotifyType, Recipient } from './types.js';
-import { resolveBrandSettings } from '../branding/index.js';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk'
+import { prisma } from '../../db.js'
+import i18n from '../../i18n/index.js'
+import type { ChannelSendArgs, NotificationChannel, NotifyType, Recipient } from './types.js'
+import { resolveBrandSettings } from '../branding/index.js'
 
-const expo = new Expo();
+const expo = new Expo()
 
 export interface PushSendResult {
-  tokenCount: number;
-  successCount: number;
-  failureCount: number;
+  tokenCount: number
+  successCount: number
+  failureCount: number
 }
 
 // Mentions, "on this day" memories, and new-media-assets alerts all reuse the
@@ -33,7 +33,7 @@ const PUSH_PREF_FIELD: Record<
   new_story: 'pushOnStory',
   story_reply: 'pushOnNewComment',
   story_reaction: 'pushOnNewLike',
-};
+}
 
 // The actual send, plus its PushDeliveryLog write — shared by the organic
 // NotificationChannel path (pushChannel.send, below) and the admin "resend
@@ -43,20 +43,20 @@ const PUSH_PREF_FIELD: Record<
 // deliberately hides from callers that only iterate the generic channel
 // list.
 export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
-  const { recipients, message, settings, postId, storyId, type, triggeredByAdminId } = args;
+  const { recipients, message, settings, postId, storyId, type, triggeredByAdminId } = args
   const tokens = await prisma.pushToken.findMany({
     where: { userId: { in: recipients.map((r) => r.id) } },
-  });
-  const validTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
+  })
+  const validTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token))
 
-  let successCount = 0;
-  let failureCount = 0;
+  let successCount = 0
+  let failureCount = 0
 
   if (validTokens.length > 0) {
     // The family name, when the admin set one (issue #164) — server-side, so
     // already-installed app versions show it too.
     const pushTitle =
-      resolveBrandSettings(settings).name || i18n.getFixedT(settings.defaultLanguage)('notifications.pushTitle');
+      resolveBrandSettings(settings).name || i18n.getFixedT(settings.defaultLanguage)('notifications.pushTitle')
     const messages: ExpoPushMessage[] = validTokens.map((t) => ({
       to: t.token,
       sound: 'default',
@@ -65,38 +65,38 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
       // Lets the client's notification-tap handler navigate straight to the
       // relevant post (see mobile's usePushNotifications.ts).
       data: storyId ? { relatedPostId: postId, relatedStoryId: storyId } : { relatedPostId: postId },
-    }));
+    }))
 
-    const chunks = expo.chunkPushNotifications(messages);
-    let cursor = 0;
+    const chunks = expo.chunkPushNotifications(messages)
+    let cursor = 0
     for (const chunk of chunks) {
       try {
-        const tickets = await expo.sendPushNotificationsAsync(chunk);
-        const staleTokens: string[] = [];
+        const tickets = await expo.sendPushNotificationsAsync(chunk)
+        const staleTokens: string[] = []
 
         for (const [i, ticket] of tickets.entries()) {
           if (ticket.status === 'ok') {
-            successCount += 1;
-            continue;
+            successCount += 1
+            continue
           }
-          failureCount += 1;
+          failureCount += 1
           if (ticket.details?.error === 'DeviceNotRegistered') {
-            staleTokens.push(validTokens[cursor + i].token);
+            staleTokens.push(validTokens[cursor + i].token)
           } else {
             console.error(
               `Push ticket error (${ticket.details?.error ?? 'unknown'}) for token ${validTokens[cursor + i].token}: ${ticket.message}`
-            );
+            )
           }
         }
 
         if (staleTokens.length > 0) {
-          await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } });
+          await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } })
         }
       } catch (err) {
-        console.error('Failed to send push notifications', err);
-        failureCount += chunk.length;
+        console.error('Failed to send push notifications', err)
+        failureCount += chunk.length
       }
-      cursor += chunk.length;
+      cursor += chunk.length
     }
   }
 
@@ -110,23 +110,23 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
       failureCount,
       triggeredByAdminId: triggeredByAdminId ?? null,
     },
-  });
+  })
 
-  return { tokenCount: validTokens.length, successCount, failureCount };
+  return { tokenCount: validTokens.length, successCount, failureCount }
 }
 
 export const pushChannel: NotificationChannel = {
   id: 'push',
 
   isEnabled(settings) {
-    return settings.pushNotificationsEnabled;
+    return settings.pushNotificationsEnabled
   },
 
   wants(recipient: Recipient, type: NotifyType) {
-    return recipient[PUSH_PREF_FIELD[type]];
+    return recipient[PUSH_PREF_FIELD[type]]
   },
 
   async send(args) {
-    await sendPush(args);
+    await sendPush(args)
   },
-};
+}
