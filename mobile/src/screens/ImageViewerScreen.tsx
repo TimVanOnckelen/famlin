@@ -676,9 +676,9 @@ function PhotoCommentsSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={sheetStyles.overlay}>
+      <KeyboardAvoidingView style={sheetStyles.overlay} behavior="padding">
         <TouchableOpacity style={sheetStyles.backdrop} activeOpacity={1} onPress={onClose} />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={sheetStyles.sheet}>
+        <View style={sheetStyles.sheet}>
           <View style={sheetStyles.handle} />
           <View style={sheetStyles.headerRow}>
             <Text style={sheetStyles.title}>{t('imageViewer.commentsTitle')}</Text>
@@ -734,8 +734,8 @@ function PhotoCommentsSheet({
               <Icon name="send" size={16} color={colors.white} />
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

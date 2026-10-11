@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -185,228 +187,232 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('profile.title')}</Text>
-        </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+          </View>
 
-        <View style={styles.profileCard}>
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            onPress={pickAvatar}
-            disabled={avatarUploading}
-            accessibilityLabel={t('profile.changePhoto')}
-          >
-            <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={80} />
-            <View style={styles.avatarEditBadge}>
-              {avatarUploading ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <Icon name="camera" size={14} color={colors.white} />
-              )}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
-          {user?.isAdmin && (
-            <View style={styles.adminBadge}>
-              <Text style={styles.adminBadgeText}>{t('profile.adminBadge')}</Text>
+          <View style={styles.profileCard}>
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={pickAvatar}
+              disabled={avatarUploading}
+              accessibilityLabel={t('profile.changePhoto')}
+            >
+              <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={80} />
+              <View style={styles.avatarEditBadge}>
+                {avatarUploading ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <Icon name="camera" size={14} color={colors.white} />
+                )}
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.name}>{user?.name}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
+            {user?.isAdmin && (
+              <View style={styles.adminBadge}>
+                <Text style={styles.adminBadgeText}>{t('profile.adminBadge')}</Text>
+              </View>
+            )}
+          </View>
+
+          {(showPush || showEmail) && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('profile.notifications')}</Text>
+
+              <View style={styles.notificationHeaderRow}>
+                <View style={{ flex: 1 }} />
+                {showPush && <Text style={styles.notificationColumnLabel}>{t('profile.push')}</Text>}
+                {showEmail && <Text style={styles.notificationColumnLabel}>{t('profile.email')}</Text>}
+              </View>
+
+              {notificationTypes
+                .filter(({ emailKey }) => showPush || emailKey)
+                .map(({ labelKey, pushKey, emailKey }) => (
+                  <View key={labelKey} style={styles.notificationRow}>
+                    <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
+                    {showPush && (
+                      <Switch
+                        value={user?.[pushKey]}
+                        onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                        thumbColor={colors.white}
+                      />
+                    )}
+                    {showEmail && !emailKey && <View style={styles.pushOnlySpacer} />}
+                    {showEmail && emailKey && (
+                      <Switch
+                        value={user?.[emailKey]}
+                        onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                        thumbColor={colors.white}
+                      />
+                    )}
+                  </View>
+                ))}
             </View>
           )}
-        </View>
 
-        {(showPush || showEmail) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('profile.notifications')}</Text>
+            <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
 
-            <View style={styles.notificationHeaderRow}>
-              <View style={{ flex: 1 }} />
-              {showPush && <Text style={styles.notificationColumnLabel}>{t('profile.push')}</Text>}
-              {showEmail && <Text style={styles.notificationColumnLabel}>{t('profile.email')}</Text>}
+            <View style={styles.settingItem}>
+              <View>
+                <Text style={styles.settingLabel}>{t('profile.language')}</Text>
+                <Text style={styles.settingDescription}>{t('profile.languageDescription')}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
+                <Text style={styles.languageValue}>
+                  {t(`profile.languages.${i18nInstance.language as SupportedLanguage}`)}
+                </Text>
+              </TouchableOpacity>
             </View>
-
-            {notificationTypes
-              .filter(({ emailKey }) => showPush || emailKey)
-              .map(({ labelKey, pushKey, emailKey }) => (
-                <View key={labelKey} style={styles.notificationRow}>
-                  <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
-                  {showPush && (
-                    <Switch
-                      value={user?.[pushKey]}
-                      onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                      thumbColor={colors.white}
-                    />
-                  )}
-                  {showEmail && !emailKey && <View style={styles.pushOnlySpacer} />}
-                  {showEmail && emailKey && (
-                    <Switch
-                      value={user?.[emailKey]}
-                      onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
-                      trackColor={{ false: colors.border, true: colors.primary }}
-                      thumbColor={colors.white}
-                    />
-                  )}
-                </View>
-              ))}
           </View>
-        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
+          {user?.hasPassword && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('profile.security')}</Text>
 
-          <View style={styles.settingItem}>
-            <View>
-              <Text style={styles.settingLabel}>{t('profile.language')}</Text>
-              <Text style={styles.settingDescription}>{t('profile.languageDescription')}</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.currentPassword')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  secureTextEntry
+                  textContentType="password"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.newPassword')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry
+                  textContentType="newPassword"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.confirmPassword')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  textContentType="newPassword"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              {passwordError && <Text style={styles.passwordError}>{passwordError}</Text>}
+              {passwordSuccess && <Text style={styles.passwordSuccess}>{t('profile.passwordChanged')}</Text>}
+
+              <TouchableOpacity
+                style={[styles.passwordButton, updatePassword.isPending && styles.passwordButtonDisabled]}
+                onPress={handlePasswordSubmit}
+                disabled={updatePassword.isPending || !currentPassword || !newPassword || !confirmPassword}
+              >
+                <Text style={styles.passwordButtonText}>
+                  {updatePassword.isPending ? t('common.loading') : t('profile.changePassword')}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => setLanguageModalVisible(true)}>
-              <Text style={styles.languageValue}>
-                {t(`profile.languages.${i18nInstance.language as SupportedLanguage}`)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          )}
 
-        {user?.hasPassword && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('profile.security')}</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.currentPassword')}</Text>
-              <TextInput
-                style={styles.input}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-                textContentType="password"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.newPassword')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                textContentType="newPassword"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.confirmPassword')}</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                textContentType="newPassword"
-                autoCapitalize="none"
-              />
-            </View>
-
-            {passwordError && <Text style={styles.passwordError}>{passwordError}</Text>}
-            {passwordSuccess && <Text style={styles.passwordSuccess}>{t('profile.passwordChanged')}</Text>}
-
+            <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
+            <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
             <TouchableOpacity
-              style={[styles.passwordButton, updatePassword.isPending && styles.passwordButtonDisabled]}
-              onPress={handlePasswordSubmit}
-              disabled={updatePassword.isPending || !currentPassword || !newPassword || !confirmPassword}
+              style={[styles.exportButton, exportData.isPending && styles.exportButtonDisabled]}
+              onPress={() => exportData.mutate()}
+              disabled={exportData.isPending}
+              accessibilityRole="button"
             >
-              <Text style={styles.passwordButtonText}>
-                {updatePassword.isPending ? t('common.loading') : t('profile.changePassword')}
+              {exportData.isPending ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Icon name="download" size={16} color={colors.primary} />
+              )}
+              <Text style={styles.exportButtonText}>
+                {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
               </Text>
             </TouchableOpacity>
           </View>
-        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
-          <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
-          <TouchableOpacity
-            style={[styles.exportButton, exportData.isPending && styles.exportButtonDisabled]}
-            onPress={() => exportData.mutate()}
-            disabled={exportData.isPending}
-            accessibilityRole="button"
-          >
-            {exportData.isPending ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Icon name="download" size={16} color={colors.primary} />
-            )}
-            <Text style={styles.exportButtonText}>
-              {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
-          <View style={styles.serverInfo}>
-            <View style={[styles.serverIcon, { backgroundColor: colors.primaryDark }]}>
-              <Icon name="server" size={18} color={colors.white} />
-            </View>
-            <View style={styles.serverInfoText}>
-              <Text style={styles.serverLabel}>{t('profile.connectedTo')}</Text>
-              <Text style={styles.serverUrl} numberOfLines={1} ellipsizeMode="middle">
-                {serverUrl || t('common.unknown')}
-              </Text>
-              {serverInfo?.version && (
-                <Text style={styles.serverVersion}>{t('profile.serverVersion', { version: serverInfo.version })}</Text>
-              )}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
+            <View style={styles.serverInfo}>
+              <View style={[styles.serverIcon, { backgroundColor: colors.primaryDark }]}>
+                <Icon name="server" size={18} color={colors.white} />
+              </View>
+              <View style={styles.serverInfoText}>
+                <Text style={styles.serverLabel}>{t('profile.connectedTo')}</Text>
+                <Text style={styles.serverUrl} numberOfLines={1} ellipsizeMode="middle">
+                  {serverUrl || t('common.unknown')}
+                </Text>
+                {serverInfo?.version && (
+                  <Text style={styles.serverVersion}>
+                    {t('profile.serverVersion', { version: serverInfo.version })}
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.app')}</Text>
-          <View style={styles.appInfo}>
-            <Logo size={40} />
-            <View style={styles.appInfoText}>
-              <Text style={styles.appName}>{t('common.appName')}</Text>
-              <Text style={styles.appVersion}>
-                {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
-              </Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.app')}</Text>
+            <View style={styles.appInfo}>
+              <Logo size={40} />
+              <View style={styles.appInfoText}>
+                <Text style={styles.appName}>{t('common.appName')}</Text>
+                <Text style={styles.appVersion}>
+                  {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.dangerSection}>
-          <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
-          <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>
-          <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteModal}>
-            <Icon name="trash" size={16} color={colors.danger} />
-            <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
-        </View>
 
-        <DeleteAccountModal
-          visible={deleteModalVisible}
-          confirmation={deleteConfirmation}
-          onChangeConfirmation={setDeleteConfirmation}
-          error={deleteError}
-          deleting={removeAccount.isPending}
-          onCancel={() => setDeleteModalVisible(false)}
-          onConfirm={() => {
-            setDeleteError(null)
-            removeAccount.mutate()
-          }}
-        />
+          <View style={styles.dangerSection}>
+            <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
+            <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>
+            <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteModal}>
+              <Icon name="trash" size={16} color={colors.danger} />
+              <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
+            </TouchableOpacity>
+          </View>
 
-        <LanguagePickerModal
-          visible={languageModalVisible}
-          onClose={() => setLanguageModalVisible(false)}
-          selectedLanguage={(i18nInstance.language as SupportedLanguage) || 'en'}
-          onSelect={handleLanguageChange}
-        />
-      </ScrollView>
+          <DeleteAccountModal
+            visible={deleteModalVisible}
+            confirmation={deleteConfirmation}
+            onChangeConfirmation={setDeleteConfirmation}
+            error={deleteError}
+            deleting={removeAccount.isPending}
+            onCancel={() => setDeleteModalVisible(false)}
+            onConfirm={() => {
+              setDeleteError(null)
+              removeAccount.mutate()
+            }}
+          />
+
+          <LanguagePickerModal
+            visible={languageModalVisible}
+            onClose={() => setLanguageModalVisible(false)}
+            selectedLanguage={(i18nInstance.language as SupportedLanguage) || 'en'}
+            onSelect={handleLanguageChange}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -478,8 +484,12 @@ function DeleteAccountModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.sheet}>
+      <KeyboardAvoidingView style={modalStyles.overlay} behavior="padding">
+        <ScrollView
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={modalStyles.sheet}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={modalStyles.handle} />
           <Text style={modalStyles.title}>{t('profile.deleteAccount')}</Text>
           <Text style={modalStyles.body}>{t('profile.deleteAccountWarning')}</Text>
@@ -512,8 +522,8 @@ function DeleteAccountModal({
           <TouchableOpacity style={modalStyles.closeButton} onPress={onCancel} disabled={deleting}>
             <Text style={modalStyles.closeButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

@@ -10,6 +10,8 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
@@ -127,67 +129,71 @@ export function CheckInComposerModal({
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.form}>
-          <Text style={styles.contextLine}>{t('trip.checkin.contextLine', { title: tripTitle, day: dayNumber })}</Text>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+            <Text style={styles.contextLine}>
+              {t('trip.checkin.contextLine', { title: tripTitle, day: dayNumber })}
+            </Text>
 
-          <View>
-            <Text style={styles.label}>{t('trip.checkin.placeLabel')}</Text>
-            <View style={styles.placeInputRow}>
-              <Icon name="map-pin" size={16} color={colors.trip} />
-              <TextInput
-                style={styles.placeInput}
-                placeholder={t('trip.checkin.placePlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                value={place}
-                onChangeText={setPlace}
-                maxLength={80}
-                autoFocus
-              />
-            </View>
-          </View>
-
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('trip.checkin.textPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            value={text}
-            onChangeText={setText}
-            multiline
-          />
-
-          <View style={styles.photoGrid}>
-            {photoUrls.map((url) => {
-              const isVideo = isVideoUrl(url)
-              return (
-                <View key={url} style={styles.photoTile}>
-                  <Image source={{ uri: getUploadUrl(url) }} style={styles.photoImage} />
-                  {isVideo && (
-                    <View style={styles.videoBadge} pointerEvents="none">
-                      <Icon name="play" size={14} color={colors.white} />
-                    </View>
-                  )}
-                  <TouchableOpacity style={styles.removePhotoButton} onPress={() => removePhoto(url)}>
-                    <Icon name="x" size={12} color={colors.white} />
-                  </TouchableOpacity>
-                </View>
-              )
-            })}
-            {Array.from({ length: pendingCount }).map((_, i) => (
-              <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
-                <ActivityIndicator size="small" color={colors.white} />
-                {typeof progress === 'number' && progress > 0 && (
-                  <Text style={styles.pendingProgressText}>{Math.round(progress * 100)}%</Text>
-                )}
+            <View>
+              <Text style={styles.label}>{t('trip.checkin.placeLabel')}</Text>
+              <View style={styles.placeInputRow}>
+                <Icon name="map-pin" size={16} color={colors.trip} />
+                <TextInput
+                  style={styles.placeInput}
+                  placeholder={t('trip.checkin.placePlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  value={place}
+                  onChangeText={setPlace}
+                  maxLength={80}
+                  autoFocus
+                />
               </View>
-            ))}
-            {photoUrls.length < MAX_CHECKIN_PHOTOS && (
-              <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
-                <Icon name="plus" size={20} color={colors.trip} />
-                <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
+            </View>
+
+            <TextInput
+              style={styles.textInput}
+              placeholder={t('trip.checkin.textPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={text}
+              onChangeText={setText}
+              multiline
+            />
+
+            <View style={styles.photoGrid}>
+              {photoUrls.map((url) => {
+                const isVideo = isVideoUrl(url)
+                return (
+                  <View key={url} style={styles.photoTile}>
+                    <Image source={{ uri: getUploadUrl(url) }} style={styles.photoImage} />
+                    {isVideo && (
+                      <View style={styles.videoBadge} pointerEvents="none">
+                        <Icon name="play" size={14} color={colors.white} />
+                      </View>
+                    )}
+                    <TouchableOpacity style={styles.removePhotoButton} onPress={() => removePhoto(url)}>
+                      <Icon name="x" size={12} color={colors.white} />
+                    </TouchableOpacity>
+                  </View>
+                )
+              })}
+              {Array.from({ length: pendingCount }).map((_, i) => (
+                <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
+                  <ActivityIndicator size="small" color={colors.white} />
+                  {typeof progress === 'number' && progress > 0 && (
+                    <Text style={styles.pendingProgressText}>{Math.round(progress * 100)}%</Text>
+                  )}
+                </View>
+              ))}
+              {photoUrls.length < MAX_CHECKIN_PHOTOS && (
+                <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
+                  <Icon name="plus" size={20} color={colors.trip} />
+                  <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   )
