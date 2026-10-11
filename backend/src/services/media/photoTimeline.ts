@@ -135,8 +135,7 @@ function uploadAssetType(url: string): 'IMAGE' | 'VIDEO' {
 }
 
 export type PhotoTimelineResult =
-  | { ok: true; items: PhotoItem[]; nextCursor: string | null }
-  | { ok: false; status: number; errorKey: string };
+  { ok: true; items: PhotoItem[]; nextCursor: string | null } | { ok: false; status: number; errorKey: string };
 
 // Builds one group's merged photo timeline: every asset across the group's
 // linked media albums, plus every directly-uploaded (/uploads/...) photo on
@@ -170,10 +169,7 @@ export async function getGroupPhotoTimeline(
     // pagination source) if that assumption ever stops holding.
     prisma.post.findMany({
       where: {
-        AND: [
-          await visiblePostsWhereFor([groupId], viewerId),
-          { uploadedAssetUrls: { isEmpty: false } },
-        ],
+        AND: [await visiblePostsWhereFor([groupId], viewerId), { uploadedAssetUrls: { isEmpty: false } }],
       },
       select: { id: true, createdAt: true, uploadedAssetUrls: true },
     }),

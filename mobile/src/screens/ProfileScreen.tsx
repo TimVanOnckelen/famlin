@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Modal, Alert, ActivityIndicator, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Switch,
+  ScrollView,
+  Modal,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -155,7 +166,11 @@ export function ProfileScreen() {
   }
 
   // emailKey is omitted for push-only types (stories never email).
-  const notificationTypes: { labelKey: string; pushKey: keyof NotificationPrefs; emailKey?: keyof NotificationPrefs }[] = [
+  const notificationTypes: {
+    labelKey: string;
+    pushKey: keyof NotificationPrefs;
+    emailKey?: keyof NotificationPrefs;
+  }[] = [
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
@@ -213,27 +228,27 @@ export function ProfileScreen() {
             {notificationTypes
               .filter(({ emailKey }) => showPush || emailKey)
               .map(({ labelKey, pushKey, emailKey }) => (
-              <View key={labelKey} style={styles.notificationRow}>
-                <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
-                {showPush && (
-                  <Switch
-                    value={user?.[pushKey]}
-                    onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={colors.white}
-                  />
-                )}
-                {showEmail && !emailKey && <View style={styles.pushOnlySpacer} />}
-                {showEmail && emailKey && (
-                  <Switch
-                    value={user?.[emailKey]}
-                    onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={colors.white}
-                  />
-                )}
-              </View>
-            ))}
+                <View key={labelKey} style={styles.notificationRow}>
+                  <Text style={[styles.settingLabel, styles.notificationLabel]}>{t(labelKey)}</Text>
+                  {showPush && (
+                    <Switch
+                      value={user?.[pushKey]}
+                      onValueChange={(value) => updatePrefs.mutate({ [pushKey]: value })}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={colors.white}
+                    />
+                  )}
+                  {showEmail && !emailKey && <View style={styles.pushOnlySpacer} />}
+                  {showEmail && emailKey && (
+                    <Switch
+                      value={user?.[emailKey]}
+                      onValueChange={(value) => updatePrefs.mutate({ [emailKey]: value })}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={colors.white}
+                    />
+                  )}
+                </View>
+              ))}
           </View>
         )}
 
@@ -415,23 +430,13 @@ function LanguagePickerModal({ visible, onClose, selectedLanguage, onSelect }: L
           {SUPPORTED_LANGUAGES.map((lang) => (
             <TouchableOpacity
               key={lang}
-              style={[
-                modalStyles.option,
-                selectedLanguage === lang && modalStyles.optionSelected,
-              ]}
+              style={[modalStyles.option, selectedLanguage === lang && modalStyles.optionSelected]}
               onPress={() => onSelect(lang)}
             >
-              <Text
-                style={[
-                  modalStyles.optionText,
-                  selectedLanguage === lang && modalStyles.optionTextSelected,
-                ]}
-              >
+              <Text style={[modalStyles.optionText, selectedLanguage === lang && modalStyles.optionTextSelected]}>
                 {t(`profile.languages.${lang}`)}
               </Text>
-              {selectedLanguage === lang && (
-                <View style={modalStyles.checkmark} />
-              )}
+              {selectedLanguage === lang && <View style={modalStyles.checkmark} />}
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
@@ -478,9 +483,7 @@ function DeleteAccountModal({
           <View style={modalStyles.handle} />
           <Text style={modalStyles.title}>{t('profile.deleteAccount')}</Text>
           <Text style={modalStyles.body}>{t('profile.deleteAccountWarning')}</Text>
-          <Text style={modalStyles.body}>
-            {t('profile.deleteAccountConfirmPrompt', { word: requiredWord })}
-          </Text>
+          <Text style={modalStyles.body}>{t('profile.deleteAccountConfirmPrompt', { word: requiredWord })}</Text>
 
           <TextInput
             style={modalStyles.confirmInput}

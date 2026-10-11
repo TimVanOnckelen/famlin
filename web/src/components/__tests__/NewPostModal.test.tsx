@@ -76,10 +76,7 @@ describe('NewPostModal', () => {
       groupId: 'group-1',
       content: undefined,
       type: 'UPDATE',
-      uploadedAssetUrls: [
-        '/api/media/assets/l1/a1/preview.jpg',
-        '/api/media/assets/l1/a2/original.mp4',
-      ],
+      uploadedAssetUrls: ['/api/media/assets/l1/a1/preview.jpg', '/api/media/assets/l1/a2/original.mp4'],
     });
   });
 
@@ -96,9 +93,7 @@ describe('NewPostModal', () => {
   it('sends groupIds (cross-posting) when more than one group is selected', async () => {
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
     const user = userEvent.setup();
-    renderWithQueryClient(
-      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
-    );
+    renderWithQueryClient(<NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />);
     await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
     await user.click(screen.getByRole('button', { name: 'Grandparents' }));
     await user.click(screen.getByRole('button', { name: 'Post' }));
@@ -114,9 +109,7 @@ describe('NewPostModal', () => {
   it('omits groupIds when only one group ends up selected', async () => {
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
     const user = userEvent.setup();
-    renderWithQueryClient(
-      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
-    );
+    renderWithQueryClient(<NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />);
     await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
     await user.click(screen.getByRole('button', { name: 'Post' }));
     expect(createPost).toHaveBeenCalledWith({
@@ -131,9 +124,7 @@ describe('NewPostModal', () => {
   it('disables Post once every group has been deselected', async () => {
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([]);
     const user = userEvent.setup();
-    renderWithQueryClient(
-      <NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />
-    );
+    renderWithQueryClient(<NewPostModal groups={multiGroups} defaultGroupId="group-1" onClose={() => {}} />);
     await user.type(await screen.findByPlaceholderText(/Share an update/), 'Hello everyone');
     const postButton = screen.getByRole('button', { name: 'Post' });
     expect(postButton).toBeEnabled();
@@ -263,13 +254,12 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'POLL'],
         },
       ];
-      renderWithQueryClient(
-        <NewPostModal groups={restrictedGroups} defaultGroupId="group-1" onClose={() => {}} />
-      );
+      renderWithQueryClient(<NewPostModal groups={restrictedGroups} defaultGroupId="group-1" onClose={() => {}} />);
       expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Poll' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Milestone' })).not.toBeInTheDocument();
@@ -282,19 +272,19 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'POLL'],
         },
         {
           id: 'group-2',
           name: 'Grandparents',
-          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          chitchatEnabled: false,
           allowedPostTypes: ['UPDATE', 'MILESTONE'],
         },
       ];
-      renderWithQueryClient(
-        <NewPostModal groups={mixedGroups} defaultGroupId="group-1" onClose={() => {}} />
-      );
+      renderWithQueryClient(<NewPostModal groups={mixedGroups} defaultGroupId="group-1" onClose={() => {}} />);
 
       // Only group-1 selected: Poll is offered — pick it.
       await user.click(screen.getByRole('button', { name: 'Poll' }));
@@ -311,9 +301,7 @@ describe('NewPostModal', () => {
       // The reset really applies to the submitted payload too.
       await user.type(screen.getByPlaceholderText(/Share an update/), 'Hello');
       await user.click(screen.getByRole('button', { name: 'Post' }));
-      expect(createPost).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'UPDATE', typeData: undefined })
-      );
+      expect(createPost).toHaveBeenCalledWith(expect.objectContaining({ type: 'UPDATE', typeData: undefined }));
     });
 
     it('disables submit and shows a notice when the selected groups share no post type', async () => {
@@ -323,24 +311,22 @@ describe('NewPostModal', () => {
         {
           id: 'group-1',
           name: 'Familie de Vries',
-          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          chitchatEnabled: false,
           allowedPostTypes: ['POLL'],
         },
         {
           id: 'group-2',
           name: 'Grandparents',
-          createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          chitchatEnabled: false,
           allowedPostTypes: ['MILESTONE'],
         },
       ];
-      renderWithQueryClient(
-        <NewPostModal groups={disjointGroups} defaultGroupId="group-1" onClose={() => {}} />
-      );
+      renderWithQueryClient(<NewPostModal groups={disjointGroups} defaultGroupId="group-1" onClose={() => {}} />);
 
       await user.click(screen.getByRole('button', { name: 'Grandparents' }));
-      expect(
-        screen.getByText(/don't have any post type in common/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/don't have any post type in common/)).toBeInTheDocument();
       await user.type(screen.getByRole('textbox'), 'Hello');
       expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled();
     });

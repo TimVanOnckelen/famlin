@@ -57,7 +57,11 @@ export class ApiError extends Error {
   // MediaProviderError in backend/src/services/media/types.ts) — lets callers
   // branch on the failure reason instead of only having a translated message
   // to show.
-  constructor(public status: number, message: string, public code?: string) {
+  constructor(
+    public status: number,
+    message: string,
+    public code?: string
+  ) {
     super(message);
   }
 }
@@ -206,8 +210,7 @@ export const api = {
   updateUser: (id: string, data: Partial<User>) =>
     request<User>(`/api/admin/users/${id}`, { method: 'PATCH', body: data }),
 
-  deleteUser: (id: string) =>
-    request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+  deleteUser: (id: string) => request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
 
   getGroups: () => request<Group[]>('/api/admin/groups'),
 
@@ -217,8 +220,7 @@ export const api = {
     allowedPostTypes?: string[];
     chitchatEnabled?: boolean;
     storiesEnabled?: boolean;
-  }) =>
-    request<Group>('/api/admin/groups', { method: 'POST', body: data }),
+  }) => request<Group>('/api/admin/groups', { method: 'POST', body: data }),
 
   updateGroup: (
     id: string,
@@ -229,18 +231,15 @@ export const api = {
       chitchatEnabled?: boolean;
       storiesEnabled?: boolean;
     }
-  ) =>
-    request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
+  ) => request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
 
   // Registry of post types (e.g. UPDATE, MILESTONE, POLL) — used by the group
   // form's "Allowed post types" fieldset.
   getPostTypes: () => request<{ items: PostTypeInfo[] }>('/api/admin/post-types'),
 
-  deleteGroup: (id: string) =>
-    request<void>(`/api/admin/groups/${id}`, { method: 'DELETE' }),
+  deleteGroup: (id: string) => request<void>(`/api/admin/groups/${id}`, { method: 'DELETE' }),
 
-  getGroupMembers: (groupId: string) =>
-    request<GroupMember[]>(`/api/admin/groups/${groupId}/members`),
+  getGroupMembers: (groupId: string) => request<GroupMember[]>(`/api/admin/groups/${groupId}/members`),
 
   addGroupMember: (groupId: string, userId: string) =>
     request<void>(`/api/admin/groups/${groupId}/members`, {
@@ -260,8 +259,7 @@ export const api = {
   // exists. Note this is management access, not content access — circle posts
   // stay out of the moderation lists unless the admin is in the circle.
 
-  getGroupCircles: (groupId: string) =>
-    request<Circle[]>(`/api/admin/groups/${groupId}/circles`),
+  getGroupCircles: (groupId: string) => request<Circle[]>(`/api/admin/groups/${groupId}/circles`),
 
   createCircle: (groupId: string, body: { name: string; description?: string | null; userIds?: string[] }) =>
     request<Circle>(`/api/admin/groups/${groupId}/circles`, { method: 'POST', body }),
@@ -285,14 +283,12 @@ export const api = {
   removeCircleMember: (circleId: string, userId: string) =>
     request<void>(`/api/admin/circles/${circleId}/members/${userId}`, { method: 'DELETE' }),
 
-  getGroupInvites: (groupId: string) =>
-    request<Invite[]>(`/api/admin/groups/${groupId}/invites`),
+  getGroupInvites: (groupId: string) => request<Invite[]>(`/api/admin/groups/${groupId}/invites`),
 
   createGroupInvite: (groupId: string, data: { email?: string; expiresInDays?: number }) =>
     request<Invite>(`/api/admin/groups/${groupId}/invites`, { method: 'POST', body: data }),
 
-  revokeInvite: (id: string) =>
-    request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
+  revokeInvite: (id: string) => request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
 
   getContentPosts: (params: ContentFilterParams = {}) => {
     const qs = contentQueryString(params);
@@ -392,32 +388,30 @@ export const api = {
       body: { rootPath },
     }),
 
-  getMediaAlbums: (provider: MediaProviderId) =>
-    request<MediaAlbumSummary[]>(`/api/admin/media/${provider}/albums`),
+  getMediaAlbums: (provider: MediaProviderId) => request<MediaAlbumSummary[]>(`/api/admin/media/${provider}/albums`),
 
-  getGroupMediaAlbums: (groupId: string) =>
-    request<MediaAlbumLink[]>(`/api/admin/groups/${groupId}/media-albums`),
+  getGroupMediaAlbums: (groupId: string) => request<MediaAlbumLink[]>(`/api/admin/groups/${groupId}/media-albums`),
 
   linkMediaAlbum: (groupId: string, data: { provider: MediaProviderId; externalAlbumId: string; albumName: string }) =>
     request<MediaAlbumLink>(`/api/admin/groups/${groupId}/media-albums`, { method: 'POST', body: data }),
 
-  unlinkMediaAlbum: (id: string) =>
-    request<void>(`/api/admin/media-albums/${id}`, { method: 'DELETE' }),
+  unlinkMediaAlbum: (id: string) => request<void>(`/api/admin/media-albums/${id}`, { method: 'DELETE' }),
 
   updateMediaAlbumLink: (id: string, data: { newAssetMode: NewAssetMode }) =>
     request<MediaAlbumLink>(`/api/admin/media-albums/${id}`, { method: 'PATCH', body: data }),
 
-  getMediaPeople: (provider: MediaProviderId) =>
-    request<MediaPerson[]>(`/api/admin/media/${provider}/people`),
+  getMediaPeople: (provider: MediaProviderId) => request<MediaPerson[]>(`/api/admin/media/${provider}/people`),
 
-  getMediaPersonLinks: () =>
-    request<MediaPersonLink[]>('/api/admin/media/people-links'),
+  getMediaPersonLinks: () => request<MediaPersonLink[]>('/api/admin/media/people-links'),
 
-  createMediaPersonLink: (data: { provider: MediaProviderId; externalPersonId: string; label: string; userId?: string }) =>
-    request<MediaPersonLink>('/api/admin/media/people-links', { method: 'POST', body: data }),
+  createMediaPersonLink: (data: {
+    provider: MediaProviderId;
+    externalPersonId: string;
+    label: string;
+    userId?: string;
+  }) => request<MediaPersonLink>('/api/admin/media/people-links', { method: 'POST', body: data }),
 
-  deleteMediaPersonLink: (id: string) =>
-    request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
+  deleteMediaPersonLink: (id: string) => request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
 
   // Not a JSON endpoint (returns a zip stream), so this bypasses request()
   // and does its own auth header + error handling instead.

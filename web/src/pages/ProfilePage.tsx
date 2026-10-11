@@ -205,13 +205,7 @@ export function ProfilePage({
               <Icon name="camera" size={14} color="white" strokeWidth={2} />
             </span>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => pickAvatar(e.target.files)}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={(e) => pickAvatar(e.target.files)} />
           <div className="profile-name">{user.name}</div>
           <div className="profile-email">{user.email}</div>
           {user.isAdmin && <span className="profile-admin-badge">{t('profile.adminBadge')}</span>}
@@ -233,35 +227,35 @@ export function ProfilePage({
             {notificationTypes
               .filter(({ emailKey }) => showPush || emailKey)
               .map(({ labelKey, pushKey, emailKey }) => (
-              <div key={labelKey} className="profile-notification-row">
-                <span className="profile-setting-label profile-notification-label">{t(labelKey)}</span>
-                {showPush && (
-                  <span className="profile-notification-col">
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      className="profile-toggle"
-                      checked={user[pushKey] ?? false}
-                      onChange={(e) => updatePrefs.mutate({ [pushKey]: e.target.checked })}
-                      aria-label={`${t(labelKey)} — ${t('profile.push')}`}
-                    />
-                  </span>
-                )}
-                {showEmail && !emailKey && <span className="profile-notification-col" />}
-                {showEmail && emailKey && (
-                  <span className="profile-notification-col">
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      className="profile-toggle"
-                      checked={user[emailKey] ?? false}
-                      onChange={(e) => updatePrefs.mutate({ [emailKey]: e.target.checked })}
-                      aria-label={`${t(labelKey)} — ${t('profile.email')}`}
-                    />
-                  </span>
-                )}
-              </div>
-            ))}
+                <div key={labelKey} className="profile-notification-row">
+                  <span className="profile-setting-label profile-notification-label">{t(labelKey)}</span>
+                  {showPush && (
+                    <span className="profile-notification-col">
+                      <input
+                        type="checkbox"
+                        role="switch"
+                        className="profile-toggle"
+                        checked={user[pushKey] ?? false}
+                        onChange={(e) => updatePrefs.mutate({ [pushKey]: e.target.checked })}
+                        aria-label={`${t(labelKey)} — ${t('profile.push')}`}
+                      />
+                    </span>
+                  )}
+                  {showEmail && !emailKey && <span className="profile-notification-col" />}
+                  {showEmail && emailKey && (
+                    <span className="profile-notification-col">
+                      <input
+                        type="checkbox"
+                        role="switch"
+                        className="profile-toggle"
+                        checked={user[emailKey] ?? false}
+                        onChange={(e) => updatePrefs.mutate({ [emailKey]: e.target.checked })}
+                        aria-label={`${t(labelKey)} — ${t('profile.email')}`}
+                      />
+                    </span>
+                  )}
+                </div>
+              ))}
           </section>
         )}
 

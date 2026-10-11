@@ -37,9 +37,7 @@ export function NewPostModal({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const initialGroupId = defaultGroupId ?? groups[0]?.id ?? '';
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(
-    initialGroupId ? [initialGroupId] : []
-  );
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(initialGroupId ? [initialGroupId] : []);
   // Audience: null = the whole family, otherwise one Circle within the single
   // selected family. Circles and cross-posting are mutually exclusive (a
   // Circle belongs to exactly one group), so this resets whenever the group
@@ -228,13 +226,7 @@ export function NewPostModal({
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
-      <form
-        className="modal-card"
-        ref={formRef}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={submit}
-      >
+      <form className="modal-card" ref={formRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h2 className="modal-title">{t('newPost.title')}</h2>
 
         {groups.length > 1 && (
@@ -494,10 +486,7 @@ export function NewPostModal({
           groupId={primaryGroupId}
           onConfirm={(assets) => {
             // Merge without duplicating an asset that was already picked.
-            setMediaAssets((prev) => [
-              ...prev,
-              ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId)),
-            ]);
+            setMediaAssets((prev) => [...prev, ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId))]);
             setMediaPickerOpen(false);
           }}
           onClose={() => setMediaPickerOpen(false)}

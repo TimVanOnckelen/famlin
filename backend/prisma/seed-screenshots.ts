@@ -219,7 +219,7 @@ async function main() {
       type: 'UPDATE',
       uploadedAssetUrls: [img.mountain0],
       latitude: 50.5001,
-      longitude: 6.0800,
+      longitude: 6.08,
       locationName: 'High Fens',
       createdAt: at('2026-06-10', '15:30'),
     },
@@ -360,7 +360,7 @@ async function main() {
       postId: puppyPost.id,
       authorId: dad.id,
       parentId: puppyComment1.id,
-      content: "His name is Max! 🐾",
+      content: 'His name is Max! 🐾',
       createdAt: at('2026-06-18', '20:35'),
     },
   });
@@ -403,7 +403,7 @@ async function main() {
       postId: kidBirthdayPost.id,
       authorId: grandma.id,
       parentId: kidBirthdayComment1.id,
-      content: 'Couldn\'t agree more, what a lovely party this was!',
+      content: "Couldn't agree more, what a lovely party this was!",
       createdAt: at('2026-07-02', '19:10'),
     },
   });
@@ -506,7 +506,8 @@ async function main() {
       userId: admin.id,
       type: 'on_this_day',
       relatedPostId: travelPost.id,
-      message: 'A memory from The Miller Family — Dad Mike\'s post from 1 year ago: "Our first day in the Algarve! The kids jumped straight into the water..."',
+      message:
+        'A memory from The Miller Family — Dad Mike\'s post from 1 year ago: "Our first day in the Algarve! The kids jumped straight into the water..."',
       createdAt: at('2026-07-03', '08:00'),
     },
   });
@@ -515,7 +516,8 @@ async function main() {
       userId: admin.id,
       type: 'new_like_post',
       relatedPostId: todayPost.id,
-      message: 'Mom Emily reacted ❤️ to your post in The Miller Family: "Wishing everyone a great start to the week! ☀️"',
+      message:
+        'Mom Emily reacted ❤️ to your post in The Miller Family: "Wishing everyone a great start to the week! ☀️"',
       createdAt: at('2026-07-03', '10:00'),
     },
   });
@@ -543,7 +545,8 @@ async function main() {
       userId: admin.id,
       type: 'new_post',
       relatedPostId: kidBirthdayPost.id,
-      message: 'Sophie posted in The Miller Family: "Emma turned 6 today! 🎉 Our little girl was spoiled with cake and presents."',
+      message:
+        'Sophie posted in The Miller Family: "Emma turned 6 today! 🎉 Our little girl was spoiled with cake and presents."',
       createdAt: at('2026-07-02', '18:40'),
       readAt: at('2026-07-02', '20:00'),
     },
@@ -553,7 +556,8 @@ async function main() {
       userId: admin.id,
       type: 'new_post',
       relatedPostId: puppyPost.id,
-      message: 'Dad Mike posted in The Miller Family: "Everyone, meet the newest member of the family! He\'s still tired from the trip home. 🐶"',
+      message:
+        'Dad Mike posted in The Miller Family: "Everyone, meet the newest member of the family! He\'s still tired from the trip home. 🐶"',
       createdAt: at('2026-06-18', '20:10'),
       readAt: at('2026-06-18', '21:00'),
     },
@@ -563,7 +567,8 @@ async function main() {
       userId: admin.id,
       type: 'new_like_post',
       relatedPostId: dinnerPost.id,
-      message: 'Grandpa Joe reacted ❤️ to your post in The Miller Family: "Had such a lovely family dinner on Sunday..."',
+      message:
+        'Grandpa Joe reacted ❤️ to your post in The Miller Family: "Had such a lovely family dinner on Sunday..."',
       createdAt: at('2026-03-28', '19:00'),
       readAt: at('2026-03-29', '08:00'),
     },

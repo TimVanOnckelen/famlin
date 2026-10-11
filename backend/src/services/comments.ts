@@ -6,7 +6,7 @@ export function shapeComment<
   T extends {
     _count: { likes: number };
     likes: { type: ReactionType; userId: string }[];
-  }
+  },
 >(comment: T, userId: string) {
   const { _count, likes, ...rest } = comment;
   const { counts, myReaction } = summarizeReactions(likes, userId);

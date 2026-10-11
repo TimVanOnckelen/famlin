@@ -2,11 +2,7 @@ import { SupportedLanguage } from '../i18n/index.js';
 import type { PublicBranding } from '../services/branding/index.js';
 
 export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // Matches the app's Logo component (mobile/src/components/Logo.tsx): a

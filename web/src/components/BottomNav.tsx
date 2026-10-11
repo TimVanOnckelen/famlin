@@ -83,12 +83,7 @@ export function BottomNav({
       </button>
 
       {onNewPost && (
-        <button
-          className="bottom-nav-fab"
-          onClick={onNewPost}
-          aria-label={t('feed.newPost')}
-          title={t('feed.newPost')}
-        >
+        <button className="bottom-nav-fab" onClick={onNewPost} aria-label={t('feed.newPost')} title={t('feed.newPost')}>
           <Icon name="plus" size={24} color="white" strokeWidth={2.5} />
         </button>
       )}

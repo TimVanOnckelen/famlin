@@ -37,12 +37,7 @@ function VideoThumbnail({ url, style }: MediaThumbnailProps) {
 
   return (
     <View style={style as StyleProp<ViewStyle>}>
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        nativeControls={false}
-      />
+      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
       <PlayBadge />
     </View>
   );

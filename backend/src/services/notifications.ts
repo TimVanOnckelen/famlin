@@ -27,9 +27,7 @@ export function excerptText(content?: string | null, fallback = ''): string {
   if (!content) return fallback;
   const collapsed = content.replace(/\s+/g, ' ').trim();
   if (!collapsed) return fallback;
-  return collapsed.length > EXCERPT_MAX_LENGTH
-    ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…`
-    : collapsed;
+  return collapsed.length > EXCERPT_MAX_LENGTH ? `${collapsed.slice(0, EXCERPT_MAX_LENGTH).trimEnd()}…` : collapsed;
 }
 
 // Mirrors mobile's constants/reactions.ts REACTION_EMOJI — kept as a small
@@ -171,7 +169,12 @@ async function notify(options: NotifyOptions) {
   let updateRecipientIds = new Set<string>();
   if (bundleSince && postId) {
     const existing = await prisma.notification.findMany({
-      where: { userId: { in: recipients.map((r) => r.id) }, type, relatedPostId: postId, createdAt: { gte: bundleSince } },
+      where: {
+        userId: { in: recipients.map((r) => r.id) },
+        type,
+        relatedPostId: postId,
+        createdAt: { gte: bundleSince },
+      },
       select: { id: true, userId: true },
     });
     if (existing.length > 0) {
@@ -280,7 +283,10 @@ export async function notifyUsers(options: {
 // PostTypeError in services/postTypes/types.ts). `code` is an i18n error key
 // suffix and always maps to HTTP 400.
 export class PushNotificationError extends Error {
-  constructor(public code: string, message?: string) {
+  constructor(
+    public code: string,
+    message?: string
+  ) {
     super(message ?? code);
     this.name = 'PushNotificationError';
   }
@@ -299,10 +305,7 @@ export interface PostPushResendResult {
 // in-app Notification row (already written by the original post.created
 // event), only re-delivers the OS-level push. Returns null if the post
 // doesn't exist, so the caller can 404.
-export async function resendPostPush(
-  postId: string,
-  triggeredByAdminId: string
-): Promise<PostPushResendResult | null> {
+export async function resendPostPush(postId: string, triggeredByAdminId: string): Promise<PostPushResendResult | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
     select: {

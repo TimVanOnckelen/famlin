@@ -61,7 +61,9 @@ export async function createGroupWithMember(user: { id: string }, overrides?: Pa
   return group;
 }
 
-export async function createPost(overrides: { groupId: string; authorId: string } & Partial<{ content: string; uploadedAssetUrls: string[] }>) {
+export async function createPost(
+  overrides: { groupId: string; authorId: string } & Partial<{ content: string; uploadedAssetUrls: string[] }>
+) {
   return prisma.post.create({
     data: {
       groupId: overrides.groupId,
@@ -72,7 +74,14 @@ export async function createPost(overrides: { groupId: string; authorId: string 
   });
 }
 
-export async function createComment(overrides: { postId: string; authorId: string } & Partial<{ content: string; parentId: string; assetUrl: string; attachmentUrl: string }>) {
+export async function createComment(
+  overrides: { postId: string; authorId: string } & Partial<{
+    content: string;
+    parentId: string;
+    assetUrl: string;
+    attachmentUrl: string;
+  }>
+) {
   return prisma.comment.create({
     data: {
       postId: overrides.postId,

@@ -1,13 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Post,
-  ReactionType,
-  REACTION_TYPES,
-  reactToPost,
-  patchPostInCaches,
-  getUploadUrl,
-} from '@famlin/api-client';
+import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
 import { REACTION_EMOJI } from '@/constants/reactions';
 import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
@@ -208,8 +201,8 @@ export function TripFeedCard({
           {trip.latestCheckin && (
             <div className="trip-card-last-stop">
               <Icon name="map-pin" size={14} />
-              {t('feed.trip.lastStopLabel')}{' '}
-              <strong>{trip.latestCheckin.place}</strong> · {formatTime(trip.latestCheckin.createdAt, i18n.language)}
+              {t('feed.trip.lastStopLabel')} <strong>{trip.latestCheckin.place}</strong> ·{' '}
+              {formatTime(trip.latestCheckin.createdAt, i18n.language)}
             </div>
           )}
           <div className="trip-card-muted">

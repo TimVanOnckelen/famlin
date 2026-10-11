@@ -40,7 +40,9 @@
     "lint:api-client": "npm run lint --workspace=packages/api-client",
     "lint:mobile": "cd mobile && npm run lint",
     "check:locales": "node scripts/check-locales.mjs",
-    "lint": "npm run lint:backend && npm run lint:admin && npm run lint:web && npm run lint:api-client && npm run lint:mobile"
+    "lint": "npm run lint:backend && npm run lint:admin && npm run lint:web && npm run lint:api-client && npm run lint:mobile",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -50,6 +52,7 @@
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
+    "prettier": "3.9.10",
     "typescript-eslint": "^8.71.1"
   }
 }

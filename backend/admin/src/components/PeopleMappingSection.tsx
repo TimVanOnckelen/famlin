@@ -139,12 +139,8 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
       return a.name.localeCompare(b.name);
     });
   const query = personQuery.trim().toLowerCase();
-  const filteredUnmapped = query
-    ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query))
-    : unmappedPeople;
-  const visibleUnmapped = showAllUnmapped
-    ? filteredUnmapped
-    : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT);
+  const filteredUnmapped = query ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query)) : unmappedPeople;
+  const visibleUnmapped = showAllUnmapped ? filteredUnmapped : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT);
 
   if (loading) return <div className="loading">{t('common.loading')}</div>;
 
@@ -199,11 +195,13 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                     <span className="member-card-info">
                       <span className="member-card-name">
                         {link.label}
-                        {link.user && <span className="badge" style={{ marginLeft: '0.5rem' }}>{link.user.name}</span>}
+                        {link.user && (
+                          <span className="badge" style={{ marginLeft: '0.5rem' }}>
+                            {link.user.name}
+                          </span>
+                        )}
                       </span>
-                      {link.user && (
-                        <span className="member-card-sub">{link.user.email}</span>
-                      )}
+                      {link.user && <span className="member-card-sub">{link.user.email}</span>}
                     </span>
                     <button
                       className="icon-button danger"
@@ -223,7 +221,11 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   <span className="member-card-info">
                     <span className="member-card-name">
                       {group.label}
-                      {group.user && <span className="badge" style={{ marginLeft: '0.5rem' }}>{group.user.name}</span>}
+                      {group.user && (
+                        <span className="badge" style={{ marginLeft: '0.5rem' }}>
+                          {group.user.name}
+                        </span>
+                      )}
                       <span
                         className="badge"
                         style={{ marginLeft: '0.5rem' }}
@@ -246,9 +248,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                                 <Icon name="users" size={14} />
                               </span>
                             )}
-                            <span className="person-link-name">
-                              {person?.name || t('media.peopleMapping.unnamed')}
-                            </span>
+                            <span className="person-link-name">{person?.name || t('media.peopleMapping.unnamed')}</span>
                             <button
                               className="icon-button danger"
                               title={t('common.remove')}
@@ -378,9 +378,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                             <Icon name="users" size={20} />
                           </span>
                         )}
-                        <span className="person-tile-name">
-                          {person.name || t('media.peopleMapping.unnamed')}
-                        </span>
+                        <span className="person-tile-name">{person.name || t('media.peopleMapping.unnamed')}</span>
                       </button>
                     </li>
                   ))}
@@ -403,7 +401,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
       )}
 
       {people.length === 0 && peopleLinks.length === 0 && (
-        <div className="empty" style={{ marginTop: '1rem' }}>{t('media.peopleMapping.noPeople')}</div>
+        <div className="empty" style={{ marginTop: '1rem' }}>
+          {t('media.peopleMapping.noPeople')}
+        </div>
       )}
     </div>
   );

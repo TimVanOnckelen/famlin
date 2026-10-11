@@ -39,11 +39,7 @@ export function CircleBadge({ post }: { post: Post }) {
       </button>
 
       {membersOpen && (
-        <CircleMembersModal
-          circleId={circle.id}
-          circleName={circle.name}
-          onClose={() => setMembersOpen(false)}
-        />
+        <CircleMembersModal circleId={circle.id} circleName={circle.name} onClose={() => setMembersOpen(false)} />
       )}
     </>
   );

@@ -108,7 +108,11 @@ export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: 
                 }
                 accessibilityLabel={t('stories.openHighlight', { name: story.author.name })}
               >
-                <Image source={{ uri: getUploadUrl(story.imageUrl, 'thumbnail') }} style={styles.highlightImage} contentFit="cover" />
+                <Image
+                  source={{ uri: getUploadUrl(story.imageUrl, 'thumbnail') }}
+                  style={styles.highlightImage}
+                  contentFit="cover"
+                />
               </TouchableOpacity>
             ))}
             {highlightsQuery.hasNextPage && (

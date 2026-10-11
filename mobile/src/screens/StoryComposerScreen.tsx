@@ -115,7 +115,9 @@ export function StoryComposerScreen() {
       quality: 0.9,
     };
     const result =
-      source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
       setComposer(EMPTY_COMPOSER);
@@ -168,7 +170,11 @@ export function StoryComposerScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton} accessibilityLabel={t('common.close')}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.iconButton}
+            accessibilityLabel={t('common.close')}
+          >
             <Icon name="x" size={26} color={colors.white} />
           </TouchableOpacity>
           <Text style={styles.title}>{t('stories.newStory')}</Text>
@@ -199,7 +205,11 @@ export function StoryComposerScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => setPhotoUri(null)} style={styles.iconButton} accessibilityLabel={t('stories.back')}>
+        <TouchableOpacity
+          onPress={() => setPhotoUri(null)}
+          style={styles.iconButton}
+          accessibilityLabel={t('stories.back')}
+        >
           <Icon name="chevron-left" size={26} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.tools}>
@@ -237,7 +247,11 @@ export function StoryComposerScreen() {
             disabled={composer.history.length === 0}
             accessibilityLabel={t('stories.undo')}
           >
-            <Icon name="rotate-ccw" size={22} color={composer.history.length ? colors.white : 'rgba(255,255,255,0.35)'} />
+            <Icon
+              name="rotate-ccw"
+              size={22}
+              color={composer.history.length ? colors.white : 'rgba(255,255,255,0.35)'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -282,7 +296,11 @@ export function StoryComposerScreen() {
               onRemove={() =>
                 Alert.alert(t('stories.removeOverlay'), undefined, [
                   { text: t('common.cancel'), style: 'cancel' },
-                  { text: t('stories.remove'), style: 'destructive', onPress: () => setComposer((s) => removeOverlay(s, item.id)) },
+                  {
+                    text: t('stories.remove'),
+                    style: 'destructive',
+                    onPress: () => setComposer((s) => removeOverlay(s, item.id)),
+                  },
                 ])
               }
             />

@@ -23,9 +23,7 @@ export function UsersPage() {
         setUsers(page.items);
         setNextCursor(page.nextCursor);
         setGroups(g);
-        setManagingUser((current) =>
-          current ? page.items.find((x) => x.id === current.id) ?? null : null
-        );
+        setManagingUser((current) => (current ? (page.items.find((x) => x.id === current.id) ?? null) : null));
       })
       .finally(() => setLoading(false));
   };
@@ -53,8 +51,7 @@ export function UsersPage() {
 
   // The table shows a single push/email toggle per user as a quick bulk
   // on/off switch; per-event-type granularity is managed by the user in the app.
-  const isEmailEnabled = (user: User) =>
-    user.emailOnNewPost || user.emailOnNewComment || user.emailOnNewLike;
+  const isEmailEnabled = (user: User) => user.emailOnNewPost || user.emailOnNewComment || user.emailOnNewLike;
 
   const toggleEmailNotifications = async (user: User) => {
     const enabled = !isEmailEnabled(user);
@@ -66,8 +63,7 @@ export function UsersPage() {
     load();
   };
 
-  const isPushEnabled = (user: User) =>
-    user.pushOnNewPost || user.pushOnNewComment || user.pushOnNewLike;
+  const isPushEnabled = (user: User) => user.pushOnNewPost || user.pushOnNewComment || user.pushOnNewLike;
 
   const togglePushNotifications = async (user: User) => {
     const enabled = !isPushEnabled(user);
@@ -215,17 +211,10 @@ export function UsersPage() {
       </div>
 
       {managingUser && (
-        <ManageGroupsModal
-          user={managingUser}
-          groups={groups}
-          onClose={() => setManagingUser(null)}
-          onChanged={load}
-        />
+        <ManageGroupsModal user={managingUser} groups={groups} onClose={() => setManagingUser(null)} onChanged={load} />
       )}
 
-      {showAddMember && (
-        <AddMemberModal onClose={() => setShowAddMember(false)} onCreated={load} />
-      )}
+      {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onCreated={load} />}
     </>
   );
 }

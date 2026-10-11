@@ -36,10 +36,7 @@ export function DashboardPage() {
 
     (async () => {
       try {
-        const [serverInfo, releaseRes] = await Promise.all([
-          api.getServerInfo(),
-          fetch(GITHUB_LATEST_RELEASE_URL),
-        ]);
+        const [serverInfo, releaseRes] = await Promise.all([api.getServerInfo(), fetch(GITHUB_LATEST_RELEASE_URL)]);
 
         if (!releaseRes.ok) return;
         const release = await releaseRes.json();
@@ -77,19 +74,12 @@ export function DashboardPage() {
             <Icon name="bell" size={18} />
           </span>
           <div className="update-banner-text">
-            <strong>
-              {t('dashboard.updateAvailable.title', { version: updateInfo.latestVersion })}
-            </strong>
+            <strong>{t('dashboard.updateAvailable.title', { version: updateInfo.latestVersion })}</strong>
             <span className="hint" style={{ marginTop: 0 }}>
               {t('dashboard.updateAvailable.currentVersion', { version: updateInfo.currentVersion })}
             </span>
           </div>
-          <a
-            className="update-banner-link"
-            href={updateInfo.releaseUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className="update-banner-link" href={updateInfo.releaseUrl} target="_blank" rel="noreferrer">
             {t('dashboard.updateAvailable.viewReleaseNotes')}
           </a>
         </div>
@@ -104,11 +94,7 @@ export function DashboardPage() {
         />
         <StatTile icon="layers" label={t('dashboard.stats.groups')} value={stats.counts.groups} />
         <StatTile icon="image" label={t('dashboard.stats.posts')} value={stats.counts.posts} />
-        <StatTile
-          icon="message-circle"
-          label={t('dashboard.stats.comments')}
-          value={stats.counts.comments}
-        />
+        <StatTile icon="message-circle" label={t('dashboard.stats.comments')} value={stats.counts.comments} />
         <StatTile icon="heart" label={t('dashboard.stats.likes')} value={stats.counts.likes} />
       </div>
 
@@ -229,7 +215,6 @@ export function DashboardPage() {
                   {t('dashboard.apiDocs')}
                 </a>
               </li>
-
             </ul>
           </div>
         </div>

@@ -27,7 +27,6 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-
     const likes = await prisma.like.findMany({
       where: { postId },
       select: { type: true, user: { select: { id: true, name: true, avatarUrl: true } } },
@@ -58,7 +57,6 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
-
 
     const existing = await prisma.like.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
@@ -131,7 +129,6 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
-
 
     const existing = await prisma.like.findUnique({
       where: { commentId_userId: { commentId, userId: request.user!.id } },

@@ -185,7 +185,11 @@ export function StoryViewer({
           </button>
         </header>
 
-        <img className="story-image" src={getUploadUrl(story.imageUrl)} alt={t('stories.imageAlt', { name: story.author.name })} />
+        <img
+          className="story-image"
+          src={getUploadUrl(story.imageUrl)}
+          alt={t('stories.imageAlt', { name: story.author.name })}
+        />
 
         <button className="story-tap story-tap-prev" onClick={goPrev} aria-label={t('stories.previous')} />
         <button className="story-tap story-tap-next" onClick={goNext} aria-label={t('stories.next')} />
@@ -194,8 +198,10 @@ export function StoryViewer({
           {story.isMine ? (
             <button className="story-insights-button" onClick={() => setInsightsOpen(true)}>
               {t('stories.seenBy', { count: story.stats?.viewCount ?? 0 })}
-              {(story.stats?.reactionCount ?? 0) > 0 && ` · ${t('stories.reactionsCount', { count: story.stats!.reactionCount })}`}
-              {(story.stats?.replyCount ?? 0) > 0 && ` · ${t('stories.repliesCount', { count: story.stats!.replyCount })}`}
+              {(story.stats?.reactionCount ?? 0) > 0 &&
+                ` · ${t('stories.reactionsCount', { count: story.stats!.reactionCount })}`}
+              {(story.stats?.replyCount ?? 0) > 0 &&
+                ` · ${t('stories.repliesCount', { count: story.stats!.replyCount })}`}
             </button>
           ) : (
             <>

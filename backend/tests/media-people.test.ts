@@ -146,9 +146,9 @@ describe('member-facing media people endpoints', () => {
       // Filter to this test's label: the endpoint is provider-scoped (not
       // group-scoped) by design, so people mapped under `local` by earlier
       // tests in this file are also present in the response.
-      const emmaEntries = (res.json() as Array<{ id: string; provider: string; label: string; userId: string | null }>).filter(
-        (p) => p.label === 'Emma'
-      );
+      const emmaEntries = (
+        res.json() as Array<{ id: string; provider: string; label: string; userId: string | null }>
+      ).filter((p) => p.label === 'Emma');
       expect(emmaEntries).toEqual([
         { id: linkedPersonLink.externalPersonId, provider: 'local', label: 'Emma', userId: mappedUser.id },
       ]);

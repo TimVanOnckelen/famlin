@@ -42,8 +42,16 @@ describe('StoryTray', () => {
     vi.mocked(fetchStoryTray).mockResolvedValue({ authors: [] });
     vi.mocked(fetchStoryHighlights).mockResolvedValue({
       items: [
-        makeStory({ id: 'h-new', author: { id: 'a', name: 'Newest', avatarUrl: null }, pinnedAt: new Date().toISOString() }),
-        makeStory({ id: 'h-old', author: { id: 'b', name: 'Oldest', avatarUrl: null }, pinnedAt: new Date().toISOString() }),
+        makeStory({
+          id: 'h-new',
+          author: { id: 'a', name: 'Newest', avatarUrl: null },
+          pinnedAt: new Date().toISOString(),
+        }),
+        makeStory({
+          id: 'h-old',
+          author: { id: 'b', name: 'Oldest', avatarUrl: null },
+          pinnedAt: new Date().toISOString(),
+        }),
       ],
       nextCursor: null,
     });

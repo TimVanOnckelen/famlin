@@ -26,7 +26,6 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-
     const existing = await prisma.favorite.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
     });

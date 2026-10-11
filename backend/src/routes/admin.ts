@@ -6,15 +6,8 @@ import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
 import { resendPostPush, PushNotificationError } from '../services/notifications.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js';
-import {
-  testImmichConnection,
-} from '../services/media/immich.js';
-import {
-  getMediaProvider,
-  mediaErrorKey,
-  mediaErrorStatus,
-  MediaProviderError,
-} from '../services/media/registry.js';
+import { testImmichConnection } from '../services/media/immich.js';
+import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js';
 import fsp from 'fs/promises';
 import {
   createGroupBodySchema,
@@ -133,9 +126,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // and read back) so the range lines up with the day keys below regardless
     // of the server's local timezone.
     const now = new Date();
-    const rangeStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13)
-    );
+    const rangeStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13));
 
     const [
       userCount,
@@ -311,7 +302,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // post type — an unknown id would silently never match anything (empty ≠
   // unknown: an empty array deliberately means "all allowed"). Returns true
   // after sending the 400, mirroring requireAdmin's return-and-bail contract.
-  function rejectUnknownPostTypes(allowedPostTypes: string[] | undefined, request: FastifyRequest, reply: FastifyReply): boolean {
+  function rejectUnknownPostTypes(
+    allowedPostTypes: string[] | undefined,
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): boolean {
     if (allowedPostTypes?.some((id) => !getPostTypeHandler(id))) {
       reply.status(400).send({ error: getT(request)('errors.unknownPostType') });
       return true;
@@ -681,9 +676,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') });
 
     if (circle._count.posts > 0 && !deleteContent) {
-      return reply
-        .status(409)
-        .send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts });
+      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts });
     }
 
     // The circle's stories cascade with it; delete them explicitly first so
@@ -941,10 +934,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const logs = await prisma.pushDeliveryLog.findMany({
       where: {
         ...(postId ? { postId } : {}),
-        OR: [
-          { postId: null },
-          { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } },
-        ],
+        OR: [{ postId: null }, { post: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] } }],
       },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),

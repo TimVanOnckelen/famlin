@@ -87,7 +87,7 @@ export function resolveBrandSettings(
 }
 
 export function seedFor(preset: string, color: string | null): string {
-  return preset === CUSTOM_PRESET && color ? color : BRAND_PRESETS[preset] ?? BRAND_PRESETS[DEFAULT_PRESET];
+  return preset === CUSTOM_PRESET && color ? color : (BRAND_PRESETS[preset] ?? BRAND_PRESETS[DEFAULT_PRESET]);
 }
 
 export function logoUrls(logo: string) {

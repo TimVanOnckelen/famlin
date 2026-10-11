@@ -94,7 +94,11 @@ function normalizeTravelerIds(ids: string[], authorId: string): string[] {
 // 'checkin' branch below, which skips a sibling whose group the acting user
 // is no longer a member of, rather than trusting this create/setTravelers-time
 // check to still hold forever.
-async function assertTravelersAreMembers(userIds: string[], groupIds: string[], db: TripDbClient = prisma): Promise<void> {
+async function assertTravelersAreMembers(
+  userIds: string[],
+  groupIds: string[],
+  db: TripDbClient = prisma
+): Promise<void> {
   if (userIds.length === 0) return;
   const memberships = await db.groupMember.findMany({
     where: { groupId: { in: groupIds }, userId: { in: userIds } },
@@ -307,7 +311,12 @@ export const tripHandler: PostTypeHandler = {
         // One shared checkinId across every copy (single-group trips get it
         // too, for uniformity) — see TripCheckinMetadata and the author
         // delete fan-out in routes/comments.ts.
-        const metadata: TripCheckinMetadata = { kind: 'trip_checkin', checkinId: randomUUID(), place, photoUrls: photoUrls ?? [] };
+        const metadata: TripCheckinMetadata = {
+          kind: 'trip_checkin',
+          checkinId: randomUUID(),
+          place,
+          photoUrls: photoUrls ?? [],
+        };
 
         // A cross-posted trip stores one Comment copy per sibling post
         // (same content/metadata) — but ONLY in a sibling whose group the
@@ -419,7 +428,11 @@ export const tripHandler: PostTypeHandler = {
         // identical typeData — created together, and every mutation goes
         // through this same fan-out) — the `{crossPostId, authorId}` where
         // mirrors author PATCH/DELETE in routes/posts.ts.
-        const updated: PersistedTripTypeData = { ...freshTypeData, closedAt: new Date().toISOString(), closedByUserId: userId };
+        const updated: PersistedTripTypeData = {
+          ...freshTypeData,
+          closedAt: new Date().toISOString(),
+          closedByUserId: userId,
+        };
         await tx.post.updateMany({
           where: post.crossPostId ? { crossPostId: post.crossPostId, authorId: post.authorId } : { id: post.id },
           data: { typeData: updated as unknown as Prisma.InputJsonValue },

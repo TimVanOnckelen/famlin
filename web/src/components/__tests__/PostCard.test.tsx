@@ -59,7 +59,9 @@ describe('PostCard', () => {
 
   it('renders no scrapbook decoration (no washi tape or milestone pin)', () => {
     const { container } = renderWithQueryClient(
-      <PostCard post={makePost({ type: 'MILESTONE', content: 'Emma turns 5!', uploadedAssetUrls: ['/uploads/a.jpg'] })} />
+      <PostCard
+        post={makePost({ type: 'MILESTONE', content: 'Emma turns 5!', uploadedAssetUrls: ['/uploads/a.jpg'] })}
+      />
     );
     expect(container.querySelector('.post-tape')).not.toBeInTheDocument();
     expect(container.querySelector('.post-pin')).not.toBeInTheDocument();
@@ -219,17 +221,13 @@ describe('PostCard', () => {
   });
 
   it('falls back to plain text content for an unknown custom post type', () => {
-    renderWithQueryClient(
-      <PostCard post={makePost({ type: 'RSVP', content: 'Are you coming to the picnic?' })} />
-    );
+    renderWithQueryClient(<PostCard post={makePost({ type: 'RSVP', content: 'Are you coming to the picnic?' })} />);
     expect(screen.getByText('Are you coming to the picnic?')).toBeInTheDocument();
   });
 
   describe('trip posts', () => {
     it('renders the active trip card: badge, destination, last stop, stops-so-far, and follow CTA', () => {
-      renderWithQueryClient(
-        <PostCard post={makePost({ type: 'TRIP', content: null, trip: makeTrip() })} />
-      );
+      renderWithQueryClient(<PostCard post={makePost({ type: 'TRIP', content: null, trip: makeTrip() })} />);
       expect(screen.getByText(/Day 4/)).toBeInTheDocument();
       expect(screen.getByText('→ Tuscany & Emilia-Romagna, Italy')).toBeInTheDocument();
       expect(screen.getByText('Bologna', { exact: false })).toBeInTheDocument();
@@ -241,7 +239,10 @@ describe('PostCard', () => {
       const user = userEvent.setup();
       const onOpenTrip = vi.fn();
       renderWithQueryClient(
-        <PostCard post={makePost({ id: 'trip-post', type: 'TRIP', content: null, trip: makeTrip() })} onOpenTrip={onOpenTrip} />
+        <PostCard
+          post={makePost({ id: 'trip-post', type: 'TRIP', content: null, trip: makeTrip() })}
+          onOpenTrip={onOpenTrip}
+        />
       );
       await user.click(screen.getByRole('button', { name: 'Follow the trip →' }));
       expect(onOpenTrip).toHaveBeenCalledWith('trip-post');
@@ -287,9 +288,7 @@ describe('PostCard', () => {
 
   describe('album posts', () => {
     it('renders the album card: badge, title, stats, contributors, and open CTA', () => {
-      renderWithQueryClient(
-        <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />
-      );
+      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />);
       expect(screen.getByText('SHARED ALBUM')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Summer at the lake' })).toBeInTheDocument();
       expect(screen.getByText('5 photos · 2 contributors')).toBeInTheDocument();

@@ -114,9 +114,18 @@ export function removeOverlay(state: ComposerState, id: string): ComposerState {
   };
 }
 
-export function startStroke(state: ComposerState, color: string, width: number, point: [number, number]): ComposerState {
+export function startStroke(
+  state: ComposerState,
+  color: string,
+  width: number,
+  point: [number, number]
+): ComposerState {
   const stroke: Stroke = { id: makeId('stroke'), color, width, points: [point] };
-  return { ...state, strokes: [...state.strokes, stroke], history: [...state.history, { kind: 'stroke', id: stroke.id }] };
+  return {
+    ...state,
+    strokes: [...state.strokes, stroke],
+    history: [...state.history, { kind: 'stroke', id: stroke.id }],
+  };
 }
 
 export function extendStroke(state: ComposerState, point: [number, number]): ComposerState {

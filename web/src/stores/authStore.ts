@@ -1,11 +1,5 @@
 import { create } from 'zustand';
-import {
-  User,
-  getStorageAdapter,
-  TOKEN_KEY,
-  setMediaToken,
-  refreshMediaToken,
-} from '@famlin/api-client';
+import { User, getStorageAdapter, TOKEN_KEY, setMediaToken, refreshMediaToken } from '@famlin/api-client';
 
 // Web counterpart of mobile's authStore — smaller on purpose: no server URL
 // (the web app is same-origin with the backend) and no push-token

@@ -47,7 +47,7 @@ Run from the repo root unless noted. `backend/`, `backend/admin/`, `mobile/`, an
 
 **Root shortcuts** (`package.json`): `dev:backend`, `dev:admin`, `dev:mobile`, `dev:docs`, `dev:web`, `build:admin`, `build:docs`, `build:web`, `build:api-client`, `db:migrate`, `db:seed`.
 
-After any change, verify with `npx tsc --noEmit` in each affected package.
+After any change, verify with `npx tsc --noEmit` in each affected package. Formatting is Prettier (one root `.prettierrc.json` covering backend, admin, web, api-client and mobile; Markdown/YAML/JSON/HTML and `docs/`/`website/` excluded in `.prettierignore`): run `npm run format` from the root after editing code — CI's `Lint` job runs `npm run format:check`.
 
 ## Architecture as-built
 

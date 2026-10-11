@@ -35,7 +35,10 @@ describe('ALBUM posts', () => {
       payload: {
         groupId,
         type: 'ALBUM',
-        typeData: { title: overrides.title ?? 'Summer 2026', ...('coverPhotoUrl' in overrides ? { coverPhotoUrl: overrides.coverPhotoUrl } : {}) },
+        typeData: {
+          title: overrides.title ?? 'Summer 2026',
+          ...('coverPhotoUrl' in overrides ? { coverPhotoUrl: overrides.coverPhotoUrl } : {}),
+        },
         uploadedAssetUrls: [],
       },
     });
@@ -64,7 +67,12 @@ describe('ALBUM posts', () => {
       // The enriched `album` view is attached on GET (not on the create response).
       const detail = await app.inject({ method: 'GET', url: `/api/posts/${body.id}`, headers: authHeader(author) });
       expect(detail.statusCode).toBe(200);
-      expect(detail.json().album).toMatchObject({ title: 'Beach week', closed: false, photoCount: 0, contributorCount: 0 });
+      expect(detail.json().album).toMatchObject({
+        title: 'Beach week',
+        closed: false,
+        photoCount: 0,
+        contributorCount: 0,
+      });
       expect(detail.json().album.collagePhotoUrls).toEqual([]);
     });
 
@@ -87,7 +95,12 @@ describe('ALBUM posts', () => {
         method: 'POST',
         url: '/api/posts',
         headers: authHeader(author),
-        payload: { groupId: group.id, type: 'ALBUM', typeData: { title: 'X', coverPhotoUrl: 'https://evil.example/x.jpg' }, uploadedAssetUrls: [] },
+        payload: {
+          groupId: group.id,
+          type: 'ALBUM',
+          typeData: { title: 'X', coverPhotoUrl: 'https://evil.example/x.jpg' },
+          uploadedAssetUrls: [],
+        },
       });
       expect(res.statusCode).toBe(400);
     });
@@ -101,7 +114,10 @@ describe('ALBUM posts', () => {
       await addMember(group.id, member.id);
       const albumId = (await createAlbum(author, group.id)).json().id;
 
-      const res = await addPhotos(authHeader(member), albumId, { photoUrls: [assetPath(), assetPath()], caption: 'By the lake' });
+      const res = await addPhotos(authHeader(member), albumId, {
+        photoUrls: [assetPath(), assetPath()],
+        caption: 'By the lake',
+      });
       expect(res.statusCode).toBe(200);
       const album = res.json().album;
       expect(album.photoCount).toBe(2);
@@ -117,7 +133,11 @@ describe('ALBUM posts', () => {
       const albumId = (await createAlbum(author, group.id)).json().id;
       await addPhotos(authHeader(author), albumId, { photoUrls: [assetPath()], caption: 'Sunset' });
 
-      const res = await app.inject({ method: 'GET', url: `/api/posts/${albumId}/comments`, headers: authHeader(author) });
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/posts/${albumId}/comments`,
+        headers: authHeader(author),
+      });
       const contribution = res.json().find((c: { metadata?: { kind?: string } }) => c.metadata?.kind === 'album_photo');
       expect(contribution).toBeTruthy();
       expect(contribution.metadata.photoUrls).toHaveLength(1);
@@ -173,7 +193,12 @@ describe('ALBUM posts', () => {
 
   describe('closing an album', () => {
     function close(token: { authorization: string }, postId: string) {
-      return app.inject({ method: 'POST', url: `/api/posts/${postId}/interactions`, headers: token, payload: { key: 'close' } });
+      return app.inject({
+        method: 'POST',
+        url: `/api/posts/${postId}/interactions`,
+        headers: token,
+        payload: { key: 'close' },
+      });
     }
 
     it('blocks a non-author from closing', async () => {
@@ -221,7 +246,13 @@ describe('ALBUM posts', () => {
         method: 'POST',
         url: '/api/posts',
         headers: authHeader(author),
-        payload: { groupId: groupA.id, groupIds: [groupA.id, groupB.id], type: 'ALBUM', typeData: { title: 'Shared' }, uploadedAssetUrls: [] },
+        payload: {
+          groupId: groupA.id,
+          groupIds: [groupA.id, groupB.id],
+          type: 'ALBUM',
+          typeData: { title: 'Shared' },
+          uploadedAssetUrls: [],
+        },
       });
       expect(create.statusCode).toBe(200);
       const postId = create.json().id;
@@ -231,7 +262,11 @@ describe('ALBUM posts', () => {
 
       // One Comment copy per sibling post (both groups the contributor is in).
       const copies = await prisma.comment.count({
-        where: { authorId: member.id, metadata: { path: ['kind'], equals: 'album_photo' }, post: { crossPostId: { not: null } } },
+        where: {
+          authorId: member.id,
+          metadata: { path: ['kind'], equals: 'album_photo' },
+          post: { crossPostId: { not: null } },
+        },
       });
       expect(copies).toBe(2);
     });
@@ -248,7 +283,13 @@ describe('ALBUM posts', () => {
         method: 'POST',
         url: '/api/posts',
         headers: authHeader(author),
-        payload: { groupId: groupA.id, groupIds: [groupA.id, groupB.id], type: 'ALBUM', typeData: { title: 'Shared 2' }, uploadedAssetUrls: [] },
+        payload: {
+          groupId: groupA.id,
+          groupIds: [groupA.id, groupB.id],
+          type: 'ALBUM',
+          typeData: { title: 'Shared 2' },
+          uploadedAssetUrls: [],
+        },
       });
       const postId = create.json().id;
 

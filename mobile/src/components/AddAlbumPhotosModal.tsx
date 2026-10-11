@@ -106,7 +106,9 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
             {submitting ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Text style={[styles.headerButton, styles.headerButtonPrimary, !canSubmit && styles.headerButtonDisabled]}>
+              <Text
+                style={[styles.headerButton, styles.headerButtonPrimary, !canSubmit && styles.headerButtonDisabled]}
+              >
                 {t('album.addPhotos.submitButton')}
               </Text>
             )}

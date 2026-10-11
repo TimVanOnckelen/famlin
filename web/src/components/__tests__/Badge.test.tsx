@@ -9,14 +9,20 @@ describe('Badge', () => {
   });
 
   it('applies the chosen color and outline variant', () => {
-    render(<Badge color="info" variant="outline">TRIP · CLOSED</Badge>);
+    render(
+      <Badge color="info" variant="outline">
+        TRIP · CLOSED
+      </Badge>
+    );
     expect(screen.getByText('TRIP · CLOSED').className).toBe('badge badge-info badge-outline');
   });
 
   it('keeps the warning hue and merges external positioning classes', () => {
-    render(<Badge color="warning" className="milestone-badge-overlay">MILESTONE</Badge>);
-    expect(screen.getByText('MILESTONE').className).toBe(
-      'badge badge-warning milestone-badge-overlay'
+    render(
+      <Badge color="warning" className="milestone-badge-overlay">
+        MILESTONE
+      </Badge>
     );
+    expect(screen.getByText('MILESTONE').className).toBe('badge badge-warning milestone-badge-overlay');
   });
 });

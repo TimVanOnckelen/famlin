@@ -21,9 +21,7 @@ export function EmptyState({ title, subtitle, centerSubtitle, containerStyle, ti
     <View style={[styles.emptyState, containerStyle]}>
       <Text style={[styles.emptyStateText, titleStyle]}>{title}</Text>
       {!!subtitle && (
-        <Text style={[styles.emptyStateSubtext, centerSubtitle && styles.emptyStateSubtextCentered]}>
-          {subtitle}
-        </Text>
+        <Text style={[styles.emptyStateSubtext, centerSubtitle && styles.emptyStateSubtextCentered]}>{subtitle}</Text>
       )}
     </View>
   );

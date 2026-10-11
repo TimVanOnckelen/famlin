@@ -7,7 +7,14 @@ import { navigationRef } from '@/navigation/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import axios from 'axios';
-import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
+import {
+  useFonts,
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+} from '@expo-google-fonts/nunito';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as Linking from 'expo-linking';
 
@@ -138,7 +145,7 @@ function AppContent() {
         const token = await loadToken();
         if (token) {
           const me = await fetchMe();
-          const serverUrl = await getServerUrl() || '';
+          const serverUrl = (await getServerUrl()) || '';
           await setAuth(me, token, serverUrl);
         }
       } catch (err) {
@@ -170,11 +177,7 @@ function AppContent() {
   // point `onDone` clears it and the normal Login/Main flow below takes over.
   if (pendingInvite) {
     return (
-      <InviteScreen
-        token={pendingInvite.token}
-        server={pendingInvite.server}
-        onDone={() => setPendingInvite(null)}
-      />
+      <InviteScreen token={pendingInvite.token} server={pendingInvite.server} onDone={() => setPendingInvite(null)} />
     );
   }
 
@@ -192,7 +195,9 @@ function AppContent() {
         ) : (
           // Required lazily — see AuthenticatedScreens.tsx.
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          (require('@/navigation/AuthenticatedScreens') as typeof import('@/navigation/AuthenticatedScreens')).renderAuthenticatedScreens(Stack)
+          (
+            require('@/navigation/AuthenticatedScreens') as typeof import('@/navigation/AuthenticatedScreens')
+          ).renderAuthenticatedScreens(Stack)
         )}
       </Stack.Navigator>
     </NavigationContainer>

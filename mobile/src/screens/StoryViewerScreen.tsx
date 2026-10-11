@@ -83,9 +83,7 @@ export function StoryViewerScreen() {
     );
   }
 
-  return (
-    <StoryPlayer sequences={sequences} start={{ seq: params.startSequence ?? 0, idx: params.startIndex ?? 0 }} />
-  );
+  return <StoryPlayer sequences={sequences} start={{ seq: params.startSequence ?? 0, idx: params.startIndex ?? 0 }} />;
 }
 
 function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; start: StoryPosition }) {
@@ -355,7 +353,9 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
                     placeholderTextColor="rgba(255,255,255,0.75)"
                     maxLength={500}
                     returnKeyType="send"
-                    onSubmitEditing={() => replyText.trim() && reply.mutate({ id: story.id, content: replyText.trim() })}
+                    onSubmitEditing={() =>
+                      replyText.trim() && reply.mutate({ id: story.id, content: replyText.trim() })
+                    }
                   />
                   <TouchableOpacity
                     style={styles.iconButton}
@@ -384,7 +384,11 @@ function StoryInsightsSheet({ storyId, visible, onClose }: { storyId: string; vi
   const { t } = useTranslation();
   const [tab, setTab] = useState<'views' | 'reactions' | 'replies'>('views');
 
-  const views = useQuery({ queryKey: ['story-views', storyId], queryFn: () => fetchStoryViews(storyId), enabled: visible });
+  const views = useQuery({
+    queryKey: ['story-views', storyId],
+    queryFn: () => fetchStoryViews(storyId),
+    enabled: visible,
+  });
   const reactions = useQuery({
     queryKey: ['story-reactions', storyId],
     queryFn: () => fetchStoryReactions(storyId),
@@ -436,7 +440,9 @@ function StoryInsightsSheet({ storyId, visible, onClose }: { storyId: string; vi
           )}
           ListEmptyComponent={
             <Text style={styles.sheetEmpty}>
-              {t(tab === 'views' ? 'stories.noViews' : tab === 'reactions' ? 'stories.noReactions' : 'stories.noReplies')}
+              {t(
+                tab === 'views' ? 'stories.noViews' : tab === 'reactions' ? 'stories.noReactions' : 'stories.noReplies'
+              )}
             </Text>
           }
         />

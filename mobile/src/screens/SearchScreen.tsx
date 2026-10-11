@@ -26,7 +26,11 @@ export function SearchScreen() {
     return () => clearTimeout(timer);
   }, [queryInput]);
 
-  const { query, items: results, onEndReached } = useCursorPagination({
+  const {
+    query,
+    items: results,
+    onEndReached,
+  } = useCursorPagination({
     queryKey: ['postSearch', groupId, debouncedQuery],
     queryFn: (cursor) => searchPosts({ groupId, q: debouncedQuery, cursor }),
     enabled: debouncedQuery.length > 0,
@@ -35,11 +39,7 @@ export function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScreenHeader
-        title={t('search.title', { group: groupName })}
-        onBack={() => navigation.goBack()}
-        centered
-      />
+      <ScreenHeader title={t('search.title', { group: groupName })} onBack={() => navigation.goBack()} centered />
 
       <View style={styles.searchBarContainer}>
         <Icon name="search" size={18} color={colors.textMuted} />
@@ -63,11 +63,7 @@ export function SearchScreen() {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           debouncedQuery.length === 0 ? null : isLoading ? null : (
-            <EmptyState
-              title={t('search.emptyTitle')}
-              subtitle={t('search.emptySubtitle')}
-              centerSubtitle
-            />
+            <EmptyState title={t('search.emptyTitle')} subtitle={t('search.emptySubtitle')} centerSubtitle />
           )
         }
       />

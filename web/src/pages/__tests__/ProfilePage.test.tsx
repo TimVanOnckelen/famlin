@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe('ProfilePage', () => {
-  it('downloads the data export as a zip and says it includes everyone\'s posts', async () => {
+  it("downloads the data export as a zip and says it includes everyone's posts", async () => {
     const user = userEvent.setup();
     vi.mocked(downloadMyExport).mockResolvedValue(new Blob(['PK'], { type: 'application/zip' }));
     const createObjectURL = vi.fn(() => 'blob:export');
@@ -66,20 +66,14 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Admin')).toBeInTheDocument();
     unmount();
 
-    renderWithQueryClient(
-      <ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />);
     expect(screen.queryByText('Admin')).not.toBeInTheDocument();
   });
 
   it('saves a notification preference when a switch is toggled', async () => {
     const user = userEvent.setup();
     renderWithQueryClient(
-      <ProfilePage
-        user={makeUser({ pushOnNewPost: false })}
-        onBack={() => {}}
-        onLogout={() => {}}
-      />
+      <ProfilePage user={makeUser({ pushOnNewPost: false })} onBack={() => {}} onLogout={() => {}} />
     );
 
     await user.click(await screen.findByRole('switch', { name: 'New posts — Push' }));
@@ -88,15 +82,11 @@ describe('ProfilePage', () => {
 
   it('hides the push column when the server has no push configured', async () => {
     vi.mocked(fetchNotificationConfig).mockResolvedValue({ pushEnabled: false, emailEnabled: true });
-    renderWithQueryClient(
-      <ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByRole('switch', { name: 'New posts — Email' })).toBeInTheDocument();
     // Both columns show while the config is still loading — wait for it.
-    await waitFor(() =>
-      expect(screen.queryByRole('switch', { name: 'New posts — Push' })).not.toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.queryByRole('switch', { name: 'New posts — Push' })).not.toBeInTheDocument());
   });
 
   it('has no back button (a top-level tab) and navigates to the feed via the nav', async () => {

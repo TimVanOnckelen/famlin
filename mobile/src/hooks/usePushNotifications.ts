@@ -35,8 +35,7 @@ export function usePushNotifications() {
 
     function handleResponse(response: Notifications.NotificationResponse) {
       const data = response.notification.request.content.data as
-        | { relatedPostId?: string | null; relatedStoryId?: string | null }
-        | undefined;
+        { relatedPostId?: string | null; relatedStoryId?: string | null } | undefined;
       if (data?.relatedPostId) {
         navigate('PostDetail', { postId: data.relatedPostId });
       } else if (data?.relatedStoryId) {

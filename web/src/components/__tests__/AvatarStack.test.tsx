@@ -16,9 +16,7 @@ describe('AvatarStack', () => {
   });
 
   it('renders img avatars for people with an avatarUrl', () => {
-    render(
-      <AvatarStack people={[{ id: 'u1', name: 'Sophie', avatarUrl: 'https://example.com/sophie.jpg' }]} />
-    );
+    render(<AvatarStack people={[{ id: 'u1', name: 'Sophie', avatarUrl: 'https://example.com/sophie.jpg' }]} />);
     expect(screen.getByAltText('Sophie')).toHaveAttribute('src', 'https://example.com/sophie.jpg');
   });
 

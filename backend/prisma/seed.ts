@@ -146,7 +146,7 @@ async function main() {
       id: 'seed-post-3',
       authorId: mama.id,
       groupId: familyGroup.id,
-      content: 'Zondag zo\'n heerlijk familiediner gehad. Iedereen aanwezig — zo fijn! 💛',
+      content: "Zondag zo'n heerlijk familiediner gehad. Iedereen aanwezig — zo fijn! 💛",
       type: 'UPDATE',
     },
   });
@@ -158,7 +158,7 @@ async function main() {
       id: 'seed-post-poll',
       authorId: papa.id,
       groupId: familyGroup.id,
-      content: 'Waar gaan we volgende maand met z\'n allen eten?',
+      content: "Waar gaan we volgende maand met z'n allen eten?",
       type: 'POLL',
       typeData: {
         options: [
@@ -217,7 +217,7 @@ async function main() {
       id: 'seed-post-trip',
       authorId: papa.id,
       groupId: weekendGroup.id,
-      content: 'Met z\'n zessen naar de Ardennen! 🌲',
+      content: "Met z'n zessen naar de Ardennen! 🌲",
       type: 'TRIP',
       typeData: {
         title: 'Weekendje Ardennen',

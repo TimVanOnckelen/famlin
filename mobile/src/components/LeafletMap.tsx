@@ -13,7 +13,12 @@ interface LeafletMapProps {
 
 // Renders OpenStreetMap tiles via Leaflet inside a WebView — no native map SDK
 // (and no Google/Apple Maps API key) is required on either platform this way.
-function buildHtml({ latitude, longitude, zoom, interactive }: Required<Pick<LeafletMapProps, 'latitude' | 'longitude' | 'zoom' | 'interactive'>>) {
+function buildHtml({
+  latitude,
+  longitude,
+  zoom,
+  interactive,
+}: Required<Pick<LeafletMapProps, 'latitude' | 'longitude' | 'zoom' | 'interactive'>>) {
   return `<!DOCTYPE html>
 <html>
 <head>

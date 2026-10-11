@@ -21,7 +21,14 @@ import {
   visiblePostsWhereFor,
 } from '../services/circles.js';
 import { bindAssetsToScope } from '../services/uploads.js';
-import { shapePost, shapePostsWithPeople, attachSharedWithGroups, dedupeByCrossPostId, dropLeadingCrossPostSiblings, postInclude } from '../services/posts.js';
+import {
+  shapePost,
+  shapePostsWithPeople,
+  attachSharedWithGroups,
+  dedupeByCrossPostId,
+  dropLeadingCrossPostSiblings,
+  postInclude,
+} from '../services/posts.js';
 import { getOnThisDayPosts } from '../services/onThisDay.js';
 import { paginationArgs, paginate } from '../services/pagination.js';
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js';
@@ -73,11 +80,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: t('errors.unknownPostType') });
     }
 
-    const requested = groupIds
-      ? [...new Set(groupIds.split(',').filter(Boolean))]
-      : groupId
-        ? [groupId]
-        : null;
+    const requested = groupIds ? [...new Set(groupIds.split(',').filter(Boolean))] : groupId ? [groupId] : null;
 
     const memberGroupIds = await getUserGroupIds(request.user!.id);
 
@@ -200,10 +203,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     const full = await prisma.post.findMany({
       where: {
-        AND: [
-          { id: { in: posts.map((p) => p.id) } },
-          await visiblePostsWhereFor([groupId], request.user!.id),
-        ],
+        AND: [{ id: { in: posts.map((p) => p.id) } }, await visiblePostsWhereFor([groupId], request.user!.id)],
       },
       include: postInclude(request.user!.id),
     });
@@ -383,7 +383,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
         assetUrls = assetUrls.map((url) => copied.get(url) ?? url);
       } catch (err) {
         if (err instanceof CrossPostAssetCopyError) {
-          return reply.status(err.code === 'forbidden' ? 400 : 502).send({ error: t('errors.crossPostAssetCopyFailed') });
+          return reply
+            .status(err.code === 'forbidden' ? 400 : 502)
+            .send({ error: t('errors.crossPostAssetCopyFailed') });
         }
         throw err;
       }
@@ -483,7 +485,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
             uploadedAssetUrls = uploadedAssetUrls.map((url) => copied.get(url) ?? url);
           } catch (err) {
             if (err instanceof CrossPostAssetCopyError) {
-              return reply.status(err.code === 'forbidden' ? 400 : 502).send({ error: t('errors.crossPostAssetCopyFailed') });
+              return reply
+                .status(err.code === 'forbidden' ? 400 : 502)
+                .send({ error: t('errors.crossPostAssetCopyFailed') });
             }
             throw err;
           }
@@ -496,7 +500,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
           content: body.content,
           milestoneTag: body.milestoneTag,
           editedAt: new Date(),
-          ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
+          ...('latitude' in body
+            ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName }
+            : {}),
           ...(uploadedAssetUrls ? { uploadedAssetUrls } : {}),
         },
       });
@@ -538,7 +544,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
         content: body.content,
         milestoneTag: body.milestoneTag,
         editedAt: new Date(),
-        ...('latitude' in body ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName } : {}),
+        ...('latitude' in body
+          ? { latitude: body.latitude, longitude: body.longitude, locationName: body.locationName }
+          : {}),
         ...(body.uploadedAssetUrls ? { uploadedAssetUrls: body.uploadedAssetUrls } : {}),
       },
       include: postInclude(request.user!.id),
@@ -611,7 +619,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const { postId } = request.params as { postId: string };
     const { key, value } = postInteractionBodySchema.parse(request.body);
 
-    const post = await prisma.post.findUnique({ where: { id: postId }, include: { group: { select: { name: true } } } });
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { group: { select: { name: true } } },
+    });
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') });

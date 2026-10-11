@@ -152,7 +152,13 @@ export async function verifyOidcToken(idToken: string, options?: { allowUnlisted
   };
 }
 
-export function createUserToken(user: { id: string; email: string; name: string; isAdmin: boolean; tokenVersion: number }) {
+export function createUserToken(user: {
+  id: string;
+  email: string;
+  name: string;
+  isAdmin: boolean;
+  tokenVersion: number;
+}) {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, tokenVersion: user.tokenVersion },
     config.JWT_SECRET,
@@ -284,7 +290,11 @@ export function requireAdmin(request: FastifyRequest, reply: FastifyReply): bool
 
 // Returns true (and sends a 403) when the caller isn't a member of groupId.
 // Same contract as requireAdmin: callers MUST `return` when this returns true.
-export async function requireGroupMember(request: FastifyRequest, reply: FastifyReply, groupId: string): Promise<boolean> {
+export async function requireGroupMember(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  groupId: string
+): Promise<boolean> {
   if (!(await isGroupMember(groupId, request.user!.id))) {
     reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
     return true;

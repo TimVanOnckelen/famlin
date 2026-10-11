@@ -45,8 +45,12 @@ beforeAll(async () => {
 
   memberA = await prisma.user.create({ data: { email: `chat-member-a-${runId}@test.local`, name: 'Chat Member A' } });
   memberB = await prisma.user.create({ data: { email: `chat-member-b-${runId}@test.local`, name: 'Chat Member B' } });
-  memberC = await prisma.user.create({ data: { email: `chat-member-c-${runId}@test.local`, name: 'Chat Member C (non-member)' } });
-  admin = await prisma.user.create({ data: { email: `chat-admin-${runId}@test.local`, name: 'Chat Admin', isAdmin: true } });
+  memberC = await prisma.user.create({
+    data: { email: `chat-member-c-${runId}@test.local`, name: 'Chat Member C (non-member)' },
+  });
+  admin = await prisma.user.create({
+    data: { email: `chat-admin-${runId}@test.local`, name: 'Chat Admin', isAdmin: true },
+  });
 
   await prisma.groupMember.createMany({
     data: [
@@ -157,7 +161,7 @@ describe('creating, listing, and deleting messages', () => {
     expect(del.json()).toEqual({ success: true });
   });
 
-  it('blocks a non-author, non-admin member from deleting someone else\'s message, but lets an admin', async () => {
+  it("blocks a non-author, non-admin member from deleting someone else's message, but lets an admin", async () => {
     const create = await app.inject({
       method: 'POST',
       url: `/api/chat/groups/${chitchatGroupId}/messages`,

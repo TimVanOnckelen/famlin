@@ -116,8 +116,16 @@ describe('cross-posting', () => {
     const like = await app.inject({ method: 'POST', url: `/api/posts/${postA.id}/like`, headers: authHeader(author) });
     expect(like.statusCode).toBe(200);
 
-    const commentsA = await app.inject({ method: 'GET', url: `/api/posts/${postA.id}/comments`, headers: authHeader(author) });
-    const commentsB = await app.inject({ method: 'GET', url: `/api/posts/${postB.id}/comments`, headers: authHeader(author) });
+    const commentsA = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postA.id}/comments`,
+      headers: authHeader(author),
+    });
+    const commentsB = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postB.id}/comments`,
+      headers: authHeader(author),
+    });
     expect(commentsA.json()).toHaveLength(1);
     expect(commentsB.json()).toHaveLength(0);
 
@@ -346,8 +354,20 @@ describe('cross-posting', () => {
     const crossPostId = randomUUID();
     await prisma.post.createMany({
       data: [
-        { authorId: author.id, groupId: groupA.id, content: 'on this day cross post', crossPostId, createdAt: lastYear },
-        { authorId: author.id, groupId: groupB.id, content: 'on this day cross post', crossPostId, createdAt: lastYear },
+        {
+          authorId: author.id,
+          groupId: groupA.id,
+          content: 'on this day cross post',
+          crossPostId,
+          createdAt: lastYear,
+        },
+        {
+          authorId: author.id,
+          groupId: groupB.id,
+          content: 'on this day cross post',
+          crossPostId,
+          createdAt: lastYear,
+        },
       ],
     });
 
@@ -372,8 +392,20 @@ describe('cross-posting', () => {
 
     await prisma.post.createMany({
       data: [
-        { authorId: author.id, groupId: group.id, content: 'duplicate sibling on this day', crossPostId, createdAt: lastYear },
-        { authorId: author.id, groupId: group.id, content: 'duplicate sibling on this day', crossPostId, createdAt: lastYear },
+        {
+          authorId: author.id,
+          groupId: group.id,
+          content: 'duplicate sibling on this day',
+          crossPostId,
+          createdAt: lastYear,
+        },
+        {
+          authorId: author.id,
+          groupId: group.id,
+          content: 'duplicate sibling on this day',
+          crossPostId,
+          createdAt: lastYear,
+        },
       ],
     });
 

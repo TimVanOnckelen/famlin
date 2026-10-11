@@ -1,13 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -60,12 +52,9 @@ export function FeedScreen() {
 
   // Group-scoped affordances (members, on-this-day, search context) only
   // have one clear target when the filter narrows to exactly one family.
-  const effectiveGroupIds =
-    selectedGroupIds.length > 0 ? selectedGroupIds : (groups ?? []).map((g: Group) => g.id);
+  const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : (groups ?? []).map((g: Group) => g.id);
   const singleActiveGroup =
-    effectiveGroupIds.length === 1
-      ? groups?.find((g: Group) => g.id === effectiveGroupIds[0])
-      : undefined;
+    effectiveGroupIds.length === 1 ? groups?.find((g: Group) => g.id === effectiveGroupIds[0]) : undefined;
 
   // Only circles the viewer belongs to ever come back — a group member
   // outside a circle never learns it exists — so there's nothing to filter
@@ -78,9 +67,7 @@ export function FeedScreen() {
   });
 
   function toggleGroup(groupId: string) {
-    setSelectedGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
-    );
+    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]));
     // A circle belongs to one family, so a selection made under a different
     // family filter is no longer valid — and the server would 403 it.
     setSelectedCircleIds([]);
@@ -98,7 +85,11 @@ export function FeedScreen() {
     enabled: !!singleActiveGroup,
   });
 
-  const { query, items: posts, onEndReached } = useCursorPagination({
+  const {
+    query,
+    items: posts,
+    onEndReached,
+  } = useCursorPagination({
     queryKey: [
       'posts',
       [...selectedGroupIds].sort().join(',') || 'all',
@@ -196,9 +187,7 @@ export function FeedScreen() {
           <Icon name="bell" size={20} color={colors.textTitle} />
           {!!unreadCount && (
             <View style={styles.notificationsBadge}>
-              <Text style={styles.notificationsBadgeText}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Text>
+              <Text style={styles.notificationsBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -220,9 +209,7 @@ export function FeedScreen() {
                   onPress={() => (isAll ? setSelectedGroupIds([]) : toggleGroup(item.id))}
                   accessibilityState={{ selected: isActive }}
                 >
-                  <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
-                    {item.name}
-                  </Text>
+                  <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
               );
             }}
@@ -246,9 +233,7 @@ export function FeedScreen() {
                   onPress={() => toggleCircle(item.id)}
                   accessibilityState={{ selected: isActive }}
                 >
-                  <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>
-                    {item.name}
-                  </Text>
+                  <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
               );
             }}
@@ -261,9 +246,7 @@ export function FeedScreen() {
         data={hasGroups ? posts : []}
         keyExtractor={postKeyExtractor}
         contentContainerStyle={styles.feedList}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
         renderItem={renderPost}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
@@ -289,9 +272,7 @@ export function FeedScreen() {
                 </View>
                 <View style={styles.onThisDayText}>
                   <Text style={styles.onThisDayTitle}>{t('feed.onThisDayTitle')}</Text>
-                  <Text style={styles.onThisDaySubtitle}>
-                    {t('feed.onThisDayCount', { count: onThisDay.length })}
-                  </Text>
+                  <Text style={styles.onThisDaySubtitle}>{t('feed.onThisDayCount', { count: onThisDay.length })}</Text>
                 </View>
                 <Icon name="chevron-right" size={18} color={colors.textMuted} />
               </TouchableOpacity>

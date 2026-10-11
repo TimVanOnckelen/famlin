@@ -59,7 +59,11 @@ describe('immich integration', () => {
         method: 'POST',
         url: `/api/admin/groups/${group.id}/media-albums`,
         headers: authHeader(nonAdmin),
-        payload: { provider: 'immich', externalAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
+        payload: {
+          provider: 'immich',
+          externalAlbumId: '11111111-1111-4111-8111-111111111111',
+          albumName: 'Family photos',
+        },
       });
       expect(res.statusCode).toBe(403);
 
@@ -75,7 +79,11 @@ describe('immich integration', () => {
         method: 'POST',
         url: `/api/admin/groups/${group.id}/media-albums`,
         headers: authHeader(admin),
-        payload: { provider: 'immich', externalAlbumId: '11111111-1111-4111-8111-111111111111', albumName: 'Family photos' },
+        payload: {
+          provider: 'immich',
+          externalAlbumId: '11111111-1111-4111-8111-111111111111',
+          albumName: 'Family photos',
+        },
       });
       expect(res.statusCode).toBe(200);
 
@@ -128,7 +136,7 @@ describe('immich integration', () => {
   });
 
   describe('member-facing album/asset listing', () => {
-    it('rejects a non-member listing a group\'s linked albums', async () => {
+    it("rejects a non-member listing a group's linked albums", async () => {
       const member = await createUser();
       const outsider = await createUser();
       const group = await createGroupWithMember(member);
@@ -142,7 +150,7 @@ describe('immich integration', () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it('lets a member list their group\'s linked albums', async () => {
+    it("lets a member list their group's linked albums", async () => {
       const member = await createUser();
       const group = await createGroupWithMember(member);
       const link = await linkAlbum(group.id, { albumName: 'Vacation 2025' });
@@ -211,7 +219,7 @@ describe('immich integration', () => {
       expect(res.statusCode).toBe(401);
     });
 
-    it('rejects a user who is not a member of the link\'s group', async () => {
+    it("rejects a user who is not a member of the link's group", async () => {
       const member = await createUser();
       const outsider = await createUser();
       const group = await createGroupWithMember(member);
@@ -336,7 +344,12 @@ describe('immich integration', () => {
         // both assets were already covered by the bulk search above.
         return new Response(
           JSON.stringify({
-            assets: { items: [{ id: 'asset-1', type: 'IMAGE' }, { id: 'asset-2', type: 'IMAGE' }] },
+            assets: {
+              items: [
+                { id: 'asset-1', type: 'IMAGE' },
+                { id: 'asset-2', type: 'IMAGE' },
+              ],
+            },
           }),
           { status: 200, headers: { 'content-type': 'application/json' } }
         );
@@ -382,7 +395,12 @@ describe('immich integration', () => {
           // Coverage check: the album actually has two assets.
           return new Response(
             JSON.stringify({
-              assets: { items: [{ id: 'asset-mine', type: 'IMAGE' }, { id: 'asset-other-owner', type: 'IMAGE' }] },
+              assets: {
+                items: [
+                  { id: 'asset-mine', type: 'IMAGE' },
+                  { id: 'asset-other-owner', type: 'IMAGE' },
+                ],
+              },
             }),
             { status: 200, headers: { 'content-type': 'application/json' } }
           );

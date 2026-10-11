@@ -73,10 +73,7 @@ export default function App() {
       try {
         const token = await loadToken();
         if (token) {
-          const [me, groups] = await Promise.all([
-            fetchMe(),
-            fetchGroups().catch(() => null),
-          ]);
+          const [me, groups] = await Promise.all([fetchMe(), fetchGroups().catch(() => null)]);
           if (groups) queryClient.setQueryData(['groups'], groups);
           await setAuth(me, token);
         }

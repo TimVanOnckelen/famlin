@@ -54,9 +54,7 @@ export function Layout({ user, children }: LayoutProps) {
             {t('layout.logout')}
           </button>
           {version && (
-            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>
-              {t('layout.version', { version })}
-            </div>
+            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>{t('layout.version', { version })}</div>
           )}
         </div>
       </aside>

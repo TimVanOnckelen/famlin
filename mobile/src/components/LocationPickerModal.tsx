@@ -27,9 +27,7 @@ interface LocationPickerModalProps {
 export function LocationPickerModal({ visible, initialLocation, onCancel, onConfirm }: LocationPickerModalProps) {
   const { t } = useTranslation();
   const [coords, setCoords] = useState(
-    initialLocation
-      ? { latitude: initialLocation.latitude, longitude: initialLocation.longitude }
-      : DEFAULT_CENTER
+    initialLocation ? { latitude: initialLocation.latitude, longitude: initialLocation.longitude } : DEFAULT_CENTER
   );
   const [locationName, setLocationName] = useState(initialLocation?.locationName || '');
   const [locating, setLocating] = useState(false);

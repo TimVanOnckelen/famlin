@@ -208,24 +208,15 @@ export function ContentPage() {
       <div className="page-header">
         <h2>{t('content.title')}</h2>
         <div className="seg-tabs">
-          <button
-            className={`seg-tab${tab === 'posts' ? ' active' : ''}`}
-            onClick={() => setTab('posts')}
-          >
+          <button className={`seg-tab${tab === 'posts' ? ' active' : ''}`} onClick={() => setTab('posts')}>
             <Icon name="image" size={14} />
             {t('content.tabPosts')}
           </button>
-          <button
-            className={`seg-tab${tab === 'comments' ? ' active' : ''}`}
-            onClick={() => setTab('comments')}
-          >
+          <button className={`seg-tab${tab === 'comments' ? ' active' : ''}`} onClick={() => setTab('comments')}>
             <Icon name="message-circle" size={14} />
             {t('content.tabComments')}
           </button>
-          <button
-            className={`seg-tab${tab === 'stories' ? ' active' : ''}`}
-            onClick={() => setTab('stories')}
-          >
+          <button className={`seg-tab${tab === 'stories' ? ' active' : ''}`} onClick={() => setTab('stories')}>
             <Icon name="clock" size={14} />
             {t('content.tabStories')}
           </button>
@@ -296,14 +287,8 @@ export function ContentPage() {
                         <AuthorCell name={post.author.name} />
                       </td>
                       <td className="cell-content">
-                        {post.type === 'MILESTONE' && (
-                          <span className="badge milestone">{t('content.milestone')}</span>
-                        )}
-                        {post.content ? (
-                          truncate(post.content)
-                        ) : (
-                          <span className="muted">{t('content.noText')}</span>
-                        )}
+                        {post.type === 'MILESTONE' && <span className="badge milestone">{t('content.milestone')}</span>}
+                        {post.content ? truncate(post.content) : <span className="muted">{t('content.noText')}</span>}
                       </td>
                       <td>
                         <div className="group-badges">

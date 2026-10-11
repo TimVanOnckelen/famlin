@@ -15,7 +15,11 @@ export function FavoritesScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
 
-  const { query, items: favorites, onEndReached } = useCursorPagination({
+  const {
+    query,
+    items: favorites,
+    onEndReached,
+  } = useCursorPagination({
     queryKey: ['favorites'],
     queryFn: (cursor) => fetchFavorites(cursor),
   });
@@ -35,19 +39,13 @@ export function FavoritesScreen() {
         data={favorites}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />}
         renderItem={({ item }) => <PostCard post={item} showGroup />}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           isLoading ? null : (
-            <EmptyState
-              title={t('favorites.emptyTitle')}
-              subtitle={t('favorites.emptySubtitle')}
-              centerSubtitle
-            />
+            <EmptyState title={t('favorites.emptyTitle')} subtitle={t('favorites.emptySubtitle')} centerSubtitle />
           )
         }
       />

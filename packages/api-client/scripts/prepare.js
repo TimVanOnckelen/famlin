@@ -14,10 +14,7 @@ function hasDependencies() {
   // When installed as a file: dependency, devDependencies of this package are
   // not necessarily available (e.g. EAS/cloud builds). Compiling then fails
   // with "Cannot find module 'axios'" even though committed dist/ is usable.
-  return (
-    existsSync('node_modules/axios') &&
-    existsSync('node_modules/@tanstack/react-query')
-  );
+  return existsSync('node_modules/axios') && existsSync('node_modules/@tanstack/react-query');
 }
 
 if (!hasDependencies()) {
@@ -40,7 +37,5 @@ if (!hasDependencies()) {
   );
   process.exit(1);
 } else {
-  console.warn(
-    '[@famlin/api-client] tsc is not available; using existing dist/.'
-  );
+  console.warn('[@famlin/api-client] tsc is not available; using existing dist/.');
 }

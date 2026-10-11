@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { User } from '@/types';
-import { setToken, deleteToken, getToken, setServerUrl, deleteServerUrl, getPushToken, deletePushToken } from '@/utils/storage';
+import {
+  setToken,
+  deleteToken,
+  getToken,
+  setServerUrl,
+  deleteServerUrl,
+  getPushToken,
+  deletePushToken,
+} from '@/utils/storage';
 import { setApiBaseUrl, setMediaToken, unregisterPushToken } from '@famlin/api-client';
 import { refreshMediaToken } from '@/api/uploads';
 

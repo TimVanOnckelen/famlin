@@ -66,13 +66,7 @@ export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
 
-export {
-  getUploadUrl,
-  refreshMediaToken,
-  ensureFreshMediaToken,
-  uploadFiles,
-  UPLOAD_TIMEOUT_MS,
-} from './uploads';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS } from './uploads';
 
 export type {
   ReactionType,
@@ -141,20 +135,10 @@ export type { CreateCommentBody, UpdateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
 
 export type { CommentGroup } from './commentGroups';
-export {
-  MAX_COMMENT_ATTACHMENTS,
-  commentAttachments,
-  groupCommentAttachments,
-} from './commentGroups';
+export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups';
 
 export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
-export {
-  fetchChatMessages,
-  sendChatMessage,
-  deleteChatMessage,
-  markChatRead,
-  fetchChatUnreadCounts,
-} from './chat';
+export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat';
 
 export {
   fetchNotifications,

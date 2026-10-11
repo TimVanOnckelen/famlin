@@ -21,13 +21,7 @@ import { colors } from '@/constants/colors';
 import { Icon, IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Group, PostType } from '@/types';
-import {
-  fetchGroups,
-  fetchMyCircles,
-  createPost,
-  addAlbumPhotos,
-  getGroupMediaAlbums,
-} from '@famlin/api-client';
+import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { getUploadUrl } from '@/api/uploads';
 import { isVideoUrl } from '@/utils/media';
@@ -91,7 +85,12 @@ const POST_TYPE_ICON_BG: Record<string, string> = {
 // palette per type, echoing the type-chooser row it was picked from.
 const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg: string; text: string }> = {
   UPDATE: { bg: colors.updateBg, border: colors.updateBorder, iconBg: colors.accent, text: colors.updateText },
-  MILESTONE: { bg: colors.milestoneBg, border: colors.milestoneDivider, iconBg: colors.milestone, text: colors.milestoneText },
+  MILESTONE: {
+    bg: colors.milestoneBg,
+    border: colors.milestoneDivider,
+    iconBg: colors.milestone,
+    text: colors.milestoneText,
+  },
   POLL: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
   ALBUM: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
@@ -262,7 +261,11 @@ export function NewPostScreen() {
         circleId: selectedCircleId ?? undefined,
         content: isTrip ? undefined : content,
         type: postType,
-        milestoneTag: isMilestone ? (isCustomTag ? customTagText.trim() || undefined : selectedTag ?? undefined) : undefined,
+        milestoneTag: isMilestone
+          ? isCustomTag
+            ? customTagText.trim() || undefined
+            : (selectedTag ?? undefined)
+          : undefined,
         typeData: isTrip
           ? {
               title: tripTitle.trim(),
@@ -314,7 +317,11 @@ export function NewPostScreen() {
     setPollOptions((prev) => prev.map((option, i) => (i === index ? text : option)));
   }
 
-  const { pick: pickDeviceMedia, uploading, progress: uploadProgress } = usePickAndUploadMedia({
+  const {
+    pick: pickDeviceMedia,
+    uploading,
+    progress: uploadProgress,
+  } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -398,9 +405,7 @@ export function NewPostScreen() {
                       }}
                       accessibilityState={{ selected: isActive }}
                     >
-                      <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
-                        {group.name}
-                      </Text>
+                      <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -518,16 +523,14 @@ export function NewPostScreen() {
                     key={group.id}
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
                     onPress={() => {
-                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
-                        // A circle belongs to one family, so a previous
-                        // choice stops being valid once the family moves.
-                        setSelectedCircleId(null);
-                      }}
+                      setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
+                      // A circle belongs to one family, so a previous
+                      // choice stops being valid once the family moves.
+                      setSelectedCircleId(null);
+                    }}
                     accessibilityState={{ selected: isActive }}
                   >
-                    <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
-                      {group.name}
-                    </Text>
+                    <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -545,9 +548,7 @@ export function NewPostScreen() {
                 onPress={() => setSelectedCircleId(null)}
                 accessibilityState={{ selected: selectedCircleId === null }}
               >
-                <Text
-                  style={[styles.groupChipText, selectedCircleId === null && styles.groupChipTextActive]}
-                >
+                <Text style={[styles.groupChipText, selectedCircleId === null && styles.groupChipTextActive]}>
                   {t('newPost.audienceEveryone')}
                 </Text>
               </TouchableOpacity>
@@ -560,9 +561,7 @@ export function NewPostScreen() {
                     onPress={() => setSelectedCircleId(circle.id)}
                     accessibilityState={{ selected: isActive }}
                   >
-                    <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>
-                      {circle.name}
-                    </Text>
+                    <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>{circle.name}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -750,9 +749,7 @@ export function NewPostScreen() {
                       size={14}
                       color={active ? colors.milestoneText : colors.textMuted}
                     />
-                    <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>
-                      {tag}
-                    </Text>
+                    <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>{tag}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -794,90 +791,88 @@ export function NewPostScreen() {
             shown for TRIP — its only photo is the optional cover above,
             handled by the trip fields block. */}
         {!isTrip && (
-        <View style={styles.attachSection}>
-          <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
+          <View style={styles.attachSection}>
+            <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
 
-          {(allAssets.length > 0 || pendingAssets.length > 0) && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectedAssets}>
-              {allAssets.map((asset) => {
-                const isVideo = isVideoUrl(asset.url);
-                return (
-                  <View key={asset.url} style={styles.selectedAsset}>
-                    {isVideo ? (
-                      <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
+            {(allAssets.length > 0 || pendingAssets.length > 0) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.selectedAssets}
+              >
+                {allAssets.map((asset) => {
+                  const isVideo = isVideoUrl(asset.url);
+                  return (
+                    <View key={asset.url} style={styles.selectedAsset}>
+                      {isVideo ? (
+                        <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
+                      ) : (
+                        <Image source={{ uri: getUploadUrl(asset.url) }} style={styles.selectedAssetImage} />
+                      )}
+                      {isVideo && (
+                        <View style={styles.videoBadge} pointerEvents="none">
+                          <Icon name="play" size={14} color={colors.white} />
+                        </View>
+                      )}
+                      <TouchableOpacity style={styles.removeAssetButton} onPress={() => removeUploadedAsset(asset.url)}>
+                        <Icon name="x" size={12} color={colors.white} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+                {pendingAssets.map((asset, index) => (
+                  <View key={`pending-${index}`} style={styles.selectedAsset}>
+                    {asset.isVideo ? (
+                      <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
                     ) : (
-                      <Image
-                        source={{ uri: getUploadUrl(asset.url) }}
-                        style={styles.selectedAssetImage}
-                      />
+                      <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
                     )}
-                    {isVideo && (
-                      <View style={styles.videoBadge} pointerEvents="none">
-                        <Icon name="play" size={14} color={colors.white} />
-                      </View>
-                    )}
-                    <TouchableOpacity
-                      style={styles.removeAssetButton}
-                      onPress={() => removeUploadedAsset(asset.url)}
-                    >
-                      <Icon name="x" size={12} color={colors.white} />
-                    </TouchableOpacity>
+                    <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
                   </View>
-                );
-              })}
-              {pendingAssets.map((asset, index) => (
-                <View key={`pending-${index}`} style={styles.selectedAsset}>
-                  {asset.isVideo ? (
-                    <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
-                  ) : (
-                    <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
-                  )}
-                  <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
-                </View>
-              ))}
-            </ScrollView>
-          )}
-
-          <View style={styles.attachPillRow}>
-            <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
-              <View style={styles.attachPillIcon}>
-                <Icon name="smartphone" size={13} color={colors.white} />
-              </View>
-              <Text style={styles.attachPillLabel}>{t('newPost.addPhotoTitle')}</Text>
-            </TouchableOpacity>
-
-            {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
-              <TouchableOpacity style={styles.attachPill} onPress={() => setShowMediaPicker(true)}>
-                <View style={styles.attachPillIcon}>
-                  <Icon name="image" size={13} color={colors.white} />
-                </View>
-                <Text style={styles.attachPillLabel}>{t('newPost.addAlbumPhotoTitle')}</Text>
-              </TouchableOpacity>
+                ))}
+              </ScrollView>
             )}
 
-            {location ? (
-              <View style={styles.locationChip}>
-                <Icon name="map-pin" size={16} color={colors.primary} />
-                <Text style={styles.locationChipText} numberOfLines={1}>
-                  {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
-                </Text>
-                <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
-                  <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setLocation(null)}>
-                  <Icon name="x" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity style={styles.attachPill} onPress={() => setShowLocationPicker(true)}>
+            <View style={styles.attachPillRow}>
+              <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
                 <View style={styles.attachPillIcon}>
-                  <Icon name="map-pin" size={13} color={colors.white} />
+                  <Icon name="smartphone" size={13} color={colors.white} />
                 </View>
-                <Text style={styles.attachPillLabel}>{t('newPost.location.addTitle')}</Text>
+                <Text style={styles.attachPillLabel}>{t('newPost.addPhotoTitle')}</Text>
               </TouchableOpacity>
-            )}
+
+              {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
+                <TouchableOpacity style={styles.attachPill} onPress={() => setShowMediaPicker(true)}>
+                  <View style={styles.attachPillIcon}>
+                    <Icon name="image" size={13} color={colors.white} />
+                  </View>
+                  <Text style={styles.attachPillLabel}>{t('newPost.addAlbumPhotoTitle')}</Text>
+                </TouchableOpacity>
+              )}
+
+              {location ? (
+                <View style={styles.locationChip}>
+                  <Icon name="map-pin" size={16} color={colors.primary} />
+                  <Text style={styles.locationChipText} numberOfLines={1}>
+                    {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
+                    <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setLocation(null)}>
+                    <Icon name="x" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.attachPill} onPress={() => setShowLocationPicker(true)}>
+                  <View style={styles.attachPillIcon}>
+                    <Icon name="map-pin" size={13} color={colors.white} />
+                  </View>
+                  <Text style={styles.attachPillLabel}>{t('newPost.location.addTitle')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
         )}
       </ScrollView>
 

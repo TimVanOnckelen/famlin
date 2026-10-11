@@ -70,7 +70,10 @@ export function TripDetailPage({
   const comments = commentsQuery.data ?? [];
 
   const { checkins, tripComments } = useMemo(
-    () => (trip ? splitTripComments(comments, trip.startDate) : { checkins: [], tripComments: [], repliesByParent: new Map() }),
+    () =>
+      trip
+        ? splitTripComments(comments, trip.startDate)
+        : { checkins: [], tripComments: [], repliesByParent: new Map() },
     [comments, trip]
   );
   const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed]);
@@ -109,106 +112,111 @@ export function TripDetailPage({
   return shell(
     <>
       <div className="trip-detail-cover">
-          {coverUrl ? (
-            <ShimmerImage src={getUploadUrl(coverUrl)} className="trip-detail-cover-media" loading="eager" />
-          ) : (
-            <div className="trip-detail-cover-placeholder" aria-hidden>
-              <Icon name="briefcase" size={48} strokeWidth={1.5} />
-            </div>
-          )}
-        </div>
-
-        <section className="trip-detail-header">
-          <Badge color="info" variant={trip.closed ? 'outline' : 'solid'}>
-            <Icon name="briefcase" size={12} strokeWidth={2.2} />
-            {trip.closed ? t('trip.detail.closedBadge') : t('trip.detail.activeBadge', { day: trip.dayNumber ?? 1 })}
-          </Badge>
-          <h1 className="trip-detail-title">{trip.title}</h1>
-          {trip.destination && <div className="trip-detail-destination">→ {trip.destination}</div>}
-
-          {!trip.closed ? (
-            <div className="trip-detail-author-row">
-              <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={30} />
-              <span>{t('trip.detail.sinceLabel', { author: post.author.name, date: formatDayMonth(trip.startDate, i18n.language) })}</span>
-            </div>
-          ) : (
-            <div className="trip-detail-stats">
-              <div className="trip-detail-stat">
-                <div className="trip-detail-stat-number">{trip.stopCount}</div>
-                <div className="trip-detail-stat-label">{t('trip.detail.statsStops')}</div>
-              </div>
-              <div className="trip-detail-stat">
-                <div className="trip-detail-stat-number">{trip.photoCount}</div>
-                <div className="trip-detail-stat-label">{t('trip.detail.statsPhotos')}</div>
-              </div>
-              <div className="trip-detail-stat">
-                <div className="trip-detail-stat-number">{trip.durationDays ?? 0}</div>
-                <div className="trip-detail-stat-label">{t('trip.detail.statsDays')}</div>
-              </div>
-            </div>
-          )}
-
-          {travelers.length > 0 && (
-            <div className="trip-detail-travelers" aria-label={t('trip.detail.travelersRowLabel')}>
-              <AvatarStack people={travelers} size={26} />
-              <span className="trip-detail-travelers-text">
-                {t('trip.detail.travelersWith', { names: travelers.map((traveler) => traveler.name).join(', ') })}
-              </span>
-            </div>
-          )}
-        </section>
-
-        <section className="trip-detail-comments-section">
-          <h2 className="trip-detail-section-title">
-            <Icon name="message-square" size={16} />
-            {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
-          </h2>
-          <CommentsSection post={post} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
-        </section>
-
-        {sortedCheckins.length > 0 && (
-          <div className="trip-detail-timeline-label">
-            {trip.closed ? t('trip.detail.timelineLabelClosed') : t('trip.detail.timelineLabelActive')}
+        {coverUrl ? (
+          <ShimmerImage src={getUploadUrl(coverUrl)} className="trip-detail-cover-media" loading="eager" />
+        ) : (
+          <div className="trip-detail-cover-placeholder" aria-hidden>
+            <Icon name="briefcase" size={48} strokeWidth={1.5} />
           </div>
         )}
+      </div>
 
-        {sortedCheckins.length === 0 ? (
-          <div className="trip-detail-empty">
-            <div className="trip-detail-empty-icon" aria-hidden>
-              <Icon name="briefcase" size={28} strokeWidth={1.5} />
-            </div>
-            <div className="trip-detail-empty-title">{t('trip.detail.emptyTitle')}</div>
-            <div className="trip-detail-empty-description">
-              {t('trip.detail.emptyDescription', { name: post.author.name })}
-            </div>
+      <section className="trip-detail-header">
+        <Badge color="info" variant={trip.closed ? 'outline' : 'solid'}>
+          <Icon name="briefcase" size={12} strokeWidth={2.2} />
+          {trip.closed ? t('trip.detail.closedBadge') : t('trip.detail.activeBadge', { day: trip.dayNumber ?? 1 })}
+        </Badge>
+        <h1 className="trip-detail-title">{trip.title}</h1>
+        {trip.destination && <div className="trip-detail-destination">→ {trip.destination}</div>}
+
+        {!trip.closed ? (
+          <div className="trip-detail-author-row">
+            <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={30} />
+            <span>
+              {t('trip.detail.sinceLabel', {
+                author: post.author.name,
+                date: formatDayMonth(trip.startDate, i18n.language),
+              })}
+            </span>
           </div>
         ) : (
-          <ol className="trip-detail-timeline">
-            {sortedCheckins.map((entry, index) => (
-              <CheckinTimelineItem
-                key={entry.comment.id}
-                entry={entry}
-                tripAuthorId={post.authorId}
-                closed={trip.closed}
-                isLast={index === sortedCheckins.length - 1}
-                onOpenPhotos={(urls, i) => setLightbox({ urls, index: i })}
-              />
-            ))}
-          </ol>
-        )}
-
-        {trip.closed && (
-          <div className="trip-detail-closing-line">
-            {t('trip.detail.closingLine', {
-              author: post.author.name,
-              date: formatDayMonth(trip.closedAt || trip.endDate || trip.startDate, i18n.language),
-            })}
+          <div className="trip-detail-stats">
+            <div className="trip-detail-stat">
+              <div className="trip-detail-stat-number">{trip.stopCount}</div>
+              <div className="trip-detail-stat-label">{t('trip.detail.statsStops')}</div>
+            </div>
+            <div className="trip-detail-stat">
+              <div className="trip-detail-stat-number">{trip.photoCount}</div>
+              <div className="trip-detail-stat-label">{t('trip.detail.statsPhotos')}</div>
+            </div>
+            <div className="trip-detail-stat">
+              <div className="trip-detail-stat-number">{trip.durationDays ?? 0}</div>
+              <div className="trip-detail-stat-label">{t('trip.detail.statsDays')}</div>
+            </div>
           </div>
         )}
 
-        {lightbox && (
-          <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
+        {travelers.length > 0 && (
+          <div className="trip-detail-travelers" aria-label={t('trip.detail.travelersRowLabel')}>
+            <AvatarStack people={travelers} size={26} />
+            <span className="trip-detail-travelers-text">
+              {t('trip.detail.travelersWith', { names: travelers.map((traveler) => traveler.name).join(', ') })}
+            </span>
+          </div>
         )}
+      </section>
+
+      <section className="trip-detail-comments-section">
+        <h2 className="trip-detail-section-title">
+          <Icon name="message-square" size={16} />
+          {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
+        </h2>
+        <CommentsSection post={post} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
+      </section>
+
+      {sortedCheckins.length > 0 && (
+        <div className="trip-detail-timeline-label">
+          {trip.closed ? t('trip.detail.timelineLabelClosed') : t('trip.detail.timelineLabelActive')}
+        </div>
+      )}
+
+      {sortedCheckins.length === 0 ? (
+        <div className="trip-detail-empty">
+          <div className="trip-detail-empty-icon" aria-hidden>
+            <Icon name="briefcase" size={28} strokeWidth={1.5} />
+          </div>
+          <div className="trip-detail-empty-title">{t('trip.detail.emptyTitle')}</div>
+          <div className="trip-detail-empty-description">
+            {t('trip.detail.emptyDescription', { name: post.author.name })}
+          </div>
+        </div>
+      ) : (
+        <ol className="trip-detail-timeline">
+          {sortedCheckins.map((entry, index) => (
+            <CheckinTimelineItem
+              key={entry.comment.id}
+              entry={entry}
+              tripAuthorId={post.authorId}
+              closed={trip.closed}
+              isLast={index === sortedCheckins.length - 1}
+              onOpenPhotos={(urls, i) => setLightbox({ urls, index: i })}
+            />
+          ))}
+        </ol>
+      )}
+
+      {trip.closed && (
+        <div className="trip-detail-closing-line">
+          {t('trip.detail.closingLine', {
+            author: post.author.name,
+            date: formatDayMonth(trip.closedAt || trip.endDate || trip.startDate, i18n.language),
+          })}
+        </div>
+      )}
+
+      {lightbox && (
+        <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 }
@@ -360,7 +368,11 @@ function CheckinTimelineItem({
               maxLength={2000}
               autoFocus
             />
-            <button type="submit" className="btn btn-primary comment-send" disabled={!replyDraft.trim() || replyMutation.isPending}>
+            <button
+              type="submit"
+              className="btn btn-primary comment-send"
+              disabled={!replyDraft.trim() || replyMutation.isPending}
+            >
               {t('comments.send')}
             </button>
           </form>

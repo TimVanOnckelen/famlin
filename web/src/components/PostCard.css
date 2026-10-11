@@ -551,7 +551,10 @@ a.post-time:focus-visible {
   opacity: 0;
   visibility: hidden;
   transform: translateY(4px);
-  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease,
+    visibility 0.12s;
   z-index: 10;
 }
 

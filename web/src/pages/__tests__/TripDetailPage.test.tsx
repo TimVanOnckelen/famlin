@@ -43,7 +43,9 @@ describe('TripDetailPage', () => {
       makeComment({ id: 'com-1', authorId: 'user-2', content: 'Have a great trip!' }),
     ]);
 
-    const { container } = renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
+    const { container } = renderWithQueryClient(
+      <TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />
+    );
 
     expect(await screen.findByText('Road trip Italy')).toBeInTheDocument();
     expect(screen.getByText('Timeline · newest first')).toBeInTheDocument();
@@ -89,7 +91,9 @@ describe('TripDetailPage', () => {
       }),
     ]);
 
-    const { container } = renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
+    const { container } = renderWithQueryClient(
+      <TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />
+    );
 
     expect(await screen.findByText('Diary · oldest first')).toBeInTheDocument();
     const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent);

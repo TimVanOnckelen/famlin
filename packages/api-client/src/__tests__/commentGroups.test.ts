@@ -54,20 +54,12 @@ describe('commentAttachments', () => {
 
 describe('groupCommentAttachments', () => {
   it('bundles adjacent photo-only comments from the same author', () => {
-    const groups = groupCommentAttachments([
-      photoComment('c1', 0),
-      photoComment('c2', 1),
-      photoComment('c3', 2),
-    ]);
+    const groups = groupCommentAttachments([photoComment('c1', 0), photoComment('c2', 1), photoComment('c3', 2)]);
 
     expect(groups).toHaveLength(1);
     expect(groups[0].isBundle).toBe(true);
     expect(groups[0].lead.id).toBe('c1');
-    expect(groups[0].attachments.map((a) => a.url)).toEqual([
-      '/uploads/c1.jpg',
-      '/uploads/c2.jpg',
-      '/uploads/c3.jpg',
-    ]);
+    expect(groups[0].attachments.map((a) => a.url)).toEqual(['/uploads/c1.jpg', '/uploads/c2.jpg', '/uploads/c3.jpg']);
     expect(groups[0].latestCreatedAt).toBe(photoComment('c3', 2).createdAt);
   });
 
@@ -77,11 +69,7 @@ describe('groupCommentAttachments', () => {
       photoComment('c2', 1),
     ]);
 
-    expect(groups[0].attachments.map((a) => a.url)).toEqual([
-      '/uploads/a.jpg',
-      '/uploads/b.jpg',
-      '/uploads/c2.jpg',
-    ]);
+    expect(groups[0].attachments.map((a) => a.url)).toEqual(['/uploads/a.jpg', '/uploads/b.jpg', '/uploads/c2.jpg']);
     expect(groups[0].attachments[1].commentId).toBe('c1');
   });
 

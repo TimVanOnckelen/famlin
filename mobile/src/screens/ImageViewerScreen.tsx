@@ -167,8 +167,7 @@ function ImagePage({
       onPanResponderTerminationRequest: () => z.scale <= 1,
       // Android: once we do own a pinch or a zoomed pan, keep the pager
       // from stealing it mid-gesture.
-      onShouldBlockNativeResponder: (evt) =>
-        evt.nativeEvent.touches.length >= 2 || z.scale > 1,
+      onShouldBlockNativeResponder: (evt) => evt.nativeEvent.touches.length >= 2 || z.scale > 1,
       onPanResponderGrant: () => {
         z.pinchBase = null;
         z.panStart = null;
@@ -179,10 +178,7 @@ function ImagePage({
         if (touches.length >= 2) {
           z.moved = true;
           z.panStart = null;
-          const dist = Math.hypot(
-            touches[0].pageX - touches[1].pageX,
-            touches[0].pageY - touches[1].pageY
-          );
+          const dist = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
           if (dist <= 0) return;
           // pinchBase = finger distance per unit of scale, captured at pinch
           // start, so scale tracks the fingers relative to where they began.
@@ -246,8 +242,7 @@ function ImagePage({
     const start = z.touchStart;
     z.touchStart = null;
     if (!start) return;
-    const movedTooFar =
-      Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 10;
+    const movedTooFar = Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 10;
     const now = Date.now();
     if (movedTooFar || now - start.at > DOUBLE_TAP_WINDOW_MS) return;
     if (now - z.lastTapAt < DOUBLE_TAP_WINDOW_MS) {
@@ -538,10 +533,7 @@ export function ImageViewerScreen() {
   return (
     <Animated.View style={[styles.root, { opacity: viewerOpacity }]} needsOffscreenAlphaCompositing>
       <View style={styles.backdrop} />
-      <Animated.View
-        style={[styles.animatedContent, { transform: [{ translateY }] }]}
-        {...panResponder.panHandlers}
-      >
+      <Animated.View style={[styles.animatedContent, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} hitSlop={16}>
@@ -576,7 +568,10 @@ export function ImageViewerScreen() {
                   url={url}
                   width={width}
                   isActive={index === currentIndex}
-                  accessibilityLabel={t('imageViewer.videoAccessibilityLabel', { index: index + 1, total: urls.length })}
+                  accessibilityLabel={t('imageViewer.videoAccessibilityLabel', {
+                    index: index + 1,
+                    total: urls.length,
+                  })}
                 />
               ) : (
                 <ImagePage
@@ -585,7 +580,10 @@ export function ImageViewerScreen() {
                   width={width}
                   isActive={index === currentIndex}
                   onZoomChange={handleZoomChange}
-                  accessibilityLabel={t('imageViewer.photoAccessibilityLabel', { index: index + 1, total: urls.length })}
+                  accessibilityLabel={t('imageViewer.photoAccessibilityLabel', {
+                    index: index + 1,
+                    total: urls.length,
+                  })}
                 />
               )
             )}
@@ -680,10 +678,7 @@ function PhotoCommentsSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={sheetStyles.overlay}>
         <TouchableOpacity style={sheetStyles.backdrop} activeOpacity={1} onPress={onClose} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={sheetStyles.sheet}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={sheetStyles.sheet}>
           <View style={sheetStyles.handle} />
           <View style={sheetStyles.headerRow}>
             <Text style={sheetStyles.title}>{t('imageViewer.commentsTitle')}</Text>
@@ -698,9 +693,7 @@ function PhotoCommentsSheet({
             style={sheetStyles.list}
             contentContainerStyle={sheetStyles.listContent}
             ListEmptyComponent={
-              isLoading ? null : (
-                <Text style={sheetStyles.emptyText}>{t('imageViewer.noComments')}</Text>
-              )
+              isLoading ? null : <Text style={sheetStyles.emptyText}>{t('imageViewer.noComments')}</Text>
             }
             renderItem={({ item }) => (
               <View style={sheetStyles.commentItem}>

@@ -33,10 +33,7 @@ export function AppleSignInButton({ serverSupported, onSuccess, inviteToken }: A
       await onSuccess(result);
     } catch (err: any) {
       if (err instanceof AppleCancelledError) return;
-      Alert.alert(
-        t('login.alerts.loginFailedTitle'),
-        err.response?.data?.error || err.message || t('common.tryAgain')
-      );
+      Alert.alert(t('login.alerts.loginFailedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
     } finally {
       setBusy(false);
     }

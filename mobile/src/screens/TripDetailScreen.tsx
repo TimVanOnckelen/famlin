@@ -68,7 +68,10 @@ export function TripDetailScreen() {
   const trip = post?.trip;
 
   const { checkins, tripComments, repliesByParent } = useMemo(
-    () => (trip ? splitTripComments(comments || [], trip.startDate) : { checkins: [], tripComments: [], repliesByParent: new Map() }),
+    () =>
+      trip
+        ? splitTripComments(comments || [], trip.startDate)
+        : { checkins: [], tripComments: [], repliesByParent: new Map() },
     [comments, trip]
   );
 
@@ -211,7 +214,12 @@ export function TripDetailScreen() {
             />
           )}
           ListEmptyComponent={
-            <TripEmptyState trip={trip} authorName={post.author.name} canCheckIn={canCheckIn} onAddCheckin={() => setCheckinComposerOpen(true)} />
+            <TripEmptyState
+              trip={trip}
+              authorName={post.author.name}
+              canCheckIn={canCheckIn}
+              onAddCheckin={() => setCheckinComposerOpen(true)}
+            />
           }
           ListFooterComponent={
             trip.closed ? (
@@ -381,11 +389,7 @@ function TripHeader({
         )}
 
         {travelers.length > 0 && (
-          <View
-            style={styles.travelersRow}
-            accessible={true}
-            accessibilityLabel={t('trip.detail.travelersRowLabel')}
-          >
+          <View style={styles.travelersRow} accessible={true} accessibilityLabel={t('trip.detail.travelersRowLabel')}>
             <View style={styles.travelersStack}>
               {travelers.slice(0, 5).map((traveler, index) => (
                 <View key={traveler.id} style={[styles.travelerFace, index > 0 && styles.travelerFaceOverlap]}>
@@ -578,7 +582,11 @@ function CheckinTimelineItem({
                 activeOpacity={0.9}
                 onPress={() => onOpenPhotos(index)}
               >
-                <MediaThumbnail url={getUploadUrl(url, 'thumbnail')} fallbackUrl={getUploadUrl(url)} style={styles.timelinePhotoImage} />
+                <MediaThumbnail
+                  url={getUploadUrl(url, 'thumbnail')}
+                  fallbackUrl={getUploadUrl(url)}
+                  style={styles.timelinePhotoImage}
+                />
               </TouchableOpacity>
             ))}
           </View>

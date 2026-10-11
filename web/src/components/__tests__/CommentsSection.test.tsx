@@ -19,7 +19,12 @@ describe('CommentsSection', () => {
   it('lists comments with replies indented under their parent', async () => {
     vi.mocked(fetchComments).mockResolvedValue([
       makeComment({ id: 'c1', content: 'First!' }),
-      makeComment({ id: 'c2', content: 'A reply', parentId: 'c1', author: { id: 'u3', name: 'Rita', avatarUrl: null } }),
+      makeComment({
+        id: 'c2',
+        content: 'A reply',
+        parentId: 'c1',
+        author: { id: 'u3', name: 'Rita', avatarUrl: null },
+      }),
     ]);
     renderWithQueryClient(<CommentsSection post={makePost()} />);
 
@@ -44,9 +49,7 @@ describe('CommentsSection', () => {
 
     expect(createComment).toHaveBeenCalledWith('post-1', { content: 'Hello family' });
     expect(await screen.findByText('Hello family')).toBeInTheDocument();
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText('Write a comment…')).toHaveValue('')
-    );
+    await waitFor(() => expect(screen.getByPlaceholderText('Write a comment…')).toHaveValue(''));
   });
 
   it('disables send for an empty draft', async () => {
@@ -91,9 +94,7 @@ describe('CommentsSection', () => {
     let previewId = 0;
     URL.createObjectURL = vi.fn(() => `blob:mock-preview-${previewId++}`);
     URL.revokeObjectURL = vi.fn();
-    const uploadSpy = vi
-      .spyOn(api, 'post')
-      .mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } });
+    const uploadSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } });
     const user = userEvent.setup();
     vi.mocked(fetchComments).mockResolvedValue([]);
     vi.mocked(createComment).mockResolvedValue(
@@ -135,7 +136,12 @@ describe('CommentsSection', () => {
   it('keeps a photo comment that has text on its own card', async () => {
     vi.mocked(fetchComments).mockResolvedValue([
       makeComment({ id: 'c1', content: '', attachmentUrls: ['/uploads/a.jpg'], createdAt: '2026-07-08T11:00:00Z' }),
-      makeComment({ id: 'c2', content: 'Look!', attachmentUrls: ['/uploads/b.jpg'], createdAt: '2026-07-08T11:01:00Z' }),
+      makeComment({
+        id: 'c2',
+        content: 'Look!',
+        attachmentUrls: ['/uploads/b.jpg'],
+        createdAt: '2026-07-08T11:01:00Z',
+      }),
     ]);
     const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />);
 
@@ -148,12 +154,19 @@ describe('CommentsSection', () => {
   // 'trip_checkin') or their replies — see web's TripDetailPage.tsx.
   it('excludes comments (and their replies) that filterComments removes', async () => {
     vi.mocked(fetchComments).mockResolvedValue([
-      makeComment({ id: 'checkin-1', content: 'Arrived in Bologna!', metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'checkin-1' } }),
+      makeComment({
+        id: 'checkin-1',
+        content: 'Arrived in Bologna!',
+        metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'checkin-1' },
+      }),
       makeComment({ id: 'checkin-reply', content: 'Nice!', parentId: 'checkin-1' }),
       makeComment({ id: 'trip-comment', content: 'Have a great trip!' }),
     ]);
     renderWithQueryClient(
-      <CommentsSection post={makePost()} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
+      <CommentsSection
+        post={makePost()}
+        filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')}
+      />
     );
 
     expect(await screen.findByText('Have a great trip!')).toBeInTheDocument();

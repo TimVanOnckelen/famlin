@@ -45,9 +45,7 @@ describe('usePushNotifications', () => {
   });
 
   it('registers the push token once when a signed-in user is present', async () => {
-    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) =>
-      selector({ user: { id: 'u1' } })
-    );
+    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: { id: 'u1' } }));
     (fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: true });
     (registerPushToken as jest.Mock).mockResolvedValue(undefined);
 
@@ -61,9 +59,7 @@ describe('usePushNotifications', () => {
   });
 
   it('does not register when the server reports push notifications disabled', async () => {
-    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) =>
-      selector({ user: { id: 'u1' } })
-    );
+    (useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: { id: 'u1' } }));
     (fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: false });
 
     renderHook(() => usePushNotifications());

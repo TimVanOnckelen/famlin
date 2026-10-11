@@ -105,7 +105,9 @@ describe('runNewAssetsJob', () => {
     __registerMediaProviderForTests(
       makeFakeProvider(PROVIDER_ID, {
         async listAlbumAssets() {
-          return [{ id: 'a1', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: new Date().toISOString() }];
+          return [
+            { id: 'a1', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: new Date().toISOString() },
+          ];
         },
       })
     );
@@ -143,7 +145,14 @@ describe('runNewAssetsJob', () => {
       makeFakeProvider(PROVIDER_ID, {
         async listAlbumAssets() {
           return [
-            { id: 'old', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: new Date(checkedAt.getTime() - 1000).toISOString() },
+            {
+              id: 'old',
+              type: 'IMAGE',
+              width: 1,
+              height: 1,
+              originalExt: 'jpg',
+              addedAt: new Date(checkedAt.getTime() - 1000).toISOString(),
+            },
             { id: 'new1', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: freshAddedAt },
             { id: 'new2', type: 'VIDEO', width: 1, height: 1, originalExt: 'mp4', addedAt: freshAddedAt },
           ];
@@ -252,7 +261,9 @@ describe('runNewAssetsJob', () => {
     __registerMediaProviderForTests(
       makeFakeProvider(PROVIDER_ID, {
         async listAlbumAssets() {
-          return [{ id: 'h1', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: new Date().toISOString() }];
+          return [
+            { id: 'h1', type: 'IMAGE', width: 1, height: 1, originalExt: 'jpg', addedAt: new Date().toISOString() },
+          ];
         },
       })
     );

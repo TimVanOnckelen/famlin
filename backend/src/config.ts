@@ -42,6 +42,4 @@ export const config = envSchema.parse(process.env);
 // directory must use this rather than recomputing it from process.cwd(), so
 // an override applies everywhere (the upload route, the static file hook,
 // cross-post asset copies, and the admin export) or nowhere.
-export const uploadsDir = path.resolve(
-  config.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads')
-);
+export const uploadsDir = path.resolve(config.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads'));

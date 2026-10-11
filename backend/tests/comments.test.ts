@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
-import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, createComment, authHeader } from './helpers.js';
+import {
+  buildTestApp,
+  createUser,
+  createGroupWithMember,
+  addMember,
+  createPost,
+  createComment,
+  authHeader,
+} from './helpers.js';
 
 // The API only accepts assetUrl/uploadedAssetUrls matching the app's
 // /uploads/<uuid>.<ext> upload path format (see UPLOAD_PATH_REGEX in
@@ -54,7 +62,7 @@ describe('comments routes', () => {
   });
 
   describe('authorization on mutation', () => {
-    it('rejects a non-author editing another member\'s comment', async () => {
+    it("rejects a non-author editing another member's comment", async () => {
       const author = await createUser();
       const otherMember = await createUser();
       const group = await createGroupWithMember(author);
@@ -72,7 +80,7 @@ describe('comments routes', () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it('lets an admin delete another member\'s comment', async () => {
+    it("lets an admin delete another member's comment", async () => {
       const author = await createUser();
       const admin = await createUser({ isAdmin: true });
       const group = await createGroupWithMember(author);
@@ -106,7 +114,7 @@ describe('comments routes', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('a reply inherits the parent comment\'s pinned assetUrl, ignoring any client override', async () => {
+    it("a reply inherits the parent comment's pinned assetUrl, ignoring any client override", async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
       const [assetA, assetB] = [assetPath(), assetPath()];
@@ -273,7 +281,12 @@ describe('comments routes', () => {
   describe('editing attachments', () => {
     // Creating through the route rather than the fixture so both attachment
     // columns are populated the way a real comment's are.
-    async function postComment(app: FastifyInstance, postId: string, user: Parameters<typeof authHeader>[0], payload: object) {
+    async function postComment(
+      app: FastifyInstance,
+      postId: string,
+      user: Parameters<typeof authHeader>[0],
+      payload: object
+    ) {
       const res = await app.inject({
         method: 'POST',
         url: `/api/posts/${postId}/comments`,

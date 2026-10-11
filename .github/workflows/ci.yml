@@ -54,6 +54,11 @@ jobs:
       # ordering note on the admin/mobile jobs further down.
       - name: Install workspace dependencies (builds @famlin/api-client)
         run: npm ci
+      # One root Prettier config covers backend, admin, web, api-client and
+      # mobile (see .prettierignore for what's excluded). Run `npm run format`
+      # from the repo root to fix a failure here.
+      - name: Check formatting (Prettier)
+        run: npm run format:check
       - name: Lint shared API client
         working-directory: packages/api-client
         run: npm run lint

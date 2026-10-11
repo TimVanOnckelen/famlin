@@ -188,10 +188,7 @@ export const createCommentBodySchema = z
  * the legacy single-photo fallback. Duplicate paths are dropped so the same
  * upload can't be listed twice in one comment.
  */
-export function normalizeCommentAttachments(body: {
-  attachmentUrl?: string;
-  attachmentUrls?: string[];
-}): string[] {
+export function normalizeCommentAttachments(body: { attachmentUrl?: string; attachmentUrls?: string[] }): string[] {
   const urls = body.attachmentUrls?.length ? body.attachmentUrls : body.attachmentUrl ? [body.attachmentUrl] : [];
   return [...new Set(urls)];
 }

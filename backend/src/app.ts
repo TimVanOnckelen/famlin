@@ -78,8 +78,7 @@ export async function buildApp() {
 
     const contentLength = request.headers['content-length'];
     const framed =
-      request.headers['transfer-encoding'] !== undefined ||
-      (contentLength !== undefined && contentLength !== '0');
+      request.headers['transfer-encoding'] !== undefined || (contentLength !== undefined && contentLength !== '0');
 
     if (!framed) delete request.headers['content-type'];
   });
@@ -95,7 +94,7 @@ export async function buildApp() {
     if (!config.TRUST_PROXY && !loggedProxyHeaderMismatch && request.headers['x-forwarded-for']) {
       loggedProxyHeaderMismatch = true;
       fastify.log.warn(
-        'Received an X-Forwarded-For header but TRUST_PROXY is not enabled. If this server sits behind a reverse proxy, every request will appear to come from the proxy\'s IP, collapsing rate limiting across all clients, and X-Forwarded-Proto/Host will be ignored so generated URLs (including OIDC redirect URIs) will use the raw connection scheme. Set TRUST_PROXY=true (only if that proxy is trusted to set these headers).'
+        "Received an X-Forwarded-For header but TRUST_PROXY is not enabled. If this server sits behind a reverse proxy, every request will appear to come from the proxy's IP, collapsing rate limiting across all clients, and X-Forwarded-Proto/Host will be ignored so generated URLs (including OIDC redirect URIs) will use the raw connection scheme. Set TRUST_PROXY=true (only if that proxy is trusted to set these headers)."
       );
     }
   });

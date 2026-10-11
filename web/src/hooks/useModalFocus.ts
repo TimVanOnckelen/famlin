@@ -9,11 +9,7 @@ const FOCUSABLE_SELECTOR =
 // to the modal's content element (the one carrying role="dialog"), not the
 // overlay backdrop — NewPostModal.tsx and ShortcutsDialog.tsx are the
 // reference usages.
-export function useModalFocus(
-  containerRef: RefObject<HTMLElement | null>,
-  onClose: () => void,
-  active = true
-) {
+export function useModalFocus(containerRef: RefObject<HTMLElement | null>, onClose: () => void, active = true) {
   useEffect(() => {
     if (!active) return;
     const container = containerRef.current;

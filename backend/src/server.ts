@@ -38,8 +38,7 @@ async function start() {
   // media included (see src/jobs/expireStories.ts). Also run once at boot so
   // a server that was down for a while doesn't keep expired media around
   // until the first tick.
-  const expireStories = () =>
-    runExpireStoriesJob().catch((err) => fastify.log.error(err, 'expire-stories job failed'));
+  const expireStories = () => runExpireStoriesJob().catch((err) => fastify.log.error(err, 'expire-stories job failed'));
   const expireStoriesTask = cron.schedule('*/10 * * * *', expireStories);
   expireStories();
 

@@ -100,9 +100,7 @@ export function PostDetailScreen() {
   const [commentAttachments, setCommentAttachments] = useState<
     { uri: string; isVideo: boolean; uploadedUrl?: string }[]
   >([]);
-  const uploadedAttachmentUrls = commentAttachments
-    .map((a) => a.uploadedUrl)
-    .filter((url): url is string => !!url);
+  const uploadedAttachmentUrls = commentAttachments.map((a) => a.uploadedUrl).filter((url): url is string => !!url);
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
@@ -260,9 +258,7 @@ export function PostDetailScreen() {
     // Only mention someone whose "@name" is still actually present in the
     // final text — if the user deleted it after picking it from the list,
     // don't notify them.
-    const mentionedUserIds = selectedMentions
-      .filter((m) => commentText.includes(`@${m.name}`))
-      .map((m) => m.id);
+    const mentionedUserIds = selectedMentions.filter((m) => commentText.includes(`@${m.name}`)).map((m) => m.id);
     commentMutation.mutate({
       content: trimmed,
       parentId: replyingTo?.id,
@@ -276,7 +272,11 @@ export function PostDetailScreen() {
   // removes exactly those and leaves earlier picks alone.
   const attachmentBatchSize = useRef(0);
 
-  const { pick: pickAttachmentMedia, uploading: attachmentUploading, progress: attachmentUploadProgress } = usePickAndUploadMedia({
+  const {
+    pick: pickAttachmentMedia,
+    uploading: attachmentUploading,
+    progress: attachmentUploadProgress,
+  } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -289,10 +289,7 @@ export function PostDetailScreen() {
     // is in flight; drop them again if it fails.
     onPicked: (assets) => {
       attachmentBatchSize.current = assets.length;
-      setCommentAttachments((old) => [
-        ...old,
-        ...assets.map((asset) => ({ uri: asset.uri, isVideo: asset.isVideo })),
-      ]);
+      setCommentAttachments((old) => [...old, ...assets.map((asset) => ({ uri: asset.uri, isVideo: asset.isVideo }))]);
     },
     onError: () => {
       setCommentAttachments((old) => old.slice(0, Math.max(0, old.length - attachmentBatchSize.current)));
@@ -323,7 +320,11 @@ export function PostDetailScreen() {
   // from the server, the saved list just stops referring to it.
   const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length;
 
-  const { pick: pickEditPostMedia, uploading: editPostUploading, progress: editPostUploadProgress } = usePickAndUploadMedia({
+  const {
+    pick: pickEditPostMedia,
+    uploading: editPostUploading,
+    progress: editPostUploadProgress,
+  } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -353,11 +354,14 @@ export function PostDetailScreen() {
   }
 
   function selectMention(member: GroupMember) {
-    const replaced = commentText.replace(TRAILING_MENTION_REGEX, (matched) =>
-      (matched.startsWith(' ') ? ' ' : '') + `@${member.name} `
+    const replaced = commentText.replace(
+      TRAILING_MENTION_REGEX,
+      (matched) => (matched.startsWith(' ') ? ' ' : '') + `@${member.name} `
     );
     setCommentText(replaced);
-    setSelectedMentions((prev) => (prev.some((m) => m.id === member.id) ? prev : [...prev, { id: member.id, name: member.name }]));
+    setSelectedMentions((prev) =>
+      prev.some((m) => m.id === member.id) ? prev : [...prev, { id: member.id, name: member.name }]
+    );
     setMentionQuery(null);
   }
 
@@ -466,212 +470,229 @@ export function PostDetailScreen() {
                   )}
                 </View>
               )}
-            <View
-              style={[
-                styles.postContainer,
-                showHeroPhoto && styles.postContainerOverlap,
-                isMilestone && !hasPhotos && styles.milestoneContainer,
-              ]}
-            >
-              {isMilestone && !hasPhotos && (
-                <View style={styles.milestoneBadge}>
-                  <View style={styles.milestoneBadgePill}>
-                    <Icon name="gift" size={12} color={colors.milestoneText} />
-                    <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
-                  </View>
-                </View>
-              )}
-
-              <View style={styles.authorRow}>
-                <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={48} />
-                <View style={styles.authorInfo}>
-                  <Text style={styles.authorName}>{post.author.name}</Text>
-                  <Text style={styles.postTime}>
-                    {post.group?.name
-                      ? t('postDetail.postedInGroup', {
-                          group: post.group.name,
-                          time: formatRelativeDate(post.createdAt),
-                        })
-                      : formatRelativeDate(post.createdAt)}
-                    {post.editedAt ? ` · ${t('common.edited')}` : ''}
-                  </Text>
-                </View>
-                {isOwnPost && !isEditingPost && (
-                  <TouchableOpacity
-                    onPress={openPostMenu}
-                    style={styles.postMenuButton}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Icon name="more-vertical" size={20} color={colors.textMuted} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {isEditingPost ? (
-                <View style={styles.postEditContainer}>
-                  <TextInput
-                    style={styles.postEditInput}
-                    value={editPostContent}
-                    onChangeText={setEditPostContent}
-                    placeholder={t('postDetail.editPlaceholder')}
-                    placeholderTextColor={colors.textMuted}
-                    multiline
-                    autoFocus
-                  />
-
-                  {(editPostAssets.length > 0 || editPostPendingAssets.length > 0) && (
-                    <View style={styles.editAttachmentRow}>
-                      {editPostAssets.map((url) => (
-                        <View style={styles.attachmentPreview} key={url}>
-                          <MediaThumbnail
-                            url={getUploadUrl(url, 'thumbnail')}
-                            fallbackUrl={getUploadUrl(url)}
-                            style={styles.attachmentPreviewImage}
-                          />
-                          <TouchableOpacity
-                            style={styles.attachmentRemoveButton}
-                            onPress={() => removeEditPostAsset(url)}
-                            accessibilityLabel={t('postDetail.removeAttachment')}
-                          >
-                            <Icon name="x" size={12} color={colors.white} />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                      {editPostPendingAssets.map((asset, index) => (
-                        <View style={styles.attachmentPreview} key={`pending-${index}`}>
-                          <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
-                          <UploadProgressOverlay progress={editPostUploadProgress} style={styles.attachmentUploadingOverlay} />
-                        </View>
-                      ))}
+              <View
+                style={[
+                  styles.postContainer,
+                  showHeroPhoto && styles.postContainerOverlap,
+                  isMilestone && !hasPhotos && styles.milestoneContainer,
+                ]}
+              >
+                {isMilestone && !hasPhotos && (
+                  <View style={styles.milestoneBadge}>
+                    <View style={styles.milestoneBadgePill}>
+                      <Icon name="gift" size={12} color={colors.milestoneText} />
+                      <Text style={styles.milestoneBadgeText}>{t('postDetail.milestoneBadge')}</Text>
                     </View>
-                  )}
-
-                  <View style={styles.postEditActions}>
-                    <TouchableOpacity
-                      style={styles.editAddPhotoButton}
-                      onPress={pickEditPostAssets}
-                      disabled={editPostUploading || editPostAssetRoom <= 0}
-                      accessibilityLabel={t('postDetail.addAttachment')}
-                    >
-                      <Icon name="image" size={16} color={colors.primary} />
-                      <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.editActionsSpacer} />
-                    <TouchableOpacity
-                      style={styles.postEditCancelButton}
-                      onPress={cancelEditPost}
-                      disabled={editPostMutation.isPending}
-                    >
-                      <Text style={styles.postEditCancelText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.postEditSaveButton,
-                        (!canSavePostEdit || editPostUploading) && styles.sendButtonDisabled,
-                      ]}
-                      onPress={() =>
-                        editPostMutation.mutate({
-                          content: editPostContent.trim(),
-                          uploadedAssetUrls: editPostAssets,
-                        })
-                      }
-                      disabled={editPostMutation.isPending || editPostUploading || !canSavePostEdit}
-                    >
-                      <Text style={styles.postEditSaveText}>{t('common.save')}</Text>
-                    </TouchableOpacity>
                   </View>
-                </View>
-              ) : isMilestone ? (
-                !hasPhotos && <Text style={styles.milestoneTitle}>{post.content}</Text>
-              ) : (
-                !!post.content && <Text style={styles.postContent}>{post.content}</Text>
-              )}
+                )}
 
-              {/* Registry entry for post.type (e.g. POLL) — renders below the
+                <View style={styles.authorRow}>
+                  <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size={48} />
+                  <View style={styles.authorInfo}>
+                    <Text style={styles.authorName}>{post.author.name}</Text>
+                    <Text style={styles.postTime}>
+                      {post.group?.name
+                        ? t('postDetail.postedInGroup', {
+                            group: post.group.name,
+                            time: formatRelativeDate(post.createdAt),
+                          })
+                        : formatRelativeDate(post.createdAt)}
+                      {post.editedAt ? ` · ${t('common.edited')}` : ''}
+                    </Text>
+                  </View>
+                  {isOwnPost && !isEditingPost && (
+                    <TouchableOpacity
+                      onPress={openPostMenu}
+                      style={styles.postMenuButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Icon name="more-vertical" size={20} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {isEditingPost ? (
+                  <View style={styles.postEditContainer}>
+                    <TextInput
+                      style={styles.postEditInput}
+                      value={editPostContent}
+                      onChangeText={setEditPostContent}
+                      placeholder={t('postDetail.editPlaceholder')}
+                      placeholderTextColor={colors.textMuted}
+                      multiline
+                      autoFocus
+                    />
+
+                    {(editPostAssets.length > 0 || editPostPendingAssets.length > 0) && (
+                      <View style={styles.editAttachmentRow}>
+                        {editPostAssets.map((url) => (
+                          <View style={styles.attachmentPreview} key={url}>
+                            <MediaThumbnail
+                              url={getUploadUrl(url, 'thumbnail')}
+                              fallbackUrl={getUploadUrl(url)}
+                              style={styles.attachmentPreviewImage}
+                            />
+                            <TouchableOpacity
+                              style={styles.attachmentRemoveButton}
+                              onPress={() => removeEditPostAsset(url)}
+                              accessibilityLabel={t('postDetail.removeAttachment')}
+                            >
+                              <Icon name="x" size={12} color={colors.white} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                        {editPostPendingAssets.map((asset, index) => (
+                          <View style={styles.attachmentPreview} key={`pending-${index}`}>
+                            <MediaThumbnail url={asset.uri} style={styles.attachmentPreviewImage} />
+                            <UploadProgressOverlay
+                              progress={editPostUploadProgress}
+                              style={styles.attachmentUploadingOverlay}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    <View style={styles.postEditActions}>
+                      <TouchableOpacity
+                        style={styles.editAddPhotoButton}
+                        onPress={pickEditPostAssets}
+                        disabled={editPostUploading || editPostAssetRoom <= 0}
+                        accessibilityLabel={t('postDetail.addAttachment')}
+                      >
+                        <Icon name="image" size={16} color={colors.primary} />
+                        <Text style={styles.editAddPhotoText}>{t('postDetail.addPhotos')}</Text>
+                      </TouchableOpacity>
+                      <View style={styles.editActionsSpacer} />
+                      <TouchableOpacity
+                        style={styles.postEditCancelButton}
+                        onPress={cancelEditPost}
+                        disabled={editPostMutation.isPending}
+                      >
+                        <Text style={styles.postEditCancelText}>{t('common.cancel')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.postEditSaveButton,
+                          (!canSavePostEdit || editPostUploading) && styles.sendButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          editPostMutation.mutate({
+                            content: editPostContent.trim(),
+                            uploadedAssetUrls: editPostAssets,
+                          })
+                        }
+                        disabled={editPostMutation.isPending || editPostUploading || !canSavePostEdit}
+                      >
+                        <Text style={styles.postEditSaveText}>{t('common.save')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : isMilestone ? (
+                  !hasPhotos && <Text style={styles.milestoneTitle}>{post.content}</Text>
+                ) : (
+                  !!post.content && <Text style={styles.postContent}>{post.content}</Text>
+                )}
+
+                {/* Registry entry for post.type (e.g. POLL) — renders below the
                   content above, which for a poll is already the question, so
                   this must not repeat it. Hidden while editing the post's own
                   content, same as the content Text above. */}
-              {!isEditingPost && TypeCardBody && <TypeCardBody post={post} />}
+                {!isEditingPost && TypeCardBody && <TypeCardBody post={post} />}
 
-              {post.latitude != null && post.longitude != null && (
-                <PostLocationPreview latitude={post.latitude} longitude={post.longitude} locationName={post.locationName} />
-              )}
+                {post.latitude != null && post.longitude != null && (
+                  <PostLocationPreview
+                    latitude={post.latitude}
+                    longitude={post.longitude}
+                    locationName={post.locationName}
+                  />
+                )}
 
-              {!isEditingPost && allPhotoUrls.length > 1 && allPhotoUrls.length <= POST_GRID_MAX_PHOTOS && (
-                <View style={styles.photoGallery}>
-                  {allPhotoUrls.slice(1).map((url: string, index: number) => (
-                    <TouchableOpacity
-                      key={url}
-                      activeOpacity={0.95}
-                      style={styles.photoWrapper}
-                      onPress={() => openFullscreen(index + 1)}
-                    >
-                      <MediaThumbnail url={allPhotoThumbUrls[index + 1]} fallbackUrl={url} style={styles.photoImage} />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                {!isEditingPost && allPhotoUrls.length > 1 && allPhotoUrls.length <= POST_GRID_MAX_PHOTOS && (
+                  <View style={styles.photoGallery}>
+                    {allPhotoUrls.slice(1).map((url: string, index: number) => (
+                      <TouchableOpacity
+                        key={url}
+                        activeOpacity={0.95}
+                        style={styles.photoWrapper}
+                        onPress={() => openFullscreen(index + 1)}
+                      >
+                        <MediaThumbnail
+                          url={allPhotoThumbUrls[index + 1]}
+                          fallbackUrl={url}
+                          style={styles.photoImage}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
 
-              {/* Past POST_GRID_MAX_PHOTOS the wrapping grid would push the
+                {/* Past POST_GRID_MAX_PHOTOS the wrapping grid would push the
                   post's text and comments far down the screen — scroll the
                   photos sideways instead. */}
-              {!isEditingPost && allPhotoUrls.length > POST_GRID_MAX_PHOTOS && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.photoStrip}
-                  contentContainerStyle={styles.photoStripContent}
-                >
-                  {allPhotoUrls.slice(1).map((url: string, index: number) => (
-                    <TouchableOpacity
-                      key={url}
-                      activeOpacity={0.95}
-                      style={styles.photoStripItem}
-                      onPress={() => openFullscreen(index + 1)}
-                    >
-                      <MediaThumbnail url={allPhotoThumbUrls[index + 1]} fallbackUrl={url} style={styles.photoImage} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-
-              <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
-                <TouchableOpacity
-                  style={[styles.likeButton, post.myReaction && styles.likeButtonActive]}
-                  onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
-                  onLongPress={() => setPostReactionPickerOpen(true)}
-                >
-              {post.myReaction ? (
-                <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
-              ) : (
-                <Icon name="heart" size={16} color={colors.textMuted} />
-              )}
-              <Text style={[styles.likeButtonText, post.myReaction && styles.likeButtonTextActive]}>
-                {post.likeCount}
-              </Text>
-                </TouchableOpacity>
-                <Text style={styles.commentCount}>{t('postDetail.comments', { count: post.commentCount })}</Text>
-                {reactors.length > 0 && (
-                  <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
+                {!isEditingPost && allPhotoUrls.length > POST_GRID_MAX_PHOTOS && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.photoStrip}
+                    contentContainerStyle={styles.photoStripContent}
+                  >
+                    {allPhotoUrls.slice(1).map((url: string, index: number) => (
+                      <TouchableOpacity
+                        key={url}
+                        activeOpacity={0.95}
+                        style={styles.photoStripItem}
+                        onPress={() => openFullscreen(index + 1)}
+                      >
+                        <MediaThumbnail
+                          url={allPhotoThumbUrls[index + 1]}
+                          fallbackUrl={url}
+                          style={styles.photoImage}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 )}
-                <TouchableOpacity
-                  style={styles.favoriteButton}
-                  onPress={() => favoriteMutation.mutate()}
-                  disabled={favoriteMutation.isPending}
-                  accessibilityLabel={t('postDetail.favorite')}
-                  accessibilityState={{ selected: !!post.favoritedByMe }}
-                >
-                  <Icon
-                    name="bookmark"
-                    size={18}
-                    filled={!!post.favoritedByMe}
-                    color={post.favoritedByMe ? colors.primary : colors.textMuted}
-                  />
-                </TouchableOpacity>
-              </View>
 
-              <Text style={styles.commentsHeader}>{t('postDetail.commentsHeader', { count: comments?.length || 0 })}</Text>
-            </View>
+                <View style={[styles.actionsRow, isMilestone && styles.actionsRowMilestone]}>
+                  <TouchableOpacity
+                    style={[styles.likeButton, post.myReaction && styles.likeButtonActive]}
+                    onPress={() => likeMutation.mutate(post.myReaction ?? 'LOVE')}
+                    onLongPress={() => setPostReactionPickerOpen(true)}
+                  >
+                    {post.myReaction ? (
+                      <Text style={styles.reactionEmoji}>{REACTION_EMOJI[post.myReaction]}</Text>
+                    ) : (
+                      <Icon name="heart" size={16} color={colors.textMuted} />
+                    )}
+                    <Text style={[styles.likeButtonText, post.myReaction && styles.likeButtonTextActive]}>
+                      {post.likeCount}
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={styles.commentCount}>{t('postDetail.comments', { count: post.commentCount })}</Text>
+                  {reactors.length > 0 && (
+                    <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
+                  )}
+                  <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={() => favoriteMutation.mutate()}
+                    disabled={favoriteMutation.isPending}
+                    accessibilityLabel={t('postDetail.favorite')}
+                    accessibilityState={{ selected: !!post.favoritedByMe }}
+                  >
+                    <Icon
+                      name="bookmark"
+                      size={18}
+                      filled={!!post.favoritedByMe}
+                      color={post.favoritedByMe ? colors.primary : colors.textMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.commentsHeader}>
+                  {t('postDetail.commentsHeader', { count: comments?.length || 0 })}
+                </Text>
+              </View>
             </>
           }
           renderItem={({ item }) => (
@@ -705,9 +726,7 @@ export function PostDetailScreen() {
 
         {replyingTo && (
           <View style={styles.replyingBar}>
-            <Text style={styles.replyingBarText}>
-              {t('postDetail.replyingTo', { name: replyingTo.authorName })}
-            </Text>
+            <Text style={styles.replyingBarText}>{t('postDetail.replyingTo', { name: replyingTo.authorName })}</Text>
             <TouchableOpacity onPress={() => setReplyingTo(null)}>
               <Text style={styles.replyingBarCancel}>{t('postDetail.cancelReply')}</Text>
             </TouchableOpacity>
@@ -731,7 +750,10 @@ export function PostDetailScreen() {
               <View style={styles.attachmentPreview} key={`${attachment.uri}-${index}`}>
                 <MediaThumbnail url={attachment.uri} style={styles.attachmentPreviewImage} />
                 {!attachment.uploadedUrl && (
-                  <UploadProgressOverlay progress={attachmentUploadProgress} style={styles.attachmentUploadingOverlay} />
+                  <UploadProgressOverlay
+                    progress={attachmentUploadProgress}
+                    style={styles.attachmentUploadingOverlay}
+                  />
                 )}
                 <TouchableOpacity
                   style={styles.attachmentRemoveButton}
@@ -792,10 +814,7 @@ export function PostDetailScreen() {
         }}
         onClose={() => setReactionPickerCommentId(null)}
       />
-      <ReactionsModal
-        postId={reactionsModalOpen ? postId : null}
-        onClose={() => setReactionsModalOpen(false)}
-      />
+      <ReactionsModal postId={reactionsModalOpen ? postId : null} onClose={() => setReactionsModalOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -892,7 +911,11 @@ function CommentBody({
 
   const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length;
 
-  const { pick: pickEditMedia, uploading: editUploading, progress: editUploadProgress } = usePickAndUploadMedia({
+  const {
+    pick: pickEditMedia,
+    uploading: editUploading,
+    progress: editUploadProgress,
+  } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -963,13 +986,7 @@ function CommentBody({
   if (isEditing) {
     return (
       <View style={styles.commentEditContainer}>
-        <TextInput
-          style={styles.commentEditInput}
-          value={editText}
-          onChangeText={setEditText}
-          multiline
-          autoFocus
-        />
+        <TextInput style={styles.commentEditInput} value={editText} onChangeText={setEditText} multiline autoFocus />
 
         {(editAttachments.length > 0 || editPendingAttachments.length > 0) && (
           <View style={styles.editAttachmentRow}>
@@ -1096,9 +1113,7 @@ function CommentBody({
           {comment.editedAt ? ` · ${t('common.edited')}` : ''}
         </Text>
         {attachmentUrls.length > 1 && (
-          <Text style={styles.commentTime}>
-            {t('postDetail.photoCount', { count: attachmentUrls.length })}
-          </Text>
+          <Text style={styles.commentTime}>{t('postDetail.photoCount', { count: attachmentUrls.length })}</Text>
         )}
         <TouchableOpacity onPress={() => onLike(group.myReaction ?? 'LIKE')} onLongPress={onLongPressLike}>
           <Text style={[styles.commentAction, group.myReaction && styles.commentActionActive]}>

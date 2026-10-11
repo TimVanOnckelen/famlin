@@ -72,10 +72,7 @@ export async function getGroupMediaPeople(groupId: string): Promise<MediaPerson[
   return response.data;
 }
 
-export async function getMediaAlbumAssets(
-  linkId: string,
-  personId?: string
-): Promise<MediaAsset[]> {
+export async function getMediaAlbumAssets(linkId: string, personId?: string): Promise<MediaAsset[]> {
   const response = await api.get<MediaAsset[]>(`/media/albums/${linkId}/assets`, {
     params: personId ? { personId } : undefined,
   });

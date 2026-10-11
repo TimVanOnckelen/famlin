@@ -104,103 +104,109 @@ export function AlbumDetailPage({
   return shell(
     <>
       <div className="album-detail-cover">
-          {coverUrl ? (
-            <ShimmerImage src={getUploadUrl(coverUrl)} className="album-detail-cover-media" loading="eager" />
-          ) : (
-            <div className="album-detail-cover-placeholder" aria-hidden>
-              <Icon name="image" size={48} strokeWidth={1.5} />
-            </div>
-          )}
+        {coverUrl ? (
+          <ShimmerImage src={getUploadUrl(coverUrl)} className="album-detail-cover-media" loading="eager" />
+        ) : (
+          <div className="album-detail-cover-placeholder" aria-hidden>
+            <Icon name="image" size={48} strokeWidth={1.5} />
+          </div>
+        )}
+      </div>
+
+      <section className="album-detail-header">
+        <Badge variant={album.closed ? 'outline' : 'solid'}>
+          <Icon name="image" size={12} strokeWidth={2.2} />
+          {album.closed ? t('album.detail.closedBadge') : t('album.detail.badge')}
+        </Badge>
+        <h1 className="album-detail-title">{album.title}</h1>
+        {post.content && <p className="album-detail-description">{post.content}</p>}
+
+        <div className="album-detail-stats">
+          <div className="album-detail-stat">
+            <div className="album-detail-stat-number">{album.photoCount}</div>
+            <div className="album-detail-stat-label">{t('album.detail.statsPhotos')}</div>
+          </div>
+          <div className="album-detail-stat">
+            <div className="album-detail-stat-number">{album.contributorCount}</div>
+            <div className="album-detail-stat-label">{t('album.detail.statsContributors')}</div>
+          </div>
         </div>
 
-        <section className="album-detail-header">
-          <Badge variant={album.closed ? 'outline' : 'solid'}>
-            <Icon name="image" size={12} strokeWidth={2.2} />
-            {album.closed ? t('album.detail.closedBadge') : t('album.detail.badge')}
-          </Badge>
-          <h1 className="album-detail-title">{album.title}</h1>
-          {post.content && <p className="album-detail-description">{post.content}</p>}
-
-          <div className="album-detail-stats">
-            <div className="album-detail-stat">
-              <div className="album-detail-stat-number">{album.photoCount}</div>
-              <div className="album-detail-stat-label">{t('album.detail.statsPhotos')}</div>
-            </div>
-            <div className="album-detail-stat">
-              <div className="album-detail-stat-number">{album.contributorCount}</div>
-              <div className="album-detail-stat-label">{t('album.detail.statsContributors')}</div>
-            </div>
-          </div>
-
-          {album.contributors.length > 0 && (
-            <div className="album-detail-contributors" aria-label={t('album.detail.contributorsLabel')}>
-              <AvatarStack people={album.contributors} size={26} max={6} />
-              <span className="album-detail-contributors-text">
-                {t('album.detail.contributedBy', { names: album.contributors.map((c) => c.name).join(', ') })}
-              </span>
-            </div>
-          )}
-
-          <div className="album-detail-header-actions">
-            {!album.closed && (
-              <button type="button" className="btn btn-primary" onClick={() => setContributeOpen(true)}>
-                {t('album.detail.addPhotosCta')}
-              </button>
-            )}
-            {isAuthor && !album.closed && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => closeMutation.mutate()}
-                disabled={closeMutation.isPending}
-              >
-                {t('album.detail.closeCta')}
-              </button>
-            )}
-          </div>
-        </section>
-
-        {photos.length === 0 ? (
-          <div className="album-detail-empty">
-            <div className="album-detail-empty-icon" aria-hidden>
-              <Icon name="image" size={28} strokeWidth={1.5} />
-            </div>
-            <div className="album-detail-empty-title">{t('album.detail.emptyTitle')}</div>
-            <div className="album-detail-empty-description">
-              {album.closed ? t('album.detail.emptyClosedDescription') : t('album.detail.emptyDescription')}
-            </div>
-          </div>
-        ) : (
-          <div className="album-detail-grid">
-            {photos.map((photo, index) => (
-              <button
-                key={`${photo.comment.id}-${photo.url}`}
-                type="button"
-                className="album-detail-grid-tile"
-                onClick={() => setLightbox({ urls: photoUrls, index })}
-                title={photo.comment.content || photo.comment.author.name}
-              >
-                {isVideoUrl(photo.url) ? (
-                  <video src={getUploadUrl(photo.url)} muted preload="metadata" />
-                ) : (
-                  <ShimmerImage src={getUploadUrl(photo.url, 'thumbnail')} fallbackSrc={getUploadUrl(photo.url)} loading="lazy" />
-                )}
-              </button>
-            ))}
+        {album.contributors.length > 0 && (
+          <div className="album-detail-contributors" aria-label={t('album.detail.contributorsLabel')}>
+            <AvatarStack people={album.contributors} size={26} max={6} />
+            <span className="album-detail-contributors-text">
+              {t('album.detail.contributedBy', { names: album.contributors.map((c) => c.name).join(', ') })}
+            </span>
           </div>
         )}
 
-        <section className="album-detail-comments-section">
-          <h2 className="album-detail-section-title">
-            <Icon name="message-square" size={16} />
-            {t('album.detail.commentsSectionTitle')}
-          </h2>
-          <CommentsSection post={post} filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
-        </section>
+        <div className="album-detail-header-actions">
+          {!album.closed && (
+            <button type="button" className="btn btn-primary" onClick={() => setContributeOpen(true)}>
+              {t('album.detail.addPhotosCta')}
+            </button>
+          )}
+          {isAuthor && !album.closed && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => closeMutation.mutate()}
+              disabled={closeMutation.isPending}
+            >
+              {t('album.detail.closeCta')}
+            </button>
+          )}
+        </div>
+      </section>
 
-        {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}
+      {photos.length === 0 ? (
+        <div className="album-detail-empty">
+          <div className="album-detail-empty-icon" aria-hidden>
+            <Icon name="image" size={28} strokeWidth={1.5} />
+          </div>
+          <div className="album-detail-empty-title">{t('album.detail.emptyTitle')}</div>
+          <div className="album-detail-empty-description">
+            {album.closed ? t('album.detail.emptyClosedDescription') : t('album.detail.emptyDescription')}
+          </div>
+        </div>
+      ) : (
+        <div className="album-detail-grid">
+          {photos.map((photo, index) => (
+            <button
+              key={`${photo.comment.id}-${photo.url}`}
+              type="button"
+              className="album-detail-grid-tile"
+              onClick={() => setLightbox({ urls: photoUrls, index })}
+              title={photo.comment.content || photo.comment.author.name}
+            >
+              {isVideoUrl(photo.url) ? (
+                <video src={getUploadUrl(photo.url)} muted preload="metadata" />
+              ) : (
+                <ShimmerImage
+                  src={getUploadUrl(photo.url, 'thumbnail')}
+                  fallbackSrc={getUploadUrl(photo.url)}
+                  loading="lazy"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {lightbox && <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />}
+      <section className="album-detail-comments-section">
+        <h2 className="album-detail-section-title">
+          <Icon name="message-square" size={16} />
+          {t('album.detail.commentsSectionTitle')}
+        </h2>
+        <CommentsSection post={post} filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
+      </section>
+
+      {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}
+
+      {lightbox && (
+        <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 }

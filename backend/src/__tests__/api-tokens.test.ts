@@ -46,8 +46,20 @@ beforeAll(async () => {
   await prisma.groupMember.create({ data: { groupId, userId: member.id } });
   await prisma.groupMember.create({ data: { groupId: otherGroupId, userId: outsider.id } });
 
-  sessionToken = createUserToken({ id: member.id, email: member.email, name: member.name, isAdmin: false, tokenVersion: member.tokenVersion });
-  outsiderSessionToken = createUserToken({ id: outsider.id, email: outsider.email, name: outsider.name, isAdmin: false, tokenVersion: outsider.tokenVersion });
+  sessionToken = createUserToken({
+    id: member.id,
+    email: member.email,
+    name: member.name,
+    isAdmin: false,
+    tokenVersion: member.tokenVersion,
+  });
+  outsiderSessionToken = createUserToken({
+    id: outsider.id,
+    email: outsider.email,
+    name: outsider.name,
+    isAdmin: false,
+    tokenVersion: outsider.tokenVersion,
+  });
 });
 
 afterAll(async () => {

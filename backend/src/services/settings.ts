@@ -123,7 +123,10 @@ async function loadAllSettings(): Promise<ServerSettings> {
     // button — the latter must stay blank, so these can't use the `|| ''`
     // pattern the other optional fields use.
     appStoreUrl: parseValue('appStoreUrl', map.has('appStoreUrl') ? map.get('appStoreUrl')! : DEFAULT_APP_STORE_URL),
-    playStoreUrl: parseValue('playStoreUrl', map.has('playStoreUrl') ? map.get('playStoreUrl')! : DEFAULT_PLAY_STORE_URL),
+    playStoreUrl: parseValue(
+      'playStoreUrl',
+      map.has('playStoreUrl') ? map.get('playStoreUrl')! : DEFAULT_PLAY_STORE_URL
+    ),
     allowedEmails: parseValue('allowedEmails', map.get('allowedEmails') || ''),
     oidcName: parseValue('oidcName', map.get('oidcName') || 'SSO'),
     oidcIssuer: parseValue('oidcIssuer', map.get('oidcIssuer') || ''),
@@ -136,14 +139,8 @@ async function loadAllSettings(): Promise<ServerSettings> {
     smtpUser: parseValue('smtpUser', map.get('smtpUser') || ''),
     smtpPass: parseValue('smtpPass', map.get('smtpPass') || ''),
     smtpFrom: parseValue('smtpFrom', map.get('smtpFrom') || ''),
-    pushNotificationsEnabled: parseValue(
-      'pushNotificationsEnabled',
-      map.get('pushNotificationsEnabled') ?? 'true'
-    ),
-    emailNotificationsEnabled: parseValue(
-      'emailNotificationsEnabled',
-      map.get('emailNotificationsEnabled') ?? 'true'
-    ),
+    pushNotificationsEnabled: parseValue('pushNotificationsEnabled', map.get('pushNotificationsEnabled') ?? 'true'),
+    emailNotificationsEnabled: parseValue('emailNotificationsEnabled', map.get('emailNotificationsEnabled') ?? 'true'),
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
@@ -165,9 +162,7 @@ export async function getAllSettings(): Promise<ServerSettings> {
 }
 
 export async function updateSettings(partial: Partial<ServerSettings>) {
-  const entries = Object.entries(partial).filter(([key]) =>
-    SETTING_KEYS.includes(key as keyof ServerSettings)
-  );
+  const entries = Object.entries(partial).filter(([key]) => SETTING_KEYS.includes(key as keyof ServerSettings));
 
   for (const [key, value] of entries) {
     const serialized = serializeValue(key as keyof ServerSettings, value);
