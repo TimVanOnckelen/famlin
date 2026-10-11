@@ -9,7 +9,7 @@ export interface KeyboardShortcutHandlers {
   onHelp: () => void;
 }
 
-const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', u: 'profile' };
+const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', b: 'favorites', u: 'profile' };
 
 // Global "g then <letter>" / "n" / "?" shortcuts (the Gmail/Linear-style
 // chord pattern). Ignored while typing in a field or contenteditable, while

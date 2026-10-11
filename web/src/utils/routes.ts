@@ -9,6 +9,7 @@ export const paths = {
   photos: '/photos',
   chat: '/chat',
   profile: '/profile',
+  favorites: '/favorites',
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
   album: (postId: string) => `/albums/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
@@ -36,6 +37,7 @@ export function useAppNavigation() {
       toPhotos: () => navigate(paths.photos),
       toChat: () => navigate(paths.chat),
       toProfile: () => navigate(paths.profile),
+      toFavorites: () => navigate(paths.favorites),
       toTrip: (postId: string, opts?: { replace?: boolean }) => navigate(paths.trip(postId), opts),
       toAlbum: (postId: string, opts?: { replace?: boolean }) => navigate(paths.album(postId), opts),
       back: () => {

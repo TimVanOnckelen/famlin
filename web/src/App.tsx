@@ -9,6 +9,7 @@ import { FeedPage } from '@/pages/FeedPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { PhotosPage } from '@/pages/PhotosPage';
 import { ChatPage } from '@/pages/ChatPage';
+import { FavoritesPage } from '@/pages/FavoritesPage';
 import { TripDetailPage } from '@/pages/TripDetailPage';
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
@@ -140,6 +141,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
               onLogout={() => logout()}
@@ -155,6 +157,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenFeed={nav.toFeed}
                 onOpenChat={nav.toChat}
                 onOpenProfile={nav.toProfile}
+                onOpenFavorites={nav.toFavorites}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
               />
@@ -170,6 +173,7 @@ function AppRoutes({ user }: { user: User }) {
                 onBack={nav.toFeed}
                 onOpenPhotos={nav.toPhotos}
                 onOpenProfile={nav.toProfile}
+                onOpenFavorites={nav.toFavorites}
                 onLogout={() => logout()}
               />
             </RequireGroups>
@@ -183,6 +187,7 @@ function AppRoutes({ user }: { user: User }) {
               onBack={nav.toFeed}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
               onLogout={() => logout()}
             />
           }
@@ -190,6 +195,21 @@ function AppRoutes({ user }: { user: User }) {
         <Route path="/trips/:postId" element={<TripRoute user={user} />} />
         <Route path="/albums/:postId" element={<AlbumRoute user={user} />} />
         <Route path="/posts/:postId" element={<PostRoute user={user} />} />
+        <Route
+          path={paths.favorites}
+          element={
+            <FavoritesPage
+              user={user}
+              onBack={nav.toFeed}
+              onOpenProfile={nav.toProfile}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenTrip={nav.toTrip}
+              onOpenAlbum={nav.toAlbum}
+              onLogout={() => logout()}
+            />
+          }
+        />
         <Route path="*" element={<Navigate to={paths.feed} replace />} />
       </Routes>
 
@@ -245,6 +265,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onOpenFavorites={nav.toFavorites}
       onLogout={() => logout()}
     />
   );
@@ -264,6 +285,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onOpenFavorites={nav.toFavorites}
       onLogout={() => logout()}
     />
   );
@@ -285,6 +307,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
+      onOpenFavorites={nav.toFavorites}
       onLogout={() => logout()}
     />
   );

@@ -42,6 +42,7 @@ export function TripDetailPage({
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
+  onOpenFavorites,
   onLogout,
 }: {
   user: User;
@@ -52,6 +53,7 @@ export function TripDetailPage({
   onOpenPhotos?: () => void;
   onOpenChat?: () => void;
   onOpenProfile?: () => void;
+  onOpenFavorites?: () => void;
   onLogout: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -80,6 +82,7 @@ export function TripDetailPage({
         active="feed"
         onFeed={onOpenFeed ?? onBack}
         onPhotos={onOpenPhotos}
+        onFavorites={onOpenFavorites}
         onChat={onOpenChat}
         onProfile={onOpenProfile ?? (() => {})}
         onLogout={onLogout}

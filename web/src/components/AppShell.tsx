@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import './AppShell.css';
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'profile';
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile';
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -20,8 +20,8 @@ export type NavView = 'feed' | 'photos' | 'chat' | 'profile';
 // 721–1100px), or today's compact top header + BottomNav at ≤720px.
 //
 // Deliberately mirrors BottomNav's own prop shape (onFeed/onPhotos/onChat/
-// onProfile/onNewPost, each an optional-except-the-current-tab plain
-// callback) rather than inventing a `navigate(view)` abstraction — pages
+// onFavorites/onProfile/onNewPost, each an optional-except-the-current-tab
+// plain callback) rather than inventing a `navigate(view)` abstraction — pages
 // stay router-agnostic (App.tsx is the only place that knows about
 // react-router, see utils/routes.ts) and this keeps every page's existing
 // prop contract and tests unchanged; AppShell is a drop-in replacement for
@@ -35,6 +35,7 @@ export function AppShell({
   onFeed,
   onPhotos,
   onChat,
+  onFavorites,
   onProfile,
   onNewPost,
   onLogout,
@@ -45,6 +46,7 @@ export function AppShell({
   onFeed: () => void;
   onPhotos?: () => void;
   onChat?: () => void;
+  onFavorites?: () => void;
   onProfile: () => void;
   onNewPost?: () => void;
   onLogout: () => void;
@@ -66,25 +68,28 @@ export function AppShell({
   });
   const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0);
 
-  // Photos and Chat are family-scoped surfaces: a user in no families has
-  // nothing to see in either, so both tabs collapse for them (Feed and
-  // Profile remain). Shares the ['groups'] cache key the pages fetch with,
-  // seeded by App.tsx's parallel bootstrap fetch — so a groupless user's
-  // tabs are collapsed from the very first render, no flash. Until the query
-  // answers (loading or failed) reads as "has groups", so the nav never
-  // hides tabs it might have to show back; the tab currently being viewed
-  // also never disappears.
+  // Photos, Chat and Favorites are family-scoped surfaces: a user in no
+  // families has nothing to see in any of them, so all three collapse for
+  // them (Feed and Profile remain). Shares the ['groups'] cache key the
+  // pages fetch with, seeded by App.tsx's parallel bootstrap fetch — so a
+  // groupless user's tabs are collapsed from the very first render, no
+  // flash. Until the query answers (loading or failed) reads as "has
+  // groups", so the nav never hides tabs it might have to show back; the
+  // tab currently being viewed also never disappears.
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const hasGroups = (groupsQuery.data?.length ?? 1) > 0;
   const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos');
   const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat');
+  const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites');
   const photosNav = showPhotosTab ? onPhotos : undefined;
   const chatNav = showChatTab ? onChat : undefined;
+  const favoritesNav = showFavoritesNav ? onFavorites : undefined;
 
   function goTo(view: NavView) {
     if (view === 'feed') onFeed();
     else if (view === 'photos') photosNav?.();
     else if (view === 'chat') chatNav?.();
+    else if (view === 'favorites') favoritesNav?.();
     else onProfile();
   }
 
@@ -98,6 +103,7 @@ export function AppShell({
 
   const navItems: { view: NavView; icon: IconName; label: string; keys: string; onClick?: () => void; badge?: boolean; show: boolean }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
+    { view: 'favorites', icon: 'bookmark', label: t('tabs.favorites'), keys: 'g b', onClick: favoritesNav, show: showFavoritesNav },
     { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: photosNav, show: showPhotosTab },
     {
       view: 'chat',
@@ -167,28 +173,27 @@ export function AppShell({
         </button>
 
         <div className="sidebar-footer">
-          <UserMenu
-            user={user}
-            variant="sidebar"
-            onProfile={onProfile}
-            onApiTokens={() => setApiTokensOpen(true)}
-            onLogout={onLogout}
-          />
+          <UserMenu user={user} onProfile={onProfile} onApiTokens={() => setApiTokensOpen(true)} onLogout={onLogout} />
         </div>
       </nav>
-
       <header className="mobile-header">
         <div className="mobile-header-brand">
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        <UserMenu
-          user={user}
-          variant="header"
-          onProfile={onProfile}
-          onApiTokens={() => setApiTokensOpen(true)}
-          onLogout={onLogout}
-        />
+        {favoritesNav && (
+          <div className="mobile-header-actions">
+            <button
+              type="button"
+              className="mobile-header-action"
+              onClick={favoritesNav}
+              aria-label={t('tabs.favorites')}
+              title={t('shortcuts.hint', { label: t('tabs.favorites'), keys: 'g b' })}
+            >
+              <Icon name="bookmark" size={20} />
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="app-shell-main" id="main-content">
