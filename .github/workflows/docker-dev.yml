@@ -1,0 +1,22 @@
+name: Publish development Docker image
+
+# Merging a PR updates main and fires this push event too.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+# Serialize dev publications so overlapping builds cannot race the tag.
+# Keep an in-flight publication running until its manifest is complete.
+concurrency:
+  group: docker-publish-dev
+  cancel-in-progress: false
+
+jobs:
+  publish-dev:
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      development: true

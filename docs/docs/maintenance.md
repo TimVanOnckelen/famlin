@@ -94,6 +94,11 @@ FAMLIN_VERSION=1.2.0
 
 Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
 
+To try the current development build from `main`, set `FAMLIN_VERSION=dev`
+in `.env`, then run the same `pull` and `up -d` commands above. The rolling
+`dev` image is published after every push or PR merge into `main`, for both
+`linux/amd64` and `linux/arm64`.
+
 ## Building from source instead
 
 If you'd rather build the backend image yourself (e.g. you're running a fork, or testing an unreleased change) instead of pulling from `ghcr.io`, replace the `image:` line for `famlin-backend` in your compose file with a `build:` block:
