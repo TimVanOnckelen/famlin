@@ -1,6 +1,7 @@
+import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
 import { LivePhoto } from './LivePhoto'
 import { useUploadProcessing } from '@/hooks/useUploadProcessing'
-import { useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type VideoHTMLAttributes } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getUploadUrl } from '@famlin/api-client'
 import { ShimmerImage } from './ShimmerImage'
@@ -37,21 +38,45 @@ function VideoPreview({
   )
 }
 
+function VideoMedia(props: VideoHTMLAttributes<HTMLVideoElement>) {
+  const player = useRef<HTMLVideoElement>(null)
+  useExclusiveVideo(player)
+  useEffect(() => {
+    const video = player.current
+    if (!video || !props.autoPlay) return
+    let canceled = false
+    video.play().catch(async (error: unknown) => {
+      if (canceled || !(error instanceof DOMException) || error.name !== 'NotAllowedError') return
+      // Browsers can require silent playback when media becomes ready after
+      // the opening gesture. Native controls still allow enabling sound.
+      video.muted = true
+      await video.play().catch(() => {})
+    })
+    return () => {
+      canceled = true
+    }
+  }, [props.autoPlay, props.src])
+  return <video ref={player} {...props} />
+}
+
 export function UploadMedia({
   url,
   className,
   thumbnail = false,
+  thumbnailUrl,
   onClick,
   autoPlay = false,
 }: {
   url: string
   className?: string
   thumbnail?: boolean
+  thumbnailUrl?: string
   onClick?: (event: MouseEvent<HTMLElement>) => void
   autoPlay?: boolean
 }) {
   const { t } = useTranslation()
   const state = useUploadProcessing(url)
+  const previewUrl = thumbnailUrl ?? state.thumbnailUrl
   if (state.pending || state.failed) {
     return (
       <div className={`media-processing ${className ?? ''}`} role="status">
@@ -64,10 +89,11 @@ export function UploadMedia({
     return (
       <LivePhoto
         key={url}
-        imageUrl={thumbnail && state.thumbnailUrl ? state.thumbnailUrl : url}
+        imageUrl={thumbnail && previewUrl ? previewUrl : url}
         videoUrl={state.videoUrl}
         className={className}
         onClick={onClick}
+        autoPlay={autoPlay}
       />
     )
   }
@@ -75,14 +101,14 @@ export function UploadMedia({
     if (thumbnail) {
       return (
         <VideoPreview
-          src={state.thumbnailUrl ? getUploadUrl(state.thumbnailUrl) : getUploadUrl(url, 'thumbnail')}
+          src={previewUrl ? getUploadUrl(previewUrl) : getUploadUrl(url, 'thumbnail')}
           className={className}
           onClick={onClick}
         />
       )
     }
     return (
-      <video
+      <VideoMedia
         src={getUploadUrl(url)}
         className={className}
         controls
@@ -92,11 +118,7 @@ export function UploadMedia({
       />
     )
   }
-  const src = thumbnail
-    ? state.thumbnailUrl
-      ? getUploadUrl(state.thumbnailUrl)
-      : getUploadUrl(url, 'thumbnail')
-    : getUploadUrl(url)
+  const src = thumbnail ? (previewUrl ? getUploadUrl(previewUrl) : getUploadUrl(url, 'thumbnail')) : getUploadUrl(url)
   return (
     <ShimmerImage src={src} fallbackSrc={getUploadUrl(url)} className={className} loading="lazy" onClick={onClick} />
   )

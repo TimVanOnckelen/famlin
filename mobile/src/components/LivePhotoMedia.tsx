@@ -1,30 +1,23 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  AppState,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AppState, Dimensions, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Image } from 'expo-image'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { useIsFocused } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { getUploadUrl } from '@famlin/api-client'
-import { Icon } from './Icon'
+import { LivePhotoIcon } from './LivePhotoIcon'
+import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
 
-function Motion({ url, paused }: { url: string; paused: boolean }) {
+function Motion({ url, onInterrupted }: { url: string; onInterrupted: () => void }) {
   const player = useVideoPlayer({ uri: getUploadUrl(url) }, (video) => {
     video.loop = true
     video.muted = true
   })
+  useExclusiveVideo(player, onInterrupted)
   useEffect(() => {
-    if (paused) player.pause()
-    else player.play()
-  }, [paused, player])
+    player.play()
+    // useVideoPlayer releases and stops the native player on unmount.
+  }, [player])
   return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
 }
 
@@ -32,7 +25,11 @@ export function LivePhotoMedia({
   imageUrl,
   videoUrl,
   style,
+  autoPlay = false,
+  isActive = true,
 }: {
+  autoPlay?: boolean
+  isActive?: boolean
   imageUrl: string
   videoUrl: string
   style?: StyleProp<ViewStyle>
@@ -40,17 +37,24 @@ export function LivePhotoMedia({
   const { t } = useTranslation()
   const view = useRef<View>(null)
   const [visible, setVisible] = useState(false)
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(!autoPlay)
+  const interrupt = useCallback(() => setPaused(true), [])
   const focused = useIsFocused()
+  useEffect(() => {
+    setPaused(!autoPlay)
+  }, [autoPlay, isActive, focused])
   useEffect(() => {
     const measure = () => {
       if (!focused || AppState.currentState !== 'active') {
         setVisible(false)
+        setPaused(true)
         return
       }
-      view.current?.measureInWindow((_x, y, width, height) =>
-        setVisible(width > 0 && height > 0 && y + height > 0 && y < Dimensions.get('window').height)
-      )
+      view.current?.measureInWindow((_x, y, width, height) => {
+        const inView = width > 0 && height > 0 && y + height > 0 && y < Dimensions.get('window').height
+        setVisible(inView)
+        if (!inView) setPaused(true)
+      })
     }
     measure()
     const interval = setInterval(measure, 500)
@@ -63,9 +67,10 @@ export function LivePhotoMedia({
   return (
     <View ref={view} style={style} collapsable={false}>
       <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-      {visible && <Motion url={videoUrl} paused={paused} />}
+      {visible && focused && isActive && !paused && <Motion url={videoUrl} onInterrupted={interrupt} />}
       <TouchableOpacity
         style={styles.badge}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={t(paused ? 'media.playLivePhoto' : 'media.pauseLivePhoto')}
         onPress={(event) => {
@@ -73,8 +78,7 @@ export function LivePhotoMedia({
           setPaused((value) => !value)
         }}
       >
-        <Icon name="disc" size={18} color="white" />
-        <Text style={styles.label}>LIVE</Text>
+        <LivePhotoIcon size={20} />
       </TouchableOpacity>
     </View>
   )
@@ -84,12 +88,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 8,
     bottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(15,34,42,0.72)',
     padding: 6,
-    borderRadius: 18,
   },
-  label: { color: 'white', fontSize: 10, fontWeight: '700' },
 })

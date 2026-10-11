@@ -6,16 +6,14 @@ import {
   fetchGroups,
   getGroupPhotoTimeline,
   getGroupMediaPeople,
-  getUploadUrl,
   PhotoItem,
   Post,
   User,
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
-import { isVideoUrl } from '@/utils/media'
 import { AppShell } from '@/components/AppShell'
 import { Lightbox } from '@/components/Lightbox'
-import { ShimmerImage } from '@/components/ShimmerImage'
+import { UploadMedia } from '@/components/UploadMedia'
 import { NewPostModal } from '@/components/NewPostModal'
 import './PhotosPage.css'
 
@@ -138,7 +136,7 @@ export function PhotosPage({
   }
 
   // URLs for lightbox (all loaded photos)
-  const allPhotoUrls = photos.map((p) => getUploadUrl(p.previewUrl))
+  const allPhotoUrls = photos.map((p) => (p.type === 'VIDEO' ? p.originalUrl : p.previewUrl))
 
   return (
     <AppShell
@@ -298,7 +296,18 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const overflow = Math.max(0, album.photoCount - visible.length)
 
   return (
-    <button type="button" className="photos-album-tile" onClick={onOpen}>
+    <div
+      role="button"
+      tabIndex={0}
+      className="photos-album-tile"
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          onOpen()
+        }
+      }}
+    >
       {visible.length === 0 ? (
         <span className="photos-album-collage photos-album-collage-empty" aria-hidden>
           <Icon name="image" size={32} strokeWidth={1.5} />
@@ -307,11 +316,7 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
         <span className={`photos-album-collage photos-album-collage-${visible.length}`} aria-hidden>
           {visible.map((url, i) => (
             <span key={`${url}-${i}`} className="photos-album-collage-tile">
-              {isVideoUrl(url) ? (
-                <video src={getUploadUrl(url)} muted preload="metadata" />
-              ) : (
-                <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
-              )}
+              <UploadMedia url={url} thumbnail />
               {i === visible.length - 1 && overflow > 0 && (
                 <span className="photos-album-collage-more">+{overflow}</span>
               )}
@@ -324,7 +329,7 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
         {album.closed && <span className="photos-album-closed">{t('feed.album.closedBadge')}</span>}
         {t('feed.album.stats', { photos: album.photoCount, contributors: album.contributorCount })}
       </span>
-    </button>
+    </div>
   )
 }
 
@@ -337,19 +342,30 @@ interface PhotoTileProps {
 function PhotoTile({ photo, onOpen, onShare }: PhotoTileProps) {
   const { t } = useTranslation()
   const [showActions, setShowActions] = useState(false)
-  const src = getUploadUrl(photo.thumbnailUrl)
-  const isVideo = photo.type === 'VIDEO'
+  const mediaUrl = photo.type === 'VIDEO' ? photo.originalUrl : photo.previewUrl
 
   return (
     <div className="photo-tile" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
-      <button className="photo-tile-button" onClick={onOpen} aria-label={photo.albumName || 'Open photo'}>
-        <ShimmerImage src={src} className="photo-tile-image" loading="lazy" />
-        {isVideo && (
-          <div className="photo-tile-play-icon" aria-hidden>
-            ▶
-          </div>
-        )}
-      </button>
+      <div
+        className="photo-tile-button"
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        aria-label={photo.albumName || 'Open photo'}
+        onKeyDown={(event) => {
+          if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault()
+            onOpen()
+          }
+        }}
+      >
+        <UploadMedia
+          url={mediaUrl}
+          thumbnail
+          thumbnailUrl={photo.source === 'album' ? photo.thumbnailUrl : undefined}
+          className="photo-tile-image"
+        />
+      </div>
 
       {showActions && photo.source === 'album' && (
         <div className="photo-tile-actions">

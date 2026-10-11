@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getUploadUrl } from '@famlin/api-client'
 import { LivePhotoIcon } from './LivePhotoIcon'
@@ -8,7 +9,9 @@ export function LivePhoto({
   videoUrl,
   className,
   onClick,
+  autoPlay = false,
 }: {
+  autoPlay?: boolean
   imageUrl: string
   videoUrl: string
   className?: string
@@ -17,17 +20,19 @@ export function LivePhoto({
   const { t } = useTranslation()
   const container = useRef<HTMLDivElement>(null)
   const player = useRef<HTMLVideoElement>(null)
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(!autoPlay)
   const [visible, setVisible] = useState(false)
-  const [activated, setActivated] = useState(false)
+  const [activated, setActivated] = useState(autoPlay)
   const [pageVisible, setPageVisible] = useState(!document.hidden)
   const [started, setStarted] = useState(false)
   const [playFailed, setPlayFailed] = useState(false)
+  const interrupt = useCallback(() => setPaused(true), [])
+  useExclusiveVideo(player, interrupt)
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setVisible(entry.isIntersecting)
-        if (entry.isIntersecting) setActivated(true)
+        if (!entry.isIntersecting) setPaused(true)
       },
       { threshold: 0.1 }
     )
@@ -66,7 +71,20 @@ export function LivePhoto({
   }
   const showMotion = started && !playFailed && !paused
   return (
-    <div ref={container} className={`live-photo ${className ?? ''}`} onClick={activate}>
+    <div
+      ref={container}
+      className={`live-photo ${className ?? ''}`}
+      onClick={activate}
+      onMouseEnter={() => {
+        if (autoPlay || !window.matchMedia('(min-width: 721px) and (hover: hover) and (pointer: fine)').matches) return
+        setActivated(true)
+        setPaused(false)
+      }}
+      onMouseLeave={() => {
+        if (!autoPlay && window.matchMedia('(min-width: 721px) and (hover: hover) and (pointer: fine)').matches)
+          setPaused(true)
+      }}
+    >
       <img src={getUploadUrl(imageUrl)} alt="" className={showMotion ? 'live-photo-still-hidden' : undefined} />
       <video
         ref={player}
@@ -96,6 +114,7 @@ export function LivePhoto({
         aria-pressed={!paused && !playFailed}
         onClick={(event) => {
           event.stopPropagation()
+          setActivated(true)
           if (playFailed && player.current) {
             player.current
               .play()

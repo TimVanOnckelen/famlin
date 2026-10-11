@@ -1,3 +1,4 @@
+import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
 import { LivePhotoMedia } from '@/components/LivePhotoMedia'
 import { useUploadProcessing } from '@/hooks/useUploadProcessing'
 import React, { useEffect, useRef, useState } from 'react'
@@ -39,7 +40,17 @@ import { formatRelativeDate } from '@/i18n/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
 
-function ProcessingPage({ url, width, children }: { url: string; width: number; children: React.ReactNode }) {
+function ProcessingPage({
+  url,
+  width,
+  isActive,
+  children,
+}: {
+  url: string
+  width: number
+  isActive: boolean
+  children: React.ReactNode
+}) {
   const state = useUploadProcessing(url)
   const { t } = useTranslation()
   if (state.pending || state.failed) {
@@ -55,7 +66,7 @@ function ProcessingPage({ url, width, children }: { url: string; width: number; 
   if (state.kind === 'livePhoto' && state.videoUrl) {
     return (
       <View style={[styles.page, { width }]}>
-        <LivePhotoMedia imageUrl={url} videoUrl={state.videoUrl} style={styles.image} />
+        <LivePhotoMedia imageUrl={url} videoUrl={state.videoUrl} style={styles.image} autoPlay isActive={isActive} />
       </View>
     )
   }
@@ -76,6 +87,7 @@ function VideoPage({
   const player = useVideoPlayer({ uri: url }, (p) => {
     p.loop = true
   })
+  useExclusiveVideo(player)
   const isFocused = useIsFocused()
 
   useEffect(() => {
@@ -587,7 +599,7 @@ export function ImageViewerScreen() {
             style={styles.scrollView}
           >
             {urls.map((url: string, index: number) => (
-              <ProcessingPage key={`${url}-${index}`} url={url} width={width}>
+              <ProcessingPage key={`${url}-${index}`} url={url} width={width} isActive={index === currentIndex}>
                 {isVideoUrl(url) ? (
                   <VideoPage
                     key={`${url}-${index}`}

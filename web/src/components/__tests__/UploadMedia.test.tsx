@@ -4,6 +4,7 @@ import { fetchUploadProcessing, getUploadUrl } from '@famlin/api-client'
 import { renderWithQueryClient } from '@/test/fixtures'
 import { UploadMedia } from '../UploadMedia'
 import { PostCard } from '../PostCard'
+import { Lightbox } from '../Lightbox'
 import { makePost } from '@/test/fixtures'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -13,7 +14,10 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
 const url = '/uploads/11111111-1111-4111-8111-111111111111.mp4'
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
 })
+afterEach(() => vi.restoreAllMocks())
 
 it.each([1, 2])('shows a video poster and opens playback in the lightbox with %i attachments', async (count) => {
   const user = userEvent.setup()
@@ -87,4 +91,45 @@ it('shows a failure instead of an endless processing indicator', async () => {
   const { container } = renderWithQueryClient(<UploadMedia url={url} />)
   expect(await screen.findByText('Media processing failed')).toBeInTheDocument()
   expect(container.querySelector('video')).toBeNull()
+})
+
+it('pauses an ordinary video when another player starts', async () => {
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'ready', url, thumbnailUrl: null })
+  const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  const { container } = renderWithQueryClient(<UploadMedia url={url} />)
+  await waitFor(() => expect(container.querySelector('video')).not.toBeNull())
+  const video = container.querySelector('video')!
+  const other = document.createElement('video')
+  document.body.append(other)
+  fireEvent.play(other)
+  expect(pause.mock.instances).toContain(video)
+  other.remove()
+  pause.mockRestore()
+})
+
+it('starts each lightbox video explicitly and stops the previous video when switching or closing', async () => {
+  const next = url.replace('11111111', '22222222')
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'ready', url, thumbnailUrl: null })
+  const { container, unmount } = renderWithQueryClient(
+    <Lightbox assetUrls={[url, next]} initialIndex={0} onClose={() => {}} />
+  )
+  await waitFor(() => expect(HTMLMediaElement.prototype.play).toHaveBeenCalled())
+  const first = container.querySelector('video')!
+  vi.mocked(HTMLMediaElement.prototype.play).mockClear()
+  vi.mocked(HTMLMediaElement.prototype.pause).mockClear()
+  await userEvent.click(screen.getByRole('button', { name: '›' }))
+  await waitFor(() => expect(container.querySelector('video')).toHaveAttribute('src', getUploadUrl(next)))
+  expect(vi.mocked(HTMLMediaElement.prototype.pause).mock.instances).toContain(first)
+  expect(vi.mocked(HTMLMediaElement.prototype.play).mock.instances).toContain(container.querySelector('video'))
+  const second = container.querySelector('video')!
+  unmount()
+  expect(vi.mocked(HTMLMediaElement.prototype.pause).mock.instances).toContain(second)
+})
+
+it('retries lightbox autoplay muted when the browser blocks sound', async () => {
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'ready', url, thumbnailUrl: null })
+  vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(new DOMException('Blocked', 'NotAllowedError'))
+  const { container } = renderWithQueryClient(<Lightbox assetUrls={[url]} initialIndex={0} onClose={() => {}} />)
+  await waitFor(() => expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2))
+  expect(container.querySelector('video')!.muted).toBe(true)
 })
