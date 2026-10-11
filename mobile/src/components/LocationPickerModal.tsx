@@ -1,16 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import * as Location from 'expo-location'
 import { useTranslation } from 'react-i18next'
 
@@ -76,51 +66,49 @@ export function LocationPickerModal({ visible, initialLocation, onCancel, onConf
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onCancel}>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onCancel}>
-              <Text style={styles.headerButton}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('newPost.location.pickerTitle')}</Text>
-            <TouchableOpacity onPress={() => onConfirm({ ...coords, locationName })}>
-              <Text style={[styles.headerButton, styles.headerButtonPrimary]}>{t('common.done')}</Text>
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingSafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onCancel}>
+            <Text style={styles.headerButton}>{t('common.cancel')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('newPost.location.pickerTitle')}</Text>
+          <TouchableOpacity onPress={() => onConfirm({ ...coords, locationName })}>
+            <Text style={[styles.headerButton, styles.headerButtonPrimary]}>{t('common.done')}</Text>
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.mapContainer}>
-            <LeafletMap
-              latitude={coords.latitude}
-              longitude={coords.longitude}
-              interactive
-              onPick={handlePick}
-              style={styles.map}
+        <View style={styles.mapContainer}>
+          <LeafletMap
+            latitude={coords.latitude}
+            longitude={coords.longitude}
+            interactive
+            onPick={handlePick}
+            style={styles.map}
+          />
+          <TouchableOpacity style={styles.locateButton} onPress={useCurrentLocation} disabled={locating}>
+            {locating ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="navigation" size={18} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.label}>{t('newPost.location.nameLabel')}</Text>
+          <View style={styles.nameInputRow}>
+            <TextInput
+              style={styles.nameInput}
+              placeholder={t('newPost.location.namePlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={locationName}
+              onChangeText={setLocationName}
             />
-            <TouchableOpacity style={styles.locateButton} onPress={useCurrentLocation} disabled={locating}>
-              {locating ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Icon name="navigation" size={18} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+            {geocoding && <ActivityIndicator size="small" color={colors.textMuted} />}
           </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.label}>{t('newPost.location.nameLabel')}</Text>
-            <View style={styles.nameInputRow}>
-              <TextInput
-                style={styles.nameInput}
-                placeholder={t('newPost.location.namePlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                value={locationName}
-                onChangeText={setLocationName}
-              />
-              {geocoding && <ActivityIndicator size="small" color={colors.textMuted} />}
-            </View>
-            <Text style={styles.hint}>{t('newPost.location.tapHint')}</Text>
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+          <Text style={styles.hint}>{t('newPost.location.tapHint')}</Text>
+        </View>
+      </KeyboardAvoidingSafeAreaView>
     </Modal>
   )
 }

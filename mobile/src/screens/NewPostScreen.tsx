@@ -9,9 +9,8 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -475,418 +474,408 @@ export function NewPostScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView style={styles.form} contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
-          {/* Swappable type chip: tapping it returns to the type-chooser step
-              (postType and everything already typed is preserved). Its colors
-              and icon reflect whichever type is currently selected. */}
+      <KeyboardAwareScrollView style={styles.form} contentContainerStyle={styles.formContent}>
+        {/* Swappable type chip: tapping it returns to the type-chooser step
+            (postType and everything already typed is preserved). Its colors
+            and icon reflect whichever type is currently selected. */}
+        <View>
+          <TouchableOpacity
+            style={[styles.typeChip, { backgroundColor: chipStyle.bg, borderColor: chipStyle.border }]}
+            onPress={() => setComposerStep('type')}
+          >
+            <View style={[styles.typeChipIcon, { backgroundColor: chipStyle.iconBg }]}>
+              <Icon name={POST_TYPE_ICON[postType]} size={14} color={chipStyle.text} />
+            </View>
+            <Text style={[styles.typeChipLabel, { color: chipStyle.text }]}>
+              {t(`newPost.postType.${postType.toLowerCase()}`)}
+            </Text>
+            <Icon name="chevron-down" size={14} color={chipStyle.text} />
+          </TouchableOpacity>
+          {noOfferedPostTypes ? (
+            // Cross-post target groups with disjoint allow-lists: nothing can
+            // be composed for this combination — tell the user why submit is
+            // disabled instead of leaving it a mystery.
+            <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
+          ) : (
+            <Text style={styles.typeChipHint}>{t('newPost.changeTypeHint')}</Text>
+          )}
+        </View>
+
+        <View style={styles.authorRow}>
+          <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={48} />
           <View>
-            <TouchableOpacity
-              style={[styles.typeChip, { backgroundColor: chipStyle.bg, borderColor: chipStyle.border }]}
-              onPress={() => setComposerStep('type')}
-            >
-              <View style={[styles.typeChipIcon, { backgroundColor: chipStyle.iconBg }]}>
-                <Icon name={POST_TYPE_ICON[postType]} size={14} color={chipStyle.text} />
-              </View>
-              <Text style={[styles.typeChipLabel, { color: chipStyle.text }]}>
-                {t(`newPost.postType.${postType.toLowerCase()}`)}
-              </Text>
-              <Icon name="chevron-down" size={14} color={chipStyle.text} />
-            </TouchableOpacity>
-            {noOfferedPostTypes ? (
-              // Cross-post target groups with disjoint allow-lists: nothing can
-              // be composed for this combination — tell the user why submit is
-              // disabled instead of leaving it a mystery.
-              <Text style={styles.noPostTypesNotice}>{t('newPost.noPostTypesForSelection')}</Text>
-            ) : (
-              <Text style={styles.typeChipHint}>{t('newPost.changeTypeHint')}</Text>
-            )}
+            <Text style={styles.authorName}>{user?.name}</Text>
+            <Text style={styles.groupName}>
+              {selectedGroupIds.length > 1
+                ? t('newPost.multipleGroupsSelected', { count: selectedGroupIds.length })
+                : groups?.find((g: Group) => g.id === primaryGroupId)?.name || t('newPost.loading')}
+            </Text>
           </View>
+        </View>
 
-          <View style={styles.authorRow}>
-            <Avatar name={user?.name || '?'} avatarUrl={user?.avatarUrl} size={48} />
-            <View>
-              <Text style={styles.authorName}>{user?.name}</Text>
-              <Text style={styles.groupName}>
-                {selectedGroupIds.length > 1
-                  ? t('newPost.multipleGroupsSelected', { count: selectedGroupIds.length })
-                  : groups?.find((g: Group) => g.id === primaryGroupId)?.name || t('newPost.loading')}
-              </Text>
-            </View>
+        {groups && groups.length > 1 && (
+          <View style={styles.groupSelector}>
+            <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {groups.map((group: Group) => {
+                const isActive = selectedGroupIds.includes(group.id)
+                return (
+                  <TouchableOpacity
+                    key={group.id}
+                    style={[styles.groupChip, isActive && styles.groupChipActive]}
+                    onPress={() => {
+                      setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
+                      // A circle belongs to one family, so a previous
+                      // choice stops being valid once the family moves.
+                      setSelectedCircleId(null)
+                    }}
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
           </View>
+        )}
 
-          {groups && groups.length > 1 && (
-            <View style={styles.groupSelector}>
-              <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {groups.map((group: Group) => {
-                  const isActive = selectedGroupIds.includes(group.id)
-                  return (
-                    <TouchableOpacity
-                      key={group.id}
-                      style={[styles.groupChip, isActive && styles.groupChipActive]}
-                      onPress={() => {
-                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
-                        // A circle belongs to one family, so a previous
-                        // choice stops being valid once the family moves.
-                        setSelectedCircleId(null)
-                      }}
-                      accessibilityState={{ selected: isActive }}
-                    >
-                      <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </ScrollView>
-            </View>
-          )}
+        {circles.length > 0 && (
+          <View style={styles.groupSelector}>
+            <Text style={styles.sectionLabel}>{t('newPost.audience')}</Text>
+            <Text style={styles.audienceHint}>{t('newPost.audienceHint')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <TouchableOpacity
+                style={[styles.groupChip, selectedCircleId === null && styles.groupChipActive]}
+                onPress={() => setSelectedCircleId(null)}
+                accessibilityState={{ selected: selectedCircleId === null }}
+              >
+                <Text style={[styles.groupChipText, selectedCircleId === null && styles.groupChipTextActive]}>
+                  {t('newPost.audienceEveryone')}
+                </Text>
+              </TouchableOpacity>
+              {circles.map((circle) => {
+                const isActive = selectedCircleId === circle.id
+                return (
+                  <TouchableOpacity
+                    key={circle.id}
+                    style={[styles.circleChip, isActive && styles.circleChipActive]}
+                    onPress={() => setSelectedCircleId(circle.id)}
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>{circle.name}</Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </View>
+        )}
 
-          {circles.length > 0 && (
-            <View style={styles.groupSelector}>
-              <Text style={styles.sectionLabel}>{t('newPost.audience')}</Text>
-              <Text style={styles.audienceHint}>{t('newPost.audienceHint')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <TouchableOpacity
-                  style={[styles.groupChip, selectedCircleId === null && styles.groupChipActive]}
-                  onPress={() => setSelectedCircleId(null)}
-                  accessibilityState={{ selected: selectedCircleId === null }}
-                >
-                  <Text style={[styles.groupChipText, selectedCircleId === null && styles.groupChipTextActive]}>
-                    {t('newPost.audienceEveryone')}
-                  </Text>
-                </TouchableOpacity>
-                {circles.map((circle) => {
-                  const isActive = selectedCircleId === circle.id
-                  return (
-                    <TouchableOpacity
-                      key={circle.id}
-                      style={[styles.circleChip, isActive && styles.circleChipActive]}
-                      onPress={() => setSelectedCircleId(circle.id)}
-                      accessibilityState={{ selected: isActive }}
-                    >
-                      <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>
-                        {circle.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </ScrollView>
-            </View>
-          )}
+        {isAlbum && offeredPostTypes.includes('ALBUM') && (
+          <View>
+            <Text style={styles.sectionLabel}>{t('newPost.album.titleLabel')} *</Text>
+            <TextInput
+              style={styles.tripInput}
+              placeholder={t('newPost.album.titlePlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={albumTitle}
+              onChangeText={setAlbumTitle}
+              maxLength={120}
+              autoFocus
+            />
+          </View>
+        )}
 
-          {isAlbum && offeredPostTypes.includes('ALBUM') && (
+        {!isTrip && (
+          <TextInput
+            style={styles.textInput}
+            placeholder={isAlbum ? t('newPost.album.descriptionPlaceholder') : contentPlaceholder}
+            placeholderTextColor={colors.textMuted}
+            multiline
+            value={content}
+            onChangeText={setContent}
+            autoFocus={!isAlbum}
+          />
+        )}
+
+        {/* Type-specific fields sit right under the content field, matching
+            whichever post type the chip above says is selected. */}
+        {isTrip && offeredPostTypes.includes('TRIP') && (
+          <View style={styles.tripFields}>
+            <Text style={styles.tripHelperText}>{t('newPost.trip.helper')}</Text>
+
             <View>
-              <Text style={styles.sectionLabel}>{t('newPost.album.titleLabel')} *</Text>
+              <Text style={styles.sectionLabel}>{t('newPost.trip.titleLabel')} *</Text>
               <TextInput
                 style={styles.tripInput}
-                placeholder={t('newPost.album.titlePlaceholder')}
+                placeholder={t('newPost.trip.titlePlaceholder')}
                 placeholderTextColor={colors.textMuted}
-                value={albumTitle}
-                onChangeText={setAlbumTitle}
+                value={tripTitle}
+                onChangeText={setTripTitle}
                 maxLength={120}
                 autoFocus
               />
             </View>
-          )}
 
-          {!isTrip && (
-            <TextInput
-              style={styles.textInput}
-              placeholder={isAlbum ? t('newPost.album.descriptionPlaceholder') : contentPlaceholder}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              value={content}
-              onChangeText={setContent}
-              autoFocus={!isAlbum}
-            />
-          )}
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.trip.destinationLabel')}</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('newPost.trip.destinationPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={tripDestination}
+                onChangeText={setTripDestination}
+                maxLength={160}
+              />
+            </View>
 
-          {/* Type-specific fields sit right under the content field, matching
-              whichever post type the chip above says is selected. */}
-          {isTrip && offeredPostTypes.includes('TRIP') && (
-            <View style={styles.tripFields}>
-              <Text style={styles.tripHelperText}>{t('newPost.trip.helper')}</Text>
-
-              <View>
-                <Text style={styles.sectionLabel}>{t('newPost.trip.titleLabel')} *</Text>
+            <View style={styles.tripDateRow}>
+              <View style={styles.tripDateField}>
+                <Text style={styles.sectionLabel}>{t('newPost.trip.startDateLabel')} *</Text>
                 <TextInput
-                  style={styles.tripInput}
-                  placeholder={t('newPost.trip.titlePlaceholder')}
+                  style={[styles.tripInput, tripStartDate.length > 0 && !tripStartDateValid && styles.tripInputInvalid]}
+                  placeholder={t('newPost.trip.datePlaceholder')}
                   placeholderTextColor={colors.textMuted}
-                  value={tripTitle}
-                  onChangeText={setTripTitle}
-                  maxLength={120}
-                  autoFocus
+                  value={tripStartDate}
+                  onChangeText={setTripStartDate}
+                  maxLength={10}
                 />
               </View>
-
-              <View>
-                <Text style={styles.sectionLabel}>{t('newPost.trip.destinationLabel')}</Text>
+              <View style={styles.tripDateField}>
+                <Text style={styles.sectionLabel}>{t('newPost.trip.endDateLabel')}</Text>
                 <TextInput
-                  style={styles.tripInput}
-                  placeholder={t('newPost.trip.destinationPlaceholder')}
+                  style={[styles.tripInput, tripEndDate.length > 0 && !tripEndDateValid && styles.tripInputInvalid]}
+                  placeholder={t('newPost.trip.endDateOptional')}
                   placeholderTextColor={colors.textMuted}
-                  value={tripDestination}
-                  onChangeText={setTripDestination}
-                  maxLength={160}
+                  value={tripEndDate}
+                  onChangeText={setTripEndDate}
+                  maxLength={10}
                 />
               </View>
+            </View>
+            <Text style={styles.tripDateHint}>{t('newPost.trip.dateHint')}</Text>
 
-              <View style={styles.tripDateRow}>
-                <View style={styles.tripDateField}>
-                  <Text style={styles.sectionLabel}>{t('newPost.trip.startDateLabel')} *</Text>
-                  <TextInput
-                    style={[
-                      styles.tripInput,
-                      tripStartDate.length > 0 && !tripStartDateValid && styles.tripInputInvalid,
-                    ]}
-                    placeholder={t('newPost.trip.datePlaceholder')}
-                    placeholderTextColor={colors.textMuted}
-                    value={tripStartDate}
-                    onChangeText={setTripStartDate}
-                    maxLength={10}
-                  />
-                </View>
-                <View style={styles.tripDateField}>
-                  <Text style={styles.sectionLabel}>{t('newPost.trip.endDateLabel')}</Text>
-                  <TextInput
-                    style={[styles.tripInput, tripEndDate.length > 0 && !tripEndDateValid && styles.tripInputInvalid]}
-                    placeholder={t('newPost.trip.endDateOptional')}
-                    placeholderTextColor={colors.textMuted}
-                    value={tripEndDate}
-                    onChangeText={setTripEndDate}
-                    maxLength={10}
-                  />
-                </View>
+            {tripCoverPhotoUrl ? (
+              <View style={styles.tripCoverPreviewWrap}>
+                <Image source={{ uri: getUploadUrl(tripCoverPhotoUrl) }} style={styles.tripCoverPreview} />
+                <TouchableOpacity style={styles.tripCoverRemoveButton} onPress={() => setTripCoverPhotoUrl(null)}>
+                  <Icon name="x" size={12} color={colors.white} />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.tripDateHint}>{t('newPost.trip.dateHint')}</Text>
+            ) : (
+              <TouchableOpacity
+                style={styles.tripCoverButton}
+                onPress={pickTripCoverPhoto}
+                disabled={tripCoverUploading}
+              >
+                <View style={styles.tripCoverButtonIcon}>
+                  {tripCoverUploading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Icon name="plus" size={18} color={colors.white} />
+                  )}
+                </View>
+                <View style={styles.tripCoverButtonText}>
+                  <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.coverPhotoTitle')}</Text>
+                  <Text style={styles.tripCoverButtonSubtitle}>{t('newPost.trip.coverPhotoSubtitle')}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
 
-              {tripCoverPhotoUrl ? (
-                <View style={styles.tripCoverPreviewWrap}>
-                  <Image source={{ uri: getUploadUrl(tripCoverPhotoUrl) }} style={styles.tripCoverPreview} />
-                  <TouchableOpacity style={styles.tripCoverRemoveButton} onPress={() => setTripCoverPhotoUrl(null)}>
-                    <Icon name="x" size={12} color={colors.white} />
+            <TouchableOpacity style={styles.tripCoverButton} onPress={() => setShowTravelerPicker(true)}>
+              <View style={styles.tripCoverButtonIcon}>
+                <Icon name="users" size={16} color={colors.white} />
+              </View>
+              <View style={styles.tripCoverButtonText}>
+                <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.travelersLabel')}</Text>
+                <Text style={styles.tripCoverButtonSubtitle}>
+                  {tripTravelerIds.length > 0
+                    ? t('newPost.trip.travelersSelected', { count: tripTravelerIds.length })
+                    : t('newPost.trip.travelersSubtitle')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {postType === 'POLL' && offeredPostTypes.includes('POLL') && (
+          <View style={styles.pollOptionsContainer}>
+            {pollOptions.map((optionText, index) => (
+              <View key={index} style={styles.pollOptionRow}>
+                <TextInput
+                  style={styles.pollOptionInput}
+                  placeholder={t('poll.optionPlaceholder', { number: index + 1 })}
+                  placeholderTextColor={colors.textMuted}
+                  value={optionText}
+                  onChangeText={(text) => updatePollOption(index, text)}
+                  maxLength={100}
+                />
+                {pollOptions.length > MIN_POLL_OPTIONS && (
+                  <TouchableOpacity
+                    style={styles.pollOptionRemoveButton}
+                    onPress={() => removePollOption(index)}
+                    accessibilityLabel={t('poll.removeOption')}
+                  >
+                    <Icon name="x" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            {pollOptions.length < MAX_POLL_OPTIONS && (
+              <TouchableOpacity style={styles.pollAddOptionButton} onPress={addPollOption}>
+                <Icon name="plus" size={16} color={colors.primary} />
+                <Text style={styles.pollAddOptionText}>{t('poll.addOption')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {isMilestone && offeredPostTypes.includes('MILESTONE') && (
+          <View style={styles.milestoneFields}>
+            <Text style={styles.sectionLabel}>{t('newPost.milestoneSubtitle')}</Text>
+            <View style={styles.tagList}>
+              {MILESTONE_TAG_KEYS.map((tagKey) => {
+                const tag = t(`newPost.milestoneTags.${tagKey}`)
+                const active = !isCustomTag && selectedTag === tag
+                return (
+                  <TouchableOpacity
+                    key={tagKey}
+                    style={[styles.tagChip, active && styles.tagChipActive]}
+                    onPress={() => {
+                      setIsCustomTag(false)
+                      setSelectedTag(tag)
+                    }}
+                  >
+                    <Icon
+                      name={MILESTONE_TAG_ICON[tagKey]}
+                      size={14}
+                      color={active ? colors.milestoneText : colors.textMuted}
+                    />
+                    <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>{tag}</Text>
+                  </TouchableOpacity>
+                )
+              })}
+              <TouchableOpacity
+                style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
+                onPress={() => {
+                  setIsCustomTag(true)
+                  setSelectedTag(null)
+                }}
+              >
+                <Icon
+                  name={MILESTONE_TAG_ICON.custom}
+                  size={14}
+                  color={isCustomTag ? colors.milestoneText : colors.textMuted}
+                />
+                <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
+                  {t('newPost.milestoneTags.custom')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {isCustomTag && (
+              <TextInput
+                style={styles.customTagInput}
+                placeholder={t('newPost.milestoneTags.customPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={customTagText}
+                onChangeText={setCustomTagText}
+                maxLength={50}
+                autoFocus
+              />
+            )}
+          </View>
+        )}
+
+        {!isTrip && <View style={styles.divider} />}
+
+        {/* Attachments: a compact, growable pill row instead of stacked
+            cards, plus a thumbnail strip for whatever's already added. Not
+            shown for TRIP — its only photo is the optional cover above,
+            handled by the trip fields block. */}
+        {!isTrip && (
+          <View style={styles.attachSection}>
+            <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
+
+            {(allAssets.length > 0 || pendingAssets.length > 0) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.selectedAssets}
+              >
+                {allAssets.map((asset) => {
+                  const isVideo = isVideoUrl(asset.url)
+                  return (
+                    <View key={asset.url} style={styles.selectedAsset}>
+                      {isVideo ? (
+                        <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
+                      ) : (
+                        <Image source={{ uri: getUploadUrl(asset.url) }} style={styles.selectedAssetImage} />
+                      )}
+                      {isVideo && (
+                        <View style={styles.videoBadge} pointerEvents="none">
+                          <Icon name="play" size={14} color={colors.white} />
+                        </View>
+                      )}
+                      <TouchableOpacity style={styles.removeAssetButton} onPress={() => removeUploadedAsset(asset.url)}>
+                        <Icon name="x" size={12} color={colors.white} />
+                      </TouchableOpacity>
+                    </View>
+                  )
+                })}
+                {pendingAssets.map((asset, index) => (
+                  <View key={`pending-${index}`} style={styles.selectedAsset}>
+                    {asset.isVideo ? (
+                      <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
+                    ) : (
+                      <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
+                    )}
+                    <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+
+            <View style={styles.attachPillRow}>
+              <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
+                <View style={styles.attachPillIcon}>
+                  <Icon name="smartphone" size={13} color={colors.white} />
+                </View>
+                <Text style={styles.attachPillLabel}>{t('newPost.addPhotoTitle')}</Text>
+              </TouchableOpacity>
+
+              {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
+                <TouchableOpacity style={styles.attachPill} onPress={() => setShowMediaPicker(true)}>
+                  <View style={styles.attachPillIcon}>
+                    <Icon name="image" size={13} color={colors.white} />
+                  </View>
+                  <Text style={styles.attachPillLabel}>{t('newPost.addAlbumPhotoTitle')}</Text>
+                </TouchableOpacity>
+              )}
+
+              {location ? (
+                <View style={styles.locationChip}>
+                  <Icon name="map-pin" size={16} color={colors.primary} />
+                  <Text style={styles.locationChipText} numberOfLines={1}>
+                    {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
+                    <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setLocation(null)}>
+                    <Icon name="x" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.tripCoverButton}
-                  onPress={pickTripCoverPhoto}
-                  disabled={tripCoverUploading}
-                >
-                  <View style={styles.tripCoverButtonIcon}>
-                    {tripCoverUploading ? (
-                      <ActivityIndicator size="small" color={colors.white} />
-                    ) : (
-                      <Icon name="plus" size={18} color={colors.white} />
-                    )}
-                  </View>
-                  <View style={styles.tripCoverButtonText}>
-                    <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.coverPhotoTitle')}</Text>
-                    <Text style={styles.tripCoverButtonSubtitle}>{t('newPost.trip.coverPhotoSubtitle')}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity style={styles.tripCoverButton} onPress={() => setShowTravelerPicker(true)}>
-                <View style={styles.tripCoverButtonIcon}>
-                  <Icon name="users" size={16} color={colors.white} />
-                </View>
-                <View style={styles.tripCoverButtonText}>
-                  <Text style={styles.tripCoverButtonTitle}>{t('newPost.trip.travelersLabel')}</Text>
-                  <Text style={styles.tripCoverButtonSubtitle}>
-                    {tripTravelerIds.length > 0
-                      ? t('newPost.trip.travelersSelected', { count: tripTravelerIds.length })
-                      : t('newPost.trip.travelersSubtitle')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {postType === 'POLL' && offeredPostTypes.includes('POLL') && (
-            <View style={styles.pollOptionsContainer}>
-              {pollOptions.map((optionText, index) => (
-                <View key={index} style={styles.pollOptionRow}>
-                  <TextInput
-                    style={styles.pollOptionInput}
-                    placeholder={t('poll.optionPlaceholder', { number: index + 1 })}
-                    placeholderTextColor={colors.textMuted}
-                    value={optionText}
-                    onChangeText={(text) => updatePollOption(index, text)}
-                    maxLength={100}
-                  />
-                  {pollOptions.length > MIN_POLL_OPTIONS && (
-                    <TouchableOpacity
-                      style={styles.pollOptionRemoveButton}
-                      onPress={() => removePollOption(index)}
-                      accessibilityLabel={t('poll.removeOption')}
-                    >
-                      <Icon name="x" size={16} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-              {pollOptions.length < MAX_POLL_OPTIONS && (
-                <TouchableOpacity style={styles.pollAddOptionButton} onPress={addPollOption}>
-                  <Icon name="plus" size={16} color={colors.primary} />
-                  <Text style={styles.pollAddOptionText}>{t('poll.addOption')}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {isMilestone && offeredPostTypes.includes('MILESTONE') && (
-            <View style={styles.milestoneFields}>
-              <Text style={styles.sectionLabel}>{t('newPost.milestoneSubtitle')}</Text>
-              <View style={styles.tagList}>
-                {MILESTONE_TAG_KEYS.map((tagKey) => {
-                  const tag = t(`newPost.milestoneTags.${tagKey}`)
-                  const active = !isCustomTag && selectedTag === tag
-                  return (
-                    <TouchableOpacity
-                      key={tagKey}
-                      style={[styles.tagChip, active && styles.tagChipActive]}
-                      onPress={() => {
-                        setIsCustomTag(false)
-                        setSelectedTag(tag)
-                      }}
-                    >
-                      <Icon
-                        name={MILESTONE_TAG_ICON[tagKey]}
-                        size={14}
-                        color={active ? colors.milestoneText : colors.textMuted}
-                      />
-                      <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>{tag}</Text>
-                    </TouchableOpacity>
-                  )
-                })}
-                <TouchableOpacity
-                  style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
-                  onPress={() => {
-                    setIsCustomTag(true)
-                    setSelectedTag(null)
-                  }}
-                >
-                  <Icon
-                    name={MILESTONE_TAG_ICON.custom}
-                    size={14}
-                    color={isCustomTag ? colors.milestoneText : colors.textMuted}
-                  />
-                  <Text style={[styles.tagChipText, isCustomTag && styles.tagChipTextActive]}>
-                    {t('newPost.milestoneTags.custom')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {isCustomTag && (
-                <TextInput
-                  style={styles.customTagInput}
-                  placeholder={t('newPost.milestoneTags.customPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  value={customTagText}
-                  onChangeText={setCustomTagText}
-                  maxLength={50}
-                  autoFocus
-                />
-              )}
-            </View>
-          )}
-
-          {!isTrip && <View style={styles.divider} />}
-
-          {/* Attachments: a compact, growable pill row instead of stacked
-              cards, plus a thumbnail strip for whatever's already added. Not
-              shown for TRIP — its only photo is the optional cover above,
-              handled by the trip fields block. */}
-          {!isTrip && (
-            <View style={styles.attachSection}>
-              <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
-
-              {(allAssets.length > 0 || pendingAssets.length > 0) && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.selectedAssets}
-                >
-                  {allAssets.map((asset) => {
-                    const isVideo = isVideoUrl(asset.url)
-                    return (
-                      <View key={asset.url} style={styles.selectedAsset}>
-                        {isVideo ? (
-                          <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
-                        ) : (
-                          <Image source={{ uri: getUploadUrl(asset.url) }} style={styles.selectedAssetImage} />
-                        )}
-                        {isVideo && (
-                          <View style={styles.videoBadge} pointerEvents="none">
-                            <Icon name="play" size={14} color={colors.white} />
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          style={styles.removeAssetButton}
-                          onPress={() => removeUploadedAsset(asset.url)}
-                        >
-                          <Icon name="x" size={12} color={colors.white} />
-                        </TouchableOpacity>
-                      </View>
-                    )
-                  })}
-                  {pendingAssets.map((asset, index) => (
-                    <View key={`pending-${index}`} style={styles.selectedAsset}>
-                      {asset.isVideo ? (
-                        <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
-                      ) : (
-                        <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
-                      )}
-                      <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-
-              <View style={styles.attachPillRow}>
-                <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
+                <TouchableOpacity style={styles.attachPill} onPress={() => setShowLocationPicker(true)}>
                   <View style={styles.attachPillIcon}>
-                    <Icon name="smartphone" size={13} color={colors.white} />
+                    <Icon name="map-pin" size={13} color={colors.white} />
                   </View>
-                  <Text style={styles.attachPillLabel}>{t('newPost.addPhotoTitle')}</Text>
+                  <Text style={styles.attachPillLabel}>{t('newPost.location.addTitle')}</Text>
                 </TouchableOpacity>
-
-                {(!!mediaAlbums?.length || mediaAlbumsErrored) && (
-                  <TouchableOpacity style={styles.attachPill} onPress={() => setShowMediaPicker(true)}>
-                    <View style={styles.attachPillIcon}>
-                      <Icon name="image" size={13} color={colors.white} />
-                    </View>
-                    <Text style={styles.attachPillLabel}>{t('newPost.addAlbumPhotoTitle')}</Text>
-                  </TouchableOpacity>
-                )}
-
-                {location ? (
-                  <View style={styles.locationChip}>
-                    <Icon name="map-pin" size={16} color={colors.primary} />
-                    <Text style={styles.locationChipText} numberOfLines={1}>
-                      {location.locationName || `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`}
-                    </Text>
-                    <TouchableOpacity onPress={() => setShowLocationPicker(true)}>
-                      <Text style={styles.locationChipAction}>{t('common.edit')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setLocation(null)}>
-                      <Icon name="x" size={16} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity style={styles.attachPill} onPress={() => setShowLocationPicker(true)}>
-                    <View style={styles.attachPillIcon}>
-                      <Icon name="map-pin" size={13} color={colors.white} />
-                    </View>
-                    <Text style={styles.attachPillLabel}>{t('newPost.location.addTitle')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              )}
             </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </View>
+        )}
+      </KeyboardAwareScrollView>
 
       <LocationPickerModal
         visible={showLocationPicker}

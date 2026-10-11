@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   Modal,
   FlatList,
@@ -15,7 +13,7 @@ import {
   StatusBar,
 } from 'react-native'
 import { Image } from 'expo-image'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -255,128 +253,122 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
         accessibilityLabel={t('stories.next')}
       />
 
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        pointerEvents="box-none"
-      >
-        <SafeAreaView style={{ flex: 1 }} pointerEvents="box-none">
-          <View style={styles.progressRow}>
-            {run.map((item, i) => (
-              <View key={item.id} style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${i < position.idx ? 100 : i === position.idx ? progress * 100 : 0}%` },
-                  ]}
-                />
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.header}>
-            <Avatar name={story.author.name} avatarUrl={story.author.avatarUrl} size={36} />
-            <View style={styles.headerText}>
-              <Text style={styles.authorName} numberOfLines={1}>
-                {story.author.name}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {formatRelativeDate(story.createdAt)} · {story.circle?.name ?? story.group.name}
-                {story.pinnedAt ? ` · ${t('stories.highlightBadge')}` : ''}
-              </Text>
+      <KeyboardAvoidingSafeAreaView style={styles.overlay} pointerEvents="box-none">
+        <View style={styles.progressRow}>
+          {run.map((item, i) => (
+            <View key={item.id} style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${i < position.idx ? 100 : i === position.idx ? progress * 100 : 0}%` },
+                ]}
+              />
             </View>
-            <TouchableOpacity onPress={close} style={styles.iconButton} accessibilityLabel={t('common.close')}>
-              <Icon name="x" size={26} color={colors.white} />
-            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.header}>
+          <Avatar name={story.author.name} avatarUrl={story.author.avatarUrl} size={36} />
+          <View style={styles.headerText}>
+            <Text style={styles.authorName} numberOfLines={1}>
+              {story.author.name}
+            </Text>
+            <Text style={styles.meta} numberOfLines={1}>
+              {formatRelativeDate(story.createdAt)} · {story.circle?.name ?? story.group.name}
+              {story.pinnedAt ? ` · ${t('stories.highlightBadge')}` : ''}
+            </Text>
           </View>
+          <TouchableOpacity onPress={close} style={styles.iconButton} accessibilityLabel={t('common.close')}>
+            <Icon name="x" size={26} color={colors.white} />
+          </TouchableOpacity>
+        </View>
 
-          <View style={{ flex: 1 }} pointerEvents="none" />
+        <View style={{ flex: 1 }} pointerEvents="none" />
 
-          <View>
-            {story.isMine ? (
-              <View style={styles.authorBar}>
-                <TouchableOpacity style={styles.pill} onPress={() => setInsightsOpen(true)}>
-                  <Icon name="eye" size={16} color={colors.white} />
-                  <Text style={styles.pillText}>
-                    {t('stories.seenBy', { count: story.stats?.viewCount ?? 0 })}
-                    {(story.stats?.replyCount ?? 0) > 0
-                      ? ` · ${t('stories.repliesCount', { count: story.stats!.replyCount })}`
-                      : ''}
-                  </Text>
-                </TouchableOpacity>
-                {(live || story.pinnedAt) && (
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={togglePin}
-                    disabled={pin.isPending}
-                    accessibilityLabel={story.pinnedAt ? t('stories.unpin') : t('stories.pin')}
-                  >
-                    <Icon
-                      name="bookmark"
-                      size={22}
-                      filled={!!story.pinnedAt}
-                      color={story.pinnedAt ? colors.milestone : colors.white}
-                    />
-                  </TouchableOpacity>
-                )}
+        <View>
+          {story.isMine ? (
+            <View style={styles.authorBar}>
+              <TouchableOpacity style={styles.pill} onPress={() => setInsightsOpen(true)}>
+                <Icon name="eye" size={16} color={colors.white} />
+                <Text style={styles.pillText}>
+                  {t('stories.seenBy', { count: story.stats?.viewCount ?? 0 })}
+                  {(story.stats?.replyCount ?? 0) > 0
+                    ? ` · ${t('stories.repliesCount', { count: story.stats!.replyCount })}`
+                    : ''}
+                </Text>
+              </TouchableOpacity>
+              {(live || story.pinnedAt) && (
                 <TouchableOpacity
                   style={styles.iconButton}
-                  onPress={confirmDelete}
-                  disabled={remove.isPending}
-                  accessibilityLabel={t('stories.delete')}
+                  onPress={togglePin}
+                  disabled={pin.isPending}
+                  accessibilityLabel={story.pinnedAt ? t('stories.unpin') : t('stories.pin')}
                 >
-                  <Icon name="trash-2" size={22} color={colors.white} />
+                  <Icon
+                    name="bookmark"
+                    size={22}
+                    filled={!!story.pinnedAt}
+                    color={story.pinnedAt ? colors.milestone : colors.white}
+                  />
                 </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={confirmDelete}
+                disabled={remove.isPending}
+                accessibilityLabel={t('stories.delete')}
+              >
+                <Icon name="trash-2" size={22} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.viewerBar}>
+              <View style={styles.reactions}>
+                {REACTION_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.reaction, story.myReaction === type && styles.reactionActive]}
+                    onPress={() => react.mutate({ id: story.id, type })}
+                    disabled={react.isPending}
+                    accessibilityLabel={t(`stories.reactions.${type}` as any)}
+                    accessibilityState={{ selected: story.myReaction === type }}
+                  >
+                    <Text style={styles.reactionEmoji}>{REACTION_EMOJI[type]}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            ) : (
-              <View style={styles.viewerBar}>
-                <View style={styles.reactions}>
-                  {REACTION_TYPES.map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[styles.reaction, story.myReaction === type && styles.reactionActive]}
-                      onPress={() => react.mutate({ id: story.id, type })}
-                      disabled={react.isPending}
-                      accessibilityLabel={t(`stories.reactions.${type}` as any)}
-                      accessibilityState={{ selected: story.myReaction === type }}
-                    >
-                      <Text style={styles.reactionEmoji}>{REACTION_EMOJI[type]}</Text>
-                    </TouchableOpacity>
-                  ))}
+              {story.myReply ? (
+                <Text style={styles.replied}>{t('stories.youReplied', { content: story.myReply.content })}</Text>
+              ) : live ? (
+                <View style={styles.replyRow}>
+                  <TextInput
+                    style={styles.replyInput}
+                    value={replyText}
+                    onChangeText={setReplyText}
+                    onFocus={() => setTyping(true)}
+                    onBlur={() => setTyping(false)}
+                    placeholder={t('stories.replyPlaceholder', { name: story.author.name })}
+                    placeholderTextColor="rgba(255,255,255,0.75)"
+                    maxLength={500}
+                    returnKeyType="send"
+                    onSubmitEditing={() =>
+                      replyText.trim() && reply.mutate({ id: story.id, content: replyText.trim() })
+                    }
+                  />
+                  <TouchableOpacity
+                    style={styles.iconButton}
+                    disabled={!replyText.trim() || reply.isPending}
+                    onPress={() => reply.mutate({ id: story.id, content: replyText.trim() })}
+                    accessibilityLabel={t('stories.sendReply')}
+                  >
+                    <Icon name="send" size={22} color={replyText.trim() ? colors.white : 'rgba(255,255,255,0.4)'} />
+                  </TouchableOpacity>
                 </View>
-                {story.myReply ? (
-                  <Text style={styles.replied}>{t('stories.youReplied', { content: story.myReply.content })}</Text>
-                ) : live ? (
-                  <View style={styles.replyRow}>
-                    <TextInput
-                      style={styles.replyInput}
-                      value={replyText}
-                      onChangeText={setReplyText}
-                      onFocus={() => setTyping(true)}
-                      onBlur={() => setTyping(false)}
-                      placeholder={t('stories.replyPlaceholder', { name: story.author.name })}
-                      placeholderTextColor="rgba(255,255,255,0.75)"
-                      maxLength={500}
-                      returnKeyType="send"
-                      onSubmitEditing={() =>
-                        replyText.trim() && reply.mutate({ id: story.id, content: replyText.trim() })
-                      }
-                    />
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      disabled={!replyText.trim() || reply.isPending}
-                      onPress={() => reply.mutate({ id: story.id, content: replyText.trim() })}
-                      accessibilityLabel={t('stories.sendReply')}
-                    >
-                      <Icon name="send" size={22} color={replyText.trim() ? colors.white : 'rgba(255,255,255,0.4)'} />
-                    </TouchableOpacity>
-                  </View>
-                ) : null}
-              </View>
-            )}
-          </View>
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+              ) : null}
+            </View>
+          )}
+        </View>
+      </KeyboardAvoidingSafeAreaView>
 
       {story.isMine && (
         <StoryInsightsSheet storyId={story.id} visible={insightsOpen} onClose={() => setInsightsOpen(false)} />

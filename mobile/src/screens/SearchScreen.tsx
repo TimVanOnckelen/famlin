@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { View, StyleSheet, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, StyleSheet, FlatList, TextInput } from 'react-native'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 
@@ -38,38 +38,36 @@ export function SearchScreen() {
   const { isLoading } = query
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScreenHeader title={t('search.title', { group: groupName })} onBack={() => navigation.goBack()} centered />
+    <KeyboardAvoidingSafeAreaView style={styles.container}>
+      <ScreenHeader title={t('search.title', { group: groupName })} onBack={() => navigation.goBack()} centered />
 
-        <View style={styles.searchBarContainer}>
-          <Icon name="search" size={18} color={colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            value={queryInput}
-            onChangeText={setQueryInput}
-            placeholder={t('search.placeholder')}
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-            returnKeyType="search"
-          />
-        </View>
-
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <PostCard post={item} />}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          ListEmptyComponent={
-            debouncedQuery.length === 0 ? null : isLoading ? null : (
-              <EmptyState title={t('search.emptyTitle')} subtitle={t('search.emptySubtitle')} centerSubtitle />
-            )
-          }
+      <View style={styles.searchBarContainer}>
+        <Icon name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={styles.searchInput}
+          value={queryInput}
+          onChangeText={setQueryInput}
+          placeholder={t('search.placeholder')}
+          placeholderTextColor={colors.textMuted}
+          autoFocus
+          returnKeyType="search"
         />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => <PostCard post={item} />}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={
+          debouncedQuery.length === 0 ? null : isLoading ? null : (
+            <EmptyState title={t('search.emptyTitle')} subtitle={t('search.emptySubtitle')} centerSubtitle />
+          )
+        }
+      />
+    </KeyboardAvoidingSafeAreaView>
   )
 }
 

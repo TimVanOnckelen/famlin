@@ -437,11 +437,7 @@ export function PostDetailScreen() {
     >
       {!showHeroPhoto && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-        keyboardVerticalOffset={90}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <FlatList
           data={topLevelGroups}
           keyExtractor={(item) => item.key}
@@ -1647,7 +1643,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    paddingBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
