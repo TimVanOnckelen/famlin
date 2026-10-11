@@ -2,18 +2,26 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AppShell } from '@/components/AppShell'
 import { createTestQueryClient, makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { fetchChatUnreadCounts, fetchGroups, fetchServerInfo, Group } from '@famlin/api-client'
+import {
+  fetchChatUnreadCounts,
+  fetchGroups,
+  fetchServerInfo,
+  fetchUnreadNotificationCount,
+  Group,
+} from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchChatUnreadCounts: vi.fn(),
   fetchGroups: vi.fn(),
   fetchServerInfo: vi.fn(),
+  fetchUnreadNotificationCount: vi.fn(),
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null })
+  vi.mocked(fetchUnreadNotificationCount).mockResolvedValue(0)
   vi.mocked(fetchChatUnreadCounts).mockResolvedValue({})
   // Most tests don't care about family-scoped tab hiding — give the shell a
   // member of one family by default.
@@ -42,6 +50,7 @@ function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}, se
       onPhotos={onPhotos}
       onChat={onChat}
       onFavorites={onFavorites}
+      onNotifications={vi.fn()}
       onProfile={onProfile}
       onNewPost={onNewPost}
       onLogout={onLogout}
@@ -207,4 +216,12 @@ describe('AppShell navigation', () => {
     renderShell({ active: 'favorites', onFavorites: undefined }, [])
     expect(screen.getAllByRole('button', { name: 'Favorites' }).length).toBeGreaterThan(0)
   })
+})
+
+it('shows notification links in sidebar and compact header and hides them without groups', () => {
+  const { unmount } = renderShell()
+  expect(screen.getAllByRole('button', { name: 'Notifications' })).toHaveLength(2)
+  unmount()
+  renderShell({}, [])
+  expect(screen.queryByRole('button', { name: 'Notifications' })).not.toBeInTheDocument()
 })

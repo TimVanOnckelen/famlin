@@ -25,6 +25,7 @@ export function PostDetailPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenNotifications,
   onLogout,
 }: {
   user: User
@@ -37,6 +38,7 @@ export function PostDetailPage({
   onOpenChat?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -88,6 +90,7 @@ export function PostDetailPage({
       onFeed={onOpenFeed ?? onBack}
       onPhotos={onOpenPhotos}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
       onChat={onOpenChat}
       onProfile={onOpenProfile ?? (() => {})}
       onLogout={onLogout}

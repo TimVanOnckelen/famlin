@@ -247,7 +247,8 @@
     "photos": "Foto's",
     "profile": "Profiel",
     "chat": "Chat",
-    "favorites": "Favorieten"
+    "favorites": "Favorieten",
+    "notifications": "Meldingen"
   },
   "demo": {
     "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
@@ -376,6 +377,16 @@
     "prevPost": "Vorig bericht",
     "openPost": "Bericht openen",
     "likePost": "Bericht liken",
-    "favoritePost": "Bericht favorieten"
+    "favoritePost": "Bericht favorieten",
+    "goNotifications": "Ga naar meldingen"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "markAllRead": "Alles als gelezen markeren",
+    "empty": "Geen meldingen",
+    "loadFailed": "Meldingen konden niet worden geladen.",
+    "markFailed": "Meldingen konden niet als gelezen worden gemarkeerd. Probeer het opnieuw.",
+    "unread": "Ongelezen",
+    "storyUnavailable": "Dit verhaal is niet meer beschikbaar."
   }
 }

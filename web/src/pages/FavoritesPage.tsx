@@ -28,6 +28,7 @@ export function FavoritesPage({
   onOpenTrip,
   onOpenAlbum,
   onLogout,
+  onOpenNotifications,
 }: {
   user: User
   onBack: () => void
@@ -37,6 +38,7 @@ export function FavoritesPage({
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
   onLogout: () => void
+  onOpenNotifications?: () => void
 }) {
   const { t } = useTranslation()
   const openPostModal = useOpenPostModal()
@@ -71,6 +73,7 @@ export function FavoritesPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={() => {}}
+      onNotifications={onOpenNotifications}
       onProfile={onOpenProfile}
       onLogout={onLogout}
     >

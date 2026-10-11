@@ -25,6 +25,7 @@ export function PhotosPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenNotifications,
   onOpenAlbum,
   onLogout,
 }: {
@@ -33,6 +34,7 @@ export function PhotosPage({
   onOpenChat?: () => void
   onOpenProfile: () => void
   onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
   onOpenAlbum?: (postId: string) => void
   onLogout: () => void
 }) {
@@ -147,6 +149,7 @@ export function PhotosPage({
       onFeed={onOpenFeed ?? (() => {})}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
       onProfile={onOpenProfile}
       // Same no-family rule as the feed: no groups → no composer to open, so
       // the shell hides its "New post" button/FAB entirely.

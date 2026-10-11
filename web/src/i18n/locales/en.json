@@ -247,7 +247,8 @@
     "photos": "Photos",
     "profile": "Profile",
     "chat": "Chat",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "notifications": "Notifications"
   },
   "demo": {
     "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
@@ -376,6 +377,16 @@
     "prevPost": "Previous post",
     "openPost": "Open post",
     "likePost": "Like post",
-    "favoritePost": "Favorite post"
+    "favoritePost": "Favorite post",
+    "goNotifications": "Go to notifications"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications",
+    "loadFailed": "Could not load notifications.",
+    "markFailed": "Could not mark notifications as read. Please try again.",
+    "unread": "Unread",
+    "storyUnavailable": "This story is no longer available."
   }
 }
