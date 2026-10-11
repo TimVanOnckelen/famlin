@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.8.2](https://github.com/TimVanOnckelen/famlin/compare/v0.8.1...v0.8.2) (2026-10-11)
+
+
+### Features
+
+* **backend:** graceful shutdown, DB-aware healthcheck and log rotation ([d062e84](https://github.com/TimVanOnckelen/famlin/commit/d062e844fbc2b9f46332c1d386f0f00288d7ddad)), closes [#225](https://github.com/TimVanOnckelen/famlin/issues/225)
+* **web:** add a favorites page with shell entry points ([633db8f](https://github.com/TimVanOnckelen/famlin/commit/633db8fb52bb7ebf9cca6b09030f7c1426888d75))
+* **web:** handle the no-family state across shell, feed, and routes ([cbd4ce1](https://github.com/TimVanOnckelen/famlin/commit/cbd4ce181592ab8edd002e781fc8db04d59af77a))
+* **web:** handle the no-family state across shell, feed, and routes ([6d0f763](https://github.com/TimVanOnckelen/famlin/commit/6d0f763594236c3985bd5a93107b70cd5c4bc0eb))
+* **web:** mobile-style redesign for wide screens with keyboard navigation ([f3a0d26](https://github.com/TimVanOnckelen/famlin/commit/f3a0d26e9763c2e830834ade3cdc9add4a8de9a0))
+
+
+### Bug Fixes
+
+* **dev:** simplify dependency setup and load seed environment ([0e7b050](https://github.com/TimVanOnckelen/famlin/commit/0e7b05095f572bf870a0e3069e22cbf51355505d))
+* **mobile:** draw a filled bookmark for favorited posts ([a539586](https://github.com/TimVanOnckelen/famlin/commit/a53958634daccca5e407e90019ef980d072bd331)), closes [#220](https://github.com/TimVanOnckelen/famlin/issues/220)
+* **mobile:** improve lightbox dismissal and swipe momentum ([7e94653](https://github.com/TimVanOnckelen/famlin/commit/7e946536010adf245bc1022ef0dcbf95ed482de3))
+* **mobile:** improve lightbox dismissal and swipe momentum ([5e62949](https://github.com/TimVanOnckelen/famlin/commit/5e629499446742aa15af9630b17b93ab30c572c8))
+* **mobile:** keep bookmark box stable on toggle and fill pinned stories ([c787b49](https://github.com/TimVanOnckelen/famlin/commit/c787b49c968b7cc13a3570c4921977e14bad8899))
+* smooth story progress and center web reaction buttons ([3b46765](https://github.com/TimVanOnckelen/famlin/commit/3b46765b8f79659422061df8c78c224c10efbf1c))
+* **web:** clear file input before opening the picker, not in the chan… ([d9cc830](https://github.com/TimVanOnckelen/famlin/commit/d9cc83062af7ed68c53e199c7e2a0e738facec00))
+* **web:** clear file input before opening the picker, not in the change handler ([e94b565](https://github.com/TimVanOnckelen/famlin/commit/e94b5658f92bd606508031cfc16dabc5bddfb7fd))
+* **web:** don't read or write refs during render (lint) ([8543052](https://github.com/TimVanOnckelen/famlin/commit/854305279608a54ba4822ac63517c721bf9c110c))
+* **web:** fetch groups during bootstrap so family-scoped tabs never flash on cold load ([c0da898](https://github.com/TimVanOnckelen/famlin/commit/c0da898072302f0ed51374cb92cd2323d732c35e))
+* **web:** hide favorites navigation for users without groups ([9c45171](https://github.com/TimVanOnckelen/famlin/commit/9c451719e2d30e3a0d616f2d232fb1f6279eae19))
+* **web:** visual and layout fixes across feed, chat, albums and trips ([43b102e](https://github.com/TimVanOnckelen/famlin/commit/43b102e8cb91f691426676bbdc64c9cf47e7ce1c))
+* **web:** visual and layout fixes across feed, chat, albums and trips ([1c8cbea](https://github.com/TimVanOnckelen/famlin/commit/1c8cbeaf3b0b09c98492be15543c3139a6180b20))
+
 ## [0.8.1](https://github.com/TimVanOnckelen/famlin/compare/v0.8.0...v0.8.1) (2026-10-06)
 
 
