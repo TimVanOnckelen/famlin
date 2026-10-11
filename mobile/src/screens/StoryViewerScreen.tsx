@@ -45,7 +45,6 @@ import { formatRelativeDate } from '@/i18n/utils';
 import { nextStoryPosition, previousStoryPosition, StoryPosition } from '@/utils/stories';
 
 export const STORY_DURATION_MS = 5000;
-const TICK_MS = 100;
 
 type Params = {
   sequences?: Story[][];
@@ -103,6 +102,7 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
   const [replyText, setReplyText] = useState('');
 
   const story = sequences[position.seq]?.[position.idx];
+  const storyId = story?.id;
   const paused = holding || typing || insightsOpen;
 
   const close = useCallback(() => {
@@ -131,10 +131,18 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
   }, [story]);
 
   useEffect(() => {
-    if (paused || !story) return;
-    const timer = setInterval(() => setElapsed((e) => e + TICK_MS), TICK_MS);
-    return () => clearInterval(timer);
-  }, [paused, story]);
+    if (paused || !storyId) return;
+    let previousTime = performance.now();
+    let frame: number;
+    function tick(now: number) {
+      const delta = now - previousTime;
+      previousTime = now;
+      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta));
+      frame = requestAnimationFrame(tick);
+    }
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [paused, storyId]);
 
   useEffect(() => {
     if (elapsed >= STORY_DURATION_MS) goNext();

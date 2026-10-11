@@ -56,6 +56,7 @@ export function StoryViewer({
 
   const base = sequences[position.seq]?.[position.idx];
   const story = base ? { ...base, ...overrides[base.id] } : undefined;
+  const storyId = story?.id;
   const paused = hovering || typing || insightsOpen;
 
   const goNext = useCallback(() => {
@@ -86,11 +87,18 @@ export function StoryViewer({
 
   // Auto-advance, paused while hovering, typing a reply or reading insights.
   useEffect(() => {
-    if (paused || !story) return;
-    const tick = 100;
-    const timer = window.setInterval(() => setElapsed((e) => e + tick), tick);
-    return () => window.clearInterval(timer);
-  }, [paused, story]);
+    if (paused || !storyId) return;
+    let previousTime = performance.now();
+    let frame: number;
+    function tick(now: number) {
+      const delta = now - previousTime;
+      previousTime = now;
+      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta));
+      frame = window.requestAnimationFrame(tick);
+    }
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [paused, storyId]);
 
   useEffect(() => {
     if (elapsed >= STORY_DURATION_MS) goNext();
@@ -157,7 +165,7 @@ export function StoryViewer({
             <span key={item.id} className="story-progress-track">
               <span
                 className="story-progress-fill"
-                style={{ width: `${i < position.idx ? 100 : i === position.idx ? progress * 100 : 0}%` }}
+                style={{ transform: `scaleX(${i < position.idx ? 1 : i === position.idx ? progress : 0})` }}
               />
             </span>
           ))}
@@ -201,7 +209,9 @@ export function StoryViewer({
                     aria-label={t(`stories.reactions.${type}`)}
                     disabled={react.isPending}
                   >
-                    {REACTION_EMOJI[type]}
+                    <span className="story-reaction-emoji" aria-hidden="true">
+                      {REACTION_EMOJI[type]}
+                    </span>
                   </button>
                 ))}
               </div>
