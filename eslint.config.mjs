@@ -39,10 +39,7 @@ export default tseslint.config(
     // No type-aware ("recommended-type-checked") rules — too slow/noisy.
     files: ['**/*.{ts,tsx}'],
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // `any` shows up broadly across existing api-client/web code
       // (mocked axios responses in tests, third-party payload shapes) —
       // downgraded rather than mass-editing source to add real types.

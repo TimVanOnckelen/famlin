@@ -1,0 +1,28 @@
+# Prettier formats the TypeScript/JavaScript/CSS source of the code packages.
+# Everything else (Markdown, YAML, JSON, HTML) is deliberately left alone:
+# locale JSON is round-tripped by Weblate, the OpenAPI spec and workflows are
+# hand-tuned YAML, and the docs/website are prose and static HTML.
+*.md
+*.mdx
+*.yml
+*.yaml
+*.json
+*.html
+
+node_modules/
+dist/
+build/
+coverage/
+.expo/
+.docusaurus/
+graphify-out/
+packages/api-client/dist/
+mobile/ios/
+mobile/android/
+backend/src/generated/
+backend/uploads/
+
+# Docs site and marketing page: not part of the code packages.
+docs/
+website/
+design/

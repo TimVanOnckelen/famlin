@@ -5,6 +5,7 @@
 ## Checklist
 
 - [ ] `npx tsc --noEmit` and `npm run lint` pass in every package I touched
+- [ ] Ran `npm run format` from the repo root (no unrelated reformatting)
 - [ ] Added/updated i18n keys in the `en`, `nl` and `zh` locales (`npm run check:locales` passes) (if UI strings changed)
 - [ ] Updated relevant docs (see the [Documentation table](../CLAUDE.md#documentation) in CLAUDE.md)
 - [ ] Tested manually (describe how below)
