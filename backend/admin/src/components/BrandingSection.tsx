@@ -34,7 +34,10 @@ export function BrandingSection() {
   };
 
   useEffect(() => {
-    api.getBranding().then(load).catch((err) => setError(err.message));
+    api
+      .getBranding()
+      .then(load)
+      .catch((err) => setError(err.message));
   }, []);
 
   const colorValid = preset !== CUSTOM || HEX_RE.test(customColor);
@@ -58,7 +61,8 @@ export function BrandingSection() {
     return () => clearTimeout(timer);
   }, [saved]);
 
-  if (!branding) return error ? <div className="error">{error}</div> : <div className="loading">{t('common.loading')}</div>;
+  if (!branding)
+    return error ? <div className="error">{error}</div> : <div className="loading">{t('common.loading')}</div>;
 
   const dirty =
     preset !== branding.preset ||
@@ -147,7 +151,9 @@ export function BrandingSection() {
               title={t(`branding.presets.${option.id}`, { defaultValue: option.id })}
             >
               <span className="branding-swatch-dot" style={{ background: option.color }} />
-              <span className="branding-swatch-label">{t(`branding.presets.${option.id}`, { defaultValue: option.id })}</span>
+              <span className="branding-swatch-label">
+                {t(`branding.presets.${option.id}`, { defaultValue: option.id })}
+              </span>
             </button>
           ))}
           <button
@@ -173,7 +179,12 @@ export function BrandingSection() {
           />
           <label style={{ flex: 1 }}>
             {t('branding.customColor')}
-            <input type="text" value={customColor} onChange={(e) => setCustomColor(e.target.value.trim())} placeholder="#006e94" />
+            <input
+              type="text"
+              value={customColor}
+              onChange={(e) => setCustomColor(e.target.value.trim())}
+              placeholder="#006e94"
+            />
           </label>
         </div>
       )}
@@ -211,7 +222,11 @@ export function BrandingSection() {
             onChange={(e) => handleLogo(e.target.files?.[0])}
           />
           <button type="button" className="secondary" disabled={uploading} onClick={() => fileInput.current?.click()}>
-            {uploading ? t('branding.uploading') : branding.logoUrl ? t('branding.replaceLogo') : t('branding.uploadLogo')}
+            {uploading
+              ? t('branding.uploading')
+              : branding.logoUrl
+                ? t('branding.replaceLogo')
+                : t('branding.uploadLogo')}
           </button>
           {branding.logoUrl && (
             <button type="button" className="secondary" disabled={uploading} onClick={handleRemoveLogo}>

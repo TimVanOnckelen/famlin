@@ -70,7 +70,12 @@ describe('StoryViewer', () => {
     ]);
     vi.mocked(fetchStoryReactions).mockResolvedValue([]);
     vi.mocked(fetchStoryReplies).mockResolvedValue([
-      { id: 'r1', fromUser: { id: 'user-3', name: 'Emma', avatarUrl: null }, content: 'Beautiful', createdAt: new Date().toISOString() },
+      {
+        id: 'r1',
+        fromUser: { id: 'user-3', name: 'Emma', avatarUrl: null },
+        content: 'Beautiful',
+        createdAt: new Date().toISOString(),
+      },
     ]);
     const mine = makeStory({ isMine: true, seen: true, stats: { viewCount: 1, reactionCount: 0, replyCount: 1 } });
     renderWithQueryClient(<StoryViewer sequences={[[mine]]} onClose={() => {}} />);
@@ -87,9 +92,7 @@ describe('StoryViewer', () => {
   it('auto-advances through a run and closes after the last story', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
-    renderWithQueryClient(
-      <StoryViewer sequences={[[makeStory(), makeStory({ id: 'story-2' })]]} onClose={onClose} />
-    );
+    renderWithQueryClient(<StoryViewer sequences={[[makeStory(), makeStory({ id: 'story-2' })]]} onClose={onClose} />);
     act(() => {
       vi.advanceTimersByTime(STORY_DURATION_MS + 200);
     });

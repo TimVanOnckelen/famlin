@@ -41,7 +41,9 @@ describe('PostDetailPage', () => {
     vi.mocked(fetchPost).mockRejectedValue(httpError(status));
     const onOpenFeed = vi.fn();
 
-    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="gone" onBack={() => {}} onOpenFeed={onOpenFeed} onLogout={() => {}} />);
+    renderWithQueryClient(
+      <PostDetailPage user={makeUser()} postId="gone" onBack={() => {}} onOpenFeed={onOpenFeed} onLogout={() => {}} />
+    );
 
     expect(await screen.findByText("This post doesn't exist, or it isn't shared with you.")).toBeInTheDocument();
     screen.getByRole('button', { name: 'Back to the feed' }).click();
@@ -59,7 +61,9 @@ describe('PostDetailPage', () => {
     vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'trip-1', type: 'TRIP', trip: makeTrip() }));
     const onOpenTrip = vi.fn();
 
-    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onOpenTrip={onOpenTrip} onLogout={() => {}} />);
+    renderWithQueryClient(
+      <PostDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onOpenTrip={onOpenTrip} onLogout={() => {}} />
+    );
 
     await vi.waitFor(() => expect(onOpenTrip).toHaveBeenCalledWith('trip-1'));
   });

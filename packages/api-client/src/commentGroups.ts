@@ -10,9 +10,7 @@ export const MAX_COMMENT_ATTACHMENTS = 10;
  * rather than touching either field, so a client stays compatible with an
  * older backend.
  */
-export function commentAttachments(
-  comment: Pick<Comment, 'attachmentUrl' | 'attachmentUrls'>
-): string[] {
+export function commentAttachments(comment: Pick<Comment, 'attachmentUrl' | 'attachmentUrls'>): string[] {
   if (comment.attachmentUrls?.length) return comment.attachmentUrls;
   return comment.attachmentUrl ? [comment.attachmentUrl] : [];
 }
@@ -101,10 +99,7 @@ function toGroup(comments: Comment[]): CommentGroup {
  * chronological order the API returns and preserves it — a bundle takes the
  * position of its first comment.
  */
-export function groupCommentAttachments(
-  comments: Comment[],
-  options?: { windowMs?: number }
-): CommentGroup[] {
+export function groupCommentAttachments(comments: Comment[], options?: { windowMs?: number }): CommentGroup[] {
   const windowMs = options?.windowMs ?? DEFAULT_BUNDLE_WINDOW_MS;
   const groups: Comment[][] = [];
 

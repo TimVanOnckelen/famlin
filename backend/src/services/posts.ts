@@ -47,7 +47,7 @@ export function shapePost<
     _count: { comments: number; likes: number };
     likes: { type: ReactionType; userId: string; user: { id: string; name: string; avatarUrl: string | null } }[];
     favorites: { id: string }[];
-  }
+  },
 >(post: T, userId: string) {
   const { _count, likes, favorites, crossPostId: _crossPostId, ...rest } = post;
   const { counts, myReaction } = summarizeReactions(likes, userId);
@@ -102,13 +102,15 @@ export function dropLeadingCrossPostSiblings<T extends { crossPostId: string | n
 // privacy rule on shapePost above.
 export async function attachSharedWithGroups<
   S extends { id: string },
-  T extends { id: string; authorId: string; crossPostId: string | null }
->(shapedPosts: S[], rawPosts: T[], viewerId: string): Promise<(S & { sharedWithGroups?: { id: string; name: string }[] })[]> {
+  T extends { id: string; authorId: string; crossPostId: string | null },
+>(
+  shapedPosts: S[],
+  rawPosts: T[],
+  viewerId: string
+): Promise<(S & { sharedWithGroups?: { id: string; name: string }[] })[]> {
   const rawById = new Map(rawPosts.map((p) => [p.id, p]));
   const crossPostIds = [
-    ...new Set(
-      rawPosts.filter((p) => p.crossPostId && p.authorId === viewerId).map((p) => p.crossPostId as string)
-    ),
+    ...new Set(rawPosts.filter((p) => p.crossPostId && p.authorId === viewerId).map((p) => p.crossPostId as string)),
   ];
 
   if (crossPostIds.length === 0) return shapedPosts;
@@ -144,7 +146,10 @@ export async function attachSharedWithGroups<
 // is allowed to propagate to the global error handler like any other route
 // failure, since (unlike an external media provider) PostInteraction is this
 // service's own database, not routine external flakiness.
-async function enrichPostTypes(shapedPosts: Array<Record<string, unknown> & { id: string; type: string }>, viewerId: string): Promise<void> {
+async function enrichPostTypes(
+  shapedPosts: Array<Record<string, unknown> & { id: string; type: string }>,
+  viewerId: string
+): Promise<void> {
   const postsByType = new Map<string, Array<Record<string, unknown> & { id: string; type: string }>>();
   for (const post of shapedPosts) {
     const list = postsByType.get(post.type);
@@ -169,8 +174,18 @@ async function enrichPostTypes(shapedPosts: Array<Record<string, unknown> & { id
 // rather than waiting on a media provider (see routes/posts.ts) — a brand
 // new post has no votes/interactions yet anyway.
 export async function shapePostsWithPeople<
-  T extends Parameters<typeof shapePost>[0] & { id: string; authorId: string; uploadedAssetUrls: string[]; type: string }
->(posts: T[], userId: string): Promise<(ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]> {
+  T extends Parameters<typeof shapePost>[0] & {
+    id: string;
+    authorId: string;
+    uploadedAssetUrls: string[];
+    type: string;
+  },
+>(
+  posts: T[],
+  userId: string
+): Promise<
+  (ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]
+> {
   const shaped = posts.map((post) => shapePost(post, userId));
   const peopleByPostId = await attachPeopleToPosts(shaped);
   const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }));

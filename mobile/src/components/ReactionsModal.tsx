@@ -16,7 +16,11 @@ import { fetchPostReactions, PostReactor } from '@famlin/api-client';
 export function ReactionsModal({ postId, onClose }: { postId: string | null; onClose: () => void }) {
   const { t } = useTranslation();
 
-  const { data: reactors, isLoading, isError } = useQuery({
+  const {
+    data: reactors,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['postReactions', postId],
     queryFn: () => fetchPostReactions(postId!),
     enabled: postId !== null,

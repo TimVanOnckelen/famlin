@@ -83,16 +83,19 @@ describe('groups routes', () => {
   // mutating route here would silently reopen it to any authenticated user
   // (no requireAdmin guard exists in this file), so guard against that shape
   // of route ever coming back.
-  it.each(['POST', 'PATCH', 'PUT', 'DELETE'] as const)('has no %s route registered under /api/groups', async (method) => {
-    const user = await createUser();
-    const group = await createGroupWithMember(user);
+  it.each(['POST', 'PATCH', 'PUT', 'DELETE'] as const)(
+    'has no %s route registered under /api/groups',
+    async (method) => {
+      const user = await createUser();
+      const group = await createGroupWithMember(user);
 
-    const res = await app.inject({
-      method,
-      url: `/api/groups/${group.id}`,
-      headers: authHeader(user),
-    });
+      const res = await app.inject({
+        method,
+        url: `/api/groups/${group.id}`,
+        headers: authHeader(user),
+      });
 
-    expect(res.statusCode).toBe(404);
-  });
+      expect(res.statusCode).toBe(404);
+    }
+  );
 });

@@ -57,12 +57,7 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
-      <div
-        className="modal-card api-tokens-card"
-        ref={cardRef}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="modal-card api-tokens-card" ref={cardRef} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">{t('apiTokens.title')}</h2>
         <p className="api-tokens-intro">
           {t('apiTokens.intro')}{' '}
@@ -73,7 +68,9 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
 
         {createdToken && (
           <div className="api-token-created" role="status">
-            <div className="api-token-created-heading">{t('apiTokens.createdHeading', { name: createdToken.name })}</div>
+            <div className="api-token-created-heading">
+              {t('apiTokens.createdHeading', { name: createdToken.name })}
+            </div>
             <div className="api-token-created-warning">{t('apiTokens.shownOnce')}</div>
             <div className="api-token-secret-row">
               <code className="api-token-secret">{createdToken.token}</code>
@@ -116,9 +113,7 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
 
         {tokensQuery.isLoading && <div className="api-tokens-hint">{t('common.loading')}</div>}
         {tokensQuery.isError && <div className="api-tokens-hint">{t('apiTokens.loadFailed')}</div>}
-        {tokensQuery.isSuccess && tokens.length === 0 && (
-          <div className="api-tokens-hint">{t('apiTokens.empty')}</div>
-        )}
+        {tokensQuery.isSuccess && tokens.length === 0 && <div className="api-tokens-hint">{t('apiTokens.empty')}</div>}
 
         {tokens.length > 0 && (
           <ul className="api-token-list">

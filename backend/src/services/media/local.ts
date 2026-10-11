@@ -165,7 +165,12 @@ async function ensureRendition(
   // which is what a thumbnail should be anyway).
   await sharp(filePath)
     .rotate()
-    .resize({ width: VARIANT_WIDTHS[variant], height: VARIANT_WIDTHS[variant], fit: 'inside', withoutEnlargement: true })
+    .resize({
+      width: VARIANT_WIDTHS[variant],
+      height: VARIANT_WIDTHS[variant],
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
     .jpeg({ quality: 80 })
     .toFile(tmpPath);
   // Atomic swap so a concurrent request never reads a half-written file.
@@ -281,7 +286,12 @@ export const localProvider: MediaProvider = {
 
     try {
       if (variant === 'original') {
-        return await streamFile(filePath, CONTENT_TYPES[fileExt(fileName)] ?? 'application/octet-stream', reply, rangeHeader);
+        return await streamFile(
+          filePath,
+          CONTENT_TYPES[fileExt(fileName)] ?? 'application/octet-stream',
+          reply,
+          rangeHeader
+        );
       }
       const rendition = await ensureRendition(externalAlbumId, fileName, filePath, variant);
       return await streamFile(rendition, 'image/jpeg', reply, rangeHeader);

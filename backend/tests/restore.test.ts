@@ -93,14 +93,27 @@ describe('POST /api/auth/setup/restore', () => {
 
   it('round-trips an export: seed, export, wipe, restore, compare', async () => {
     // --- seed ---------------------------------------------------------
-    const admin = await createUser({ isAdmin: true, email: 'admin@example.com', name: 'Admin', password: 'old-password-1' });
+    const admin = await createUser({
+      isAdmin: true,
+      email: 'admin@example.com',
+      name: 'Admin',
+      password: 'old-password-1',
+    });
     const member = await createUser({ email: 'member@example.com', name: 'Member', password: 'member-password' });
     const group = await createGroupWithMember(admin);
     await addMember(group.id, member.id);
-    await prisma.group.update({ where: { id: group.id }, data: { chitchatEnabled: true, allowedPostTypes: ['UPDATE', 'POLL'] } });
+    await prisma.group.update({
+      where: { id: group.id },
+      data: { chitchatEnabled: true, allowedPostTypes: ['UPDATE', 'POLL'] },
+    });
 
     const circle = await prisma.circle.create({
-      data: { groupId: group.id, name: 'Grandparents', createdById: admin.id, members: { create: [{ userId: admin.id }] } },
+      data: {
+        groupId: group.id,
+        name: 'Grandparents',
+        createdById: admin.id,
+        members: { create: [{ userId: admin.id }] },
+      },
     });
 
     const assetKey = crypto.randomUUID();
@@ -112,7 +125,13 @@ describe('POST /api/auth/setup/restore', () => {
     await prisma.upload.create({ data: { assetKey, uploaderId: admin.id, circleId: circle.id, bound: true } });
 
     const circlePost = await prisma.post.create({
-      data: { groupId: group.id, authorId: admin.id, circleId: circle.id, content: 'Circle only', uploadedAssetUrls: [assetPath] },
+      data: {
+        groupId: group.id,
+        authorId: admin.id,
+        circleId: circle.id,
+        content: 'Circle only',
+        uploadedAssetUrls: [assetPath],
+      },
     });
     const poll = await prisma.post.create({
       data: {
@@ -120,11 +139,19 @@ describe('POST /api/auth/setup/restore', () => {
         authorId: member.id,
         type: 'POLL',
         content: 'Pizza?',
-        typeData: { options: [{ id: 'a', text: 'Yes' }, { id: 'b', text: 'No' }], closesAt: null },
+        typeData: {
+          options: [
+            { id: 'a', text: 'Yes' },
+            { id: 'b', text: 'No' },
+          ],
+          closesAt: null,
+        },
         uploadedAssetUrls: [],
       },
     });
-    await prisma.postInteraction.create({ data: { postId: poll.id, userId: admin.id, key: 'vote', value: { optionId: 'a' } } });
+    await prisma.postInteraction.create({
+      data: { postId: poll.id, userId: admin.id, key: 'vote', value: { optionId: 'a' } },
+    });
     const plain = await createPost({ groupId: group.id, authorId: member.id, content: 'Hello' });
 
     const parent = await createComment({ postId: plain.id, authorId: admin.id, content: 'Parent' });
@@ -135,13 +162,21 @@ describe('POST /api/auth/setup/restore', () => {
     await prisma.favorite.create({ data: { postId: plain.id, userId: admin.id } });
 
     const msg = await prisma.chatMessage.create({ data: { groupId: group.id, authorId: admin.id, content: 'Hi' } });
-    await prisma.chatMessage.create({ data: { groupId: group.id, authorId: member.id, content: 'Hey', replyToMessageId: msg.id } });
+    await prisma.chatMessage.create({
+      data: { groupId: group.id, authorId: member.id, content: 'Hey', replyToMessageId: msg.id },
+    });
     await prisma.chatMessage.create({
       data: { groupId: group.id, authorId: member.id, kind: 'SYSTEM_MILESTONE', refPostId: plain.id },
     });
     await prisma.chatRead.create({ data: { groupId: group.id, userId: admin.id } });
     await prisma.mediaAlbumLink.create({
-      data: { groupId: group.id, provider: 'local', externalAlbumId: 'summer', albumName: 'Summer', newAssetMode: 'MANUAL' },
+      data: {
+        groupId: group.id,
+        provider: 'local',
+        externalAlbumId: 'summer',
+        albumName: 'Summer',
+        newAssetMode: 'MANUAL',
+      },
     });
     await prisma.mediaPersonLink.create({
       data: { provider: 'immich', externalPersonId: 'p1', label: 'Grandma', userId: member.id },
@@ -155,7 +190,9 @@ describe('POST /api/auth/setup/restore', () => {
     const liveKey = crypto.randomUUID();
     fs.writeFileSync(path.join(uploadsDir, `${highlightKey}.jpg`), 'highlight-bytes');
     fs.writeFileSync(path.join(uploadsDir, `${liveKey}.jpg`), 'live-bytes');
-    await prisma.upload.create({ data: { assetKey: highlightKey, uploaderId: admin.id, bound: true, groupIds: [group.id] } });
+    await prisma.upload.create({
+      data: { assetKey: highlightKey, uploaderId: admin.id, bound: true, groupIds: [group.id] },
+    });
     await prisma.upload.create({ data: { assetKey: liveKey, uploaderId: member.id, bound: true } });
     const createdAt = new Date('2026-07-01T10:00:00Z');
     const highlight = await prisma.story.create({
@@ -297,7 +334,11 @@ describe('POST /api/auth/setup/restore', () => {
     expect(stale.statusCode).toBe(401);
 
     // The restored circle still narrows the audience: the member isn't in it.
-    const me = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { authorization: `Bearer ${body.token}` } });
+    const me = await app.inject({
+      method: 'GET',
+      url: '/api/auth/me',
+      headers: { authorization: `Bearer ${body.token}` },
+    });
     expect(me.statusCode).toBe(200);
     const memberFeed = await app.inject({
       method: 'GET',
@@ -310,7 +351,8 @@ describe('POST /api/auth/setup/restore', () => {
   it('creates a separate admin account when the email is not in the backup', async () => {
     const admin = await createUser({ isAdmin: true, email: 'someone@example.com' });
     await createGroupWithMember(admin);
-    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) })).rawPayload;
+    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) }))
+      .rawPayload;
     await truncateAll();
 
     const res = await restore(adminFields, archive);
@@ -324,7 +366,8 @@ describe('POST /api/auth/setup/restore', () => {
 
   it('409s once the instance has any user, and writes nothing', async () => {
     const admin = await createUser({ isAdmin: true });
-    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) })).rawPayload;
+    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) }))
+      .rawPayload;
 
     const res = await restore(adminFields, archive);
     expect(res.statusCode).toBe(409);
@@ -367,7 +410,13 @@ describe('POST /api/auth/setup/restore', () => {
       'data/users.json': '[]',
       'data/groups.json': '[]',
       'data/posts.json': JSON.stringify([
-        { id: 'p1', authorId: 'nobody', groupId: 'nowhere', createdAt: new Date().toISOString(), uploadedAssetUrls: [] },
+        {
+          id: 'p1',
+          authorId: 'nobody',
+          groupId: 'nowhere',
+          createdAt: new Date().toISOString(),
+          uploadedAssetUrls: [],
+        },
       ]),
     });
     const res = await restore(adminFields, archive);

@@ -17,7 +17,9 @@ describe('invites routes', () => {
     await app.close();
   });
 
-  async function createInvite(overrides: Partial<{ email: string; expiresAt: Date; usedAt: Date; groupId: string }> = {}) {
+  async function createInvite(
+    overrides: Partial<{ email: string; expiresAt: Date; usedAt: Date; groupId: string }> = {}
+  ) {
     const group = overrides.groupId ? { id: overrides.groupId } : await createGroup();
     return prisma.invite.create({
       data: {
@@ -131,7 +133,7 @@ describe('invites routes', () => {
   });
 
   describe('accept (authenticated join)', () => {
-    it('lets a logged-in user join the invite\'s group', async () => {
+    it("lets a logged-in user join the invite's group", async () => {
       const user = await createUser();
       const invite = await createInvite();
 

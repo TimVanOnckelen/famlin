@@ -53,7 +53,10 @@ export function AlbumDetailScreen() {
   const album = post?.album;
 
   const photos = useMemo(() => collectAlbumPhotos(comments || []), [comments]);
-  const discussion = useMemo(() => (comments || []).filter((c) => !c.parentId && isAlbumDiscussionComment(c)), [comments]);
+  const discussion = useMemo(
+    () => (comments || []).filter((c) => !c.parentId && isAlbumDiscussionComment(c)),
+    [comments]
+  );
 
   const contributeMutation = useMutation({
     mutationFn: (data: { photoUrls: string[]; caption?: string }) => addAlbumPhotos(postId, data),
@@ -197,7 +200,11 @@ export function AlbumDetailScreen() {
           ) : (
             <View style={styles.grid}>
               {photos.map((photo, index) => (
-                <TouchableOpacity key={`${photo.comment.id}-${photo.url}`} style={styles.gridTile} onPress={() => openPhotos(index)}>
+                <TouchableOpacity
+                  key={`${photo.comment.id}-${photo.url}`}
+                  style={styles.gridTile}
+                  onPress={() => openPhotos(index)}
+                >
                   <MediaThumbnail url={getUploadUrl(photo.url)} style={styles.gridImage} />
                 </TouchableOpacity>
               ))}
@@ -238,7 +245,12 @@ export function AlbumDetailScreen() {
             multiline
           />
           <TouchableOpacity onPress={submitComment} disabled={!commentText.trim() || commentMutation.isPending}>
-            <Text style={[styles.commentSend, (!commentText.trim() || commentMutation.isPending) && styles.commentSendDisabled]}>
+            <Text
+              style={[
+                styles.commentSend,
+                (!commentText.trim() || commentMutation.isPending) && styles.commentSendDisabled,
+              ]}
+            >
               {t('comments.send')}
             </Text>
           </TouchableOpacity>
@@ -269,7 +281,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   headerButton: { minWidth: 64, paddingHorizontal: 8, justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: 'Nunito_800ExtraBold', fontSize: 17, color: colors.textTitle },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 17,
+    color: colors.textTitle,
+  },
   headerAction: { fontFamily: 'Nunito_700Bold', fontSize: 14, color: colors.primaryDark, textAlign: 'right' },
   scroll: { paddingBottom: 24 },
   cover: { width: '100%', height: 240 },
@@ -304,7 +322,13 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 28, marginTop: 4 },
   stat: {},
   statNumber: { fontFamily: 'Nunito_900Black', fontSize: 20, color: colors.primaryDark },
-  statLabel: { fontFamily: 'Nunito_700Bold', fontSize: 11, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   contributorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   contributorStack: { flexDirection: 'row' },
   contributorFace: { borderRadius: 13, borderWidth: 2, borderColor: colors.surface },
@@ -322,12 +346,24 @@ const styles = StyleSheet.create({
   },
   addButtonText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: colors.white },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, paddingHorizontal: 16 },
-  gridTile: { width: '32.5%', aspectRatio: 1, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.primaryTint },
+  gridTile: {
+    width: '32.5%',
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: colors.primaryTint,
+  },
   gridImage: { width: '100%', height: '100%' },
   empty: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24 },
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 17, color: colors.textTitle, marginTop: 8 },
-  emptyDescription: { fontFamily: 'Nunito_400Regular', fontSize: 14, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
+  emptyDescription: {
+    fontFamily: 'Nunito_400Regular',
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   sectionTitle: { fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: colors.textTitle },
   noComments: { fontFamily: 'Nunito_400Regular', fontSize: 14, color: colors.textMuted },

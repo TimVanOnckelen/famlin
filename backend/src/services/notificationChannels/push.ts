@@ -84,7 +84,7 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
             staleTokens.push(validTokens[cursor + i].token);
           } else {
             console.error(
-              `Push ticket error (${ticket.details?.error ?? 'unknown'}) for token ${validTokens[cursor + i].token}: ${ticket.message}`,
+              `Push ticket error (${ticket.details?.error ?? 'unknown'}) for token ${validTokens[cursor + i].token}: ${ticket.message}`
             );
           }
         }

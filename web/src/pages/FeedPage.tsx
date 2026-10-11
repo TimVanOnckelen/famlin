@@ -75,9 +75,7 @@ export function FeedPage({
   const circles = circlesQuery.data ?? [];
 
   function toggleGroup(groupId: string) {
-    setSelectedGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
-    );
+    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]));
     // The circle list is per-family, so a circle selected under one family
     // filter is meaningless under another — clear rather than send ids the
     // server would 403.
@@ -116,8 +114,7 @@ export function FeedPage({
   const hasGroups = groups.length > 0;
 
   // Preselect the composer's group when the filter narrows to exactly one.
-  const composerDefaultGroupId =
-    selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
+  const composerDefaultGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
 
   // Stories follow the same family filter. Only fetched when at least one
   // selected family has them turned on (an older server without stories
@@ -263,7 +260,12 @@ export function FeedPage({
                   })}
                   onClick={(e) => onCardClick(e, post)}
                 >
-                  <PostCard post={post} showGroup={showGroupOnCards} onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+                  <PostCard
+                    post={post}
+                    showGroup={showGroupOnCards}
+                    onOpenTrip={onOpenTrip}
+                    onOpenAlbum={onOpenAlbum}
+                  />
                 </div>
               ))}
             </div>
@@ -284,11 +286,7 @@ export function FeedPage({
       </div>
 
       {composerOpen && (
-        <NewPostModal
-          groups={groups}
-          defaultGroupId={composerDefaultGroupId}
-          onClose={() => setComposerOpen(false)}
-        />
+        <NewPostModal groups={groups} defaultGroupId={composerDefaultGroupId} onClose={() => setComposerOpen(false)} />
       )}
     </AppShell>
   );

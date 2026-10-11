@@ -98,9 +98,9 @@ describe('palette derivation', () => {
     expect(derived.semantic.trip).toBe(DEFAULT_SEMANTIC.trip);
     // The shifted circle is far from the brand, so a circle post can't look
     // like a normal family post.
-    expect(
-      hueDistance(hexToOklch(derived.semantic.circle).h, hexToOklch(derived.palette.primary).h)
-    ).toBeGreaterThan(COLLISION_HUE_DISTANCE);
+    expect(hueDistance(hexToOklch(derived.semantic.circle).h, hexToOklch(derived.palette.primary).h)).toBeGreaterThan(
+      COLLISION_HUE_DISTANCE
+    );
   });
 
   it('shifts milestone for a gold brand and trip for a non-teal blue brand', () => {
@@ -309,7 +309,9 @@ describe('branding routes', () => {
   });
 
   it('rejects SVG, non-images and oversized logos', async () => {
-    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><script>alert(1)</script></svg>');
+    const svg = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><script>alert(1)</script></svg>'
+    );
     for (const [name, type, data] of [
       ['logo.svg', 'image/svg+xml', svg],
       ['logo.png', 'image/png', Buffer.from('not an image')],

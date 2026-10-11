@@ -12,26 +12,22 @@ export default async function inviteRoutes(fastify: FastifyInstance) {
   // Rate limited (token enumeration protection) — looser than
   // POST /:token/register since this is just a read-only preview, not an
   // account-creation surface, but still capped for real.
-  fastify.get(
-    '/:token',
-    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
-    async (request) => {
-      const { token } = request.params as { token: string };
-      const { invite, reason } = await getValidInvite(token);
+  fastify.get('/:token', { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } }, async (request) => {
+    const { token } = request.params as { token: string };
+    const { invite, reason } = await getValidInvite(token);
 
-      if (!invite) {
-        return { status: 'not_found' };
-      }
-
-      return {
-        status: reason ?? 'valid',
-        groupName: invite.group.name,
-        groupDescription: invite.group.description,
-        inviterName: invite.createdBy?.name ?? null,
-        email: invite.email,
-      };
+    if (!invite) {
+      return { status: 'not_found' };
     }
-  );
+
+    return {
+      status: reason ?? 'valid',
+      groupName: invite.group.name,
+      groupDescription: invite.group.description,
+      inviterName: invite.createdBy?.name ?? null,
+      email: invite.email,
+    };
+  });
 
   // Public: self-service local account creation for someone who doesn't
   // have one yet — the invite itself is the authorization, bypassing the

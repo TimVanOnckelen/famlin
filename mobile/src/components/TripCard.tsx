@@ -82,11 +82,7 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
             </Text>
           )}
           <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.likeButtonClosed}
-              onPress={toggleLike}
-              disabled={likeMutation.isPending}
-            >
+            <TouchableOpacity style={styles.likeButtonClosed} onPress={toggleLike} disabled={likeMutation.isPending}>
               <Icon name="heart" size={16} color={post.myReaction ? colors.accent : colors.textMuted} />
               <Text style={styles.likeButtonClosedText}>{post.likeCount}</Text>
             </TouchableOpacity>

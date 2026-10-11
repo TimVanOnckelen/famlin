@@ -31,7 +31,11 @@ function rgbToHex(rgb: Rgb): string {
   return (
     '#' +
     rgb
-      .map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0'))
+      .map((v) =>
+        Math.round(Math.min(1, Math.max(0, v)) * 255)
+          .toString(16)
+          .padStart(2, '0')
+      )
       .join('')
   );
 }

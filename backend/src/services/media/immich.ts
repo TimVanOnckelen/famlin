@@ -26,7 +26,11 @@ async function immichFetch(
   try {
     res = await fetch(`${creds.serverUrl}/api${path}`, {
       ...init,
-      headers: { 'x-api-key': creds.apiKey, Accept: 'application/json', ...(init?.headers as Record<string, string> | undefined) },
+      headers: {
+        'x-api-key': creds.apiKey,
+        Accept: 'application/json',
+        ...(init?.headers as Record<string, string> | undefined),
+      },
     });
   } catch {
     throw new MediaProviderError('immich', 'unreachable');
@@ -187,7 +191,10 @@ async function fetchAlbumAssetPeopleBulk(
     const data = (await res.json()) as { assets: { items: ImmichSearchAssetItem[]; nextPage?: string | null } };
     const items = data.assets?.items ?? [];
     for (const item of items) {
-      result.set(item.id, (item.people ?? []).map((p) => ({ id: p.id, name: p.name || '' })));
+      result.set(
+        item.id,
+        (item.people ?? []).map((p) => ({ id: p.id, name: p.name || '' }))
+      );
     }
 
     page = data.assets?.nextPage ?? undefined;
@@ -220,7 +227,10 @@ async function fetchAlbumAssetPeopleFallback(
           const res = await immichFetch(`/assets/${assetId}`, creds, { allow404: true });
           if (res.status === 404) return;
           const data = (await res.json()) as { people?: Array<{ id: string; name?: string }> };
-          result.set(assetId, (data.people ?? []).map((p) => ({ id: p.id, name: p.name || '' })));
+          result.set(
+            assetId,
+            (data.people ?? []).map((p) => ({ id: p.id, name: p.name || '' }))
+          );
         } catch (err) {
           if (!warned) {
             console.warn(`immich: getAlbumAssetPeople fallback failed for album ${externalAlbumId}:`, err);

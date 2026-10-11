@@ -100,10 +100,14 @@ export async function generateVideoPoster(videoPath: string, posterPath: string)
     'ffmpeg',
     [
       '-y',
-      '-i', videoPath,
-      '-vf', `thumbnail,scale=${THUMBNAIL_WIDTH}:${THUMBNAIL_WIDTH}:force_original_aspect_ratio=decrease`,
-      '-frames:v', '1',
-      '-q:v', '4',
+      '-i',
+      videoPath,
+      '-vf',
+      `thumbnail,scale=${THUMBNAIL_WIDTH}:${THUMBNAIL_WIDTH}:force_original_aspect_ratio=decrease`,
+      '-frames:v',
+      '1',
+      '-q:v',
+      '4',
       posterPath,
     ],
     { timeout: 30_000 }
@@ -148,10 +152,7 @@ async function exists(filePath: string): Promise<boolean> {
 // @fastify/static untouched — and also when the source can't be decoded (a
 // sharp build without HEIF support, a corrupt file, an unwritable cache dir),
 // so those keep being served as the raw stored bytes exactly as before.
-export async function resolveHeicRendition(
-  uploadsDir: string,
-  requestedFile: string
-): Promise<string | null> {
+export async function resolveHeicRendition(uploadsDir: string, requestedFile: string): Promise<string | null> {
   const match = UPLOAD_FILENAME_RE.exec(requestedFile);
   if (!match) return null;
   const [, uuid, isThumbnail, rawExt] = match;
@@ -194,11 +195,7 @@ function ensureRenditions(sourcePath: string, derivedDir: string, uuid: string):
   return work;
 }
 
-async function generateRenditions(
-  sourcePath: string,
-  derivedDir: string,
-  uuid: string
-): Promise<boolean> {
+async function generateRenditions(sourcePath: string, derivedDir: string, uuid: string): Promise<boolean> {
   let sourceStat;
   try {
     sourceStat = await fsp.stat(sourcePath);
@@ -228,10 +225,7 @@ async function generateRenditions(
     await fsp.rename(thumbnailTmp, thumbnailPath);
     return true;
   } catch {
-    await Promise.all([
-      fsp.unlink(displayTmp).catch(() => {}),
-      fsp.unlink(thumbnailTmp).catch(() => {}),
-    ]);
+    await Promise.all([fsp.unlink(displayTmp).catch(() => {}), fsp.unlink(thumbnailTmp).catch(() => {})]);
     return false;
   }
 }

@@ -14,13 +14,7 @@ import './FeedSidePanel.css';
 // for its own onThisDay/members affordances — so this renders nothing at all
 // when several (or no) families are selected, and hides either section on
 // its own if it comes back empty.
-export function FeedSidePanel({
-  groupId,
-  onOpenPost,
-}: {
-  groupId: string;
-  onOpenPost: (postId: string) => void;
-}) {
+export function FeedSidePanel({ groupId, onOpenPost }: { groupId: string; onOpenPost: (postId: string) => void }) {
   const { t } = useTranslation();
 
   const onThisDayQuery = useQuery({
@@ -42,11 +36,7 @@ export function FeedSidePanel({
       {onThisDay.length > 0 && (
         <section className="side-panel-section">
           <h2 className="side-panel-title">{t('feed.onThisDayTitle')}</h2>
-          <button
-            type="button"
-            className="side-panel-on-this-day"
-            onClick={() => onOpenPost(onThisDay[0].id)}
-          >
+          <button type="button" className="side-panel-on-this-day" onClick={() => onOpenPost(onThisDay[0].id)}>
             <span className="side-panel-on-this-day-icon" aria-hidden>
               <Icon name="clock" size={18} />
             </span>

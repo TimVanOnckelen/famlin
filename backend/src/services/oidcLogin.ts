@@ -20,9 +20,7 @@ export interface FederatedIdentity {
   picture?: string;
 }
 
-type LoginOutcome =
-  | { error: FailureResponse }
-  | { result: { token: string; user: ReturnType<typeof sanitizeUser> } };
+type LoginOutcome = { error: FailureResponse } | { result: { token: string; user: ReturnType<typeof sanitizeUser> } };
 
 // The shared tail of every federated login — OIDC (POST /oidc, POST
 // /oidc/exchange, GET /oidc/mobile-callback) and Sign in with Apple (POST

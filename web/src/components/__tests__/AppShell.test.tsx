@@ -89,7 +89,7 @@ describe('AppShell navigation', () => {
     expect(screen.queryByRole('button', { name: /New post/ })).not.toBeInTheDocument();
   });
 
-  it('hides the Chat tab when the current page passes no onChat and isn\'t chat', () => {
+  it("hides the Chat tab when the current page passes no onChat and isn't chat", () => {
     renderShell({ onChat: undefined });
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
   });
@@ -198,7 +198,7 @@ describe('AppShell navigation', () => {
     expect(onFavorites).not.toHaveBeenCalled();
   });
 
-  it('hides Favorites when the current page passes no onFavorites and isn\'t favorites', () => {
+  it("hides Favorites when the current page passes no onFavorites and isn't favorites", () => {
     renderShell({ onFavorites: undefined });
     expect(screen.queryByRole('button', { name: 'Favorites' })).not.toBeInTheDocument();
   });

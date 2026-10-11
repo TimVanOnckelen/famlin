@@ -14,7 +14,11 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
 // the card click performs, without mounting the real App route tree.
 function LocationProbe() {
   const location = useLocation();
-  return <div data-testid="location-probe">{location.pathname}|{JSON.stringify(location.state)}</div>;
+  return (
+    <div data-testid="location-probe">
+      {location.pathname}|{JSON.stringify(location.state)}
+    </div>
+  );
 }
 
 function renderPage() {

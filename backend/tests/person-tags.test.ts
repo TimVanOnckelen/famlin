@@ -324,7 +324,10 @@ describe('person tags on posts', () => {
 
     const res = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(member) });
     expect(res.statusCode).toBe(200);
-    const items = res.json().items as Array<{ id: string; people: Array<{ id: string; label: string; userId: string | null }> }>;
+    const items = res.json().items as Array<{
+      id: string;
+      people: Array<{ id: string; label: string; userId: string | null }>;
+    }>;
     const shaped = items.find((p) => p.id === post.id)!;
     expect(shaped.people).toHaveLength(1);
     expect(shaped.people[0]).toMatchObject({ id: 'emma-lib-b', label: 'Emma', userId: mappedUser.id });

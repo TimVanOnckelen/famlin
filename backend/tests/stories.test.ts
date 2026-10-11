@@ -252,15 +252,27 @@ describe('views, reactions and replies', () => {
     const story = (await createStory(author, { groupId: family.id })).json();
 
     await app.inject({ method: 'POST', url: `/api/stories/${story.id}/view`, headers: authHeader(author) });
-    const view = await app.inject({ method: 'POST', url: `/api/stories/${story.id}/view`, headers: authHeader(viewer) });
+    const view = await app.inject({
+      method: 'POST',
+      url: `/api/stories/${story.id}/view`,
+      headers: authHeader(viewer),
+    });
     expect(view.statusCode).toBe(200);
     // Idempotent.
     await app.inject({ method: 'POST', url: `/api/stories/${story.id}/view`, headers: authHeader(viewer) });
 
-    const views = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/views`, headers: authHeader(author) });
+    const views = await app.inject({
+      method: 'GET',
+      url: `/api/stories/${story.id}/views`,
+      headers: authHeader(author),
+    });
     expect(views.json().items.map((v: { id: string }) => v.id)).toEqual([viewer.id]);
 
-    const snooping = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/views`, headers: authHeader(viewer) });
+    const snooping = await app.inject({
+      method: 'GET',
+      url: `/api/stories/${story.id}/views`,
+      headers: authHeader(viewer),
+    });
     expect(snooping.statusCode).toBe(404);
 
     const seen = await app.inject({ method: 'GET', url: `/api/stories/${story.id}`, headers: authHeader(viewer) });
@@ -270,13 +282,22 @@ describe('views, reactions and replies', () => {
   it('toggles and switches a reaction', async () => {
     const story = (await createStory(author, { groupId: family.id })).json();
     const react = (type: string) =>
-      app.inject({ method: 'POST', url: `/api/stories/${story.id}/reaction`, headers: authHeader(viewer), payload: { type } });
+      app.inject({
+        method: 'POST',
+        url: `/api/stories/${story.id}/reaction`,
+        headers: authHeader(viewer),
+        payload: { type },
+      });
 
     expect((await react('LOVE')).json().myReaction).toBe('LOVE');
     expect((await react('HAHA')).json().myReaction).toBe('HAHA');
     expect(await prisma.storyReaction.count({ where: { storyId: story.id } })).toBe(1);
 
-    const list = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/reactions`, headers: authHeader(author) });
+    const list = await app.inject({
+      method: 'GET',
+      url: `/api/stories/${story.id}/reactions`,
+      headers: authHeader(author),
+    });
     expect(list.json().items).toEqual([expect.objectContaining({ id: viewer.id, type: 'HAHA' })]);
 
     expect((await react('HAHA')).json().myReaction).toBeNull();
@@ -286,17 +307,30 @@ describe('views, reactions and replies', () => {
   it('allows one private reply per viewer, never to yourself, and only while live', async () => {
     const story = (await createStory(author, { groupId: family.id })).json();
     const replyAs = (user: TestUser, content = 'Lovely!') =>
-      app.inject({ method: 'POST', url: `/api/stories/${story.id}/reply`, headers: authHeader(user), payload: { content } });
+      app.inject({
+        method: 'POST',
+        url: `/api/stories/${story.id}/reply`,
+        headers: authHeader(user),
+        payload: { content },
+      });
 
     expect((await replyAs(viewer)).statusCode).toBe(200);
     expect((await replyAs(viewer, 'Again')).statusCode).toBe(409);
     expect((await replyAs(author)).statusCode).toBe(400);
 
-    const asAuthor = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/replies`, headers: authHeader(author) });
+    const asAuthor = await app.inject({
+      method: 'GET',
+      url: `/api/stories/${story.id}/replies`,
+      headers: authHeader(author),
+    });
     expect(asAuthor.json().items).toEqual([expect.objectContaining({ content: 'Lovely!' })]);
 
     for (const user of [viewer, insider, admin]) {
-      const res = await app.inject({ method: 'GET', url: `/api/stories/${story.id}/replies`, headers: authHeader(user) });
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/stories/${story.id}/replies`,
+        headers: authHeader(user),
+      });
       expect(res.statusCode).toBe(404);
     }
 
@@ -313,7 +347,11 @@ describe('pinning, Highlights and expiry', () => {
   it('only the author can pin, only while live, and a pinned story becomes a Highlight', async () => {
     const story = (await createStory(author, { groupId: family.id })).json();
 
-    const byViewer = await app.inject({ method: 'POST', url: `/api/stories/${story.id}/pin`, headers: authHeader(viewer) });
+    const byViewer = await app.inject({
+      method: 'POST',
+      url: `/api/stories/${story.id}/pin`,
+      headers: authHeader(viewer),
+    });
     expect(byViewer.statusCode).toBe(404);
 
     const pin = await app.inject({ method: 'POST', url: `/api/stories/${story.id}/pin`, headers: authHeader(author) });
@@ -324,7 +362,11 @@ describe('pinning, Highlights and expiry', () => {
 
     const late = (await createStory(author, { groupId: family.id })).json();
     await expire(late.id);
-    const latePin = await app.inject({ method: 'POST', url: `/api/stories/${late.id}/pin`, headers: authHeader(author) });
+    const latePin = await app.inject({
+      method: 'POST',
+      url: `/api/stories/${late.id}/pin`,
+      headers: authHeader(author),
+    });
     expect(latePin.statusCode).toBe(404);
   });
 
@@ -361,13 +403,15 @@ describe('pinning, Highlights and expiry', () => {
     expect(await prisma.story.findUnique({ where: { id: doomed.id } })).toBeNull();
     expect(await prisma.storyReply.count({ where: { storyId: doomed.id } })).toBe(0);
     expect(fs.existsSync(doomedFile)).toBe(false);
-    expect(
-      await prisma.upload.findUnique({ where: { assetKey: uploadAssetKey(doomed.imageUrl) } })
-    ).toBeNull();
+    expect(await prisma.upload.findUnique({ where: { assetKey: uploadAssetKey(doomed.imageUrl) } })).toBeNull();
 
     // A view after expiry is ignored: the list is frozen.
     await app.inject({ method: 'POST', url: `/api/stories/${kept.id}/view`, headers: authHeader(insider) });
-    const views = await app.inject({ method: 'GET', url: `/api/stories/${kept.id}/views`, headers: authHeader(author) });
+    const views = await app.inject({
+      method: 'GET',
+      url: `/api/stories/${kept.id}/views`,
+      headers: authHeader(author),
+    });
     expect(views.json().items.map((v: { id: string }) => v.id)).toEqual([viewer.id]);
     expect(fs.existsSync(path.join(uploadsDir, path.basename(kept.imageUrl)))).toBe(true);
   });
@@ -377,7 +421,11 @@ describe('pinning, Highlights and expiry', () => {
     await app.inject({ method: 'POST', url: `/api/stories/${story.id}/pin`, headers: authHeader(author) });
     await expire(story.id);
 
-    const res = await app.inject({ method: 'DELETE', url: `/api/stories/${story.id}/pin`, headers: authHeader(author) });
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/stories/${story.id}/pin`,
+      headers: authHeader(author),
+    });
     expect(res.json()).toEqual({ pinnedAt: null, deleted: true });
     expect(await prisma.story.findUnique({ where: { id: story.id } })).toBeNull();
   });
@@ -428,7 +476,10 @@ describe('notifications', () => {
     });
     await vi.waitFor(async () => {
       const types = (
-        await prisma.notification.findMany({ where: { userId: author.id, relatedStoryId: story.id }, select: { type: true } })
+        await prisma.notification.findMany({
+          where: { userId: author.id, relatedStoryId: story.id },
+          select: { type: true },
+        })
       ).map((n) => n.type);
       expect(types.sort()).toEqual(['story_reaction', 'story_reply']);
     });
@@ -461,7 +512,11 @@ describe('admin', () => {
     expect(del.statusCode).toBe(200);
     expect(await prisma.story.findUnique({ where: { id: visible.id } })).toBeNull();
 
-    const nonAdmin = await app.inject({ method: 'GET', url: '/api/admin/content/stories', headers: authHeader(viewer) });
+    const nonAdmin = await app.inject({
+      method: 'GET',
+      url: '/api/admin/content/stories',
+      headers: authHeader(viewer),
+    });
     expect(nonAdmin.statusCode).toBe(403);
   });
 

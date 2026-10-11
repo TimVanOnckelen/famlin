@@ -21,7 +21,11 @@ const MAX_UPLOAD_DIMENSION = 2560;
 // all. Resizing also re-encodes to JPEG, which is a deliberate side effect
 // for HEIC sources: it avoids the backend's synchronous HEIC decode entirely
 // for anything picked through this hook going forward.
-async function resizeForUpload(uri: string, width?: number, height?: number): Promise<{ uri: string; resized: boolean }> {
+async function resizeForUpload(
+  uri: string,
+  width?: number,
+  height?: number
+): Promise<{ uri: string; resized: boolean }> {
   if (!width || !height || Math.max(width, height) <= MAX_UPLOAD_DIMENSION) {
     return { uri, resized: false };
   }
@@ -116,7 +120,11 @@ export function usePickAndUploadMedia({
         const { uri, resized } = await resizeForUpload(asset.uri, asset.width, asset.height);
         return resized
           ? { uri, name: `${fileNamePrefix}${indexSuffix}.jpg`, type: 'image/jpeg' }
-          : { uri, name: asset.fileName || `${fileNamePrefix}${indexSuffix}.jpg`, type: asset.mimeType || 'image/jpeg' };
+          : {
+              uri,
+              name: asset.fileName || `${fileNamePrefix}${indexSuffix}.jpg`,
+              type: asset.mimeType || 'image/jpeg',
+            };
       })
     );
 

@@ -84,7 +84,9 @@ describe('OIDC email_verified', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/oidc',
-      payload: { idToken: await idToken({ sub: 'x', email: 'brand-new-unverified@example.com', email_verified: false }) },
+      payload: {
+        idToken: await idToken({ sub: 'x', email: 'brand-new-unverified@example.com', email_verified: false }),
+      },
     });
     expect(res.statusCode).toBe(403);
     expect(await prisma.user.findUnique({ where: { email: 'brand-new-unverified@example.com' } })).toBeNull();

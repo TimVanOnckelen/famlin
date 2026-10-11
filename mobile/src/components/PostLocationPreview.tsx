@@ -14,7 +14,9 @@ interface PostLocationPreviewProps {
 
 export function PostLocationPreview({ latitude, longitude, locationName, mapHeight = 140 }: PostLocationPreviewProps) {
   function openInBrowser() {
-    Linking.openURL(`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`);
+    Linking.openURL(
+      `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`
+    );
   }
 
   return (

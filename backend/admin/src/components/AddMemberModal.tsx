@@ -176,10 +176,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
               </label>
               <label>
                 {t('groups.invites.expiresLabel')}
-                <select
-                  value={inviteExpiry}
-                  onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}
-                >
+                <select value={inviteExpiry} onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}>
                   <option value="7">{t('groups.invites.expires7Days')}</option>
                   <option value="30">{t('groups.invites.expires30Days')}</option>
                   <option value="never">{t('groups.invites.expiresNever')}</option>
@@ -233,11 +230,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
                   {groups.map((g) => (
                     <li key={g.id} className="membership-row">
                       <span>{g.name}</span>
-                      <input
-                        type="checkbox"
-                        checked={groupIds.includes(g.id)}
-                        onChange={() => toggleGroup(g.id)}
-                      />
+                      <input type="checkbox" checked={groupIds.includes(g.id)} onChange={() => toggleGroup(g.id)} />
                     </li>
                   ))}
                 </ul>

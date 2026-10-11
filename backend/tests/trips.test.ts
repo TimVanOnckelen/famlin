@@ -70,7 +70,12 @@ describe('TRIP posts', () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
 
-      const res = await createTrip(author, group.id, { title: 'Alps', destination: 'Switzerland', startDate: isoDate(0), endDate: isoDate(5) });
+      const res = await createTrip(author, group.id, {
+        title: 'Alps',
+        destination: 'Switzerland',
+        startDate: isoDate(0),
+        endDate: isoDate(5),
+      });
 
       expect(res.statusCode).toBe(200);
       const body = res.json();
@@ -131,7 +136,6 @@ describe('TRIP posts', () => {
       });
       expect(res.statusCode).toBe(400);
     });
-
   });
 
   describe('check-in interaction', () => {
@@ -566,7 +570,10 @@ describe('TRIP posts', () => {
         method: 'POST',
         url: `/api/posts/${postId}/comments`,
         headers: authHeader(author),
-        payload: { content: 'trying to sneak in metadata', metadata: { kind: 'trip_checkin', place: 'Nowhere', photoUrls: [] } },
+        payload: {
+          content: 'trying to sneak in metadata',
+          metadata: { kind: 'trip_checkin', place: 'Nowhere', photoUrls: [] },
+        },
       });
       expect(res.statusCode).toBe(200);
 
@@ -610,7 +617,9 @@ describe('TRIP posts', () => {
       });
       expect(authorNotifications).toHaveLength(0);
 
-      const newCommentNotifications = await prisma.notification.findMany({ where: { relatedPostId: trip.id, type: 'new_comment' } });
+      const newCommentNotifications = await prisma.notification.findMany({
+        where: { relatedPostId: trip.id, type: 'new_comment' },
+      });
       expect(newCommentNotifications).toHaveLength(0);
     });
 

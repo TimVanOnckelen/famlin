@@ -80,7 +80,12 @@ describe('story composer model', () => {
   it('turns stroke points into SVG path data, including a single-tap dot', () => {
     expect(strokeToPath([])).toBe('');
     expect(strokeToPath([[2, 3]])).toBe('M2.0 3.0 L2.0 3.0');
-    expect(strokeToPath([[0, 0], [10, 5]])).toBe('M0.0 0.0 L10.0 5.0');
+    expect(
+      strokeToPath([
+        [0, 0],
+        [10, 5],
+      ])
+    ).toBe('M0.0 0.0 L10.0 5.0');
   });
 });
 

@@ -33,30 +33,18 @@ function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: 
       {isVideoUrl(assetUrl) ? (
         <video src={getUploadUrl(assetUrl)} preload="metadata" />
       ) : (
-        <ShimmerImage
-          src={getUploadUrl(assetUrl, 'thumbnail')}
-          fallbackSrc={getUploadUrl(assetUrl)}
-          loading="lazy"
-        />
+        <ShimmerImage src={getUploadUrl(assetUrl, 'thumbnail')} fallbackSrc={getUploadUrl(assetUrl)} loading="lazy" />
       )}
       {overlay}
     </button>
   );
 
   if (assetUrls.length === 2) {
-    return (
-      <div className="post-collage post-collage-2">
-        {assetUrls.map((assetUrl, i) => tile(assetUrl, i))}
-      </div>
-    );
+    return <div className="post-collage post-collage-2">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>;
   }
 
   if (assetUrls.length > COLLAGE_MAX_PHOTOS) {
-    return (
-      <div className="post-collage post-collage-gallery">
-        {assetUrls.map((assetUrl, i) => tile(assetUrl, i))}
-      </div>
-    );
+    return <div className="post-collage post-collage-gallery">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>;
   }
 
   const stackUrls = assetUrls.slice(1, 3);
@@ -297,12 +285,8 @@ function DefaultPostCard({
             </>
           )}
 
-          {isMilestone && !hasPhotos && post.content && (
-            <div className="post-milestone-title">{post.content}</div>
-          )}
-          {!isMilestone && post.content && (
-            <p className="post-content">{post.content}</p>
-          )}
+          {isMilestone && !hasPhotos && post.content && <div className="post-milestone-title">{post.content}</div>}
+          {!isMilestone && post.content && <p className="post-content">{post.content}</p>}
           {hasPhotos && (
             <div className="post-meta">
               {timeLink}

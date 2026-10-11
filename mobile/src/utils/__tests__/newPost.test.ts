@@ -76,10 +76,7 @@ describe('resolveOfferedPostTypes', () => {
   });
 
   it('treats a group missing allowedPostTypes as allowing everything (older server)', () => {
-    const groups = [
-      { id: 'g1' },
-      { id: 'g2', allowedPostTypes: ['UPDATE', 'POLL'] },
-    ];
+    const groups = [{ id: 'g1' }, { id: 'g2', allowedPostTypes: ['UPDATE', 'POLL'] }];
     expect(resolveOfferedPostTypes(KNOWN, groups, ['g1', 'g2'])).toEqual(['UPDATE', 'POLL']);
   });
 

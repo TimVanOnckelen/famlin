@@ -43,9 +43,7 @@ export function CircleMembersModal({
 
         {membersQuery.isLoading && <div className="circle-members-state">{t('common.loading')}</div>}
 
-        {membersQuery.isError && (
-          <div className="circle-members-state">{t('circles.membersLoadFailed')}</div>
-        )}
+        {membersQuery.isError && <div className="circle-members-state">{t('circles.membersLoadFailed')}</div>}
 
         {membersQuery.isSuccess && (
           <ul className="circle-members-list">

@@ -16,8 +16,17 @@ import {
 import { recordUpload } from '../services/uploads.js';
 
 const ALLOWED_EXTENSIONS = new Set([
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-  '.mp4', '.mov', '.m4v', '.webm',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.heic',
+  '.heif',
+  '.mp4',
+  '.mov',
+  '.m4v',
+  '.webm',
 ]);
 
 export default async function uploadRoutes(fastify: FastifyInstance) {
@@ -72,7 +81,9 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
               // up — an accepted, harmless orphan-file trade-off for not
               // serializing every photo's full resize cost into one request).
               const { display, thumbnail } = generateDisplayVariant(originalPath, displayPath, thumbnailPath);
-              thumbnail.catch((err) => request.log.warn({ err, thumbnailPath }, 'background thumbnail generation failed'));
+              thumbnail.catch((err) =>
+                request.log.warn({ err, thumbnailPath }, 'background thumbnail generation failed')
+              );
 
               try {
                 await display;

@@ -125,8 +125,8 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
             result.status === 'expired'
               ? t('invite.errors.expired')
               : result.status === 'used'
-              ? t('invite.errors.used')
-              : t('invite.errors.notFound')
+                ? t('invite.errors.used')
+                : t('invite.errors.notFound')
           );
           setMode('error');
           return;

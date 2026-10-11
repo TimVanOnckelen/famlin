@@ -109,30 +109,17 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         </div>
         <h1>{t('login.title')}</h1>
         <p>
-          {oidcConfig?.enabled
-            ? t('login.subtitleWithSso', { name: oidcConfig.name })
-            : t('login.subtitleWithoutSso')}
+          {oidcConfig?.enabled ? t('login.subtitleWithSso', { name: oidcConfig.name }) : t('login.subtitleWithoutSso')}
         </p>
 
         <form onSubmit={handlePasswordLogin}>
           <label>
             {t('common.email')}
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
           </label>
           <label>
             {t('common.password')}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
           <button type="submit" disabled={isLoading}>
             {isLoading ? t('common.loading') : t('login.loginButton')}

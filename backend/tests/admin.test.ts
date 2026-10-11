@@ -3,7 +3,15 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../src/db.js';
 import { __registerMediaProviderForTests, __unregisterMediaProviderForTests } from '../src/services/media/registry.js';
 import type { MediaProvider } from '../src/services/media/types.js';
-import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, createComment, authHeader } from './helpers.js';
+import {
+  buildTestApp,
+  createUser,
+  createGroupWithMember,
+  addMember,
+  createPost,
+  createComment,
+  authHeader,
+} from './helpers.js';
 
 // Minimal fake provider (mirrors media-people.test.ts/person-tags.test.ts's
 // makeFakeProvider) — only the methods each admin people-catalog test
@@ -172,7 +180,7 @@ describe('admin routes', () => {
       expect(stored).toBeNull();
     });
 
-    it('a deleted user\'s existing session token is rejected', async () => {
+    it("a deleted user's existing session token is rejected", async () => {
       const admin = await createUser({ isAdmin: true });
       const target = await createUser();
       const staleHeader = authHeader(target); // signed with tokenVersion 0, before deletion
@@ -315,7 +323,11 @@ describe('admin routes', () => {
       const post = await createPost({ groupId: group.id, authorId: author.id });
       const comment = await createComment({ postId: post.id, authorId: author.id });
 
-      const res = await app.inject({ method: 'DELETE', url: `/api/comments/${comment.id}`, headers: authHeader(author) });
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/comments/${comment.id}`,
+        headers: authHeader(author),
+      });
       expect(res.statusCode).toBe(200);
 
       const stored = await prisma.comment.findUnique({ where: { id: comment.id } });

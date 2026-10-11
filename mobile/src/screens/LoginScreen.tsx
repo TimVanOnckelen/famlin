@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
@@ -141,166 +152,159 @@ export function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <LoginBackground />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-        <View style={styles.logoSection}>
-          <PhotoCollage />
-          <Text style={styles.title}>{getBranding()?.name ?? t('common.appName')}</Text>
-          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
-        </View>
+          <View style={styles.logoSection}>
+            <PhotoCollage />
+            <Text style={styles.title}>{getBranding()?.name ?? t('common.appName')}</Text>
+            <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
+          </View>
 
-        <View style={styles.stepDots}>
-          <View style={[styles.stepDot, styles.stepDotActive]} />
-          <View style={[styles.stepDot, step === 'credentials' && styles.stepDotActive]} />
-        </View>
+          <View style={styles.stepDots}>
+            <View style={[styles.stepDot, styles.stepDotActive]} />
+            <View style={[styles.stepDot, step === 'credentials' && styles.stepDotActive]} />
+          </View>
 
-        {step === 'server' ? (
-          <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('login.serverLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={serverUrl}
-                onChangeText={setServerUrlInput}
-                placeholder={t('login.serverPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                textContentType="URL"
-                returnKeyType="go"
-                onSubmitEditing={handleContinue}
-              />
-              <Text style={styles.inputHint}>
-                {t('login.serverHint')}
-              </Text>
-              {/* Famlin has no central sign-up, so someone arriving without a
+          {step === 'server' ? (
+            <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('login.serverLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={serverUrl}
+                  onChangeText={setServerUrlInput}
+                  placeholder={t('login.serverPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  textContentType="URL"
+                  returnKeyType="go"
+                  onSubmitEditing={handleContinue}
+                />
+                <Text style={styles.inputHint}>{t('login.serverHint')}</Text>
+                {/* Famlin has no central sign-up, so someone arriving without a
                   server address (a new relative, an app reviewer) has no way
                   forward from this screen alone — this is that way out. */}
-              <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(SUPPORT_URL)}>
-                <Text style={styles.helpLink}>{t('login.needHelp')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.loginButton, isCheckingServer && styles.loginButtonDisabled]}
-              onPress={handleContinue}
-              disabled={isCheckingServer}
-            >
-              <Text style={styles.loginButtonText}>
-                {isCheckingServer ? t('common.loading') : t('login.continueButton')}
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ) : (
-          <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
-            <TouchableOpacity style={styles.serverChip} onPress={handleChangeServer}>
-              <Icon name="server" size={13} color={colors.textMuted} />
-              <Text style={styles.serverChipText} numberOfLines={1}>{serverUrl}</Text>
-              <Text style={styles.serverChipEdit}>{t('login.changeServer')}</Text>
-            </TouchableOpacity>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('login.emailLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder={t('login.emailPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('login.passwordLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder={t('login.passwordPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                textContentType="password"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-              onPress={handlePasswordLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginButtonText}>
-                {isLoading ? t('common.loading') : t('login.loginButton')}
-              </Text>
-            </TouchableOpacity>
-
-            {(ssoConfig?.enabled || showApple) && (
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>{t('common.or')}</Text>
-                <View style={styles.dividerLine} />
+                <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(SUPPORT_URL)}>
+                  <Text style={styles.helpLink}>{t('login.needHelp')}</Text>
+                </TouchableOpacity>
               </View>
-            )}
 
-            {/* Sign in with Apple sits alongside the SSO option, not below
+              <TouchableOpacity
+                style={[styles.loginButton, isCheckingServer && styles.loginButtonDisabled]}
+                onPress={handleContinue}
+                disabled={isCheckingServer}
+              >
+                <Text style={styles.loginButtonText}>
+                  {isCheckingServer ? t('common.loading') : t('login.continueButton')}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+            <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
+              <TouchableOpacity style={styles.serverChip} onPress={handleChangeServer}>
+                <Icon name="server" size={13} color={colors.textMuted} />
+                <Text style={styles.serverChipText} numberOfLines={1}>
+                  {serverUrl}
+                </Text>
+                <Text style={styles.serverChipEdit}>{t('login.changeServer')}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('login.emailLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder={t('login.emailPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('login.passwordLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={t('login.passwordPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry
+                  textContentType="password"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                onPress={handlePasswordLogin}
+                disabled={isLoading}
+              >
+                <Text style={styles.loginButtonText}>{isLoading ? t('common.loading') : t('login.loginButton')}</Text>
+              </TouchableOpacity>
+
+              {(ssoConfig?.enabled || showApple) && (
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>{t('common.or')}</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+              )}
+
+              {/* Sign in with Apple sits alongside the SSO option, not below
                 it, since guideline 4.8 wants it offered as an equivalent
                 choice wherever a third-party login is offered. */}
-            <AppleSignInButton
-              serverSupported={!!ssoConfig?.appleSignInEnabled}
-              onSuccess={(result) => setAuth(result.user, result.token, serverUrl)}
-            />
+              <AppleSignInButton
+                serverSupported={!!ssoConfig?.appleSignInEnabled}
+                onSuccess={(result) => setAuth(result.user, result.token, serverUrl)}
+              />
 
-            {ssoConfig?.enabled && (
-              <TouchableOpacity
-                style={[styles.ssoButton, isSsoLoading && styles.ssoButtonDisabled]}
-                onPress={handleSsoLogin}
-                disabled={isSsoLoading}
-              >
-                <Icon name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
-                <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
-                  {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
-                </Text>
-              </TouchableOpacity>
-            )}
+              {ssoConfig?.enabled && (
+                <TouchableOpacity
+                  style={[styles.ssoButton, isSsoLoading && styles.ssoButtonDisabled]}
+                  onPress={handleSsoLogin}
+                  disabled={isSsoLoading}
+                >
+                  <Icon name="key" size={20} color={isSsoLoading ? colors.textMuted : colors.textTitle} />
+                  <Text style={[styles.ssoButtonText, isSsoLoading && styles.ssoButtonTextDisabled]}>
+                    {isSsoLoading ? t('common.loading') : t('login.loginWithSso', { name: ssoConfig?.name })}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
-            <Text style={styles.hint}>
-              {t('login.invitationOnly')}
-            </Text>
-          </Animated.View>
-        )}
+              <Text style={styles.hint}>{t('login.invitationOnly')}</Text>
+            </Animated.View>
+          )}
 
-        {/* Before sign-in there's no Profile tab yet, so the device-language
+          {/* Before sign-in there's no Profile tab yet, so the device-language
             default needs its own way out here. */}
-        <View style={styles.languageRow} accessibilityRole="radiogroup" accessibilityLabel={t('profile.language')}>
-          {SUPPORTED_LANGUAGES.map((lang) => {
-            const selected = i18n.language === lang;
-            return (
-              <TouchableOpacity
-                key={lang}
-                style={[styles.languageChip, selected && styles.languageChipSelected]}
-                onPress={() => handleLanguageChange(lang)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-              >
-                <Text style={[styles.languageChipText, selected && styles.languageChipTextSelected]}>
-                  {t(`profile.languages.${lang}`)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+          <View style={styles.languageRow} accessibilityRole="radiogroup" accessibilityLabel={t('profile.language')}>
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const selected = i18n.language === lang;
+              return (
+                <TouchableOpacity
+                  key={lang}
+                  style={[styles.languageChip, selected && styles.languageChipSelected]}
+                  onPress={() => handleLanguageChange(lang)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={[styles.languageChipText, selected && styles.languageChipTextSelected]}>
+                    {t(`profile.languages.${lang}`)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -513,7 +517,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
-  },  languageRow: {
+  },
+  languageRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',

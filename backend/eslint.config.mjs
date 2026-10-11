@@ -33,14 +33,11 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // `any` is used broadly (route bodies, cast-heavy Prisma/test helpers)
       // across the current codebase — downgraded rather than mass-editing
       // routes/services here while backend/src is under concurrent work.
       '@typescript-eslint/no-explicit-any': 'warn',
     },
-  },
+  }
 );

@@ -7,9 +7,9 @@ jest.mock('@/utils/storage', () => ({ getLanguage: jest.fn() }));
 jest.mock('expo-localization', () => ({ getLocales: jest.fn() }));
 
 function deviceLocales(...codes: string[]) {
-  jest.mocked(getLocales).mockReturnValue(
-    codes.map((languageCode) => ({ languageCode })) as unknown as ReturnType<typeof getLocales>,
-  );
+  jest
+    .mocked(getLocales)
+    .mockReturnValue(codes.map((languageCode) => ({ languageCode })) as unknown as ReturnType<typeof getLocales>);
 }
 
 beforeEach(() => {

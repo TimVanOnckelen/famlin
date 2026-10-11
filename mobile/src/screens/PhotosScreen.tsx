@@ -71,10 +71,7 @@ const PhotoRow = React.memo(function PhotoRow({
       {/* Fill empty spaces in the last row */}
       {row.length < columns &&
         Array.from({ length: columns - row.length }).map((_, idx) => (
-          <View
-            key={`empty-${idx}`}
-            style={[styles.photoWrapper, { width: photoSize, height: photoSize }]}
-          />
+          <View key={`empty-${idx}`} style={[styles.photoWrapper, { width: photoSize, height: photoSize }]} />
         ))}
     </View>
   );
@@ -170,7 +167,11 @@ export function PhotosScreen() {
   const albums = albumsPage?.items ?? [];
 
   // Load photo timeline for the active group
-  const { query, items: allPhotos, onEndReached } = useCursorPagination({
+  const {
+    query,
+    items: allPhotos,
+    onEndReached,
+  } = useCursorPagination({
     queryKey: ['photo-timeline', activeGroupId, selectedPersonId],
     queryFn: (cursor) =>
       getGroupPhotoTimeline(activeGroupId!, {
@@ -228,9 +229,7 @@ export function PhotosScreen() {
       // native player); images get the preview jpg — the original can be a
       // huge/HEIC file <Image> may not render (same split MediaPickerModal
       // makes when attaching assets to a post).
-      const urls = allPhotos.map((p) =>
-        getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl)
-      );
+      const urls = allPhotos.map((p) => getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl));
       // Per-photo metadata: photos that belong to a post (direct uploads, or
       // album assets a post embeds — postAssetUrl) enable the viewer's
       // like/comment/favorite bar; downloadUrl points at the original
@@ -268,10 +267,7 @@ export function PhotosScreen() {
 
   const rowKeyExtractor = useCallback((item: PhotoItem[]) => item[0].id, []);
 
-  const openAlbum = useCallback(
-    (postId: string) => navigation.navigate('AlbumDetail', { postId }),
-    [navigation]
-  );
+  const openAlbum = useCallback((postId: string) => navigation.navigate('AlbumDetail', { postId }), [navigation]);
 
   const albumsHeader = useMemo(() => {
     if (albums.length === 0) return null;
@@ -326,9 +322,7 @@ export function PhotosScreen() {
                   }}
                   accessibilityState={{ selected: isActive }}
                 >
-                  <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>
-                    {item.name}
-                  </Text>
+                  <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
               );
             }}
@@ -383,9 +377,7 @@ export function PhotosScreen() {
           windowSize={7}
           updateCellsBatchingPeriod={50}
           contentContainerStyle={styles.gridContainer}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
-          }
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={

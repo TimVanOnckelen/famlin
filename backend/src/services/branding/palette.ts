@@ -73,9 +73,21 @@ export const BRAND_PRESETS: Record<string, string> = {
 const SEMANTIC_FAMILIES: Record<SemanticFamily, { hue: number; altHue: number; tokens: (keyof SemanticPalette)[] }> = {
   // accent and updateBg are the same warm coral as circle today and track it:
   // a coral brand moves all three together, so none of them clash with it.
-  circle: { hue: hexToOklch(DEFAULT_SEMANTIC.circle).h, altHue: 330, tokens: ['accent', 'updateBg', 'circle', 'circleDark', 'circleTint'] },
-  milestone: { hue: hexToOklch(DEFAULT_SEMANTIC.milestone).h, altHue: 150, tokens: ['milestone', 'milestoneBg', 'milestoneText', 'milestoneDivider'] },
-  trip: { hue: hexToOklch(DEFAULT_SEMANTIC.trip).h, altHue: 295, tokens: ['trip', 'tripDark', 'tripBg', 'tripTint', 'tripBorder'] },
+  circle: {
+    hue: hexToOklch(DEFAULT_SEMANTIC.circle).h,
+    altHue: 330,
+    tokens: ['accent', 'updateBg', 'circle', 'circleDark', 'circleTint'],
+  },
+  milestone: {
+    hue: hexToOklch(DEFAULT_SEMANTIC.milestone).h,
+    altHue: 150,
+    tokens: ['milestone', 'milestoneBg', 'milestoneText', 'milestoneDivider'],
+  },
+  trip: {
+    hue: hexToOklch(DEFAULT_SEMANTIC.trip).h,
+    altHue: 295,
+    tokens: ['trip', 'tripDark', 'tripBg', 'tripTint', 'tripBorder'],
+  },
 };
 
 // A brand hue within this many degrees (OKLCH) of a family's hue collides.

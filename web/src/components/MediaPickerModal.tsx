@@ -81,12 +81,7 @@ export function MediaPickerModal({
       role="dialog"
       aria-modal
     >
-      <div
-        className="modal-card media-picker-card"
-        ref={cardRef}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="modal-card media-picker-card" ref={cardRef} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">{t('mediaPicker.title')}</h2>
 
         {albumsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
@@ -95,11 +90,7 @@ export function MediaPickerModal({
         {linkId === null && albums.length > 1 && (
           <div className="media-picker-albums">
             {albums.map((album) => (
-              <button
-                key={album.linkId}
-                className="media-picker-album"
-                onClick={() => setChosenLinkId(album.linkId)}
-              >
+              <button key={album.linkId} className="media-picker-album" onClick={() => setChosenLinkId(album.linkId)}>
                 <span className="media-picker-album-name">{album.albumName}</span>
                 {multipleProviders && (
                   <span className="media-picker-album-provider">
@@ -183,12 +174,7 @@ export function MediaPickerModal({
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             {t('common.cancel')}
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={confirm}
-            disabled={selected.size === 0}
-          >
+          <button type="button" className="btn btn-primary" onClick={confirm} disabled={selected.size === 0}>
             {t('mediaPicker.addCount', { count: selected.size })}
           </button>
         </div>

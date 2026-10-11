@@ -8,7 +8,14 @@ import path from 'path';
 import { pipeline } from 'stream/promises';
 import pkg from '../../package.json' with { type: 'json' };
 import { prisma } from '../db.js';
-import { createUserToken, getDiscovery, exchangeOidcCode, OidcError, invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
+import {
+  createUserToken,
+  getDiscovery,
+  exchangeOidcCode,
+  OidcError,
+  invalidateSessionCache,
+  requireAdmin,
+} from '../plugins/auth.js';
 import { getOidcSettings, getAllSettings } from '../services/settings.js';
 import { getBranding } from '../services/branding/index.js';
 import { getValidInvite, consumeInvite } from '../services/invites.js';
@@ -164,51 +171,47 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // requests can't both pass the "no users yet" check and create two admins
   // — the lock is held for the transaction, so the second caller's count()
   // only runs after the first caller has committed its new user.
-  fastify.post(
-    '/setup',
-    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
-    async (request, reply) => {
-      const t = getT(request);
-      const { email, name, password } = setupBodySchema.parse(request.body);
-      const normalizedEmail = email.toLowerCase().trim();
-      const passwordHash = await hashPassword(password);
+  fastify.post('/setup', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
+    const t = getT(request);
+    const { email, name, password } = setupBodySchema.parse(request.body);
+    const normalizedEmail = email.toLowerCase().trim();
+    const passwordHash = await hashPassword(password);
 
-      const user = await prisma.$transaction(async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`;
+    const user = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`;
 
-        const userCount = await tx.user.count();
-        if (userCount > 0) {
-          return null;
-        }
-
-        return tx.user.create({
-          data: {
-            email: normalizedEmail,
-            name,
-            passwordHash,
-            isAdmin: true,
-          },
-        });
-      });
-
-      if (!user) {
-        return reply.status(409).send({ error: t('errors.setupAlreadyComplete') });
+      const userCount = await tx.user.count();
+      if (userCount > 0) {
+        return null;
       }
 
-      const token = createUserToken({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
-        tokenVersion: user.tokenVersion,
+      return tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name,
+          passwordHash,
+          isAdmin: true,
+        },
       });
+    });
 
-      return {
-        token,
-        user: sanitizeUser(user),
-      };
+    if (!user) {
+      return reply.status(409).send({ error: t('errors.setupAlreadyComplete') });
     }
-  );
+
+    const token = createUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      tokenVersion: user.tokenVersion,
+    });
+
+    return {
+      token,
+      user: sanitizeUser(user),
+    };
+  });
 
   // Public, and like /setup only usable on a fresh install: restores an
   // archive from GET /api/admin/export (services/import.ts) and provisions
@@ -312,26 +315,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin. Used
   // when the client did its own PKCE exchange directly against the provider
   // (the default — see POST /oidc/exchange for providers that need a secret).
-  fastify.post(
-    '/oidc',
-    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
-    async (request, reply) => {
-      const { idToken, inviteToken } = loginBodySchema.parse(request.body);
-      const t = getT(request);
+  fastify.post('/oidc', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
+    const { idToken, inviteToken } = loginBodySchema.parse(request.body);
+    const t = getT(request);
 
-      try {
-        const outcome = await completeOidcLogin(idToken, inviteToken, t);
-        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
-        return outcome.result;
-      } catch (err) {
-        if (err instanceof OidcError) {
-          return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
-        }
-        fastify.log.error(err);
-        return reply.status(401).send({ error: t('errors.authFailed') });
+    try {
+      const outcome = await completeOidcLogin(idToken, inviteToken, t);
+      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
+      return outcome.result;
+    } catch (err) {
+      if (err instanceof OidcError) {
+        return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
       }
+      fastify.log.error(err);
+      return reply.status(401).send({ error: t('errors.authFailed') });
     }
-  );
+  });
 
   // Sign in with Apple. Unlike /oidc this needs nothing configured on the
   // server — Apple's issuer and keys are fixed, and the token's audience is
@@ -341,26 +340,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // account it provisions is subject to the same allowedEmails/invite rules
   // as any other login (an Apple private-relay address will practically
   // always need an invite, since it can't be whitelisted in advance).
-  fastify.post(
-    '/apple',
-    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
-    async (request, reply) => {
-      const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body);
-      const t = getT(request);
+  fastify.post('/apple', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
+    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body);
+    const t = getT(request);
 
-      try {
-        const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t);
-        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
-        return outcome.result;
-      } catch (err) {
-        if (err instanceof AppleAuthError) {
-          return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) });
-        }
-        fastify.log.error(err);
-        return reply.status(401).send({ error: t('errors.authFailed') });
+    try {
+      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t);
+      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
+      return outcome.result;
+    } catch (err) {
+      if (err instanceof AppleAuthError) {
+        return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) });
       }
+      fastify.log.error(err);
+      return reply.status(401).send({ error: t('errors.authFailed') });
     }
-  );
+  });
 
   // Server-mediated OIDC login for the admin UI, used instead of POST /oidc
   // when the provider requires a client secret (e.g. Google) — the browser
@@ -410,7 +405,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const stateParam = typeof state === 'string' ? `&state=${encodeURIComponent(state)}` : '';
 
       if (error || !code) {
-        return reply.redirect(`famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}${stateParam}`);
+        return reply.redirect(
+          `famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}${stateParam}`
+        );
       }
 
       // The mobile app is a stateless HTTP client with no session on this
@@ -481,51 +478,47 @@ export default async function authRoutes(fastify: FastifyInstance) {
   );
 
   // Local email/password login
-  fastify.post(
-    '/login',
-    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
-    async (request, reply) => {
-      const { email, password, inviteToken } = passwordLoginBodySchema.parse(request.body);
-      const normalizedEmail = email.toLowerCase().trim();
-      const t = getT(request);
+  fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
+    const { email, password, inviteToken } = passwordLoginBodySchema.parse(request.body);
+    const normalizedEmail = email.toLowerCase().trim();
+    const t = getT(request);
 
-      const user = await prisma.user.findUnique({
-        where: { email: normalizedEmail },
-      });
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
 
-      if (!user || !user.passwordHash) {
-        // Still pay the bcrypt cost so response timing doesn't reveal
-        // whether this email has an account.
-        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
-        return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
-      }
-
-      const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid) {
-        return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
-      }
-
-      if (inviteToken) {
-        const { invite, reason } = await getValidInvite(inviteToken);
-        if (invite && !reason && (!invite.email || invite.email === user.email)) {
-          await consumeInvite(inviteToken, user.id);
-        }
-      }
-
-      const token = createUserToken({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
-        tokenVersion: user.tokenVersion,
-      });
-
-      return {
-        token,
-        user: sanitizeUser(user),
-      };
+    if (!user || !user.passwordHash) {
+      // Still pay the bcrypt cost so response timing doesn't reveal
+      // whether this email has an account.
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
     }
-  );
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
+    }
+
+    if (inviteToken) {
+      const { invite, reason } = await getValidInvite(inviteToken);
+      if (invite && !reason && (!invite.email || invite.email === user.email)) {
+        await consumeInvite(inviteToken, user.id);
+      }
+    }
+
+    const token = createUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      tokenVersion: user.tokenVersion,
+    });
+
+    return {
+      token,
+      user: sanitizeUser(user),
+    };
+  });
 
   // Register new user (admin only)
   fastify.post('/register', { preHandler: [fastify.authenticate] }, async (request, reply) => {

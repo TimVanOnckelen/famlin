@@ -18,7 +18,11 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
 // tree (which renders PostDetailModal) mounted alongside it.
 function LocationProbe() {
   const location = useLocation();
-  return <div data-testid="location-probe">{location.pathname}|{JSON.stringify(location.state)}</div>;
+  return (
+    <div data-testid="location-probe">
+      {location.pathname}|{JSON.stringify(location.state)}
+    </div>
+  );
 }
 
 const groups = [

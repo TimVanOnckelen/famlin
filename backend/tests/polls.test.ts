@@ -66,7 +66,12 @@ describe('custom post types + polls', () => {
       const get = await app.inject({ method: 'GET', url: `/api/posts/${body.id}`, headers: authHeader(author) });
       expect(get.statusCode).toBe(200);
       expect(get.json().poll).toEqual({
-        options: body.typeData.options.map((o: { id: string; text: string }) => ({ id: o.id, text: o.text, voteCount: 0, voters: [] })),
+        options: body.typeData.options.map((o: { id: string; text: string }) => ({
+          id: o.id,
+          text: o.text,
+          voteCount: 0,
+          voters: [],
+        })),
         totalVotes: 0,
         myVoteOptionId: null,
         closesAt: null,
@@ -96,7 +101,12 @@ describe('custom post types + polls', () => {
         method: 'POST',
         url: '/api/posts',
         headers: authHeader(author),
-        payload: { groupId: group.id, content: 'Question?', type: 'POLL', typeData: { options: [{ text: 'Only one' }] } },
+        payload: {
+          groupId: group.id,
+          content: 'Question?',
+          type: 'POLL',
+          typeData: { options: [{ text: 'Only one' }] },
+        },
       });
 
       expect(res.statusCode).toBe(400);
@@ -187,7 +197,11 @@ describe('custom post types + polls', () => {
   });
 
   describe('voting', () => {
-    async function createPoll(app: FastifyInstance, author: { id: string; email: string; name: string; isAdmin: boolean }, groupId: string) {
+    async function createPoll(
+      app: FastifyInstance,
+      author: { id: string; email: string; name: string; isAdmin: boolean },
+      groupId: string
+    ) {
       const res = await app.inject({
         method: 'POST',
         url: '/api/posts',
@@ -384,7 +398,9 @@ describe('custom post types + polls', () => {
         payload: { key: 'vote', value: { optionId: poll.typeData.options[0].id } },
       });
 
-      const notifications = await prisma.notification.findMany({ where: { relatedPostId: poll.id, userId: author.id } });
+      const notifications = await prisma.notification.findMany({
+        where: { relatedPostId: poll.id, userId: author.id },
+      });
       expect(notifications).toHaveLength(0);
     });
 
@@ -488,10 +504,20 @@ describe('custom post types + polls', () => {
       const list = await app.inject({ method: 'GET', url: '/api/groups', headers: authHeader(member) });
       expect(list.statusCode).toBe(200);
       const byId = new Map(list.json().map((g: { id: string; allowedPostTypes: string[] }) => [g.id, g]));
-      expect((byId.get(openGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM']);
+      expect((byId.get(openGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual([
+        'UPDATE',
+        'MILESTONE',
+        'POLL',
+        'TRIP',
+        'ALBUM',
+      ]);
       expect((byId.get(restrictedGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE']);
 
-      const detail = await app.inject({ method: 'GET', url: `/api/groups/${restrictedGroup.id}`, headers: authHeader(member) });
+      const detail = await app.inject({
+        method: 'GET',
+        url: `/api/groups/${restrictedGroup.id}`,
+        headers: authHeader(member),
+      });
       expect(detail.statusCode).toBe(200);
       expect(detail.json().allowedPostTypes).toEqual(['UPDATE']);
     });
@@ -561,7 +587,13 @@ describe('custom post types + polls', () => {
 
       const res = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(admin) });
       expect(res.statusCode).toBe(200);
-      expect(res.json().items).toEqual([{ id: 'UPDATE' }, { id: 'MILESTONE' }, { id: 'POLL' }, { id: 'TRIP' }, { id: 'ALBUM' }]);
+      expect(res.json().items).toEqual([
+        { id: 'UPDATE' },
+        { id: 'MILESTONE' },
+        { id: 'POLL' },
+        { id: 'TRIP' },
+        { id: 'ALBUM' },
+      ]);
 
       const denied = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(member) });
       expect(denied.statusCode).toBe(403);
@@ -594,7 +626,9 @@ describe('custom post types + polls', () => {
       expect(postB.typeData).not.toBeNull();
       // Same option ids across siblings is intended (spec: "same option ids
       // across siblings is fine and intended").
-      expect((postA.typeData as PollTypeData).options.map((o: PollOption) => o.id)).toEqual((postB.typeData as PollTypeData).options.map((o: PollOption) => o.id));
+      expect((postA.typeData as PollTypeData).options.map((o: PollOption) => o.id)).toEqual(
+        (postB.typeData as PollTypeData).options.map((o: PollOption) => o.id)
+      );
 
       const optionId = (postA.typeData as PollTypeData).options[0].id;
 

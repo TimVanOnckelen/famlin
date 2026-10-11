@@ -50,7 +50,7 @@
   --fam-text-title: #0f222a;
 
   /* Destructive actions (account deletion) — same token the admin UI uses. */
-  --fam-danger: #E05A4C;
+  --fam-danger: #e05a4c;
   --fam-danger-bg: #fdecea;
 
   --r-sm: 10px;
@@ -115,7 +115,9 @@ input {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .btn:disabled {

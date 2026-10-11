@@ -64,7 +64,7 @@ export function PostDetailModal({
     if (mediaCount < 2 || lightboxIndex !== null) return;
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && (target.closest('input, textarea, [contenteditable="true"]'))) return;
+      if (target && target.closest('input, textarea, [contenteditable="true"]')) return;
       if (e.key === 'ArrowLeft') setMediaIndex((i) => Math.max(0, i - 1));
       else if (e.key === 'ArrowRight') setMediaIndex((i) => Math.min(mediaCount - 1, i + 1));
     };
@@ -83,12 +83,7 @@ export function PostDetailModal({
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          className="post-detail-modal-close"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
+        <button type="button" className="post-detail-modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={20} strokeWidth={2.5} />
         </button>
 
@@ -117,7 +112,13 @@ export function PostDetailModal({
               return (
                 <>
                   {isVideoUrl(url) ? (
-                    <video key={url} src={getUploadUrl(url)} className="post-detail-modal-media-item" controls preload="metadata" />
+                    <video
+                      key={url}
+                      src={getUploadUrl(url)}
+                      className="post-detail-modal-media-item"
+                      controls
+                      preload="metadata"
+                    />
                   ) : (
                     <ShimmerImage
                       key={url}

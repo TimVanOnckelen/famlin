@@ -241,7 +241,7 @@ describe('circle media in the photo timeline', () => {
   });
 });
 
-describe('re-scoping someone else\'s upload', () => {
+describe("re-scoping someone else's upload", () => {
   // Every attach site accepts any well-formed /uploads/ path, so the binding
   // step itself has to refuse to change an upload it doesn't own or that's
   // already bound — otherwise knowing a URL is enough to re-scope it.

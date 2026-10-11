@@ -2,9 +2,7 @@ import { prisma } from '../../db.js';
 import { getMediaProvider, mediaErrorKey, mediaErrorStatus } from './registry.js';
 import { MediaProviderError } from './types.js';
 
-export type PersonFilterOutcome =
-  | { ok: true; assetIds: Set<string> }
-  | { ok: false; status: number; errorKey: string };
+export type PersonFilterOutcome = { ok: true; assetIds: Set<string> } | { ok: false; status: number; errorKey: string };
 
 // Resolves the label-aware set of asset ids within one linked album that are
 // tagged with `personId` (a MediaPersonLink.externalPersonId for this link's

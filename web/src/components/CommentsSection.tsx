@@ -164,9 +164,7 @@ export function CommentsSection({
     onSuccess: (created) => {
       setDraft('');
       clearAttachments();
-      queryClient.setQueryData<Comment[]>(['comments', post.id], (old) =>
-        old ? [...old, created] : [created]
-      );
+      queryClient.setQueryData<Comment[]>(['comments', post.id], (old) => (old ? [...old, created] : [created]));
       patchPostInCaches(queryClient, post.id, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
     },
   });
@@ -217,17 +215,13 @@ export function CommentsSection({
   const comments = filterComments ? filterComments(rawComments) : rawComments;
   const topLevelGroups = groupCommentAttachments(comments.filter((c) => !c.parentId));
   const replyGroupsFor = (group: CommentGroup) =>
-    groupCommentAttachments(
-      comments.filter((c) => group.comments.some((parent) => parent.id === c.parentId))
-    );
+    groupCommentAttachments(comments.filter((c) => group.comments.some((parent) => parent.id === c.parentId)));
 
   return (
     <div className="comments-section">
       {commentsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
       {commentsQuery.isError && <div className="comments-hint">{t('comments.loadFailed')}</div>}
-      {commentsQuery.isSuccess && comments.length === 0 && (
-        <div className="comments-hint">{t('comments.empty')}</div>
-      )}
+      {commentsQuery.isSuccess && comments.length === 0 && <div className="comments-hint">{t('comments.empty')}</div>}
 
       {topLevelGroups.map((group) => (
         <div key={group.key}>

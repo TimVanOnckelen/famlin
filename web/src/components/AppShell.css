@@ -115,7 +115,9 @@
   font-family: inherit;
   cursor: pointer;
   position: relative;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .sidebar-item:hover {

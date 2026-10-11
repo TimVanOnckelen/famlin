@@ -37,9 +37,9 @@ describe('getVideoPosterUrl', () => {
   });
 
   it('maps a media-proxy original to the thumbnail rendition', () => {
-    expect(
-      getVideoPosterUrl('https://s.example/api/media/assets/link1/asset2/original.mp4?token=x')
-    ).toBe('https://s.example/api/media/assets/link1/asset2/thumbnail.jpg?token=x');
+    expect(getVideoPosterUrl('https://s.example/api/media/assets/link1/asset2/original.mp4?token=x')).toBe(
+      'https://s.example/api/media/assets/link1/asset2/thumbnail.jpg?token=x'
+    );
   });
 
   it('maps a legacy immich-proxy original to the thumbnail rendition', () => {

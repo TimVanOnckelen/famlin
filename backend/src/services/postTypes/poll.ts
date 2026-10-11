@@ -10,7 +10,10 @@ import { isRecordNotFound } from '../../utils/prismaErrors.js';
 // question itself lives in `content` — not here — so search, notification
 // previews, and old clients keep rendering a poll as a plain text post.
 const pollTypeDataSchema = z.object({
-  options: z.array(z.object({ text: z.string().trim().min(1).max(100) })).min(2).max(10),
+  options: z
+    .array(z.object({ text: z.string().trim().min(1).max(100) }))
+    .min(2)
+    .max(10),
   // API-only in v1 — no composer UI builds this yet, but the backend
   // enforces it once set (see interact() below).
   closesAt: z.string().datetime().optional(),

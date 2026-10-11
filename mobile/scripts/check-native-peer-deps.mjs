@@ -42,8 +42,7 @@ function packageRoot(name) {
 }
 
 const isNative = (root) =>
-  readdirSync(root).some((f) => f.endsWith('.podspec')) ||
-  existsSync(path.join(root, 'android', 'build.gradle'));
+  readdirSync(root).some((f) => f.endsWith('.podspec')) || existsSync(path.join(root, 'android', 'build.gradle'));
 
 const isExpoModule = (root) => existsSync(path.join(root, 'expo-module.config.json'));
 
@@ -71,7 +70,7 @@ if (problems.length > 0) {
     '\nThese packages are installed in node_modules, so JS checks pass — but React' +
       '\nNative autolinking only links native code for direct dependencies, so the' +
       '\nbuilt app will crash at launch with dyld "Library not loaded".' +
-      '\nFix: cd mobile && npx expo install <package>',
+      '\nFix: cd mobile && npx expo install <package>'
   );
   process.exit(1);
 }

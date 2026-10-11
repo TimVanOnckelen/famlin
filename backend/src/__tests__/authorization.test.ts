@@ -42,8 +42,20 @@ beforeAll(async () => {
   await prisma.groupMember.create({ data: { groupId: groupAId, userId: memberA.id } });
   await prisma.groupMember.create({ data: { groupId: groupBId, userId: memberB.id } });
 
-  tokenA = createUserToken({ id: memberA.id, email: memberA.email, name: memberA.name, isAdmin: false, tokenVersion: memberA.tokenVersion });
-  tokenB = createUserToken({ id: memberB.id, email: memberB.email, name: memberB.name, isAdmin: false, tokenVersion: memberB.tokenVersion });
+  tokenA = createUserToken({
+    id: memberA.id,
+    email: memberA.email,
+    name: memberA.name,
+    isAdmin: false,
+    tokenVersion: memberA.tokenVersion,
+  });
+  tokenB = createUserToken({
+    id: memberB.id,
+    email: memberB.email,
+    name: memberB.name,
+    isAdmin: false,
+    tokenVersion: memberB.tokenVersion,
+  });
 });
 
 afterAll(async () => {
@@ -66,7 +78,7 @@ describe('group membership authorization', () => {
     expect(res.json()).toHaveProperty('items');
   });
 
-  it('blocks a non-member from listing another group\'s posts', async () => {
+  it("blocks a non-member from listing another group's posts", async () => {
     const res = await app.inject({
       method: 'GET',
       url: `/api/posts?groupId=${groupAId}`,
@@ -105,7 +117,7 @@ describe('multi-group feed filter', () => {
     await prisma.post.deleteMany({ where: { id: { in: [postAId, postBId] } } });
   });
 
-  it('returns only the caller\'s own groups when no filter is given', async () => {
+  it("returns only the caller's own groups when no filter is given", async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/posts',
@@ -259,7 +271,13 @@ describe('session invalidation', () => {
     const user = await prisma.user.create({
       data: { email: `deleted-${runId}@test.local`, name: 'Deleted' },
     });
-    const token = createUserToken({ id: user.id, email: user.email, name: user.name, isAdmin: false, tokenVersion: user.tokenVersion });
+    const token = createUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: false,
+      tokenVersion: user.tokenVersion,
+    });
 
     await prisma.user.delete({ where: { id: user.id } });
 
@@ -271,11 +289,21 @@ describe('session invalidation', () => {
     const user = await prisma.user.create({
       data: { email: `stale-token-${runId}@test.local`, name: 'Stale Token' },
     });
-    const staleToken = createUserToken({ id: user.id, email: user.email, name: user.name, isAdmin: false, tokenVersion: user.tokenVersion });
+    const staleToken = createUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: false,
+      tokenVersion: user.tokenVersion,
+    });
 
     await prisma.user.update({ where: { id: user.id }, data: { tokenVersion: { increment: 1 } } });
 
-    const res = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { authorization: `Bearer ${staleToken}` } });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/auth/me',
+      headers: { authorization: `Bearer ${staleToken}` },
+    });
     expect(res.statusCode).toBe(401);
 
     await prisma.user.delete({ where: { id: user.id } });
@@ -284,8 +312,12 @@ describe('session invalidation', () => {
 
 describe('invite consumption is single-use', () => {
   it('does not join a second, unrelated user once the invite is already claimed', async () => {
-    const claimant = await prisma.user.create({ data: { email: `invite-claimant-${runId}@test.local`, name: 'Claimant' } });
-    const latecomer = await prisma.user.create({ data: { email: `invite-latecomer-${runId}@test.local`, name: 'Latecomer' } });
+    const claimant = await prisma.user.create({
+      data: { email: `invite-claimant-${runId}@test.local`, name: 'Claimant' },
+    });
+    const latecomer = await prisma.user.create({
+      data: { email: `invite-latecomer-${runId}@test.local`, name: 'Latecomer' },
+    });
     const invite = await prisma.invite.create({
       data: { token: generateInviteToken(), groupId: groupBId },
     });

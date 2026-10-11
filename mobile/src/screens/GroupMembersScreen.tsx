@@ -32,9 +32,7 @@ export function GroupMembersScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           members && members.length > 0 ? (
-            <Text style={styles.countLabel}>
-              {t('groupMembers.count', { count: members.length })}
-            </Text>
+            <Text style={styles.countLabel}>{t('groupMembers.count', { count: members.length })}</Text>
           ) : null
         }
         renderItem={({ item }) => (

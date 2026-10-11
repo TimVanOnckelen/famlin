@@ -29,7 +29,6 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
 
-
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -67,7 +66,6 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
-
 
     let assetUrl = body.assetUrl;
 
@@ -164,7 +162,6 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
       return reply.status(404).send({ error: t('errors.postNotFound') });
     }
-
 
     const editedAt = new Date();
 

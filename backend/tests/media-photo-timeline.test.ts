@@ -92,10 +92,7 @@ describe('GET /api/media/groups/:groupId/photos', () => {
     __registerMediaProviderForTests(
       makeFakeProvider(FAKE_PROVIDER_ID, {
         async listAlbumAssets() {
-          return [
-            asset('asset-old', '2024-01-01T00:00:00.000Z'),
-            asset('asset-new', '2024-06-01T00:00:00.000Z'),
-          ];
+          return [asset('asset-old', '2024-01-01T00:00:00.000Z'), asset('asset-new', '2024-06-01T00:00:00.000Z')];
         },
       })
     );
@@ -117,7 +114,10 @@ describe('GET /api/media/groups/:groupId/photos', () => {
       headers: authHeader(member),
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json() as { items: Array<{ id: string; source: string; takenAt: string }>; nextCursor: string | null };
+    const body = res.json() as {
+      items: Array<{ id: string; source: string; takenAt: string }>;
+      nextCursor: string | null;
+    };
     expect(body.items.map((i) => i.id)).toEqual([
       `album:${link.id}:asset-new`,
       `post:${post.id}:0`,
@@ -125,7 +125,10 @@ describe('GET /api/media/groups/:groupId/photos', () => {
     ]);
     expect(body.nextCursor).toBeNull();
     const postItem = body.items.find((i) => i.source === 'post')!;
-    expect(postItem).toMatchObject({ postId: post.id, thumbnailUrl: '/uploads/11111111-1111-1111-1111-111111111111.jpg' });
+    expect(postItem).toMatchObject({
+      postId: post.id,
+      thumbnailUrl: '/uploads/11111111-1111-1111-1111-111111111111.jpg',
+    });
   });
 
   it('does not duplicate media-proxy URLs stored in a post', async () => {
@@ -199,9 +202,7 @@ describe('GET /api/media/groups/:groupId/photos', () => {
     const member = await createUser();
     const group = await createGroupWithMember(member);
 
-    const assets = Array.from({ length: 5 }, (_, i) =>
-      asset(`asset-${i}`, new Date(2024, 0, i + 1).toISOString())
-    );
+    const assets = Array.from({ length: 5 }, (_, i) => asset(`asset-${i}`, new Date(2024, 0, i + 1).toISOString()));
     __registerMediaProviderForTests(
       makeFakeProvider(FAKE_PROVIDER_ID, {
         async listAlbumAssets() {
@@ -276,7 +277,7 @@ describe('GET /api/media/groups/:groupId/photos', () => {
       expect(res.statusCode).toBe(404);
     });
 
-    it('returns only that person\'s album assets, excluding post uploads entirely', async () => {
+    it("returns only that person's album assets, excluding post uploads entirely", async () => {
       const member = await createUser();
       const group = await createGroupWithMember(member);
 

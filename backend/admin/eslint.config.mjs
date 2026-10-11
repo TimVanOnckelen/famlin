@@ -32,13 +32,10 @@ export default tseslint.config(
       // stay visible, exactly how no-explicit-any is handled above.
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/immutability': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // `any` shows up broadly in existing catch-block/error-handling code —
       // downgraded rather than mass-editing source to add real types.
       '@typescript-eslint/no-explicit-any': 'warn',
     },
-  },
+  }
 );

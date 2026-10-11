@@ -81,7 +81,11 @@ export function ChatScreen() {
     queryFn: () => fetchGroupMembers(groupId),
   });
 
-  const { query, items: messages, onEndReached } = useCursorPagination<ChatMessage>({
+  const {
+    query,
+    items: messages,
+    onEndReached,
+  } = useCursorPagination<ChatMessage>({
     queryKey: ['chatMessages', groupId],
     queryFn: (cursor) => fetchChatMessages(groupId, cursor),
   });
@@ -120,7 +124,11 @@ export function ChatScreen() {
   });
 
   // Same pick-then-upload flow as PostDetailScreen's comment attachment.
-  const { pick: pickAttachmentMedia, uploading: attachmentUploading, progress: attachmentUploadProgress } = usePickAndUploadMedia({
+  const {
+    pick: pickAttachmentMedia,
+    uploading: attachmentUploading,
+    progress: attachmentUploadProgress,
+  } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.8,
@@ -176,10 +184,7 @@ export function ChatScreen() {
   // The read receipt only ever decorates the current user's single most
   // recent message — messages are newest-first, so the first own-authored
   // item in the list is it. Keep this simple, no per-message tracking.
-  const latestOwnMessageId = useMemo(
-    () => messages.find((m) => m.authorId === user?.id)?.id,
-    [messages, user?.id]
-  );
+  const latestOwnMessageId = useMemo(() => messages.find((m) => m.authorId === user?.id)?.id, [messages, user?.id]);
 
   const canSend = (!!text.trim() || !!attachment?.uploadedUrl) && !attachmentUploading;
 
@@ -241,7 +246,9 @@ export function ChatScreen() {
             ListFooterComponent={
               isFetchingNextPage ? <ActivityIndicator style={styles.loadingMore} color={colors.primary} /> : null
             }
-            ListEmptyComponent={<EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />}
+            ListEmptyComponent={
+              <EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />
+            }
           />
         )}
 

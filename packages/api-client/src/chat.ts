@@ -38,10 +38,7 @@ export interface ChatMessagesPage {
   nextCursor: string | null;
 }
 
-export async function fetchChatMessages(
-  groupId: string,
-  cursor?: string,
-): Promise<ChatMessagesPage> {
+export async function fetchChatMessages(groupId: string, cursor?: string): Promise<ChatMessagesPage> {
   const response = await api.get<ChatMessagesPage>(`/chat/groups/${groupId}/messages`, {
     params: cursor ? { cursor } : undefined,
   });
@@ -54,10 +51,7 @@ export interface CreateChatMessageBody {
   replyToMessageId?: string;
 }
 
-export async function sendChatMessage(
-  groupId: string,
-  data: CreateChatMessageBody,
-): Promise<ChatMessage> {
+export async function sendChatMessage(groupId: string, data: CreateChatMessageBody): Promise<ChatMessage> {
   const response = await api.post<ChatMessage>(`/chat/groups/${groupId}/messages`, data);
   return response.data;
 }

@@ -78,10 +78,7 @@ export async function canViewPostCircle(circleId: string | null, userId: string)
 // Takes the post's circleId rather than its id so a caller that already
 // loaded the post doesn't pay for a second lookup; `null` (a whole-family
 // post) short-circuits.
-export async function filterRecipientsByCircle(
-  circleId: string | null,
-  userIds: string[]
-): Promise<string[]> {
+export async function filterRecipientsByCircle(circleId: string | null, userIds: string[]): Promise<string[]> {
   if (!circleId || userIds.length === 0) return userIds;
 
   const members = await prisma.circleMember.findMany({

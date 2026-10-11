@@ -22,11 +22,7 @@ export function CircleTag({ post }: { post: Post }) {
 
   return (
     <View style={styles.wrapper}>
-      <TouchableOpacity
-        style={styles.circleTag}
-        onPress={() => setMembersOpen(true)}
-        accessibilityRole="button"
-      >
+      <TouchableOpacity style={styles.circleTag} onPress={() => setMembersOpen(true)} accessibilityRole="button">
         <Text style={styles.circleTagText} numberOfLines={1}>
           {circle.name}
         </Text>

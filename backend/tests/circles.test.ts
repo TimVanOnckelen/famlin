@@ -287,9 +287,7 @@ describe('removing a group member cascades to their circles', () => {
       // A circle only ever narrows group membership, so a circle membership
       // must never outlive the group membership behind it — otherwise it
       // would grant access the outer boundary has already revoked.
-      expect(
-        await prisma.circleMember.findFirst({ where: { circleId: circle.id, userId: removed.id } })
-      ).toBeNull();
+      expect(await prisma.circleMember.findFirst({ where: { circleId: circle.id, userId: removed.id } })).toBeNull();
 
       const after = await app.inject({
         method: 'GET',

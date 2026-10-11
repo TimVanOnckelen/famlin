@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, GroupMember, MediaAlbumLink, MediaAlbumSummary, MediaProviderId, Invite, User, NewAssetMode, PostTypeInfo } from '../api/client';
+import {
+  api,
+  ApiError,
+  Group,
+  GroupMember,
+  MediaAlbumLink,
+  MediaAlbumSummary,
+  MediaProviderId,
+  Invite,
+  User,
+  NewAssetMode,
+  PostTypeInfo,
+} from '../api/client';
 import i18n from '../i18n';
 import { avatarColor, initials } from '../avatar';
 import { Icon } from './Icon';
@@ -72,12 +84,9 @@ export function GroupsPage() {
   };
 
   useEffect(() => {
-    Promise.all([
-      loadGroups(),
-      api.getAllUsers().then(setUsers),
-      loadCatalog('immich'),
-      loadCatalog('local'),
-    ]).finally(() => setLoading(false));
+    Promise.all([loadGroups(), api.getAllUsers().then(setUsers), loadCatalog('immich'), loadCatalog('local')]).finally(
+      () => setLoading(false)
+    );
   }, []);
 
   const loadMembers = (groupId: string) => {
@@ -268,13 +277,9 @@ export function GroupsPage() {
               >
                 <span className="md-list-item-main">
                   <span className="md-list-item-name">{group.name}</span>
-                  {group.description && (
-                    <span className="md-list-item-desc">{group.description}</span>
-                  )}
+                  {group.description && <span className="md-list-item-desc">{group.description}</span>}
                 </span>
-                <span className="badge">
-                  {t('groups.memberCount', { count: group.memberCount ?? 0 })}
-                </span>
+                <span className="badge">{t('groups.memberCount', { count: group.memberCount ?? 0 })}</span>
               </button>
             ))}
           </aside>
@@ -321,8 +326,8 @@ export function GroupsPage() {
                       const status = invite.usedAt
                         ? t('groups.invites.statusUsedBy', { name: invite.usedBy?.name ?? t('common.unknown') })
                         : expired
-                        ? t('groups.invites.statusExpired')
-                        : t('groups.invites.statusActive');
+                          ? t('groups.invites.statusExpired')
+                          : t('groups.invites.statusActive');
                       const revocable = !invite.usedAt && !expired;
 
                       return (
@@ -345,7 +350,9 @@ export function GroupsPage() {
                             </span>
                           </span>
                           <button type="button" className="secondary" onClick={() => handleCopyInviteLink(invite)}>
-                            {copiedInviteId === invite.id ? t('groups.invites.linkCopied') : t('groups.invites.copyLink')}
+                            {copiedInviteId === invite.id
+                              ? t('groups.invites.linkCopied')
+                              : t('groups.invites.copyLink')}
                           </button>
                           {revocable && (
                             <button
@@ -419,7 +426,8 @@ export function GroupsPage() {
                             {!member.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
                           </span>
                           <span className="member-card-sub">
-                            {member.email} · {t('groups.joinedOn', {
+                            {member.email} ·{' '}
+                            {t('groups.joinedOn', {
                               date: new Date(member.joinedAt).toLocaleDateString(i18n.language),
                             })}
                           </span>
@@ -528,13 +536,7 @@ export function GroupsPage() {
         </div>
       )}
 
-      {formGroup && (
-        <GroupFormModal
-          group={formGroup}
-          onClose={() => setFormGroup(null)}
-          onSubmit={handleSubmitForm}
-        />
-      )}
+      {formGroup && <GroupFormModal group={formGroup} onClose={() => setFormGroup(null)} onSubmit={handleSubmitForm} />}
 
       {showAddMember && selectedGroup && (
         <AddMemberModal
@@ -590,9 +592,7 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
           const stored = group.allowedPostTypes;
           // Empty/absent stored array = "all allowed" (default), same
           // convention as allowedEmails — every box starts checked.
-          setCheckedTypes(
-            !stored || stored.length === 0 ? new Set(items.map((pt) => pt.id)) : new Set(stored)
-          );
+          setCheckedTypes(!stored || stored.length === 0 ? new Set(items.map((pt) => pt.id)) : new Set(stored));
         }
       })
       .finally(() => setLoadingPostTypes(false));
@@ -655,11 +655,7 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
                 {postTypes.map((pt) => (
                   <li key={pt.id} className="membership-row">
                     <span>{t(`postTypes.${pt.id}`, { defaultValue: pt.id })}</span>
-                    <input
-                      type="checkbox"
-                      checked={checkedTypes.has(pt.id)}
-                      onChange={() => toggleType(pt.id)}
-                    />
+                    <input type="checkbox" checked={checkedTypes.has(pt.id)} onChange={() => toggleType(pt.id)} />
                   </li>
                 ))}
               </ul>
@@ -672,11 +668,7 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
 
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-              <input
-                type="checkbox"
-                checked={chitchatEnabled}
-                onChange={(e) => setChitchatEnabled(e.target.checked)}
-              />
+              <input type="checkbox" checked={chitchatEnabled} onChange={(e) => setChitchatEnabled(e.target.checked)} />
               <span>{t('groups.form.chitchatEnabled')}</span>
             </label>
             <p className="hint">{t('groups.form.chitchatEnabledHint')}</p>
@@ -684,11 +676,7 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
 
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-              <input
-                type="checkbox"
-                checked={storiesEnabled}
-                onChange={(e) => setStoriesEnabled(e.target.checked)}
-              />
+              <input type="checkbox" checked={storiesEnabled} onChange={(e) => setStoriesEnabled(e.target.checked)} />
               <span>{t('groups.form.storiesEnabled')}</span>
             </label>
             <p className="hint">{t('groups.form.storiesEnabledHint')}</p>
@@ -707,4 +695,3 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
     </div>
   );
 }
-

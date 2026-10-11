@@ -16,7 +16,14 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { Icon } from '@/components/Icon';
 import { getUploadUrl } from '@/api/uploads';
-import { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, MediaAsset, MediaGroupAlbum, MediaPerson } from '@/api/media';
+import {
+  getGroupMediaAlbums,
+  getGroupMediaPeople,
+  getMediaAlbumAssets,
+  MediaAsset,
+  MediaGroupAlbum,
+  MediaPerson,
+} from '@/api/media';
 
 const AssetThumb = React.memo(function AssetThumb({
   asset,
@@ -157,7 +164,13 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('mediaPicker.title')}</Text>
           <TouchableOpacity onPress={handleConfirm} disabled={selected.size === 0}>
-            <Text style={[styles.headerButton, styles.headerButtonPrimary, selected.size === 0 && styles.headerButtonDisabled]}>
+            <Text
+              style={[
+                styles.headerButton,
+                styles.headerButtonPrimary,
+                selected.size === 0 && styles.headerButtonDisabled,
+              ]}
+            >
               {t('mediaPicker.addCount', { count: selected.size })}
             </Text>
           </TouchableOpacity>
@@ -197,7 +210,7 @@ export function MediaPickerModal({ visible, groupId, onCancel, onConfirm }: Medi
                 <FlatList
                   horizontal
                   data={[{ id: null, label: t('mediaPicker.allPeople') }, ...people]}
-                  keyExtractor={(item) => (item.id || 'all')}
+                  keyExtractor={(item) => item.id || 'all'}
                   showsHorizontalScrollIndicator={false}
                   renderItem={({ item }) => {
                     const isAll = item.id === null;

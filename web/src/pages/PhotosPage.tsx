@@ -263,11 +263,7 @@ export function PhotosPage({
       </div>
 
       {lightboxOpen && (
-        <Lightbox
-          assetUrls={allPhotoUrls}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxOpen(false)}
-        />
+        <Lightbox assetUrls={allPhotoUrls} initialIndex={lightboxIndex} onClose={() => setLightboxOpen(false)} />
       )}
 
       {composerOpen && composerGroupId && (
@@ -296,7 +292,8 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
   const album = post.album;
   if (!album) return null;
 
-  const urls = album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
+  const urls =
+    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
   const visible = urls.slice(0, 4);
   const overflow = Math.max(0, album.photoCount - visible.length);
 
@@ -315,7 +312,9 @@ function AlbumTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
               ) : (
                 <ShimmerImage src={getUploadUrl(url, 'thumbnail')} fallbackSrc={getUploadUrl(url)} loading="lazy" />
               )}
-              {i === visible.length - 1 && overflow > 0 && <span className="photos-album-collage-more">+{overflow}</span>}
+              {i === visible.length - 1 && overflow > 0 && (
+                <span className="photos-album-collage-more">+{overflow}</span>
+              )}
             </span>
           ))}
         </span>
@@ -342,11 +341,7 @@ function PhotoTile({ photo, onOpen, onShare }: PhotoTileProps) {
   const isVideo = photo.type === 'VIDEO';
 
   return (
-    <div
-      className="photo-tile"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
+    <div className="photo-tile" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
       <button className="photo-tile-button" onClick={onOpen} aria-label={photo.albumName || 'Open photo'}>
         <ShimmerImage src={src} className="photo-tile-image" loading="lazy" />
         {isVideo && (
@@ -366,4 +361,3 @@ function PhotoTile({ photo, onOpen, onShare }: PhotoTileProps) {
     </div>
   );
 }
-

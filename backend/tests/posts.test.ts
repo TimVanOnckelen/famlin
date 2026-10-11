@@ -93,7 +93,7 @@ describe('posts routes', () => {
     // fails schema validation before the route runs (see UPLOAD_PATH_REGEX).
     const assetPath = () => `/uploads/${randomUUID()}.jpg`;
 
-    it('replaces the post\'s photos, adding and removing in one edit', async () => {
+    it("replaces the post's photos, adding and removing in one edit", async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
       const [keep, drop] = [assetPath(), assetPath()];
@@ -167,7 +167,7 @@ describe('posts routes', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('rejects adding a linked-album asset the post\'s group has no link to', async () => {
+    it("rejects adding a linked-album asset the post's group has no link to", async () => {
       const author = await createUser();
       const group = await createGroupWithMember(author);
       const post = await createPost({ groupId: group.id, authorId: author.id });
@@ -186,7 +186,7 @@ describe('posts routes', () => {
   });
 
   describe('authorization on mutation', () => {
-    it('rejects a non-author, non-admin editing another member\'s post', async () => {
+    it("rejects a non-author, non-admin editing another member's post", async () => {
       const author = await createUser();
       const otherMember = await createUser();
       const group = await createGroupWithMember(author);
@@ -203,7 +203,7 @@ describe('posts routes', () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it('rejects a non-author, non-admin deleting another member\'s post', async () => {
+    it("rejects a non-author, non-admin deleting another member's post", async () => {
       const author = await createUser();
       const otherMember = await createUser();
       const group = await createGroupWithMember(author);
@@ -219,7 +219,7 @@ describe('posts routes', () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it('lets an admin delete any member\'s post even without group membership shown elsewhere', async () => {
+    it("lets an admin delete any member's post even without group membership shown elsewhere", async () => {
       const author = await createUser();
       const admin = await createUser({ isAdmin: true });
       const group = await createGroupWithMember(author);

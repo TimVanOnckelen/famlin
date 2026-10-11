@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +16,11 @@ export function NotificationsScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
 
-  const { data: notifications, isLoading, refetch } = useQuery({
+  const {
+    data: notifications,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
     refetchInterval: 30000,
@@ -67,9 +64,7 @@ export function NotificationsScreen() {
         data={notifications || []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.notificationItem, !item.readAt && styles.unreadItem]}
@@ -82,18 +77,14 @@ export function NotificationsScreen() {
               }
             }}
           >
-            <View style={styles.dotContainer}>
-              {!item.readAt && <View style={styles.unreadDot} />}
-            </View>
+            <View style={styles.dotContainer}>{!item.readAt && <View style={styles.unreadDot} />}</View>
             <View style={styles.notificationContent}>
               <Text style={styles.notificationMessage}>{item.message}</Text>
               <Text style={styles.notificationTime}>{formatDateTime(item.createdAt)}</Text>
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={
-          <EmptyState title={t('notifications.empty')} titleStyle={styles.emptyText} />
-        }
+        ListEmptyComponent={<EmptyState title={t('notifications.empty')} titleStyle={styles.emptyText} />}
       />
     </SafeAreaView>
   );

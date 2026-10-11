@@ -38,9 +38,7 @@ export function Avatar({ name, avatarUrl, size = 44 }: AvatarProps) {
   if (avatarUrl) {
     const isExternal = avatarUrl.startsWith('http');
     // Avatars render at 22–48px, so the 400px thumbnail variant is plenty.
-    const uri = isExternal
-      ? avatarUrl
-      : getUploadUrl(avatarUrl, fellBack ? undefined : 'thumbnail');
+    const uri = isExternal ? avatarUrl : getUploadUrl(avatarUrl, fellBack ? undefined : 'thumbnail');
     return (
       <Image
         // cacheKey drops the rotating ?token= so a media-token refresh

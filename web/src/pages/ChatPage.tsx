@@ -240,9 +240,7 @@ export function ChatPage({
                         onClick={() => setSelectedGroupId(group.id)}
                       >
                         <span className="chat-group-item-name">{group.name}</span>
-                        {(unreadByGroup[group.id] ?? 0) > 0 && (
-                          <span className="chat-group-unread-dot" aria-hidden />
-                        )}
+                        {(unreadByGroup[group.id] ?? 0) > 0 && <span className="chat-group-unread-dot" aria-hidden />}
                       </button>
                     </li>
                   ))}

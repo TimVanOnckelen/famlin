@@ -17,14 +17,15 @@ const LOCALE_DIRS = [
 
 function flatten(object, prefix = '') {
   return Object.entries(object).flatMap(([key, value]) =>
-    value !== null && typeof value === 'object'
-      ? flatten(value, `${prefix}${key}.`)
-      : [[`${prefix}${key}`, value]],
+    value !== null && typeof value === 'object' ? flatten(value, `${prefix}${key}.`) : [[`${prefix}${key}`, value]]
   );
 }
 
 function placeholders(value) {
-  return [...String(value).matchAll(/{{\s*([^}]+?)\s*}}/g)].map((m) => m[1]).sort().join(',');
+  return [...String(value).matchAll(/{{\s*([^}]+?)\s*}}/g)]
+    .map((m) => m[1])
+    .sort()
+    .join(',');
 }
 
 function load(file) {
@@ -41,7 +42,8 @@ for (const dir of LOCALE_DIRS) {
     const translated = load(path.join(abs, file));
     for (const key of Object.keys(source)) {
       if (!(key in translated)) problems.push(`${label}: missing "${key}"`);
-      else if (typeof translated[key] !== 'string' || !translated[key].trim()) problems.push(`${label}: empty "${key}"`);
+      else if (typeof translated[key] !== 'string' || !translated[key].trim())
+        problems.push(`${label}: empty "${key}"`);
       else if (placeholders(translated[key]) !== placeholders(source[key])) {
         problems.push(`${label}: placeholder mismatch in "${key}"`);
       }

@@ -127,7 +127,12 @@ describe('GET /api/auth/me/export', () => {
     });
 
     await prisma.post.create({
-      data: { groupId: group.id, authorId: insider.id, content: 'Circle secret I cannot see', circleId: hiddenCircle.id },
+      data: {
+        groupId: group.id,
+        authorId: insider.id,
+        content: 'Circle secret I cannot see',
+        circleId: hiddenCircle.id,
+      },
     });
     await prisma.post.create({
       data: { groupId: group.id, authorId: me.id, content: 'Circle post I can see', circleId: myCircle.id },
@@ -153,7 +158,11 @@ describe('GET /api/auth/me/export', () => {
     await writeUpload(`${commentPhoto}.jpg`);
     await writeUpload(`${theirs}.jpg`);
 
-    const post = await createPost({ groupId: myGroup.id, authorId: me.id, uploadedAssetUrls: [`/uploads/${mine}.jpg`] });
+    const post = await createPost({
+      groupId: myGroup.id,
+      authorId: me.id,
+      uploadedAssetUrls: [`/uploads/${mine}.jpg`],
+    });
     await createComment({ postId: post.id, authorId: me.id, attachmentUrl: `/uploads/${commentPhoto}.jpg` });
     await createPost({ groupId: otherGroup.id, authorId: stranger.id, uploadedAssetUrls: [`/uploads/${theirs}.jpg`] });
 
@@ -165,7 +174,7 @@ describe('GET /api/auth/me/export', () => {
     expect(body).not.toContain(theirs);
   });
 
-  it('never includes credentials, invites, or other members\' private data', async () => {
+  it("never includes credentials, invites, or other members' private data", async () => {
     const me = await createUser({ password: 'my-own-password' });
     const relative = await createUser({ password: 'relative-password' });
     const group = await createGroupWithMember(me);
@@ -191,7 +200,11 @@ describe('GET /api/auth/me/export', () => {
 describe('collectUploadKeys', () => {
   it('maps every rendition path to its upload key', () => {
     const keys = collectUploadKeys(
-      JSON.stringify({ a: '/uploads/abc.jpg', b: ['/uploads/abc-thumbnail.jpg', '/uploads/def.mp4'], c: '/api/media/x' })
+      JSON.stringify({
+        a: '/uploads/abc.jpg',
+        b: ['/uploads/abc-thumbnail.jpg', '/uploads/def.mp4'],
+        c: '/api/media/x',
+      })
     );
     expect([...keys].sort()).toEqual(['abc', 'def']);
   });

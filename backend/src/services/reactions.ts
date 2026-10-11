@@ -3,7 +3,9 @@ import type { ReactionType } from '@prisma/client';
 
 // Used right after a single like/reaction mutation, where only one
 // post/comment's counts are needed and a fresh query is cheap and simplest.
-export async function reactionCounts(target: { postId: string } | { commentId: string }): Promise<Record<string, number>> {
+export async function reactionCounts(
+  target: { postId: string } | { commentId: string }
+): Promise<Record<string, number>> {
   const groups = await prisma.like.groupBy({
     by: ['type'],
     where: target,

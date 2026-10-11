@@ -61,9 +61,7 @@ describe('PhotosPage', () => {
       nextCursor: null,
     });
 
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await screen.findByText('July 2026');
     expect(getGroupPhotoTimeline).toHaveBeenCalledWith('group-1', {
@@ -73,9 +71,7 @@ describe('PhotosPage', () => {
   });
 
   it('renders person filter chips when people are available', async () => {
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await screen.findByRole('button', { name: 'Emma' });
     expect(screen.getByRole('button', { name: 'All people' })).toBeInTheDocument();
@@ -112,18 +108,14 @@ describe('PhotosPage', () => {
       nextCursor: null,
     });
 
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await screen.findByText('July 2026');
     expect(screen.getByText('June 2026')).toBeInTheDocument();
   });
 
   it('shows the empty state when there are no photos', async () => {
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     expect(await screen.findByText('No photos yet')).toBeInTheDocument();
   });
@@ -142,12 +134,7 @@ describe('PhotosPage', () => {
     });
 
     renderWithQueryClient(
-      <PhotosPage
-        user={makeUser()}
-        onOpenProfile={() => {}}
-        onOpenAlbum={onOpenAlbum}
-        onLogout={() => {}}
-      />
+      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onOpenAlbum={onOpenAlbum} onLogout={() => {}} />
     );
 
     const tile = await screen.findByRole('button', { name: /Summer at the lake/ });
@@ -159,9 +146,7 @@ describe('PhotosPage', () => {
   });
 
   it('hides the albums section when the group has no albums', async () => {
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await screen.findByText('No photos yet');
     expect(screen.queryByText('Shared albums')).not.toBeInTheDocument();
@@ -185,9 +170,7 @@ describe('PhotosPage', () => {
       nextCursor: null,
     });
 
-    renderWithQueryClient(
-      <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
-    );
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
 
     await screen.findByText('July 2026');
     // The play icon is rendered as part of the photo tile

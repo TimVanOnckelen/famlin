@@ -58,10 +58,7 @@ export default async function inviteLandingRoutes(fastify: FastifyInstance) {
       ? t('inviteLanding.invitedByTitle', { inviter: escapeHtml(inviterName), group: groupName })
       : t('inviteLanding.invitedTitle', { group: groupName });
 
-    const [appStoreUrl, playStoreUrl] = await Promise.all([
-      getSetting('appStoreUrl'),
-      getSetting('playStoreUrl'),
-    ]);
+    const [appStoreUrl, playStoreUrl] = await Promise.all([getSetting('appStoreUrl'), getSetting('playStoreUrl')]);
 
     const storeLinks = [
       appStoreUrl && `<a class="store-button" href="${escapeHtml(appStoreUrl)}">${t('inviteLanding.appStore')}</a>`,

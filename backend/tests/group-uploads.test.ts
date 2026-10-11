@@ -121,7 +121,11 @@ describe('group-scoped post media', () => {
     const outsider = await app.inject({ method: 'GET', url: `${photoUrl}?token=${tokenRes.json().token}` });
     expect(outsider.statusCode).toBe(404);
 
-    const memberToken = await app.inject({ method: 'GET', url: '/api/uploads/media-token', headers: authHeader(alice) });
+    const memberToken = await app.inject({
+      method: 'GET',
+      url: '/api/uploads/media-token',
+      headers: authHeader(alice),
+    });
     const member = await app.inject({ method: 'GET', url: `${photoUrl}?token=${memberToken.json().token}` });
     expect(member.statusCode).toBe(200);
   });
@@ -208,7 +212,7 @@ describe('server-side copies', () => {
 });
 
 describe('comment and chat attachments', () => {
-  it('scopes a comment photo to the post\'s group', async () => {
+  it("scopes a comment photo to the post's group", async () => {
     const post = await app.inject({
       method: 'POST',
       url: '/api/posts',
@@ -228,7 +232,7 @@ describe('comment and chat attachments', () => {
     expect(await status(photoUrl, bob)).toBe(404);
   });
 
-  it('scopes a chat attachment to the chat\'s group', async () => {
+  it("scopes a chat attachment to the chat's group", async () => {
     await prisma.group.update({ where: { id: groupB.id }, data: { chitchatEnabled: true } });
     const photoUrl = await upload(bob);
     const res = await app.inject({
@@ -267,7 +271,12 @@ describe('avatars', () => {
       headers: authHeader(anna),
       payload: { groupId: groupA.id, content: 'family only', uploadedAssetUrls: [photoUrl] },
     });
-    await app.inject({ method: 'PATCH', url: '/api/auth/me', headers: authHeader(anna), payload: { avatarUrl: photoUrl } });
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/auth/me',
+      headers: authHeader(anna),
+      payload: { avatarUrl: photoUrl },
+    });
 
     expect(await status(photoUrl, carol)).toBe(404);
   });

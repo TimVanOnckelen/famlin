@@ -132,7 +132,10 @@ describe('posts', () => {
       (client.api.post as any).mockResolvedValue({ data: fakePost });
 
       const { addAlbumPhotos } = await import('../posts.js');
-      const result = await addAlbumPhotos('post-8', { photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'], caption: 'By the lake' });
+      const result = await addAlbumPhotos('post-8', {
+        photoUrls: ['/uploads/a.jpg', '/uploads/b.jpg'],
+        caption: 'By the lake',
+      });
 
       expect(client.api.post).toHaveBeenCalledWith('/posts/post-8/interactions', {
         key: 'addPhotos',

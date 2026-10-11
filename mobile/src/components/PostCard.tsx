@@ -43,13 +43,7 @@ const COLLAGE_MAX_PHOTOS = 4;
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
 // Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
-function PhotoCollage({
-  urls,
-  onPressPhoto,
-}: {
-  urls: string[];
-  onPressPhoto: (index: number) => void;
-}) {
+function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (index: number) => void }) {
   if (urls.length === 2) {
     return (
       <View style={styles.collageRow}>
@@ -153,13 +147,7 @@ function PersonChip({ person }: { person: PostPerson }) {
 // Memoized so a cache patch from a like/favorite tap (patchPostInCaches
 // keeps unaffected posts' identity) only re-renders the affected card, not
 // every mounted card in the list.
-export const PostCard = React.memo(function PostCard({
-  post,
-  showGroup = false,
-}: {
-  post: Post;
-  showGroup?: boolean;
-}) {
+export const PostCard = React.memo(function PostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
   // TRIP posts get a wholesale different card layout (gradient frame, its
   // own hero source, a follow/diary CTA instead of the usual comment
   // button) — delegate to the dedicated component before any of the
@@ -335,11 +323,9 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           </>
         )}
 
-        {isMilestone ? (
-          !hasPhotos && <Text style={styles.milestoneTitle}>{post.content}</Text>
-        ) : (
-          !!post.content && <Text style={styles.postContent}>{post.content}</Text>
-        )}
+        {isMilestone
+          ? !hasPhotos && <Text style={styles.milestoneTitle}>{post.content}</Text>
+          : !!post.content && <Text style={styles.postContent}>{post.content}</Text>}
 
         {/* Registry entry for post.type (e.g. POLL) — renders below the
             content above, which for a poll is already the question, so this
@@ -381,11 +367,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         )}
 
         {post.people && post.people.length > 0 && (
-          <View
-            style={styles.peopleContainer}
-            accessible={true}
-            accessibilityLabel={t('feed.peopleInPost')}
-          >
+          <View style={styles.peopleContainer} accessible={true} accessibilityLabel={t('feed.peopleInPost')}>
             {post.people.map((person) => (
               <PersonChip key={person.id} person={person} />
             ))}
@@ -405,9 +387,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
           ) : (
             <Icon name="heart" size={18} color={colors.textMuted} />
           )}
-          <Text style={[styles.actionText, post.myReaction && styles.actionTextActive]}>
-            {post.likeCount}
-          </Text>
+          <Text style={[styles.actionText, post.myReaction && styles.actionTextActive]}>{post.likeCount}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={openDetail}>
           <Icon name="message-circle" size={18} color={colors.textMuted} />
@@ -425,10 +405,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         onSelect={selectReaction}
         onClose={() => setReactionPickerOpen(false)}
       />
-      <ReactionsModal
-        postId={reactionsModalOpen ? post.id : null}
-        onClose={() => setReactionsModalOpen(false)}
-      />
+      <ReactionsModal postId={reactionsModalOpen ? post.id : null} onClose={() => setReactionsModalOpen(false)} />
     </View>
   );
 }

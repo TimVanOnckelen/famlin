@@ -33,7 +33,10 @@ import pkg from '../../package.json' with { type: 'json' };
 export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty';
 
 export class RestoreError extends Error {
-  constructor(public readonly code: RestoreErrorCode, message?: string) {
+  constructor(
+    public readonly code: RestoreErrorCode,
+    message?: string
+  ) {
     super(message ?? code);
     this.name = 'RestoreError';
   }

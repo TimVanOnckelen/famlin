@@ -101,9 +101,24 @@ export function AppShell({
 
   const brandName = branding?.name ?? t('common.appName');
 
-  const navItems: { view: NavView; icon: IconName; label: string; keys: string; onClick?: () => void; badge?: boolean; show: boolean }[] = [
+  const navItems: {
+    view: NavView;
+    icon: IconName;
+    label: string;
+    keys: string;
+    onClick?: () => void;
+    badge?: boolean;
+    show: boolean;
+  }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
-    { view: 'favorites', icon: 'bookmark', label: t('tabs.favorites'), keys: 'g b', onClick: favoritesNav, show: showFavoritesNav },
+    {
+      view: 'favorites',
+      icon: 'bookmark',
+      label: t('tabs.favorites'),
+      keys: 'g b',
+      onClick: favoritesNav,
+      show: showFavoritesNav,
+    },
     { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: photosNav, show: showPhotosTab },
     {
       view: 'chat',

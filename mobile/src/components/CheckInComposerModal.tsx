@@ -118,7 +118,9 @@ export function CheckInComposerModal({
             {submitting ? (
               <ActivityIndicator size="small" color={colors.trip} />
             ) : (
-              <Text style={[styles.headerButton, styles.headerButtonPrimary, !canSubmit && styles.headerButtonDisabled]}>
+              <Text
+                style={[styles.headerButton, styles.headerButtonPrimary, !canSubmit && styles.headerButtonDisabled]}
+              >
                 {t('trip.checkin.submitButton')}
               </Text>
             )}

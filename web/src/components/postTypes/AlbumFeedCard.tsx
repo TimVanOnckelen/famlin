@@ -68,7 +68,8 @@ export function AlbumFeedCard({
       <CircleBadge post={post} />
     </>
   );
-  const heroUrls = album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
+  const heroUrls =
+    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
 
   return (
     <div className="post-card">
@@ -87,7 +88,11 @@ export function AlbumFeedCard({
             </Badge>
             {groupChip}
           </div>
-          <button type="button" className="album-card-title album-card-title-btn" onClick={() => onOpenAlbum?.(post.id)}>
+          <button
+            type="button"
+            className="album-card-title album-card-title-btn"
+            onClick={() => onOpenAlbum?.(post.id)}
+          >
             {album.title}
           </button>
           <div className="album-card-muted">

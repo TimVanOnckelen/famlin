@@ -115,10 +115,7 @@ export function ServerSettingsPage() {
     return () => clearTimeout(timer);
   }, [success]);
 
-  const dirty = useMemo(
-    () => settings !== null && JSON.stringify(form) !== JSON.stringify(settings),
-    [form, settings]
-  );
+  const dirty = useMemo(() => settings !== null && JSON.stringify(form) !== JSON.stringify(settings), [form, settings]);
 
   const updateField = <K extends keyof ServerSettings>(key: K, value: ServerSettings[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -317,10 +314,7 @@ export function ServerSettingsPage() {
               <SettingsCard icon="globe" title={t('serverSettings.general')} desc={t('serverSettings.generalDesc')}>
                 <label>
                   {t('serverSettings.defaultLanguage')}
-                  <select
-                    value={form.defaultLanguage}
-                    onChange={(e) => updateField('defaultLanguage', e.target.value)}
-                  >
+                  <select value={form.defaultLanguage} onChange={(e) => updateField('defaultLanguage', e.target.value)}>
                     {SUPPORTED_LANGUAGES.map((lang) => (
                       <option key={lang} value={lang}>
                         {LANGUAGE_NAMES[lang]}
@@ -354,7 +348,11 @@ export function ServerSettingsPage() {
             )}
 
             {activeSection === 'general' && (
-              <SettingsCard icon="download" title={t('serverSettings.dataExport')} desc={t('serverSettings.dataExportDesc')}>
+              <SettingsCard
+                icon="download"
+                title={t('serverSettings.dataExport')}
+                desc={t('serverSettings.dataExportDesc')}
+              >
                 <div className="settings-test-row">
                   <button type="button" className="secondary" onClick={handleExport} disabled={exporting}>
                     {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}

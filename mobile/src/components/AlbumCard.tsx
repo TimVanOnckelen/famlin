@@ -71,7 +71,11 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
   return (
     <View style={styles.card}>
       <TouchableOpacity activeOpacity={0.95} onPress={openDetail}>
-        <AlbumCollage collagePhotoUrls={album.collagePhotoUrls} coverPhotoUrl={album.coverPhotoUrl} photoCount={album.photoCount} />
+        <AlbumCollage
+          collagePhotoUrls={album.collagePhotoUrls}
+          coverPhotoUrl={album.coverPhotoUrl}
+          photoCount={album.photoCount}
+        />
       </TouchableOpacity>
 
       <View style={styles.body}>

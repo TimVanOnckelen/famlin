@@ -45,7 +45,7 @@ describe('local-folder media provider', () => {
     await fsp.rm(root, { recursive: true, force: true });
   });
 
-  it('lists a group\'s linked local album with its image count', async () => {
+  it("lists a group's linked local album with its image count", async () => {
     const member = await createUser();
     const group = await createGroupWithMember(member);
     const link = await linkSummerAlbum(group.id);
