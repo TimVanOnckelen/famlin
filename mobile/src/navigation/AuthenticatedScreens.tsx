@@ -114,7 +114,8 @@ export function renderAuthenticatedScreens(Stack: Stack) {
         name="ImageViewer"
         component={ImageViewerScreen}
         options={{
-          presentation: 'fullScreenModal',
+          presentation: 'transparentModal',
+          contentStyle: { backgroundColor: 'transparent' },
           animation: 'fade',
         }}
       />

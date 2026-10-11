@@ -474,7 +474,7 @@ export function ImageViewerScreen() {
   }
 
   const translateY = useRef(new Animated.Value(0)).current;
-  const backdropOpacity = translateY.interpolate({
+  const viewerOpacity = translateY.interpolate({
     inputRange: [0, height],
     outputRange: [1, 0],
     extrapolate: 'clamp',
@@ -536,8 +536,8 @@ export function ImageViewerScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+    <Animated.View style={[styles.root, { opacity: viewerOpacity }]} needsOffscreenAlphaCompositing>
+      <View style={styles.backdrop} />
       <Animated.View
         style={[styles.animatedContent, { transform: [{ translateY }] }]}
         {...panResponder.panHandlers}
@@ -558,10 +558,12 @@ export function ImageViewerScreen() {
           <ScrollView
             ref={scrollViewRef}
             horizontal
-            pagingEnabled
+            snapToInterval={width}
+            snapToAlignment="start"
+            disableIntervalMomentum
             showsHorizontalScrollIndicator={false}
             contentOffset={{ x: initialIndex * width, y: 0 }}
-            decelerationRate="fast"
+            decelerationRate="normal"
             scrollEventThrottle={16}
             onScroll={handleScroll}
             scrollEnabled={!isZoomed}
@@ -610,7 +612,7 @@ export function ImageViewerScreen() {
           )}
         </SafeAreaView>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
 
