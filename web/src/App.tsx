@@ -9,6 +9,7 @@ import { FeedPage } from '@/pages/FeedPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { PhotosPage } from '@/pages/PhotosPage'
 import { ChatPage } from '@/pages/ChatPage'
+import { NotificationsPage } from '@/pages/NotificationsPage'
 import { FavoritesPage } from '@/pages/FavoritesPage'
 import { TripDetailPage } from '@/pages/TripDetailPage'
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
@@ -139,6 +140,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
               onLogout={() => logout()}
@@ -155,6 +157,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenChat={nav.toChat}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenNotifications={nav.toNotifications}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
               />
@@ -171,6 +174,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenPhotos={nav.toPhotos}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenNotifications={nav.toNotifications}
                 onLogout={() => logout()}
               />
             </RequireGroups>
@@ -185,6 +189,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
               onLogout={() => logout()}
             />
           }
@@ -198,11 +203,27 @@ function AppRoutes({ user }: { user: User }) {
             <FavoritesPage
               user={user}
               onBack={nav.toFeed}
+              onOpenNotifications={nav.toNotifications}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.notifications}
+          element={
+            <NotificationsPage
+              user={user}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenProfile={nav.toProfile}
+              onOpenPost={nav.toPost}
               onLogout={() => logout()}
             />
           }
@@ -263,6 +284,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
       onLogout={() => logout()}
     />
   )
@@ -283,6 +305,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
       onLogout={() => logout()}
     />
   )
@@ -305,6 +328,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
       onLogout={() => logout()}
     />
   )

@@ -247,7 +247,8 @@
     "photos": "照片",
     "profile": "我的",
     "chat": "聊天",
-    "favorites": "收藏"
+    "favorites": "收藏",
+    "notifications": "通知"
   },
   "demo": {
     "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
@@ -376,6 +377,16 @@
     "prevPost": "上一条动态",
     "openPost": "打开动态",
     "likePost": "点赞动态",
-    "favoritePost": "收藏动态"
+    "favoritePost": "收藏动态",
+    "goNotifications": "前往通知"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "empty": "暂无通知",
+    "loadFailed": "无法加载通知。",
+    "markFailed": "无法将通知标为已读。请重试。",
+    "unread": "未读",
+    "storyUnavailable": "此限时动态已不可用。"
   }
 }
