@@ -267,7 +267,9 @@ jobs:
   # The release-please Release only carries the auto-generated source
   # archives. Make it a real download page: attach a docker-compose.yml pinned
   # to this exact version (+ .env.example), and append a "Downloads" section
-  # with the multi-arch image's pull command/digest and the mobile apps.
+  # with the multi-arch image's pull command/digest and the mobile apps,
+  # preceded by a "Thank you" section crediting outside contributors
+  # (.github/scripts/release-thanks.sh).
   # Runs after enhance-release-notes because that job overwrites the whole
   # body, and after publish-docker so the image is only advertised once it
   # actually exists. `always()` keeps it running when the best-effort notes
@@ -278,10 +280,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Read-only lookups of PR authors and the issues they closed, for the
+      # thank-you section.
+      pull-requests: read
+      issues: read
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
+          # Full history so the thank-you step can find the previous tag.
+          fetch-depth: 0
 
       - name: Attach version-pinned compose files
         env:
@@ -315,6 +323,15 @@ jobs:
             name=$(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith(".apk"))][0] // empty' || true)
             if [ -n "$name" ]; then APK_TAG="$tag"; APK_NAME="$name"; break; fi
           done
+          # Credit outside contributors and issue reporters (no bots, AI
+          # accounts or the repo owner). Best-effort: a failed lookup just
+          # leaves the section out rather than failing the release.
+          PREV_TAG=$(git describe --tags --abbrev=0 "$TAG_NAME^" 2>/dev/null || true)
+          if [ -n "$PREV_TAG" ]; then
+            .github/scripts/release-thanks.sh "$PREV_TAG" "$TAG_NAME" > thanks.md || : > thanks.md
+          else
+            : > thanks.md
+          fi
           MARKER='<!-- famlin-release-downloads -->'
           # Strip a previous run's section so a re-run doesn't duplicate it.
           gh release view "$TAG_NAME" -R "$GITHUB_REPOSITORY" --json body --jq .body \
@@ -323,6 +340,10 @@ jobs:
           {
             echo
             echo "$MARKER"
+            if [ -s thanks.md ]; then
+              cat thanks.md
+              echo
+            fi
             echo "## 📦 Downloads"
             echo
             echo "### Server (Docker)"
