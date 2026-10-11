@@ -157,7 +157,9 @@ USER node
 
 EXPOSE 3000
 
-# `exec` makes node replace the shell as PID 1, so it receives docker stop's
-# SIGTERM and shuts down gracefully (src/server.ts) — a shell as PID 1
-# doesn't forward signals, and node got SIGKILLed after the grace period.
-CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/server.js"]
+# src/boot.ts runs the downgrade guard (refuses to start against a database
+# migrated by a newer release), then `prisma migrate deploy`, then the server
+# — in one node process started directly (exec form, no shell), so node is
+# PID 1 and receives docker stop's SIGTERM to shut down gracefully
+# (src/server.ts); a shell as PID 1 doesn't forward signals.
+CMD ["node", "dist/boot.js"]

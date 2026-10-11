@@ -53,7 +53,7 @@ docker compose -f docker-compose.yml pull
 docker compose -f docker-compose.yml up -d
 ```
 
-The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember.
+The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember. Before migrating, it checks that the database wasn't already upgraded by a *newer* Famlin version, and refuses to start if it was (see [Troubleshooting](#troubleshooting)).
 
 When stopped or updated, the backend finishes requests already in progress (an upload mid-write, say) for up to 30 seconds (`stop_grace_period` in `docker-compose.yml`) before it exits.
 
@@ -94,6 +94,8 @@ FAMLIN_VERSION=1.2.0
 
 Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
 
+**Pinning can't be used to roll back.** Once a newer version has started, it has migrated the database schema, and older versions don't know how to run against it. If you set `FAMLIN_VERSION` to an older version than the one that last ran, Famlin refuses to start rather than risk corrupting your data (see [Troubleshooting](#troubleshooting)). To genuinely go back, restore a database backup taken before the upgrade, along with the older version.
+
 ## Building from source instead
 
 If you'd rather build the backend image yourself (e.g. you're running a fork, or testing an unreleased change) instead of pulling from `ghcr.io`, replace the `image:` line for `famlin-backend` in your compose file with a `build:` block:
@@ -123,6 +125,11 @@ Make sure the database and user already exist — Famlin does not create the dat
 **Containers won't start / `JWT_SECRET is required`** — `docker-compose.yml` fails fast if `JWT_SECRET` isn't set. Confirm `.env` is in the same directory you run `docker compose` from.
 
 **`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or the uploads volume isn't writable. The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
+
+**Famlin refuses to start: database is newer than this version** — `famlin-backend` keeps restarting and its log says `Refusing to start: the database was upgraded by a newer Famlin version than this one`, naming one or more migrations. An older Famlin image was started against a database that a newer release already upgraded — usually because `FAMLIN_VERSION` was pinned to an older version, an updater pulled a stale tag, or volumes were restored from the wrong backup. Famlin checks this before touching the database, so nothing was changed. Fix it in one of two ways:
+
+- Set `FAMLIN_VERSION` in `.env` back to the version that upgraded the database (or any newer one), then `docker compose pull && docker compose up -d`.
+- Or, if you really need the older version, restore a database backup taken *before* that upgrade (see [Backups](#backups)), then start the older version.
 
 **Migrations fail on startup** — check `docker compose logs famlin-backend`. This usually means the `famlin-db` container isn't reachable yet or `DATABASE_URL` doesn't match its credentials.
 
