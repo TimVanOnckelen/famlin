@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
-import { colors } from '@/constants/colors';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { REACTION_TYPES, ReactionType } from '@famlin/api-client';
+import React from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native'
+import { colors } from '@/constants/colors'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { REACTION_TYPES, ReactionType } from '@famlin/api-client'
 
 // A row of emoji reactions shown in a transparent full-screen modal so a tap
 // anywhere else dismisses it — used from both the post and comment "like"
@@ -12,11 +12,11 @@ export function ReactionPicker({
   onSelect,
   onClose,
 }: {
-  visible: boolean;
-  onSelect: (type: ReactionType) => void;
-  onClose: () => void;
+  visible: boolean
+  onSelect: (type: ReactionType) => void
+  onClose: () => void
 }) {
-  if (!visible) return null;
+  if (!visible) return null
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -35,7 +35,7 @@ export function ReactionPicker({
         </View>
       </Pressable>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -64,4 +64,4 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 28,
   },
-});
+})

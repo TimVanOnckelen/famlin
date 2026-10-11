@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { navigationRef } from '@/navigation/navigationRef';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react'
+import { StatusBar } from 'expo-status-bar'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { NavigationContainer } from '@react-navigation/native'
+import { navigationRef } from '@/navigation/navigationRef'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import axios from 'axios'
 import {
   useFonts,
   Nunito_400Regular,
@@ -14,24 +14,24 @@ import {
   Nunito_700Bold,
   Nunito_800ExtraBold,
   Nunito_900Black,
-} from '@expo-google-fonts/nunito';
-import * as ScreenOrientation from 'expo-screen-orientation';
-import * as Linking from 'expo-linking';
+} from '@expo-google-fonts/nunito'
+import * as ScreenOrientation from 'expo-screen-orientation'
+import * as Linking from 'expo-linking'
 
-import i18n, { initI18nLanguage } from '@/i18n';
-import { useAuthStore } from '@/stores/authStore';
-import { LoginScreen } from '@/screens/LoginScreen';
-import { InviteScreen } from '@/screens/InviteScreen';
-import { colors } from '@/constants/colors';
-import { ActivityIndicator, View, AppState } from 'react-native';
-import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client';
-import { fetchMe } from '@/api/auth';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { getServerUrl, mobileStorageAdapter } from '@/utils/storage';
-import { ensureFreshMediaToken } from '@/api/uploads';
-import { areScreensLoaded, prepareBrandingForMainScreens } from '@/branding';
+import i18n, { initI18nLanguage } from '@/i18n'
+import { useAuthStore } from '@/stores/authStore'
+import { LoginScreen } from '@/screens/LoginScreen'
+import { InviteScreen } from '@/screens/InviteScreen'
+import { colors } from '@/constants/colors'
+import { ActivityIndicator, View, AppState } from 'react-native'
+import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client'
+import { fetchMe } from '@/api/auth'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { getServerUrl, mobileStorageAdapter } from '@/utils/storage'
+import { ensureFreshMediaToken } from '@/api/uploads'
+import { areScreensLoaded, prepareBrandingForMainScreens } from '@/branding'
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator()
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,59 +42,59 @@ const queryClient = new QueryClient({
       staleTime: 30_000,
     },
   },
-});
+})
 
 // Must run before any @famlin/api-client call that touches storage
 // (initApiBaseUrl/loadToken below, or any request through the shared axios
 // client) — those all read/write via the registered adapter.
-setStorageAdapter(mobileStorageAdapter);
+setStorageAdapter(mobileStorageAdapter)
 // Backend error messages follow the app's UI language (stored choice or
 // device language, see initI18nLanguage) — React Native's HTTP stack sends
 // no Accept-Language of its own.
-setLanguageResolver(() => i18n.language);
+setLanguageResolver(() => i18n.language)
 
 // Parses `famlin://invite/<token>?server=<url>` (from the /invite/:token web
 // landing page's "Open in the app" button). Returns null for any other URL.
 function parseInviteUrl(url: string): { token: string; server?: string } | null {
   try {
-    const { hostname, path, queryParams } = Linking.parse(url);
-    const server = typeof queryParams?.server === 'string' ? queryParams.server : undefined;
-    const rawToken = hostname === 'invite' ? path : path?.startsWith('invite/') ? path.slice('invite/'.length) : null;
-    const token = rawToken?.replace(/^\//, '');
-    return token ? { token, server } : null;
+    const { hostname, path, queryParams } = Linking.parse(url)
+    const server = typeof queryParams?.server === 'string' ? queryParams.server : undefined
+    const rawToken = hostname === 'invite' ? path : path?.startsWith('invite/') ? path.slice('invite/'.length) : null
+    const token = rawToken?.replace(/^\//, '')
+    return token ? { token, server } : null
   } catch {
-    return null;
+    return null
   }
 }
 
 function AppContent() {
-  const { user, setAuth, clearSession, isLoading, loadToken } = useAuthStore();
-  const [initializing, setInitializing] = useState(true);
-  const [pendingInvite, setPendingInvite] = useState<{ token: string; server?: string } | null>(null);
+  const { user, setAuth, clearSession, isLoading, loadToken } = useAuthStore()
+  const [initializing, setInitializing] = useState(true)
+  const [pendingInvite, setPendingInvite] = useState<{ token: string; server?: string } | null>(null)
   // Per-family branding (issue #164): the authenticated screens are only
   // required once the brand for this server is applied (or known to be
   // cached) — see src/branding/.
-  const [brandReady, setBrandReady] = useState(areScreensLoaded());
+  const [brandReady, setBrandReady] = useState(areScreensLoaded())
 
   useEffect(() => {
-    if (!user || brandReady) return;
-    let cancelled = false;
+    if (!user || brandReady) return
+    let cancelled = false
     getServerUrl()
       .then((url) => (url ? prepareBrandingForMainScreens(url) : undefined))
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setBrandReady(true);
-      });
+        if (!cancelled) setBrandReady(true)
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [user, brandReady]);
+      cancelled = true
+    }
+  }, [user, brandReady])
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      clearSession();
-    });
-  }, [clearSession]);
+      clearSession()
+    })
+  }, [clearSession])
 
   let [fontsLoaded] = useFonts({
     Nunito_400Regular,
@@ -102,51 +102,51 @@ function AppContent() {
     Nunito_700Bold,
     Nunito_800ExtraBold,
     Nunito_900Black,
-  });
+  })
 
-  usePushNotifications();
+  usePushNotifications()
 
   useEffect(() => {
     // The rest of the app is built for portrait only; the fullscreen media
     // viewer is the one screen that opts into free rotation on its own.
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-  }, []);
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+  }, [])
 
   useEffect(() => {
     // The media token (7d TTL) can go stale or fail to refresh while the app
     // was backgrounded, and RN <Image>/<Video> requests bypass axios's 401
     // handling — re-check it whenever the app comes back to the foreground.
-    if (!user) return;
+    if (!user) return
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        ensureFreshMediaToken();
+        ensureFreshMediaToken()
       }
-    });
-    return () => subscription.remove();
-  }, [user?.id]);
+    })
+    return () => subscription.remove()
+  }, [user?.id])
 
   useEffect(() => {
     function handleUrl(url: string) {
-      const invite = parseInviteUrl(url);
-      if (invite) setPendingInvite(invite);
+      const invite = parseInviteUrl(url)
+      if (invite) setPendingInvite(invite)
     }
     Linking.getInitialURL().then((url) => {
-      if (url) handleUrl(url);
-    });
-    const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
-    return () => subscription.remove();
-  }, []);
+      if (url) handleUrl(url)
+    })
+    const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url))
+    return () => subscription.remove()
+  }, [])
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        await initI18nLanguage();
-        await initApiBaseUrl();
-        const token = await loadToken();
+        await initI18nLanguage()
+        await initApiBaseUrl()
+        const token = await loadToken()
         if (token) {
-          const me = await fetchMe();
-          const serverUrl = (await getServerUrl()) || '';
-          await setAuth(me, token, serverUrl);
+          const me = await fetchMe()
+          const serverUrl = (await getServerUrl()) || ''
+          await setAuth(me, token, serverUrl)
         }
       } catch (err) {
         // Only an actual auth rejection (expired/revoked token) should end
@@ -155,21 +155,21 @@ function AppContent() {
         // nor the remembered server URL, or the user would be forced to
         // re-enter the server address once connectivity comes back.
         if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
-          await clearSession();
+          await clearSession()
         }
       } finally {
-        setInitializing(false);
+        setInitializing(false)
       }
     }
-    bootstrap();
-  }, []);
+    bootstrap()
+  }, [])
 
   if (!fontsLoaded || initializing || isLoading || (user && !brandReady)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
-    );
+    )
   }
 
   // A pending invite link takes over the whole screen regardless of auth
@@ -178,7 +178,7 @@ function AppContent() {
   if (pendingInvite) {
     return (
       <InviteScreen token={pendingInvite.token} server={pendingInvite.server} onDone={() => setPendingInvite(null)} />
-    );
+    )
   }
 
   return (
@@ -201,7 +201,7 @@ function AppContent() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
-  );
+  )
 }
 
 export default function App() {
@@ -213,5 +213,5 @@ export default function App() {
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
-  );
+  )
 }

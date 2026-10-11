@@ -17,28 +17,28 @@
 // log in until an admin reconfigures SSO or resets their passwords — the
 // person restoring gets an admin login out of the same request (see
 // `admin` below), which is what makes that possible at all.
-import { Prisma, ReactionType, NewAssetMode } from '@prisma/client';
-import { z } from 'zod';
-import fs from 'fs';
-import fsp from 'fs/promises';
-import path from 'path';
-import { pipeline } from 'stream/promises';
-import yauzl from 'yauzl';
-import { prisma } from '../db.js';
-import { uploadsDir } from '../config.js';
-import { invalidateSettingsCache } from './settings.js';
-import { BRANDING_SETTING_KEYS } from './branding/index.js';
-import pkg from '../../package.json' with { type: 'json' };
+import { Prisma, ReactionType, NewAssetMode } from '@prisma/client'
+import { z } from 'zod'
+import fs from 'fs'
+import fsp from 'fs/promises'
+import path from 'path'
+import { pipeline } from 'stream/promises'
+import yauzl from 'yauzl'
+import { prisma } from '../db.js'
+import { uploadsDir } from '../config.js'
+import { invalidateSettingsCache } from './settings.js'
+import { BRANDING_SETTING_KEYS } from './branding/index.js'
+import pkg from '../../package.json' with { type: 'json' }
 
-export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty';
+export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty'
 
 export class RestoreError extends Error {
   constructor(
     public readonly code: RestoreErrorCode,
     message?: string
   ) {
-    super(message ?? code);
-    this.name = 'RestoreError';
+    super(message ?? code)
+    this.name = 'RestoreError'
   }
 }
 
@@ -48,14 +48,14 @@ export class RestoreError extends Error {
 // every JWT a password reset had revoked, on a server restored with the
 // same JWT_SECRET. Starting above any plausible old value invalidates every
 // token issued before the restore instead.
-export const RESTORED_TOKEN_VERSION = 1_000_000;
+export const RESTORED_TOKEN_VERSION = 1_000_000
 
 // Prefix of the per-request working directory, created INSIDE uploadsDir so
 // the final move of each extracted file into place is a same-filesystem
 // rename (uploadsDir is usually its own Docker volume), and so a multi-GB
 // upload is spooled to the volume sized for media rather than the
 // container's /tmp. export.ts skips it.
-export const RESTORE_WORKDIR_PREFIX = '.restore-';
+export const RESTORE_WORKDIR_PREFIX = '.restore-'
 
 // ---------------------------------------------------------------------------
 // Archive row schemas. The archive is untrusted input, so every row is
@@ -65,16 +65,16 @@ export const RESTORE_WORKDIR_PREFIX = '.restore-';
 // archive restores with those columns at their schema defaults.
 // ---------------------------------------------------------------------------
 
-const id = z.string().min(1);
-const date = z.coerce.date();
-const nullableDate = z.coerce.date().nullable().optional();
-const nullableString = z.string().nullable().optional();
-const optionalBool = z.boolean().optional();
+const id = z.string().min(1)
+const date = z.coerce.date()
+const nullableDate = z.coerce.date().nullable().optional()
+const nullableString = z.string().nullable().optional()
+const optionalBool = z.boolean().optional()
 // Json columns: `null` in the archive means SQL NULL, which Prisma requires
 // spelling as Prisma.DbNull.
 const nullableJson = z
   .unknown()
-  .transform((v) => (v === null || v === undefined ? Prisma.DbNull : (v as Prisma.InputJsonValue)));
+  .transform((v) => (v === null || v === undefined ? Prisma.DbNull : (v as Prisma.InputJsonValue)))
 
 const userRow = z.object({
   id,
@@ -91,9 +91,9 @@ const userRow = z.object({
   pushOnNewLike: optionalBool,
   pushOnChitchat: optionalBool,
   pushOnStory: optionalBool,
-});
+})
 
-const groupMemberRow = z.object({ id, groupId: id, userId: id, joinedAt: date });
+const groupMemberRow = z.object({ id, groupId: id, userId: id, joinedAt: date })
 
 const groupRow = z.object({
   id,
@@ -104,9 +104,9 @@ const groupRow = z.object({
   storiesEnabled: optionalBool,
   createdAt: date,
   members: z.array(groupMemberRow).default([]),
-});
+})
 
-const circleMemberRow = z.object({ id, circleId: id, userId: id, joinedAt: date });
+const circleMemberRow = z.object({ id, circleId: id, userId: id, joinedAt: date })
 
 const circleRow = z.object({
   id,
@@ -118,7 +118,7 @@ const circleRow = z.object({
   createdAt: date,
   updatedAt: date,
   members: z.array(circleMemberRow).default([]),
-});
+})
 
 const postRow = z.object({
   id,
@@ -136,7 +136,7 @@ const postRow = z.object({
   longitude: z.number().nullable().optional(),
   locationName: nullableString,
   crossPostId: nullableString,
-});
+})
 
 const postInteractionRow = z.object({
   id,
@@ -145,7 +145,7 @@ const postInteractionRow = z.object({
   key: z.string(),
   value: z.unknown().transform((v) => (v === null || v === undefined ? Prisma.JsonNull : (v as Prisma.InputJsonValue))),
   createdAt: date,
-});
+})
 
 const commentRow = z.object({
   id,
@@ -159,7 +159,7 @@ const commentRow = z.object({
   createdAt: date,
   editedAt: nullableDate,
   parentId: nullableString,
-});
+})
 
 const reactionRow = z.object({
   id,
@@ -168,9 +168,9 @@ const reactionRow = z.object({
   userId: id,
   type: z.enum(ReactionType).optional(),
   createdAt: date,
-});
+})
 
-const favoriteRow = z.object({ id, postId: id, userId: id, createdAt: date });
+const favoriteRow = z.object({ id, postId: id, userId: id, createdAt: date })
 
 const chatMessageRow = z.object({
   id,
@@ -183,9 +183,9 @@ const chatMessageRow = z.object({
   replyToMessageId: nullableString,
   createdAt: date,
   editedAt: nullableDate,
-});
+})
 
-const chatReadRow = z.object({ id, groupId: id, userId: id, lastReadAt: date });
+const chatReadRow = z.object({ id, groupId: id, userId: id, lastReadAt: date })
 
 const mediaAlbumLinkRow = z.object({
   id,
@@ -196,7 +196,7 @@ const mediaAlbumLinkRow = z.object({
   createdAt: date,
   newAssetMode: z.enum(NewAssetMode).optional(),
   newAssetsCheckedAt: nullableDate,
-});
+})
 
 const mediaPersonLinkRow = z.object({
   id,
@@ -205,7 +205,7 @@ const mediaPersonLinkRow = z.object({
   label: z.string(),
   userId: nullableString,
   createdAt: date,
-});
+})
 
 const uploadRow = z.object({
   id,
@@ -218,9 +218,9 @@ const uploadRow = z.object({
   groupIds: z.array(z.string()).default([]),
   serverWide: z.boolean().default(false),
   createdAt: date,
-});
+})
 
-const storyReactionRow = z.object({ id, userId: id, type: z.enum(ReactionType).optional(), createdAt: date });
+const storyReactionRow = z.object({ id, userId: id, type: z.enum(ReactionType).optional(), createdAt: date })
 
 // Only pinned stories (Highlights) are ever exported — live stories, views
 // and private replies are deliberately left out (see services/export.ts).
@@ -237,18 +237,18 @@ const highlightRow = z.object({
   expiresAt: nullableDate,
   pinnedAt: date,
   reactions: z.array(storyReactionRow).default([]),
-});
+})
 
 // Only the branding Setting keys are accepted — an archive can never write
 // credentials or other server config through this file.
 const brandingRow = z.object({
   key: z.enum(BRANDING_SETTING_KEYS),
   value: z.string().max(200),
-});
+})
 
 const manifestSchema = z.object({
   serverVersion: z.string(),
-});
+})
 
 // Archive file → schema. Files missing from an archive (one exported before
 // that table was added) restore as empty; manifest, users and groups are
@@ -269,35 +269,35 @@ const DATA_FILES = {
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
   highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
   branding: { file: 'data/branding.json', schema: z.array(brandingRow), required: false },
-} as const;
+} as const
 
-type DataKey = keyof typeof DATA_FILES;
-type ArchiveData = { [K in DataKey]: z.output<(typeof DATA_FILES)[K]['schema']> };
-export type RestoreCounts = Record<DataKey | 'groupMembers' | 'circleMembers' | 'files', number>;
+type DataKey = keyof typeof DATA_FILES
+type ArchiveData = { [K in DataKey]: z.output<(typeof DATA_FILES)[K]['schema']> }
+export type RestoreCounts = Record<DataKey | 'groupMembers' | 'circleMembers' | 'files', number>
 
 // A single JSON entry is held in memory to parse it; anything this large is
 // not an export from a family server.
-const MAX_JSON_ENTRY_BYTES = 1024 * 1024 * 1024;
+const MAX_JSON_ENTRY_BYTES = 1024 * 1024 * 1024
 
 // ---------------------------------------------------------------------------
 // Versions
 // ---------------------------------------------------------------------------
 
 function parseVersion(v: string): [number, number, number] | null {
-  const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(v.trim());
-  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
+  const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(v.trim())
+  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null
 }
 
 // True when `archiveVersion` is newer than `serverVersion` — such an archive
 // may carry columns/semantics this server's schema doesn't have yet.
 export function isNewerVersion(archiveVersion: string, serverVersion: string): boolean {
-  const a = parseVersion(archiveVersion);
-  const s = parseVersion(serverVersion);
-  if (!a || !s) throw new RestoreError('invalidArchive', `unparseable version: ${archiveVersion}`);
+  const a = parseVersion(archiveVersion)
+  const s = parseVersion(serverVersion)
+  if (!a || !s) throw new RestoreError('invalidArchive', `unparseable version: ${archiveVersion}`)
   for (let i = 0; i < 3; i++) {
-    if (a[i] !== s[i]) return a[i] > s[i];
+    if (a[i] !== s[i]) return a[i] > s[i]
   }
-  return false;
+  return false
 }
 
 // ---------------------------------------------------------------------------
@@ -307,40 +307,40 @@ export function isNewerVersion(archiveVersion: string, serverVersion: string): b
 function openZip(zipPath: string): Promise<yauzl.ZipFile> {
   return new Promise((resolve, reject) => {
     yauzl.open(zipPath, { lazyEntries: true, autoClose: true }, (err, zip) => {
-      if (err || !zip) reject(new RestoreError('invalidArchive', err?.message));
-      else resolve(zip);
-    });
-  });
+      if (err || !zip) reject(new RestoreError('invalidArchive', err?.message))
+      else resolve(zip)
+    })
+  })
 }
 
 function openEntryStream(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<NodeJS.ReadableStream> {
   return new Promise((resolve, reject) => {
     zip.openReadStream(entry, (err, stream) => {
-      if (err || !stream) reject(err ?? new Error('no stream'));
-      else resolve(stream);
-    });
-  });
+      if (err || !stream) reject(err ?? new Error('no stream'))
+      else resolve(stream)
+    })
+  })
 }
 
 async function readEntryText(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<string> {
   if (entry.uncompressedSize > MAX_JSON_ENTRY_BYTES) {
-    throw new RestoreError('invalidArchive', `${entry.fileName} is too large`);
+    throw new RestoreError('invalidArchive', `${entry.fileName} is too large`)
   }
-  const stream = await openEntryStream(zip, entry);
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString('utf8');
+  const stream = await openEntryStream(zip, entry)
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) chunks.push(chunk as Buffer)
+  return Buffer.concat(chunks).toString('utf8')
 }
 
 function isSymlink(entry: yauzl.Entry): boolean {
   // Unix mode lives in the high 16 bits of the external attributes.
-  return ((entry.externalFileAttributes >>> 16) & 0o170000) === 0o120000;
+  return ((entry.externalFileAttributes >>> 16) & 0o170000) === 0o120000
 }
 
 interface ReadArchiveResult {
-  manifest: z.output<typeof manifestSchema>;
-  rawData: Partial<Record<DataKey, unknown>>;
-  fileCount: number;
+  manifest: z.output<typeof manifestSchema>
+  rawData: Partial<Record<DataKey, unknown>>
+  fileCount: number
 }
 
 // Walks the archive once: JSON entries are parsed in memory, every
@@ -349,75 +349,75 @@ interface ReadArchiveResult {
 // half has committed). yauzl itself rejects absolute paths and `..`
 // segments; the resolved-path check below is the belt to that brace.
 async function readArchive(zipPath: string, filesDir: string): Promise<ReadArchiveResult> {
-  const zip = await openZip(zipPath);
-  const jsonByName = new Map<string, string>();
-  const wantedJson = new Set<string>(['manifest.json', ...Object.values(DATA_FILES).map((d) => d.file)]);
-  let fileCount = 0;
+  const zip = await openZip(zipPath)
+  const jsonByName = new Map<string, string>()
+  const wantedJson = new Set<string>(['manifest.json', ...Object.values(DATA_FILES).map((d) => d.file)])
+  let fileCount = 0
 
   await new Promise<void>((resolve, reject) => {
     const fail = (err: unknown) => {
-      zip.close();
-      reject(err instanceof RestoreError ? err : new RestoreError('invalidArchive', (err as Error)?.message));
-    };
+      zip.close()
+      reject(err instanceof RestoreError ? err : new RestoreError('invalidArchive', (err as Error)?.message))
+    }
 
-    zip.on('error', fail);
-    zip.on('end', () => resolve());
+    zip.on('error', fail)
+    zip.on('end', () => resolve())
     zip.on('entry', (entry: yauzl.Entry) => {
-      (async () => {
-        const name = entry.fileName;
-        if (name.endsWith('/') || isSymlink(entry)) return;
+      ;(async () => {
+        const name = entry.fileName
+        if (name.endsWith('/') || isSymlink(entry)) return
 
         if (wantedJson.has(name)) {
-          jsonByName.set(name, await readEntryText(zip, entry));
-          return;
+          jsonByName.set(name, await readEntryText(zip, entry))
+          return
         }
 
         if (name.startsWith('uploads/')) {
-          const rel = name.slice('uploads/'.length);
-          if (!rel || rel.startsWith(RESTORE_WORKDIR_PREFIX)) return;
-          const target = path.resolve(filesDir, rel);
+          const rel = name.slice('uploads/'.length)
+          if (!rel || rel.startsWith(RESTORE_WORKDIR_PREFIX)) return
+          const target = path.resolve(filesDir, rel)
           if (!target.startsWith(filesDir + path.sep)) {
-            throw new RestoreError('invalidArchive', `unsafe path: ${name}`);
+            throw new RestoreError('invalidArchive', `unsafe path: ${name}`)
           }
-          await fsp.mkdir(path.dirname(target), { recursive: true });
-          await pipeline(await openEntryStream(zip, entry), fs.createWriteStream(target));
-          fileCount += 1;
+          await fsp.mkdir(path.dirname(target), { recursive: true })
+          await pipeline(await openEntryStream(zip, entry), fs.createWriteStream(target))
+          fileCount += 1
         }
         // Anything else in the zip is ignored.
-      })().then(() => zip.readEntry(), fail);
-    });
-    zip.readEntry();
-  });
+      })().then(() => zip.readEntry(), fail)
+    })
+    zip.readEntry()
+  })
 
   const parseJson = (name: string): unknown => {
     try {
-      return JSON.parse(jsonByName.get(name)!);
+      return JSON.parse(jsonByName.get(name)!)
     } catch {
-      throw new RestoreError('invalidArchive', `${name} is not valid JSON`);
+      throw new RestoreError('invalidArchive', `${name} is not valid JSON`)
     }
-  };
-
-  if (!jsonByName.has('manifest.json')) throw new RestoreError('invalidArchive', 'missing manifest.json');
-  const manifest = manifestSchema.safeParse(parseJson('manifest.json'));
-  if (!manifest.success) throw new RestoreError('invalidArchive', 'invalid manifest.json');
-
-  const rawData: Partial<Record<DataKey, unknown>> = {};
-  for (const [key, spec] of Object.entries(DATA_FILES) as [DataKey, (typeof DATA_FILES)[DataKey]][]) {
-    if (jsonByName.has(spec.file)) rawData[key] = parseJson(spec.file);
-    else if (spec.required) throw new RestoreError('invalidArchive', `missing ${spec.file}`);
   }
 
-  return { manifest: manifest.data, rawData, fileCount };
+  if (!jsonByName.has('manifest.json')) throw new RestoreError('invalidArchive', 'missing manifest.json')
+  const manifest = manifestSchema.safeParse(parseJson('manifest.json'))
+  if (!manifest.success) throw new RestoreError('invalidArchive', 'invalid manifest.json')
+
+  const rawData: Partial<Record<DataKey, unknown>> = {}
+  for (const [key, spec] of Object.entries(DATA_FILES) as [DataKey, (typeof DATA_FILES)[DataKey]][]) {
+    if (jsonByName.has(spec.file)) rawData[key] = parseJson(spec.file)
+    else if (spec.required) throw new RestoreError('invalidArchive', `missing ${spec.file}`)
+  }
+
+  return { manifest: manifest.data, rawData, fileCount }
 }
 
 function validateData(rawData: Partial<Record<DataKey, unknown>>): ArchiveData {
-  const out = {} as Record<DataKey, unknown>;
+  const out = {} as Record<DataKey, unknown>
   for (const [key, spec] of Object.entries(DATA_FILES) as [DataKey, (typeof DATA_FILES)[DataKey]][]) {
-    const parsed = spec.schema.safeParse(rawData[key] ?? []);
-    if (!parsed.success) throw new RestoreError('invalidArchive', `invalid ${spec.file}`);
-    out[key] = parsed.data;
+    const parsed = spec.schema.safeParse(rawData[key] ?? [])
+    if (!parsed.success) throw new RestoreError('invalidArchive', `invalid ${spec.file}`)
+    out[key] = parsed.data
   }
-  return out as ArchiveData;
+  return out as ArchiveData
 }
 
 // ---------------------------------------------------------------------------
@@ -430,27 +430,27 @@ function validateData(rawData: Partial<Record<DataKey, unknown>>): ArchiveData {
 // statement. A parent id that isn't in the set is left for the database to
 // reject; a cycle can't come from a real export and is refused outright.
 function parentsFirst<T extends { id: string }>(rows: T[], parentOf: (row: T) => string | null | undefined): T[] {
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const depth = new Map<string, number>();
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const depth = new Map<string, number>()
   const depthOf = (row: T): number => {
-    const known = depth.get(row.id);
-    if (known !== undefined) return known;
-    let d = 0;
-    let current: T | undefined = row;
-    const seen = new Set<string>();
+    const known = depth.get(row.id)
+    if (known !== undefined) return known
+    let d = 0
+    let current: T | undefined = row
+    const seen = new Set<string>()
     while (current) {
-      const parentId = parentOf(current);
-      const parent = parentId ? byId.get(parentId) : undefined;
-      if (!parent) break;
-      if (seen.has(parent.id)) throw new RestoreError('invalidArchive', 'reply cycle');
-      seen.add(parent.id);
-      d += 1;
-      current = parent;
+      const parentId = parentOf(current)
+      const parent = parentId ? byId.get(parentId) : undefined
+      if (!parent) break
+      if (seen.has(parent.id)) throw new RestoreError('invalidArchive', 'reply cycle')
+      seen.add(parent.id)
+      d += 1
+      current = parent
     }
-    depth.set(row.id, d);
-    return d;
-  };
-  return [...rows].sort((a, b) => depthOf(a) - depthOf(b));
+    depth.set(row.id, d)
+    return d
+  }
+  return [...rows].sort((a, b) => depthOf(a) - depthOf(b))
 }
 
 async function insertAll(
@@ -458,20 +458,20 @@ async function insertAll(
   data: ArchiveData,
   admin: RestoreAdmin
 ): Promise<{ adminUserId: string }> {
-  const groupMembers = data.groups.flatMap((g) => g.members);
-  const circleMembers = data.circles.flatMap((c) => c.members);
+  const groupMembers = data.groups.flatMap((g) => g.members)
+  const circleMembers = data.circles.flatMap((c) => c.members)
 
   // Insertion order follows the foreign keys: users and groups first, then
   // everything that references them.
   await tx.user.createMany({
     data: data.users.map((u) => ({ ...u, email: u.email.toLowerCase().trim(), tokenVersion: RESTORED_TOKEN_VERSION })),
-  });
+  })
 
   // The person restoring becomes an admin with the password they just
   // chose. If the backup already has an account with their email, that
   // account is promoted — keeping it linked to everything they posted —
   // rather than a second, empty account being created next to it.
-  const existing = await tx.user.findUnique({ where: { email: admin.email }, select: { id: true } });
+  const existing = await tx.user.findUnique({ where: { email: admin.email }, select: { id: true } })
   const adminUser = existing
     ? await tx.user.update({
         where: { id: existing.id },
@@ -481,22 +481,22 @@ async function insertAll(
     : await tx.user.create({
         data: { email: admin.email, name: admin.name, passwordHash: admin.passwordHash, isAdmin: true },
         select: { id: true },
-      });
+      })
 
-  await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) });
-  await tx.groupMember.createMany({ data: groupMembers });
-  await tx.circle.createMany({ data: data.circles.map(({ members: _members, ...c }) => c) });
-  await tx.circleMember.createMany({ data: circleMembers });
-  await tx.mediaAlbumLink.createMany({ data: data.mediaAlbumLinks });
-  await tx.mediaPersonLink.createMany({ data: data.mediaPersonLinks });
-  await tx.post.createMany({ data: data.posts });
-  await tx.postInteraction.createMany({ data: data.postInteractions });
-  await tx.comment.createMany({ data: parentsFirst(data.comments, (c) => c.parentId) });
-  await tx.like.createMany({ data: data.reactions });
-  await tx.favorite.createMany({ data: data.favorites });
-  await tx.chatMessage.createMany({ data: parentsFirst(data.chatMessages, (m) => m.replyToMessageId) });
-  await tx.chatRead.createMany({ data: data.chatReads });
-  await tx.upload.createMany({ data: data.uploads });
+  await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) })
+  await tx.groupMember.createMany({ data: groupMembers })
+  await tx.circle.createMany({ data: data.circles.map(({ members: _members, ...c }) => c) })
+  await tx.circleMember.createMany({ data: circleMembers })
+  await tx.mediaAlbumLink.createMany({ data: data.mediaAlbumLinks })
+  await tx.mediaPersonLink.createMany({ data: data.mediaPersonLinks })
+  await tx.post.createMany({ data: data.posts })
+  await tx.postInteraction.createMany({ data: data.postInteractions })
+  await tx.comment.createMany({ data: parentsFirst(data.comments, (c) => c.parentId) })
+  await tx.like.createMany({ data: data.reactions })
+  await tx.favorite.createMany({ data: data.favorites })
+  await tx.chatMessage.createMany({ data: parentsFirst(data.chatMessages, (m) => m.replyToMessageId) })
+  await tx.chatRead.createMany({ data: data.chatReads })
+  await tx.upload.createMany({ data: data.uploads })
   await tx.story.createMany({
     data: data.highlights.map(({ reactions: _reactions, expiresAt, ...story }) => ({
       ...story,
@@ -504,15 +504,15 @@ async function insertAll(
       // gets the lifetime it would have had.
       expiresAt: expiresAt ?? new Date(story.createdAt.getTime() + 24 * 60 * 60 * 1000),
     })),
-  });
+  })
   await tx.storyReaction.createMany({
     data: data.highlights.flatMap((story) => story.reactions.map((r) => ({ ...r, storyId: story.id }))),
-  });
+  })
   for (const row of data.branding) {
-    await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row });
+    await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row })
   }
 
-  return { adminUserId: adminUser.id };
+  return { adminUserId: adminUser.id }
 }
 
 // ---------------------------------------------------------------------------
@@ -523,19 +523,19 @@ async function insertAll(
 // preserving its relative path — the /uploads/<uuid>.jpg URLs stored in the
 // restored rows resolve unchanged.
 async function installFiles(fromDir: string, toDir: string): Promise<void> {
-  let entries: fs.Dirent[];
+  let entries: fs.Dirent[]
   try {
-    entries = await fsp.readdir(fromDir, { withFileTypes: true });
+    entries = await fsp.readdir(fromDir, { withFileTypes: true })
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
-    throw err;
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return
+    throw err
   }
-  await fsp.mkdir(toDir, { recursive: true });
+  await fsp.mkdir(toDir, { recursive: true })
   for (const entry of entries) {
-    const from = path.join(fromDir, entry.name);
-    const to = path.join(toDir, entry.name);
-    if (entry.isDirectory()) await installFiles(from, to);
-    else if (entry.isFile()) await fsp.rename(from, to);
+    const from = path.join(fromDir, entry.name)
+    const to = path.join(toDir, entry.name)
+    if (entry.isDirectory()) await installFiles(from, to)
+    else if (entry.isFile()) await fsp.rename(from, to)
   }
 }
 
@@ -544,59 +544,59 @@ async function installFiles(fromDir: string, toDir: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export interface RestoreAdmin {
-  email: string;
-  name: string;
-  passwordHash: string;
+  email: string
+  name: string
+  passwordHash: string
 }
 
 export interface RestoreOptions {
-  zipPath: string;
+  zipPath: string
   // Scratch directory for extracted files — must be on the same filesystem
   // as uploadsDir (the caller creates it under uploadsDir with
   // RESTORE_WORKDIR_PREFIX) and is left for the caller to remove.
-  workDir: string;
-  admin: RestoreAdmin;
+  workDir: string
+  admin: RestoreAdmin
   // The advisory lock POST /api/auth/setup takes, so a restore and a setup
   // can't both see "no users yet".
-  lockKey: bigint;
+  lockKey: bigint
 }
 
 export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserId: string; counts: RestoreCounts }> {
-  const filesDir = path.join(opts.workDir, 'files');
-  await fsp.mkdir(filesDir, { recursive: true });
+  const filesDir = path.join(opts.workDir, 'files')
+  await fsp.mkdir(filesDir, { recursive: true })
 
-  const { manifest, rawData, fileCount } = await readArchive(opts.zipPath, filesDir);
+  const { manifest, rawData, fileCount } = await readArchive(opts.zipPath, filesDir)
   if (isNewerVersion(manifest.serverVersion, pkg.version)) {
-    throw new RestoreError('archiveTooNew');
+    throw new RestoreError('archiveTooNew')
   }
-  const data = validateData(rawData);
+  const data = validateData(rawData)
 
-  let adminUserId: string;
+  let adminUserId: string
   try {
-    ({ adminUserId } = await prisma.$transaction(
+    ;({ adminUserId } = await prisma.$transaction(
       async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${opts.lockKey})`;
-        if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty');
-        return insertAll(tx, data, opts.admin);
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${opts.lockKey})`
+        if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty')
+        return insertAll(tx, data, opts.admin)
       },
       // A large family's history is a lot of rows; the default 5s
       // interactive-transaction timeout is sized for request handlers.
       { maxWait: 30_000, timeout: 30 * 60_000 }
-    ));
+    ))
   } catch (err) {
-    if (err instanceof RestoreError) throw err;
+    if (err instanceof RestoreError) throw err
     // A dangling reference or duplicate id: the archive isn't internally
     // consistent (hand-edited, or truncated), so nothing was written.
     if (err instanceof Prisma.PrismaClientKnownRequestError && ['P2002', 'P2003'].includes(err.code)) {
-      throw new RestoreError('invalidArchive', err.message);
+      throw new RestoreError('invalidArchive', err.message)
     }
-    throw err;
+    throw err
   }
 
   // Only now, with the rows committed, does anything touch the live media
   // directory.
-  await installFiles(filesDir, uploadsDir);
-  if (data.branding.length > 0) invalidateSettingsCache();
+  await installFiles(filesDir, uploadsDir)
+  if (data.branding.length > 0) invalidateSettingsCache()
 
   const counts: RestoreCounts = {
     users: data.users.length,
@@ -617,7 +617,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     highlights: data.highlights.length,
     branding: data.branding.length,
     files: fileCount,
-  };
+  }
 
-  return { adminUserId, counts };
+  return { adminUserId, counts }
 }

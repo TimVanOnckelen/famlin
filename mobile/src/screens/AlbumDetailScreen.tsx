@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -9,24 +9,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
-import { Comment } from '@/types';
-import { fetchPost, fetchComments, createComment, addAlbumPhotos, closeAlbum } from '@famlin/api-client';
-import { getUploadUrl } from '@/api/uploads';
-import { formatTime } from '@/i18n/utils';
-import { useAuthStore } from '@/stores/authStore';
-import { patchPostInCaches } from '@/utils/postCache';
-import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal'
+import { Comment } from '@/types'
+import { fetchPost, fetchComments, createComment, addAlbumPhotos, closeAlbum } from '@famlin/api-client'
+import { getUploadUrl } from '@/api/uploads'
+import { formatTime } from '@/i18n/utils'
+import { useAuthStore } from '@/stores/authStore'
+import { patchPostInCaches } from '@/utils/postCache'
+import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album'
 
 // The detail + contribute view of a collaborative photo album — the mobile
 // counterpart of web's AlbumDetailPage. Unlike the trip screen, an album is
@@ -34,87 +34,87 @@ import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album';
 // button), and the author can close the album. Photos live on the album's
 // contribution comments (utils/album.ts splits them from ordinary comments).
 export function AlbumDetailScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { postId } = route.params;
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { postId } = route.params
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
 
-  const [contributeOpen, setContributeOpen] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  const [contributeOpen, setContributeOpen] = useState(false)
+  const [commentText, setCommentText] = useState('')
 
-  const { data: post } = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) });
+  const { data: post } = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
   const { data: comments, refetch: refetchComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: () => fetchComments(postId),
-  });
+  })
 
-  const album = post?.album;
+  const album = post?.album
 
-  const photos = useMemo(() => collectAlbumPhotos(comments || []), [comments]);
+  const photos = useMemo(() => collectAlbumPhotos(comments || []), [comments])
   const discussion = useMemo(
     () => (comments || []).filter((c) => !c.parentId && isAlbumDiscussionComment(c)),
     [comments]
-  );
+  )
 
   const contributeMutation = useMutation({
     mutationFn: (data: { photoUrls: string[]; caption?: string }) => addAlbumPhotos(postId, data),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, postId, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      refetchComments();
-      setContributeOpen(false);
+      patchPostInCaches(queryClient, postId, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      refetchComments()
+      setContributeOpen(false)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.addPhotos.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.addPhotos.alerts.failed'))
     },
-  });
+  })
 
   const closeMutation = useMutation({
     mutationFn: () => closeAlbum(postId),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, postId, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      patchPostInCaches(queryClient, postId, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.close.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.close.alerts.failed'))
     },
-  });
+  })
 
   const commentMutation = useMutation({
     mutationFn: (content: string) => createComment(postId, { content }),
     onSuccess: () => {
-      setCommentText('');
-      refetchComments();
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setCommentText('')
+      refetchComments()
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'))
     },
-  });
+  })
 
-  if (!post || !album) return null;
+  if (!post || !album) return null
 
-  const isAuthor = post.authorId === user?.id;
-  const coverUrl = album.coverPhotoUrl || album.collagePhotoUrls[0];
-  const photoUris = photos.map((p) => getUploadUrl(p.url));
+  const isAuthor = post.authorId === user?.id
+  const coverUrl = album.coverPhotoUrl || album.collagePhotoUrls[0]
+  const photoUris = photos.map((p) => getUploadUrl(p.url))
 
   function openPhotos(index: number) {
-    navigation.navigate('ImageViewer', { urls: photoUris, initialIndex: index });
+    navigation.navigate('ImageViewer', { urls: photoUris, initialIndex: index })
   }
 
   function confirmClose() {
     Alert.alert(t('album.close.confirmTitle'), t('album.close.confirmBody'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('album.close.confirmButton'), style: 'destructive', onPress: () => closeMutation.mutate() },
-    ]);
+    ])
   }
 
   function submitComment() {
-    const trimmed = commentText.trim();
-    if (trimmed && !commentMutation.isPending) commentMutation.mutate(trimmed);
+    const trimmed = commentText.trim()
+    if (trimmed && !commentMutation.isPending) commentMutation.mutate(trimmed)
   }
 
   return (
@@ -265,7 +265,7 @@ export function AlbumDetailScreen() {
         onSubmit={(data) => contributeMutation.mutate(data)}
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -392,4 +392,4 @@ const styles = StyleSheet.create({
   },
   commentSend: { fontFamily: 'Nunito_800ExtraBold', fontSize: 15, color: colors.primary },
   commentSendDisabled: { opacity: 0.4 },
-});
+})

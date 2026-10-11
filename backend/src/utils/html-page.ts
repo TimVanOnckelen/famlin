@@ -1,8 +1,8 @@
-import { SupportedLanguage } from '../i18n/index.js';
-import type { PublicBranding } from '../services/branding/index.js';
+import { SupportedLanguage } from '../i18n/index.js'
+import type { PublicBranding } from '../services/branding/index.js'
 
 export function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 // Matches the app's Logo component (mobile/src/components/Logo.tsx): a
@@ -18,7 +18,7 @@ export const LOGO_SVG = `<svg width="56" height="56" viewBox="0 0 48 48" xmlns="
   <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" fill="white" />
   <circle cx="24" cy="20.5" r="2.6" fill="#006e94" />
   <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" fill="#006e94" />
-</svg>`;
+</svg>`
 
 // Page colors — today's teal by default, the family's derived palette when
 // branding is set (issue #164). Only palette values the server itself
@@ -29,7 +29,7 @@ function pageColors(branding: PublicBranding | null | undefined) {
     bg: branding?.palette.bg ?? '#edf7fb',
     loginBgFrom: branding?.palette.loginBgFrom ?? '#edf7fb',
     loginBgTo: branding?.palette.loginBgTo ?? '#edf7fb',
-  };
+  }
 }
 
 export function htmlPage(
@@ -38,18 +38,18 @@ export function htmlPage(
   body: string,
   branding?: PublicBranding | null
 ): string {
-  const c = pageColors(branding);
-  const background = c.loginBgFrom === c.loginBgTo ? c.bg : `linear-gradient(160deg, ${c.loginBgFrom}, ${c.loginBgTo})`;
+  const c = pageColors(branding)
+  const background = c.loginBgFrom === c.loginBgTo ? c.bg : `linear-gradient(160deg, ${c.loginBgFrom}, ${c.loginBgTo})`
   const logo = branding?.logoUrl
     ? `<img src="${escapeHtml(branding.logoUrl)}" alt="${escapeHtml(branding.name ?? '')}" width="56" height="56" style="object-fit:contain" />`
-    : LOGO_SVG;
+    : LOGO_SVG
   const head = [
     `<meta property="og:title" content="${escapeHtml(title)}" />`,
     branding?.name ? `<meta property="og:site_name" content="${escapeHtml(branding.name)}" />` : '',
     branding?.faviconUrl ? `<link rel="icon" type="image/png" href="${escapeHtml(branding.faviconUrl)}" />` : '',
   ]
     .filter(Boolean)
-    .join('\n');
+    .join('\n')
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
@@ -79,5 +79,5 @@ ${head}
     ${body}
   </div>
 </body>
-</html>`;
+</html>`
 }

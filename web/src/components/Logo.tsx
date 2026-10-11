@@ -1,4 +1,4 @@
-import { useBranding } from '@/hooks/useBranding';
+import { useBranding } from '@/hooks/useBranding'
 
 // House mark from design/Famlin Styleguide.dc.html — a rounded house
 // silhouette with an arched door and round window in negative space,
@@ -27,14 +27,14 @@ export function AppIcon({ size = 76 }: { size?: number }) {
         <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" fill="var(--fam-primary)" />
       </svg>
     </div>
-  );
+  )
 }
 
 // The family's own logo when branding sets one (issue #164), else the Famlin
 // house mark. Same footprint either way, so layouts don't shift.
 export function BrandIcon({ size = 76 }: { size?: number }) {
-  const branding = useBranding();
-  if (!branding?.logoUrl) return <AppIcon size={size} />;
+  const branding = useBranding()
+  if (!branding?.logoUrl) return <AppIcon size={size} />
   return (
     <img
       src={branding.logoUrl}
@@ -43,5 +43,5 @@ export function BrandIcon({ size = 76 }: { size?: number }) {
       height={size}
       style={{ width: size, height: size, objectFit: 'contain', borderRadius: size * 0.22, flexShrink: 0 }}
     />
-  );
+  )
 }

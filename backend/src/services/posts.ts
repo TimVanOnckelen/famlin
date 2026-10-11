@@ -1,8 +1,8 @@
-import type { ReactionType } from '@prisma/client';
-import { prisma } from '../db.js';
-import { summarizeReactions } from './reactions.js';
-import { attachPeopleToPosts, type PersonTag } from './media/personTags.js';
-import { getPostTypeHandler } from './postTypes/registry.js';
+import type { ReactionType } from '@prisma/client'
+import { prisma } from '../db.js'
+import { summarizeReactions } from './reactions.js'
+import { attachPeopleToPosts, type PersonTag } from './media/personTags.js'
+import { getPostTypeHandler } from './postTypes/registry.js'
 
 // Shared Prisma include shape for fetching a post as a member should see it —
 // used by every post-returning endpoint (feed, detail, search, on-this-day,
@@ -28,7 +28,7 @@ export const postInclude = (userId: string) => ({
     orderBy: { createdAt: 'desc' as const },
   },
   favorites: { where: { userId }, select: { id: true } },
-});
+})
 
 // Shared response shape for a post — used everywhere a post (list, detail,
 // create, update, favorites) is returned to a member, so the
@@ -43,14 +43,14 @@ export const postInclude = (userId: string) => ({
 // below.
 export function shapePost<
   T extends {
-    crossPostId: string | null;
-    _count: { comments: number; likes: number };
-    likes: { type: ReactionType; userId: string; user: { id: string; name: string; avatarUrl: string | null } }[];
-    favorites: { id: string }[];
+    crossPostId: string | null
+    _count: { comments: number; likes: number }
+    likes: { type: ReactionType; userId: string; user: { id: string; name: string; avatarUrl: string | null } }[]
+    favorites: { id: string }[]
   },
 >(post: T, userId: string) {
-  const { _count, likes, favorites, crossPostId: _crossPostId, ...rest } = post;
-  const { counts, myReaction } = summarizeReactions(likes, userId);
+  const { _count, likes, favorites, crossPostId: _crossPostId, ...rest } = post
+  const { counts, myReaction } = summarizeReactions(likes, userId)
   return {
     ...rest,
     commentCount: _count.comments,
@@ -62,7 +62,7 @@ export function shapePost<
     // so this is the three most recent reactors.
     recentReactors: likes.slice(0, 3).map((like) => like.user),
     favoritedByMe: favorites.length > 0,
-  };
+  }
 }
 
 // Removes every sibling-but-one of a cross-post from a page of results,
@@ -71,13 +71,13 @@ export function shapePost<
 // (non-cross-posted) post's null crossPostId is never deduped against
 // another null.
 export function dedupeByCrossPostId<T extends { crossPostId: string | null }>(posts: T[]): T[] {
-  const seen = new Set<string>();
+  const seen = new Set<string>()
   return posts.filter((post) => {
-    if (!post.crossPostId) return true;
-    if (seen.has(post.crossPostId)) return false;
-    seen.add(post.crossPostId);
-    return true;
-  });
+    if (!post.crossPostId) return true
+    if (seen.has(post.crossPostId)) return false
+    seen.add(post.crossPostId)
+    return true
+  })
 }
 
 // Cross-page counterpart to dedupeByCrossPostId: a cross-post's sibling rows
@@ -89,9 +89,9 @@ export function dropLeadingCrossPostSiblings<T extends { crossPostId: string | n
   posts: T[],
   crossPostId: string
 ): T[] {
-  let i = 0;
-  while (i < posts.length && posts[i].crossPostId === crossPostId) i++;
-  return posts.slice(i);
+  let i = 0
+  while (i < posts.length && posts[i].crossPostId === crossPostId) i++
+  return posts.slice(i)
 }
 
 // AUTHOR-only: for a cross-posted post the viewer themselves authored,
@@ -108,31 +108,31 @@ export async function attachSharedWithGroups<
   rawPosts: T[],
   viewerId: string
 ): Promise<(S & { sharedWithGroups?: { id: string; name: string }[] })[]> {
-  const rawById = new Map(rawPosts.map((p) => [p.id, p]));
+  const rawById = new Map(rawPosts.map((p) => [p.id, p]))
   const crossPostIds = [
     ...new Set(rawPosts.filter((p) => p.crossPostId && p.authorId === viewerId).map((p) => p.crossPostId as string)),
-  ];
+  ]
 
-  if (crossPostIds.length === 0) return shapedPosts;
+  if (crossPostIds.length === 0) return shapedPosts
 
   const siblings = await prisma.post.findMany({
     where: { crossPostId: { in: crossPostIds } },
     select: { crossPostId: true, group: { select: { id: true, name: true } } },
-  });
-  const groupsByCrossPostId = new Map<string, { id: string; name: string }[]>();
+  })
+  const groupsByCrossPostId = new Map<string, { id: string; name: string }[]>()
   for (const s of siblings) {
-    const list = groupsByCrossPostId.get(s.crossPostId!) ?? [];
-    list.push(s.group);
-    groupsByCrossPostId.set(s.crossPostId!, list);
+    const list = groupsByCrossPostId.get(s.crossPostId!) ?? []
+    list.push(s.group)
+    groupsByCrossPostId.set(s.crossPostId!, list)
   }
 
   return shapedPosts.map((post) => {
-    const raw = rawById.get(post.id);
+    const raw = rawById.get(post.id)
     if (raw?.crossPostId && raw.authorId === viewerId) {
-      return { ...post, sharedWithGroups: groupsByCrossPostId.get(raw.crossPostId) ?? [] };
+      return { ...post, sharedWithGroups: groupsByCrossPostId.get(raw.crossPostId) ?? [] }
     }
-    return post;
-  });
+    return post
+  })
 }
 
 // Batches each post type's own enrichment (e.g. poll vote aggregation) across
@@ -150,17 +150,17 @@ async function enrichPostTypes(
   shapedPosts: Array<Record<string, unknown> & { id: string; type: string }>,
   viewerId: string
 ): Promise<void> {
-  const postsByType = new Map<string, Array<Record<string, unknown> & { id: string; type: string }>>();
+  const postsByType = new Map<string, Array<Record<string, unknown> & { id: string; type: string }>>()
   for (const post of shapedPosts) {
-    const list = postsByType.get(post.type);
-    if (list) list.push(post);
-    else postsByType.set(post.type, [post]);
+    const list = postsByType.get(post.type)
+    if (list) list.push(post)
+    else postsByType.set(post.type, [post])
   }
 
   for (const [type, posts] of postsByType) {
-    const handler = getPostTypeHandler(type);
-    if (!handler?.enrichPosts) continue;
-    await handler.enrichPosts(posts, viewerId);
+    const handler = getPostTypeHandler(type)
+    if (!handler?.enrichPosts) continue
+    await handler.enrichPosts(posts, viewerId)
   }
 }
 
@@ -175,10 +175,10 @@ async function enrichPostTypes(
 // new post has no votes/interactions yet anyway.
 export async function shapePostsWithPeople<
   T extends Parameters<typeof shapePost>[0] & {
-    id: string;
-    authorId: string;
-    uploadedAssetUrls: string[];
-    type: string;
+    id: string
+    authorId: string
+    uploadedAssetUrls: string[]
+    type: string
   },
 >(
   posts: T[],
@@ -186,9 +186,9 @@ export async function shapePostsWithPeople<
 ): Promise<
   (ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]
 > {
-  const shaped = posts.map((post) => shapePost(post, userId));
-  const peopleByPostId = await attachPeopleToPosts(shaped);
-  const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }));
-  await enrichPostTypes(withPeople, userId);
-  return attachSharedWithGroups(withPeople, posts, userId);
+  const shaped = posts.map((post) => shapePost(post, userId))
+  const peopleByPostId = await attachPeopleToPosts(shaped)
+  const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }))
+  await enrichPostTypes(withPeople, userId)
+  return attachSharedWithGroups(withPeople, posts, userId)
 }

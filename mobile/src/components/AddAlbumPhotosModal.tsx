@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -10,48 +10,48 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { getUploadUrl } from '@/api/uploads';
-import { isVideoUrl } from '@/utils/media';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { getUploadUrl } from '@/api/uploads'
+import { isVideoUrl } from '@/utils/media'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 
 // Matches the server's cap on an album contribution's photoUrls array
 // (services/postTypes/album.ts addPhotos schema) — enforced here too so
 // uploads never succeed only to have the interaction request rejected.
-const MAX_ALBUM_PHOTOS = 10;
+const MAX_ALBUM_PHOTOS = 10
 
 interface AddAlbumPhotosModalProps {
-  visible: boolean;
-  albumTitle: string;
-  submitting: boolean;
-  onCancel: () => void;
-  onSubmit: (data: { photoUrls: string[]; caption?: string }) => void;
+  visible: boolean
+  albumTitle: string
+  submitting: boolean
+  onCancel: () => void
+  onSubmit: (data: { photoUrls: string[]; caption?: string }) => void
 }
 
 // The "Add photos" modal — the write half of a collaborative album, available
 // to any group member. Modeled on CheckInComposerModal, minus the required
 // place field (photos are the only requirement).
 export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel, onSubmit }: AddAlbumPhotosModalProps) {
-  const { t } = useTranslation();
-  const [caption, setCaption] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const { t } = useTranslation()
+  const [caption, setCaption] = useState('')
+  const [photoUrls, setPhotoUrls] = useState<string[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     if (visible) {
-      setCaption('');
-      setPhotoUrls([]);
-      setPendingCount(0);
+      setCaption('')
+      setPhotoUrls([])
+      setPendingCount(0)
     }
-  }, [visible]);
+  }, [visible])
 
-  const remainingPhotoSlots = MAX_ALBUM_PHOTOS - photoUrls.length;
+  const remainingPhotoSlots = MAX_ALBUM_PHOTOS - photoUrls.length
 
   const { pick, uploading, progress } = usePickAndUploadMedia({
     pickerOptions: {
@@ -64,21 +64,21 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
     includeIndexInName: true,
     onPicked: (assets) => setPendingCount(assets.length),
     onError: () => setPendingCount(0),
-  });
+  })
 
   async function pickPhotos() {
-    const result = await pick();
-    setPendingCount(0);
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_ALBUM_PHOTOS));
+    const result = await pick()
+    setPendingCount(0)
+    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_ALBUM_PHOTOS))
   }
 
   function removePhoto(url: string) {
-    setPhotoUrls((prev) => prev.filter((u) => u !== url));
+    setPhotoUrls((prev) => prev.filter((u) => u !== url))
   }
 
   function handleSubmit() {
-    if (photoUrls.length === 0) return;
-    onSubmit({ photoUrls, caption: caption.trim() || undefined });
+    if (photoUrls.length === 0) return
+    onSubmit({ photoUrls, caption: caption.trim() || undefined })
   }
 
   function handleCancel() {
@@ -86,13 +86,13 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
       Alert.alert(t('common.cancel'), undefined, [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.done'), style: 'destructive', onPress: onCancel },
-      ]);
-      return;
+      ])
+      return
     }
-    onCancel();
+    onCancel()
   }
 
-  const canSubmit = photoUrls.length > 0 && !submitting && !uploading;
+  const canSubmit = photoUrls.length > 0 && !submitting && !uploading
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleCancel}>
@@ -120,7 +120,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
 
           <View style={styles.photoGrid}>
             {photoUrls.map((url) => {
-              const isVideo = isVideoUrl(url);
+              const isVideo = isVideoUrl(url)
               return (
                 <View key={url} style={styles.photoTile}>
                   <Image source={{ uri: getUploadUrl(url) }} style={styles.photoImage} />
@@ -133,7 +133,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
                     <Icon name="x" size={12} color={colors.white} />
                   </TouchableOpacity>
                 </View>
-              );
+              )
             })}
             {Array.from({ length: pendingCount }).map((_, i) => (
               <View key={`pending-${i}`} style={[styles.photoTile, styles.photoTilePending]}>
@@ -163,7 +163,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
         </ScrollView>
       </SafeAreaView>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -283,4 +283,4 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: colors.primaryDark,
   },
-});
+})

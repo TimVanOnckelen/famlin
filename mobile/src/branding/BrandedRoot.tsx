@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { loadCachedBranding } from './index';
+import React, { useEffect, useState } from 'react'
+import { loadCachedBranding } from './index'
 
 // The registered root component (see index.js). Registration has to be
 // synchronous, but the app itself must not be evaluated until the cached
@@ -9,14 +9,14 @@ import { loadCachedBranding } from './index';
 // nothing in the meantime — the native splash screen is still up, and the
 // AsyncStorage/SecureStore read takes a few milliseconds.
 export default function BrandedRoot() {
-  const [App, setApp] = useState<React.ComponentType | null>(null);
+  const [App, setApp] = useState<React.ComponentType | null>(null)
 
   useEffect(() => {
     loadCachedBranding().finally(() => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      setApp(() => require('../../App').default);
-    });
-  }, []);
+      setApp(() => require('../../App').default)
+    })
+  }, [])
 
-  return App ? <App /> : null;
+  return App ? <App /> : null
 }

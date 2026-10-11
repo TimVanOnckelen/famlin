@@ -1,5 +1,5 @@
-import 'dotenv/config';
-import { defineConfig } from 'prisma/config';
+import 'dotenv/config'
+import { defineConfig } from 'prisma/config'
 
 // Prisma 7 reads the connection string from here rather than from the
 // schema's datasource block (which now carries only the provider).
@@ -15,7 +15,7 @@ import { defineConfig } from 'prisma/config';
 // commands still get the URL from the environment at runtime — and, when it
 // genuinely is missing, now fail with Prisma's own "no datasource configured"
 // message instead of a config-file load error.
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -23,4 +23,4 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   ...(databaseUrl ? { datasource: { url: databaseUrl } } : {}),
-});
+})

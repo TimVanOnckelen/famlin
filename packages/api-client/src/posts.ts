@@ -1,25 +1,25 @@
-import { api } from './client';
-import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
+import { api } from './client'
+import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types'
 
 export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
-  groupIds?: string[];
-  cursor?: string;
+  groupIds?: string[]
+  cursor?: string
   // Narrows the same list to one post type — what the Photos tab's albums
   // section asks for ('ALBUM'). Omit for the ordinary mixed feed. A server
   // that predates the filter ignores it and returns every type, so callers
   // that must not show other types should still filter defensively.
-  type?: PostType;
+  type?: PostType
   // Narrows to specific Circles — what the feed's circle filter chips send.
   // Selecting circles shows ONLY those circles' posts, excluding whole-family
   // ones, so the chip is a real filter rather than a no-op. Requesting a
   // circle you're not in is a 403, never a silently empty page.
-  circleIds?: string[];
+  circleIds?: string[]
 }
 
 export interface PostsPage {
-  items: Post[];
-  nextCursor: string | null;
+  items: Post[]
+  nextCursor: string | null
 }
 
 export async function fetchPosts(params: FetchPostsParams = {}): Promise<PostsPage> {
@@ -30,8 +30,8 @@ export async function fetchPosts(params: FetchPostsParams = {}): Promise<PostsPa
       cursor: params.cursor,
       type: params.type,
     },
-  });
-  return response.data;
+  })
+  return response.data
 }
 
 // The albums shown in the Photos tab: every ALBUM post in the given groups,
@@ -39,136 +39,136 @@ export async function fetchPosts(params: FetchPostsParams = {}): Promise<PostsPa
 // `type: 'ALBUM'` call) so web and mobile share the older-server fallback —
 // see FetchPostsParams.type.
 export async function fetchAlbumPosts(params: { groupIds?: string[]; cursor?: string } = {}): Promise<PostsPage> {
-  const page = await fetchPosts({ ...params, type: 'ALBUM' });
-  return { ...page, items: page.items.filter((post) => post.type === 'ALBUM') };
+  const page = await fetchPosts({ ...params, type: 'ALBUM' })
+  return { ...page, items: page.items.filter((post) => post.type === 'ALBUM') }
 }
 
 export async function fetchPost(postId: string): Promise<Post> {
-  const response = await api.get<Post>(`/posts/${postId}`);
-  return response.data;
+  const response = await api.get<Post>(`/posts/${postId}`)
+  return response.data
 }
 
 export async function fetchOnThisDay(groupId: string): Promise<Post[]> {
-  const response = await api.get<{ items: Post[] }>('/posts/on-this-day', { params: { groupId } });
-  return response.data.items;
+  const response = await api.get<{ items: Post[] }>('/posts/on-this-day', { params: { groupId } })
+  return response.data.items
 }
 
 export interface SearchPostsParams {
-  groupId: string;
-  q: string;
-  cursor?: string;
+  groupId: string
+  q: string
+  cursor?: string
 }
 
 export async function searchPosts(params: SearchPostsParams): Promise<PostsPage> {
-  const response = await api.get<PostsPage>('/posts/search', { params });
-  return response.data;
+  const response = await api.get<PostsPage>('/posts/search', { params })
+  return response.data
 }
 
 export async function fetchFavorites(cursor?: string): Promise<PostsPage> {
-  const response = await api.get<PostsPage>('/favorites', { params: { cursor } });
-  return response.data;
+  const response = await api.get<PostsPage>('/favorites', { params: { cursor } })
+  return response.data
 }
 
 export interface CreatePostBody {
-  groupId: string;
+  groupId: string
   // Cross-post targets: when set (2+ groups), the server creates one post per
   // group that behaves as a single post for the author (shared edit/delete),
   // while comments and reactions stay scoped to each group. groupId is still
   // required for older servers that don't know groupIds.
-  groupIds?: string[];
-  content?: string;
-  type: PostType;
+  groupIds?: string[]
+  content?: string
+  type: PostType
   // Handler-owned config for custom post types, e.g. poll options
   // ({ options: [{ text }], closesAt? }), a trip's title/destination/dates, or
   // an album's { title, coverPhotoUrl? }; absent/undefined for
   // UPDATE/MILESTONE. TRIP posts cross-post like every other type (groupIds
   // 1–20), with each travelerUserId required to be a member of every target
   // group.
-  typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
-  milestoneTag?: string;
-  uploadedAssetUrls: string[];
+  typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>
+  milestoneTag?: string
+  uploadedAssetUrls: string[]
   // Narrows the audience from the whole group to one Circle within it.
   // Mutually exclusive with cross-posting (a Circle belongs to exactly one
   // group, so the server rejects circleId alongside a multi-group groupIds).
   // Omit for "Everyone", which is what every pre-Circles client sends.
-  circleId?: string | null;
-  latitude?: number;
-  longitude?: number;
-  locationName?: string;
+  circleId?: string | null
+  latitude?: number
+  longitude?: number
+  locationName?: string
 }
 
 export async function createPost(data: CreatePostBody): Promise<Post> {
-  const response = await api.post<Post>('/posts', data);
-  return response.data;
+  const response = await api.post<Post>('/posts', data)
+  return response.data
 }
 
 export interface UpdatePostBody {
-  content?: string;
-  milestoneTag?: string;
+  content?: string
+  milestoneTag?: string
   // The post's complete photo/video list after the edit — send it to add or
   // remove photos (it replaces the stored list wholesale), omit it to leave
   // them untouched. Paths are the same shape createPost takes: /uploads/
   // paths from POST /api/uploads, or media-proxy paths from a linked album.
-  uploadedAssetUrls?: string[];
-  latitude?: number | null;
-  longitude?: number | null;
-  locationName?: string | null;
+  uploadedAssetUrls?: string[]
+  latitude?: number | null
+  longitude?: number | null
+  locationName?: string | null
 }
 
 export async function updatePost(postId: string, data: UpdatePostBody): Promise<Post> {
-  const response = await api.patch<Post>(`/posts/${postId}`, data);
-  return response.data;
+  const response = await api.patch<Post>(`/posts/${postId}`, data)
+  return response.data
 }
 
 export async function deletePost(postId: string): Promise<void> {
-  await api.delete(`/posts/${postId}`);
+  await api.delete(`/posts/${postId}`)
 }
 
 // What the reaction endpoints actually return — not the full Post/Comment.
 // Callers keep list caches fresh via optimistic patches + invalidation
 // (see patchPostInCaches) rather than merging this result in.
 export interface ReactionResult {
-  myReaction: ReactionType | null;
-  counts: Partial<Record<ReactionType, number>>;
+  myReaction: ReactionType | null
+  counts: Partial<Record<ReactionType, number>>
 }
 
 export async function reactToPost(postId: string, type: ReactionType): Promise<ReactionResult> {
-  const response = await api.post<ReactionResult>(`/posts/${postId}/like`, { type });
-  return response.data;
+  const response = await api.post<ReactionResult>(`/posts/${postId}/like`, { type })
+  return response.data
 }
 
 // Every reactor and which emoji they left, newest first — used by the "who
 // reacted with what" view, as opposed to Post.recentReactors (top 3, no type).
 export async function fetchPostReactions(postId: string): Promise<PostReactor[]> {
-  const response = await api.get<{ items: PostReactor[] }>(`/posts/${postId}/reactions`);
-  return response.data.items;
+  const response = await api.get<{ items: PostReactor[] }>(`/posts/${postId}/reactions`)
+  return response.data.items
 }
 
 export async function toggleFavoritePost(postId: string): Promise<{ favorited: boolean }> {
-  const response = await api.post<{ favorited: boolean }>(`/posts/${postId}/favorite`);
-  return response.data;
+  const response = await api.post<{ favorited: boolean }>(`/posts/${postId}/favorite`)
+  return response.data
 }
 
 // Generic per-post-type interaction endpoint (e.g. poll voting). Returns the
 // full shaped + enriched post so callers can refresh their cache in one round
 // trip — see votePoll() below for the poll-specific convenience wrapper.
 export async function interactWithPost(postId: string, key: string, value?: unknown): Promise<Post> {
-  const response = await api.post<Post>(`/posts/${postId}/interactions`, { key, value });
-  return response.data;
+  const response = await api.post<Post>(`/posts/${postId}/interactions`, { key, value })
+  return response.data
 }
 
 // Voting the same option again unvotes; voting a different option switches —
 // mirrors reaction semantics. See PostTypeHandler.interact on the backend.
 export async function votePoll(postId: string, optionId: string): Promise<Post> {
-  return interactWithPost(postId, 'vote', { optionId });
+  return interactWithPost(postId, 'vote', { optionId })
 }
 
 export interface CheckInTripBody {
-  place: string;
-  text?: string;
+  place: string
+  text?: string
   // Already-uploaded paths (POST /api/uploads first, same flow as post
   // photos) — not raw files, this endpoint doesn't accept multipart data.
-  photoUrls?: string[];
+  photoUrls?: string[]
 }
 
 // Adds a check-in to an active trip. Allowed for the post author or any
@@ -179,14 +179,14 @@ export interface CheckInTripBody {
 // `metadata: { kind: 'trip_checkin', ... }` (see fetchComments), so callers
 // should also refresh the post's comments after this resolves.
 export async function checkInTrip(postId: string, data: CheckInTripBody): Promise<Post> {
-  return interactWithPost(postId, 'checkin', data);
+  return interactWithPost(postId, 'checkin', data)
 }
 
 // Closes a trip (author only, irreversible): flips `trip.closed`, and the
 // timeline reverses to oldest-first client-side. Returns the full shaped +
 // enriched post.
 export async function closeTrip(postId: string): Promise<Post> {
-  return interactWithPost(postId, 'close');
+  return interactWithPost(postId, 'close')
 }
 
 // Replaces the trip's co-traveler list (author only, active trips only) —
@@ -195,15 +195,15 @@ export async function closeTrip(postId: string): Promise<Post> {
 // errors.tripTravelerNotMember, errors.tripClosed. Returns the full shaped +
 // enriched post (its trip.travelers reflecting the new list).
 export async function setTripTravelers(postId: string, userIds: string[]): Promise<Post> {
-  return interactWithPost(postId, 'setTravelers', { userIds });
+  return interactWithPost(postId, 'setTravelers', { userIds })
 }
 
 export interface AddAlbumPhotosBody {
   // Already-uploaded paths (POST /api/uploads first, same flow as post photos)
   // — not raw files, this endpoint doesn't accept multipart data. 1–10 per
   // contribution.
-  photoUrls: string[];
-  caption?: string;
+  photoUrls: string[]
+  caption?: string
 }
 
 // Adds photos to an ALBUM post. Allowed for ANY member of the post's group
@@ -214,12 +214,12 @@ export interface AddAlbumPhotosBody {
 // `metadata: { kind: 'album_photo', ... }` (see fetchComments), so callers
 // should also refresh the post's comments after this resolves.
 export async function addAlbumPhotos(postId: string, data: AddAlbumPhotosBody): Promise<Post> {
-  return interactWithPost(postId, 'addPhotos', data);
+  return interactWithPost(postId, 'addPhotos', data)
 }
 
 // Closes an album (author only, irreversible): flips `album.closed` so no more
 // photos can be added. Server errors: errors.albumNotAuthor,
 // errors.albumClosed. Returns the full shaped + enriched post.
 export async function closeAlbum(postId: string): Promise<Post> {
-  return interactWithPost(postId, 'close');
+  return interactWithPost(postId, 'close')
 }

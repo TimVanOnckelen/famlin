@@ -1,9 +1,9 @@
-import type { PostTypeHandler } from './types.js';
-import { updateHandler } from './update.js';
-import { milestoneHandler } from './milestone.js';
-import { pollHandler } from './poll.js';
-import { tripHandler, isTripCheckinMetadata } from './trip.js';
-import { albumHandler, isAlbumPhotoMetadata } from './album.js';
+import type { PostTypeHandler } from './types.js'
+import { updateHandler } from './update.js'
+import { milestoneHandler } from './milestone.js'
+import { pollHandler } from './poll.js'
+import { tripHandler, isTripCheckinMetadata } from './trip.js'
+import { albumHandler, isAlbumPhotoMetadata } from './album.js'
 
 // The static post-type registry — adding a custom post type (an RSVP, ...) =
 // implement PostTypeHandler in a new file in this directory and add it here.
@@ -15,7 +15,7 @@ const handlers = new Map<string, PostTypeHandler>([
   [pollHandler.id, pollHandler],
   [tripHandler.id, tripHandler],
   [albumHandler.id, albumHandler],
-]);
+])
 
 // A handler-authored Comment (a TRIP check-in, an ALBUM photo contribution)
 // carries a per-type metadata `kind` plus a stable correlation id shared by
@@ -25,17 +25,17 @@ const handlers = new Map<string, PostTypeHandler>([
 // generic branch instead of a per-type `if` ladder. Returns null for an
 // ordinary user comment (metadata === null), which fans out to nothing.
 export function handlerCommentSiblingKey(metadata: unknown): { path: string[]; value: string } | null {
-  if (isTripCheckinMetadata(metadata)) return { path: ['checkinId'], value: metadata.checkinId };
-  if (isAlbumPhotoMetadata(metadata)) return { path: ['contributionId'], value: metadata.contributionId };
-  return null;
+  if (isTripCheckinMetadata(metadata)) return { path: ['checkinId'], value: metadata.checkinId }
+  if (isAlbumPhotoMetadata(metadata)) return { path: ['contributionId'], value: metadata.contributionId }
+  return null
 }
 
 export function getPostTypeHandler(id: string): PostTypeHandler | undefined {
-  return handlers.get(id);
+  return handlers.get(id)
 }
 
 export function listPostTypeHandlers(): PostTypeHandler[] {
-  return [...handlers.values()];
+  return [...handlers.values()]
 }
 
 // A group's effective allowed post types (Group.allowedPostTypes): the empty
@@ -49,21 +49,21 @@ export function listPostTypeHandlers(): PostTypeHandler[] {
 // list.
 export function resolveAllowedPostTypes(group: { allowedPostTypes: string[] }): string[] {
   if (group.allowedPostTypes.length === 0) {
-    return listPostTypeHandlers().map((handler) => handler.id);
+    return listPostTypeHandlers().map((handler) => handler.id)
   }
-  return group.allowedPostTypes.filter((id) => handlers.has(id));
+  return group.allowedPostTypes.filter((id) => handlers.has(id))
 }
 
 // Test-only escape hatch (mirrors __registerMediaProviderForTests in
 // services/media/registry.ts): lets a test register a fake PostTypeHandler
 // and remove it afterwards so it can't leak into other test files.
 export function __registerPostTypeHandlerForTests(handler: PostTypeHandler): void {
-  handlers.set(handler.id, handler);
+  handlers.set(handler.id, handler)
 }
 
 export function __unregisterPostTypeHandlerForTests(id: string): void {
-  handlers.delete(id);
+  handlers.delete(id)
 }
 
-export { PostTypeError } from './types.js';
-export type { PostTypeHandler } from './types.js';
+export { PostTypeError } from './types.js'
+export type { PostTypeHandler } from './types.js'

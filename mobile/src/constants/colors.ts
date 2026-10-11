@@ -48,7 +48,7 @@ export const colors = {
   danger: '#E05A4C',
   dangerBg: '#fdecea',
   white: '#FFFFFF',
-};
+}
 
 // Today's look, untouched — what an unbranded server (or a reset) restores.
-export const DEFAULT_COLORS: Readonly<typeof colors> = Object.freeze({ ...colors });
+export const DEFAULT_COLORS: Readonly<typeof colors> = Object.freeze({ ...colors })

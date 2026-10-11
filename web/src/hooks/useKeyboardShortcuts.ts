@@ -1,15 +1,15 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
-import type { NavView } from '@/components/AppShell';
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import type { NavView } from '@/components/AppShell'
 
 export interface KeyboardShortcutHandlers {
-  onNavigate: (view: NavView) => void;
+  onNavigate: (view: NavView) => void
   // Omitted entirely on a page with no composer (Chat/Profile) — mirrors
   // BottomNav/Sidebar's own onNewPost?: () => void convention.
-  onNewPost?: () => void;
-  onHelp: () => void;
+  onNewPost?: () => void
+  onHelp: () => void
 }
 
-const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', b: 'favorites', u: 'profile' };
+const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', b: 'favorites', u: 'profile' }
 
 // Global "g then <letter>" / "n" / "?" shortcuts (the Gmail/Linear-style
 // chord pattern). Ignored while typing in a field or contenteditable, while
@@ -19,59 +19,59 @@ const NAV_KEYS: Record<string, NavView> = { f: 'feed', p: 'photos', c: 'chat', b
 // normal typing. Handlers are read through a ref so the listener is attached
 // exactly once per mount regardless of how often the caller's props change.
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
-  const handlersRef = useRef(handlers);
+  const handlersRef = useRef(handlers)
   useLayoutEffect(() => {
-    handlersRef.current = handlers;
-  });
+    handlersRef.current = handlers
+  })
 
   useEffect(() => {
-    let pendingG = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let pendingG = false
+    let timer: ReturnType<typeof setTimeout> | null = null
 
     function resetChord() {
-      pendingG = false;
+      pendingG = false
       if (timer) {
-        clearTimeout(timer);
-        timer = null;
+        clearTimeout(timer)
+        timer = null
       }
     }
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return
 
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return
 
-      if (document.querySelector('.modal-overlay')) return;
+      if (document.querySelector('.modal-overlay')) return
 
       if (pendingG) {
-        const next = NAV_KEYS[e.key];
-        resetChord();
-        if (next) handlersRef.current.onNavigate(next);
-        return;
+        const next = NAV_KEYS[e.key]
+        resetChord()
+        if (next) handlersRef.current.onNavigate(next)
+        return
       }
 
       if (e.key === 'g') {
-        pendingG = true;
-        timer = setTimeout(resetChord, 1000);
-        return;
+        pendingG = true
+        timer = setTimeout(resetChord, 1000)
+        return
       }
 
       if (e.key === 'n' && handlersRef.current.onNewPost) {
-        handlersRef.current.onNewPost();
-        return;
+        handlersRef.current.onNewPost()
+        return
       }
 
       if (e.key === '?') {
-        handlersRef.current.onHelp();
+        handlersRef.current.onHelp()
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown)
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      resetChord();
-    };
-  }, []);
+      window.removeEventListener('keydown', onKeyDown)
+      resetChord()
+    }
+  }, [])
 }

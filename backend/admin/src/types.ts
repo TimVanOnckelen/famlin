@@ -1,239 +1,239 @@
 export interface GroupRef {
-  id: string;
-  name: string;
+  id: string
+  name: string
 }
 
 export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl: string | null;
-  isAdmin: boolean;
+  id: string
+  email: string
+  name: string
+  avatarUrl: string | null
+  isAdmin: boolean
   // False for SSO-only accounts (never given a local password).
-  hasPassword: boolean;
-  emailOnNewPost: boolean;
-  emailOnNewComment: boolean;
-  emailOnNewLike: boolean;
-  pushOnNewPost: boolean;
-  pushOnNewComment: boolean;
-  pushOnNewLike: boolean;
-  createdAt: string;
-  groups?: GroupRef[];
+  hasPassword: boolean
+  emailOnNewPost: boolean
+  emailOnNewComment: boolean
+  emailOnNewLike: boolean
+  pushOnNewPost: boolean
+  pushOnNewComment: boolean
+  pushOnNewLike: boolean
+  createdAt: string
+  groups?: GroupRef[]
 }
 
 export interface Group {
-  id: string;
-  name: string;
-  description: string | null;
-  createdAt: string;
-  memberCount?: number;
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+  memberCount?: number
   // Raw stored list of post-type ids members may create in this group.
   // Empty (or absent, for groups fetched before this field existed) means
   // "all registered types allowed" — see PostTypeInfo / resolveAllowedPostTypes.
-  allowedPostTypes?: string[];
-  chitchatEnabled?: boolean;
+  allowedPostTypes?: string[]
+  chitchatEnabled?: boolean
   // Stories on/off for this group — defaults to on (absent = older server).
-  storiesEnabled?: boolean;
+  storiesEnabled?: boolean
 }
 
 // A registered post type, as reported by GET /api/admin/post-types.
 export interface PostTypeInfo {
-  id: string;
+  id: string
 }
 
 // A user as returned by the group-members endpoint, carrying the join date.
 export interface GroupMember extends User {
-  joinedAt: string;
+  joinedAt: string
 }
 
 export interface GroupWithMembers extends Group {
-  members: User[];
+  members: User[]
 }
 
 export interface ServerSettings {
-  defaultLanguage: string;
-  appStoreUrl: string;
-  playStoreUrl: string;
-  allowedEmails: string[];
-  oidcName: string;
-  oidcIssuer: string;
-  oidcClientId: string;
-  oidcClientSecret: string;
-  oidcScopes: string;
-  appleBundleIds: string;
-  smtpHost: string;
-  smtpPort: number;
-  smtpUser: string;
-  smtpPass: string;
-  smtpFrom: string;
-  pushNotificationsEnabled: boolean;
-  emailNotificationsEnabled: boolean;
-  immichServerUrl: string;
-  immichApiKey: string;
-  localMediaPath: string;
+  defaultLanguage: string
+  appStoreUrl: string
+  playStoreUrl: string
+  allowedEmails: string[]
+  oidcName: string
+  oidcIssuer: string
+  oidcClientId: string
+  oidcClientSecret: string
+  oidcScopes: string
+  appleBundleIds: string
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpPass: string
+  smtpFrom: string
+  pushNotificationsEnabled: boolean
+  emailNotificationsEnabled: boolean
+  immichServerUrl: string
+  immichApiKey: string
+  localMediaPath: string
 }
 
 // A media source members can pick photos from — mirrors the backend's
 // provider registry (backend/src/services/media/registry.ts).
-export type MediaProviderId = 'immich' | 'local';
+export type MediaProviderId = 'immich' | 'local'
 
 export interface MediaAlbumSummary {
-  id: string;
-  name: string;
-  assetCount: number;
+  id: string
+  name: string
+  assetCount: number
 }
 
-export type NewAssetMode = 'OFF' | 'MANUAL' | 'AUTO';
+export type NewAssetMode = 'OFF' | 'MANUAL' | 'AUTO'
 
 export interface MediaAlbumLink {
-  id: string;
-  groupId: string;
-  provider: MediaProviderId;
-  externalAlbumId: string;
-  albumName: string;
-  createdAt: string;
-  newAssetMode: NewAssetMode;
+  id: string
+  groupId: string
+  provider: MediaProviderId
+  externalAlbumId: string
+  albumName: string
+  createdAt: string
+  newAssetMode: NewAssetMode
 }
 
 export interface MediaPerson {
-  id: string;
-  name: string;
-  thumbnailDataUri: string | null;
+  id: string
+  name: string
+  thumbnailDataUri: string | null
 }
 
 export interface MediaPersonLink {
-  id: string;
-  provider: MediaProviderId;
-  externalPersonId: string;
-  label: string;
-  user: { id: string; name: string; email: string } | null;
-  createdAt: string;
+  id: string
+  provider: MediaProviderId
+  externalPersonId: string
+  label: string
+  user: { id: string; name: string; email: string } | null
+  createdAt: string
 }
 
 export interface Invite {
-  id: string;
-  token: string;
-  link: string;
-  groupId: string;
-  email: string | null;
-  expiresAt: string | null;
-  usedAt: string | null;
-  usedBy: { id: string; name: string } | null;
-  createdAt: string;
+  id: string
+  token: string
+  link: string
+  groupId: string
+  email: string | null
+  expiresAt: string | null
+  usedAt: string | null
+  usedBy: { id: string; name: string } | null
+  createdAt: string
 }
 
 export interface OidcConfig {
-  enabled: boolean;
-  name: string;
-  authorizationEndpoint: string;
-  tokenEndpoint: string;
-  clientId: string;
-  scopes: string;
+  enabled: boolean
+  name: string
+  authorizationEndpoint: string
+  tokenEndpoint: string
+  clientId: string
+  scopes: string
   // True when the provider requires a client secret (e.g. Google) — the
   // browser hands the authorization code to POST /oidc/exchange instead of
   // exchanging it itself.
-  usesClientSecret: boolean;
+  usesClientSecret: boolean
 }
 
 export interface ModerationPost {
-  id: string;
-  content: string | null;
-  type: 'UPDATE' | 'MILESTONE';
-  createdAt: string;
-  editedAt: string | null;
-  author: { id: string; name: string };
-  group: { id: string; name: string };
-  commentCount: number;
-  likeCount: number;
+  id: string
+  content: string | null
+  type: 'UPDATE' | 'MILESTONE'
+  createdAt: string
+  editedAt: string | null
+  author: { id: string; name: string }
+  group: { id: string; name: string }
+  commentCount: number
+  likeCount: number
 }
 
 export interface ModerationComment {
-  id: string;
-  content: string;
-  createdAt: string;
-  editedAt: string | null;
-  author: { id: string; name: string };
-  post: { id: string; content: string | null; group: { id: string; name: string } };
+  id: string
+  content: string
+  createdAt: string
+  editedAt: string | null
+  author: { id: string; name: string }
+  post: { id: string; content: string | null; group: { id: string; name: string } }
 }
 
 // A story as listed by GET /api/admin/content/stories — live stories and
 // pinned Highlights only. Private replies are never exposed to admins.
 export interface ModerationStory {
-  id: string;
-  imageUrl: string;
-  createdAt: string;
-  expiresAt: string;
-  pinnedAt: string | null;
-  circleId: string | null;
-  author: { id: string; name: string };
-  group: { id: string; name: string };
-  viewCount: number;
-  reactionCount: number;
+  id: string
+  imageUrl: string
+  createdAt: string
+  expiresAt: string
+  pinnedAt: string | null
+  circleId: string | null
+  author: { id: string; name: string }
+  group: { id: string; name: string }
+  viewCount: number
+  reactionCount: number
 }
 
 export interface PostPushResendResult {
-  recipientCount: number;
-  tokenCount: number;
-  successCount: number;
-  failureCount: number;
+  recipientCount: number
+  tokenCount: number
+  successCount: number
+  failureCount: number
 }
 
 export interface PushDeliveryLog {
-  id: string;
-  notifyType: string;
-  recipientCount: number;
-  tokenCount: number;
-  successCount: number;
-  failureCount: number;
-  createdAt: string;
-  post: { id: string; content: string | null; group: { id: string; name: string } } | null;
-  triggeredByAdmin: { id: string; name: string } | null;
+  id: string
+  notifyType: string
+  recipientCount: number
+  tokenCount: number
+  successCount: number
+  failureCount: number
+  createdAt: string
+  post: { id: string; content: string | null; group: { id: string; name: string } } | null
+  triggeredByAdmin: { id: string; name: string } | null
 }
 
 export interface DashboardStats {
   counts: {
-    users: number;
-    admins: number;
-    groups: number;
-    posts: number;
-    comments: number;
-    likes: number;
-  };
-  postsByDay: { date: string; count: number }[];
+    users: number
+    admins: number
+    groups: number
+    posts: number
+    comments: number
+    likes: number
+  }
+  postsByDay: { date: string; count: number }[]
   recentPosts: {
-    id: string;
-    type: 'UPDATE' | 'MILESTONE';
-    createdAt: string;
-    authorName: string;
-    groupName: string;
-    commentCount: number;
-    likeCount: number;
-  }[];
-  topGroups: { id: string; name: string; postCount: number }[];
+    id: string
+    type: 'UPDATE' | 'MILESTONE'
+    createdAt: string
+    authorName: string
+    groupName: string
+    commentCount: number
+    likeCount: number
+  }[]
+  topGroups: { id: string; name: string; postCount: number }[]
 }
 
 // Public endpoint (GET /api/auth/server-info) — no auth required. Only
 // `version` is used today; `minAppVersion`/store URLs may be added by the
 // backend but aren't consumed here.
 export interface ServerInfo {
-  version: string;
+  version: string
 }
 
 // Per-family branding (issue #164). The palette is derived server-side; the
 // admin UI only previews what the server computes.
-export type BrandSemanticFamily = 'circle' | 'milestone' | 'trip';
+export type BrandSemanticFamily = 'circle' | 'milestone' | 'trip'
 
 export interface DerivedBrand {
-  seed: string;
+  seed: string
   palette: {
-    primary: string;
-    primaryDark: string;
-    primaryLight: string;
-    primaryTint: string;
-    bg: string;
-    loginBgFrom: string;
-    loginBgTo: string;
-  };
+    primary: string
+    primaryDark: string
+    primaryLight: string
+    primaryTint: string
+    bg: string
+    loginBgFrom: string
+    loginBgTo: string
+  }
   semantic: Record<
     | 'accent'
     | 'updateBg'
@@ -250,20 +250,20 @@ export interface DerivedBrand {
     | 'tripTint'
     | 'tripBorder',
     string
-  >;
+  >
   // True when the seed failed WCAG AA for white text and was darkened.
-  adjusted: boolean;
-  shifted: BrandSemanticFamily[];
+  adjusted: boolean
+  shifted: BrandSemanticFamily[]
 }
 
 export interface AdminBranding {
-  preset: string;
-  color: string | null;
-  name: string;
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  presets: { id: string; color: string }[];
-  derived: DerivedBrand;
+  preset: string
+  color: string | null
+  name: string
+  logoUrl: string | null
+  faviconUrl: string | null
+  presets: { id: string; color: string }[]
+  derived: DerivedBrand
 }
 
 // A smaller, reusable audience inside one Group ("Grandparents", "Cousins").
@@ -272,17 +272,17 @@ export interface AdminBranding {
 // group regardless of the admin's own membership — that's management access,
 // which deliberately does NOT extend to reading the circle's content.
 export interface Circle {
-  id: string;
-  groupId: string;
-  name: string;
-  description: string | null;
-  avatarUrl: string | null;
-  createdById: string | null;
-  createdAt: string;
-  memberCount: number;
+  id: string
+  groupId: string
+  name: string
+  description: string | null
+  avatarUrl: string | null
+  createdById: string | null
+  createdAt: string
+  memberCount: number
   // How many posts would be destroyed if this circle were deleted — the
   // number is shown before confirming, but the content itself stays
   // unreadable to an admin outside the circle.
-  postCount: number;
-  members?: GroupMember[];
+  postCount: number
+  members?: GroupMember[]
 }

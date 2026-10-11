@@ -1,8 +1,8 @@
-import { prisma } from '../../db.js';
-import { getMediaProvider, mediaErrorKey, mediaErrorStatus } from './registry.js';
-import { MediaProviderError } from './types.js';
+import { prisma } from '../../db.js'
+import { getMediaProvider, mediaErrorKey, mediaErrorStatus } from './registry.js'
+import { MediaProviderError } from './types.js'
 
-export type PersonFilterOutcome = { ok: true; assetIds: Set<string> } | { ok: false; status: number; errorKey: string };
+export type PersonFilterOutcome = { ok: true; assetIds: Set<string> } | { ok: false; status: number; errorKey: string }
 
 // Resolves the label-aware set of asset ids within one linked album that are
 // tagged with `personId` (a MediaPersonLink.externalPersonId for this link's
@@ -21,14 +21,14 @@ export async function resolvePersonFilterForAlbum(
   // exposed to families via the admin mapping UI.
   const personLink = await prisma.mediaPersonLink.findUnique({
     where: { provider_externalPersonId: { provider: link.provider, externalPersonId: personId } },
-  });
-  if (!personLink) return { ok: false, status: 404, errorKey: 'errors.mediaPersonLinkNotFound' };
+  })
+  if (!personLink) return { ok: false, status: 404, errorKey: 'errors.mediaPersonLinkNotFound' }
 
-  const provider = getMediaProvider(link.provider);
-  if (!provider) return { ok: false, status: 404, errorKey: 'errors.mediaAlbumLinkNotFound' };
+  const provider = getMediaProvider(link.provider)
+  if (!provider) return { ok: false, status: 404, errorKey: 'errors.mediaAlbumLinkNotFound' }
 
   if (!provider.getAlbumAssetPeople && !provider.getPersonAssetIds) {
-    return { ok: false, status: 400, errorKey: 'errors.mediaProviderLacksPersonFilter' };
+    return { ok: false, status: 400, errorKey: 'errors.mediaProviderLacksPersonFilter' }
   }
 
   // Label-aware: filtering by one mapped id must also match every other
@@ -36,8 +36,8 @@ export async function resolvePersonFilterForAlbum(
   // twice, once per parent's library, filters both at once.
   const sameLabelLinks = await prisma.mediaPersonLink.findMany({
     where: { provider: link.provider, label: personLink.label },
-  });
-  const wantedPersonIds = new Set(sameLabelLinks.map((p) => p.externalPersonId));
+  })
+  const wantedPersonIds = new Set(sameLabelLinks.map((p) => p.externalPersonId))
 
   try {
     if (provider.getAlbumAssetPeople) {
@@ -45,21 +45,21 @@ export async function resolvePersonFilterForAlbum(
       // provider attaches to every asset the requester can see in this
       // shared album, rather than querying the key owner's own person index
       // (which getPersonAssetIds is scoped to).
-      const albumPeople = await provider.getAlbumAssetPeople(link.externalAlbumId);
+      const albumPeople = await provider.getAlbumAssetPeople(link.externalAlbumId)
       const assetIds = new Set(
         [...albumPeople.entries()]
           .filter(([, people]) => people.some((p) => wantedPersonIds.has(p.id)))
           .map(([assetId]) => assetId)
-      );
-      return { ok: true, assetIds };
+      )
+      return { ok: true, assetIds }
     }
 
-    const sets = await Promise.all([...wantedPersonIds].map((id) => provider.getPersonAssetIds!(id)));
-    return { ok: true, assetIds: new Set(sets.flatMap((s) => [...s])) };
+    const sets = await Promise.all([...wantedPersonIds].map((id) => provider.getPersonAssetIds!(id)))
+    return { ok: true, assetIds: new Set(sets.flatMap((s) => [...s])) }
   } catch (err) {
     if (err instanceof MediaProviderError) {
-      return { ok: false, status: mediaErrorStatus(err), errorKey: mediaErrorKey(err) };
+      return { ok: false, status: mediaErrorStatus(err), errorKey: mediaErrorKey(err) }
     }
-    throw err;
+    throw err
   }
 }

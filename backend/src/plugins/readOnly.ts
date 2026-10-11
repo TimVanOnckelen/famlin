@@ -1,11 +1,11 @@
-import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getT } from '../i18n/index.js';
-import { requestPathname } from '../utils/requestPath.js';
+import fp from 'fastify-plugin'
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { getT } from '../i18n/index.js'
+import { requestPathname } from '../utils/requestPath.js'
 
 // HTTP methods that write or delete data. OPTIONS is deliberately excluded —
 // @fastify/cors handles CORS preflight before this hook runs.
-const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 // Endpoints that must stay writable in read-only mode so visitors can still
 // sign in and browse. All other POST/PUT/PATCH/DELETE requests are rejected.
@@ -18,10 +18,10 @@ const ALLOWED_MUTATING_PREFIXES = [
   // the Apple option to actually work wherever the SSO one does.
   '/api/auth/apple',
   '/api/auth/setup',
-];
+]
 
 function isAllowedMutatingRequest(url: string): boolean {
-  return ALLOWED_MUTATING_PREFIXES.some((prefix) => url === prefix || url.startsWith(`${prefix}/`));
+  return ALLOWED_MUTATING_PREFIXES.some((prefix) => url === prefix || url.startsWith(`${prefix}/`))
 }
 
 /**
@@ -31,10 +31,10 @@ function isAllowedMutatingRequest(url: string): boolean {
  * comments, uploads, admin changes, etc.
  */
 export default fp(async function readOnlyPlugin(fastify: FastifyInstance) {
-  if (process.env.READ_ONLY !== 'true') return;
+  if (process.env.READ_ONLY !== 'true') return
 
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!MUTATING_METHODS.has(request.method)) return;
+    if (!MUTATING_METHODS.has(request.method)) return
 
     // Normalized, not `request.raw.url`: the allow-list is prefix-based, so on
     // the raw string `POST /api/auth/login/../../posts` matches the
@@ -42,12 +42,12 @@ export default fp(async function readOnlyPlugin(fastify: FastifyInstance) {
     // /api/posts — writing to a supposedly read-only instance. Normalizing
     // also strips the query string, which the raw form left attached
     // (`/api/auth/login?next=/` failed to match its own allow-list entry).
-    const url = requestPathname(request.raw.url);
-    if (isAllowedMutatingRequest(url)) return;
+    const url = requestPathname(request.raw.url)
+    if (isAllowedMutatingRequest(url)) return
 
-    const t = getT(request);
-    return reply.status(403).send({ error: t('errors.readOnly') });
-  });
+    const t = getT(request)
+    return reply.status(403).send({ error: t('errors.readOnly') })
+  })
 
-  fastify.log.info('Read-only mode enabled: mutating requests are blocked');
-});
+  fastify.log.info('Read-only mode enabled: mutating requests are blocked')
+})

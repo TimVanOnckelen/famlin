@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -9,20 +9,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { CheckInComposerModal } from '@/components/CheckInComposerModal';
-import { CloseTripSheet } from '@/components/CloseTripSheet';
-import { TravelerPickerModal } from '@/components/TravelerPickerModal';
-import { Comment, Post, TripEnrichment } from '@/types';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { CheckInComposerModal } from '@/components/CheckInComposerModal'
+import { CloseTripSheet } from '@/components/CloseTripSheet'
+import { TravelerPickerModal } from '@/components/TravelerPickerModal'
+import { Comment, Post, TripEnrichment } from '@/types'
 import {
   fetchPost,
   fetchComments,
@@ -31,41 +31,41 @@ import {
   checkInTrip,
   closeTrip,
   setTripTravelers,
-} from '@famlin/api-client';
-import { getUploadUrl } from '@/api/uploads';
-import { formatTime, formatDayMonth } from '@/i18n/utils';
-import { useAuthStore } from '@/stores/authStore';
-import { patchPostInCaches } from '@/utils/postCache';
-import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip';
+} from '@famlin/api-client'
+import { getUploadUrl } from '@/api/uploads'
+import { formatTime, formatDayMonth } from '@/i18n/utils'
+import { useAuthStore } from '@/stores/authStore'
+import { patchPostInCaches } from '@/utils/postCache'
+import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip'
 
 export function TripDetailScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
-  const route = useRoute<any>();
-  const { postId } = route.params;
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const insets = useSafeAreaInsets()
+  const route = useRoute<any>()
+  const { postId } = route.params
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
 
-  const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [tripCommentsExpanded, setTripCommentsExpanded] = useState(false);
-  const [checkinComposerOpen, setCheckinComposerOpen] = useState(false);
-  const [closeSheetOpen, setCloseSheetOpen] = useState(false);
-  const [travelerPickerOpen, setTravelerPickerOpen] = useState(false);
+  const [commentText, setCommentText] = useState('')
+  const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [tripCommentsExpanded, setTripCommentsExpanded] = useState(false)
+  const [checkinComposerOpen, setCheckinComposerOpen] = useState(false)
+  const [closeSheetOpen, setCloseSheetOpen] = useState(false)
+  const [travelerPickerOpen, setTravelerPickerOpen] = useState(false)
 
   const { data: post } = useQuery({
     queryKey: ['post', postId],
     queryFn: () => fetchPost(postId),
-  });
+  })
 
   const { data: comments, refetch: refetchComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: () => fetchComments(postId),
-  });
+  })
 
-  const trip = post?.trip;
+  const trip = post?.trip
 
   const { checkins, tripComments, repliesByParent } = useMemo(
     () =>
@@ -73,95 +73,95 @@ export function TripDetailScreen() {
         ? splitTripComments(comments || [], trip.startDate)
         : { checkins: [], tripComments: [], repliesByParent: new Map() },
     [comments, trip]
-  );
+  )
 
-  const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed]);
+  const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed])
 
   const checkinMutation = useMutation({
     mutationFn: (data: { place: string; text?: string; photoUrls: string[] }) => checkInTrip(postId, data),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, postId, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      refetchComments();
-      setCheckinComposerOpen(false);
+      patchPostInCaches(queryClient, postId, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      refetchComments()
+      setCheckinComposerOpen(false)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.checkin.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.checkin.alerts.failed'))
     },
-  });
+  })
 
   const closeMutation = useMutation({
     mutationFn: () => closeTrip(postId),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, postId, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      setCloseSheetOpen(false);
+      patchPostInCaches(queryClient, postId, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      setCloseSheetOpen(false)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.close.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.close.alerts.failed'))
     },
-  });
+  })
 
   const setTravelersMutation = useMutation({
     mutationFn: (userIds: string[]) => setTripTravelers(postId, userIds),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, postId, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      setTravelerPickerOpen(false);
+      patchPostInCaches(queryClient, postId, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      setTravelerPickerOpen(false)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.travelers.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('trip.travelers.alerts.failed'))
     },
-  });
+  })
 
   const commentMutation = useMutation({
     mutationFn: ({ content, parentId }: { content: string; parentId?: string }) =>
       createComment(postId, { content, parentId }),
     onSuccess: () => {
-      setCommentText('');
-      setReplyingTo(null);
-      refetchComments();
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      setCommentText('')
+      setReplyingTo(null)
+      refetchComments()
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'))
     },
-  });
+  })
 
   const likeCommentMutation = useMutation({
     mutationFn: (commentId: string) => reactToComment(commentId, 'LIKE'),
     onSuccess: () => refetchComments(),
-  });
+  })
 
-  if (!post || !trip) return null;
+  if (!post || !trip) return null
 
-  const isAuthor = post.authorId === user?.id;
-  const travelers = trip.travelers ?? [];
+  const isAuthor = post.authorId === user?.id
+  const travelers = trip.travelers ?? []
   // Check-in permission: the trip author OR a designated co-traveler.
-  const canCheckIn = isAuthor || travelers.some((traveler) => traveler.id === user?.id);
+  const canCheckIn = isAuthor || travelers.some((traveler) => traveler.id === user?.id)
 
   function toggleExpanded(id: string) {
     setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   function startReply(comment: { id: string; author: { name: string } }) {
-    setReplyingTo({ id: comment.id, authorName: comment.author.name });
+    setReplyingTo({ id: comment.id, authorName: comment.author.name })
   }
 
   function submitComment() {
-    const trimmed = commentText.trim();
-    if (!trimmed) return;
-    commentMutation.mutate({ content: trimmed, parentId: replyingTo?.id });
+    const trimmed = commentText.trim()
+    if (!trimmed) return
+    commentMutation.mutate({ content: trimmed, parentId: replyingTo?.id })
   }
 
   function openPhotos(urls: string[], index: number) {
-    navigation.navigate('ImageViewer', { urls: urls.map((u) => getUploadUrl(u)), initialIndex: index });
+    navigation.navigate('ImageViewer', { urls: urls.map((u) => getUploadUrl(u)), initialIndex: index })
   }
 
   function openMenu() {
@@ -169,10 +169,10 @@ export function TripDetailScreen() {
       { text: t('trip.detail.editTravelersMenuItem'), onPress: () => setTravelerPickerOpen(true) },
       { text: t('trip.detail.closeTripMenuItem'), style: 'destructive', onPress: () => setCloseSheetOpen(true) },
       { text: t('common.cancel'), style: 'cancel' },
-    ]);
+    ])
   }
 
-  const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0];
+  const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0]
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -308,7 +308,7 @@ export function TripDetailScreen() {
         onConfirm={(userIds) => setTravelersMutation.mutate(userIds)}
       />
     </SafeAreaView>
-  );
+  )
 }
 
 function TripHeader({
@@ -325,21 +325,21 @@ function TripHeader({
   onReplyToComment,
   onLikeComment,
 }: {
-  post: Post;
-  trip: TripEnrichment;
-  coverUrl: string | null | undefined;
-  canCheckIn: boolean;
-  hasCheckins: boolean;
-  tripComments: Comment[];
-  repliesByParent: Map<string, Comment[]>;
-  tripCommentsExpanded: boolean;
-  onToggleTripComments: () => void;
-  onAddCheckin: () => void;
-  onReplyToComment: (comment: { id: string; author: { name: string } }) => void;
-  onLikeComment: (id: string) => void;
+  post: Post
+  trip: TripEnrichment
+  coverUrl: string | null | undefined
+  canCheckIn: boolean
+  hasCheckins: boolean
+  tripComments: Comment[]
+  repliesByParent: Map<string, Comment[]>
+  tripCommentsExpanded: boolean
+  onToggleTripComments: () => void
+  onAddCheckin: () => void
+  onReplyToComment: (comment: { id: string; author: { name: string } }) => void
+  onLikeComment: (id: string) => void
 }) {
-  const { t } = useTranslation();
-  const travelers = trip.travelers ?? [];
+  const { t } = useTranslation()
+  const travelers = trip.travelers ?? []
 
   return (
     <View>
@@ -443,7 +443,7 @@ function TripHeader({
         </Text>
       )}
     </View>
-  );
+  )
 }
 
 function TripCommentRow({
@@ -452,12 +452,12 @@ function TripCommentRow({
   onReply,
   onLike,
 }: {
-  comment: Comment;
-  replies: Comment[];
-  onReply: () => void;
-  onLike: () => void;
+  comment: Comment
+  replies: Comment[]
+  onReply: () => void
+  onLike: () => void
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <View style={styles.tripCommentRow}>
       <Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} size={28} />
@@ -486,7 +486,7 @@ function TripCommentRow({
         ))}
       </View>
     </View>
-  );
+  )
 }
 
 function TripEmptyState({
@@ -495,12 +495,12 @@ function TripEmptyState({
   canCheckIn,
   onAddCheckin,
 }: {
-  trip: TripEnrichment;
-  authorName: string;
-  canCheckIn: boolean;
-  onAddCheckin: () => void;
+  trip: TripEnrichment
+  authorName: string
+  canCheckIn: boolean
+  onAddCheckin: () => void
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconCircle}>
@@ -514,7 +514,7 @@ function TripEmptyState({
         </TouchableOpacity>
       )}
     </View>
-  );
+  )
 }
 
 function CheckinTimelineItem({
@@ -528,27 +528,27 @@ function CheckinTimelineItem({
   onReply,
   onOpenPhotos,
 }: {
-  entry: TripCheckinEntry;
-  tripAuthorId: string;
-  isLast: boolean;
-  closed: boolean;
-  expanded: boolean;
-  onToggleExpanded: () => void;
-  onLike: () => void;
-  onReply: () => void;
-  onOpenPhotos: (index: number) => void;
+  entry: TripCheckinEntry
+  tripAuthorId: string
+  isLast: boolean
+  closed: boolean
+  expanded: boolean
+  onToggleExpanded: () => void
+  onLike: () => void
+  onReply: () => void
+  onOpenPhotos: (index: number) => void
 }) {
-  const { t } = useTranslation();
-  const { comment, dayNumber, replies } = entry;
+  const { t } = useTranslation()
+  const { comment, dayNumber, replies } = entry
   // Entries here are always trip check-ins (splitTripComments filters on
   // metadata.kind === 'trip_checkin'); narrow the widened Comment.metadata
   // union back to the check-in shape so `place` is accessible.
-  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null;
-  const photoUrls = metadata?.photoUrls || [];
+  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null
+  const photoUrls = metadata?.photoUrls || []
   // A co-traveler's check-in gets attributed explicitly; the trip author's
   // own check-ins don't repeat their name on every entry (the header already
   // names them).
-  const isCoTravelerCheckin = comment.authorId !== tripAuthorId;
+  const isCoTravelerCheckin = comment.authorId !== tripAuthorId
 
   return (
     <View style={styles.timelineRow}>
@@ -621,7 +621,7 @@ function CheckinTimelineItem({
         )}
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -1107,4 +1107,4 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: colors.border,
   },
-});
+})

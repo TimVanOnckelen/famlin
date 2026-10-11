@@ -1,21 +1,21 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { setStorageAdapter, setApiBaseUrl, setLanguageResolver } from '@famlin/api-client';
-import { adminLocalStorageAdapter } from './storageAdapter';
-import i18n from './i18n';
-import App from './App';
-import './index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { setStorageAdapter, setApiBaseUrl, setLanguageResolver } from '@famlin/api-client'
+import { adminLocalStorageAdapter } from './storageAdapter'
+import i18n from './i18n'
+import App from './App'
+import './index.css'
 
 // Required once at startup for the shared package's browser OIDC helpers
 // (used by LoginPage) — see storageAdapter.ts. Admin is always served
 // same-origin with the backend (in dev, Vite proxies /api to it — see
 // vite.config.ts), same as web/'s equivalent setup in web/src/main.tsx.
-setStorageAdapter(adminLocalStorageAdapter);
-setApiBaseUrl(window.location.origin);
+setStorageAdapter(adminLocalStorageAdapter)
+setApiBaseUrl(window.location.origin)
 // For the shared package's requests (OIDC login); api/client.ts's own fetch
 // wrapper sets the same header itself.
-setLanguageResolver(() => i18n.resolvedLanguage ?? i18n.language);
+setLanguageResolver(() => i18n.resolvedLanguage ?? i18n.language)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -23,4 +23,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <App />
     </BrowserRouter>
   </React.StrictMode>
-);
+)

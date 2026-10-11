@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, ServerSettings, User } from '../api/client';
-import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n';
-import { Icon, IconName } from './Icon';
-import { PeopleMappingSection } from './PeopleMappingSection';
-import { BrandingSection } from './BrandingSection';
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, ServerSettings, User } from '../api/client'
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
+import { Icon, IconName } from './Icon'
+import { PeopleMappingSection } from './PeopleMappingSection'
+import { BrandingSection } from './BrandingSection'
 
-type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media';
+type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media'
 
 interface SettingsCardProps {
-  icon: IconName;
-  title: string;
-  desc?: string;
-  badge?: React.ReactNode;
-  children: React.ReactNode;
+  icon: IconName
+  title: string
+  desc?: string
+  badge?: React.ReactNode
+  children: React.ReactNode
 }
 
 function SettingsCard({ icon, title, desc, badge, children }: SettingsCardProps) {
@@ -31,14 +31,14 @@ function SettingsCard({ icon, title, desc, badge, children }: SettingsCardProps)
       </div>
       <div className="settings-fields">{children}</div>
     </section>
-  );
+  )
 }
 
 interface ToggleRowProps {
-  title: string;
-  hint: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+  title: string
+  hint: string
+  checked: boolean
+  onChange: (checked: boolean) => void
 }
 
 function ToggleRow({ title, hint, checked, onChange }: ToggleRowProps) {
@@ -53,18 +53,18 @@ function ToggleRow({ title, hint, checked, onChange }: ToggleRowProps) {
         <span className="switch-slider" />
       </span>
     </label>
-  );
+  )
 }
 
 export function ServerSettingsPage() {
-  const { t } = useTranslation();
-  const [settings, setSettings] = useState<ServerSettings | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionId>('general');
+  const { t } = useTranslation()
+  const [settings, setSettings] = useState<ServerSettings | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [activeSection, setActiveSection] = useState<SectionId>('general')
 
   const [form, setForm] = useState<ServerSettings>({
     defaultLanguage: 'en',
@@ -87,142 +87,142 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     localMediaPath: '',
-  });
+  })
 
-  const [testingImmich, setTestingImmich] = useState(false);
-  const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null);
-  const [testingLocalMedia, setTestingLocalMedia] = useState(false);
-  const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null);
+  const [testingImmich, setTestingImmich] = useState(false)
+  const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null)
+  const [testingLocalMedia, setTestingLocalMedia] = useState(false)
+  const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null)
 
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
       api.getSettings().then((s) => {
-        setSettings(s);
-        setForm(s);
+        setSettings(s)
+        setForm(s)
       }),
       api.getAllUsers().then(setUsers),
     ])
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => setLoading(false))
+  }, [])
 
   useEffect(() => {
-    if (!success) return;
-    const timer = setTimeout(() => setSuccess(false), 4000);
-    return () => clearTimeout(timer);
-  }, [success]);
+    if (!success) return
+    const timer = setTimeout(() => setSuccess(false), 4000)
+    return () => clearTimeout(timer)
+  }, [success])
 
-  const dirty = useMemo(() => settings !== null && JSON.stringify(form) !== JSON.stringify(settings), [form, settings]);
+  const dirty = useMemo(() => settings !== null && JSON.stringify(form) !== JSON.stringify(settings), [form, settings])
 
   const updateField = <K extends keyof ServerSettings>(key: K, value: ServerSettings[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setSuccess(false);
-  };
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setSuccess(false)
+  }
 
   const parseList = (value: string) =>
     value
       .split(',')
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
 
   const handleTestImmich = async () => {
-    setTestingImmich(true);
-    setImmichTestResult(null);
+    setTestingImmich(true)
+    setImmichTestResult(null)
     try {
-      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey);
-      setImmichTestResult(result.ok ? 'ok' : result.error);
+      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey)
+      setImmichTestResult(result.ok ? 'ok' : result.error)
     } catch {
-      setImmichTestResult('unreachable');
+      setImmichTestResult('unreachable')
     } finally {
-      setTestingImmich(false);
+      setTestingImmich(false)
     }
-  };
+  }
 
   const handleTestLocalMedia = async () => {
-    setTestingLocalMedia(true);
-    setLocalMediaTestResult(null);
+    setTestingLocalMedia(true)
+    setLocalMediaTestResult(null)
     try {
-      const result = await api.testLocalMediaPath(form.localMediaPath);
-      setLocalMediaTestResult(result.ok ? 'ok' : result.error);
+      const result = await api.testLocalMediaPath(form.localMediaPath)
+      setLocalMediaTestResult(result.ok ? 'ok' : result.error)
     } catch {
-      setLocalMediaTestResult('not_found');
+      setLocalMediaTestResult('not_found')
     } finally {
-      setTestingLocalMedia(false);
+      setTestingLocalMedia(false)
     }
-  };
+  }
 
   const handleExport = async () => {
-    setExporting(true);
-    setExportError(null);
+    setExporting(true)
+    setExportError(null)
     try {
-      const { blob, filename } = await api.downloadExport();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      const { blob, filename } = await api.downloadExport()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
     } catch (err: any) {
-      setExportError(err.message);
+      setExportError(err.message)
     } finally {
-      setExporting(false);
+      setExporting(false)
     }
-  };
+  }
 
   const handleDiscard = () => {
-    if (settings) setForm(settings);
-    setError(null);
-    setSuccess(false);
-  };
+    if (settings) setForm(settings)
+    setError(null)
+    setSuccess(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSuccess(false)
 
     try {
-      const updated = await api.updateSettings(form);
-      setSettings(updated);
-      setForm(updated);
-      setSuccess(true);
+      const updated = await api.updateSettings(form)
+      setSettings(updated)
+      setForm(updated)
+      setSuccess(true)
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>;
-  if (error && !settings) return <div className="error">{error}</div>;
+  if (loading) return <div className="loading">{t('common.loading')}</div>
+  if (error && !settings) return <div className="error">{error}</div>
 
-  const oidcConfigured = Boolean(form.oidcIssuer && form.oidcClientId);
-  const immichConfigured = Boolean(form.immichServerUrl && form.immichApiKey);
-  const localConfigured = Boolean(form.localMediaPath);
-  const anyChannelEnabled = form.pushNotificationsEnabled || form.emailNotificationsEnabled;
-  const languageName = LANGUAGE_NAMES[form.defaultLanguage as SupportedLanguage] ?? form.defaultLanguage;
+  const oidcConfigured = Boolean(form.oidcIssuer && form.oidcClientId)
+  const immichConfigured = Boolean(form.immichServerUrl && form.immichApiKey)
+  const localConfigured = Boolean(form.localMediaPath)
+  const anyChannelEnabled = form.pushNotificationsEnabled || form.emailNotificationsEnabled
+  const languageName = LANGUAGE_NAMES[form.defaultLanguage as SupportedLanguage] ?? form.defaultLanguage
 
   const configuredBadge = (ok: boolean) => (
     <span className={`badge ${ok ? 'ok' : 'off'}`}>
       {ok ? t('serverSettings.statusConfigured') : t('serverSettings.statusNotConfigured')}
     </span>
-  );
+  )
   const enabledBadge = (ok: boolean) => (
     <span className={`badge ${ok ? 'ok' : 'off'}`}>
       {ok ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled')}
     </span>
-  );
+  )
 
   const sections: {
-    id: SectionId;
-    icon: IconName;
-    label: string;
-    status: { ok?: boolean; label: string };
+    id: SectionId
+    icon: IconName
+    label: string
+    status: { ok?: boolean; label: string }
   }[] = [
     {
       id: 'general',
@@ -266,7 +266,7 @@ export function ServerSettingsPage() {
             : t('serverSettings.statusNotConfigured'),
       },
     },
-  ];
+  ]
 
   return (
     <>
@@ -533,8 +533,8 @@ export function ServerSettingsPage() {
                       type="url"
                       value={form.immichServerUrl}
                       onChange={(e) => {
-                        updateField('immichServerUrl', e.target.value);
-                        setImmichTestResult(null);
+                        updateField('immichServerUrl', e.target.value)
+                        setImmichTestResult(null)
                       }}
                       placeholder="https://immich.example.com"
                     />
@@ -545,8 +545,8 @@ export function ServerSettingsPage() {
                       type="password"
                       value={form.immichApiKey}
                       onChange={(e) => {
-                        updateField('immichApiKey', e.target.value);
-                        setImmichTestResult(null);
+                        updateField('immichApiKey', e.target.value)
+                        setImmichTestResult(null)
                       }}
                     />
                   </label>
@@ -588,8 +588,8 @@ export function ServerSettingsPage() {
                       type="text"
                       value={form.localMediaPath}
                       onChange={(e) => {
-                        updateField('localMediaPath', e.target.value);
-                        setLocalMediaTestResult(null);
+                        updateField('localMediaPath', e.target.value)
+                        setLocalMediaTestResult(null)
                       }}
                       placeholder="/media/family-photos"
                     />
@@ -648,5 +648,5 @@ export function ServerSettingsPage() {
         </div>
       </div>
     </>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties } from 'react'
 
 // The one icon vocabulary for the web app — flat, minimal, single-weight
 // line icons drawn on Feather's 24×24 grid (2px stroke, round caps/joins),
@@ -166,9 +166,9 @@ const ICON_PATHS = {
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </>
   ),
-} as const;
+} as const
 
-export type IconName = keyof typeof ICON_PATHS;
+export type IconName = keyof typeof ICON_PATHS
 
 export function Icon({
   name,
@@ -181,13 +181,13 @@ export function Icon({
   className,
   style,
 }: {
-  name: IconName;
-  size?: number;
-  color?: string;
-  strokeWidth?: number;
-  filled?: boolean;
-  className?: string;
-  style?: CSSProperties;
+  name: IconName
+  size?: number
+  color?: string
+  strokeWidth?: number
+  filled?: boolean
+  className?: string
+  style?: CSSProperties
 }) {
   return (
     <svg
@@ -205,5 +205,5 @@ export function Icon({
     >
       {ICON_PATHS[name]}
     </svg>
-  );
+  )
 }

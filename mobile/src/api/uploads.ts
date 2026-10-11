@@ -1,8 +1,8 @@
-import type { AxiosProgressEvent } from 'axios';
-import { api } from './client';
-import { UPLOAD_TIMEOUT_MS } from '@famlin/api-client';
+import type { AxiosProgressEvent } from 'axios'
+import { api } from './client'
+import { UPLOAD_TIMEOUT_MS } from '@famlin/api-client'
 
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from '@famlin/api-client';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken } from '@famlin/api-client'
 
 export async function uploadMedia(
   files: { uri: string; name: string; type: string }[],
@@ -11,15 +11,15 @@ export async function uploadMedia(
   // most of what makes a several-second upload feel like it's hanging.
   onProgress?: (fraction: number) => void
 ): Promise<string[]> {
-  const formData = new FormData();
+  const formData = new FormData()
 
   files.forEach((file, index) => {
     formData.append(`file${index}`, {
       uri: file.uri,
       name: file.name,
       type: file.type,
-    } as any);
-  });
+    } as any)
+  })
 
   // Don't set a Content-Type of our own: React Native's networking layer
   // must generate its own `multipart/form-data; boundary=...` header when it
@@ -40,10 +40,10 @@ export async function uploadMedia(
     timeout: UPLOAD_TIMEOUT_MS,
     onUploadProgress: onProgress
       ? (event: AxiosProgressEvent) => {
-          if (event.total) onProgress(event.loaded / event.total);
+          if (event.total) onProgress(event.loaded / event.total)
         }
       : undefined,
-  });
+  })
 
-  return response.data.urls;
+  return response.data.urls
 }

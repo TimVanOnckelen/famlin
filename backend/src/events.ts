@@ -16,122 +16,122 @@ export interface DomainEvents {
     // target group, all sharing the rest of this payload. Lets the
     // notifications subscriber notify a recipient who's in several target
     // groups exactly once instead of once per group.
-    posts: Array<{ postId: string; groupId: string; groupName: string }>;
-    authorId: string;
-    authorName: string;
-    content: string | null;
+    posts: Array<{ postId: string; groupId: string; groupName: string }>
+    authorId: string
+    authorName: string
+    content: string | null
     // Shared by every sibling post a single create call produces (same
     // convention as `content` above) — lets the notifications subscriber
     // auto-post a SYSTEM_MILESTONE chitchat message per target group without
     // re-fetching the post.
-    type: string;
-    milestoneTag: string | null;
+    type: string
+    milestoneTag: string | null
     // The audience of the created post(s) — null for a whole-family post.
     // Cross-posts are never circle-scoped, so one value covers every entry
     // in `posts` above (same convention as `content`/`type`).
-    circleId: string | null;
-  };
+    circleId: string | null
+  }
   'comment.created': {
-    commentId: string;
-    postId: string;
-    postAuthorId: string;
-    groupId: string;
-    groupName: string;
-    authorId: string;
-    authorName: string;
-    content: string;
-    hasAttachment: boolean;
-    parentId: string | null;
+    commentId: string
+    postId: string
+    postAuthorId: string
+    groupId: string
+    groupName: string
+    authorId: string
+    authorName: string
+    content: string
+    hasAttachment: boolean
+    parentId: string | null
     // As sent by the client (resolved from "@name" typing) — NOT yet
     // validated. Subscribers must re-check each id is a current member of
     // the post's group before acting on it.
-    mentionedUserIds: string[];
+    mentionedUserIds: string[]
     // The comment row's own metadata (Comment.metadata) — null for every
     // ordinary user-authored comment, {kind: 'trip_checkin', ...} for a TRIP
     // check-in (services/postTypes/trip.ts). Lets the notifications
     // subscriber recognize a check-in and notify with `trip_checkin` instead
     // of the normal `new_comment`, without re-querying the comment.
-    metadata: unknown;
+    metadata: unknown
     // Set only by trip.ts's `checkin` interaction: one entry per Comment
     // copy the check-in created — one for a single-group trip, one per
     // cross-post sibling otherwise (mirrors post.created's `posts` array).
     // Lets the notifications subscriber notify a recipient who's in several
     // sibling groups exactly once. Absent for ordinary comments
     // (routes/comments.ts never sets it).
-    checkinTargets?: Array<{ commentId: string; postId: string; groupId: string; groupName: string }>;
-  };
+    checkinTargets?: Array<{ commentId: string; postId: string; groupId: string; groupName: string }>
+  }
   'reaction.added': {
     // Set (not removed) reactions only — covers both adding and switching.
-    targetKind: 'post' | 'comment';
-    postId: string;
-    commentId: string | null;
-    groupId: string;
-    groupName: string;
-    targetAuthorId: string;
-    targetContent: string | null;
-    reactorId: string;
-    reactorName: string;
-    reactionType: string;
-  };
+    targetKind: 'post' | 'comment'
+    postId: string
+    commentId: string | null
+    groupId: string
+    groupName: string
+    targetAuthorId: string
+    targetContent: string | null
+    reactorId: string
+    reactorName: string
+    reactionType: string
+  }
   'chat.created': {
-    messageId: string;
-    groupId: string;
-    groupName: string;
-    authorId: string;
-    authorName: string;
-    content: string | null;
-    hasAttachment: boolean;
-    kind: string;
-    refPostId: string | null;
-  };
+    messageId: string
+    groupId: string
+    groupName: string
+    authorId: string
+    authorName: string
+    content: string | null
+    hasAttachment: boolean
+    kind: string
+    refPostId: string | null
+  }
   'story.created': {
     // One entry per Story row — one per target group for a cross-posted
     // story, mirroring post.created's `posts`.
-    stories: Array<{ storyId: string; groupId: string; groupName: string }>;
-    authorId: string;
-    authorName: string;
-    circleId: string | null;
-    createdAt: Date;
-  };
+    stories: Array<{ storyId: string; groupId: string; groupName: string }>
+    authorId: string
+    authorName: string
+    circleId: string | null
+    createdAt: Date
+  }
   'story.reaction.added': {
     // Set (not removed) reactions only — covers both adding and switching.
-    storyId: string;
-    groupName: string;
-    storyAuthorId: string;
-    reactorId: string;
-    reactorName: string;
-    reactionType: string;
-  };
+    storyId: string
+    groupName: string
+    storyAuthorId: string
+    reactorId: string
+    reactorName: string
+    reactionType: string
+  }
   'story.reply.created': {
-    storyId: string;
-    groupName: string;
-    storyAuthorId: string;
-    fromUserId: string;
-    fromUserName: string;
-    content: string;
-  };
+    storyId: string
+    groupName: string
+    storyAuthorId: string
+    fromUserId: string
+    fromUserName: string
+    content: string
+  }
 }
 
-type Handler<K extends keyof DomainEvents> = (payload: DomainEvents[K]) => void | Promise<void>;
+type Handler<K extends keyof DomainEvents> = (payload: DomainEvents[K]) => void | Promise<void>
 
-const handlers = new Map<keyof DomainEvents, Handler<keyof DomainEvents>[]>();
+const handlers = new Map<keyof DomainEvents, Handler<keyof DomainEvents>[]>()
 
 export function onDomainEvent<K extends keyof DomainEvents>(event: K, handler: Handler<K>): void {
-  const list = handlers.get(event) ?? [];
-  list.push(handler as Handler<keyof DomainEvents>);
-  handlers.set(event, list);
+  const list = handlers.get(event) ?? []
+  list.push(handler as Handler<keyof DomainEvents>)
+  handlers.set(event, list)
 }
 
 export function emitDomainEvent<K extends keyof DomainEvents>(event: K, payload: DomainEvents[K]): void {
   for (const handler of handlers.get(event) ?? []) {
     Promise.resolve()
       .then(() => handler(payload))
-      .catch((err) => console.error(`Domain event handler failed for ${event}`, err));
+      .catch((err) => console.error(`Domain event handler failed for ${event}`, err))
   }
 }
 
 // Test-only escape hatch: buildApp() registers subscribers idempotently, so a
 // test that wants to assert against a clean listener set can reset here.
 export function __clearDomainEventHandlersForTests(): void {
-  handlers.clear();
+  handlers.clear()
 }

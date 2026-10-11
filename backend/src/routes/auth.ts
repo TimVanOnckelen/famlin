@@ -1,13 +1,13 @@
-import { isRecordNotFound } from '../utils/prismaErrors.js';
-import { FastifyInstance } from 'fastify';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import fs from 'fs';
-import fsp from 'fs/promises';
-import path from 'path';
-import { pipeline } from 'stream/promises';
-import pkg from '../../package.json' with { type: 'json' };
-import { prisma } from '../db.js';
+import { isRecordNotFound } from '../utils/prismaErrors.js'
+import { FastifyInstance } from 'fastify'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import fs from 'fs'
+import fsp from 'fs/promises'
+import path from 'path'
+import { pipeline } from 'stream/promises'
+import pkg from '../../package.json' with { type: 'json' }
+import { prisma } from '../db.js'
 import {
   createUserToken,
   getDiscovery,
@@ -15,20 +15,20 @@ import {
   OidcError,
   invalidateSessionCache,
   requireAdmin,
-} from '../plugins/auth.js';
-import { getOidcSettings, getAllSettings } from '../services/settings.js';
-import { getBranding } from '../services/branding/index.js';
-import { getValidInvite, consumeInvite } from '../services/invites.js';
-import { completeOidcLogin } from '../services/oidcLogin.js';
-import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js';
-import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js';
-import { getT } from '../i18n/index.js';
-import { sanitizeUser, hashPassword } from '../services/users.js';
-import { config, uploadsDir } from '../config.js';
-import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js';
-import { buildMemberExportArchive } from '../services/memberExport.js';
-import { deleteStoriesWithMedia } from '../services/stories.js';
-import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js';
+} from '../plugins/auth.js'
+import { getOidcSettings, getAllSettings } from '../services/settings.js'
+import { getBranding } from '../services/branding/index.js'
+import { getValidInvite, consumeInvite } from '../services/invites.js'
+import { completeOidcLogin } from '../services/oidcLogin.js'
+import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js'
+import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js'
+import { getT } from '../i18n/index.js'
+import { sanitizeUser, hashPassword } from '../services/users.js'
+import { config, uploadsDir } from '../config.js'
+import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js'
+import { buildMemberExportArchive } from '../services/memberExport.js'
+import { deleteStoriesWithMedia } from '../services/stories.js'
+import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -40,17 +40,17 @@ import {
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
-} from '../types.js';
+} from '../types.js'
 
 // Never a valid bcrypt match — used so a login with an unknown email still
 // pays the cost of a bcrypt.compare, instead of returning immediately, so
 // timing doesn't reveal whether the email exists.
-const DUMMY_PASSWORD_HASH = await hashPassword(crypto.randomUUID());
+const DUMMY_PASSWORD_HASH = await hashPassword(crypto.randomUUID())
 
 // Arbitrary fixed key for a Postgres advisory lock — only used to serialize
 // concurrent POST /setup calls against each other (see below), unrelated to
 // any other lock in the app.
-const SETUP_ADVISORY_LOCK_KEY = 4_827_193n;
+const SETUP_ADVISORY_LOCK_KEY = 4_827_193n
 
 // The oldest mobile app version this server still supports. Mobile clients
 // compare their own build version against this and show a blocking
@@ -60,7 +60,7 @@ const SETUP_ADVISORY_LOCK_KEY = 4_827_193n;
 // breaking change (`feat!:` / `BREAKING CHANGE:` footer) per repo convention
 // — bumping it is itself a breaking change for anyone still running an
 // older app build.
-const MIN_APP_VERSION = '0.1.0';
+const MIN_APP_VERSION = '0.1.0'
 
 const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   not_configured: 'errors.oidcNotConfigured',
@@ -68,24 +68,24 @@ const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
   email_not_verified: 'errors.oidcEmailNotVerified',
   not_allowed: 'errors.emailNotAllowed',
   exchange_failed: 'errors.oidcExchangeFailed',
-};
+}
 
 const APPLE_ERROR_KEY: Record<AppleAuthError['code'], string> = {
   invalid_token: 'errors.authFailed',
   no_email: 'errors.appleAccountNoEmail',
   not_allowed: 'errors.emailNotAllowed',
-};
+}
 
 const APPLE_ERROR_STATUS: Record<AppleAuthError['code'], number> = {
   invalid_token: 401,
   no_email: 403,
   not_allowed: 403,
-};
+}
 
 function oidcErrorStatus(code: OidcError['code']): number {
-  if (code === 'not_configured') return 503;
-  if (code === 'exchange_failed') return 400;
-  return 403;
+  if (code === 'not_configured') return 503
+  if (code === 'exchange_failed') return 400
+  return 403
 }
 
 // Maps internal OIDC error codes to the stable codes the mobile app uses in
@@ -93,15 +93,15 @@ function oidcErrorStatus(code: OidcError['code']): number {
 function oidcErrorToMobileCode(code: OidcError['code']): string {
   switch (code) {
     case 'not_configured':
-      return 'oidc_not_configured';
+      return 'oidc_not_configured'
     case 'no_email':
-      return 'oidc_no_email';
+      return 'oidc_no_email'
     case 'email_not_verified':
-      return 'oidc_email_not_verified';
+      return 'oidc_email_not_verified'
     case 'not_allowed':
-      return 'email_not_allowed';
+      return 'email_not_allowed'
     case 'exchange_failed':
-      return 'oidc_exchange_failed';
+      return 'oidc_exchange_failed'
   }
 }
 
@@ -111,13 +111,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // Resolving discovery server-side avoids relying on the provider allowing
   // CORS for browser-based clients to fetch it directly.
   fastify.get('/oidc-config', async (request) => {
-    const { name, issuer, clientId, clientSecret, scopes } = await getOidcSettings();
+    const { name, issuer, clientId, clientSecret, scopes } = await getOidcSettings()
     // Some providers (Google) reject a secretless PKCE exchange from a
     // public client — when a secret is configured, clients must hand the
     // authorization code to the backend instead (POST /oidc/exchange for the
     // admin UI, GET /oidc/mobile-callback for the mobile app) rather than
     // exchanging it themselves. The secret itself never leaves the backend.
-    const usesClientSecret = !!clientSecret;
+    const usesClientSecret = !!clientSecret
     // Sign in with Apple needs no server-side configuration, so it's always
     // available — but the flag has to be advertised here so an iOS app talking
     // to a server that predates POST /apple hides the button instead of
@@ -131,17 +131,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
       scopes,
       usesClientSecret,
       appleSignInEnabled: true,
-    };
+    }
 
     if (!issuer || !clientId) {
-      return disabled;
+      return disabled
     }
 
     try {
-      const { doc } = await getDiscovery(issuer);
+      const { doc } = await getDiscovery(issuer)
       // host, not hostname — Fastify 5's hostname drops the port, and this
       // origin is handed to clients to build their OIDC redirect URI from.
-      const origin = `${request.protocol}://${request.host}`;
+      const origin = `${request.protocol}://${request.host}`
       return {
         enabled: true,
         name,
@@ -152,19 +152,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
         usesClientSecret,
         appleSignInEnabled: true,
         ...(usesClientSecret ? { mobileCallbackUrl: `${origin}/api/auth/oidc/mobile-callback` } : {}),
-      };
+      }
     } catch {
-      return disabled;
+      return disabled
     }
-  });
+  })
 
   // Public: lets the admin UI know whether this is a fresh install with no
   // users yet, so it can show the first-run admin setup screen instead of
   // the login form.
   fastify.get('/setup-status', async () => {
-    const userCount = await prisma.user.count();
-    return { needsSetup: userCount === 0 };
-  });
+    const userCount = await prisma.user.count()
+    return { needsSetup: userCount === 0 }
+  })
 
   // Public, but only succeeds once: provisions the very first admin account
   // on a fresh install. Guarded by a Postgres advisory lock so two concurrent
@@ -172,17 +172,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // — the lock is held for the transaction, so the second caller's count()
   // only runs after the first caller has committed its new user.
   fastify.post('/setup', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const t = getT(request);
-    const { email, name, password } = setupBodySchema.parse(request.body);
-    const normalizedEmail = email.toLowerCase().trim();
-    const passwordHash = await hashPassword(password);
+    const t = getT(request)
+    const { email, name, password } = setupBodySchema.parse(request.body)
+    const normalizedEmail = email.toLowerCase().trim()
+    const passwordHash = await hashPassword(password)
 
     const user = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`
 
-      const userCount = await tx.user.count();
+      const userCount = await tx.user.count()
       if (userCount > 0) {
-        return null;
+        return null
       }
 
       return tx.user.create({
@@ -192,11 +192,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
           passwordHash,
           isAdmin: true,
         },
-      });
-    });
+      })
+    })
 
     if (!user) {
-      return reply.status(409).send({ error: t('errors.setupAlreadyComplete') });
+      return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
     }
 
     const token = createUserToken({
@@ -205,13 +205,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
       name: user.name,
       isAdmin: user.isAdmin,
       tokenVersion: user.tokenVersion,
-    });
+    })
 
     return {
       token,
       user: sanitizeUser(user),
-    };
-  });
+    }
+  })
 
   // Public, and like /setup only usable on a fresh install: restores an
   // archive from GET /api/admin/export (services/import.ts) and provisions
@@ -231,106 +231,106 @@ export default async function authRoutes(fastify: FastifyInstance) {
     '/setup/restore',
     { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
-      const t = getT(request);
+      const t = getT(request)
       if (!request.isMultipart()) {
-        return reply.status(400).send({ error: t('errors.restoreArchiveMissing') });
+        return reply.status(400).send({ error: t('errors.restoreArchiveMissing') })
       }
       // Cheap early refusal before spooling a multi-GB upload; the
       // authoritative check is repeated under the advisory lock.
       if ((await prisma.user.count()) > 0) {
-        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') });
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
       }
 
-      const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`);
-      await fsp.mkdir(workDir, { recursive: true });
+      const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
+      await fsp.mkdir(workDir, { recursive: true })
       try {
-        const fields: Record<string, string> = {};
-        let zipPath: string | null = null;
+        const fields: Record<string, string> = {}
+        let zipPath: string | null = null
 
         // No fileSize cap (the app-wide multipart limit is sized for a single
         // photo/video, not a family's whole history) — the archive is
         // streamed to disk on the uploads volume, never buffered in memory.
-        const parts = request.parts({ limits: { fileSize: Infinity, files: 1, fields: 10 } });
+        const parts = request.parts({ limits: { fileSize: Infinity, files: 1, fields: 10 } })
         for await (const part of parts) {
           if (part.type === 'file') {
             if (part.fieldname !== 'archive' || zipPath) {
-              part.file.resume();
-              continue;
+              part.file.resume()
+              continue
             }
-            zipPath = path.join(workDir, 'archive.zip');
-            await pipeline(part.file, fs.createWriteStream(zipPath));
+            zipPath = path.join(workDir, 'archive.zip')
+            await pipeline(part.file, fs.createWriteStream(zipPath))
           } else {
-            fields[part.fieldname] = String(part.value);
+            fields[part.fieldname] = String(part.value)
           }
         }
 
         if (!zipPath) {
-          return reply.status(400).send({ error: t('errors.restoreArchiveMissing') });
+          return reply.status(400).send({ error: t('errors.restoreArchiveMissing') })
         }
 
-        const { email, name, password } = setupBodySchema.parse(fields);
-        const passwordHash = await hashPassword(password);
+        const { email, name, password } = setupBodySchema.parse(fields)
+        const passwordHash = await hashPassword(password)
 
-        let result;
+        let result
         try {
           result = await restoreArchive({
             zipPath,
             workDir,
             admin: { email: email.toLowerCase().trim(), name, passwordHash },
             lockKey: SETUP_ADVISORY_LOCK_KEY,
-          });
+          })
         } catch (err) {
-          if (!(err instanceof RestoreError)) throw err;
-          request.log.warn({ err }, 'restore refused');
+          if (!(err instanceof RestoreError)) throw err
+          request.log.warn({ err }, 'restore refused')
           if (err.code === 'notEmpty') {
-            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') });
+            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
           }
           if (err.code === 'archiveTooNew') {
-            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') });
+            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
           }
-          return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') });
+          return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') })
         }
 
-        const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } });
+        const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })
         const token = createUserToken({
           id: user.id,
           email: user.email,
           name: user.name,
           isAdmin: user.isAdmin,
           tokenVersion: user.tokenVersion,
-        });
+        })
 
         return {
           token,
           user: sanitizeUser(user),
           counts: result.counts,
-        };
+        }
       } finally {
-        await fsp.rm(workDir, { recursive: true, force: true });
+        await fsp.rm(workDir, { recursive: true, force: true })
       }
     }
-  );
+  )
 
   // Generic OIDC login — works with any OpenID Connect provider (Google,
   // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin. Used
   // when the client did its own PKCE exchange directly against the provider
   // (the default — see POST /oidc/exchange for providers that need a secret).
   fastify.post('/oidc', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { idToken, inviteToken } = loginBodySchema.parse(request.body);
-    const t = getT(request);
+    const { idToken, inviteToken } = loginBodySchema.parse(request.body)
+    const t = getT(request)
 
     try {
-      const outcome = await completeOidcLogin(idToken, inviteToken, t);
-      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
-      return outcome.result;
+      const outcome = await completeOidcLogin(idToken, inviteToken, t)
+      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
+      return outcome.result
     } catch (err) {
       if (err instanceof OidcError) {
-        return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
+        return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) })
       }
-      fastify.log.error(err);
-      return reply.status(401).send({ error: t('errors.authFailed') });
+      fastify.log.error(err)
+      return reply.status(401).send({ error: t('errors.authFailed') })
     }
-  });
+  })
 
   // Sign in with Apple. Unlike /oidc this needs nothing configured on the
   // server — Apple's issuer and keys are fixed, and the token's audience is
@@ -341,21 +341,21 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // as any other login (an Apple private-relay address will practically
   // always need an invite, since it can't be whitelisted in advance).
   fastify.post('/apple', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body);
-    const t = getT(request);
+    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body)
+    const t = getT(request)
 
     try {
-      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t);
-      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
-      return outcome.result;
+      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t)
+      if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
+      return outcome.result
     } catch (err) {
       if (err instanceof AppleAuthError) {
-        return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) });
+        return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) })
       }
-      fastify.log.error(err);
-      return reply.status(401).send({ error: t('errors.authFailed') });
+      fastify.log.error(err)
+      return reply.status(401).send({ error: t('errors.authFailed') })
     }
-  });
+  })
 
   // Server-mediated OIDC login for the admin UI, used instead of POST /oidc
   // when the provider requires a client secret (e.g. Google) — the browser
@@ -365,23 +365,23 @@ export default async function authRoutes(fastify: FastifyInstance) {
     '/oidc/exchange',
     { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
     async (request, reply) => {
-      const { code, redirectUri, codeVerifier, inviteToken } = oidcExchangeBodySchema.parse(request.body);
-      const t = getT(request);
+      const { code, redirectUri, codeVerifier, inviteToken } = oidcExchangeBodySchema.parse(request.body)
+      const t = getT(request)
 
       try {
-        const idToken = await exchangeOidcCode({ code, redirectUri, codeVerifier });
-        const outcome = await completeOidcLogin(idToken, inviteToken, t);
-        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error });
-        return outcome.result;
+        const idToken = await exchangeOidcCode({ code, redirectUri, codeVerifier })
+        const outcome = await completeOidcLogin(idToken, inviteToken, t)
+        if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
+        return outcome.result
       } catch (err) {
         if (err instanceof OidcError) {
-          return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) });
+          return reply.status(oidcErrorStatus(err.code)).send({ error: t(OIDC_ERROR_KEY[err.code]) })
         }
-        fastify.log.error(err);
-        return reply.status(401).send({ error: t('errors.authFailed') });
+        fastify.log.error(err)
+        return reply.status(401).send({ error: t('errors.authFailed') })
       }
     }
-  );
+  )
 
   // The redirect_uri Google (or another secret-requiring provider) sends the
   // user's browser back to for the mobile app's login. A plain custom-scheme
@@ -395,19 +395,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
     '/oidc/mobile-callback',
     { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
     async (request, reply) => {
-      const t = getT(request);
-      const { code, state, error } = request.query as { code?: string; state?: string; error?: string };
+      const t = getT(request)
+      const { code, state, error } = request.query as { code?: string; state?: string; error?: string }
 
       // The app validates that the state it sent survives the whole round
       // trip (CSRF binding — see performServerMediatedLogin in the mobile
       // app's utils/oidcLogin.ts) and rejects any callback without it, so
       // every redirect below must echo it, error paths included.
-      const stateParam = typeof state === 'string' ? `&state=${encodeURIComponent(state)}` : '';
+      const stateParam = typeof state === 'string' ? `&state=${encodeURIComponent(state)}` : ''
 
       if (error || !code) {
         return reply.redirect(
           `famlin://oidc-callback?error=${encodeURIComponent(error || 'missing_code')}${stateParam}`
-        );
+        )
       }
 
       // The mobile app is a stateless HTTP client with no session on this
@@ -415,11 +415,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // `state` param Google echoes back unchanged — same trust level as the
       // client-supplied inviteToken already accepted by POST /oidc, since the
       // invite's own validity is what's actually authoritative server-side.
-      let inviteToken: string | undefined;
+      let inviteToken: string | undefined
       if (state) {
         try {
-          const parsed = JSON.parse(state);
-          if (typeof parsed?.inviteToken === 'string') inviteToken = parsed.inviteToken;
+          const parsed = JSON.parse(state)
+          if (typeof parsed?.inviteToken === 'string') inviteToken = parsed.inviteToken
         } catch {
           // Malformed state — proceed without an invite token.
         }
@@ -428,10 +428,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // host, not hostname: this redirect_uri must byte-match the one the app
       // authorized with (and the one registered at the provider), and Fastify
       // 5's hostname would strip the port off a non-443 deployment.
-      const redirectUri = `${request.protocol}://${request.host}/api/auth/oidc/mobile-callback`;
+      const redirectUri = `${request.protocol}://${request.host}/api/auth/oidc/mobile-callback`
       try {
-        const idToken = await exchangeOidcCode({ code, redirectUri });
-        const outcome = await completeOidcLogin(idToken, inviteToken, t);
+        const idToken = await exchangeOidcCode({ code, redirectUri })
+        const outcome = await completeOidcLogin(idToken, inviteToken, t)
         if ('error' in outcome) {
           fastify.log.warn(
             {
@@ -442,22 +442,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
               redirectUri,
             },
             'OIDC mobile callback login outcome failed'
-          );
-          return reply.redirect(`famlin://oidc-callback?error=${outcome.error.code}${stateParam}`);
+          )
+          return reply.redirect(`famlin://oidc-callback?error=${outcome.error.code}${stateParam}`)
         }
-        const handoff = createOidcHandoff(outcome.result);
-        return reply.redirect(`famlin://oidc-callback?handoff=${handoff}${stateParam}`);
+        const handoff = createOidcHandoff(outcome.result)
+        return reply.redirect(`famlin://oidc-callback?handoff=${handoff}${stateParam}`)
       } catch (err) {
-        const errorCode = err instanceof OidcError ? oidcErrorToMobileCode(err.code) : 'unknown';
+        const errorCode = err instanceof OidcError ? oidcErrorToMobileCode(err.code) : 'unknown'
         if (err instanceof OidcError) {
-          fastify.log.warn({ oidcError: err.code, errorCode, redirectUri }, 'OIDC mobile callback failed');
+          fastify.log.warn({ oidcError: err.code, errorCode, redirectUri }, 'OIDC mobile callback failed')
         } else {
-          fastify.log.error(err);
+          fastify.log.error(err)
         }
-        return reply.redirect(`famlin://oidc-callback?error=${errorCode}${stateParam}`);
+        return reply.redirect(`famlin://oidc-callback?error=${errorCode}${stateParam}`)
       }
     }
-  );
+  )
 
   // Redeems the one-time code from the famlin://oidc-callback deep link for
   // the actual Famlin session token — see createOidcHandoff for why the
@@ -466,43 +466,43 @@ export default async function authRoutes(fastify: FastifyInstance) {
     '/oidc/mobile-handoff',
     { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } },
     async (request, reply) => {
-      const { code } = oidcMobileHandoffBodySchema.parse(request.body);
-      const t = getT(request);
+      const { code } = oidcMobileHandoffBodySchema.parse(request.body)
+      const t = getT(request)
 
-      const result = consumeOidcHandoff(code);
+      const result = consumeOidcHandoff(code)
       if (!result) {
-        return reply.status(400).send({ error: t('errors.oidcHandoffExpired') });
+        return reply.status(400).send({ error: t('errors.oidcHandoffExpired') })
       }
-      return result;
+      return result
     }
-  );
+  )
 
   // Local email/password login
   fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { email, password, inviteToken } = passwordLoginBodySchema.parse(request.body);
-    const normalizedEmail = email.toLowerCase().trim();
-    const t = getT(request);
+    const { email, password, inviteToken } = passwordLoginBodySchema.parse(request.body)
+    const normalizedEmail = email.toLowerCase().trim()
+    const t = getT(request)
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
-    });
+    })
 
     if (!user || !user.passwordHash) {
       // Still pay the bcrypt cost so response timing doesn't reveal
       // whether this email has an account.
-      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
-      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH)
+      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') })
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, user.passwordHash)
     if (!valid) {
-      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') });
+      return reply.status(401).send({ error: t('errors.invalidEmailOrPassword') })
     }
 
     if (inviteToken) {
-      const { invite, reason } = await getValidInvite(inviteToken);
+      const { invite, reason } = await getValidInvite(inviteToken)
       if (invite && !reason && (!invite.email || invite.email === user.email)) {
-        await consumeInvite(inviteToken, user.id);
+        await consumeInvite(inviteToken, user.id)
       }
     }
 
@@ -512,40 +512,40 @@ export default async function authRoutes(fastify: FastifyInstance) {
       name: user.name,
       isAdmin: user.isAdmin,
       tokenVersion: user.tokenVersion,
-    });
+    })
 
     return {
       token,
       user: sanitizeUser(user),
-    };
-  });
+    }
+  })
 
   // Register new user (admin only)
   fastify.post('/register', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
+    const t = getT(request)
 
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { email, name, password, isAdmin, groupIds } = registerBodySchema.parse(request.body);
-    const normalizedEmail = email.toLowerCase().trim();
+    const { email, name, password, isAdmin, groupIds } = registerBodySchema.parse(request.body)
+    const normalizedEmail = email.toLowerCase().trim()
 
-    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
     if (existing) {
-      return reply.status(409).send({ error: t('errors.userAlreadyExists') });
+      return reply.status(409).send({ error: t('errors.userAlreadyExists') })
     }
 
-    const uniqueGroupIds = groupIds && groupIds.length > 0 ? [...new Set(groupIds)] : [];
+    const uniqueGroupIds = groupIds && groupIds.length > 0 ? [...new Set(groupIds)] : []
     if (uniqueGroupIds.length > 0) {
       const foundGroups = await prisma.group.findMany({
         where: { id: { in: uniqueGroupIds } },
         select: { id: true },
-      });
+      })
       if (foundGroups.length !== uniqueGroupIds.length) {
-        return reply.status(400).send({ error: t('errors.unknownGroup') });
+        return reply.status(400).send({ error: t('errors.unknownGroup') })
       }
     }
 
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPassword(password)
 
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
@@ -555,21 +555,21 @@ export default async function authRoutes(fastify: FastifyInstance) {
           passwordHash,
           isAdmin: isAdmin || false,
         },
-      });
+      })
 
       if (uniqueGroupIds.length > 0) {
         await tx.groupMember.createMany({
           data: uniqueGroupIds.map((groupId) => ({ groupId, userId: created.id })),
-        });
+        })
       }
 
-      return created;
-    });
+      return created
+    })
 
     return {
       user: sanitizeUser(user),
-    };
-  });
+    }
+  })
 
   // Change own password
   fastify.post(
@@ -579,34 +579,34 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: { rateLimit: { max: 10, timeWindow: '15 minutes' } },
     },
     async (request, reply) => {
-      const t = getT(request);
-      const { currentPassword, newPassword } = changePasswordBodySchema.parse(request.body);
+      const t = getT(request)
+      const { currentPassword, newPassword } = changePasswordBodySchema.parse(request.body)
 
       const user = await prisma.user.findUnique({
         where: { id: request.user!.id },
-      });
+      })
 
       if (!user || !user.passwordHash) {
-        return reply.status(400).send({ error: t('errors.noLocalPasswordSet') });
+        return reply.status(400).send({ error: t('errors.noLocalPasswordSet') })
       }
 
-      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+      const valid = await bcrypt.compare(currentPassword, user.passwordHash)
       if (!valid) {
-        return reply.status(401).send({ error: t('errors.currentPasswordIncorrect') });
+        return reply.status(401).send({ error: t('errors.currentPasswordIncorrect') })
       }
 
-      const passwordHash = await hashPassword(newPassword);
+      const passwordHash = await hashPassword(newPassword)
       // Bumping tokenVersion invalidates every token issued before this
       // change, including on any other device the account is signed into.
       await prisma.user.update({
         where: { id: user.id },
         data: { passwordHash, tokenVersion: { increment: 1 } },
-      });
-      invalidateSessionCache(user.id);
+      })
+      invalidateSessionCache(user.id)
 
-      return { success: true };
+      return { success: true }
     }
-  );
+  )
 
   // Admin reset/set user password. Rate limited looser than /login (this is
   // admin-only, gated by requireAdmin below, not a public guessing surface)
@@ -619,35 +619,35 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: { rateLimit: { max: 30, timeWindow: '15 minutes' } },
     },
     async (request, reply) => {
-      const t = getT(request);
+      const t = getT(request)
 
-      if (requireAdmin(request, reply)) return;
+      if (requireAdmin(request, reply)) return
 
-      const { id } = request.params as { id: string };
-      const { newPassword } = resetPasswordBodySchema.parse(request.body);
+      const { id } = request.params as { id: string }
+      const { newPassword } = resetPasswordBodySchema.parse(request.body)
 
-      const passwordHash = await hashPassword(newPassword);
+      const passwordHash = await hashPassword(newPassword)
 
       try {
         const user = await prisma.user.update({
           where: { id },
           data: { passwordHash, tokenVersion: { increment: 1 } },
-        });
-        invalidateSessionCache(id);
+        })
+        invalidateSessionCache(id)
 
-        return { success: true, user: sanitizeUser(user) };
+        return { success: true, user: sanitizeUser(user) }
       } catch (err) {
         // Prisma "record not found" on update.
         if (isRecordNotFound(err)) {
-          return reply.status(404).send({ error: t('errors.userNotFound') });
+          return reply.status(404).send({ error: t('errors.userNotFound') })
         }
-        throw err;
+        throw err
       }
     }
-  );
+  )
 
   fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
+    const t = getT(request)
     const user = await prisma.user.findUnique({
       where: { id: request.user!.id },
       include: {
@@ -655,25 +655,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
           include: { group: true },
         },
       },
-    });
+    })
 
     if (!user) {
-      return reply.status(404).send({ error: t('errors.userNotFound') });
+      return reply.status(404).send({ error: t('errors.userNotFound') })
     }
 
     return {
       ...sanitizeUser(user),
       groups: user.groupMemberships.map((m) => m.group),
-    };
-  });
+    }
+  })
 
   fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request) => {
-    const body = updateUserBodySchema.parse(request.body);
+    const body = updateUserBodySchema.parse(request.body)
 
     const user = await prisma.user.update({
       where: { id: request.user!.id },
       data: body,
-    });
+    })
 
     // An avatar shows up in every group the user belongs to (and in groups
     // they join later), so it's bound server-wide rather than to any group.
@@ -681,11 +681,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // uploader — i.e. every other member would see a broken avatar. See
     // services/uploads.ts.
     if (body.avatarUrl) {
-      await bindAssetsToScope([body.avatarUrl], SERVER_WIDE, request.user!.id);
+      await bindAssetsToScope([body.avatarUrl], SERVER_WIDE, request.user!.id)
     }
 
-    return sanitizeUser(user);
-  });
+    return sanitizeUser(user)
+  })
 
   // Self-service data export: a zip of everything the caller can already see
   // (their groups' posts, comments, reactions and chat, their own favorites,
@@ -711,22 +711,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const archive = await buildMemberExportArchive(request.user!.id);
+      const archive = await buildMemberExportArchive(request.user!.id)
       archive.on('error', (err) => {
-        request.log.error(err, 'member export archive stream error');
-      });
+        request.log.error(err, 'member export archive stream error')
+      })
 
-      const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`;
-      reply.header('content-type', 'application/zip');
-      reply.header('content-disposition', `attachment; filename="${filename}"`);
+      const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`
+      reply.header('content-type', 'application/zip')
+      reply.header('content-disposition', `attachment; filename="${filename}"`)
 
       // Same finalize-after-attach pattern as GET /api/admin/export.
       archive.finalize().catch((err) => {
-        request.log.error(err, 'member export archive finalize error');
-      });
-      return reply.send(archive);
+        request.log.error(err, 'member export archive finalize error')
+      })
+      return reply.send(archive)
     }
-  );
+  )
 
   // Self-service account deletion — the same permanent, cascading delete an
   // admin can perform via DELETE /api/admin/users/:id, but initiated by the
@@ -736,46 +736,46 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // comments, likes, favorites, chat messages and notifications through the
   // schema's cascades; there is no restore.
   fastify.delete('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const userId = request.user!.id;
+    const t = getT(request)
+    const userId = request.user!.id
 
     // Irreversible and account-wide, so it takes an interactive login session
     // — a leaked personal access token must not be able to wipe the account
     // it was scoped to. Same rule as minting a PAT (routes/api-tokens.ts).
     if (request.authMethod !== 'session') {
-      return reply.status(403).send({ error: t('errors.sessionRequired') });
+      return reply.status(403).send({ error: t('errors.sessionRequired') })
     }
 
     // Deleting the only admin would leave the deployment with no way to
     // administer itself, so that account has to hand over admin first —
     // mirroring the same guard on the admin delete route.
-    const self = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+    const self = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
     if (!self) {
-      return reply.status(404).send({ error: t('errors.userNotFound') });
+      return reply.status(404).send({ error: t('errors.userNotFound') })
     }
     if (self.isAdmin && (await prisma.user.count({ where: { isAdmin: true } })) <= 1) {
-      return reply.status(400).send({ error: t('errors.cannotDeleteLastAdminAccount') });
+      return reply.status(400).send({ error: t('errors.cannotDeleteLastAdminAccount') })
     }
 
     // Stories cascade with the user, but their photos would stay on disk —
     // delete them (media included) first.
-    await deleteStoriesWithMedia({ authorId: userId });
-    await prisma.user.delete({ where: { id: userId } });
-    invalidateSessionCache(userId);
-    return { success: true };
-  });
+    await deleteStoriesWithMedia({ authorId: userId })
+    await prisma.user.delete({ where: { id: userId } })
+    invalidateSessionCache(userId)
+    return { success: true }
+  })
 
   // Public: lets clients know whether the server has push/email
   // notifications enabled at all, so they can skip requesting permission /
   // registering an Expo push token, and hide the corresponding preference
   // toggles, when the admin has turned a channel off.
   fastify.get('/notification-config', async () => {
-    const settings = await getAllSettings();
+    const settings = await getAllSettings()
     return {
       pushEnabled: settings.pushNotificationsEnabled,
       emailEnabled: settings.emailNotificationsEnabled,
-    };
-  });
+    }
+  })
 
   // Public: lets clients (e.g. the mobile app's profile screen) display
   // which server version they're connected to, and lets a mobile client
@@ -784,7 +784,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // public on the invite landing page) let that screen link straight to
   // the right store for this deployment.
   fastify.get('/server-info', async () => {
-    const settings = await getAllSettings();
+    const settings = await getAllSettings()
     return {
       version: pkg.version,
       minAppVersion: MIN_APP_VERSION,
@@ -794,6 +794,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // Per-family branding (issue #164), or null when unbranded. Additive:
       // older clients ignore it. `hash` lets mobile detect a change cheaply.
       branding: await getBranding(),
-    };
-  });
+    }
+  })
 }

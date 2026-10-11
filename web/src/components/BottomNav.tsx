@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { fetchChatUnreadCounts } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import './BottomNav.css';
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { fetchChatUnreadCounts } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import './BottomNav.css'
 
-type BottomNavTab = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile';
+type BottomNavTab = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile'
 
 // The app-like bottom tab bar shown on small screens (see BottomNav.css's
 // media query) — mirrors mobile's MainTabs.tsx: Feed/Photos/Chat/Profile
@@ -18,14 +18,14 @@ export function BottomNav({
   onProfile,
   onNewPost,
 }: {
-  active: BottomNavTab;
-  onFeed: () => void;
-  onPhotos?: () => void;
-  onChat?: () => void;
-  onProfile: () => void;
-  onNewPost?: () => void;
+  active: BottomNavTab
+  onFeed: () => void
+  onPhotos?: () => void
+  onChat?: () => void
+  onProfile: () => void
+  onNewPost?: () => void
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   // Same ['chat-unread'] cache entry AppShell's sidebar polls — sharing the
   // key means this doesn't add a second network poll on top of its own.
@@ -34,8 +34,8 @@ export function BottomNav({
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
     enabled: !!onChat,
-  });
-  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0);
+  })
+  const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
 
   return (
     <nav className="bottom-nav" aria-label={t('common.appName')}>
@@ -88,5 +88,5 @@ export function BottomNav({
         </button>
       )}
     </nav>
-  );
+  )
 }

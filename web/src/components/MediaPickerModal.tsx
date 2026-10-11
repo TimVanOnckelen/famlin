@@ -1,17 +1,17 @@
-import { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import {
   MediaAsset,
   getGroupMediaAlbums,
   getGroupMediaPeople,
   getMediaAlbumAssets,
   getUploadUrl,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { useModalFocus } from '@/hooks/useModalFocus';
-import './MediaPickerModal.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import './MediaPickerModal.css'
 
 // Picks photos/videos from the group's linked albums, whatever media source
 // they live on (Immich, a local folder on the server, ...) — the
@@ -21,52 +21,52 @@ export function MediaPickerModal({
   onConfirm,
   onClose,
 }: {
-  groupId: string;
-  onConfirm: (assets: MediaAsset[]) => void;
-  onClose: () => void;
+  groupId: string
+  onConfirm: (assets: MediaAsset[]) => void
+  onClose: () => void
 }) {
-  const { t } = useTranslation();
-  const [chosenLinkId, setChosenLinkId] = useState<string | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const cardRef = useRef<HTMLDivElement>(null);
-  useModalFocus(cardRef, onClose);
+  const { t } = useTranslation()
+  const [chosenLinkId, setChosenLinkId] = useState<string | null>(null)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const cardRef = useRef<HTMLDivElement>(null)
+  useModalFocus(cardRef, onClose)
 
   const albumsQuery = useQuery({
     queryKey: ['media-albums', groupId],
     queryFn: () => getGroupMediaAlbums(groupId),
-  });
-  const albums = albumsQuery.data ?? [];
+  })
+  const albums = albumsQuery.data ?? []
 
   const peopleQuery = useQuery({
     queryKey: ['media-people', groupId],
     queryFn: () => getGroupMediaPeople(groupId),
-  });
-  const people = peopleQuery.data ?? [];
+  })
+  const people = peopleQuery.data ?? []
 
   // A single linked album skips the album list entirely.
-  const linkId = chosenLinkId ?? (albums.length === 1 ? albums[0].linkId : null);
+  const linkId = chosenLinkId ?? (albums.length === 1 ? albums[0].linkId : null)
   // The source badge only disambiguates when the group actually mixes sources.
-  const multipleProviders = new Set(albums.map((a) => a.provider)).size > 1;
+  const multipleProviders = new Set(albums.map((a) => a.provider)).size > 1
 
   const assetsQuery = useQuery({
     queryKey: ['media-assets', linkId, selectedPersonId],
     queryFn: () => getMediaAlbumAssets(linkId!, selectedPersonId ?? undefined),
     enabled: linkId !== null,
-  });
-  const assets = assetsQuery.data ?? [];
+  })
+  const assets = assetsQuery.data ?? []
 
   function toggle(assetId: string) {
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(assetId)) next.delete(assetId);
-      else next.add(assetId);
-      return next;
-    });
+      const next = new Set(prev)
+      if (next.has(assetId)) next.delete(assetId)
+      else next.add(assetId)
+      return next
+    })
   }
 
   function confirm() {
-    onConfirm(assets.filter((a) => selected.has(a.assetId)));
+    onConfirm(assets.filter((a) => selected.has(a.assetId)))
   }
 
   return (
@@ -75,8 +75,8 @@ export function MediaPickerModal({
     <div
       className="modal-overlay"
       onClick={(e) => {
-        e.stopPropagation();
-        onClose();
+        e.stopPropagation()
+        onClose()
       }}
       role="dialog"
       aria-modal
@@ -109,9 +109,9 @@ export function MediaPickerModal({
               <button
                 className="media-picker-back"
                 onClick={() => {
-                  setChosenLinkId(null);
-                  setSelectedPersonId(null);
-                  setSelected(new Set());
+                  setChosenLinkId(null)
+                  setSelectedPersonId(null)
+                  setSelected(new Set())
                 }}
               >
                 ‹ {t('mediaPicker.backToAlbums')}
@@ -144,7 +144,7 @@ export function MediaPickerModal({
             )}
             <div className="media-picker-grid">
               {assets.map((asset) => {
-                const isSelected = selected.has(asset.assetId);
+                const isSelected = selected.has(asset.assetId)
                 return (
                   <button
                     key={asset.assetId}
@@ -164,7 +164,7 @@ export function MediaPickerModal({
                       </span>
                     )}
                   </button>
-                );
+                )
               })}
             </div>
           </>
@@ -180,5 +180,5 @@ export function MediaPickerModal({
         </div>
       </div>
     </div>
-  );
+  )
 }

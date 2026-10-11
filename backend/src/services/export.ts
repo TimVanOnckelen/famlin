@@ -36,14 +36,14 @@
 // compression: most of the archive's bytes are already-compressed photos/
 // videos in uploads/, so compression buys little, and store mode keeps the
 // stream fast and the resulting file trivially predictable in tests.
-import { ZipArchive, type Archiver } from 'archiver';
-import fs from 'fs';
-import { prisma } from '../db.js';
-import { uploadsDir } from '../config.js';
-import { uploadAssetKey } from './uploads.js';
-import { BRANDING_SETTING_KEYS } from './branding/index.js';
-import pkg from '../../package.json' with { type: 'json' };
-import { RESTORE_WORKDIR_PREFIX } from './import.js';
+import { ZipArchive, type Archiver } from 'archiver'
+import fs from 'fs'
+import { prisma } from '../db.js'
+import { uploadsDir } from '../config.js'
+import { uploadAssetKey } from './uploads.js'
+import { BRANDING_SETTING_KEYS } from './branding/index.js'
+import pkg from '../../package.json' with { type: 'json' }
+import { RESTORE_WORKDIR_PREFIX } from './import.js'
 
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
@@ -120,16 +120,16 @@ export async function buildExportArchive(): Promise<Archiver> {
       },
     }),
     prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
-  ]);
+  ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
   // uploads/branding/ below). Every other Setting row stays excluded.
   const branding = await prisma.setting.findMany({
     where: { key: { in: [...BRANDING_SETTING_KEYS] } },
     select: { key: true, value: true },
-  });
+  })
 
-  const archive: Archiver = new ZipArchive({ store: true });
+  const archive: Archiver = new ZipArchive({ store: true })
 
   const manifest = {
     exportedAt: new Date().toISOString(),
@@ -151,33 +151,31 @@ export async function buildExportArchive(): Promise<Archiver> {
       highlights: highlights.length,
       branding: branding.length,
     },
-  };
+  }
 
-  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
-  archive.append(JSON.stringify(users, null, 2), { name: 'data/users.json' });
-  archive.append(JSON.stringify(groups, null, 2), { name: 'data/groups.json' });
-  archive.append(JSON.stringify(circles, null, 2), { name: 'data/circles.json' });
-  archive.append(JSON.stringify(posts, null, 2), { name: 'data/posts.json' });
-  archive.append(JSON.stringify(postInteractions, null, 2), { name: 'data/post-interactions.json' });
-  archive.append(JSON.stringify(comments, null, 2), { name: 'data/comments.json' });
-  archive.append(JSON.stringify(reactions, null, 2), { name: 'data/reactions.json' });
-  archive.append(JSON.stringify(favorites, null, 2), { name: 'data/favorites.json' });
-  archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' });
-  archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' });
-  archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' });
-  archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' });
-  archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' });
-  archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' });
+  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
+  archive.append(JSON.stringify(users, null, 2), { name: 'data/users.json' })
+  archive.append(JSON.stringify(groups, null, 2), { name: 'data/groups.json' })
+  archive.append(JSON.stringify(circles, null, 2), { name: 'data/circles.json' })
+  archive.append(JSON.stringify(posts, null, 2), { name: 'data/posts.json' })
+  archive.append(JSON.stringify(postInteractions, null, 2), { name: 'data/post-interactions.json' })
+  archive.append(JSON.stringify(comments, null, 2), { name: 'data/comments.json' })
+  archive.append(JSON.stringify(reactions, null, 2), { name: 'data/reactions.json' })
+  archive.append(JSON.stringify(favorites, null, 2), { name: 'data/favorites.json' })
+  archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' })
+  archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' })
+  archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' })
+  archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
+  archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
+  archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)
   // by asset key — and its Upload row, so a restore doesn't recreate an
   // authorization row for a file that isn't in the archive. A cross-post
   // sibling that is pinned keeps the file in.
-  const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)));
-  const liveOnlyKeys = new Set(
-    liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key))
-  );
+  const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)))
+  const liveOnlyKeys = new Set(liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key)))
   archive.append(
     JSON.stringify(
       uploads.filter((u) => !liveOnlyKeys.has(u.assetKey)),
@@ -185,7 +183,7 @@ export async function buildExportArchive(): Promise<Archiver> {
       2
     ),
     { name: 'data/uploads.json' }
-  );
+  )
 
   // Fresh installs may not have an uploads directory yet — skip silently
   // rather than failing the whole export.
@@ -197,8 +195,8 @@ export async function buildExportArchive(): Promise<Archiver> {
       entry.name.startsWith(`uploads/${RESTORE_WORKDIR_PREFIX}`) || liveOnlyKeys.has(uploadAssetKey(entry.name))
         ? false
         : entry
-    );
+    )
   }
 
-  return archive;
+  return archive
 }

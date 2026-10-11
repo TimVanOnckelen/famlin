@@ -1,67 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Location from 'expo-location';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import * as Location from 'expo-location'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { LeafletMap } from '@/components/LeafletMap';
-import { reverseGeocode } from '@/utils/geocode';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { LeafletMap } from '@/components/LeafletMap'
+import { reverseGeocode } from '@/utils/geocode'
 
-const DEFAULT_CENTER = { latitude: 50.8503, longitude: 4.3517 }; // Brussels — used when no GPS fix is available yet
+const DEFAULT_CENTER = { latitude: 50.8503, longitude: 4.3517 } // Brussels — used when no GPS fix is available yet
 
 export interface PickedLocation {
-  latitude: number;
-  longitude: number;
-  locationName: string;
+  latitude: number
+  longitude: number
+  locationName: string
 }
 
 interface LocationPickerModalProps {
-  visible: boolean;
-  initialLocation?: PickedLocation | null;
-  onCancel: () => void;
-  onConfirm: (location: PickedLocation) => void;
+  visible: boolean
+  initialLocation?: PickedLocation | null
+  onCancel: () => void
+  onConfirm: (location: PickedLocation) => void
 }
 
 export function LocationPickerModal({ visible, initialLocation, onCancel, onConfirm }: LocationPickerModalProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const [coords, setCoords] = useState(
     initialLocation ? { latitude: initialLocation.latitude, longitude: initialLocation.longitude } : DEFAULT_CENTER
-  );
-  const [locationName, setLocationName] = useState(initialLocation?.locationName || '');
-  const [locating, setLocating] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
+  )
+  const [locationName, setLocationName] = useState(initialLocation?.locationName || '')
+  const [locating, setLocating] = useState(false)
+  const [geocoding, setGeocoding] = useState(false)
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) return
     if (initialLocation) {
-      setCoords({ latitude: initialLocation.latitude, longitude: initialLocation.longitude });
-      setLocationName(initialLocation.locationName || '');
-      return;
+      setCoords({ latitude: initialLocation.latitude, longitude: initialLocation.longitude })
+      setLocationName(initialLocation.locationName || '')
+      return
     }
-    useCurrentLocation();
+    useCurrentLocation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible])
 
   async function useCurrentLocation() {
     try {
-      setLocating(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      await handlePick({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      setLocating(true)
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      await handlePick({ latitude: position.coords.latitude, longitude: position.coords.longitude })
     } finally {
-      setLocating(false);
+      setLocating(false)
     }
   }
 
   async function handlePick(picked: { latitude: number; longitude: number }) {
-    setCoords(picked);
-    setGeocoding(true);
-    const name = await reverseGeocode(picked.latitude, picked.longitude);
-    setGeocoding(false);
-    if (name) setLocationName(name);
+    setCoords(picked)
+    setGeocoding(true)
+    const name = await reverseGeocode(picked.latitude, picked.longitude)
+    setGeocoding(false)
+    if (name) setLocationName(name)
   }
 
   return (
@@ -110,7 +110,7 @@ export function LocationPickerModal({ visible, initialLocation, onCancel, onConf
         </View>
       </SafeAreaView>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -197,4 +197,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
   },
-});
+})

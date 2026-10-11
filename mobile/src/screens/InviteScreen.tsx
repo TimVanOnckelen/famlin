@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -10,96 +10,96 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import * as WebBrowser from 'expo-web-browser'
+import { useTranslation } from 'react-i18next'
 
-import { Icon } from '@/components/Icon';
-import { AppIcon } from '@/components/Logo';
-import { colors } from '@/constants/colors';
-import { useAuthStore } from '@/stores/authStore';
-import { fetchOidcConfig, loginWithPassword } from '@/api/auth';
-import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin';
-import { AppleSignInButton } from '@/components/AppleSignInButton';
-import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites';
-import { getServerUrl } from '@/utils/storage';
-import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client';
+import { Icon } from '@/components/Icon'
+import { AppIcon } from '@/components/Logo'
+import { colors } from '@/constants/colors'
+import { useAuthStore } from '@/stores/authStore'
+import { fetchOidcConfig, loginWithPassword } from '@/api/auth'
+import { performOidcLogin, OidcCancelledError } from '@/utils/oidcLogin'
+import { AppleSignInButton } from '@/components/AppleSignInButton'
+import { fetchInvitePreview, registerViaInvite, acceptInvite, InvitePreview } from '@/api/invites'
+import { getServerUrl } from '@/utils/storage'
+import { setApiBaseUrl, getCurrentServerUrl } from '@/api/client'
 
-WebBrowser.maybeCompleteAuthSession();
+WebBrowser.maybeCompleteAuthSession()
 
 interface InviteScreenProps {
-  token: string;
-  server?: string;
-  onDone: () => void;
+  token: string
+  server?: string
+  onDone: () => void
 }
 
-type Mode = 'loading' | 'error' | 'choose' | 'register' | 'login';
+type Mode = 'loading' | 'error' | 'choose' | 'register' | 'login'
 
 function normalizeServerUrl(url: string): string {
-  let trimmed = url.trim();
-  if (!trimmed) return '';
+  let trimmed = url.trim()
+  if (!trimmed) return ''
   if (!/^https?:\/\//i.test(trimmed)) {
-    trimmed = `https://${trimmed}`;
+    trimmed = `https://${trimmed}`
   }
-  return trimmed.replace(/\/+$/, '');
+  return trimmed.replace(/\/+$/, '')
 }
 
 // RN's URL polyfill doesn't implement `host`, so strip the scheme by hand.
 function serverHost(url: string): string {
-  return url.replace(/^https?:\/\//i, '').split('/')[0];
+  return url.replace(/^https?:\/\//i, '').split('/')[0]
 }
 
 export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
-  const { t } = useTranslation();
-  const user = useAuthStore((state) => state.user);
-  const setAuth = useAuthStore((state) => state.setAuth);
-  const [mode, setMode] = useState<Mode>('loading');
-  const [preview, setPreview] = useState<InvitePreview | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
+  const { t } = useTranslation()
+  const user = useAuthStore((state) => state.user)
+  const setAuth = useAuthStore((state) => state.setAuth)
+  const [mode, setMode] = useState<Mode>('loading')
+  const [preview, setPreview] = useState<InvitePreview | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [ssoLoading, setSsoLoading] = useState(false);
-  const [ssoEnabled, setSsoEnabled] = useState(false);
-  const [ssoName, setSsoName] = useState('');
-  const [appleEnabled, setAppleEnabled] = useState(false);
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [ssoLoading, setSsoLoading] = useState(false)
+  const [ssoEnabled, setSsoEnabled] = useState(false)
+  const [ssoName, setSsoName] = useState('')
+  const [appleEnabled, setAppleEnabled] = useState(false)
   // The server this invite belongs to, and whether it differs from the one
   // this device is signed in to / remembers. Anyone can craft an invite link
   // naming any server, so a foreign one is never persisted until the user
   // has actually signed in there (setAuth saves it together with the new
   // token), is shown to the user by host, and never receives the existing
   // session's token (see tokenBelongsToCurrentServer in the api-client).
-  const [inviteServer, setInviteServer] = useState('');
-  const [isForeignServer, setIsForeignServer] = useState(false);
-  const previousServerRef = useRef<string | null>(null);
+  const [inviteServer, setInviteServer] = useState('')
+  const [isForeignServer, setIsForeignServer] = useState(false)
+  const previousServerRef = useRef<string | null>(null)
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       // A bad/expired invite link must never leave the app pointed at a
       // foreign server — remember what was active before we switch, and put
       // it back on every path that bails out without a completed invite.
-      const previousServerUrl = getCurrentServerUrl();
-      previousServerRef.current = previousServerUrl;
+      const previousServerUrl = getCurrentServerUrl()
+      previousServerRef.current = previousServerUrl
       function restorePreviousServer() {
-        if (previousServerUrl) setApiBaseUrl(previousServerUrl);
+        if (previousServerUrl) setApiBaseUrl(previousServerUrl)
       }
 
       try {
-        const storedServer = normalizeServerUrl((await getServerUrl()) || '');
-        const targetServer = server ? normalizeServerUrl(server) : storedServer;
+        const storedServer = normalizeServerUrl((await getServerUrl()) || '')
+        const targetServer = server ? normalizeServerUrl(server) : storedServer
         if (!targetServer) {
-          setErrorMessage(t('invite.errors.noServer'));
-          setMode('error');
-          return;
+          setErrorMessage(t('invite.errors.noServer'))
+          setMode('error')
+          return
         }
-        setApiBaseUrl(targetServer);
+        setApiBaseUrl(targetServer)
 
-        let result: InvitePreview;
+        let result: InvitePreview
         try {
-          result = await fetchInvitePreview(token);
+          result = await fetchInvitePreview(token)
         } catch (err: any) {
           // No `response` means the request never reached the server (bad
           // host, TLS failure, connection refused, timeout) — distinguish
@@ -107,131 +107,131 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
           // the user isn't told to ask for a new invite when the real
           // problem is the server address baked into this link.
           if (!err?.response) {
-            restorePreviousServer();
-            setErrorMessage(t('invite.errors.serverUnreachable', { server: targetServer }));
-            setMode('error');
-            return;
+            restorePreviousServer()
+            setErrorMessage(t('invite.errors.serverUnreachable', { server: targetServer }))
+            setMode('error')
+            return
           }
-          throw err;
+          throw err
         }
 
-        setInviteServer(targetServer);
-        setIsForeignServer(targetServer !== storedServer);
-        setPreview(result);
+        setInviteServer(targetServer)
+        setIsForeignServer(targetServer !== storedServer)
+        setPreview(result)
 
         if (result.status !== 'valid') {
-          restorePreviousServer();
+          restorePreviousServer()
           setErrorMessage(
             result.status === 'expired'
               ? t('invite.errors.expired')
               : result.status === 'used'
                 ? t('invite.errors.used')
                 : t('invite.errors.notFound')
-          );
-          setMode('error');
-          return;
+          )
+          setMode('error')
+          return
         }
 
-        if (result.email) setEmail(result.email);
+        if (result.email) setEmail(result.email)
 
         fetchOidcConfig()
           .then((config) => {
-            setSsoEnabled(config.enabled);
-            setSsoName(config.name);
-            setAppleEnabled(!!config.appleSignInEnabled);
+            setSsoEnabled(config.enabled)
+            setSsoName(config.name)
+            setAppleEnabled(!!config.appleSignInEnabled)
           })
           .catch(() => {
-            setSsoEnabled(false);
-            setAppleEnabled(false);
-          });
+            setSsoEnabled(false)
+            setAppleEnabled(false)
+          })
 
-        setMode('choose');
+        setMode('choose')
       } catch (err) {
-        restorePreviousServer();
-        setErrorMessage(t('invite.errors.notFound'));
-        setMode('error');
+        restorePreviousServer()
+        setErrorMessage(t('invite.errors.notFound'))
+        setMode('error')
       }
-    })();
-  }, [token, server]);
+    })()
+  }, [token, server])
 
   // Backing out of an invite for another server without signing in there:
   // point the client back at the server the existing session belongs to.
   function handleCancel() {
-    if (previousServerRef.current) setApiBaseUrl(previousServerRef.current);
-    onDone();
+    if (previousServerRef.current) setApiBaseUrl(previousServerRef.current)
+    onDone()
   }
 
   async function handleJoinExisting() {
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      await acceptInvite(token);
-      onDone();
+      await acceptInvite(token)
+      onDone()
     } catch (err: any) {
-      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   async function handleSsoLogin() {
-    setSsoLoading(true);
+    setSsoLoading(true)
     try {
-      const config = await fetchOidcConfig();
+      const config = await fetchOidcConfig()
       if (!config.enabled) {
-        Alert.alert(t('invite.alerts.failedTitle'), t('login.ssoNotConfigured'));
-        return;
+        Alert.alert(t('invite.alerts.failedTitle'), t('login.ssoNotConfigured'))
+        return
       }
 
-      const loginResult = await performOidcLogin(config, token);
-      await setAuth(loginResult.user, loginResult.token, inviteServer);
-      onDone();
+      const loginResult = await performOidcLogin(config, token)
+      await setAuth(loginResult.user, loginResult.token, inviteServer)
+      onDone()
     } catch (err: any) {
-      if (err instanceof OidcCancelledError) return;
-      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      if (err instanceof OidcCancelledError) return
+      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setSsoLoading(false);
+      setSsoLoading(false)
     }
   }
 
   async function handleRegister() {
     if (!name.trim() || !password) {
-      Alert.alert(t('invite.alerts.failedTitle'), t('invite.errors.fillRequired'));
-      return;
+      Alert.alert(t('invite.alerts.failedTitle'), t('invite.errors.fillRequired'))
+      return
     }
     if (!preview?.email && !email.trim()) {
-      Alert.alert(t('invite.alerts.failedTitle'), t('invite.errors.fillRequired'));
-      return;
+      Alert.alert(t('invite.alerts.failedTitle'), t('invite.errors.fillRequired'))
+      return
     }
-    setSubmitting(true);
+    setSubmitting(true)
     try {
       const result = await registerViaInvite(token, {
         name: name.trim(),
         email: preview?.email ? undefined : email.trim(),
         password,
-      });
-      await setAuth(result.user, result.token, inviteServer);
-      onDone();
+      })
+      await setAuth(result.user, result.token, inviteServer)
+      onDone()
     } catch (err: any) {
-      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      Alert.alert(t('invite.alerts.failedTitle'), t('login.alerts.enterEmailAndPassword'));
-      return;
+      Alert.alert(t('invite.alerts.failedTitle'), t('login.alerts.enterEmailAndPassword'))
+      return
     }
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      const result = await loginWithPassword(email.trim(), password, token);
-      await setAuth(result.user, result.token, inviteServer);
-      onDone();
+      const result = await loginWithPassword(email.trim(), password, token)
+      await setAuth(result.user, result.token, inviteServer)
+      onDone()
     } catch (err: any) {
-      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('invite.alerts.failedTitle'), err.response?.data?.error || err.message || t('common.tryAgain'))
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
@@ -293,8 +293,8 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
                         serverSupported={appleEnabled}
                         inviteToken={token}
                         onSuccess={async (result) => {
-                          await setAuth(result.user, result.token, inviteServer);
-                          onDone();
+                          await setAuth(result.user, result.token, inviteServer)
+                          onDone()
                         }}
                       />
 
@@ -432,7 +432,7 @@ export function InviteScreen({ token, server, onDone }: InviteScreenProps) {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -573,4 +573,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 8,
   },
-});
+})

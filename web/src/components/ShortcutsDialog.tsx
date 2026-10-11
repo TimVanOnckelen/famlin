@@ -1,16 +1,16 @@
-import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { SHORTCUTS } from '@/hooks/shortcuts';
-import { useModalFocus } from '@/hooks/useModalFocus';
-import './ShortcutsDialog.css';
+import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { SHORTCUTS } from '@/hooks/shortcuts'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import './ShortcutsDialog.css'
 
 // The "?" help dialog listing every registered global shortcut (see
 // hooks/shortcuts.ts — phase 2's feed shortcuts show up here automatically
 // once registered, with no change needed in this file).
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
-  const cardRef = useRef<HTMLDivElement>(null);
-  useModalFocus(cardRef, onClose);
+  const { t } = useTranslation()
+  const cardRef = useRef<HTMLDivElement>(null)
+  useModalFocus(cardRef, onClose)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -45,5 +45,5 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

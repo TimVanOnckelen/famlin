@@ -1,7 +1,7 @@
-import { FastifyInstance } from 'fastify';
-import { randomUUID } from 'crypto';
-import { Prisma } from '@prisma/client';
-import { prisma } from '../db.js';
+import { FastifyInstance } from 'fastify'
+import { randomUUID } from 'crypto'
+import { Prisma } from '@prisma/client'
+import { prisma } from '../db.js'
 import {
   createPostBodySchema,
   updatePostBodySchema,
@@ -9,18 +9,18 @@ import {
   searchPostsQuerySchema,
   postInteractionBodySchema,
   parseMediaAssetPath,
-} from '../types.js';
-import { emitDomainEvent } from '../events.js';
-import { getUserGroupIds } from '../services/groups.js';
-import { requireGroupMember } from '../plugins/auth.js';
+} from '../types.js'
+import { emitDomainEvent } from '../events.js'
+import { getUserGroupIds } from '../services/groups.js'
+import { requireGroupMember } from '../plugins/auth.js'
 import {
   canViewPostCircle,
   getUserCircleIds,
   validateCircleTarget,
   visiblePostsWhere,
   visiblePostsWhereFor,
-} from '../services/circles.js';
-import { bindAssetsToScope } from '../services/uploads.js';
+} from '../services/circles.js'
+import { bindAssetsToScope } from '../services/uploads.js'
 import {
   shapePost,
   shapePostsWithPeople,
@@ -28,12 +28,12 @@ import {
   dedupeByCrossPostId,
   dropLeadingCrossPostSiblings,
   postInclude,
-} from '../services/posts.js';
-import { getOnThisDayPosts } from '../services/onThisDay.js';
-import { paginationArgs, paginate } from '../services/pagination.js';
-import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js';
-import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js';
-import { getT } from '../i18n/index.js';
+} from '../services/posts.js'
+import { getOnThisDayPosts } from '../services/onThisDay.js'
+import { paginationArgs, paginate } from '../services/pagination.js'
+import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js'
+import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js'
+import { getT } from '../i18n/index.js'
 
 // A post's uploadedAssetUrls can include media proxy URLs (see
 // routes/media.ts and the legacy routes/immich.ts) alongside normal
@@ -41,13 +41,13 @@ import { getT } from '../i18n/index.js';
 // to *this* post's group, so a member of group A can't attach group B's
 // linked album photos to a post in group A.
 async function mediaUrlsBelongToGroup(urls: string[] | undefined, groupId: string): Promise<boolean> {
-  if (!urls || urls.length === 0) return true;
+  if (!urls || urls.length === 0) return true
 
-  const linkIds = [...new Set(urls.map((url) => parseMediaAssetPath(url)?.linkId).filter((id): id is string => !!id))];
-  if (linkIds.length === 0) return true;
+  const linkIds = [...new Set(urls.map((url) => parseMediaAssetPath(url)?.linkId).filter((id): id is string => !!id))]
+  if (linkIds.length === 0) return true
 
-  const links = await prisma.mediaAlbumLink.findMany({ where: { id: { in: linkIds } } });
-  return links.length === linkIds.length && links.every((link) => link.groupId === groupId);
+  const links = await prisma.mediaAlbumLink.findMany({ where: { id: { in: linkIds } } })
+  return links.length === linkIds.length && links.every((link) => link.groupId === groupId)
 }
 
 // Prisma's Json input type doesn't accept a plain JS `null` for a nullable
@@ -56,7 +56,7 @@ async function mediaUrlsBelongToGroup(urls: string[] | undefined, groupId: strin
 // UPDATE/MILESTONE and an object for POLL; this is the one place that
 // distinction gets bridged into what prisma.post.create expects.
 function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
-  return value === null || value === undefined ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+  return value === null || value === undefined ? Prisma.JsonNull : (value as Prisma.InputJsonValue)
 }
 
 export default async function postRoutes(fastify: FastifyInstance) {
@@ -68,36 +68,36 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // `type=ALBUM`), validated against the post-type registry so an unknown id
   // is a 400 rather than a silently empty page.
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
+    const t = getT(request)
     const { groupId, groupIds, circleIds, type } = request.query as {
-      groupId?: string;
-      groupIds?: string;
-      circleIds?: string;
-      type?: string;
-    };
+      groupId?: string
+      groupIds?: string
+      circleIds?: string
+      type?: string
+    }
 
     if (type !== undefined && !getPostTypeHandler(type)) {
-      return reply.status(400).send({ error: t('errors.unknownPostType') });
+      return reply.status(400).send({ error: t('errors.unknownPostType') })
     }
 
-    const requested = groupIds ? [...new Set(groupIds.split(',').filter(Boolean))] : groupId ? [groupId] : null;
+    const requested = groupIds ? [...new Set(groupIds.split(',').filter(Boolean))] : groupId ? [groupId] : null
 
-    const memberGroupIds = await getUserGroupIds(request.user!.id);
+    const memberGroupIds = await getUserGroupIds(request.user!.id)
 
-    let effectiveGroupIds: string[];
+    let effectiveGroupIds: string[]
     if (requested) {
       if (requested.length === 0 || requested.some((id) => !memberGroupIds.includes(id))) {
-        return reply.status(403).send({ error: t('errors.notGroupMember') });
+        return reply.status(403).send({ error: t('errors.notGroupMember') })
       }
-      effectiveGroupIds = requested;
+      effectiveGroupIds = requested
     } else {
-      effectiveGroupIds = memberGroupIds;
+      effectiveGroupIds = memberGroupIds
     }
 
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     if (effectiveGroupIds.length === 0) {
-      return { items: [], nextCursor: null };
+      return { items: [], nextCursor: null }
     }
 
     // A cross-post's sibling rows share createdAt, so createdAt alone isn't a
@@ -107,15 +107,15 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // Every post-reading query composes with it rather than writing the
     // clause by hand, because forgetting it fails OPEN — the query would
     // quietly serve circle-private posts to the whole group.
-    const myCircleIds = await getUserCircleIds(request.user!.id);
+    const myCircleIds = await getUserCircleIds(request.user!.id)
 
     // An optional narrowing to specific circles — what the feed's circle
     // filter chips send. Requesting a circle you're not in is a 403, never a
     // silently empty page: same rule as `groupIds`, and it keeps a
     // non-member from probing circle ids.
-    const requestedCircleIds = circleIds ? [...new Set(circleIds.split(',').filter(Boolean))] : null;
+    const requestedCircleIds = circleIds ? [...new Set(circleIds.split(',').filter(Boolean))] : null
     if (requestedCircleIds && requestedCircleIds.some((id) => !myCircleIds.includes(id))) {
-      return reply.status(403).send({ error: t('errors.notCircleMember') });
+      return reply.status(403).send({ error: t('errors.notCircleMember') })
     }
 
     const posts = await prisma.post.findMany({
@@ -130,25 +130,25 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: postInclude(request.user!.id),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
-    });
+    })
 
-    const { items, nextCursor } = paginate(posts, take);
+    const { items, nextCursor } = paginate(posts, take)
 
     // A cursor can land in the middle of a cross-post's sibling group (they
     // share createdAt) — drop any of THIS page's leading rows that share the
     // cursor post's crossPostId, since those siblings were already shown on
     // the previous page.
-    let deduped = items;
+    let deduped = items
     if (cursor) {
-      const cursorPost = await prisma.post.findUnique({ where: { id: cursor }, select: { crossPostId: true } });
+      const cursorPost = await prisma.post.findUnique({ where: { id: cursor }, select: { crossPostId: true } })
       if (cursorPost?.crossPostId) {
-        deduped = dropLeadingCrossPostSiblings(deduped, cursorPost.crossPostId);
+        deduped = dropLeadingCrossPostSiblings(deduped, cursorPost.crossPostId)
       }
     }
-    deduped = dedupeByCrossPostId(deduped);
+    deduped = dedupeByCrossPostId(deduped)
 
-    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor };
-  });
+    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor }
+  })
 
   // Registered before /:id so "search"/"on-this-day" aren't swallowed by the
   // dynamic :id param route.
@@ -162,9 +162,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // endpoint span multiple groups doesn't silently reopen the duplicate-post
   // privacy leak GET / already guards against.
   fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query);
+    const { groupId, q, cursor, take } = searchPostsQuerySchema.parse(request.query)
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
     // AND-composed rather than merged: visiblePostsWhere already uses OR for
     // the circle clause, so spreading it next to this OR would silently
@@ -184,72 +184,72 @@ export default async function postRoutes(fastify: FastifyInstance) {
       include: postInclude(request.user!.id),
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
-    });
+    })
 
-    const { items, nextCursor } = paginate(posts, take);
-    const deduped = dedupeByCrossPostId(items);
-    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor };
-  });
+    const { items, nextCursor } = paginate(posts, take)
+    const deduped = dedupeByCrossPostId(items)
+    return { items: await shapePostsWithPeople(deduped, request.user!.id), nextCursor }
+  })
 
   fastify.get('/on-this-day', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { groupId } = request.query as { groupId?: string };
-    if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') });
+    const t = getT(request)
+    const { groupId } = request.query as { groupId?: string }
+    if (!groupId) return reply.status(400).send({ error: t('errors.groupIdRequired') })
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
-    const posts = await getOnThisDayPosts(groupId);
-    if (posts.length === 0) return { items: [] };
+    const posts = await getOnThisDayPosts(groupId)
+    if (posts.length === 0) return { items: [] }
 
     const full = await prisma.post.findMany({
       where: {
         AND: [{ id: { in: posts.map((p) => p.id) } }, await visiblePostsWhereFor([groupId], request.user!.id)],
       },
       include: postInclude(request.user!.id),
-    });
-    const byId = new Map(full.map((p) => [p.id, p]));
-    const ordered = posts.map((p) => byId.get(p.id)).filter((p): p is NonNullable<typeof p> => !!p);
-    const deduped = dedupeByCrossPostId(ordered);
+    })
+    const byId = new Map(full.map((p) => [p.id, p]))
+    const ordered = posts.map((p) => byId.get(p.id)).filter((p): p is NonNullable<typeof p> => !!p)
+    const deduped = dedupeByCrossPostId(ordered)
 
-    return { items: await shapePostsWithPeople(deduped, request.user!.id) };
-  });
+    return { items: await shapePostsWithPeople(deduped, request.user!.id) }
+  })
 
   fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
     const post = await prisma.post.findUnique({
       where: { id },
       include: postInclude(request.user!.id),
-    });
+    })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // 404, not 403: a circle is fully private, so a group member outside it
     // must not be able to confirm the post exists at all.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const [shaped] = await shapePostsWithPeople([post], request.user!.id);
-    return shaped;
-  });
+    const [shaped] = await shapePostsWithPeople([post], request.user!.id)
+    return shaped
+  })
 
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const body = createPostBodySchema.parse(request.body);
+    const t = getT(request)
+    const body = createPostBodySchema.parse(request.body)
 
     // Cross-posting: `groupIds` (1–20) fans one write out into one Post row
     // per target group, all sharing a crossPostId — the legacy single
     // `groupId` shape still works unchanged (targets.length === 1 below).
-    const targets = [...new Set(body.groupIds ?? [body.groupId!])];
+    const targets = [...new Set(body.groupIds ?? [body.groupId!])]
 
     for (const groupId of targets) {
-      if (await requireGroupMember(request, reply, groupId)) return;
+      if (await requireGroupMember(request, reply, groupId)) return
     }
 
     // Circle targeting. The schema already guarantees a circleId never
@@ -258,9 +258,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // same 403 on purpose: a circle is fully private, so a non-member must
     // not be able to distinguish "not yours" from "doesn't exist" and probe
     // for circles they can't see.
-    const circleId = body.circleId ?? null;
+    const circleId = body.circleId ?? null
     if (circleId && (await validateCircleTarget(circleId, targets[0], request.user!.id))) {
-      return reply.status(403).send({ error: t('errors.notCircleMember') });
+      return reply.status(403).send({ error: t('errors.notCircleMember') })
     }
 
     // Custom post types (services/postTypes/registry.ts): look up the
@@ -269,9 +269,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // row below (single-group and cross-post branches both use it) — a
     // poll's option ids are shared across siblings, which is fine and
     // intended (see the spec this was built from).
-    const postTypeHandler = getPostTypeHandler(body.type);
+    const postTypeHandler = getPostTypeHandler(body.type)
     if (!postTypeHandler) {
-      return reply.status(400).send({ error: t('errors.unknownPostType') });
+      return reply.status(400).send({ error: t('errors.unknownPostType') })
     }
 
     // EVERY target group must allow this post type (Group.allowedPostTypes,
@@ -282,22 +282,22 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const targetGroups = await prisma.group.findMany({
       where: { id: { in: targets } },
       select: { allowedPostTypes: true },
-    });
+    })
     if (targetGroups.some((group) => !resolveAllowedPostTypes(group).includes(body.type))) {
-      return reply.status(403).send({ error: t('errors.postTypeNotAllowed') });
+      return reply.status(403).send({ error: t('errors.postTypeNotAllowed') })
     }
 
-    let parsedTypeData: unknown;
+    let parsedTypeData: unknown
     if (postTypeHandler.typeDataSchema) {
-      const result = postTypeHandler.typeDataSchema.safeParse(body.typeData);
+      const result = postTypeHandler.typeDataSchema.safeParse(body.typeData)
       if (!result.success) {
-        return reply.status(400).send({ error: t('errors.invalidPostTypeData') });
+        return reply.status(400).send({ error: t('errors.invalidPostTypeData') })
       }
-      parsedTypeData = result.data;
+      parsedTypeData = result.data
     } else if (body.typeData !== undefined) {
       // A type with no typeDataSchema (UPDATE, MILESTONE) accepts no
       // typeData at all.
-      return reply.status(400).send({ error: t('errors.invalidPostTypeData') });
+      return reply.status(400).send({ error: t('errors.invalidPostTypeData') })
     }
 
     try {
@@ -306,22 +306,22 @@ export default async function postRoutes(fastify: FastifyInstance) {
         typeData: parsedTypeData,
         authorId: request.user!.id,
         targetGroupIds: targets,
-      });
+      })
     } catch (err) {
       if (err instanceof PostTypeError) {
-        return reply.status(400).send({ error: t(`errors.${err.code}`) });
+        return reply.status(400).send({ error: t(`errors.${err.code}`) })
       }
-      throw err;
+      throw err
     }
 
     const persistedTypeData =
-      postTypeHandler.transformCreate?.(parsedTypeData, { authorId: request.user!.id }) ?? parsedTypeData ?? null;
+      postTypeHandler.transformCreate?.(parsedTypeData, { authorId: request.user!.id }) ?? parsedTypeData ?? null
 
     if (targets.length === 1) {
-      const groupId = targets[0];
+      const groupId = targets[0]
 
       if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, groupId))) {
-        return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
+        return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') })
       }
 
       const post = await prisma.post.create({
@@ -339,7 +339,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
           circleId,
         },
         include: postInclude(request.user!.id),
-      });
+      })
 
       // Bind this post's photos to its audience so /uploads/* can authorize
       // them (see services/uploads.ts): this group's members, narrowed to
@@ -348,7 +348,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         [...(body.uploadedAssetUrls ?? []), ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
         { groupIds: [groupId], circleId },
         request.user!.id
-      );
+      )
 
       // Handlers run fire-and-forget (see events.ts), so fanning out
       // push/email to the group can't hold the response or fail post
@@ -361,12 +361,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
         type: post.type,
         milestoneTag: post.milestoneTag,
         circleId: post.circleId,
-      });
+      })
 
       // people: [] unenriched — a freshly created post can't wait on an
       // Immich person-tag crawl before the client sees its own post; the
       // next feed fetch will carry real tags for it.
-      return { ...shapePost(post, request.user!.id), people: [] };
+      return { ...shapePost(post, request.user!.id), people: [] }
     }
 
     // Cross-post: a linked-album asset is only readable through the
@@ -375,26 +375,26 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // target group) before fanning out. mediaUrlsBelongToGroup's per-group
     // check doesn't apply here: copyMediaAssetsToUploads does the equivalent
     // authorization check against every target group instead.
-    let assetUrls = body.uploadedAssetUrls ?? [];
-    const mediaUrls = assetUrls.filter((url) => parseMediaAssetPath(url) !== null);
+    let assetUrls = body.uploadedAssetUrls ?? []
+    const mediaUrls = assetUrls.filter((url) => parseMediaAssetPath(url) !== null)
     if (mediaUrls.length > 0) {
       try {
-        const copied = await copyMediaAssetsToUploads(mediaUrls, targets, request.user!.id);
-        assetUrls = assetUrls.map((url) => copied.get(url) ?? url);
+        const copied = await copyMediaAssetsToUploads(mediaUrls, targets, request.user!.id)
+        assetUrls = assetUrls.map((url) => copied.get(url) ?? url)
       } catch (err) {
         if (err instanceof CrossPostAssetCopyError) {
           return reply
             .status(err.code === 'forbidden' ? 400 : 502)
-            .send({ error: t('errors.crossPostAssetCopyFailed') });
+            .send({ error: t('errors.crossPostAssetCopyFailed') })
         }
-        throw err;
+        throw err
       }
     }
 
-    const crossPostId = randomUUID();
+    const crossPostId = randomUUID()
     // One shared Date so every sibling's createdAt matches exactly (the feed
     // dedup logic relies on siblings sorting adjacently).
-    const createdAt = new Date();
+    const createdAt = new Date()
 
     const createdPosts = await prisma.$transaction(
       targets.map((groupId) =>
@@ -416,7 +416,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
           include: postInclude(request.user!.id),
         })
       )
-    );
+    )
 
     // Cross-posts are never circle-scoped (the body schema rejects the
     // combination), so their assets are readable by every target group.
@@ -424,7 +424,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       [...assetUrls, ...(postTypeHandler.collectAssets?.(persistedTypeData) ?? [])],
       { groupIds: targets },
       request.user!.id
-    );
+    )
 
     emitDomainEvent('post.created', {
       posts: createdPosts.map((p) => ({ postId: p.id, groupId: p.group.id, groupName: p.group.name })),
@@ -435,37 +435,37 @@ export default async function postRoutes(fastify: FastifyInstance) {
       milestoneTag: createdPosts[0].milestoneTag,
       // Cross-posts can never be circle-scoped (see createPostBodySchema).
       circleId: null,
-    });
+    })
 
     // The response mirrors the single-group shape (first target group's
     // post), plus sharedWithGroups — this only ever appears for the author,
     // which the creator always is (see the privacy rule on shapePost).
-    const first = createdPosts[0];
+    const first = createdPosts[0]
     return {
       ...shapePost(first, request.user!.id),
       people: [],
       sharedWithGroups: createdPosts.map((p) => ({ id: p.group.id, name: p.group.name })),
-    };
-  });
+    }
+  })
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = updatePostBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = updatePostBodySchema.parse(request.body)
 
-    const post = await prisma.post.findUnique({ where: { id } });
+    const post = await prisma.post.findUnique({ where: { id } })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     if (post.authorId !== request.user!.id) {
-      return reply.status(403).send({ error: t('errors.notAuthorized') });
+      return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
     // Editing writes into the group, so it requires *current* membership — a
     // removed member's old posts stay visible but they can't keep editing them.
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     if (post.crossPostId) {
       // Cross-posted: every sibling shares identical content, so an edit
@@ -474,22 +474,22 @@ export default async function postRoutes(fastify: FastifyInstance) {
       // row's own — mirrors the copy step in POST / above.
       const siblingGroupIds = (
         await prisma.post.findMany({ where: { crossPostId: post.crossPostId }, select: { groupId: true } })
-      ).map((s) => s.groupId);
+      ).map((s) => s.groupId)
 
-      let uploadedAssetUrls = body.uploadedAssetUrls;
+      let uploadedAssetUrls = body.uploadedAssetUrls
       if (uploadedAssetUrls) {
-        const mediaUrls = uploadedAssetUrls.filter((url) => parseMediaAssetPath(url) !== null);
+        const mediaUrls = uploadedAssetUrls.filter((url) => parseMediaAssetPath(url) !== null)
         if (mediaUrls.length > 0) {
           try {
-            const copied = await copyMediaAssetsToUploads(mediaUrls, siblingGroupIds, request.user!.id);
-            uploadedAssetUrls = uploadedAssetUrls.map((url) => copied.get(url) ?? url);
+            const copied = await copyMediaAssetsToUploads(mediaUrls, siblingGroupIds, request.user!.id)
+            uploadedAssetUrls = uploadedAssetUrls.map((url) => copied.get(url) ?? url)
           } catch (err) {
             if (err instanceof CrossPostAssetCopyError) {
               return reply
                 .status(err.code === 'forbidden' ? 400 : 502)
-                .send({ error: t('errors.crossPostAssetCopyFailed') });
+                .send({ error: t('errors.crossPostAssetCopyFailed') })
             }
-            throw err;
+            throw err
           }
         }
       }
@@ -505,26 +505,26 @@ export default async function postRoutes(fastify: FastifyInstance) {
             : {}),
           ...(uploadedAssetUrls ? { uploadedAssetUrls } : {}),
         },
-      });
+      })
 
       // Cross-posts are never circle-scoped, so any newly added photo is
       // readable by every sibling's group.
       if (uploadedAssetUrls) {
-        await bindAssetsToScope(uploadedAssetUrls, { groupIds: siblingGroupIds }, request.user!.id);
+        await bindAssetsToScope(uploadedAssetUrls, { groupIds: siblingGroupIds }, request.user!.id)
       }
 
       const current = await prisma.post.findUnique({
         where: { id },
         include: postInclude(request.user!.id),
-      });
+      })
       const [shaped] = await attachSharedWithGroups(
         [shapePost(current!, request.user!.id)],
         [current!],
         request.user!.id
-      );
+      )
       // Same reasoning as the non-cross-post branch below — don't make an
       // edit wait on Immich.
-      return { ...shaped, people: [] };
+      return { ...shaped, people: [] }
     }
 
     // A linked-album asset added by the edit has to be authorized against this
@@ -532,7 +532,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // (The cross-post branch's copyMediaAssetsToUploads does the equivalent
     // check against every sibling group instead.)
     if (!(await mediaUrlsBelongToGroup(body.uploadedAssetUrls, post.groupId))) {
-      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') });
+      return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') })
     }
 
     // Removing a photo leaves any comment pinned to it (Comment.assetUrl)
@@ -550,7 +550,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
         ...(body.uploadedAssetUrls ? { uploadedAssetUrls: body.uploadedAssetUrls } : {}),
       },
       include: postInclude(request.user!.id),
-    });
+    })
 
     // An edit can introduce photos that were uploaded after the post was
     // created, so bind those to this post's existing audience. Photos the
@@ -561,25 +561,25 @@ export default async function postRoutes(fastify: FastifyInstance) {
         body.uploadedAssetUrls,
         { groupIds: [updated.groupId], circleId: updated.circleId },
         request.user!.id
-      );
+      )
     }
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.
-    return { ...shapePost(updated, request.user!.id), people: [] };
-  });
+    return { ...shapePost(updated, request.user!.id), people: [] }
+  })
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
-    const post = await prisma.post.findUnique({ where: { id } });
+    const post = await prisma.post.findUnique({ where: { id } })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     if (post.authorId !== request.user!.id && !request.user!.isAdmin) {
-      return reply.status(403).send({ error: t('errors.notAuthorized') });
+      return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
     // Admins are NOT implicit members of every circle (see services/circles.ts):
@@ -588,7 +588,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // only admin route to it is deleting the whole circle, which reports its
     // post count first (routes/admin.ts).
     if (post.authorId !== request.user!.id && !(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     // Only the author's OWN delete fans out to every cross-posted sibling.
@@ -597,13 +597,13 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // group-scoped — an admin may not even be a member of a sibling's other
     // groups, and moderation is deliberately per-group (see admin.ts).
     if (post.crossPostId && post.authorId === request.user!.id) {
-      await prisma.post.deleteMany({ where: { crossPostId: post.crossPostId, authorId: request.user!.id } });
+      await prisma.post.deleteMany({ where: { crossPostId: post.crossPostId, authorId: request.user!.id } })
     } else {
-      await prisma.post.delete({ where: { id } });
+      await prisma.post.delete({ where: { id } })
     }
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   // A post-type-specific action — poll voting, TRIP check-ins/closing, RSVPs
   // etc. later (see services/postTypes/). This route itself emits no domain
@@ -615,31 +615,31 @@ export default async function postRoutes(fastify: FastifyInstance) {
   // (trip.ts's checkin/close/setTravelers) fans out internally via the
   // crossPostId it receives.
   fastify.post('/:postId/interactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
-    const { key, value } = postInteractionBodySchema.parse(request.body);
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
+    const { key, value } = postInteractionBodySchema.parse(request.body)
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { group: { select: { name: true } } },
-    });
+    })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // Voting on a circle-private poll, or checking in to a circle-private
     // trip, is reading and writing that post — a group member outside the
     // circle gets the same 404 the post itself would give them.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const postTypeHandler = getPostTypeHandler(post.type);
+    const postTypeHandler = getPostTypeHandler(post.type)
     if (!postTypeHandler?.interact) {
-      return reply.status(400).send({ error: t('errors.invalidInteraction') });
+      return reply.status(400).send({ error: t('errors.invalidInteraction') })
     }
 
     try {
@@ -656,12 +656,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
         userId: request.user!.id,
         key,
         value,
-      });
+      })
     } catch (err) {
       if (err instanceof PostTypeError) {
-        return reply.status(400).send({ error: t(`errors.${err.code}`) });
+        return reply.status(400).send({ error: t(`errors.${err.code}`) })
       }
-      throw err;
+      throw err
     }
 
     // Full shaped + enriched post (same shape as GET /:id) so the client can
@@ -669,8 +669,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const updated = await prisma.post.findUnique({
       where: { id: postId },
       include: postInclude(request.user!.id),
-    });
-    const [shaped] = await shapePostsWithPeople([updated!], request.user!.id);
-    return shaped;
-  });
+    })
+    const [shaped] = await shapePostsWithPeople([updated!], request.user!.id)
+    return shaped
+  })
 }

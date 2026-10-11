@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, Circle, GroupMember } from '../api/client';
-import { Icon } from './Icon';
-import { avatarColor, initials } from '../avatar';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, Circle, GroupMember } from '../api/client'
+import { Icon } from './Icon'
+import { avatarColor, initials } from '../avatar'
 
 /**
  * Admin management for a group's Family Circles.
@@ -21,43 +21,43 @@ import { avatarColor, initials } from '../avatar';
  *    entitled to, and it's enough to make the destruction informed.
  */
 export function CirclesSection({ groupId, members }: { groupId: string; members: GroupMember[] }) {
-  const { t } = useTranslation();
-  const [circles, setCircles] = useState<Circle[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [addUserId, setAddUserId] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { t } = useTranslation()
+  const [circles, setCircles] = useState<Circle[]>([])
+  const [loading, setLoading] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [addUserId, setAddUserId] = useState('')
+  const [busy, setBusy] = useState(false)
 
   async function load() {
-    setLoading(true);
+    setLoading(true)
     try {
-      setCircles(await api.getGroupCircles(groupId));
+      setCircles(await api.getGroupCircles(groupId))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    void load();
-    setExpandedId(null);
+    void load()
+    setExpandedId(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId])
 
   async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    setBusy(true);
+    e.preventDefault()
+    if (!newName.trim()) return
+    setBusy(true)
     try {
-      await api.createCircle(groupId, { name: newName.trim(), description: newDescription.trim() || null });
-      setNewName('');
-      setNewDescription('');
-      setCreating(false);
-      await load();
+      await api.createCircle(groupId, { name: newName.trim(), description: newDescription.trim() || null })
+      setNewName('')
+      setNewDescription('')
+      setCreating(false)
+      await load()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
@@ -68,37 +68,37 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
     const message =
       circle.postCount > 0
         ? t('circles.confirmDeleteWithPosts', { name: circle.name, count: circle.postCount })
-        : t('circles.confirmDelete', { name: circle.name });
-    if (!confirm(message)) return;
+        : t('circles.confirmDelete', { name: circle.name })
+    if (!confirm(message)) return
 
-    setBusy(true);
+    setBusy(true)
     try {
-      await api.deleteCircle(circle.id, circle.postCount > 0);
-      await load();
+      await api.deleteCircle(circle.id, circle.postCount > 0)
+      await load()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   async function handleAddMember(circleId: string) {
-    if (!addUserId) return;
-    setBusy(true);
+    if (!addUserId) return
+    setBusy(true)
     try {
-      await api.addCircleMember(circleId, addUserId);
-      setAddUserId('');
-      await load();
+      await api.addCircleMember(circleId, addUserId)
+      setAddUserId('')
+      await load()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   async function handleRemoveMember(circleId: string, userId: string) {
-    setBusy(true);
+    setBusy(true)
     try {
-      await api.removeCircleMember(circleId, userId);
-      await load();
+      await api.removeCircleMember(circleId, userId)
+      await load()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
@@ -146,9 +146,9 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
       ) : (
         <ul className="member-cards">
           {circles.map((circle) => {
-            const circleMemberIds = new Set((circle.members ?? []).map((m) => m.id));
-            const candidates = members.filter((m) => !circleMemberIds.has(m.id));
-            const expanded = expandedId === circle.id;
+            const circleMemberIds = new Set((circle.members ?? []).map((m) => m.id))
+            const candidates = members.filter((m) => !circleMemberIds.has(m.id))
+            const expanded = expandedId === circle.id
 
             return (
               <li key={circle.id} className="member-card md-circle-card">
@@ -231,10 +231,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                   </div>
                 )}
               </li>
-            );
+            )
           })}
         </ul>
       )}
     </>
-  );
+  )
 }

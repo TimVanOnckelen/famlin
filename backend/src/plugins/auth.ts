@@ -1,70 +1,70 @@
-import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import jwt from 'jsonwebtoken';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { config } from '../config.js';
-import { prisma } from '../db.js';
-import { getOidcSettings, isEmailAllowed } from '../services/settings.js';
-import { API_TOKEN_PREFIX, verifyApiToken } from '../services/apiTokens.js';
-import { isGroupMember } from '../services/groups.js';
-import { getT } from '../i18n/index.js';
+import fp from 'fastify-plugin'
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
+import jwt from 'jsonwebtoken'
+import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { config } from '../config.js'
+import { prisma } from '../db.js'
+import { getOidcSettings, isEmailAllowed } from '../services/settings.js'
+import { API_TOKEN_PREFIX, verifyApiToken } from '../services/apiTokens.js'
+import { isGroupMember } from '../services/groups.js'
+import { getT } from '../i18n/index.js'
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user: {
-    id: string;
-    email: string;
-    name: string;
-    isAdmin: boolean;
-  };
+    id: string
+    email: string
+    name: string
+    isAdmin: boolean
+  }
 }
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: AuthenticatedRequest['user'];
+    user?: AuthenticatedRequest['user']
     // How this request authenticated: an interactive login session (JWT) or a
     // developer personal access token. Routes that mint new credentials
     // (routes/api-tokens.ts) require 'session' so a leaked PAT can't be used
     // to create replacement PATs and outlive its own revocation.
-    authMethod?: 'session' | 'api-token';
+    authMethod?: 'session' | 'api-token'
   }
   interface FastifyInstance {
-    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
   }
 }
 
 interface DiscoveryDocument {
-  issuer: string;
-  jwks_uri: string;
-  authorization_endpoint: string;
-  token_endpoint: string;
+  issuer: string
+  jwks_uri: string
+  authorization_endpoint: string
+  token_endpoint: string
 }
 
 // Discovery documents and their JWKS keysets rarely change, so cache them
 // per issuer instead of re-fetching on every login.
-const discoveryCache = new Map<string, { doc: DiscoveryDocument; jwks: ReturnType<typeof createRemoteJWKSet> }>();
+const discoveryCache = new Map<string, { doc: DiscoveryDocument; jwks: ReturnType<typeof createRemoteJWKSet> }>()
 
 export async function getDiscovery(issuer: string) {
-  const cached = discoveryCache.get(issuer);
-  if (cached) return cached;
+  const cached = discoveryCache.get(issuer)
+  if (cached) return cached
 
-  const res = await fetch(`${issuer}/.well-known/openid-configuration`);
+  const res = await fetch(`${issuer}/.well-known/openid-configuration`)
   if (!res.ok) {
-    throw new Error('Could not reach the OIDC provider');
+    throw new Error('Could not reach the OIDC provider')
   }
-  const doc = (await res.json()) as DiscoveryDocument;
-  const jwks = createRemoteJWKSet(new URL(doc.jwks_uri));
+  const doc = (await res.json()) as DiscoveryDocument
+  const jwks = createRemoteJWKSet(new URL(doc.jwks_uri))
 
-  const entry = { doc, jwks };
-  discoveryCache.set(issuer, entry);
-  return entry;
+  const entry = { doc, jwks }
+  discoveryCache.set(issuer, entry)
+  return entry
 }
 
 // Thrown for expected, user-facing OIDC failures so routes can map them to a
 // translated message instead of leaking jose/fetch internals via err.message.
 export class OidcError extends Error {
   constructor(public code: 'not_configured' | 'no_email' | 'email_not_verified' | 'not_allowed' | 'exchange_failed') {
-    super(code);
-    this.name = 'OidcError';
+    super(code)
+    this.name = 'OidcError'
   }
 }
 
@@ -75,16 +75,16 @@ export class OidcError extends Error {
 // here (still passed through when the caller generated one, for defense in
 // depth, but its absence isn't a problem).
 export async function exchangeOidcCode(params: {
-  code: string;
-  redirectUri: string;
-  codeVerifier?: string;
+  code: string
+  redirectUri: string
+  codeVerifier?: string
 }): Promise<string> {
-  const { issuer, clientId, clientSecret } = await getOidcSettings();
+  const { issuer, clientId, clientSecret } = await getOidcSettings()
   if (!issuer || !clientId || !clientSecret) {
-    throw new OidcError('not_configured');
+    throw new OidcError('not_configured')
   }
 
-  const { doc } = await getDiscovery(issuer);
+  const { doc } = await getDiscovery(issuer)
 
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
@@ -92,41 +92,41 @@ export async function exchangeOidcCode(params: {
     redirect_uri: params.redirectUri,
     client_id: clientId,
     client_secret: clientSecret,
-  });
+  })
   if (params.codeVerifier) {
-    body.set('code_verifier', params.codeVerifier);
+    body.set('code_verifier', params.codeVerifier)
   }
 
   const res = await fetch(doc.token_endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
-  });
+  })
 
-  const data = (await res.json().catch(() => null)) as { id_token?: string } | null;
+  const data = (await res.json().catch(() => null)) as { id_token?: string } | null
   if (!res.ok || !data?.id_token) {
-    throw new OidcError('exchange_failed');
+    throw new OidcError('exchange_failed')
   }
-  return data.id_token;
+  return data.id_token
 }
 
 export async function verifyOidcToken(idToken: string, options?: { allowUnlisted?: boolean }) {
-  const { issuer, clientId } = await getOidcSettings();
+  const { issuer, clientId } = await getOidcSettings()
 
   if (!issuer || !clientId) {
-    throw new OidcError('not_configured');
+    throw new OidcError('not_configured')
   }
 
-  const { doc, jwks } = await getDiscovery(issuer);
+  const { doc, jwks } = await getDiscovery(issuer)
 
   const { payload } = await jwtVerify(idToken, jwks, {
     issuer: doc.issuer,
     audience: clientId,
-  });
+  })
 
-  const email = (payload.email as string | undefined)?.toLowerCase();
+  const email = (payload.email as string | undefined)?.toLowerCase()
   if (!email) {
-    throw new OidcError('no_email');
+    throw new OidcError('no_email')
   }
 
   // Accounts are matched on email alone, so an unverified email claim would
@@ -136,34 +136,34 @@ export async function verifyOidcToken(idToken: string, options?: { allowUnlisted
   // some providers (e.g. Microsoft Entra) never emit the claim at all, and
   // for those the admin is trusting the provider's email by configuring it.
   if (payload.email_verified === false || payload.email_verified === 'false') {
-    throw new OidcError('email_not_verified');
+    throw new OidcError('email_not_verified')
   }
 
   // A valid invite is its own authorization, so it can provision an account
   // for an email that isn't on the allowedEmails whitelist.
   if (!options?.allowUnlisted && !(await isEmailAllowed(email))) {
-    throw new OidcError('not_allowed');
+    throw new OidcError('not_allowed')
   }
 
   return {
     email,
     name: (payload.name as string | undefined) || email.split('@')[0],
     picture: payload.picture as string | undefined,
-  };
+  }
 }
 
 export function createUserToken(user: {
-  id: string;
-  email: string;
-  name: string;
-  isAdmin: boolean;
-  tokenVersion: number;
+  id: string
+  email: string
+  name: string
+  isAdmin: boolean
+  tokenVersion: number
 }) {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, tokenVersion: user.tokenVersion },
     config.JWT_SECRET,
     { expiresIn: '30d' }
-  );
+  )
 }
 
 // Session tokens carry no `scope` claim. Media tokens are signed with the same
@@ -171,13 +171,13 @@ export function createUserToken(user: {
 // (copied link, proxy/access log) would pass as a full session credential.
 export function verifyToken(token: string) {
   const decoded = jwt.verify(token, config.JWT_SECRET) as AuthenticatedRequest['user'] & {
-    tokenVersion: number;
-    scope?: unknown;
-  };
-  if (typeof decoded !== 'object' || decoded === null || decoded.scope !== undefined) {
-    throw new jwt.JsonWebTokenError('not a session token');
+    tokenVersion: number
+    scope?: unknown
   }
-  return decoded;
+  if (typeof decoded !== 'object' || decoded === null || decoded.scope !== undefined) {
+    throw new jwt.JsonWebTokenError('not a session token')
+  }
+  return decoded
 }
 
 // A narrow-scope, longer-lived token used only to authorize reading files
@@ -187,16 +187,16 @@ export function verifyToken(token: string) {
 // password reset / account deletion can invalidate it the same way it
 // invalidates a session token (see isSessionCurrent).
 export function createMediaToken(userId: string, tokenVersion: number) {
-  return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' })
 }
 
 export function verifyMediaToken(token: string): { id: string; tokenVersion?: number } | null {
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET) as { id?: string; scope?: string; tokenVersion?: number };
-    if (decoded.scope !== 'media' || !decoded.id) return null;
-    return { id: decoded.id, tokenVersion: decoded.tokenVersion };
+    const decoded = jwt.verify(token, config.JWT_SECRET) as { id?: string; scope?: string; tokenVersion?: number }
+    if (decoded.scope !== 'media' || !decoded.id) return null
+    return { id: decoded.id, tokenVersion: decoded.tokenVersion }
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -207,11 +207,11 @@ export function verifyMediaToken(token: string): { id: string; tokenVersion?: nu
 // routes/auth.ts and routes/admin.ts) so revocation still takes effect
 // immediately in the normal case; the TTL only bounds staleness if a call
 // site is ever missed.
-const SESSION_CACHE_TTL_MS = 5_000;
-const sessionCache = new Map<string, { tokenVersion: number; expiresAt: number }>();
+const SESSION_CACHE_TTL_MS = 5_000
+const sessionCache = new Map<string, { tokenVersion: number; expiresAt: number }>()
 
 export function invalidateSessionCache(userId: string) {
-  sessionCache.delete(userId);
+  sessionCache.delete(userId)
 }
 
 // Confirms a decoded token still corresponds to an existing user at its
@@ -221,27 +221,27 @@ export function invalidateSessionCache(userId: string) {
 // access immediately, matching the guarantee the main `authenticate`
 // decorator makes.
 export async function isSessionCurrent(decoded: { id: string; tokenVersion?: number }): Promise<boolean> {
-  const cached = sessionCache.get(decoded.id);
-  const now = Date.now();
-  let user: { tokenVersion: number };
+  const cached = sessionCache.get(decoded.id)
+  const now = Date.now()
+  let user: { tokenVersion: number }
 
   if (cached && cached.expiresAt > now) {
-    user = cached;
+    user = cached
   } else {
     const found = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { tokenVersion: true },
-    });
+    })
     if (!found) {
-      sessionCache.delete(decoded.id);
-      return false;
+      sessionCache.delete(decoded.id)
+      return false
     }
-    user = found;
-    sessionCache.set(decoded.id, { ...found, expiresAt: now + SESSION_CACHE_TTL_MS });
+    user = found
+    sessionCache.set(decoded.id, { ...found, expiresAt: now + SESSION_CACHE_TTL_MS })
   }
 
-  if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false;
-  return true;
+  if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false
+  return true
 }
 
 // Shared by anything gated the same way /uploads/* is: accepts either a
@@ -250,31 +250,31 @@ export async function isSessionCurrent(decoded: { id: string; tokenVersion?: num
 // routes/uploads.ts and routes/immich.ts. Returns the authenticated user id,
 // or null if neither form of auth checks out.
 export async function authenticateMediaRequest(request: FastifyRequest): Promise<string | null> {
-  const authHeader = request.headers.authorization;
+  const authHeader = request.headers.authorization
   if (authHeader?.startsWith('Bearer ')) {
-    const bearer = authHeader.slice(7);
+    const bearer = authHeader.slice(7)
     if (bearer.startsWith(API_TOKEN_PREFIX)) {
       // Developer personal access tokens can read media too — verifyApiToken
       // already checks existence (revocation) and expiry against the DB.
-      const user = await verifyApiToken(bearer);
-      if (user) return user.id;
+      const user = await verifyApiToken(bearer)
+      if (user) return user.id
     } else {
       try {
-        const decoded = verifyToken(bearer);
-        if (await isSessionCurrent(decoded)) return decoded.id;
+        const decoded = verifyToken(bearer)
+        if (await isSessionCurrent(decoded)) return decoded.id
       } catch {
         // fall through to the media-token check below
       }
     }
   }
 
-  const queryToken = (request.query as { token?: string } | undefined)?.token;
+  const queryToken = (request.query as { token?: string } | undefined)?.token
   if (queryToken) {
-    const decoded = verifyMediaToken(queryToken);
-    if (decoded && (await isSessionCurrent(decoded))) return decoded.id;
+    const decoded = verifyMediaToken(queryToken)
+    if (decoded && (await isSessionCurrent(decoded))) return decoded.id
   }
 
-  return null;
+  return null
 }
 
 // Returns true (and sends a 403) when the caller is not an admin. Callers MUST
@@ -282,10 +282,10 @@ export async function authenticateMediaRequest(request: FastifyRequest): Promise
 // the 403 is sent and the mutation still runs.
 export function requireAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
   if (!request.user?.isAdmin) {
-    reply.status(403).send({ error: getT(request)('errors.adminRequired') });
-    return true;
+    reply.status(403).send({ error: getT(request)('errors.adminRequired') })
+    return true
   }
-  return false;
+  return false
 }
 
 // Returns true (and sends a 403) when the caller isn't a member of groupId.
@@ -296,59 +296,59 @@ export async function requireGroupMember(
   groupId: string
 ): Promise<boolean> {
   if (!(await isGroupMember(groupId, request.user!.id))) {
-    reply.status(403).send({ error: getT(request)('errors.notGroupMember') });
-    return true;
+    reply.status(403).send({ error: getT(request)('errors.notGroupMember') })
+    return true
   }
-  return false;
+  return false
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const authHeader = request.headers.authorization;
+      const authHeader = request.headers.authorization
       if (!authHeader?.startsWith('Bearer ')) {
-        return reply.status(401).send({ error: getT(request)('errors.missingOrInvalidAuthHeader') });
+        return reply.status(401).send({ error: getT(request)('errors.missingOrInvalidAuthHeader') })
       }
 
-      const token = authHeader.slice(7);
+      const token = authHeader.slice(7)
 
       // Developer personal access token — the DB row is the credential
       // (existence = valid, deletion = revoked), so unlike a JWT there is no
       // signature or tokenVersion to check.
       if (token.startsWith(API_TOKEN_PREFIX)) {
-        const user = await verifyApiToken(token);
+        const user = await verifyApiToken(token)
         if (!user) {
-          return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+          return reply.status(401).send({ error: getT(request)('errors.unauthorized') })
         }
-        request.user = user;
-        request.authMethod = 'api-token';
-        return;
+        request.user = user
+        request.authMethod = 'api-token'
+        return
       }
 
-      const decoded = verifyToken(token);
+      const decoded = verifyToken(token)
 
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: { id: true, email: true, name: true, isAdmin: true, tokenVersion: true },
-      });
+      })
 
       if (!user) {
-        return reply.status(401).send({ error: getT(request)('errors.userNotFound') });
+        return reply.status(401).send({ error: getT(request)('errors.userNotFound') })
       }
 
       // Lets a password change/reset or an admin-forced sign-out invalidate
       // every token issued before it, without needing a token blocklist.
       if (user.tokenVersion !== decoded.tokenVersion) {
-        return reply.status(401).send({ error: getT(request)('errors.sessionExpired') });
+        return reply.status(401).send({ error: getT(request)('errors.sessionExpired') })
       }
 
-      const { tokenVersion: _tokenVersion, ...publicUser } = user;
-      request.user = publicUser;
-      request.authMethod = 'session';
+      const { tokenVersion: _tokenVersion, ...publicUser } = user
+      request.user = publicUser
+      request.authMethod = 'session'
     } catch {
-      return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+      return reply.status(401).send({ error: getT(request)('errors.unauthorized') })
     }
-  });
-};
+  })
+}
 
-export default fp(authPlugin);
+export default fp(authPlugin)

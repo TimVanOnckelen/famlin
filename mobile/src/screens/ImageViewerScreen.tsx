@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -15,27 +15,27 @@ import {
   useWindowDimensions,
   Animated,
   PanResponder,
-} from 'react-native';
-import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { Image } from 'expo-image';
-import * as ScreenOrientation from 'expo-screen-orientation';
-import * as MediaLibrary from 'expo-media-library';
-import { File, Paths } from 'expo-file-system';
+} from 'react-native'
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { useVideoPlayer, VideoView } from 'expo-video'
+import { Image } from 'expo-image'
+import * as ScreenOrientation from 'expo-screen-orientation'
+import * as MediaLibrary from 'expo-media-library'
+import { File, Paths } from 'expo-file-system'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { ReactionPicker } from '@/components/ReactionPicker';
-import { isVideoUrl } from '@/utils/media';
-import { fetchComments, createComment, deleteComment, fetchPost } from '@famlin/api-client';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { formatRelativeDate } from '@/i18n/utils';
-import { useAuthStore } from '@/stores/authStore';
-import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { ReactionPicker } from '@/components/ReactionPicker'
+import { isVideoUrl } from '@/utils/media'
+import { fetchComments, createComment, deleteComment, fetchPost } from '@famlin/api-client'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { formatRelativeDate } from '@/i18n/utils'
+import { useAuthStore } from '@/stores/authStore'
+import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
 
 function VideoPage({
   url,
@@ -43,23 +43,23 @@ function VideoPage({
   isActive,
   accessibilityLabel,
 }: {
-  url: string;
-  width: number;
-  isActive: boolean;
-  accessibilityLabel: string;
+  url: string
+  width: number
+  isActive: boolean
+  accessibilityLabel: string
 }) {
   const player = useVideoPlayer({ uri: url }, (p) => {
-    p.loop = true;
-  });
-  const isFocused = useIsFocused();
+    p.loop = true
+  })
+  const isFocused = useIsFocused()
 
   useEffect(() => {
     if (isActive && isFocused) {
-      player.play();
+      player.play()
     } else {
-      player.pause();
+      player.pause()
     }
-  }, [isActive, isFocused, player]);
+  }, [isActive, isFocused, player])
 
   return (
     <View style={[styles.page, { width }]}>
@@ -71,12 +71,12 @@ function VideoPage({
         accessibilityLabel={accessibilityLabel}
       />
     </View>
-  );
+  )
 }
 
-const MAX_ZOOM_SCALE = 4;
-const DOUBLE_TAP_SCALE = 2.5;
-const DOUBLE_TAP_WINDOW_MS = 300;
+const MAX_ZOOM_SCALE = 4
+const DOUBLE_TAP_SCALE = 2.5
+const DOUBLE_TAP_WINDOW_MS = 300
 
 // Pinch-to-zoom / pan / double-tap image page built on core PanResponder +
 // Animated (no gesture-handler/reanimated dependency). Interplay with the
@@ -91,17 +91,17 @@ function ImagePage({
   accessibilityLabel,
   onZoomChange,
 }: {
-  url: string;
-  width: number;
-  isActive: boolean;
-  accessibilityLabel: string;
-  onZoomChange: (zoomed: boolean) => void;
+  url: string
+  width: number
+  isActive: boolean
+  accessibilityLabel: string
+  onZoomChange: (zoomed: boolean) => void
 }) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
-  const scale = useRef(new Animated.Value(1)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current
+  const translateX = useRef(new Animated.Value(0)).current
+  const translateY = useRef(new Animated.Value(0)).current
   // Live gesture bookkeeping — refs, not state, so the PanResponder callbacks
   // (created once) always see current values without re-renders per frame.
   const z = useRef({
@@ -114,39 +114,39 @@ function ImagePage({
     lastTapAt: 0,
     touchStart: null as { x: number; y: number; at: number } | null,
     pageHeight: 0,
-  }).current;
-  const onZoomChangeRef = useRef(onZoomChange);
-  onZoomChangeRef.current = onZoomChange;
+  }).current
+  const onZoomChangeRef = useRef(onZoomChange)
+  onZoomChangeRef.current = onZoomChange
 
   function clampPan(s: number, value: number, size: number) {
-    const max = Math.max(0, (size * (s - 1)) / 2);
-    return Math.min(max, Math.max(-max, value));
+    const max = Math.max(0, (size * (s - 1)) / 2)
+    return Math.min(max, Math.max(-max, value))
   }
 
   function apply(nextScale: number, nextTx: number, nextTy: number) {
-    const wasZoomed = z.scale > 1;
-    z.scale = nextScale;
-    z.tx = clampPan(nextScale, nextTx, width);
-    z.ty = clampPan(nextScale, nextTy, z.pageHeight || width);
-    scale.setValue(z.scale);
-    translateX.setValue(z.tx);
-    translateY.setValue(z.ty);
-    const isZoomed = z.scale > 1;
-    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed);
+    const wasZoomed = z.scale > 1
+    z.scale = nextScale
+    z.tx = clampPan(nextScale, nextTx, width)
+    z.ty = clampPan(nextScale, nextTy, z.pageHeight || width)
+    scale.setValue(z.scale)
+    translateX.setValue(z.tx)
+    translateY.setValue(z.ty)
+    const isZoomed = z.scale > 1
+    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed)
   }
 
   function animateTo(nextScale: number) {
-    const wasZoomed = z.scale > 1;
-    z.scale = nextScale;
-    z.tx = clampPan(nextScale, z.tx, width);
-    z.ty = clampPan(nextScale, z.ty, z.pageHeight || width);
+    const wasZoomed = z.scale > 1
+    z.scale = nextScale
+    z.tx = clampPan(nextScale, z.tx, width)
+    z.ty = clampPan(nextScale, z.ty, z.pageHeight || width)
     Animated.parallel([
       Animated.timing(scale, { toValue: z.scale, duration: 200, useNativeDriver: false }),
       Animated.timing(translateX, { toValue: z.tx, duration: 200, useNativeDriver: false }),
       Animated.timing(translateY, { toValue: z.ty, duration: 200, useNativeDriver: false }),
-    ]).start();
-    const isZoomed = z.scale > 1;
-    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed);
+    ]).start()
+    const isZoomed = z.scale > 1
+    if (isZoomed !== wasZoomed) onZoomChangeRef.current(isZoomed)
   }
 
   const responder = useRef(
@@ -169,58 +169,58 @@ function ImagePage({
       // from stealing it mid-gesture.
       onShouldBlockNativeResponder: (evt) => evt.nativeEvent.touches.length >= 2 || z.scale > 1,
       onPanResponderGrant: () => {
-        z.pinchBase = null;
-        z.panStart = null;
-        z.moved = false;
+        z.pinchBase = null
+        z.panStart = null
+        z.moved = false
       },
       onPanResponderMove: (evt, gestureState) => {
-        const touches = evt.nativeEvent.touches;
+        const touches = evt.nativeEvent.touches
         if (touches.length >= 2) {
-          z.moved = true;
-          z.panStart = null;
-          const dist = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
-          if (dist <= 0) return;
+          z.moved = true
+          z.panStart = null
+          const dist = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY)
+          if (dist <= 0) return
           // pinchBase = finger distance per unit of scale, captured at pinch
           // start, so scale tracks the fingers relative to where they began.
-          if (z.pinchBase === null) z.pinchBase = dist / z.scale;
-          const next = Math.min(MAX_ZOOM_SCALE, Math.max(1, dist / z.pinchBase));
-          apply(next, z.tx, z.ty);
+          if (z.pinchBase === null) z.pinchBase = dist / z.scale
+          const next = Math.min(MAX_ZOOM_SCALE, Math.max(1, dist / z.pinchBase))
+          apply(next, z.tx, z.ty)
         } else if (z.scale > 1) {
-          z.pinchBase = null;
-          if (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4) z.moved = true;
+          z.pinchBase = null
+          if (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4) z.moved = true
           if (!z.panStart) {
-            z.panStart = { dx: gestureState.dx, dy: gestureState.dy, tx: z.tx, ty: z.ty };
+            z.panStart = { dx: gestureState.dx, dy: gestureState.dy, tx: z.tx, ty: z.ty }
           }
           apply(
             z.scale,
             z.panStart.tx + (gestureState.dx - z.panStart.dx),
             z.panStart.ty + (gestureState.dy - z.panStart.dy)
-          );
+          )
         }
       },
       onPanResponderRelease: () => {
-        z.pinchBase = null;
-        z.panStart = null;
+        z.pinchBase = null
+        z.panStart = null
         if (z.moved && z.scale < 1.05) {
           // Pinched back to (almost) fit — snap clean so paging re-enables.
-          animateTo(1);
+          animateTo(1)
         }
       },
       onPanResponderTerminate: () => {
-        z.pinchBase = null;
-        z.panStart = null;
+        z.pinchBase = null
+        z.panStart = null
       },
     })
-  ).current;
+  ).current
 
   useEffect(() => {
     // Swiping away resets the zoom, so returning to this photo starts fitted.
     if (!isActive && z.scale > 1) {
-      z.tx = 0;
-      z.ty = 0;
-      animateTo(1);
+      z.tx = 0
+      z.ty = 0
+      animateTo(1)
     }
-  }, [isActive]);
+  }, [isActive])
 
   // Tap/double-tap detection lives on plain touch events, not the
   // PanResponder: on Android a plain tap never grants us the responder
@@ -228,28 +228,28 @@ function ImagePage({
   // way. A paging swipe ends in a native touch-cancel, so it can't register
   // as a tap.
   function handleTouchStart(e: { nativeEvent: { touches: { pageX: number; pageY: number }[] } }) {
-    const touches = e.nativeEvent.touches;
+    const touches = e.nativeEvent.touches
     if (touches.length === 1) {
-      z.touchStart = { x: touches[0].pageX, y: touches[0].pageY, at: Date.now() };
+      z.touchStart = { x: touches[0].pageX, y: touches[0].pageY, at: Date.now() }
     } else {
       // A second finger means pinch, not tap.
-      z.touchStart = null;
+      z.touchStart = null
     }
   }
 
   function handleTouchEnd(e: { nativeEvent: { pageX: number; pageY: number; touches: unknown[] } }) {
-    if (e.nativeEvent.touches.length > 0) return;
-    const start = z.touchStart;
-    z.touchStart = null;
-    if (!start) return;
-    const movedTooFar = Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 10;
-    const now = Date.now();
-    if (movedTooFar || now - start.at > DOUBLE_TAP_WINDOW_MS) return;
+    if (e.nativeEvent.touches.length > 0) return
+    const start = z.touchStart
+    z.touchStart = null
+    if (!start) return
+    const movedTooFar = Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 10
+    const now = Date.now()
+    if (movedTooFar || now - start.at > DOUBLE_TAP_WINDOW_MS) return
     if (now - z.lastTapAt < DOUBLE_TAP_WINDOW_MS) {
-      z.lastTapAt = 0;
-      animateTo(z.scale > 1 ? 1 : DOUBLE_TAP_SCALE);
+      z.lastTapAt = 0
+      animateTo(z.scale > 1 ? 1 : DOUBLE_TAP_SCALE)
     } else {
-      z.lastTapAt = now;
+      z.lastTapAt = now
     }
   }
 
@@ -257,12 +257,12 @@ function ImagePage({
     <View
       style={[styles.page, { width }]}
       onLayout={(e) => {
-        z.pageHeight = e.nativeEvent.layout.height;
+        z.pageHeight = e.nativeEvent.layout.height
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={() => {
-        z.touchStart = null;
+        z.touchStart = null
       }}
       {...responder.panHandlers}
     >
@@ -287,7 +287,7 @@ function ImagePage({
         </View>
       )}
     </View>
-  );
+  )
 }
 
 // Per-photo metadata for viewers opened over mixed sources (the photos
@@ -296,11 +296,11 @@ function ImagePage({
 // per-photo comments work; album assets carry neither — there is no
 // backend object to like, favorite, or comment on.
 interface ViewerItem {
-  postId?: string;
-  assetUrl?: string;
+  postId?: string
+  assetUrl?: string
   // Absolute URL of the rendition worth saving to the device (the original,
   // not the preview shown in the pager). Falls back to the displayed URL.
-  downloadUrl?: string;
+  downloadUrl?: string
 }
 
 function PhotoActionsBar({
@@ -309,48 +309,48 @@ function PhotoActionsBar({
   downloadUrl,
   onOpenComments,
 }: {
-  postId?: string;
-  canComment: boolean;
-  downloadUrl: string;
-  onOpenComments: () => void;
+  postId?: string
+  canComment: boolean
+  downloadUrl: string
+  onOpenComments: () => void
 }) {
-  const { t } = useTranslation();
-  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const { t } = useTranslation()
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   // Album photos without a post still get the bar (download only).
   const { data: post } = useQuery({
     queryKey: ['post', postId],
     queryFn: () => fetchPost(postId!),
     enabled: !!postId,
-  });
+  })
 
   async function handleDownload() {
-    if (downloading) return;
-    setDownloading(true);
+    if (downloading) return
+    setDownloading(true)
     try {
       // writeOnly: add-to-library is all we need — avoids the scarier
       // full-library read permission prompt on iOS.
-      const permission = await MediaLibrary.requestPermissionsAsync(true);
+      const permission = await MediaLibrary.requestPermissionsAsync(true)
       if (!permission.granted) {
-        Alert.alert(t('common.error'), t('imageViewer.downloadPermissionDenied'));
-        return;
+        Alert.alert(t('common.error'), t('imageViewer.downloadPermissionDenied'))
+        return
       }
-      const cleanPath = downloadUrl.split('?')[0];
-      const filename = cleanPath.substring(cleanPath.lastIndexOf('/') + 1) || 'photo.jpg';
-      const destination = new File(Paths.cache, filename);
-      if (destination.exists) destination.delete();
-      const file = await File.downloadFileAsync(downloadUrl, destination);
+      const cleanPath = downloadUrl.split('?')[0]
+      const filename = cleanPath.substring(cleanPath.lastIndexOf('/') + 1) || 'photo.jpg'
+      const destination = new File(Paths.cache, filename)
+      if (destination.exists) destination.delete()
+      const file = await File.downloadFileAsync(downloadUrl, destination)
       // Class-based API — the legacy saveToLibraryAsync throws at runtime
       // on SDK 57.
-      await MediaLibrary.Asset.create(file.uri);
-      file.delete();
-      Alert.alert(t('imageViewer.downloadSuccess'));
+      await MediaLibrary.Asset.create(file.uri)
+      file.delete()
+      Alert.alert(t('imageViewer.downloadSuccess'))
     } catch (err) {
-      console.warn('ImageViewer: saving photo failed:', err);
-      Alert.alert(t('common.error'), t('imageViewer.downloadError'));
+      console.warn('ImageViewer: saving photo failed:', err)
+      Alert.alert(t('common.error'), t('imageViewer.downloadError'))
     } finally {
-      setDownloading(false);
+      setDownloading(false)
     }
   }
 
@@ -358,8 +358,8 @@ function PhotoActionsBar({
   // in sync with what the viewer shows. `post` is guaranteed loaded by the
   // time these are actually invoked, since the buttons below only render
   // once `post` is truthy.
-  const likeMutation = useReactToPost(post!);
-  const favoriteMutation = useToggleFavorite(post!);
+  const likeMutation = useReactToPost(post!)
+  const favoriteMutation = useToggleFavorite(post!)
 
   return (
     <>
@@ -430,50 +430,50 @@ function PhotoActionsBar({
       <ReactionPicker
         visible={reactionPickerOpen}
         onSelect={(type) => {
-          setReactionPickerOpen(false);
-          likeMutation.mutate(type);
+          setReactionPickerOpen(false)
+          likeMutation.mutate(type)
         }}
         onClose={() => setReactionPickerOpen(false)}
       />
     </>
-  );
+  )
 }
 
 export function ImageViewerScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { urls, initialIndex = 0, postId, assetUrls, items } = route.params;
-  const { width, height } = useWindowDimensions();
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [commentsVisible, setCommentsVisible] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { urls, initialIndex = 0, postId, assetUrls, items } = route.params
+  const { width, height } = useWindowDimensions()
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [commentsVisible, setCommentsVisible] = useState(false)
+  const scrollViewRef = useRef<ScrollView>(null)
 
   // Post-context callers (PostCard, PostDetail) pass one postId + parallel
   // assetUrls; the photos tab passes per-index `items` instead, since its
   // grid mixes photos from different posts and albums.
-  const currentItem: ViewerItem | undefined = items?.[currentIndex];
-  const currentPostId: string | undefined = items ? currentItem?.postId : postId;
-  const currentAssetUrl: string | undefined = items ? currentItem?.assetUrl : assetUrls?.[currentIndex];
-  const canComment = !!currentPostId && !!currentAssetUrl;
-  const currentDownloadUrl: string = currentItem?.downloadUrl ?? urls[currentIndex];
+  const currentItem: ViewerItem | undefined = items?.[currentIndex]
+  const currentPostId: string | undefined = items ? currentItem?.postId : postId
+  const currentAssetUrl: string | undefined = items ? currentItem?.assetUrl : assetUrls?.[currentIndex]
+  const canComment = !!currentPostId && !!currentAssetUrl
+  const currentDownloadUrl: string = currentItem?.downloadUrl ?? urls[currentIndex]
 
   // While a photo is zoomed, paging and the swipe-down dismiss are disabled
   // so drags pan the photo instead. State drives scrollEnabled; the ref is
   // read inside the PanResponder callbacks (created once).
-  const [isZoomed, setIsZoomed] = useState(false);
-  const isZoomedRef = useRef(false);
+  const [isZoomed, setIsZoomed] = useState(false)
+  const isZoomedRef = useRef(false)
   function handleZoomChange(zoomed: boolean) {
-    isZoomedRef.current = zoomed;
-    setIsZoomed(zoomed);
+    isZoomedRef.current = zoomed
+    setIsZoomed(zoomed)
   }
 
-  const translateY = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current
   const viewerOpacity = translateY.interpolate({
     inputRange: [0, height],
     outputRange: [1, 0],
     extrapolate: 'clamp',
-  });
+  })
 
   const panResponder = useRef(
     PanResponder.create({
@@ -486,7 +486,7 @@ export function ImageViewerScreen() {
         Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
       onPanResponderMove: (_evt, gestureState) => {
         if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy);
+          translateY.setValue(gestureState.dy)
         }
       },
       onPanResponderRelease: (_evt, gestureState) => {
@@ -495,39 +495,39 @@ export function ImageViewerScreen() {
             toValue: height,
             duration: 200,
             useNativeDriver: true,
-          }).start(() => navigation.goBack());
+          }).start(() => navigation.goBack())
         } else {
           Animated.spring(translateY, {
             toValue: 0,
             useNativeDriver: true,
             bounciness: 0,
-          }).start();
+          }).start()
         }
       },
     })
-  ).current;
+  ).current
 
   useEffect(() => {
-    ScreenOrientation.unlockAsync();
+    ScreenOrientation.unlockAsync()
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    };
-  }, []);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+    }
+  }, [])
 
   useEffect(() => {
     // Keep the current page aligned when the width changes on rotation.
-    scrollViewRef.current?.scrollTo({ x: currentIndex * width, animated: false });
-  }, [width]);
+    scrollViewRef.current?.scrollTo({ x: currentIndex * width, animated: false })
+  }, [width])
 
   useEffect(() => {
     // Swiping to a different photo means the sheet no longer applies to it.
-    setCommentsVisible(false);
-  }, [currentIndex]);
+    setCommentsVisible(false)
+  }, [currentIndex])
 
   function handleScroll(event: any) {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / width);
-    setCurrentIndex(index);
+    const offsetX = event.nativeEvent.contentOffset.x
+    const index = Math.round(offsetX / width)
+    setCurrentIndex(index)
   }
 
   return (
@@ -611,7 +611,7 @@ export function ImageViewerScreen() {
         </SafeAreaView>
       </Animated.View>
     </Animated.View>
-  );
+  )
 }
 
 function PhotoCommentsSheet({
@@ -620,58 +620,58 @@ function PhotoCommentsSheet({
   postId,
   assetUrl,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  postId: string;
-  assetUrl: string;
+  visible: boolean
+  onClose: () => void
+  postId: string
+  assetUrl: string
 }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
-  const [commentText, setCommentText] = useState('');
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const [commentText, setCommentText] = useState('')
 
   const { data: comments, isLoading } = useQuery({
     queryKey: ['comments', postId, assetUrl],
     queryFn: () => fetchComments(postId, assetUrl),
     enabled: visible,
-  });
+  })
 
   function invalidateComments() {
-    queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-    queryClient.invalidateQueries({ queryKey: ['post', postId] });
-    queryClient.invalidateQueries({ queryKey: ['posts'] });
+    queryClient.invalidateQueries({ queryKey: ['comments', postId] })
+    queryClient.invalidateQueries({ queryKey: ['post', postId] })
+    queryClient.invalidateQueries({ queryKey: ['posts'] })
   }
 
   const commentMutation = useMutation({
     mutationFn: (content: string) => createComment(postId, { content, assetUrl }),
     onSuccess: () => {
-      setCommentText('');
-      invalidateComments();
+      setCommentText('')
+      invalidateComments()
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('common.tryAgain'))
     },
-  });
+  })
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: string) => deleteComment(commentId),
     onSuccess: () => invalidateComments(),
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('postDetail.alerts.deleteFailed'))
     },
-  });
+  })
 
   function confirmDelete(commentId: string) {
     Alert.alert(t('postDetail.deleteCommentConfirmTitle'), t('postDetail.deleteCommentConfirmMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deleteCommentMutation.mutate(commentId) },
-    ]);
+    ])
   }
 
   function submitComment() {
-    const trimmed = commentText.trim();
-    if (!trimmed) return;
-    commentMutation.mutate(trimmed);
+    const trimmed = commentText.trim()
+    if (!trimmed) return
+    commentMutation.mutate(trimmed)
   }
 
   return (
@@ -737,7 +737,7 @@ function PhotoCommentsSheet({
         </KeyboardAvoidingView>
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
   reactionEmoji: {
     fontSize: 20,
   },
-});
+})
 
 const sheetStyles = StyleSheet.create({
   overlay: {
@@ -962,4 +962,4 @@ const sheetStyles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: colors.border,
   },
-});
+})

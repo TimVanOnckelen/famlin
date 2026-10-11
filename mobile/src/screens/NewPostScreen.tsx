@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -9,36 +9,36 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as ImagePicker from 'expo-image-picker';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import * as ImagePicker from 'expo-image-picker'
+import { useVideoPlayer, VideoView } from 'expo-video'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon, IconName } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { Group, PostType } from '@/types';
-import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client';
-import { useAuthStore } from '@/stores/authStore';
-import { getUploadUrl } from '@/api/uploads';
-import { isVideoUrl } from '@/utils/media';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
-import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
-import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal';
-import { MediaPickerModal } from '@/components/MediaPickerModal';
-import { TravelerPickerModal } from '@/components/TravelerPickerModal';
+import { colors } from '@/constants/colors'
+import { Icon, IconName } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { Group, PostType } from '@/types'
+import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client'
+import { useAuthStore } from '@/stores/authStore'
+import { getUploadUrl } from '@/api/uploads'
+import { isVideoUrl } from '@/utils/media'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
+import { LocationPickerModal, PickedLocation } from '@/components/LocationPickerModal'
+import { MediaPickerModal } from '@/components/MediaPickerModal'
+import { TravelerPickerModal } from '@/components/TravelerPickerModal'
 import {
   buildGroupSelectionPayload,
   toggleGroupSelection,
   resolveOfferedPostTypes,
   reconcilePostTypeSelection,
-} from '@/utils/newPost';
-import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
+} from '@/utils/newPost'
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 
-const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const;
+const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const
 // Feather names, not emoji — same reasoning as POST_TYPE_ICON below. The chip
 // label itself is what gets stored as Post.milestoneTag, so it stays plain
 // text and the icon is purely the chip's own decoration.
@@ -48,13 +48,13 @@ const MILESTONE_TAG_ICON: Record<string, IconName> = {
   anniversary: 'heart',
   graduation: 'award',
   custom: 'edit-3',
-};
-const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM'] as const;
-const MIN_POLL_OPTIONS = 2;
-const MAX_POLL_OPTIONS = 10;
+}
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM'] as const
+const MIN_POLL_OPTIONS = 2
+const MAX_POLL_OPTIONS = 10
 // 'YYYY-MM-DD' — matches the backend contract's typeData.startDate/endDate
 // shape exactly (no time component).
-const TRIP_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const TRIP_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 // Icon/accent used by the "what do you want to share?" type-chooser step.
 // Feather names, not emoji: an emoji is drawn by the platform's own font, so
@@ -65,21 +65,21 @@ const POST_TYPE_ICON: Record<string, IconName> = {
   POLL: 'bar-chart-2',
   TRIP: 'briefcase',
   ALBUM: 'image',
-};
+}
 const POST_TYPE_ICON_COLOR: Record<string, string> = {
   UPDATE: colors.accent,
   MILESTONE: colors.milestoneText,
   POLL: colors.primary,
   TRIP: colors.trip,
   ALBUM: colors.primary,
-};
+}
 const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
   MILESTONE: colors.milestoneBg,
   POLL: colors.primaryTint,
   TRIP: colors.tripTint,
   ALBUM: colors.primaryTint,
-};
+}
 
 // Colors for the swappable type chip at the top of the compose step — one
 // palette per type, echoing the type-chooser row it was picked from.
@@ -94,116 +94,116 @@ const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg:
   POLL: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
   ALBUM: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
-};
+}
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
   const player = useVideoPlayer({ uri }, (p) => {
-    p.muted = true;
-  });
+    p.muted = true
+  })
 
-  return <VideoView player={player} style={style} contentFit="cover" nativeControls={false} />;
+  return <VideoView player={player} style={style} contentFit="cover" nativeControls={false} />
 }
 
 export function NewPostScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
-  const [content, setContent] = useState('');
-  const [postType, setPostType] = useState<PostType>('UPDATE');
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const [content, setContent] = useState('')
+  const [postType, setPostType] = useState<PostType>('UPDATE')
   // Which post type to share is chosen up front, on its own step, before the
   // rest of the composer (content, media, type-specific fields) is shown.
-  const [composerStep, setComposerStep] = useState<'type' | 'compose'>('type');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [isCustomTag, setIsCustomTag] = useState(false);
-  const [customTagText, setCustomTagText] = useState('');
+  const [composerStep, setComposerStep] = useState<'type' | 'compose'>('type')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [isCustomTag, setIsCustomTag] = useState(false)
+  const [customTagText, setCustomTagText] = useState('')
   // Poll composer state: option text inputs, starting at the minimum of 2.
   // Only non-empty ones are sent (see createPostMutation below).
-  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
   // Trip composer state (design 6g) — dates are plain 'YYYY-MM-DD' text,
   // there's no date-picker dependency in this app yet.
-  const [tripTitle, setTripTitle] = useState('');
-  const [tripDestination, setTripDestination] = useState('');
-  const [tripStartDate, setTripStartDate] = useState('');
-  const [tripEndDate, setTripEndDate] = useState('');
-  const [tripCoverPhotoUrl, setTripCoverPhotoUrl] = useState<string | null>(null);
+  const [tripTitle, setTripTitle] = useState('')
+  const [tripDestination, setTripDestination] = useState('')
+  const [tripStartDate, setTripStartDate] = useState('')
+  const [tripEndDate, setTripEndDate] = useState('')
+  const [tripCoverPhotoUrl, setTripCoverPhotoUrl] = useState<string | null>(null)
   // Co-travelers: group members (besides the author) who may also check in.
-  const [tripTravelerIds, setTripTravelerIds] = useState<string[]>([]);
-  const [showTravelerPicker, setShowTravelerPicker] = useState(false);
+  const [tripTravelerIds, setTripTravelerIds] = useState<string[]>([])
+  const [showTravelerPicker, setShowTravelerPicker] = useState(false)
   // Album composer state: the album's title lives in typeData; content stays
   // an optional description. Initial photos (uploadedAssetUrls) are seeded as
   // the author's first contribution after the album is created.
-  const [albumTitle, setAlbumTitle] = useState('');
-  const isMilestone = postType === 'MILESTONE';
+  const [albumTitle, setAlbumTitle] = useState('')
+  const isMilestone = postType === 'MILESTONE'
   // Multi-select: which groups this post goes to. The first entry is the
   // "primary" group (also what the media/album picker is scoped to); more
   // than one selected turns the submit into a cross-post. At least one is
   // always required — see toggleGroupSelection.
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
   // Audience: null = the whole family, otherwise one Circle within the single
   // selected family. Circles and cross-posting are mutually exclusive (a
   // Circle belongs to exactly one group), so this resets whenever the family
   // selection moves.
-  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
-  const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([]);
-  const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([]);
-  const [location, setLocation] = useState<PickedLocation | null>(null);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
+  const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([])
+  const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([])
+  const [location, setLocation] = useState<PickedLocation | null>(null)
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
 
   const { data: groups } = useQuery<Group[], Error>({
     queryKey: ['groups'],
     queryFn: fetchGroups,
-  });
+  })
 
   // The linked-album media picker targets a single group — when several are
   // selected, drive it from the first one chosen.
-  const primaryGroupId = selectedGroupIds[0] ?? null;
+  const primaryGroupId = selectedGroupIds[0] ?? null
 
   // The audience picker offers only circles the author is in — which is all
   // the server ever returns, and all they're allowed to post to. Offered only
   // for a single-family post: cross-posting to several families can't be
   // narrowed to a circle.
-  const canChooseCircle = selectedGroupIds.length === 1;
+  const canChooseCircle = selectedGroupIds.length === 1
   const { data: circlesData } = useQuery({
     queryKey: ['circles', primaryGroupId],
     queryFn: () => fetchMyCircles(primaryGroupId!),
     enabled: !!primaryGroupId && canChooseCircle,
-  });
-  const circles = canChooseCircle ? (circlesData ?? []) : [];
+  })
+  const circles = canChooseCircle ? (circlesData ?? []) : []
 
   const { data: mediaAlbums, isError: mediaAlbumsErrored } = useQuery({
     queryKey: ['media-albums', primaryGroupId],
     queryFn: () => getGroupMediaAlbums(primaryGroupId!),
     enabled: !!primaryGroupId,
-  });
+  })
 
   React.useEffect(() => {
     if (groups && groups.length > 0 && selectedGroupIds.length === 0) {
-      setSelectedGroupIds([groups[0].id]);
+      setSelectedGroupIds([groups[0].id])
     }
-  }, [groups]);
+  }, [groups])
 
   // Only the post types EVERY selected target group allows are offered —
   // the server enforces each group's allowedPostTypes on POST /api/posts,
   // so the segmented control must not offer a type a target group rejects.
   // An empty intersection (possible when cross-posting to groups with
   // disjoint allow-lists) disables submit with a notice instead.
-  const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds);
-  const noOfferedPostTypes = offeredPostTypes.length === 0;
+  const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds)
+  const noOfferedPostTypes = offeredPostTypes.length === 0
 
   // When the group selection changes and the current type is no longer
   // offered, snap to the first offered type (UPDATE in practice).
   React.useEffect(() => {
-    const reconciled = reconcilePostTypeSelection(postType, offeredPostTypes);
+    const reconciled = reconcilePostTypeSelection(postType, offeredPostTypes)
     if (reconciled !== null && reconciled !== postType) {
-      setPostType(reconciled);
+      setPostType(reconciled)
     }
-  }, [offeredPostTypes.join(','), postType]);
+  }, [offeredPostTypes.join(','), postType])
 
-  const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
-  const isTrip = postType === 'TRIP';
-  const isAlbum = postType === 'ALBUM';
+  const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0)
+  const isTrip = postType === 'TRIP'
+  const isAlbum = postType === 'ALBUM'
 
   // Valid trip co-travelers = members of EVERY selected group (the server
   // enforces this per target group on a cross-posted trip). Shares the
@@ -211,25 +211,25 @@ export function NewPostScreen() {
   const { members: travelerCandidates, loaded: travelerCandidatesLoaded } = useGroupMembersIntersection(
     selectedGroupIds,
     isTrip
-  );
-  const travelerCandidateIdsKey = travelerCandidates.map((member) => member.id).join(',');
+  )
+  const travelerCandidateIdsKey = travelerCandidates.map((member) => member.id).join(',')
 
   // When the group selection changes, previously picked co-travelers may no
   // longer be in the intersection — drop them (only once every member list
   // has loaded, so an in-flight fetch can't wrongly clear the selection).
   React.useEffect(() => {
-    if (!isTrip || !travelerCandidatesLoaded) return;
+    if (!isTrip || !travelerCandidatesLoaded) return
     setTripTravelerIds((prev) => {
-      const next = prev.filter((id) => travelerCandidates.some((member) => member.id === id));
-      return next.length === prev.length ? prev : next;
-    });
-  }, [isTrip, travelerCandidatesLoaded, travelerCandidateIdsKey]);
-  const tripStartDateValid = TRIP_DATE_REGEX.test(tripStartDate);
-  const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate);
+      const next = prev.filter((id) => travelerCandidates.some((member) => member.id === id))
+      return next.length === prev.length ? prev : next
+    })
+  }, [isTrip, travelerCandidatesLoaded, travelerCandidateIdsKey])
+  const tripStartDateValid = TRIP_DATE_REGEX.test(tripStartDate)
+  const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate)
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
-      if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'));
+      if (selectedGroupIds.length === 0) throw new Error(t('newPost.alerts.noGroupSelected'))
 
       // ALBUM: create an empty album (title in typeData, first uploaded photo
       // as the cover), then seed the uploaded photos as the author's first
@@ -237,7 +237,7 @@ export function NewPostScreen() {
       // on Post.uploadedAssetUrls. Only /uploads/ paths can seed a
       // contribution (the addPhotos interaction rejects media-proxy URLs).
       if (isAlbum) {
-        const seedPhotoUrls = uploadedAssetUrls.filter((url) => url.startsWith('/uploads/'));
+        const seedPhotoUrls = uploadedAssetUrls.filter((url) => url.startsWith('/uploads/'))
         const album = await createPost({
           ...buildGroupSelectionPayload(selectedGroupIds),
           // Omitted entirely for a whole-family post, so older servers that
@@ -247,11 +247,11 @@ export function NewPostScreen() {
           type: postType,
           typeData: { title: albumTitle.trim(), coverPhotoUrl: seedPhotoUrls[0] || undefined },
           uploadedAssetUrls: [],
-        });
+        })
         if (seedPhotoUrls.length > 0) {
-          await addAlbumPhotos(album.id, { photoUrls: seedPhotoUrls });
+          await addAlbumPhotos(album.id, { photoUrls: seedPhotoUrls })
         }
-        return album;
+        return album
       }
 
       return createPost({
@@ -282,16 +282,16 @@ export function NewPostScreen() {
         latitude: isTrip ? undefined : location?.latitude,
         longitude: isTrip ? undefined : location?.longitude,
         locationName: isTrip ? undefined : location?.locationName,
-      });
+      })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      navigation.goBack();
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      navigation.goBack()
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.postFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.postFailed'))
     },
-  });
+  })
 
   const canSubmit =
     selectedGroupIds.length > 0 &&
@@ -303,18 +303,18 @@ export function NewPostScreen() {
         ? albumTitle.trim().length > 0
         : postType === 'POLL'
           ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
-          : content.trim().length > 0 || uploadedAssetUrls.length > 0);
+          : content.trim().length > 0 || uploadedAssetUrls.length > 0)
 
   function addPollOption() {
-    setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']));
+    setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']))
   }
 
   function removePollOption(index: number) {
-    setPollOptions((prev) => (prev.length <= MIN_POLL_OPTIONS ? prev : prev.filter((_, i) => i !== index)));
+    setPollOptions((prev) => (prev.length <= MIN_POLL_OPTIONS ? prev : prev.filter((_, i) => i !== index)))
   }
 
   function updatePollOption(index: number, text: string) {
-    setPollOptions((prev) => prev.map((option, i) => (i === index ? text : option)));
+    setPollOptions((prev) => prev.map((option, i) => (i === index ? text : option)))
   }
 
   const {
@@ -334,24 +334,24 @@ export function NewPostScreen() {
     // is in flight.
     onPicked: setPendingAssets,
     onError: (err) => console.error('Upload error:', err),
-  });
+  })
 
   async function pickImagesFromDevice() {
-    const result = await pickDeviceMedia();
-    if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls]);
-    setPendingAssets([]);
+    const result = await pickDeviceMedia()
+    if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls])
+    setPendingAssets([])
   }
 
   function removeUploadedAsset(url: string) {
-    setUploadedAssetUrls((prev) => prev.filter((u) => u !== url));
+    setUploadedAssetUrls((prev) => prev.filter((u) => u !== url))
   }
 
   function handleMediaConfirm(urls: string[]) {
-    setShowMediaPicker(false);
-    setUploadedAssetUrls((prev) => [...prev, ...urls]);
+    setShowMediaPicker(false)
+    setUploadedAssetUrls((prev) => [...prev, ...urls])
   }
 
-  const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }));
+  const allAssets = uploadedAssetUrls.map((url) => ({ type: 'upload' as const, url }))
 
   // Trip's cover photo is a single optional image, separate from the
   // multi-photo attach flow above — reuses the same pick-then-upload hook
@@ -363,11 +363,11 @@ export function NewPostScreen() {
       quality: 0.8,
     },
     onError: (err) => console.error('Cover photo upload error:', err),
-  });
+  })
 
   async function pickTripCoverPhoto() {
-    const result = await pickTripCoverMedia();
-    if (result && result.urls[0]) setTripCoverPhotoUrl(result.urls[0]);
+    const result = await pickTripCoverMedia()
+    if (result && result.urls[0]) setTripCoverPhotoUrl(result.urls[0])
   }
 
   // Step 1: pick who to share with and what kind of post to make, as a
@@ -392,22 +392,22 @@ export function NewPostScreen() {
               <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
               <View style={styles.chooserGroupChips}>
                 {groups.map((group: Group) => {
-                  const isActive = selectedGroupIds.includes(group.id);
+                  const isActive = selectedGroupIds.includes(group.id)
                   return (
                     <TouchableOpacity
                       key={group.id}
                       style={[styles.groupChip, isActive && styles.groupChipActive]}
                       onPress={() => {
-                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
+                        setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
                         // A circle belongs to one family, so a previous
                         // choice stops being valid once the family moves.
-                        setSelectedCircleId(null);
+                        setSelectedCircleId(null)
                       }}
                       accessibilityState={{ selected: isActive }}
                     >
                       <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
                     </TouchableOpacity>
-                  );
+                  )
                 })}
               </View>
             </View>
@@ -425,8 +425,8 @@ export function NewPostScreen() {
                     key={option}
                     style={styles.typeRow}
                     onPress={() => {
-                      setPostType(option);
-                      setComposerStep('compose');
+                      setPostType(option)
+                      setComposerStep('compose')
                     }}
                   >
                     <View style={[styles.typeRowIcon, { backgroundColor: POST_TYPE_ICON_BG[option] }]}>
@@ -446,16 +446,16 @@ export function NewPostScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    );
+    )
   }
 
-  const chipStyle = POST_TYPE_CHIP_STYLE[postType] ?? POST_TYPE_CHIP_STYLE.UPDATE;
+  const chipStyle = POST_TYPE_CHIP_STYLE[postType] ?? POST_TYPE_CHIP_STYLE.UPDATE
   const contentPlaceholder =
     postType === 'POLL'
       ? t('poll.questionPlaceholder')
       : isMilestone
         ? t('newPost.milestoneContentPlaceholder')
-        : t('newPost.contentPlaceholder');
+        : t('newPost.contentPlaceholder')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -517,22 +517,22 @@ export function NewPostScreen() {
             <Text style={styles.sectionLabel}>{t('newPost.groupsLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {groups.map((group: Group) => {
-                const isActive = selectedGroupIds.includes(group.id);
+                const isActive = selectedGroupIds.includes(group.id)
                 return (
                   <TouchableOpacity
                     key={group.id}
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
                     onPress={() => {
-                      setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id));
+                      setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
                       // A circle belongs to one family, so a previous
                       // choice stops being valid once the family moves.
-                      setSelectedCircleId(null);
+                      setSelectedCircleId(null)
                     }}
                     accessibilityState={{ selected: isActive }}
                   >
                     <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{group.name}</Text>
                   </TouchableOpacity>
-                );
+                )
               })}
             </ScrollView>
           </View>
@@ -553,7 +553,7 @@ export function NewPostScreen() {
                 </Text>
               </TouchableOpacity>
               {circles.map((circle) => {
-                const isActive = selectedCircleId === circle.id;
+                const isActive = selectedCircleId === circle.id
                 return (
                   <TouchableOpacity
                     key={circle.id}
@@ -563,7 +563,7 @@ export function NewPostScreen() {
                   >
                     <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>{circle.name}</Text>
                   </TouchableOpacity>
-                );
+                )
               })}
             </ScrollView>
           </View>
@@ -733,15 +733,15 @@ export function NewPostScreen() {
             <Text style={styles.sectionLabel}>{t('newPost.milestoneSubtitle')}</Text>
             <View style={styles.tagList}>
               {MILESTONE_TAG_KEYS.map((tagKey) => {
-                const tag = t(`newPost.milestoneTags.${tagKey}`);
-                const active = !isCustomTag && selectedTag === tag;
+                const tag = t(`newPost.milestoneTags.${tagKey}`)
+                const active = !isCustomTag && selectedTag === tag
                 return (
                   <TouchableOpacity
                     key={tagKey}
                     style={[styles.tagChip, active && styles.tagChipActive]}
                     onPress={() => {
-                      setIsCustomTag(false);
-                      setSelectedTag(tag);
+                      setIsCustomTag(false)
+                      setSelectedTag(tag)
                     }}
                   >
                     <Icon
@@ -751,13 +751,13 @@ export function NewPostScreen() {
                     />
                     <Text style={[styles.tagChipText, active && styles.tagChipTextActive]}>{tag}</Text>
                   </TouchableOpacity>
-                );
+                )
               })}
               <TouchableOpacity
                 style={[styles.tagChip, isCustomTag && styles.tagChipActive]}
                 onPress={() => {
-                  setIsCustomTag(true);
-                  setSelectedTag(null);
+                  setIsCustomTag(true)
+                  setSelectedTag(null)
                 }}
               >
                 <Icon
@@ -801,7 +801,7 @@ export function NewPostScreen() {
                 contentContainerStyle={styles.selectedAssets}
               >
                 {allAssets.map((asset) => {
-                  const isVideo = isVideoUrl(asset.url);
+                  const isVideo = isVideoUrl(asset.url)
                   return (
                     <View key={asset.url} style={styles.selectedAsset}>
                       {isVideo ? (
@@ -818,7 +818,7 @@ export function NewPostScreen() {
                         <Icon name="x" size={12} color={colors.white} />
                       </TouchableOpacity>
                     </View>
-                  );
+                  )
                 })}
                 {pendingAssets.map((asset, index) => (
                   <View key={`pending-${index}`} style={styles.selectedAsset}>
@@ -881,8 +881,8 @@ export function NewPostScreen() {
         initialLocation={location}
         onCancel={() => setShowLocationPicker(false)}
         onConfirm={(picked) => {
-          setLocation(picked);
-          setShowLocationPicker(false);
+          setLocation(picked)
+          setShowLocationPicker(false)
         }}
       />
 
@@ -903,13 +903,13 @@ export function NewPostScreen() {
           initialSelectedIds={tripTravelerIds}
           onCancel={() => setShowTravelerPicker(false)}
           onConfirm={(userIds) => {
-            setTripTravelerIds(userIds);
-            setShowTravelerPicker(false);
+            setTripTravelerIds(userIds)
+            setShowTravelerPicker(false)
           }}
         />
       )}
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -1423,4 +1423,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+})

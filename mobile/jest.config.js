@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('path')
 
 // @famlin/api-client is installed via `file:../packages/api-client`, which
 // npm links as a symlink — Jest resolves symlinks to their real path before
@@ -8,7 +8,7 @@ const path = require('path');
 // then fails looking for @babel/runtime helpers. `<rootDir>/..` isn't
 // path-normalized by Jest's substitution, so it never matches the already-
 // normalized real path — resolve it ourselves instead.
-const apiClientDist = path.resolve(__dirname, '../packages/api-client/dist');
+const apiClientDist = path.resolve(__dirname, '../packages/api-client/dist')
 
 /** @type {import('jest').Config} */
 module.exports = {
@@ -22,4 +22,4 @@ module.exports = {
     '/node_modules/@react-native/babel-preset/',
     apiClientDist,
   ],
-};
+}

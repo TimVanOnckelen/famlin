@@ -1,1 +1,1 @@
-export { patchPostInCaches } from '@famlin/api-client';
+export { patchPostInCaches } from '@famlin/api-client'

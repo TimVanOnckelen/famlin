@@ -4,8 +4,8 @@
 // that breaks `vite build` for any consumer (e.g. web/) even though it works
 // fine under ts-jest/Metro/`tsc --noEmit`. Named re-exports compile to
 // statically analyzable `Object.defineProperty` getters instead.
-export type { StorageAdapter } from './storage';
-export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
+export type { StorageAdapter } from './storage'
+export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage'
 
 export {
   api,
@@ -16,7 +16,7 @@ export {
   initApiBaseUrl,
   setUnauthorizedHandler,
   setLanguageResolver,
-} from './client';
+} from './client'
 
 export type {
   LoginResponse,
@@ -27,7 +27,7 @@ export type {
   Branding,
   BrandPalette,
   BrandSemantic,
-} from './auth';
+} from './auth'
 export {
   fetchOidcConfig,
   loginWithOidc,
@@ -44,9 +44,9 @@ export {
   deleteAccount,
   downloadMyExport,
   getMyExportRequest,
-} from './auth';
+} from './auth'
 
-export { compareVersions } from './version';
+export { compareVersions } from './version'
 
 export {
   generateRandomString,
@@ -54,19 +54,19 @@ export {
   startBrowserOidcLogin,
   completeBrowserOidcLogin,
   clearBrowserOidcLogin,
-} from './oidcBrowser';
+} from './oidcBrowser'
 
-export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
-export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';
+export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media'
+export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media'
 
 // Legacy Immich-only equivalents of ./media — see the note in ./immich.ts.
-export type { ImmichGroupAlbum, ImmichAsset } from './immich';
-export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
+export type { ImmichGroupAlbum, ImmichAsset } from './immich'
+export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich'
 
-export type { InvitePreview } from './invites';
-export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
+export type { InvitePreview } from './invites'
+export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites'
 
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS } from './uploads';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS } from './uploads'
 
 export type {
   ReactionType,
@@ -91,13 +91,13 @@ export type {
   AlbumPhotoMetadata,
   Comment,
   Notification,
-} from './types';
-export { REACTION_TYPES } from './types';
+} from './types'
+export { REACTION_TYPES } from './types'
 
-export { patchPostInCaches } from './postCache';
+export { patchPostInCaches } from './postCache'
 
-export type { GroupMember } from './groups';
-export { fetchGroups, fetchGroupMembers } from './groups';
+export type { GroupMember } from './groups'
+export { fetchGroups, fetchGroupMembers } from './groups'
 
 export type {
   FetchPostsParams,
@@ -108,7 +108,7 @@ export type {
   ReactionResult,
   CheckInTripBody,
   AddAlbumPhotosBody,
-} from './posts';
+} from './posts'
 export {
   fetchPosts,
   fetchAlbumPosts,
@@ -129,28 +129,28 @@ export {
   setTripTravelers,
   addAlbumPhotos,
   closeAlbum,
-} from './posts';
+} from './posts'
 
-export type { CreateCommentBody, UpdateCommentBody } from './comments';
-export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
+export type { CreateCommentBody, UpdateCommentBody } from './comments'
+export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments'
 
-export type { CommentGroup } from './commentGroups';
-export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups';
+export type { CommentGroup } from './commentGroups'
+export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups'
 
-export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
-export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat';
+export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat'
+export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat'
 
 export {
   fetchNotifications,
   fetchUnreadNotificationCount,
   markNotificationRead,
   markAllNotificationsRead,
-} from './notifications';
+} from './notifications'
 
-export { registerPushToken, unregisterPushToken } from './pushTokens';
+export { registerPushToken, unregisterPushToken } from './pushTokens'
 
-export type { ApiToken, CreatedApiToken } from './apiTokens';
-export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens';
+export type { ApiToken, CreatedApiToken } from './apiTokens'
+export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens'
 
 export type {
   Story,
@@ -162,7 +162,7 @@ export type {
   StoryReactor,
   StoryReply,
   CreateStoryBody,
-} from './stories';
+} from './stories'
 export {
   fetchStoryTray,
   fetchStoryHighlights,
@@ -178,7 +178,7 @@ export {
   unpinStory,
   deleteStory,
   isStoryLive,
-} from './stories';
+} from './stories'
 
-export type { Circle, CircleMember } from './types';
-export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';
+export type { Circle, CircleMember } from './types'
+export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles'

@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { AvatarStack } from '@/components/AvatarStack';
-import { Badge } from '@/components/Badge';
-import { Icon } from '@/components/Icon';
-import { CircleBadge } from '@/components/CircleBadge';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
-import { isVideoUrl } from '@/utils/media';
-import '../PostCard.css';
-import './AlbumFeedCard.css';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { AvatarStack } from '@/components/AvatarStack'
+import { Badge } from '@/components/Badge'
+import { Icon } from '@/components/Icon'
+import { CircleBadge } from '@/components/CircleBadge'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal'
+import { isVideoUrl } from '@/utils/media'
+import '../PostCard.css'
+import './AlbumFeedCard.css'
 
 // The feed card for an ALBUM post — a collaborative photo album any group
 // member adds photos to. Like TripFeedCard, it replaces the generic card
@@ -23,41 +23,41 @@ export function AlbumFeedCard({
   showGroup = false,
   onOpenAlbum,
 }: {
-  post: Post;
-  showGroup?: boolean;
-  onOpenAlbum?: (postId: string) => void;
+  post: Post
+  showGroup?: boolean
+  onOpenAlbum?: (postId: string) => void
 }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const album = post.album;
-  const [contributeOpen, setContributeOpen] = useState(false);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const album = post.album
+  const [contributeOpen, setContributeOpen] = useState(false)
 
   const reactMutation = useMutation({
     mutationFn: (type: ReactionType) => reactToPost(post.id, type),
     onMutate: async (type) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const nextReaction = post.myReaction === type ? null : type;
+      await queryClient.cancelQueries({ queryKey: ['posts'] })
+      const nextReaction = post.myReaction === type ? null : type
       patchPostInCaches(queryClient, post.id, (p) => {
-        const reactions = { ...p.reactions };
-        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
-        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
+        const reactions = { ...p.reactions }
+        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1)
+        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1
         return {
           ...p,
           myReaction: nextReaction,
           reactions,
           likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
           likedByMe: nextReaction !== null,
-        };
-      });
+        }
+      })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
-  });
+  })
 
   // Guard mirrors TripFeedCard: an ALBUM post is always enriched with `album`
   // by the server, but an older/partial cache entry is possible.
-  if (!album) return null;
+  if (!album) return null
 
   // Both context chips travel together: which family the post is in (when the
   // feed spans several) and which Circle it was shared with (when it wasn't
@@ -67,9 +67,9 @@ export function AlbumFeedCard({
       {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
       <CircleBadge post={post} />
     </>
-  );
+  )
   const heroUrls =
-    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : [];
+    album.collagePhotoUrls.length > 0 ? album.collagePhotoUrls : album.coverPhotoUrl ? [album.coverPhotoUrl] : []
 
   return (
     <div className="post-card">
@@ -154,7 +154,7 @@ export function AlbumFeedCard({
 
       {contributeOpen && <AddAlbumPhotosModal postId={post.id} onClose={() => setContributeOpen(false)} />}
     </div>
-  );
+  )
 }
 
 // A 2×2 collage built from up to 4 of the album's newest photos, with a "+N"
@@ -166,10 +166,10 @@ function AlbumCollage({
   label,
   onOpen,
 }: {
-  urls: string[];
-  photoCount: number;
-  label: string;
-  onOpen: () => void;
+  urls: string[]
+  photoCount: number
+  label: string
+  onOpen: () => void
 }) {
   if (urls.length === 0) {
     return (
@@ -178,11 +178,11 @@ function AlbumCollage({
           <Icon name="image" size={40} strokeWidth={1.5} />
         </div>
       </button>
-    );
+    )
   }
 
-  const visible = urls.slice(0, 4);
-  const overflow = Math.max(0, photoCount - visible.length);
+  const visible = urls.slice(0, 4)
+  const overflow = Math.max(0, photoCount - visible.length)
 
   return (
     <button
@@ -202,5 +202,5 @@ function AlbumCollage({
         </span>
       ))}
     </button>
-  );
+  )
 }

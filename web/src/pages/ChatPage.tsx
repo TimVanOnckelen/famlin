@@ -1,6 +1,6 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   uploadFiles,
   fetchGroups,
@@ -13,27 +13,27 @@ import {
   ChatMessage,
   ChatMessagesPage,
   User,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { AvatarStack } from '@/components/AvatarStack';
-import { AppShell } from '@/components/AppShell';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { Lightbox } from '@/components/Lightbox';
-import { formatRelativeDate } from '@/utils/time';
-import { isVideoUrl } from '@/utils/media';
-import './ChatPage.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { AvatarStack } from '@/components/AvatarStack'
+import { AppShell } from '@/components/AppShell'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { Lightbox } from '@/components/Lightbox'
+import { formatRelativeDate } from '@/utils/time'
+import { isVideoUrl } from '@/utils/media'
+import './ChatPage.css'
 
 // Same endpoint as every other composer, same "first url of the batch"
 // contract as CommentsSection.tsx.
 async function uploadChatAttachment(file: File): Promise<string> {
-  const urls = await uploadFiles([file]);
-  return urls[0];
+  const urls = await uploadFiles([file])
+  return urls[0]
 }
 
 function dateKey(iso: string): string {
-  return new Date(iso).toDateString();
+  return new Date(iso).toDateString()
 }
 
 // Web counterpart of mobile's per-group chitchat screen, desktop-styled: a
@@ -49,45 +49,45 @@ export function ChatPage({
   onOpenFavorites,
   onLogout,
 }: {
-  user: User;
-  onBack: () => void;
-  onOpenPhotos?: () => void;
-  onOpenProfile?: () => void;
-  onOpenFavorites?: () => void;
-  onLogout: () => void;
+  user: User
+  onBack: () => void
+  onOpenPhotos?: () => void
+  onOpenProfile?: () => void
+  onOpenFavorites?: () => void
+  onLogout: () => void
 }) {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
-  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const isNearBottomRef = useRef(true);
-  const isFirstLoadRef = useRef(true);
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const isNearBottomRef = useRef(true)
+  const isFirstLoadRef = useRef(true)
 
-  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
-  const chatGroups = (groupsQuery.data ?? []).filter((group) => group.chitchatEnabled);
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
+  const chatGroups = (groupsQuery.data ?? []).filter((group) => group.chitchatEnabled)
   // Default to the first family rather than making the user pick.
-  const activeGroupId = selectedGroupId ?? (chatGroups.length > 0 ? chatGroups[0].id : null);
-  const activeGroup = chatGroups.find((group) => group.id === activeGroupId) ?? null;
+  const activeGroupId = selectedGroupId ?? (chatGroups.length > 0 ? chatGroups[0].id : null)
+  const activeGroup = chatGroups.find((group) => group.id === activeGroupId) ?? null
 
   const unreadQuery = useQuery({
     queryKey: ['chat-unread'],
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
-  });
-  const unreadByGroup = unreadQuery.data ?? {};
+  })
+  const unreadByGroup = unreadQuery.data ?? {}
 
   const membersQuery = useQuery({
     queryKey: ['group-members', activeGroupId],
     queryFn: () => fetchGroupMembers(activeGroupId!),
     enabled: !!activeGroupId,
-  });
-  const members = membersQuery.data ?? [];
+  })
+  const members = membersQuery.data ?? []
 
   const messagesQuery = useInfiniteQuery({
     queryKey: ['chatMessages', activeGroupId],
@@ -98,111 +98,111 @@ export function ChatPage({
     // A web tab doesn't background the same way mobile does, so a plain
     // interval is enough — just skip it while the tab isn't visible.
     refetchInterval: () => (document.visibilityState === 'hidden' ? false : 6000),
-  });
+  })
 
   // Pages come back newest-first (per page, and page-over-page); reverse the
   // flattened list for oldest-at-top / newest-at-bottom chat rendering.
-  const messages = [...(messagesQuery.data?.pages.flatMap((page) => page.items) ?? [])].reverse();
+  const messages = [...(messagesQuery.data?.pages.flatMap((page) => page.items) ?? [])].reverse()
 
   const markReadMutation = useMutation({
     mutationFn: (groupId: string) => markChatRead(groupId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chat-unread'] });
+      queryClient.invalidateQueries({ queryKey: ['chat-unread'] })
     },
-  });
+  })
 
   // Mark read whenever the selected group's chat is opened.
   useEffect(() => {
-    if (activeGroupId) markReadMutation.mutate(activeGroupId);
+    if (activeGroupId) markReadMutation.mutate(activeGroupId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroupId]);
+  }, [activeGroupId])
 
   useEffect(() => {
-    isFirstLoadRef.current = true;
-  }, [activeGroupId]);
+    isFirstLoadRef.current = true
+  }, [activeGroupId])
 
   // Auto-scroll to the newest message on first load, and on any later update
   // only if the user was already near the bottom (so background polling
   // doesn't yank someone away from older messages they scrolled up to read).
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0) return
     if (isFirstLoadRef.current || isNearBottomRef.current) {
-      bottomRef.current?.scrollIntoView({ block: 'end' });
-      isFirstLoadRef.current = false;
+      bottomRef.current?.scrollIntoView({ block: 'end' })
+      isFirstLoadRef.current = false
     }
-  }, [messages.length]);
+  }, [messages.length])
 
   const sendMutation = useMutation({
     mutationFn: async ({ content, file }: { content: string; file: File | null }) => {
-      const attachmentUrl = file ? await uploadChatAttachment(file) : undefined;
-      return sendChatMessage(activeGroupId!, { content: content || undefined, attachmentUrl });
+      const attachmentUrl = file ? await uploadChatAttachment(file) : undefined
+      return sendChatMessage(activeGroupId!, { content: content || undefined, attachmentUrl })
     },
     onSuccess: (created) => {
-      setDraft('');
-      clearAttachment();
+      setDraft('')
+      clearAttachment()
       // Mirrors CommentsSection.tsx's onSuccess cache-append pattern, adapted
       // to an infinite query: the new message is the newest, so it goes at
       // the front of the first (newest) page.
       queryClient.setQueryData<InfiniteData<ChatMessagesPage>>(['chatMessages', activeGroupId], (old) => {
-        if (!old) return old;
-        const [firstPage, ...rest] = old.pages;
-        return { ...old, pages: [{ ...firstPage, items: [created, ...firstPage.items] }, ...rest] };
-      });
-      isNearBottomRef.current = true;
+        if (!old) return old
+        const [firstPage, ...rest] = old.pages
+        return { ...old, pages: [{ ...firstPage, items: [created, ...firstPage.items] }, ...rest] }
+      })
+      isNearBottomRef.current = true
     },
-  });
+  })
 
   function handleScroll() {
-    const el = containerRef.current;
-    if (!el) return;
-    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    const el = containerRef.current
+    if (!el) return
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120
   }
 
   async function loadOlder() {
-    const el = containerRef.current;
-    const prevHeight = el?.scrollHeight ?? 0;
-    await messagesQuery.fetchNextPage();
+    const el = containerRef.current
+    const prevHeight = el?.scrollHeight ?? 0
+    await messagesQuery.fetchNextPage()
     // Keep the viewport pinned to what the user was looking at rather than
     // letting the newly-prepended older messages push it down.
     requestAnimationFrame(() => {
-      if (el) el.scrollTop = el.scrollHeight - prevHeight + el.scrollTop;
-    });
+      if (el) el.scrollTop = el.scrollHeight - prevHeight + el.scrollTop
+    })
   }
 
   function clearAttachment() {
-    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
-    setAttachmentFile(null);
-    setAttachmentPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachmentFile(null)
+    setAttachmentPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function pickAttachment(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
-    setAttachmentFile(file);
-    setAttachmentPreviewUrl(URL.createObjectURL(file));
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl)
+    setAttachmentFile(file)
+    setAttachmentPreviewUrl(URL.createObjectURL(file))
   }
 
   function submit(e: FormEvent) {
-    e.preventDefault();
-    const content = draft.trim();
+    e.preventDefault()
+    const content = draft.trim()
     if ((content || attachmentFile) && !sendMutation.isPending && activeGroupId) {
-      sendMutation.mutate({ content, file: attachmentFile });
+      sendMutation.mutate({ content, file: attachmentFile })
     }
   }
 
   function dividerLabel(iso: string): string {
-    const date = new Date(iso);
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return t('chat.today');
-    if (date.toDateString() === yesterday.toDateString()) return t('chat.yesterday');
-    return date.toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' });
+    const date = new Date(iso)
+    const today = new Date()
+    const yesterday = new Date()
+    yesterday.setDate(today.getDate() - 1)
+    if (date.toDateString() === today.toDateString()) return t('chat.today')
+    if (date.toDateString() === yesterday.toDateString()) return t('chat.yesterday')
+    return date.toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' })
   }
 
-  let lastDateKey = '';
+  let lastDateKey = ''
 
   return (
     <AppShell
@@ -288,9 +288,9 @@ export function ChatPage({
                   )}
 
                   {messages.map((message) => {
-                    const key = dateKey(message.createdAt);
-                    const showDivider = key !== lastDateKey;
-                    lastDateKey = key;
+                    const key = dateKey(message.createdAt)
+                    const showDivider = key !== lastDateKey
+                    lastDateKey = key
                     return (
                       <div key={message.id} className="chat-message-group">
                         {showDivider && (
@@ -310,7 +310,7 @@ export function ChatPage({
                           />
                         )}
                       </div>
-                    );
+                    )
                   })}
 
                   <div ref={bottomRef} />
@@ -349,8 +349,8 @@ export function ChatPage({
                         // Clear before opening the picker, so the same file
                         // can be re-picked after sending/removing it —
                         // never in the change handler (see NewPostModal).
-                        if (fileInputRef.current) fileInputRef.current.value = '';
-                        fileInputRef.current?.click();
+                        if (fileInputRef.current) fileInputRef.current.value = ''
+                        fileInputRef.current?.click()
                       }}
                       aria-label={t('chat.addAttachment')}
                     >
@@ -382,7 +382,7 @@ export function ChatPage({
 
       {lightboxUrl && <Lightbox assetUrls={[lightboxUrl]} initialIndex={0} onClose={() => setLightboxUrl(null)} />}
     </AppShell>
-  );
+  )
 }
 
 function ChatBubble({
@@ -390,11 +390,11 @@ function ChatBubble({
   isOwn,
   onOpenAttachment,
 }: {
-  message: ChatMessage;
-  isOwn: boolean;
-  onOpenAttachment: (assetUrl: string) => void;
+  message: ChatMessage
+  isOwn: boolean
+  onOpenAttachment: (assetUrl: string) => void
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation()
 
   return (
     <div className={`chat-message-row${isOwn ? ' chat-message-row-own' : ''}`}>
@@ -425,5 +425,5 @@ function ChatBubble({
         <div className="chat-message-time">{formatRelativeDate(message.createdAt, i18n.language)}</div>
       </div>
     </div>
-  );
+  )
 }

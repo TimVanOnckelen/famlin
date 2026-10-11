@@ -1,8 +1,8 @@
-import { ReactElement } from 'react';
-import { render } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
-import { Post, PostPoll, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client';
+import { ReactElement } from 'react'
+import { render } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
+import { Post, PostPoll, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client'
 
 export function makePost(overrides: Partial<Post> = {}): Post {
   return {
@@ -28,7 +28,7 @@ export function makePost(overrides: Partial<Post> = {}): Post {
     favoritedByMe: false,
     people: [],
     ...overrides,
-  };
+  }
 }
 
 export function makePoll(overrides: Partial<PostPoll> = {}): PostPoll {
@@ -42,7 +42,7 @@ export function makePoll(overrides: Partial<PostPoll> = {}): PostPoll {
     closesAt: null,
     closed: false,
     ...overrides,
-  };
+  }
 }
 
 export function makeTrip(overrides: Partial<TripEnrichment> = {}): TripEnrichment {
@@ -62,7 +62,7 @@ export function makeTrip(overrides: Partial<TripEnrichment> = {}): TripEnrichmen
     collagePhotoUrls: [],
     travelers: [],
     ...overrides,
-  };
+  }
 }
 
 export function makeAlbum(overrides: Partial<AlbumEnrichment> = {}): AlbumEnrichment {
@@ -80,7 +80,7 @@ export function makeAlbum(overrides: Partial<AlbumEnrichment> = {}): AlbumEnrich
     collagePhotoUrls: [],
     latestContribution: { commentId: 'ac-1', contributorName: 'Sophie', createdAt: '2026-07-08T12:00:00Z' },
     ...overrides,
-  };
+  }
 }
 
 export function makeComment(overrides: Partial<Comment> = {}): Comment {
@@ -101,7 +101,7 @@ export function makeComment(overrides: Partial<Comment> = {}): Comment {
     myReaction: null,
     reactions: {},
     ...overrides,
-  };
+  }
 }
 
 export function makeUser(overrides: Partial<User> = {}): User {
@@ -119,7 +119,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     pushOnNewComment: true,
     pushOnNewLike: true,
     ...overrides,
-  };
+  }
 }
 
 // Every component under test assumes a react-query provider; retries are off
@@ -131,7 +131,7 @@ export function createTestQueryClient() {
       queries: { retry: false },
       mutations: { retry: false },
     },
-  });
+  })
 }
 
 export function renderWithQueryClient(
@@ -145,5 +145,5 @@ export function renderWithQueryClient(
         <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
       </QueryClientProvider>
     ),
-  };
+  }
 }

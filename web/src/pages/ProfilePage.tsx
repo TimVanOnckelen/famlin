@@ -1,6 +1,6 @@
-import { FormEvent, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { FormEvent, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   uploadFiles,
   changePassword,
@@ -11,15 +11,15 @@ import {
   updateMe,
   NotificationPrefs,
   User,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { AppShell } from '@/components/AppShell';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { ApiTokensModal } from '@/components/ApiTokensModal';
-import { useAuthStore } from '@/stores/authStore';
-import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n';
-import './ProfilePage.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { AppShell } from '@/components/AppShell'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { ApiTokensModal } from '@/components/ApiTokensModal'
+import { useAuthStore } from '@/stores/authStore'
+import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n'
+import './ProfilePage.css'
 
 // Web counterpart of mobile's ProfileScreen: same sections (profile card,
 // notification prefs, language, server info, logout), desktop-styled. The
@@ -33,75 +33,75 @@ export function ProfilePage({
   onOpenFavorites,
   onLogout,
 }: {
-  user: User;
-  onBack: () => void;
-  onOpenPhotos?: () => void;
-  onOpenChat?: () => void;
-  onOpenFavorites?: () => void;
-  onLogout: () => void;
+  user: User
+  onBack: () => void
+  onOpenPhotos?: () => void
+  onOpenChat?: () => void
+  onOpenFavorites?: () => void
+  onLogout: () => void
 }) {
-  const { t, i18n: i18nInstance } = useTranslation();
-  const { updateUser } = useAuthStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { t, i18n: i18nInstance } = useTranslation()
+  const { updateUser } = useAuthStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   // The avatar menu's API-tokens entry, mirrored here: the compact mobile
   // header has no avatar anymore, so the profile is where tokens are managed
   // on narrow screens (the sidebar footer menu still has them on wide ones).
-  const [apiTokensOpen, setApiTokensOpen] = useState(false);
+  const [apiTokensOpen, setApiTokensOpen] = useState(false)
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
     queryFn: fetchNotificationConfig,
-  });
-  const showPush = notificationConfig?.pushEnabled ?? true;
-  const showEmail = notificationConfig?.emailEnabled ?? true;
+  })
+  const showPush = notificationConfig?.pushEnabled ?? true
+  const showEmail = notificationConfig?.emailEnabled ?? true
 
   const { data: serverInfo } = useQuery({
     queryKey: ['server-info'],
     queryFn: fetchServerInfo,
-  });
+  })
 
   const updatePrefs = useMutation({
     mutationFn: (prefs: NotificationPrefs) => updateMe(prefs),
     onSuccess: (updated) => updateUser(updated),
-  });
+  })
 
   const updateAvatar = useMutation({
     mutationFn: async (file: File) => {
-      const urls = await uploadFiles([file]);
-      return updateMe({ avatarUrl: urls[0] });
+      const urls = await uploadFiles([file])
+      return updateMe({ avatarUrl: urls[0] })
     },
     onSuccess: (updated) => {
-      setUploadError(null);
-      updateUser(updated);
+      setUploadError(null)
+      updateUser(updated)
     },
     onError: (err: any) => {
-      setUploadError(err.response?.data?.error || t('profile.photoUploadFailed'));
+      setUploadError(err.response?.data?.error || t('profile.photoUploadFailed'))
     },
-  });
+  })
 
   const updatePassword = useMutation({
     mutationFn: () => changePassword(currentPassword, newPassword),
     onSuccess: () => {
-      setPasswordError(null);
-      setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setPasswordError(null)
+      setPasswordSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
     },
     onError: (err: any) => {
-      setPasswordSuccess(false);
-      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'));
+      setPasswordSuccess(false)
+      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'))
     },
-  });
+  })
 
   // Permanent, cascading account deletion (DELETE /api/auth/me) — mirrors
   // mobile's ProfileScreen, including the type-to-confirm step, since nothing
@@ -109,13 +109,13 @@ export function ProfilePage({
   const removeAccount = useMutation({
     mutationFn: deleteAccount,
     onSuccess: () => {
-      setDeleteOpen(false);
-      onLogout();
+      setDeleteOpen(false)
+      onLogout()
     },
     onError: (err: any) => {
-      setDeleteError(err.response?.data?.error || t('common.tryAgain'));
+      setDeleteError(err.response?.data?.error || t('common.tryAgain'))
     },
-  });
+  })
 
   // Self-service data export (GET /api/auth/me/export). The zip is built and
   // streamed server-side; here it lands as a Blob and is saved through a
@@ -124,59 +124,59 @@ export function ProfilePage({
   const exportData = useMutation({
     mutationFn: downloadMyExport,
     onSuccess: (blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
     },
-  });
+  })
   const exportError = exportData.isError
     ? (exportData.error as any)?.response?.status === 429
       ? t('profile.exportRateLimited')
       : t('profile.exportFailed')
-    : null;
+    : null
 
-  const deleteConfirmWord = t('profile.deleteAccountConfirmWord');
+  const deleteConfirmWord = t('profile.deleteAccountConfirmWord')
   const canConfirmDelete =
-    deleteConfirmation.trim().toUpperCase() === deleteConfirmWord.toUpperCase() && !removeAccount.isPending;
+    deleteConfirmation.trim().toUpperCase() === deleteConfirmWord.toUpperCase() && !removeAccount.isPending
 
   function handlePasswordSubmit(e: FormEvent) {
-    e.preventDefault();
-    setPasswordSuccess(false);
+    e.preventDefault()
+    setPasswordSuccess(false)
     if (newPassword !== confirmPassword) {
-      setPasswordError(t('profile.passwordMismatch'));
-      return;
+      setPasswordError(t('profile.passwordMismatch'))
+      return
     }
-    setPasswordError(null);
-    updatePassword.mutate();
+    setPasswordError(null)
+    updatePassword.mutate()
   }
 
   function pickAvatar(files: FileList | null) {
-    const file = files?.[0];
-    if (file) updateAvatar.mutate(file);
+    const file = files?.[0]
+    if (file) updateAvatar.mutate(file)
     // Allow re-picking the same file after a failure.
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const notificationTypes: {
-    labelKey: string;
-    pushKey: keyof NotificationPrefs;
+    labelKey: string
+    pushKey: keyof NotificationPrefs
     // Omitted for push-only types (stories never email).
-    emailKey?: keyof NotificationPrefs;
+    emailKey?: keyof NotificationPrefs
   }[] = [
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
-  ];
+  ]
 
   function handleLanguageChange(lang: SupportedLanguage) {
-    i18nInstance.changeLanguage(lang);
-    storeLanguage(lang);
+    i18nInstance.changeLanguage(lang)
+    storeLanguage(lang)
   }
 
   return (
@@ -394,9 +394,9 @@ export function ProfilePage({
             <button
               className="profile-delete-trigger"
               onClick={() => {
-                setDeleteConfirmation('');
-                setDeleteError(null);
-                setDeleteOpen(true);
+                setDeleteConfirmation('')
+                setDeleteError(null)
+                setDeleteOpen(true)
               }}
             >
               <Icon name="trash" size={16} />
@@ -406,9 +406,9 @@ export function ProfilePage({
             <form
               className="profile-delete-form"
               onSubmit={(e) => {
-                e.preventDefault();
-                setDeleteError(null);
-                removeAccount.mutate();
+                e.preventDefault()
+                setDeleteError(null)
+                removeAccount.mutate()
               }}
             >
               <p className="profile-delete-warning">{t('profile.deleteAccountWarning')}</p>
@@ -450,5 +450,5 @@ export function ProfilePage({
 
       {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
     </AppShell>
-  );
+  )
 }

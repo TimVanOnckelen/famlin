@@ -1,100 +1,100 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, User, Group } from '../api/client';
-import { ApiError } from '../api/client';
-import i18n from '../i18n';
-import { Icon } from './Icon';
-import { AddMemberModal } from './AddMemberModal';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, User, Group } from '../api/client'
+import { ApiError } from '../api/client'
+import i18n from '../i18n'
+import { Icon } from './Icon'
+import { AddMemberModal } from './AddMemberModal'
 
 export function UsersPage() {
-  const { t } = useTranslation();
-  const [users, setUsers] = useState<User[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [managingUser, setManagingUser] = useState<User | null>(null);
+  const { t } = useTranslation()
+  const [users, setUsers] = useState<User[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [groups, setGroups] = useState<Group[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [managingUser, setManagingUser] = useState<User | null>(null)
 
   const load = () => {
-    setLoading(true);
+    setLoading(true)
     Promise.all([api.getUsers(), api.getGroups()])
       .then(([page, g]) => {
-        setUsers(page.items);
-        setNextCursor(page.nextCursor);
-        setGroups(g);
-        setManagingUser((current) => (current ? (page.items.find((x) => x.id === current.id) ?? null) : null));
+        setUsers(page.items)
+        setNextCursor(page.nextCursor)
+        setGroups(g)
+        setManagingUser((current) => (current ? (page.items.find((x) => x.id === current.id) ?? null) : null))
       })
-      .finally(() => setLoading(false));
-  };
+      .finally(() => setLoading(false))
+  }
 
   const loadMore = async () => {
-    if (!nextCursor) return;
-    setLoadingMore(true);
+    if (!nextCursor) return
+    setLoadingMore(true)
     try {
-      const page = await api.getUsers({ cursor: nextCursor });
-      setUsers((current) => [...current, ...page.items]);
-      setNextCursor(page.nextCursor);
+      const page = await api.getUsers({ cursor: nextCursor })
+      setUsers((current) => [...current, ...page.items])
+      setNextCursor(page.nextCursor)
     } finally {
-      setLoadingMore(false);
+      setLoadingMore(false)
     }
-  };
+  }
 
   useEffect(() => {
-    load();
-  }, []);
+    load()
+  }, [])
 
   const toggleAdmin = async (user: User) => {
-    await api.updateUser(user.id, { isAdmin: !user.isAdmin });
-    load();
-  };
+    await api.updateUser(user.id, { isAdmin: !user.isAdmin })
+    load()
+  }
 
   // The table shows a single push/email toggle per user as a quick bulk
   // on/off switch; per-event-type granularity is managed by the user in the app.
-  const isEmailEnabled = (user: User) => user.emailOnNewPost || user.emailOnNewComment || user.emailOnNewLike;
+  const isEmailEnabled = (user: User) => user.emailOnNewPost || user.emailOnNewComment || user.emailOnNewLike
 
   const toggleEmailNotifications = async (user: User) => {
-    const enabled = !isEmailEnabled(user);
+    const enabled = !isEmailEnabled(user)
     await api.updateUser(user.id, {
       emailOnNewPost: enabled,
       emailOnNewComment: enabled,
       emailOnNewLike: enabled,
-    });
-    load();
-  };
+    })
+    load()
+  }
 
-  const isPushEnabled = (user: User) => user.pushOnNewPost || user.pushOnNewComment || user.pushOnNewLike;
+  const isPushEnabled = (user: User) => user.pushOnNewPost || user.pushOnNewComment || user.pushOnNewLike
 
   const togglePushNotifications = async (user: User) => {
-    const enabled = !isPushEnabled(user);
+    const enabled = !isPushEnabled(user)
     await api.updateUser(user.id, {
       pushOnNewPost: enabled,
       pushOnNewComment: enabled,
       pushOnNewLike: enabled,
-    });
-    load();
-  };
+    })
+    load()
+  }
 
   const handleDelete = async (user: User) => {
     if (!confirm(t('users.deleteConfirm', { name: user.name, email: user.email }))) {
-      return;
+      return
     }
-    await api.deleteUser(user.id);
-    load();
-  };
+    await api.deleteUser(user.id)
+    load()
+  }
 
   const handleResetPassword = async (user: User) => {
-    const newPassword = prompt(t('users.resetPasswordPrompt', { name: user.name, email: user.email }));
-    if (!newPassword) return;
+    const newPassword = prompt(t('users.resetPasswordPrompt', { name: user.name, email: user.email }))
+    if (!newPassword) return
     if (newPassword.length < 8) {
-      alert(t('users.passwordTooShort'));
-      return;
+      alert(t('users.passwordTooShort'))
+      return
     }
-    await api.resetPassword(user.id, newPassword);
-    alert(t('users.passwordChanged', { name: user.name }));
-  };
+    await api.resetPassword(user.id, newPassword)
+    alert(t('users.passwordChanged', { name: user.name }))
+  }
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>;
+  if (loading) return <div className="loading">{t('common.loading')}</div>
 
   return (
     <>
@@ -216,37 +216,37 @@ export function UsersPage() {
 
       {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onCreated={load} />}
     </>
-  );
+  )
 }
 
 interface ManageGroupsModalProps {
-  user: User;
-  groups: Group[];
-  onClose: () => void;
-  onChanged: () => void;
+  user: User
+  groups: Group[]
+  onClose: () => void
+  onChanged: () => void
 }
 
 function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsModalProps) {
-  const { t } = useTranslation();
-  const [busyGroupId, setBusyGroupId] = useState<string | null>(null);
-  const memberGroupIds = new Set((user.groups ?? []).map((g) => g.id));
+  const { t } = useTranslation()
+  const [busyGroupId, setBusyGroupId] = useState<string | null>(null)
+  const memberGroupIds = new Set((user.groups ?? []).map((g) => g.id))
 
   const toggleMembership = async (group: Group, isMember: boolean) => {
-    setBusyGroupId(group.id);
+    setBusyGroupId(group.id)
     try {
       if (isMember) {
-        await api.removeGroupMember(group.id, user.id);
+        await api.removeGroupMember(group.id, user.id)
       } else {
-        await api.addGroupMember(group.id, user.id);
+        await api.addGroupMember(group.id, user.id)
       }
-      onChanged();
+      onChanged()
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('users.membershipError', { error: message }));
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      alert(t('users.membershipError', { error: message }))
     } finally {
-      setBusyGroupId(null);
+      setBusyGroupId(null)
     }
-  };
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -257,7 +257,7 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
         ) : (
           <ul className="membership-list">
             {groups.map((group) => {
-              const isMember = memberGroupIds.has(group.id);
+              const isMember = memberGroupIds.has(group.id)
               return (
                 <li key={group.id} className="membership-row">
                   <span>{group.name}</span>
@@ -269,7 +269,7 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
                     {isMember ? t('common.remove') : t('common.add')}
                   </button>
                 </li>
-              );
+              )
             })}
           </ul>
         )}
@@ -280,5 +280,5 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
         </div>
       </div>
     </div>
-  );
+  )
 }

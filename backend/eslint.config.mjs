@@ -9,9 +9,9 @@
 // non-type-checked "recommended" rules only, and anything that doesn't
 // cleanly pass against the current codebase is downgraded to "warn" rather
 // than fixed by editing source here. See the per-rule comments below.
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import globals from 'globals';
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import globals from 'globals'
 
 export default tseslint.config(
   {
@@ -40,4 +40,4 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   }
-);
+)

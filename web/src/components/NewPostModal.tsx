@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FormEvent, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   addAlbumPhotos,
   uploadFiles,
@@ -11,17 +11,17 @@ import {
   Group,
   MediaAsset,
   PhotoItem,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { MediaPickerModal } from '@/components/MediaPickerModal';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media';
-import { useModalFocus } from '@/hooks/useModalFocus';
-import './NewPostModal.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { MediaPickerModal } from '@/components/MediaPickerModal'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM'] as const;
-type ComposerType = (typeof COMPOSER_TYPES)[number];
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM'] as const
+type ComposerType = (typeof COMPOSER_TYPES)[number]
 
 export function NewPostModal({
   groups,
@@ -29,30 +29,30 @@ export function NewPostModal({
   onClose,
   initialAsset,
 }: {
-  groups: Group[];
-  defaultGroupId: string | null;
-  onClose: () => void;
-  initialAsset?: PhotoItem | null;
+  groups: Group[]
+  defaultGroupId: string | null
+  onClose: () => void
+  initialAsset?: PhotoItem | null
 }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const initialGroupId = defaultGroupId ?? groups[0]?.id ?? '';
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(initialGroupId ? [initialGroupId] : []);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const initialGroupId = defaultGroupId ?? groups[0]?.id ?? ''
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(initialGroupId ? [initialGroupId] : [])
   // Audience: null = the whole family, otherwise one Circle within the single
   // selected family. Circles and cross-posting are mutually exclusive (a
   // Circle belongs to exactly one group), so this resets whenever the group
   // selection changes.
-  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
-  const [type, setType] = useState<ComposerType>('UPDATE');
-  const [content, setContent] = useState('');
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
+  const [type, setType] = useState<ComposerType>('UPDATE')
+  const [content, setContent] = useState('')
   // Poll options: always at least 2 rows in the editor (spec: 2–10 options);
   // blank rows are filtered out on submit and don't count toward the ≥2
   // validation requirement.
-  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
   // ALBUM: the album's title lives in typeData, not content (content stays an
   // optional description).
-  const [albumTitle, setAlbumTitle] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [albumTitle, setAlbumTitle] = useState('')
+  const [files, setFiles] = useState<File[]>([])
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(
     initialAsset && initialAsset.source === 'album'
       ? [
@@ -67,34 +67,34 @@ export function NewPostModal({
           },
         ]
       : []
-  );
-  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  )
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
   // Esc closes the composer and focus is trapped/restored, matching every
   // other modal's expected keyboard behavior. The media picker rendered
   // below is a DOM sibling (not a descendant) of this form, each with its
   // own keydown listener attached directly to its own container — so while
   // the picker is open and holds focus, its Esc/Tab handling fires instead
   // of this one's, with no explicit coordination needed between the two.
-  useModalFocus(formRef, onClose);
+  useModalFocus(formRef, onClose)
 
   // The linked-album picker targets a single group; when cross-posting to
   // several, drive it off the first one picked — the server copies
   // linked-album photos so every group ends up able to see them.
-  const primaryGroupId = selectedGroupIds[0] ?? '';
+  const primaryGroupId = selectedGroupIds[0] ?? ''
 
   // The audience picker offers only circles the author is in — which is all
   // the server will ever return, and all they're allowed to post to. Offered
   // only for a single-family post: cross-posting to several families can't be
   // narrowed to a circle.
-  const canChooseCircle = selectedGroupIds.length === 1;
+  const canChooseCircle = selectedGroupIds.length === 1
   const circlesQuery = useQuery({
     queryKey: ['circles', primaryGroupId],
     queryFn: () => fetchMyCircles(primaryGroupId),
     enabled: !!primaryGroupId && canChooseCircle,
-  });
-  const circles = canChooseCircle ? (circlesQuery.data ?? []) : [];
+  })
+  const circles = canChooseCircle ? (circlesQuery.data ?? []) : []
 
   // "Choose from albums" only appears when the primary group actually has
   // linked albums (from any media source) — same behavior as the mobile
@@ -103,8 +103,8 @@ export function NewPostModal({
     queryKey: ['media-albums', primaryGroupId],
     queryFn: () => getGroupMediaAlbums(primaryGroupId),
     enabled: !!primaryGroupId,
-  });
-  const hasLinkedAlbums = (mediaAlbumsQuery.data?.length ?? 0) > 0;
+  })
+  const hasLinkedAlbums = (mediaAlbumsQuery.data?.length ?? 0) > 0
 
   // Admins can restrict which post types a group allows. The server sends the
   // resolved effective list as Group.allowedPostTypes; a missing field (older
@@ -114,26 +114,26 @@ export function NewPostModal({
   // creates one post per group.
   const offeredTypes = COMPOSER_TYPES.filter((candidate) =>
     selectedGroupIds.every((id) => {
-      const allowed = groups.find((g) => g.id === id)?.allowedPostTypes;
-      return !allowed || allowed.includes(candidate);
+      const allowed = groups.find((g) => g.id === id)?.allowedPostTypes
+      return !allowed || allowed.includes(candidate)
     })
-  );
+  )
 
   // When the group selection changes and the current type is no longer
   // offered, fall back to the first type that still is (if any is left).
   useEffect(() => {
     if (!offeredTypes.includes(type) && offeredTypes.length > 0) {
-      setType(offeredTypes[0]);
+      setType(offeredTypes[0])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offeredTypes.join(','), type]);
+  }, [offeredTypes.join(','), type])
 
   // Blank rows in the editor don't count as real options.
-  const nonEmptyPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+  const nonEmptyPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0)
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const uploadedUrls = files.length > 0 ? await uploadFiles(files) : [];
+      const uploadedUrls = files.length > 0 ? await uploadFiles(files) : []
 
       // ALBUM: create an empty album (title in typeData, first uploaded photo
       // as the cover), then seed the uploaded photos as the author's first
@@ -152,16 +152,16 @@ export function NewPostModal({
           type,
           typeData: { title: albumTitle.trim(), ...(uploadedUrls[0] ? { coverPhotoUrl: uploadedUrls[0] } : {}) },
           uploadedAssetUrls: [],
-        });
+        })
         if (uploadedUrls.length > 0) {
-          await addAlbumPhotos(post.id, { photoUrls: uploadedUrls });
+          await addAlbumPhotos(post.id, { photoUrls: uploadedUrls })
         }
-        return post;
+        return post
       }
 
       // previewUrl is a JPEG still even for a video, so videos attach their
       // original rendition instead (mirrors mobile's MediaPickerModal).
-      const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl));
+      const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl))
       return createPost({
         groupId: primaryGroupId,
         // Omit groupIds entirely for a single group so older servers that
@@ -175,41 +175,41 @@ export function NewPostModal({
         // Poll options only — no closesAt UI in v1 (API-only, backend default).
         typeData: type === 'POLL' ? { options: nonEmptyPollOptions.map((text) => ({ text })) } : undefined,
         uploadedAssetUrls: [...uploadedUrls, ...mediaUrls],
-      });
+      })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      onClose();
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      onClose()
     },
-  });
+  })
 
   function submit(e: FormEvent) {
-    e.preventDefault();
-    if (canSubmit) submitMutation.mutate();
+    e.preventDefault()
+    if (canSubmit) submitMutation.mutate()
   }
 
   function toggleGroup(id: string) {
-    setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
+    setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]))
     // A circle belongs to one family, so any previous choice stops being
     // valid the moment the family selection moves.
-    setSelectedCircleId(null);
+    setSelectedCircleId(null)
   }
 
   function addFiles(list: FileList | null) {
-    if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)]);
+    if (!list) return
+    setFiles((prev) => [...prev, ...Array.from(list)])
   }
 
   function updatePollOption(index: number, value: string) {
-    setPollOptions((prev) => prev.map((o, i) => (i === index ? value : o)));
+    setPollOptions((prev) => prev.map((o, i) => (i === index ? value : o)))
   }
 
   function addPollOption() {
-    setPollOptions((prev) => (prev.length < 10 ? [...prev, ''] : prev));
+    setPollOptions((prev) => (prev.length < 10 ? [...prev, ''] : prev))
   }
 
   function removePollOption(index: number) {
-    setPollOptions((prev) => (prev.length > 2 ? prev.filter((_, i) => i !== index) : prev));
+    setPollOptions((prev) => (prev.length > 2 ? prev.filter((_, i) => i !== index) : prev))
   }
 
   const canSubmit =
@@ -222,7 +222,7 @@ export function NewPostModal({
       ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
       : type === 'ALBUM'
         ? albumTitle.trim().length > 0
-        : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0);
+        : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -454,8 +454,8 @@ export function NewPostModal({
               // the second run reads an empty list, silently dropping the
               // picked photos. Firefox only fires one event, which is why
               // the old code worked there.
-              if (fileInputRef.current) fileInputRef.current.value = '';
-              fileInputRef.current?.click();
+              if (fileInputRef.current) fileInputRef.current.value = ''
+              fileInputRef.current?.click()
             }}
           >
             <Icon name="image" size={18} />
@@ -486,12 +486,12 @@ export function NewPostModal({
           groupId={primaryGroupId}
           onConfirm={(assets) => {
             // Merge without duplicating an asset that was already picked.
-            setMediaAssets((prev) => [...prev, ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId))]);
-            setMediaPickerOpen(false);
+            setMediaAssets((prev) => [...prev, ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId))])
+            setMediaPickerOpen(false)
           }}
           onClose={() => setMediaPickerOpen(false)}
         />
       )}
     </div>
-  );
+  )
 }

@@ -1,6 +1,6 @@
-import type { FastifyReply } from 'fastify';
-import type { MediaAlbumLink } from '@prisma/client';
-import { prisma } from '../../db.js';
+import type { FastifyReply } from 'fastify'
+import type { MediaAlbumLink } from '@prisma/client'
+import { prisma } from '../../db.js'
 import {
   MediaProviderError,
   mediaErrorKey,
@@ -8,7 +8,7 @@ import {
   type MediaProvider,
   type MediaAssetVariant,
   type MediaAssetSummary,
-} from './registry.js';
+} from './registry.js'
 
 // Shared plumbing between routes/media.ts (provider-generic) and
 // routes/immich.ts (legacy Immich-only compat — its /api/immich/assets/...
@@ -22,16 +22,16 @@ import {
 // media.ts's ?personId= filter, which immich.ts has no equivalent of), it's
 // left unshared in the route file instead.
 
-type TFn = (key: string) => string;
+type TFn = (key: string) => string
 
 // Every media/immich provider call that fails throws MediaProviderError;
 // every route maps it to the same translated status/body. Anything else
 // rethrows to the global error handler, same as an unguarded call would.
 export function sendMediaProviderErrorResponse(err: unknown, reply: FastifyReply, t: TFn) {
   if (err instanceof MediaProviderError) {
-    return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) });
+    return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) })
   }
-  throw err;
+  throw err
 }
 
 // media.ts queries every linked album regardless of provider; immich.ts
@@ -41,14 +41,14 @@ export async function findGroupAlbumLinks(groupId: string, providerFilter?: stri
   return prisma.mediaAlbumLink.findMany({
     where: providerFilter ? { groupId, provider: providerFilter } : { groupId },
     orderBy: { createdAt: 'desc' },
-  });
+  })
 }
 
 interface AlbumListRow {
-  linkId: string;
-  provider?: string;
-  albumName: string;
-  assetCount: number;
+  linkId: string
+  provider?: string
+  albumName: string
+  assetCount: number
 }
 
 // media.ts is fail-soft per album (a source that's down reports assetCount 0
@@ -65,30 +65,30 @@ export async function respondWithAlbumList(
   t: TFn,
   links: MediaAlbumLink[],
   opts: {
-    resolveProvider: (link: MediaAlbumLink) => MediaProvider | undefined;
-    failSoft: boolean;
-    includeProviderField: boolean;
+    resolveProvider: (link: MediaAlbumLink) => MediaProvider | undefined
+    failSoft: boolean
+    includeProviderField: boolean
   }
 ) {
   try {
     return await Promise.all(
       links.map(async (link) => {
-        const provider = opts.resolveProvider(link);
-        let assetCount = 0;
+        const provider = opts.resolveProvider(link)
+        let assetCount = 0
         if (provider) {
           try {
-            assetCount = (await provider.getAlbumInfo(link.externalAlbumId))?.assetCount ?? 0;
+            assetCount = (await provider.getAlbumInfo(link.externalAlbumId))?.assetCount ?? 0
           } catch (err) {
-            if (!(err instanceof MediaProviderError) || !opts.failSoft) throw err;
+            if (!(err instanceof MediaProviderError) || !opts.failSoft) throw err
           }
         }
-        const row: AlbumListRow = { linkId: link.id, albumName: link.albumName, assetCount };
-        if (opts.includeProviderField) row.provider = link.provider;
-        return row;
+        const row: AlbumListRow = { linkId: link.id, albumName: link.albumName, assetCount }
+        if (opts.includeProviderField) row.provider = link.provider
+        return row
       })
-    );
+    )
   } catch (err) {
-    return sendMediaProviderErrorResponse(err, reply, t);
+    return sendMediaProviderErrorResponse(err, reply, t)
   }
 }
 
@@ -105,11 +105,11 @@ export async function findAlbumLinkOrNotFound(
   linkId: string,
   opts: { providerFilter?: string; notFoundErrorKey: string }
 ): Promise<{ ok: true; link: MediaAlbumLink } | { ok: false; status: 404; errorKey: string }> {
-  const link = await prisma.mediaAlbumLink.findUnique({ where: { id: linkId } });
+  const link = await prisma.mediaAlbumLink.findUnique({ where: { id: linkId } })
   if (!link || (opts.providerFilter && link.provider !== opts.providerFilter)) {
-    return { ok: false, status: 404, errorKey: opts.notFoundErrorKey };
+    return { ok: false, status: 404, errorKey: opts.notFoundErrorKey }
   }
-  return { ok: true, link };
+  return { ok: true, link }
 }
 
 // Only meaningful for media.ts, where the provider is looked up by id and
@@ -120,19 +120,19 @@ export function resolveProviderOr404(
   link: MediaAlbumLink,
   opts: { resolveProvider: (link: MediaAlbumLink) => MediaProvider | undefined; notFoundErrorKey: string }
 ): { ok: true; provider: MediaProvider } | { ok: false; status: 404; errorKey: string } {
-  const provider = opts.resolveProvider(link);
-  if (!provider) return { ok: false, status: 404, errorKey: opts.notFoundErrorKey };
-  return { ok: true, provider };
+  const provider = opts.resolveProvider(link)
+  if (!provider) return { ok: false, status: 404, errorKey: opts.notFoundErrorKey }
+  return { ok: true, provider }
 }
 
 interface AssetListItem {
-  assetId: string;
-  type: MediaAssetSummary['type'];
-  width: number | null;
-  height: number | null;
-  thumbnailUrl: string;
-  previewUrl: string;
-  originalUrl: string;
+  assetId: string
+  type: MediaAssetSummary['type']
+  width: number | null
+  height: number | null
+  thumbnailUrl: string
+  previewUrl: string
+  originalUrl: string
 }
 
 export function assetToListItem(link: { id: string }, asset: MediaAssetSummary, urlPrefix: string): AssetListItem {
@@ -144,7 +144,7 @@ export function assetToListItem(link: { id: string }, asset: MediaAssetSummary, 
     thumbnailUrl: `${urlPrefix}/${link.id}/${asset.id}/thumbnail.jpg`,
     previewUrl: `${urlPrefix}/${link.id}/${asset.id}/preview.jpg`,
     originalUrl: `${urlPrefix}/${link.id}/${asset.id}/original.${asset.originalExt}`,
-  };
+  }
 }
 
 // Shared list + map + error-translate for the asset-list routes. media.ts's
@@ -159,11 +159,11 @@ export async function listAndMapAlbumAssets(
   filterAssetIds?: Set<string> | null
 ) {
   try {
-    const assets = await provider.listAlbumAssets(link.externalAlbumId);
-    const filtered = filterAssetIds ? assets.filter((asset) => filterAssetIds.has(asset.id)) : assets;
-    return filtered.map((asset) => assetToListItem(link, asset, urlPrefix));
+    const assets = await provider.listAlbumAssets(link.externalAlbumId)
+    const filtered = filterAssetIds ? assets.filter((asset) => filterAssetIds.has(asset.id)) : assets
+    return filtered.map((asset) => assetToListItem(link, asset, urlPrefix))
   } catch (err) {
-    return sendMediaProviderErrorResponse(err, reply, t);
+    return sendMediaProviderErrorResponse(err, reply, t)
   }
 }
 
@@ -189,10 +189,10 @@ export async function authorizeAndStreamAsset(
     // otherwise a member who learns an asset id from elsewhere could read
     // assets never linked to Famlin.
     if (!(await provider.isAssetInAlbum(link.externalAlbumId, assetId))) {
-      return reply.status(404).send({ error: t(notFoundErrorKey) });
+      return reply.status(404).send({ error: t(notFoundErrorKey) })
     }
-    return await provider.streamAsset(link.externalAlbumId, assetId, variant, reply, range);
+    return await provider.streamAsset(link.externalAlbumId, assetId, variant, reply, range)
   } catch (err) {
-    return sendMediaProviderErrorResponse(err, reply, t);
+    return sendMediaProviderErrorResponse(err, reply, t)
   }
 }

@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'path'
 
 /**
  * The canonical pathname a request will actually be *routed* to, derived from
@@ -26,12 +26,12 @@ import path from 'path';
  * this neither under- nor over-normalizes relative to the path that is served.
  */
 export function requestPathname(rawUrl: string | undefined): string {
-  const pathOnly = (rawUrl ?? '').split('?')[0].split('#')[0];
-  if (pathOnly === '') return '/';
+  const pathOnly = (rawUrl ?? '').split('?')[0].split('#')[0]
+  if (pathOnly === '') return '/'
 
-  let decoded = pathOnly;
+  let decoded = pathOnly
   try {
-    decoded = decodeURIComponent(pathOnly);
+    decoded = decodeURIComponent(pathOnly)
   } catch {
     // Malformed percent-escapes (a lone `%`): keep the undecoded form rather
     // than throwing. A guard comparing the raw-ish string is still safe here —
@@ -41,7 +41,7 @@ export function requestPathname(rawUrl: string | undefined): string {
   // Collapse duplicate slashes BEFORE normalize: path.posix.normalize
   // deliberately preserves a leading `//` (POSIX permits it to be
   // implementation-defined), which would otherwise survive as `//uploads/`.
-  const collapsed = decoded.replace(/\/{2,}/g, '/');
-  const normalized = path.posix.normalize(collapsed);
-  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  const collapsed = decoded.replace(/\/{2,}/g, '/')
+  const normalized = path.posix.normalize(collapsed)
+  return normalized.startsWith('/') ? normalized : `/${normalized}`
 }

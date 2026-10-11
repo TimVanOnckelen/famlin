@@ -1,14 +1,14 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../db.js';
-import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js';
-import { getAllSettings, updateSettings } from '../services/settings.js';
-import { generateInviteToken, sendInviteEmail } from '../services/invites.js';
-import { resendPostPush, PushNotificationError } from '../services/notifications.js';
-import { paginationArgs, paginate } from '../services/pagination.js';
-import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js';
-import { testImmichConnection } from '../services/media/immich.js';
-import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js';
-import fsp from 'fs/promises';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { prisma } from '../db.js'
+import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js'
+import { getAllSettings, updateSettings } from '../services/settings.js'
+import { generateInviteToken, sendInviteEmail } from '../services/invites.js'
+import { resendPostPush, PushNotificationError } from '../services/notifications.js'
+import { paginationArgs, paginate } from '../services/pagination.js'
+import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
+import { testImmichConnection } from '../services/media/immich.js'
+import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js'
+import fsp from 'fs/promises'
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -29,7 +29,7 @@ import {
   adminStoriesQuerySchema,
   brandingPreviewBodySchema,
   updateBrandingBodySchema,
-} from '../types.js';
+} from '../types.js'
 import {
   BRAND_PRESETS,
   BrandingError,
@@ -41,14 +41,14 @@ import {
   saveBrandSettings,
   saveLogo,
   seedFor,
-} from '../services/branding/index.js';
-import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js';
-import { buildExportArchive } from '../services/export.js';
-import { getT } from '../i18n/index.js';
-import { canViewPostCircle, getUserCircleIds } from '../services/circles.js';
-import { bindAssetsToScope } from '../services/uploads.js';
-import { isGroupMember } from '../services/groups.js';
-import { deleteStoriesWithMedia } from '../services/stories.js';
+} from '../services/branding/index.js'
+import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js'
+import { buildExportArchive } from '../services/export.js'
+import { getT } from '../i18n/index.js'
+import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
+import { bindAssetsToScope } from '../services/uploads.js'
+import { isGroupMember } from '../services/groups.js'
+import { deleteStoriesWithMedia } from '../services/stories.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -64,14 +64,14 @@ import { deleteStoriesWithMedia } from '../services/stories.js';
 // origin built from hostname would silently drop the port on any deployment
 // not served on 80/443, producing invite links that don't resolve.
 function getPublicOrigin(request: FastifyRequest): string {
-  return `${request.protocol}://${request.host}`;
+  return `${request.protocol}://${request.host}`
 }
 
 // Safety cap on GET /media/:provider/people's combined (own + cross-owner
 // discovered) catalog size — this feeds an admin "map this person" picker,
 // not a paginated browse UI, mirroring immich.ts's own MAX_PEOPLE cap on
 // listPeople() itself.
-const ADMIN_PEOPLE_CATALOG_CAP = 200;
+const ADMIN_PEOPLE_CATALOG_CAP = 200
 
 // Fields safe to expose to admin clients. passwordHash is selected only so
 // toSafeUser() below can derive `hasPassword` from it — every caller of this
@@ -93,7 +93,7 @@ const userSelect = {
   pushOnChitchat: true,
   pushOnStory: true,
   createdAt: true,
-} as const;
+} as const
 
 // Strips passwordHash from a userSelect-shaped row and replaces it with
 // `hasPassword` — the admin UI uses this to badge SSO-only accounts (never
@@ -101,32 +101,32 @@ const userSelect = {
 function toSafeUser<T extends { passwordHash: string | null }>(
   user: T
 ): Omit<T, 'passwordHash'> & { hasPassword: boolean } {
-  const { passwordHash, ...safe } = user;
-  return { ...safe, hasPassword: !!passwordHash };
+  const { passwordHash, ...safe } = user
+  return { ...safe, hasPassword: !!passwordHash }
 }
 
 // Guards against ever leaving the app with zero admins: called before an
 // update/delete that would strip isAdmin from (or delete) `userId`.
 async function isLastAdmin(userId: string): Promise<boolean> {
-  const target = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
-  if (!target?.isAdmin) return false;
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+  if (!target?.isAdmin) return false
 
-  const adminCount = await prisma.user.count({ where: { isAdmin: true } });
-  return adminCount <= 1;
+  const adminCount = await prisma.user.count({ where: { isAdmin: true } })
+  return adminCount <= 1
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {
-  fastify.addHook('preHandler', fastify.authenticate);
+  fastify.addHook('preHandler', fastify.authenticate)
 
   // Dashboard overview: totals, a 14-day activity trend, and recent activity.
   fastify.get('/stats', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
     // Bucketed and queried entirely in UTC (matching how `createdAt` is stored
     // and read back) so the range lines up with the day keys below regardless
     // of the server's local timezone.
-    const now = new Date();
-    const rangeStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13));
+    const now = new Date()
+    const rangeStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13))
 
     const [
       userCount,
@@ -166,17 +166,17 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         orderBy: { posts: { _count: 'desc' } },
         select: { id: true, name: true, _count: { select: { posts: true } } },
       }),
-    ]);
+    ])
 
     const postsByDay = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date(rangeStart);
-      d.setUTCDate(d.getUTCDate() + i);
-      return { date: d.toISOString().slice(0, 10), count: 0 };
-    });
-    const dayIndex = new Map(postsByDay.map((d, i) => [d.date, i]));
+      const d = new Date(rangeStart)
+      d.setUTCDate(d.getUTCDate() + i)
+      return { date: d.toISOString().slice(0, 10), count: 0 }
+    })
+    const dayIndex = new Map(postsByDay.map((d, i) => [d.date, i]))
     for (const post of postsInRange) {
-      const idx = dayIndex.get(post.createdAt.toISOString().slice(0, 10));
-      if (idx !== undefined) postsByDay[idx].count++;
+      const idx = dayIndex.get(post.createdAt.toISOString().slice(0, 10))
+      if (idx !== undefined) postsByDay[idx].count++
     }
 
     return {
@@ -200,14 +200,14 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         ...group,
         postCount: _count.posts,
       })),
-    };
-  });
+    }
+  })
 
   // Users
   fastify.get('/users', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
@@ -219,9 +219,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           orderBy: { group: { name: 'asc' } },
         },
       },
-    });
+    })
 
-    const { items, nextCursor } = paginate(users, take);
+    const { items, nextCursor } = paginate(users, take)
 
     // Flatten memberships into a plain `groups` array for the admin UI.
     return {
@@ -230,18 +230,18 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         groups: groupMemberships.map((m) => m.group),
       })),
       nextCursor,
-    };
-  });
+    }
+  })
 
   fastify.patch('/users/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = adminUpdateUserBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = adminUpdateUserBodySchema.parse(request.body)
 
     if (body.isAdmin === false && (await isLastAdmin(id))) {
-      return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') });
+      return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') })
     }
 
     try {
@@ -249,13 +249,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         where: { id },
         data: body,
         select: userSelect,
-      });
-      return toSafeUser(user);
+      })
+      return toSafeUser(user)
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') })
+      throw err
     }
-  });
+  })
 
   // Permanently removes the account — cascades to delete all of their posts,
   // comments, likes, favorites, and notifications too (see onDelete: Cascade
@@ -263,40 +263,40 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // the session cache so any token already in flight for this user id stops
   // being treated as current right away rather than waiting out its TTL.
   fastify.delete('/users/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
     if (id === request.user!.id) {
-      return reply.status(400).send({ error: t('errors.cannotDeleteYourself') });
+      return reply.status(400).send({ error: t('errors.cannotDeleteYourself') })
     }
     if (await isLastAdmin(id)) {
-      return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') });
+      return reply.status(400).send({ error: t('errors.cannotRemoveLastAdmin') })
     }
 
     try {
       // Stories cascade with the user; delete them first so their photos
       // leave the disk too.
-      await deleteStoriesWithMedia({ authorId: id });
-      await prisma.user.delete({ where: { id } });
-      invalidateSessionCache(id);
-      return { success: true };
+      await deleteStoriesWithMedia({ authorId: id })
+      await prisma.user.delete({ where: { id } })
+      invalidateSessionCache(id)
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') })
+      throw err
     }
-  });
+  })
 
   // The registered post types, for the admin UI's "allowed post types"
   // checkboxes in the group form — the registry is compile-time
   // (services/postTypes/registry.ts), so this list is static per server
   // version.
   fastify.get('/post-types', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    return { items: listPostTypeHandlers().map((handler) => ({ id: handler.id })) };
-  });
+    return { items: listPostTypeHandlers().map((handler) => ({ id: handler.id })) }
+  })
 
   // Every id in an admin-supplied allowedPostTypes list must be a registered
   // post type — an unknown id would silently never match anything (empty ≠
@@ -308,10 +308,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     reply: FastifyReply
   ): boolean {
     if (allowedPostTypes?.some((id) => !getPostTypeHandler(id))) {
-      reply.status(400).send({ error: getT(request)('errors.unknownPostType') });
-      return true;
+      reply.status(400).send({ error: getT(request)('errors.unknownPostType') })
+      return true
     }
-    return false;
+    return false
   }
 
   // Groups
@@ -321,24 +321,24 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // which resolve it — the admin UI needs to distinguish "all" from an
   // explicit list to render its checkboxes.
   fastify.get('/groups', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
     const groups = await prisma.group.findMany({
       orderBy: { name: 'asc' },
       include: { _count: { select: { members: true } } },
-    });
+    })
 
     return groups.map(({ _count, ...group }) => ({
       ...group,
       memberCount: _count.members,
-    }));
-  });
+    }))
+  })
 
   fastify.post('/groups', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const body = createGroupBodySchema.parse(request.body);
-    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return;
+    const body = createGroupBodySchema.parse(request.body)
+    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
     const group = await prisma.group.create({
       data: {
@@ -348,17 +348,17 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         chitchatEnabled: body.chitchatEnabled ?? false,
         storiesEnabled: body.storiesEnabled ?? true,
       },
-    });
+    })
 
-    return group;
-  });
+    return group
+  })
 
   fastify.patch('/groups/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
-    const body = adminUpdateGroupBodySchema.parse(request.body);
-    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return;
+    const { id } = request.params as { id: string }
+    const body = adminUpdateGroupBodySchema.parse(request.body)
+    if (rejectUnknownPostTypes(body.allowedPostTypes, request, reply)) return
 
     try {
       const group = await prisma.group.update({
@@ -371,32 +371,32 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           ...(body.chitchatEnabled !== undefined ? { chitchatEnabled: body.chitchatEnabled } : {}),
           ...(body.storiesEnabled !== undefined ? { storiesEnabled: body.storiesEnabled } : {}),
         },
-      });
-      return group;
+      })
+      return group
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') })
+      throw err
     }
-  });
+  })
 
   fastify.delete('/groups/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: string }
 
     try {
-      await prisma.group.delete({ where: { id } });
-      return { success: true };
+      await prisma.group.delete({ where: { id } })
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.groupNotFound') })
+      throw err
     }
-  });
+  })
 
   fastify.get('/groups/:id/members', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: string }
 
     const members = await prisma.groupMember.findMany({
       where: { groupId: id },
@@ -406,16 +406,16 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         },
       },
       orderBy: { joinedAt: 'asc' },
-    });
+    })
 
-    return members.map((m) => ({ ...toSafeUser(m.user), joinedAt: m.joinedAt }));
-  });
+    return members.map((m) => ({ ...toSafeUser(m.user), joinedAt: m.joinedAt }))
+  })
 
   fastify.post('/groups/:id/members', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
-    const body = groupMemberBodySchema.parse(request.body);
+    const { id } = request.params as { id: string }
+    const body = groupMemberBodySchema.parse(request.body)
 
     try {
       await prisma.groupMember.create({
@@ -423,22 +423,22 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           groupId: id,
           userId: body.userId,
         },
-      });
+      })
     } catch (err) {
       // Unique constraint: the user is already a member of this group.
       if (isUniqueConstraintViolation(err)) {
-        return reply.status(409).send({ error: getT(request)('errors.userAlreadyMember') });
+        return reply.status(409).send({ error: getT(request)('errors.userAlreadyMember') })
       }
-      throw err;
+      throw err
     }
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   fastify.delete('/groups/:id/members/:userId', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id, userId } = request.params as { id: string; userId: string };
+    const { id, userId } = request.params as { id: string; userId: string }
 
     try {
       // Removing someone from the family also removes them from every Circle
@@ -459,45 +459,45 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       await prisma.$transaction(async (tx) => {
         await tx.circleMember.deleteMany({
           where: { userId, circle: { groupId: id } },
-        });
+        })
         await tx.groupMember.delete({
           where: { groupId_userId: { groupId: id, userId } },
-        });
-      });
-      return { success: true };
+        })
+      })
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.memberNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.memberNotFound') })
+      throw err
     }
-  });
+  })
 
   // Invites: single-use links that let someone join a group without an
   // existing account or an allowedEmails entry.
   fastify.get('/groups/:id/invites', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
-    const origin = getPublicOrigin(request);
+    const { id } = request.params as { id: string }
+    const origin = getPublicOrigin(request)
 
     const invites = await prisma.invite.findMany({
       where: { groupId: id },
       orderBy: { createdAt: 'desc' },
       include: { usedBy: { select: { id: true, name: true } } },
-    });
+    })
 
-    return invites.map((invite) => ({ ...invite, link: `${origin}/invite/${invite.token}` }));
-  });
+    return invites.map((invite) => ({ ...invite, link: `${origin}/invite/${invite.token}` }))
+  })
 
   fastify.post('/groups/:id/invites', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
-    const body = createInviteBodySchema.parse(request.body);
-    const origin = getPublicOrigin(request);
+    const { id } = request.params as { id: string }
+    const body = createInviteBodySchema.parse(request.body)
+    const origin = getPublicOrigin(request)
 
-    const group = await prisma.group.findUnique({ where: { id }, select: { name: true } });
+    const group = await prisma.group.findUnique({ where: { id }, select: { name: true } })
     if (!group) {
-      return reply.status(404).send({ error: getT(request)('errors.groupNotFound') });
+      return reply.status(404).send({ error: getT(request)('errors.groupNotFound') })
     }
 
     const invite = await prisma.invite.create({
@@ -508,9 +508,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         expiresAt: body.expiresInDays ? new Date(Date.now() + body.expiresInDays * 24 * 60 * 60 * 1000) : null,
         createdById: request.user!.id,
       },
-    });
+    })
 
-    const link = `${origin}/invite/${invite.token}`;
+    const link = `${origin}/invite/${invite.token}`
 
     if (invite.email) {
       // Best-effort: doesn't fail the request if SMTP isn't configured.
@@ -519,24 +519,24 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         groupName: group.name,
         inviterName: request.user!.name,
         link,
-      });
+      })
     }
 
-    return { ...invite, link };
-  });
+    return { ...invite, link }
+  })
 
   fastify.delete('/invites/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: string }
     try {
-      await prisma.invite.delete({ where: { id } });
-      return { success: true };
+      await prisma.invite.delete({ where: { id } })
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.inviteNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.inviteNotFound') })
+      throw err
     }
-  });
+  })
 
   // Content moderation: cross-group visibility into posts/comments so an
   // admin can review them without being a member of every group. Deleting
@@ -557,9 +557,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // content (see the content moderation routes above).
 
   fastify.get('/groups/:id/circles', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: string }
 
     const circles = await prisma.circle.findMany({
       where: { groupId: id },
@@ -568,37 +568,37 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         members: { include: { user: { select: userSelect } }, orderBy: { joinedAt: 'asc' } },
       },
       orderBy: { name: 'asc' },
-    });
+    })
 
     return circles.map(({ _count, members, ...circle }) => ({
       ...circle,
       memberCount: _count.members,
       postCount: _count.posts,
       members: members.map((m) => ({ ...toSafeUser(m.user), joinedAt: m.joinedAt })),
-    }));
-  });
+    }))
+  })
 
   fastify.post('/groups/:id/circles', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = adminCreateCircleBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = adminCreateCircleBodySchema.parse(request.body)
 
-    const group = await prisma.group.findUnique({ where: { id }, select: { id: true } });
-    if (!group) return reply.status(404).send({ error: t('errors.groupNotFound') });
+    const group = await prisma.group.findUnique({ where: { id }, select: { id: true } })
+    if (!group) return reply.status(404).send({ error: t('errors.groupNotFound') })
 
     // A Circle narrows group membership, so every seeded member must already
     // be in the group — otherwise the circle would grant access to someone
     // the outer boundary excludes.
-    const userIds = [...new Set(body.userIds ?? [])];
+    const userIds = [...new Set(body.userIds ?? [])]
     if (userIds.length > 0) {
       const memberships = await prisma.groupMember.findMany({
         where: { groupId: id, userId: { in: userIds } },
         select: { userId: true },
-      });
+      })
       if (memberships.length !== userIds.length) {
-        return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') });
+        return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') })
       }
     }
 
@@ -612,24 +612,24 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         members: { create: userIds.map((userId) => ({ userId })) },
       },
       include: { _count: { select: { members: true, posts: true } } },
-    });
+    })
 
     // The circle's own avatar is readable by anyone who can see the circle,
     // so it binds to the circle's group rather than to the circle itself —
     // scoping it to the circle would be circular (you'd need to be a member
     // to load the picture identifying the circle).
-    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [id] }, request.user!.id);
+    if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [id] }, request.user!.id)
 
-    const { _count, ...rest } = circle;
-    return { ...rest, memberCount: _count.members, postCount: _count.posts };
-  });
+    const { _count, ...rest } = circle
+    return { ...rest, memberCount: _count.members, postCount: _count.posts }
+  })
 
   fastify.patch('/circles/:circleId', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { circleId } = request.params as { circleId: string };
-    const body = adminUpdateCircleBodySchema.parse(request.body);
+    const t = getT(request)
+    const { circleId } = request.params as { circleId: string }
+    const body = adminUpdateCircleBodySchema.parse(request.body)
 
     try {
       const circle = await prisma.circle.update({
@@ -640,17 +640,17 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           ...('avatarUrl' in body ? { avatarUrl: body.avatarUrl ?? null } : {}),
         },
         include: { _count: { select: { members: true, posts: true } } },
-      });
+      })
 
-      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [circle.groupId] }, request.user!.id);
+      if (body.avatarUrl) await bindAssetsToScope([body.avatarUrl], { groupIds: [circle.groupId] }, request.user!.id)
 
-      const { _count, ...rest } = circle;
-      return { ...rest, memberCount: _count.members, postCount: _count.posts };
+      const { _count, ...rest } = circle
+      return { ...rest, memberCount: _count.members, postCount: _count.posts }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleNotFound') })
+      throw err
     }
-  });
+  })
 
   // Deleting a circle permanently deletes its posts (and, through Post's own
   // cascades, their comments/likes/favorites). There is no restore and no
@@ -663,70 +663,70 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // the UI can say how much is about to be destroyed — a number, never the
   // content itself.
   fastify.delete('/circles/:circleId', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { circleId } = request.params as { circleId: string };
-    const { deleteContent } = adminDeleteCircleQuerySchema.parse(request.query);
+    const t = getT(request)
+    const { circleId } = request.params as { circleId: string }
+    const { deleteContent } = adminDeleteCircleQuerySchema.parse(request.query)
 
     const circle = await prisma.circle.findUnique({
       where: { id: circleId },
       select: { id: true, _count: { select: { posts: true } } },
-    });
-    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') });
+    })
+    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
     if (circle._count.posts > 0 && !deleteContent) {
-      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts });
+      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts })
     }
 
     // The circle's stories cascade with it; delete them explicitly first so
     // their photos leave the disk too instead of lingering as unreadable
     // orphans (a dangling Upload.circleId matches nobody).
-    await deleteStoriesWithMedia({ circleId });
-    await prisma.circle.delete({ where: { id: circleId } });
+    await deleteStoriesWithMedia({ circleId })
+    await prisma.circle.delete({ where: { id: circleId } })
 
-    return { success: true, deletedPostCount: circle._count.posts };
-  });
+    return { success: true, deletedPostCount: circle._count.posts }
+  })
 
   fastify.post('/circles/:circleId/members', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { circleId } = request.params as { circleId: string };
-    const body = circleMemberBodySchema.parse(request.body);
+    const t = getT(request)
+    const { circleId } = request.params as { circleId: string }
+    const body = circleMemberBodySchema.parse(request.body)
 
-    const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } });
-    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') });
+    const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } })
+    if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
     // Same rule as seeding at creation: a circle can only ever narrow the
     // group, never grant access to a non-member of it.
     if (!(await isGroupMember(circle.groupId, body.userId))) {
-      return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') });
+      return reply.status(400).send({ error: t('errors.circleMemberNotInGroup') })
     }
 
     try {
-      await prisma.circleMember.create({ data: { circleId, userId: body.userId } });
+      await prisma.circleMember.create({ data: { circleId, userId: body.userId } })
     } catch (err) {
       if (isUniqueConstraintViolation(err)) {
-        return reply.status(409).send({ error: t('errors.userAlreadyCircleMember') });
+        return reply.status(409).send({ error: t('errors.userAlreadyCircleMember') })
       }
-      throw err;
+      throw err
     }
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   fastify.delete('/circles/:circleId/members/:userId', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { circleId, userId } = request.params as { circleId: string; userId: string };
+    const t = getT(request)
+    const { circleId, userId } = request.params as { circleId: string; userId: string }
 
     try {
-      await prisma.circleMember.delete({ where: { circleId_userId: { circleId, userId } } });
+      await prisma.circleMember.delete({ where: { circleId_userId: { circleId, userId } } })
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleMemberNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleMemberNotFound') })
+      throw err
     }
 
     // Removing someone from a circle revokes their access to its posts and
@@ -734,18 +734,18 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // request, and the /uploads/ authorization cache is keyed on the upload,
     // not on any per-user decision. Their posts in the circle stay, mirroring
     // how removing a group member leaves their posts visible.
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   fastify.get('/content/posts', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
     const { groupId, authorId, q } = request.query as {
-      groupId?: string;
-      authorId?: string;
-      q?: string;
-    };
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+      groupId?: string
+      authorId?: string
+      q?: string
+    }
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     // Circle privacy applies to admins too: an admin sees a circle-scoped
     // post here only if they are themselves a member of that circle. This is
@@ -754,7 +754,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // admin action reaching it is deleting the whole circle (which reports
     // its post count first). GET /api/admin/export is the one exception: it
     // is a full backup, not a reading surface. See docs/docs/security.md.
-    const adminCircleIds = await getUserCircleIds(request.user!.id);
+    const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const posts = await prisma.post.findMany({
       where: {
@@ -770,9 +770,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         group: { select: { id: true, name: true } },
         _count: { select: { comments: true, likes: true } },
       },
-    });
+    })
 
-    const { items, nextCursor } = paginate(posts, take);
+    const { items, nextCursor } = paginate(posts, take)
 
     return {
       items: items.map(({ _count, ...post }) => ({
@@ -781,18 +781,18 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         likeCount: _count.likes,
       })),
       nextCursor,
-    };
-  });
+    }
+  })
 
   fastify.get('/content/comments', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
     const { groupId, authorId, q } = request.query as {
-      groupId?: string;
-      authorId?: string;
-      q?: string;
-    };
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+      groupId?: string
+      authorId?: string
+      q?: string
+    }
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     // Circle privacy applies to admins too: an admin sees a circle-scoped
     // post here only if they are themselves a member of that circle. This is
@@ -801,7 +801,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     // admin action reaching it is deleting the whole circle (which reports
     // its post count first). GET /api/admin/export is the one exception: it
     // is a full backup, not a reading surface. See docs/docs/security.md.
-    const adminCircleIds = await getUserCircleIds(request.user!.id);
+    const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const comments = await prisma.comment.findMany({
       where: {
@@ -819,10 +819,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         author: { select: { id: true, name: true } },
         post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
       },
-    });
+    })
 
-    return paginate(comments, take);
-  });
+    return paginate(comments, take)
+  })
 
   // Stories moderation: live stories and pinned Highlights (an expired,
   // unpinned story is already gone for members and about to be deleted by
@@ -830,10 +830,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // circle story only if they're in that circle. Private replies are never
   // exposed here or anywhere else to admins.
   fastify.get('/content/stories', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { groupId, authorId, cursor, take } = adminStoriesQuerySchema.parse(request.query);
-    const adminCircleIds = await getUserCircleIds(request.user!.id);
+    const { groupId, authorId, cursor, take } = adminStoriesQuerySchema.parse(request.query)
+    const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const stories = await prisma.story.findMany({
       where: {
@@ -851,9 +851,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         group: { select: { id: true, name: true } },
         _count: { select: { views: true, reactions: true } },
       },
-    });
+    })
 
-    const { items, nextCursor } = paginate(stories, take);
+    const { items, nextCursor } = paginate(stories, take)
     return {
       items: items.map(({ _count, crossStoryId: _crossStoryId, ...story }) => ({
         ...story,
@@ -861,75 +861,75 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         reactionCount: _count.reactions,
       })),
       nextCursor,
-    };
-  });
+    }
+  })
 
   // Per-group, like admin post moderation: deleting one cross-post sibling
   // leaves the others (and therefore their shared photo) in place.
   fastify.delete('/content/stories/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
-    const story = await prisma.story.findUnique({ where: { id }, select: { circleId: true } });
+    const { id } = request.params as { id: string }
+    const story = await prisma.story.findUnique({ where: { id }, select: { circleId: true } })
     if (!story || !(await canViewPostCircle(story.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: getT(request)('errors.storyNotFound') });
+      return reply.status(404).send({ error: getT(request)('errors.storyNotFound') })
     }
 
-    await deleteStoriesWithMedia({ id });
-    return { success: true };
-  });
+    await deleteStoriesWithMedia({ id })
+    return { success: true }
+  })
 
   // Lets an admin manually resend a post's push notification (e.g. a member
   // missed it because their device was offline when it first fired) — see
   // resendPostPush() in services/notifications.ts. Push-only: doesn't touch
   // email or re-create the in-app Notification row.
   fastify.post('/content/posts/:id/retrigger-push', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    if (requireAdmin(request, reply)) return
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
     // An admin outside the post's circle can't see it on the Content page, so
     // they mustn't be able to act on it here either — 404, the same answer
     // that page's absence implies. resendPostPush() also filters recipients,
     // so this is defence in depth rather than the only check.
-    const post = await prisma.post.findUnique({ where: { id }, select: { circleId: true } });
+    const post = await prisma.post.findUnique({ where: { id }, select: { circleId: true } })
     if (post && !(await canViewPostCircle(post.circleId, request.user!.id))) {
-      reply.status(404).send({ error: t('errors.postNotFound') });
-      return;
+      reply.status(404).send({ error: t('errors.postNotFound') })
+      return
     }
 
     try {
-      const result = await resendPostPush(id, request.user!.id);
+      const result = await resendPostPush(id, request.user!.id)
       if (!result) {
-        reply.status(404).send({ error: t('errors.postNotFound') });
-        return;
+        reply.status(404).send({ error: t('errors.postNotFound') })
+        return
       }
-      reply.send(result);
+      reply.send(result)
     } catch (err) {
       if (err instanceof PushNotificationError) {
-        reply.status(400).send({ error: t(`errors.${err.code}`) });
-        return;
+        reply.status(400).send({ error: t(`errors.${err.code}`) })
+        return
       }
-      throw err;
+      throw err
     }
-  });
+  })
 
   // Delivery log for push-notification send attempts — organic (post
   // created, comment created, ...) and admin-triggered ("resend push")
   // alike. One row per Expo API call, written by sendPush() in
   // services/notificationChannels/push.ts.
   fastify.get('/push-log', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { postId } = request.query as { postId?: string };
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+    const { postId } = request.query as { postId?: string }
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     // A log row joins its post's `content`, which makes this a third content
     // READING surface alongside /content/posts and /content/comments — so it
     // takes the same circle narrowing they do. Rows with no post (a chat or
     // on-this-day send) carry nothing circle-scoped and stay visible, so the
     // operational view an admin needs is unaffected.
-    const adminCircleIds = await getUserCircleIds(request.user!.id);
+    const adminCircleIds = await getUserCircleIds(request.user!.id)
 
     const logs = await prisma.pushDeliveryLog.findMany({
       where: {
@@ -942,157 +942,157 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
         triggeredByAdmin: { select: { id: true, name: true } },
       },
-    });
+    })
 
-    return paginate(logs, take);
-  });
+    return paginate(logs, take)
+  })
 
   // Server settings (stored in DB, editable by admin)
   fastify.get('/settings', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    return getAllSettings();
-  });
+    if (requireAdmin(request, reply)) return
+    return getAllSettings()
+  })
 
   fastify.patch('/settings', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const body = updateServerSettingsBodySchema.parse(request.body);
-    return updateSettings(body);
-  });
+    const body = updateServerSettingsBodySchema.parse(request.body)
+    return updateSettings(body)
+  })
 
   // Per-family branding (issue #164, services/branding/). One brand per
   // server; the palette is derived server-side so mobile and web can't drift.
   fastify.get('/branding', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    return getAdminBranding();
-  });
+    if (requireAdmin(request, reply)) return
+    return getAdminBranding()
+  })
 
   fastify.put('/branding', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    const body = updateBrandingBodySchema.parse(request.body);
+    if (requireAdmin(request, reply)) return
+    const body = updateBrandingBodySchema.parse(request.body)
     if (body.preset !== CUSTOM_PRESET && !(body.preset in BRAND_PRESETS)) {
-      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') });
+      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') })
     }
     return saveBrandSettings({
       preset: body.preset,
       color: body.preset === CUSTOM_PRESET ? body.color : null,
       name: body.name,
-    });
-  });
+    })
+  })
 
   // Live preview for the settings page: what a preset/custom color would
   // derive to (contrast adjustment + semantic shifts), without saving.
   fastify.post('/branding/preview', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    const body = brandingPreviewBodySchema.parse(request.body);
+    if (requireAdmin(request, reply)) return
+    const body = brandingPreviewBodySchema.parse(request.body)
     if (body.preset !== CUSTOM_PRESET && !(body.preset in BRAND_PRESETS)) {
-      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') });
+      return reply.status(400).send({ error: getT(request)('errors.unknownBrandPreset') })
     }
-    return derivePalette(seedFor(body.preset, body.color ?? null));
-  });
+    return derivePalette(seedFor(body.preset, body.color ?? null))
+  })
 
   fastify.post('/branding/logo', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    const t = getT(request);
+    if (requireAdmin(request, reply)) return
+    const t = getT(request)
     if (!request.isMultipart()) {
-      return reply.status(400).send({ error: t('errors.invalidLogo') });
+      return reply.status(400).send({ error: t('errors.invalidLogo') })
     }
 
-    let buffer: Buffer;
+    let buffer: Buffer
     try {
-      const file = await request.file({ limits: { fileSize: MAX_LOGO_BYTES, files: 1 } });
-      if (!file) return reply.status(400).send({ error: t('errors.invalidLogo') });
-      buffer = await file.toBuffer();
+      const file = await request.file({ limits: { fileSize: MAX_LOGO_BYTES, files: 1 } })
+      if (!file) return reply.status(400).send({ error: t('errors.invalidLogo') })
+      buffer = await file.toBuffer()
     } catch (err) {
       if ((err as { code?: string } | null)?.code === 'FST_REQ_FILE_TOO_LARGE') {
-        return reply.status(400).send({ error: t('errors.logoTooLarge') });
+        return reply.status(400).send({ error: t('errors.logoTooLarge') })
       }
-      throw err;
+      throw err
     }
 
     try {
-      return await saveLogo(buffer);
+      return await saveLogo(buffer)
     } catch (err) {
-      if (err instanceof BrandingError) return reply.status(400).send({ error: t(err.key) });
-      throw err;
+      if (err instanceof BrandingError) return reply.status(400).send({ error: t(err.key) })
+      throw err
     }
-  });
+  })
 
   fastify.delete('/branding/logo', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
-    return deleteLogo();
-  });
+    if (requireAdmin(request, reply)) return
+    return deleteLogo()
+  })
 
   // Media integrations: each provider is one server-level connection
   // (configured above via /settings) shared by every group; below, an admin
   // links specific provider albums to specific Famlin groups so members can
   // pick photos from them (see services/media/registry.ts for the providers).
   fastify.post('/immich/test', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const body = testImmichConnectionBodySchema.parse(request.body);
-    return testImmichConnection(body.serverUrl, body.apiKey);
-  });
+    const body = testImmichConnectionBodySchema.parse(request.body)
+    return testImmichConnection(body.serverUrl, body.apiKey)
+  })
 
   // Validates a local-media root path before the admin saves it — the
   // equivalent of /immich/test for the local-folder provider. Path probing is
   // admin-only by definition of this route, and the saved value is what the
   // provider later trusts.
   fastify.post('/media/local/test', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const body = testLocalMediaBodySchema.parse(request.body);
+    const body = testLocalMediaBodySchema.parse(request.body)
     try {
-      const stat = await fsp.stat(body.rootPath);
-      if (!stat.isDirectory()) return { ok: false as const, error: 'not_a_directory' as const };
-      await fsp.access(body.rootPath, fsp.constants.R_OK);
-      return { ok: true as const };
+      const stat = await fsp.stat(body.rootPath)
+      if (!stat.isDirectory()) return { ok: false as const, error: 'not_a_directory' as const }
+      await fsp.access(body.rootPath, fsp.constants.R_OK)
+      return { ok: true as const }
     } catch {
-      return { ok: false as const, error: 'not_found' as const };
+      return { ok: false as const, error: 'not_found' as const }
     }
-  });
+  })
 
   // The admin "link an album" picker's catalog, per provider.
   fastify.get('/media/:provider/albums', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { provider: providerId } = request.params as { provider: string };
-    const provider = getMediaProvider(providerId);
-    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+    const t = getT(request)
+    const { provider: providerId } = request.params as { provider: string }
+    const provider = getMediaProvider(providerId)
+    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') })
 
     try {
-      return await provider.listAlbums();
+      return await provider.listAlbums()
     } catch (err) {
       if (err instanceof MediaProviderError) {
-        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });
+        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code })
       }
-      throw err;
+      throw err
     }
-  });
+  })
 
   fastify.get('/groups/:id/media-albums', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: string }
     return prisma.mediaAlbumLink.findMany({
       where: { groupId: id },
       orderBy: { createdAt: 'desc' },
-    });
-  });
+    })
+  })
 
   fastify.post('/groups/:id/media-albums', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = linkMediaAlbumBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = linkMediaAlbumBodySchema.parse(request.body)
 
     // Syntactic validity per provider (Immich uuid / safe folder name) — a
     // crafted album id must never reach the provider's filesystem/API.
-    const provider = getMediaProvider(body.provider)!;
+    const provider = getMediaProvider(body.provider)!
     if (!provider.isValidAlbumId(body.externalAlbumId)) {
-      return reply.status(400).send({ error: t('errors.validationFailed') });
+      return reply.status(400).send({ error: t('errors.validationFailed') })
     }
 
     try {
@@ -1103,51 +1103,51 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           externalAlbumId: body.externalAlbumId,
           albumName: body.albumName,
         },
-      });
-      return link;
+      })
+      return link
     } catch (err) {
       // Unique constraint: this album is already linked to this group.
       if (isUniqueConstraintViolation(err)) {
-        return reply.status(409).send({ error: t('errors.mediaAlbumAlreadyLinked') });
+        return reply.status(409).send({ error: t('errors.mediaAlbumAlreadyLinked') })
       }
-      throw err;
+      throw err
     }
-  });
+  })
 
   fastify.delete('/media-albums/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
     try {
-      await prisma.mediaAlbumLink.delete({ where: { id } });
-      return { success: true };
+      await prisma.mediaAlbumLink.delete({ where: { id } })
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') })
+      throw err
     }
-  });
+  })
 
   // Toggles whether/how src/jobs/newAssets.ts surfaces newly-added assets on
   // this linked album — OFF (default), MANUAL (a notification), or AUTO (a
   // real Post). The job itself resolves this per link on every run.
   fastify.patch('/media-albums/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
-    const body = updateMediaAlbumLinkBodySchema.parse(request.body);
+    const t = getT(request)
+    const { id } = request.params as { id: string }
+    const body = updateMediaAlbumLinkBodySchema.parse(request.body)
 
     try {
       return await prisma.mediaAlbumLink.update({
         where: { id },
         data: { newAssetMode: body.newAssetMode },
-      });
+      })
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') })
+      throw err
     }
-  });
+  })
 
   // The admin "map a person" picker's catalog for one provider — only
   // providers that implement the optional listPeople() capability (Immich
@@ -1158,81 +1158,81 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // admin can map someone who never appears in the key owner's own /people
   // list. Same response shape either way — the admin UI needs no changes.
   fastify.get('/media/:provider/people', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { provider: providerId } = request.params as { provider: string };
-    const provider = getMediaProvider(providerId);
-    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') });
+    const t = getT(request)
+    const { provider: providerId } = request.params as { provider: string }
+    const provider = getMediaProvider(providerId)
+    if (!provider) return reply.status(404).send({ error: t('errors.mediaAlbumLinkNotFound') })
     if (!provider.listPeople) {
-      return reply.status(400).send({ error: t('errors.mediaProviderLacksPeople') });
+      return reply.status(400).send({ error: t('errors.mediaProviderLacksPeople') })
     }
 
     try {
-      const ownPeople = await provider.listPeople();
-      const byId = new Map(ownPeople.map((p) => [p.id, p]));
+      const ownPeople = await provider.listPeople()
+      const byId = new Map(ownPeople.map((p) => [p.id, p]))
 
       if (provider.getAlbumAssetPeople) {
         const links = await prisma.mediaAlbumLink.findMany({
           where: { provider: providerId },
           select: { externalAlbumId: true },
-        });
-        const albumIds = [...new Set(links.map((l) => l.externalAlbumId))];
+        })
+        const albumIds = [...new Set(links.map((l) => l.externalAlbumId))]
 
         for (const albumId of albumIds) {
-          if (byId.size >= ADMIN_PEOPLE_CATALOG_CAP) break;
+          if (byId.size >= ADMIN_PEOPLE_CATALOG_CAP) break
           try {
-            const albumPeople = await provider.getAlbumAssetPeople(albumId);
+            const albumPeople = await provider.getAlbumAssetPeople(albumId)
             for (const people of albumPeople.values()) {
               for (const person of people) {
-                if (byId.has(person.id) || byId.size >= ADMIN_PEOPLE_CATALOG_CAP) continue;
+                if (byId.has(person.id) || byId.size >= ADMIN_PEOPLE_CATALOG_CAP) continue
                 const thumbnailDataUri = provider.getPersonThumbnail
                   ? await provider.getPersonThumbnail(person.id).catch(() => null)
-                  : null;
-                byId.set(person.id, { id: person.id, name: person.name, thumbnailDataUri });
+                  : null
+                byId.set(person.id, { id: person.id, name: person.name, thumbnailDataUri })
               }
             }
           } catch (err) {
             // One failing album's cross-owner discovery shouldn't blank out
             // the key owner's own people (already resolved above) — log and
             // move on to the next linked album.
-            console.warn(`admin media people: failed to discover album people for ${providerId}/${albumId}:`, err);
+            console.warn(`admin media people: failed to discover album people for ${providerId}/${albumId}:`, err)
           }
         }
       }
 
-      return [...byId.values()];
+      return [...byId.values()]
     } catch (err) {
       if (err instanceof MediaProviderError) {
-        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code });
+        return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)), code: err.code })
       }
-      throw err;
+      throw err
     }
-  });
+  })
 
   // Every provider-person -> Famlin-user mapping, across every provider —
   // the admin UI's single management table.
   fastify.get('/media/people-links', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
     return prisma.mediaPersonLink.findMany({
       orderBy: { createdAt: 'desc' },
       include: { user: { select: { id: true, name: true, email: true } } },
-    });
-  });
+    })
+  })
 
   // Upserts on the (provider, externalPersonId) unique pair — re-mapping an
   // already-linked person (a different label/user) is a normal edit, not an
   // error.
   fastify.post('/media/people-links', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const body = createMediaPersonLinkBodySchema.parse(request.body);
+    const t = getT(request)
+    const body = createMediaPersonLinkBodySchema.parse(request.body)
 
     if (body.userId) {
-      const user = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } });
-      if (!user) return reply.status(400).send({ error: t('errors.userNotFound') });
+      const user = await prisma.user.findUnique({ where: { id: body.userId }, select: { id: true } })
+      if (!user) return reply.status(400).send({ error: t('errors.userNotFound') })
     }
 
     return prisma.mediaPersonLink.upsert({
@@ -1248,46 +1248,46 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         userId: body.userId ?? null,
       },
       include: { user: { select: { id: true, name: true, email: true } } },
-    });
-  });
+    })
+  })
 
   fastify.delete('/media/people-links/:id', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
     try {
-      await prisma.mediaPersonLink.delete({ where: { id } });
-      return { success: true };
+      await prisma.mediaPersonLink.delete({ where: { id } })
+      return { success: true }
     } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') });
-      throw err;
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.mediaPersonLinkNotFound') })
+      throw err
     }
-  });
+  })
 
   // Full data export: a zip of all family content (users sans credentials,
   // groups/members, posts, comments, reactions, favorites, chat messages) and
   // the entire uploads directory — see services/export.ts for exactly what's
   // deliberately left out (Setting, invites, tokens, notification history).
   fastify.get('/export', async (request, reply) => {
-    if (requireAdmin(request, reply)) return;
+    if (requireAdmin(request, reply)) return
 
-    const archive = await buildExportArchive();
+    const archive = await buildExportArchive()
     archive.on('error', (err) => {
-      request.log.error(err, 'export archive stream error');
-    });
+      request.log.error(err, 'export archive stream error')
+    })
 
-    const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`;
-    reply.header('content-type', 'application/zip');
-    reply.header('content-disposition', `attachment; filename="${filename}"`);
+    const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
+    reply.header('content-type', 'application/zip')
+    reply.header('content-disposition', `attachment; filename="${filename}"`)
 
     // finalize() returns a promise (archiver v8) — fire it after attaching
     // the archive to the response so bytes start streaming immediately;
     // a rejection is caught here in addition to the 'error' listener above
     // so it can never surface as an unhandled rejection.
     archive.finalize().catch((err) => {
-      request.log.error(err, 'export archive finalize error');
-    });
-    return reply.send(archive);
-  });
+      request.log.error(err, 'export archive finalize error')
+    })
+    return reply.send(archive)
+  })
 }

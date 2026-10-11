@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next';
-import { Icon } from '@/components/Icon';
-import './ScreenHeader.css';
+import { useTranslation } from 'react-i18next'
+import { Icon } from '@/components/Icon'
+import './ScreenHeader.css'
 
 // A shared "back bar" — back button + title — for any screen reached by
 // drilling into something rather than tapping a sidebar/BottomNav tab (Chat,
@@ -8,7 +8,7 @@ import './ScreenHeader.css';
 // "← Back to the feed" link with one consistent, mobile-ScreenHeader-like
 // pattern.
 export function ScreenHeader({ title, onBack }: { title: string; onBack?: () => void }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <div className="screen-header">
       {onBack && (
@@ -18,5 +18,5 @@ export function ScreenHeader({ title, onBack }: { title: string; onBack?: () => 
       )}
       <h1 className="screen-header-title">{title}</h1>
     </div>
-  );
+  )
 }

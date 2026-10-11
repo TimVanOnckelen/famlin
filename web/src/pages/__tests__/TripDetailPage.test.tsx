@@ -1,7 +1,7 @@
-import { screen, within } from '@testing-library/react';
-import { TripDetailPage } from '@/pages/TripDetailPage';
-import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchComments, fetchPost } from '@famlin/api-client';
+import { screen, within } from '@testing-library/react'
+import { TripDetailPage } from '@/pages/TripDetailPage'
+import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures'
+import { fetchComments, fetchPost } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -10,11 +10,11 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   createComment: vi.fn(),
   reactToComment: vi.fn(),
   getUploadUrl: vi.fn((url: string) => `http://localhost:3000${url}`),
-}));
+}))
 
 beforeEach(() => {
-  vi.clearAllMocks();
-});
+  vi.clearAllMocks()
+})
 
 describe('TripDetailPage', () => {
   it('shows the timeline newest-first and the trip-level comment separately while active', async () => {
@@ -25,8 +25,8 @@ describe('TripDetailPage', () => {
       authorId: 'user-1',
       author: { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
       trip: makeTrip({ startDate: '2026-07-03', closed: false, dayNumber: 4 }),
-    });
-    vi.mocked(fetchPost).mockResolvedValue(post);
+    })
+    vi.mocked(fetchPost).mockResolvedValue(post)
     vi.mocked(fetchComments).mockResolvedValue([
       makeComment({
         id: 'ci-1',
@@ -41,23 +41,23 @@ describe('TripDetailPage', () => {
         metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'ci-2' },
       }),
       makeComment({ id: 'com-1', authorId: 'user-2', content: 'Have a great trip!' }),
-    ]);
+    ])
 
     const { container } = renderWithQueryClient(
       <TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />
-    );
+    )
 
-    expect(await screen.findByText('Road trip Italy')).toBeInTheDocument();
-    expect(screen.getByText('Timeline · newest first')).toBeInTheDocument();
+    expect(await screen.findByText('Road trip Italy')).toBeInTheDocument()
+    expect(screen.getByText('Timeline · newest first')).toBeInTheDocument()
 
-    const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent);
-    expect(places).toEqual(['Bologna', 'Florence']); // newest (Bologna) first
+    const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent)
+    expect(places).toEqual(['Bologna', 'Florence']) // newest (Bologna) first
 
     // The trip-level comment shows in its own section, not the timeline.
-    expect(screen.getByText('Have a great trip!')).toBeInTheDocument();
-    const timeline = container.querySelector('.trip-detail-timeline') as HTMLElement;
-    expect(within(timeline).queryByText('Have a great trip!')).not.toBeInTheDocument();
-  });
+    expect(screen.getByText('Have a great trip!')).toBeInTheDocument()
+    const timeline = container.querySelector('.trip-detail-timeline') as HTMLElement
+    expect(within(timeline).queryByText('Have a great trip!')).not.toBeInTheDocument()
+  })
 
   it('flips to oldest-first with the diary label and a closing line once the trip is closed', async () => {
     const post = makePost({
@@ -74,8 +74,8 @@ describe('TripDetailPage', () => {
         dayNumber: null,
         durationDays: 12,
       }),
-    });
-    vi.mocked(fetchPost).mockResolvedValue(post);
+    })
+    vi.mocked(fetchPost).mockResolvedValue(post)
     vi.mocked(fetchComments).mockResolvedValue([
       makeComment({
         id: 'ci-1',
@@ -89,18 +89,18 @@ describe('TripDetailPage', () => {
         createdAt: '2026-07-06T14:20:00Z',
         metadata: { kind: 'trip_checkin', place: 'Bologna', photoUrls: [], checkinId: 'ci-2' },
       }),
-    ]);
+    ])
 
     const { container } = renderWithQueryClient(
       <TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />
-    );
+    )
 
-    expect(await screen.findByText('Diary · oldest first')).toBeInTheDocument();
-    const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent);
-    expect(places).toEqual(['Florence', 'Bologna']); // oldest first once closed
+    expect(await screen.findByText('Diary · oldest first')).toBeInTheDocument()
+    const places = Array.from(container.querySelectorAll('.trip-timeline-place')).map((el) => el.textContent)
+    expect(places).toEqual(['Florence', 'Bologna']) // oldest first once closed
 
-    expect(screen.getByText(/Trip closed by Grandpa John/)).toBeInTheDocument();
-  });
+    expect(screen.getByText(/Trip closed by Grandpa John/)).toBeInTheDocument()
+  })
 
   it('shows the empty state with no check-in CTA when the trip has no check-ins yet', async () => {
     const post = makePost({
@@ -110,13 +110,13 @@ describe('TripDetailPage', () => {
       authorId: 'user-1',
       author: { id: 'user-1', name: 'Grandpa John', avatarUrl: null },
       trip: makeTrip({ startDate: '2026-07-03', closed: false, dayNumber: 1, latestCheckin: null }),
-    });
-    vi.mocked(fetchPost).mockResolvedValue(post);
-    vi.mocked(fetchComments).mockResolvedValue([]);
+    })
+    vi.mocked(fetchPost).mockResolvedValue(post)
+    vi.mocked(fetchComments).mockResolvedValue([])
 
-    renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<TripDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onLogout={() => {}} />)
 
-    expect(await screen.findByText('The trip has begun…')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /check-in/i })).not.toBeInTheDocument();
-  });
-});
+    expect(await screen.findByText('The trip has begun…')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /check-in/i })).not.toBeInTheDocument()
+  })
+})

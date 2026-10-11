@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -13,12 +13,12 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+} from 'react-native'
+import { Image } from 'expo-image'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   REACTION_TYPES,
   ReactionType,
@@ -34,42 +34,42 @@ import {
   reactToStory,
   replyToStory,
   unpinStory,
-} from '@famlin/api-client';
+} from '@famlin/api-client'
 
-import { colors } from '@/constants/colors';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { Avatar } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import { getUploadUrl } from '@/api/uploads';
-import { formatRelativeDate } from '@/i18n/utils';
-import { nextStoryPosition, previousStoryPosition, StoryPosition } from '@/utils/stories';
+import { colors } from '@/constants/colors'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { Avatar } from '@/components/Avatar'
+import { Icon } from '@/components/Icon'
+import { getUploadUrl } from '@/api/uploads'
+import { formatRelativeDate } from '@/i18n/utils'
+import { nextStoryPosition, previousStoryPosition, StoryPosition } from '@/utils/stories'
 
-export const STORY_DURATION_MS = 5000;
+export const STORY_DURATION_MS = 5000
 
 type Params = {
-  sequences?: Story[][];
-  startSequence?: number;
-  startIndex?: number;
+  sequences?: Story[][]
+  startSequence?: number
+  startIndex?: number
   // A notification deep link opens one story by id instead.
-  storyId?: string;
-};
+  storyId?: string
+}
 
 // Full-screen story player. Plays each run (one per tray author, or the
 // whole Highlights strip) in order: tap right/left to skip, hold to pause.
 // Viewers can react and send one private reply; the author instead sees who
 // viewed/reacted/replied and can pin, unpin or delete.
 export function StoryViewerScreen() {
-  const route = useRoute<any>();
-  const params = (route.params ?? {}) as Params;
-  const { t } = useTranslation();
+  const route = useRoute<any>()
+  const params = (route.params ?? {}) as Params
+  const { t } = useTranslation()
 
   const singleQuery = useQuery({
     queryKey: ['story', params.storyId],
     queryFn: () => fetchStory(params.storyId!),
     enabled: !!params.storyId && !params.sequences,
-  });
+  })
 
-  const sequences = params.sequences ?? (singleQuery.data ? [[singleQuery.data]] : null);
+  const sequences = params.sequences ?? (singleQuery.data ? [[singleQuery.data]] : null)
 
   if (!sequences) {
     return (
@@ -80,159 +80,159 @@ export function StoryViewerScreen() {
           <ActivityIndicator color={colors.white} />
         )}
       </View>
-    );
+    )
   }
 
-  return <StoryPlayer sequences={sequences} start={{ seq: params.startSequence ?? 0, idx: params.startIndex ?? 0 }} />;
+  return <StoryPlayer sequences={sequences} start={{ seq: params.startSequence ?? 0, idx: params.startIndex ?? 0 }} />
 }
 
 function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; start: StoryPosition }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const queryClient = useQueryClient();
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const queryClient = useQueryClient()
   // Local copy so deleting a story or reacting updates the player in place.
-  const [sequences, setSequences] = useState(initial);
-  const [position, setPosition] = useState(start);
-  const [elapsed, setElapsed] = useState(0);
-  const [holding, setHolding] = useState(false);
-  const [typing, setTyping] = useState(false);
-  const [insightsOpen, setInsightsOpen] = useState(false);
-  const [replyText, setReplyText] = useState('');
+  const [sequences, setSequences] = useState(initial)
+  const [position, setPosition] = useState(start)
+  const [elapsed, setElapsed] = useState(0)
+  const [holding, setHolding] = useState(false)
+  const [typing, setTyping] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
+  const [replyText, setReplyText] = useState('')
 
-  const story = sequences[position.seq]?.[position.idx];
-  const storyId = story?.id;
-  const paused = holding || typing || insightsOpen;
+  const story = sequences[position.seq]?.[position.idx]
+  const storyId = story?.id
+  const paused = holding || typing || insightsOpen
 
   const close = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['stories'] });
-    navigation.goBack();
-  }, [navigation, queryClient]);
+    queryClient.invalidateQueries({ queryKey: ['stories'] })
+    navigation.goBack()
+  }, [navigation, queryClient])
 
   const goNext = useCallback(() => {
-    setElapsed(0);
-    const next = nextStoryPosition(sequences, position);
-    if (next) setPosition(next);
-    else close();
-  }, [sequences, position, close]);
+    setElapsed(0)
+    const next = nextStoryPosition(sequences, position)
+    if (next) setPosition(next)
+    else close()
+  }, [sequences, position, close])
 
   const goPrev = useCallback(() => {
-    setElapsed(0);
-    setPosition(previousStoryPosition(sequences, position));
-  }, [sequences, position]);
+    setElapsed(0)
+    setPosition(previousStoryPosition(sequences, position))
+  }, [sequences, position])
 
-  const viewed = useRef(new Set<string>());
+  const viewed = useRef(new Set<string>())
   useEffect(() => {
-    if (!story || viewed.current.has(story.id)) return;
-    viewed.current.add(story.id);
+    if (!story || viewed.current.has(story.id)) return
+    viewed.current.add(story.id)
     // The server ignores this for your own story and an expired Highlight.
-    markStoryViewed(story.id).catch(() => {});
-  }, [story]);
+    markStoryViewed(story.id).catch(() => {})
+  }, [story])
 
   useEffect(() => {
-    if (paused || !storyId) return;
-    let previousTime = performance.now();
-    let frame: number;
+    if (paused || !storyId) return
+    let previousTime = performance.now()
+    let frame: number
     function tick(now: number) {
-      const delta = now - previousTime;
-      previousTime = now;
-      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta));
-      frame = requestAnimationFrame(tick);
+      const delta = now - previousTime
+      previousTime = now
+      setElapsed((e) => Math.min(STORY_DURATION_MS, e + delta))
+      frame = requestAnimationFrame(tick)
     }
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [paused, storyId]);
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [paused, storyId])
 
   useEffect(() => {
-    if (elapsed >= STORY_DURATION_MS) goNext();
-  }, [elapsed, goNext]);
+    if (elapsed >= STORY_DURATION_MS) goNext()
+  }, [elapsed, goNext])
 
   function patchStory(id: string, patch: Partial<Story>) {
-    setSequences((seqs) => seqs.map((run) => run.map((s) => (s.id === id ? { ...s, ...patch } : s))));
+    setSequences((seqs) => seqs.map((run) => run.map((s) => (s.id === id ? { ...s, ...patch } : s))))
   }
 
   function dropStory(id: string) {
-    const remaining = sequences.map((run) => run.filter((s) => s.id !== id)).filter((run) => run.length > 0);
-    if (remaining.length === 0) return close();
-    setSequences(remaining);
-    setElapsed(0);
+    const remaining = sequences.map((run) => run.filter((s) => s.id !== id)).filter((run) => run.length > 0)
+    if (remaining.length === 0) return close()
+    setSequences(remaining)
+    setElapsed(0)
     setPosition((p) => {
-      const seq = Math.min(p.seq, remaining.length - 1);
-      return { seq, idx: Math.min(p.idx, remaining[seq].length - 1) };
-    });
+      const seq = Math.min(p.seq, remaining.length - 1)
+      return { seq, idx: Math.min(p.idx, remaining[seq].length - 1) }
+    })
   }
 
   const react = useMutation({
     mutationFn: ({ id, type }: { id: string; type: ReactionType }) => reactToStory(id, type),
     onSuccess: ({ myReaction }, { id }) => patchStory(id, { myReaction }),
-  });
+  })
 
   const reply = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) => replyToStory(id, content),
     onSuccess: (sent, { id }) => {
-      patchStory(id, { myReply: sent });
-      setReplyText('');
-      setTyping(false);
+      patchStory(id, { myReply: sent })
+      setReplyText('')
+      setTyping(false)
     },
     onError: () => Alert.alert(t('stories.replyFailed')),
-  });
+  })
 
   const pin = useMutation({
     mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) => (pinned ? unpinStory(id) : pinStory(id)),
     onSuccess: (result, { id }) => {
-      if (result.deleted) dropStory(id);
-      else patchStory(id, { pinnedAt: result.pinnedAt });
+      if (result.deleted) dropStory(id)
+      else patchStory(id, { pinnedAt: result.pinnedAt })
     },
     onError: () => Alert.alert(t('common.error'), t('stories.actionFailed')),
-  });
+  })
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteStory(id),
     onSuccess: (_r, id) => dropStory(id),
     onError: () => Alert.alert(t('common.error'), t('stories.actionFailed')),
-  });
+  })
 
-  if (!story) return null;
+  if (!story) return null
 
-  const live = isStoryLive(story);
-  const run = sequences[position.seq] ?? [];
-  const progress = Math.min(1, elapsed / STORY_DURATION_MS);
+  const live = isStoryLive(story)
+  const run = sequences[position.seq] ?? []
+  const progress = Math.min(1, elapsed / STORY_DURATION_MS)
 
   function togglePin() {
-    if (!story) return;
-    const pinned = !!story.pinnedAt;
+    if (!story) return
+    const pinned = !!story.pinnedAt
     // Unpinning an expired Highlight has nothing to fall back to — it deletes.
     if (pinned && !live) {
-      setHolding(true);
+      setHolding(true)
       Alert.alert(t('stories.unpinDeleteTitle'), t('stories.unpinDeleteMessage'), [
         { text: t('common.cancel'), style: 'cancel', onPress: () => setHolding(false) },
         {
           text: t('stories.delete'),
           style: 'destructive',
           onPress: () => {
-            setHolding(false);
-            pin.mutate({ id: story.id, pinned });
+            setHolding(false)
+            pin.mutate({ id: story.id, pinned })
           },
         },
-      ]);
-      return;
+      ])
+      return
     }
-    pin.mutate({ id: story.id, pinned });
+    pin.mutate({ id: story.id, pinned })
   }
 
   function confirmDelete() {
-    if (!story) return;
-    setHolding(true);
+    if (!story) return
+    setHolding(true)
     Alert.alert(t('stories.deleteTitle'), t('stories.deleteMessage'), [
       { text: t('common.cancel'), style: 'cancel', onPress: () => setHolding(false) },
       {
         text: t('stories.delete'),
         style: 'destructive',
         onPress: () => {
-          setHolding(false);
-          remove.mutate(story.id);
+          setHolding(false)
+          remove.mutate(story.id)
         },
       },
-    ]);
+    ])
   }
 
   return (
@@ -376,36 +376,36 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
         <StoryInsightsSheet storyId={story.id} visible={insightsOpen} onClose={() => setInsightsOpen(false)} />
       )}
     </View>
-  );
+  )
 }
 
 // Author-only: who viewed, who reacted with what, and the private replies.
 function StoryInsightsSheet({ storyId, visible, onClose }: { storyId: string; visible: boolean; onClose: () => void }) {
-  const { t } = useTranslation();
-  const [tab, setTab] = useState<'views' | 'reactions' | 'replies'>('views');
+  const { t } = useTranslation()
+  const [tab, setTab] = useState<'views' | 'reactions' | 'replies'>('views')
 
   const views = useQuery({
     queryKey: ['story-views', storyId],
     queryFn: () => fetchStoryViews(storyId),
     enabled: visible,
-  });
+  })
   const reactions = useQuery({
     queryKey: ['story-reactions', storyId],
     queryFn: () => fetchStoryReactions(storyId),
     enabled: visible,
-  });
+  })
   const replies = useQuery({
     queryKey: ['story-replies', storyId],
     queryFn: () => fetchStoryReplies(storyId),
     enabled: visible,
-  });
+  })
 
   const rows: { id: string; name: string; avatarUrl: string | null; detail: string }[] =
     tab === 'views'
       ? (views.data ?? []).map((v) => ({ ...v, detail: formatRelativeDate(v.viewedAt) }))
       : tab === 'reactions'
         ? (reactions.data ?? []).map((r) => ({ ...r, detail: REACTION_EMOJI[r.type] }))
-        : (replies.data ?? []).map((r) => ({ ...r.fromUser, id: r.id, detail: r.content }));
+        : (replies.data ?? []).map((r) => ({ ...r.fromUser, id: r.id, detail: r.content }))
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -449,7 +449,7 @@ function StoryInsightsSheet({ storyId, visible, onClose }: { storyId: string; vi
         <Text style={styles.sheetPrivacy}>{t('stories.repliesPrivate')}</Text>
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -660,4 +660,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
   },
-});
+})

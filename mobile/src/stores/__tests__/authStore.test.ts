@@ -1,4 +1,4 @@
-import { User } from '@/types';
+import { User } from '@/types'
 
 jest.mock('@/utils/storage', () => ({
   setToken: jest.fn().mockResolvedValue(undefined),
@@ -8,17 +8,17 @@ jest.mock('@/utils/storage', () => ({
   deleteServerUrl: jest.fn().mockResolvedValue(undefined),
   getPushToken: jest.fn().mockResolvedValue(null),
   deletePushToken: jest.fn().mockResolvedValue(undefined),
-}));
+}))
 
 jest.mock('@/api/uploads', () => ({
   refreshMediaToken: jest.fn().mockResolvedValue(undefined),
-}));
+}))
 
 jest.mock('@famlin/api-client', () => ({
   setApiBaseUrl: jest.fn(),
   setMediaToken: jest.fn(),
   unregisterPushToken: jest.fn().mockResolvedValue(undefined),
-}));
+}))
 
 const testUser: User = {
   id: 'u1',
@@ -32,81 +32,81 @@ const testUser: User = {
   pushOnNewPost: true,
   pushOnNewComment: true,
   pushOnNewLike: true,
-};
+}
 
 describe('authStore', () => {
   beforeEach(() => {
-    jest.resetModules();
-    jest.clearAllMocks();
-  });
+    jest.resetModules()
+    jest.clearAllMocks()
+  })
 
   it('setAuth stores the token/server, sets the api base URL, updates state, and refreshes the media token', async () => {
-    const storage = require('@/utils/storage');
-    const client = require('@famlin/api-client');
-    const uploads = require('@/api/uploads');
-    const { useAuthStore } = require('@/stores/authStore');
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    const uploads = require('@/api/uploads')
+    const { useAuthStore } = require('@/stores/authStore')
 
-    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com');
+    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com')
 
-    expect(storage.setToken).toHaveBeenCalledWith('tok-abc');
-    expect(storage.setServerUrl).toHaveBeenCalledWith('http://example.com');
-    expect(client.setApiBaseUrl).toHaveBeenCalledWith('http://example.com');
-    expect(uploads.refreshMediaToken).toHaveBeenCalledTimes(1);
+    expect(storage.setToken).toHaveBeenCalledWith('tok-abc')
+    expect(storage.setServerUrl).toHaveBeenCalledWith('http://example.com')
+    expect(client.setApiBaseUrl).toHaveBeenCalledWith('http://example.com')
+    expect(uploads.refreshMediaToken).toHaveBeenCalledTimes(1)
 
-    const state = useAuthStore.getState();
-    expect(state.user).toEqual(testUser);
-    expect(state.token).toBe('tok-abc');
-    expect(state.serverUrl).toBe('http://example.com');
-    expect(state.isLoading).toBe(false);
-  });
+    const state = useAuthStore.getState()
+    expect(state.user).toEqual(testUser)
+    expect(state.token).toBe('tok-abc')
+    expect(state.serverUrl).toBe('http://example.com')
+    expect(state.isLoading).toBe(false)
+  })
 
   it('logout deletes the token AND the server URL and resets state', async () => {
-    const storage = require('@/utils/storage');
-    const client = require('@famlin/api-client');
-    storage.getPushToken.mockResolvedValue(null); // no push token registered
-    const { useAuthStore } = require('@/stores/authStore');
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    storage.getPushToken.mockResolvedValue(null) // no push token registered
+    const { useAuthStore } = require('@/stores/authStore')
 
-    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com');
-    await useAuthStore.getState().logout();
+    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com')
+    await useAuthStore.getState().logout()
 
-    expect(storage.deleteToken).toHaveBeenCalledTimes(1);
-    expect(storage.deleteServerUrl).toHaveBeenCalledTimes(1);
-    expect(client.setMediaToken).toHaveBeenCalledWith(null);
+    expect(storage.deleteToken).toHaveBeenCalledTimes(1)
+    expect(storage.deleteServerUrl).toHaveBeenCalledTimes(1)
+    expect(client.setMediaToken).toHaveBeenCalledWith(null)
 
-    const state = useAuthStore.getState();
-    expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
-    expect(state.serverUrl).toBeNull();
-  });
+    const state = useAuthStore.getState()
+    expect(state.user).toBeNull()
+    expect(state.token).toBeNull()
+    expect(state.serverUrl).toBeNull()
+  })
 
   it('logout also unregisters this device push token when one is stored', async () => {
-    const storage = require('@/utils/storage');
-    const client = require('@famlin/api-client');
-    storage.getPushToken.mockResolvedValue('push-token-xyz');
-    const { useAuthStore } = require('@/stores/authStore');
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    storage.getPushToken.mockResolvedValue('push-token-xyz')
+    const { useAuthStore } = require('@/stores/authStore')
 
-    await useAuthStore.getState().logout();
+    await useAuthStore.getState().logout()
 
-    expect(client.unregisterPushToken).toHaveBeenCalledWith('push-token-xyz');
-    expect(storage.deletePushToken).toHaveBeenCalledTimes(1);
-  });
+    expect(client.unregisterPushToken).toHaveBeenCalledWith('push-token-xyz')
+    expect(storage.deletePushToken).toHaveBeenCalledTimes(1)
+  })
 
   it('clearSession deletes the token but PRESERVES the server URL', async () => {
-    const storage = require('@/utils/storage');
-    const client = require('@famlin/api-client');
-    const { useAuthStore } = require('@/stores/authStore');
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    const { useAuthStore } = require('@/stores/authStore')
 
-    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com');
-    await useAuthStore.getState().clearSession();
+    await useAuthStore.getState().setAuth(testUser, 'tok-abc', 'http://example.com')
+    await useAuthStore.getState().clearSession()
 
-    expect(storage.deleteToken).toHaveBeenCalledTimes(1);
-    expect(storage.deleteServerUrl).not.toHaveBeenCalled();
-    expect(client.setMediaToken).toHaveBeenCalledWith(null);
+    expect(storage.deleteToken).toHaveBeenCalledTimes(1)
+    expect(storage.deleteServerUrl).not.toHaveBeenCalled()
+    expect(client.setMediaToken).toHaveBeenCalledWith(null)
 
-    const state = useAuthStore.getState();
-    expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
+    const state = useAuthStore.getState()
+    expect(state.user).toBeNull()
+    expect(state.token).toBeNull()
     // serverUrl is intentionally left as-is (not reset to null in clearSession).
-    expect(state.serverUrl).toBe('http://example.com');
-  });
-});
+    expect(state.serverUrl).toBe('http://example.com')
+  })
+})

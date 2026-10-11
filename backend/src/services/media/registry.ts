@@ -1,6 +1,6 @@
-import { MediaProviderError, type MediaProvider } from './types.js';
-import { immichProvider } from './immich.js';
-import { localProvider } from './local.js';
+import { MediaProviderError, type MediaProvider } from './types.js'
+import { immichProvider } from './immich.js'
+import { localProvider } from './local.js'
 
 // The static provider registry — adding a media source (Nextcloud,
 // PhotoPrism, ...) = implement MediaProvider in a new file in this directory
@@ -9,14 +9,14 @@ import { localProvider } from './local.js';
 const providers = new Map<string, MediaProvider>([
   [immichProvider.id, immichProvider],
   [localProvider.id, localProvider],
-]);
+])
 
 export function getMediaProvider(id: string): MediaProvider | undefined {
-  return providers.get(id);
+  return providers.get(id)
 }
 
 export function listMediaProviders(): MediaProvider[] {
-  return [...providers.values()];
+  return [...providers.values()]
 }
 
 // Test-only escape hatch (mirrors __clearDomainEventHandlersForTests in
@@ -24,11 +24,11 @@ export function listMediaProviders(): MediaProvider[] {
 // src/jobs/newAssets.ts without hitting a real Immich/local source — and
 // remove it afterwards so it can't leak into other test files.
 export function __registerMediaProviderForTests(provider: MediaProvider): void {
-  providers.set(provider.id, provider);
+  providers.set(provider.id, provider)
 }
 
 export function __unregisterMediaProviderForTests(id: string): void {
-  providers.delete(id);
+  providers.delete(id)
 }
 
 // Single source of truth for mapping a MediaProviderError to a translated
@@ -38,14 +38,14 @@ export function __unregisterMediaProviderForTests(id: string): void {
 // providers share the generic pair.
 export function mediaErrorKey(err: MediaProviderError): string {
   if (err.provider === 'immich') {
-    return err.code === 'not_configured' ? 'errors.immichNotConfigured' : 'errors.immichUnreachable';
+    return err.code === 'not_configured' ? 'errors.immichNotConfigured' : 'errors.immichUnreachable'
   }
-  return err.code === 'not_configured' ? 'errors.mediaSourceNotConfigured' : 'errors.mediaSourceUnavailable';
+  return err.code === 'not_configured' ? 'errors.mediaSourceNotConfigured' : 'errors.mediaSourceUnavailable'
 }
 
 export function mediaErrorStatus(err: MediaProviderError): number {
-  return err.code === 'not_configured' ? 400 : 502;
+  return err.code === 'not_configured' ? 400 : 502
 }
 
-export { MediaProviderError } from './types.js';
-export type { MediaProvider, MediaAssetVariant, MediaAlbumSummary, MediaAssetSummary } from './types.js';
+export { MediaProviderError } from './types.js'
+export type { MediaProvider, MediaAssetVariant, MediaAlbumSummary, MediaAssetSummary } from './types.js'

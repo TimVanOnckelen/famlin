@@ -1,20 +1,20 @@
-import { ReactNode, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches, User } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { Badge } from '@/components/Badge';
-import { AvatarStack } from '@/components/AvatarStack';
-import { AppShell } from '@/components/AppShell';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { CommentsSection } from '@/components/CommentsSection';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
-import { useAuthStore } from '@/stores/authStore';
-import { isVideoUrl } from '@/utils/media';
-import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album';
-import './AlbumDetailPage.css';
+import { ReactNode, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { closeAlbum, fetchPost, fetchComments, getUploadUrl, patchPostInCaches, User } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { Badge } from '@/components/Badge'
+import { AvatarStack } from '@/components/AvatarStack'
+import { AppShell } from '@/components/AppShell'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { CommentsSection } from '@/components/CommentsSection'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal'
+import { useAuthStore } from '@/stores/authStore'
+import { isVideoUrl } from '@/utils/media'
+import { collectAlbumPhotos, isAlbumDiscussionComment } from '@/utils/album'
+import './AlbumDetailPage.css'
 
 // Web's album detail — the read + contribute view of a collaborative photo
 // album, routed at /albums/:postId (see App.tsx). AppShell always keeps the
@@ -34,40 +34,40 @@ export function AlbumDetailPage({
   onOpenFavorites,
   onLogout,
 }: {
-  user: User;
-  postId: string;
-  onBack: () => void;
+  user: User
+  postId: string
+  onBack: () => void
   // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
-  onOpenFeed?: () => void;
-  onOpenPhotos?: () => void;
-  onOpenChat?: () => void;
-  onOpenProfile?: () => void;
-  onOpenFavorites?: () => void;
-  onLogout: () => void;
+  onOpenFeed?: () => void
+  onOpenPhotos?: () => void
+  onOpenChat?: () => void
+  onOpenProfile?: () => void
+  onOpenFavorites?: () => void
+  onLogout: () => void
 }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const currentUserId = useAuthStore((s) => s.user?.id);
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
-  const [contributeOpen, setContributeOpen] = useState(false);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const currentUserId = useAuthStore((s) => s.user?.id)
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null)
+  const [contributeOpen, setContributeOpen] = useState(false)
 
-  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) });
-  const commentsQuery = useQuery({ queryKey: ['comments', postId], queryFn: () => fetchComments(postId) });
+  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
+  const commentsQuery = useQuery({ queryKey: ['comments', postId], queryFn: () => fetchComments(postId) })
 
-  const post = postQuery.data;
-  const album = post?.album;
-  const comments = commentsQuery.data ?? [];
+  const post = postQuery.data
+  const album = post?.album
+  const comments = commentsQuery.data ?? []
 
-  const photos = useMemo(() => collectAlbumPhotos(comments), [comments]);
+  const photos = useMemo(() => collectAlbumPhotos(comments), [comments])
 
   const closeMutation = useMutation({
     mutationFn: () => closeAlbum(postId),
     onSuccess: (updated) => {
-      patchPostInCaches(queryClient, postId, () => updated);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      patchPostInCaches(queryClient, postId, () => updated)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
     },
-  });
+  })
 
   function shell(children: ReactNode) {
     return (
@@ -86,20 +86,20 @@ export function AlbumDetailPage({
           {children}
         </div>
       </AppShell>
-    );
+    )
   }
 
   if (postQuery.isLoading || commentsQuery.isLoading) {
-    return shell(<div className="album-detail-hint">{t('common.loading')}</div>);
+    return shell(<div className="album-detail-hint">{t('common.loading')}</div>)
   }
 
   if (!post || !album) {
-    return shell(<div className="album-detail-hint">{t('feed.loadFailed')}</div>);
+    return shell(<div className="album-detail-hint">{t('feed.loadFailed')}</div>)
   }
 
-  const coverUrl = album.coverPhotoUrl || album.collagePhotoUrls[0] || null;
-  const isAuthor = currentUserId === post.authorId;
-  const photoUrls = photos.map((p) => p.url);
+  const coverUrl = album.coverPhotoUrl || album.collagePhotoUrls[0] || null
+  const isAuthor = currentUserId === post.authorId
+  const photoUrls = photos.map((p) => p.url)
 
   return shell(
     <>
@@ -208,5 +208,5 @@ export function AlbumDetailPage({
         <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
       )}
     </>
-  );
+  )
 }

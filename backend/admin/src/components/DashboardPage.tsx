@@ -1,66 +1,66 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { compareVersions } from '@famlin/api-client';
-import { api, DashboardStats } from '../api/client';
-import { Icon, IconName } from './Icon';
-import i18n from '../i18n';
-import { avatarColor, initials } from '../avatar';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { compareVersions } from '@famlin/api-client'
+import { api, DashboardStats } from '../api/client'
+import { Icon, IconName } from './Icon'
+import i18n from '../i18n'
+import { avatarColor, initials } from '../avatar'
 
-const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/timvanonckelen/famlin/releases/latest';
+const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/timvanonckelen/famlin/releases/latest'
 
 interface UpdateInfo {
-  currentVersion: string;
-  latestVersion: string;
-  releaseUrl: string;
+  currentVersion: string
+  latestVersion: string
+  releaseUrl: string
 }
 
 export function DashboardPage() {
-  const { t } = useTranslation();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const { t } = useTranslation()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null)
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
 
   useEffect(() => {
     api
       .getStats()
       .then(setStats)
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => setLoading(false))
+  }, [])
 
   // Fail-soft, one-shot check — never blocks the dashboard, never retries,
   // and renders nothing at all if anything goes wrong (network error, GitHub
   // rate limiting, a malformed response, ...).
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
 
-    (async () => {
+    ;(async () => {
       try {
-        const [serverInfo, releaseRes] = await Promise.all([api.getServerInfo(), fetch(GITHUB_LATEST_RELEASE_URL)]);
+        const [serverInfo, releaseRes] = await Promise.all([api.getServerInfo(), fetch(GITHUB_LATEST_RELEASE_URL)])
 
-        if (!releaseRes.ok) return;
-        const release = await releaseRes.json();
-        const latestVersion = release?.tag_name;
-        const releaseUrl = release?.html_url;
-        if (typeof latestVersion !== 'string' || typeof releaseUrl !== 'string') return;
+        if (!releaseRes.ok) return
+        const release = await releaseRes.json()
+        const latestVersion = release?.tag_name
+        const releaseUrl = release?.html_url
+        if (typeof latestVersion !== 'string' || typeof releaseUrl !== 'string') return
 
         if (!cancelled && compareVersions(latestVersion, serverInfo.version) > 0) {
-          setUpdateInfo({ currentVersion: serverInfo.version, latestVersion, releaseUrl });
+          setUpdateInfo({ currentVersion: serverInfo.version, latestVersion, releaseUrl })
         }
       } catch {
         // Network error, CORS/rate-limit failure, etc. — no notice, no retry.
       }
-    })();
+    })()
 
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
-  if (loading || !stats) return <div className="loading">{t('common.loading')}</div>;
+  if (loading || !stats) return <div className="loading">{t('common.loading')}</div>
 
-  const maxDayCount = Math.max(1, ...stats.postsByDay.map((d) => d.count));
-  const maxGroupPosts = Math.max(1, ...stats.topGroups.map((g) => g.postCount));
+  const maxDayCount = Math.max(1, ...stats.postsByDay.map((d) => d.count))
+  const maxGroupPosts = Math.max(1, ...stats.topGroups.map((g) => g.postCount))
 
   return (
     <>
@@ -102,8 +102,8 @@ export function DashboardPage() {
         <h3>{t('dashboard.trend.title')}</h3>
         <div className="bar-chart">
           {stats.postsByDay.map((day, i) => {
-            const pct = (day.count / maxDayCount) * 100;
-            const localDate = new Date(`${day.date}T00:00:00`);
+            const pct = (day.count / maxDayCount) * 100
+            const localDate = new Date(`${day.date}T00:00:00`)
             return (
               <div
                 key={day.date}
@@ -124,17 +124,17 @@ export function DashboardPage() {
                 )}
                 <div className="bar-fill" style={{ height: `${day.count === 0 ? 0 : Math.max(pct, 6)}%` }} />
               </div>
-            );
+            )
           })}
         </div>
         <div className="bar-chart-labels">
           {stats.postsByDay.map((day) => {
-            const localDate = new Date(`${day.date}T00:00:00`);
+            const localDate = new Date(`${day.date}T00:00:00`)
             return (
               <span key={day.date} className="bar-chart-label">
                 {localDate.toLocaleDateString(i18n.language, { weekday: 'narrow' })}
               </span>
-            );
+            )
           })}
         </div>
       </div>
@@ -220,14 +220,14 @@ export function DashboardPage() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
 interface StatTileProps {
-  icon: IconName;
-  label: string;
-  value: number;
-  sub?: string;
+  icon: IconName
+  label: string
+  value: number
+  sub?: string
 }
 
 function StatTile({ icon, label, value, sub }: StatTileProps) {
@@ -240,5 +240,5 @@ function StatTile({ icon, label, value, sub }: StatTileProps) {
       <span className="stat-tile-label">{label}</span>
       {sub && <span className="stat-tile-sub">{sub}</span>}
     </div>
-  );
+  )
 }

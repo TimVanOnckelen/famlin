@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../db.js';
+import { Prisma } from '@prisma/client'
+import { prisma } from '../db.js'
 
 // A Circle is a smaller, reusable audience inside one Group. Group membership
 // remains the outer authorization boundary — a Circle only ever NARROWS it,
@@ -9,8 +9,8 @@ import { prisma } from '../db.js';
 export async function isCircleMember(circleId: string, userId: string): Promise<boolean> {
   const membership = await prisma.circleMember.findUnique({
     where: { circleId_userId: { circleId, userId } },
-  });
-  return !!membership;
+  })
+  return !!membership
 }
 
 // Every circle the user belongs to, across all their groups — the implicit
@@ -19,8 +19,8 @@ export async function getUserCircleIds(userId: string): Promise<string[]> {
   const memberships = await prisma.circleMember.findMany({
     where: { userId },
     select: { circleId: true },
-  });
-  return memberships.map((m) => m.circleId);
+  })
+  return memberships.map((m) => m.circleId)
 }
 
 // THE post visibility predicate. Every member-facing query that reads posts
@@ -39,7 +39,7 @@ export function visiblePostsWhere(groupIds: string[], circleIds: string[]): Pris
   return {
     groupId: { in: groupIds },
     OR: [{ circleId: null }, { circleId: { in: circleIds } }],
-  };
+  }
 }
 
 // The Story counterpart of visiblePostsWhere — same fail-open warning, same
@@ -51,13 +51,13 @@ export function visibleStoriesWhere(groupIds: string[], circleIds: string[]): Pr
     groupId: { in: groupIds },
     group: { storiesEnabled: true },
     OR: [{ circleId: null }, { circleId: { in: circleIds } }],
-  };
+  }
 }
 
 // Convenience wrapper for the common case: resolve the caller's circles and
 // build the predicate in one step.
 export async function visiblePostsWhereFor(groupIds: string[], userId: string): Promise<Prisma.PostWhereInput> {
-  return visiblePostsWhere(groupIds, await getUserCircleIds(userId));
+  return visiblePostsWhere(groupIds, await getUserCircleIds(userId))
 }
 
 // Can this user read this specific post? Used by every single-post route
@@ -65,8 +65,8 @@ export async function visiblePostsWhereFor(groupIds: string[], userId: string): 
 // requireGroupMember check. Group membership is assumed already verified;
 // this adds only the circle narrowing.
 export async function canViewPostCircle(circleId: string | null, userId: string): Promise<boolean> {
-  if (!circleId) return true;
-  return isCircleMember(circleId, userId);
+  if (!circleId) return true
+  return isCircleMember(circleId, userId)
 }
 
 // Narrows a candidate recipient list to people who can actually SEE the post
@@ -79,32 +79,32 @@ export async function canViewPostCircle(circleId: string | null, userId: string)
 // loaded the post doesn't pay for a second lookup; `null` (a whole-family
 // post) short-circuits.
 export async function filterRecipientsByCircle(circleId: string | null, userIds: string[]): Promise<string[]> {
-  if (!circleId || userIds.length === 0) return userIds;
+  if (!circleId || userIds.length === 0) return userIds
 
   const members = await prisma.circleMember.findMany({
     where: { circleId, userId: { in: userIds } },
     select: { userId: true },
-  });
-  return members.map((m) => m.userId);
+  })
+  return members.map((m) => m.userId)
 }
 
 // Validates a client-supplied circleId at post-creation time: the circle must
 // exist, belong to the target group, and have the author as a member.
 // Returns a machine-readable reason rather than a translated string so the
 // route owns the i18n, matching how the post-type handlers report errors.
-export type CircleTargetError = 'circleNotFound' | 'circleNotInGroup' | 'circleNotMember';
+export type CircleTargetError = 'circleNotFound' | 'circleNotInGroup' | 'circleNotMember'
 
 export async function validateCircleTarget(
   circleId: string,
   groupId: string,
   userId: string
 ): Promise<CircleTargetError | null> {
-  const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } });
+  const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } })
   // A non-member must not be able to tell a circle apart from a circle that
   // doesn't exist, so "wrong group" and "not a member" are reported
   // distinctly here but collapse to the same 403 in the route.
-  if (!circle) return 'circleNotFound';
-  if (circle.groupId !== groupId) return 'circleNotInGroup';
-  if (!(await isCircleMember(circleId, userId))) return 'circleNotMember';
-  return null;
+  if (!circle) return 'circleNotFound'
+  if (circle.groupId !== groupId) return 'circleNotInGroup'
+  if (!(await isCircleMember(circleId, userId))) return 'circleNotMember'
+  return null
 }

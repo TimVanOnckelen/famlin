@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from '../i18n'
 import {
   User,
   Group,
@@ -23,7 +23,7 @@ import {
   Circle,
   AdminBranding,
   DerivedBrand,
-} from '../types';
+} from '../types'
 
 export type {
   User,
@@ -49,7 +49,7 @@ export type {
   Circle,
   AdminBranding,
   DerivedBrand,
-};
+}
 
 export class ApiError extends Error {
   // Machine-readable error code, when the backend sends one (e.g. a media
@@ -62,70 +62,70 @@ export class ApiError extends Error {
     message: string,
     public code?: string
   ) {
-    super(message);
+    super(message)
   }
 }
 
 export interface Page<T> {
-  items: T[];
-  nextCursor: string | null;
+  items: T[]
+  nextCursor: string | null
 }
 
 export interface ContentFilterParams {
-  groupId?: string;
-  authorId?: string;
-  q?: string;
-  cursor?: string;
+  groupId?: string
+  authorId?: string
+  q?: string
+  cursor?: string
 }
 
 function contentQueryString(params: ContentFilterParams) {
-  const query = new URLSearchParams();
-  if (params.groupId) query.set('groupId', params.groupId);
-  if (params.authorId) query.set('authorId', params.authorId);
-  if (params.q) query.set('q', params.q);
-  if (params.cursor) query.set('cursor', params.cursor);
-  return query.toString();
+  const query = new URLSearchParams()
+  if (params.groupId) query.set('groupId', params.groupId)
+  if (params.authorId) query.set('authorId', params.authorId)
+  if (params.q) query.set('q', params.q)
+  if (params.cursor) query.set('cursor', params.cursor)
+  return query.toString()
 }
 
 // Backend error messages are translated from Accept-Language — send the
 // admin UI's own language rather than the browser's, which ignores the
 // in-app language picker.
 function currentLanguage(): string {
-  return i18n.resolvedLanguage ?? i18n.language;
+  return i18n.resolvedLanguage ?? i18n.language
 }
 
 function getToken() {
-  return localStorage.getItem('famlin_admin_token');
+  return localStorage.getItem('famlin_admin_token')
 }
 
 async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
-  const method = options?.method || 'GET';
-  const headers: Record<string, string> = { 'Accept-Language': currentLanguage() };
+  const method = options?.method || 'GET'
+  const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
 
   // Only set Content-Type when there's an actual body to send — Fastify's
   // default JSON body parser rejects an empty body when this header is
   // present (a POST with no body, e.g. retriggerPostPush below).
   if (options?.body !== undefined) {
-    headers['Content-Type'] = 'application/json';
+    headers['Content-Type'] = 'application/json'
   }
 
-  const token = getToken();
+  const token = getToken()
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['Authorization'] = `Bearer ${token}`
   }
 
   const res = await fetch(path, {
     method,
     headers,
     body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  })
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: i18n.t('common.error') }));
-    throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code);
+    const data = await res.json().catch(() => ({ error: i18n.t('common.error') }))
+    throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code)
   }
 
-  return res.json();
+  return res.json()
 }
 
 export const api = {
@@ -140,23 +140,23 @@ export const api = {
   // Multipart rather than JSON, so it can't go through request(): the
   // browser must set the multipart Content-Type (with its boundary) itself.
   restoreBackup: async (archive: File, data: { email: string; name: string; password: string }) => {
-    const form = new FormData();
-    form.append('email', data.email);
-    form.append('name', data.name);
-    form.append('password', data.password);
+    const form = new FormData()
+    form.append('email', data.email)
+    form.append('name', data.name)
+    form.append('password', data.password)
     // Fields before the file, so the server has them without buffering it.
-    form.append('archive', archive);
+    form.append('archive', archive)
 
     const res = await fetch('/api/auth/setup/restore', {
       method: 'POST',
       body: form,
       headers: { 'Accept-Language': currentLanguage() },
-    });
+    })
     if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: i18n.t('common.error') }));
-      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code);
+      const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
+      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
     }
-    return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>;
+    return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>
   },
 
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
@@ -188,23 +188,23 @@ export const api = {
   getServerInfo: () => request<ServerInfo>('/api/auth/server-info'),
 
   getUsers: (params: { cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
-    return request<Page<User>>(`/api/admin/users${qs ? `?${qs}` : ''}`);
+    const query = new URLSearchParams()
+    if (params.cursor) query.set('cursor', params.cursor)
+    const qs = query.toString()
+    return request<Page<User>>(`/api/admin/users${qs ? `?${qs}` : ''}`)
   },
 
   // Used by pickers (e.g. "add member to group") that need the full roster
   // rather than a single page — walks every page and concatenates.
   getAllUsers: async (): Promise<User[]> => {
-    const all: User[] = [];
-    let cursor: string | undefined;
+    const all: User[] = []
+    let cursor: string | undefined
     do {
-      const page = await api.getUsers({ cursor });
-      all.push(...page.items);
-      cursor = page.nextCursor ?? undefined;
-    } while (cursor);
-    return all;
+      const page = await api.getUsers({ cursor })
+      all.push(...page.items)
+      cursor = page.nextCursor ?? undefined
+    } while (cursor)
+    return all
   },
 
   updateUser: (id: string, data: Partial<User>) =>
@@ -215,21 +215,21 @@ export const api = {
   getGroups: () => request<Group[]>('/api/admin/groups'),
 
   createGroup: (data: {
-    name: string;
-    description?: string;
-    allowedPostTypes?: string[];
-    chitchatEnabled?: boolean;
-    storiesEnabled?: boolean;
+    name: string
+    description?: string
+    allowedPostTypes?: string[]
+    chitchatEnabled?: boolean
+    storiesEnabled?: boolean
   }) => request<Group>('/api/admin/groups', { method: 'POST', body: data }),
 
   updateGroup: (
     id: string,
     data: {
-      name: string;
-      description?: string;
-      allowedPostTypes?: string[];
-      chitchatEnabled?: boolean;
-      storiesEnabled?: boolean;
+      name: string
+      description?: string
+      allowedPostTypes?: string[]
+      chitchatEnabled?: boolean
+      storiesEnabled?: boolean
     }
   ) => request<Group>(`/api/admin/groups/${id}`, { method: 'PATCH', body: data }),
 
@@ -291,19 +291,19 @@ export const api = {
   revokeInvite: (id: string) => request<void>(`/api/admin/invites/${id}`, { method: 'DELETE' }),
 
   getContentPosts: (params: ContentFilterParams = {}) => {
-    const qs = contentQueryString(params);
-    return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`);
+    const qs = contentQueryString(params)
+    return request<Page<ModerationPost>>(`/api/admin/content/posts${qs ? `?${qs}` : ''}`)
   },
 
   getContentComments: (params: ContentFilterParams = {}) => {
-    const qs = contentQueryString(params);
-    return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`);
+    const qs = contentQueryString(params)
+    return request<Page<ModerationComment>>(`/api/admin/content/comments${qs ? `?${qs}` : ''}`)
   },
 
   // Stories have no free-text search (they're photos), so `q` is ignored.
   getContentStories: (params: ContentFilterParams = {}) => {
-    const qs = contentQueryString({ ...params, q: undefined });
-    return request<Page<ModerationStory>>(`/api/admin/content/stories${qs ? `?${qs}` : ''}`);
+    const qs = contentQueryString({ ...params, q: undefined })
+    return request<Page<ModerationStory>>(`/api/admin/content/stories${qs ? `?${qs}` : ''}`)
   },
 
   deleteStory: (id: string) => request<void>(`/api/admin/content/stories/${id}`, { method: 'DELETE' }),
@@ -311,10 +311,10 @@ export const api = {
   // /uploads/* needs the bearer token, which an <img src> can't send — fetch
   // the thumbnail with it and hand back an object URL instead.
   fetchUploadObjectUrl: async (uploadPath: string): Promise<string | null> => {
-    const token = getToken();
-    const res = await fetch(uploadPath, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-    if (!res.ok) return null;
-    return URL.createObjectURL(await res.blob());
+    const token = getToken()
+    const res = await fetch(uploadPath, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    if (!res.ok) return null
+    return URL.createObjectURL(await res.blob())
   },
 
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
@@ -325,11 +325,11 @@ export const api = {
     request<PostPushResendResult>(`/api/admin/content/posts/${id}/retrigger-push`, { method: 'POST' }),
 
   getPushLog: (params: { postId?: string; cursor?: string } = {}) => {
-    const query = new URLSearchParams();
-    if (params.postId) query.set('postId', params.postId);
-    if (params.cursor) query.set('cursor', params.cursor);
-    const qs = query.toString();
-    return request<Page<PushDeliveryLog>>(`/api/admin/push-log${qs ? `?${qs}` : ''}`);
+    const query = new URLSearchParams()
+    if (params.postId) query.set('postId', params.postId)
+    if (params.cursor) query.set('cursor', params.cursor)
+    const qs = query.toString()
+    return request<Page<PushDeliveryLog>>(`/api/admin/push-log${qs ? `?${qs}` : ''}`)
   },
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
@@ -344,19 +344,19 @@ export const api = {
 
   // Multipart, so not through request() — see restoreBackup above.
   uploadBrandingLogo: async (file: File) => {
-    const form = new FormData();
-    form.append('file', file);
-    const token = getToken();
+    const form = new FormData()
+    form.append('file', file)
+    const token = getToken()
     const res = await fetch('/api/admin/branding/logo', {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
-    });
+    })
     if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: 'Unknown error' }));
-      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code);
+      const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
     }
-    return res.json() as Promise<AdminBranding>;
+    return res.json() as Promise<AdminBranding>
   },
 
   deleteBrandingLogo: () => request<AdminBranding>('/api/admin/branding/logo', { method: 'DELETE' }),
@@ -405,10 +405,10 @@ export const api = {
   getMediaPersonLinks: () => request<MediaPersonLink[]>('/api/admin/media/people-links'),
 
   createMediaPersonLink: (data: {
-    provider: MediaProviderId;
-    externalPersonId: string;
-    label: string;
-    userId?: string;
+    provider: MediaProviderId
+    externalPersonId: string
+    label: string
+    userId?: string
   }) => request<MediaPersonLink>('/api/admin/media/people-links', { method: 'POST', body: data }),
 
   deleteMediaPersonLink: (id: string) => request<void>(`/api/admin/media/people-links/${id}`, { method: 'DELETE' }),
@@ -416,23 +416,23 @@ export const api = {
   // Not a JSON endpoint (returns a zip stream), so this bypasses request()
   // and does its own auth header + error handling instead.
   downloadExport: async (): Promise<{ blob: Blob; filename: string }> => {
-    const headers: Record<string, string> = { 'Accept-Language': currentLanguage() };
-    const token = getToken();
+    const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
+    const token = getToken()
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`
     }
 
-    const res = await fetch('/api/admin/export', { headers });
+    const res = await fetch('/api/admin/export', { headers })
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: i18n.t('common.error') }));
-      throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code);
+      const data = await res.json().catch(() => ({ error: i18n.t('common.error') }))
+      throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code)
     }
 
-    const blob = await res.blob();
-    const disposition = res.headers.get('content-disposition') || '';
-    const match = disposition.match(/filename="([^"]+)"/);
-    const filename = match?.[1] ?? `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`;
-    return { blob, filename };
+    const blob = await res.blob()
+    const disposition = res.headers.get('content-disposition') || ''
+    const match = disposition.match(/filename="([^"]+)"/)
+    const filename = match?.[1] ?? `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
+    return { blob, filename }
   },
-};
+}

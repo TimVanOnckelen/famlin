@@ -1,8 +1,8 @@
-import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { PhotosPage } from '@/pages/PhotosPage';
-import { makeAlbum, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { PhotosPage } from '@/pages/PhotosPage'
+import { makeAlbum, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures'
+import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -11,7 +11,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   getGroupPhotoTimeline: vi.fn(),
   getGroupMediaPeople: vi.fn(),
   getUploadUrl: vi.fn((url: string) => `http://localhost:3000${url}`),
-}));
+}))
 
 // Mock IntersectionObserver for tests
 globalThis.IntersectionObserver = class IntersectionObserver {
@@ -19,25 +19,25 @@ globalThis.IntersectionObserver = class IntersectionObserver {
   observe() {}
   disconnect() {}
   unobserve() {}
-} as any;
+} as any
 
 const groups = [
   { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
   { id: 'group-2', name: 'Neefjes', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
-];
+]
 
 const people = [
   { id: 'person-1', provider: 'immich', label: 'Emma', userId: null },
   { id: 'person-2', provider: 'immich', label: 'John', userId: null },
-];
+]
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  vi.mocked(fetchGroups).mockResolvedValue(groups);
-  vi.mocked(getGroupMediaPeople).mockResolvedValue(people);
-  vi.mocked(getGroupPhotoTimeline).mockResolvedValue({ items: [], nextCursor: null });
-  vi.mocked(fetchAlbumPosts).mockResolvedValue({ items: [], nextCursor: null });
-});
+  vi.clearAllMocks()
+  vi.mocked(fetchGroups).mockResolvedValue(groups)
+  vi.mocked(getGroupMediaPeople).mockResolvedValue(people)
+  vi.mocked(getGroupPhotoTimeline).mockResolvedValue({ items: [], nextCursor: null })
+  vi.mocked(fetchAlbumPosts).mockResolvedValue({ items: [], nextCursor: null })
+})
 
 describe('PhotosPage', () => {
   it('shows every family by default (no group filter sent)', async () => {
@@ -59,25 +59,25 @@ describe('PhotosPage', () => {
         },
       ],
       nextCursor: null,
-    });
+    })
 
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await screen.findByText('July 2026');
+    await screen.findByText('July 2026')
     expect(getGroupPhotoTimeline).toHaveBeenCalledWith('group-1', {
       cursor: undefined,
       personId: undefined,
-    });
-  });
+    })
+  })
 
   it('renders person filter chips when people are available', async () => {
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await screen.findByRole('button', { name: 'Emma' });
-    expect(screen.getByRole('button', { name: 'All people' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Emma' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'John' })).toBeInTheDocument();
-  });
+    await screen.findByRole('button', { name: 'Emma' })
+    expect(screen.getByRole('button', { name: 'All people' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Emma' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'John' })).toBeInTheDocument()
+  })
 
   it('groups photos by month', async () => {
     vi.mocked(getGroupPhotoTimeline).mockResolvedValue({
@@ -106,22 +106,22 @@ describe('PhotosPage', () => {
         },
       ],
       nextCursor: null,
-    });
+    })
 
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await screen.findByText('July 2026');
-    expect(screen.getByText('June 2026')).toBeInTheDocument();
-  });
+    await screen.findByText('July 2026')
+    expect(screen.getByText('June 2026')).toBeInTheDocument()
+  })
 
   it('shows the empty state when there are no photos', async () => {
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    expect(await screen.findByText('No photos yet')).toBeInTheDocument();
-  });
+    expect(await screen.findByText('No photos yet')).toBeInTheDocument()
+  })
 
   it('shows the shared albums strip for the active group and opens an album', async () => {
-    const onOpenAlbum = vi.fn();
+    const onOpenAlbum = vi.fn()
     vi.mocked(fetchAlbumPosts).mockResolvedValue({
       items: [
         makePost({
@@ -131,26 +131,26 @@ describe('PhotosPage', () => {
         }),
       ],
       nextCursor: null,
-    });
+    })
 
     renderWithQueryClient(
       <PhotosPage user={makeUser()} onOpenProfile={() => {}} onOpenAlbum={onOpenAlbum} onLogout={() => {}} />
-    );
+    )
 
-    const tile = await screen.findByRole('button', { name: /Summer at the lake/ });
-    expect(screen.getByText('Shared albums')).toBeInTheDocument();
-    expect(fetchAlbumPosts).toHaveBeenCalledWith({ groupIds: ['group-1'] });
+    const tile = await screen.findByRole('button', { name: /Summer at the lake/ })
+    expect(screen.getByText('Shared albums')).toBeInTheDocument()
+    expect(fetchAlbumPosts).toHaveBeenCalledWith({ groupIds: ['group-1'] })
 
-    await userEvent.click(tile);
-    expect(onOpenAlbum).toHaveBeenCalledWith('album-post-1');
-  });
+    await userEvent.click(tile)
+    expect(onOpenAlbum).toHaveBeenCalledWith('album-post-1')
+  })
 
   it('hides the albums section when the group has no albums', async () => {
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await screen.findByText('No photos yet');
-    expect(screen.queryByText('Shared albums')).not.toBeInTheDocument();
-  });
+    await screen.findByText('No photos yet')
+    expect(screen.queryByText('Shared albums')).not.toBeInTheDocument()
+  })
 
   it('shows video play icon for video items', async () => {
     vi.mocked(getGroupPhotoTimeline).mockResolvedValue({
@@ -168,13 +168,13 @@ describe('PhotosPage', () => {
         },
       ],
       nextCursor: null,
-    });
+    })
 
-    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await screen.findByText('July 2026');
+    await screen.findByText('July 2026')
     // The play icon is rendered as part of the photo tile
-    const playIcon = screen.getByText('▶');
-    expect(playIcon).toBeInTheDocument();
-  });
-});
+    const playIcon = screen.getByText('▶')
+    expect(playIcon).toBeInTheDocument()
+  })
+})

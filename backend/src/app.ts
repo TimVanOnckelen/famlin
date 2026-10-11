@@ -1,44 +1,44 @@
-import Fastify, { type FastifyError } from 'fastify';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
-import multipart from '@fastify/multipart';
-import staticPlugin from '@fastify/static';
-import path from 'path';
-import fs from 'fs/promises';
-import { createReadStream, constants as fsConstants } from 'fs';
-import { ZodError } from 'zod';
-import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js';
-import { canReadUpload } from './services/uploads.js';
-import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js';
-import { injectBrandingIntoHtml } from './services/branding/css.js';
-import authPlugin, { authenticateMediaRequest } from './plugins/auth.js';
-import readOnlyPlugin from './plugins/readOnly.js';
-import { requestPathname } from './utils/requestPath.js';
-import { config, uploadsDir } from './config.js';
-import { prisma } from './db.js';
-import { getT } from './i18n/index.js';
-import { registerNotificationSubscriber } from './subscribers/notifications.js';
+import Fastify, { type FastifyError } from 'fastify'
+import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import rateLimit from '@fastify/rate-limit'
+import multipart from '@fastify/multipart'
+import staticPlugin from '@fastify/static'
+import path from 'path'
+import fs from 'fs/promises'
+import { createReadStream, constants as fsConstants } from 'fs'
+import { ZodError } from 'zod'
+import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js'
+import { canReadUpload } from './services/uploads.js'
+import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
+import { injectBrandingIntoHtml } from './services/branding/css.js'
+import authPlugin, { authenticateMediaRequest } from './plugins/auth.js'
+import readOnlyPlugin from './plugins/readOnly.js'
+import { requestPathname } from './utils/requestPath.js'
+import { config, uploadsDir } from './config.js'
+import { prisma } from './db.js'
+import { getT } from './i18n/index.js'
+import { registerNotificationSubscriber } from './subscribers/notifications.js'
 
-import authRoutes from './routes/auth.js';
-import adminRoutes from './routes/admin.js';
-import groupRoutes from './routes/groups.js';
-import circleRoutes from './routes/circles.js';
-import postRoutes from './routes/posts.js';
-import commentRoutes from './routes/comments.js';
-import likeRoutes from './routes/likes.js';
-import favoriteRoutes from './routes/favorites.js';
-import chatRoutes from './routes/chat.js';
-import storyRoutes from './routes/stories.js';
-import pushTokenRoutes from './routes/push-tokens.js';
-import apiTokenRoutes from './routes/api-tokens.js';
-import notificationRoutes from './routes/notifications.js';
-import uploadRoutes from './routes/uploads.js';
-import immichRoutes from './routes/immich.js';
-import mediaRoutes from './routes/media.js';
-import inviteRoutes from './routes/invites.js';
-import inviteLandingRoutes from './routes/invite-landing.js';
-import landingRoutes from './routes/landing.js';
+import authRoutes from './routes/auth.js'
+import adminRoutes from './routes/admin.js'
+import groupRoutes from './routes/groups.js'
+import circleRoutes from './routes/circles.js'
+import postRoutes from './routes/posts.js'
+import commentRoutes from './routes/comments.js'
+import likeRoutes from './routes/likes.js'
+import favoriteRoutes from './routes/favorites.js'
+import chatRoutes from './routes/chat.js'
+import storyRoutes from './routes/stories.js'
+import pushTokenRoutes from './routes/push-tokens.js'
+import apiTokenRoutes from './routes/api-tokens.js'
+import notificationRoutes from './routes/notifications.js'
+import uploadRoutes from './routes/uploads.js'
+import immichRoutes from './routes/immich.js'
+import mediaRoutes from './routes/media.js'
+import inviteRoutes from './routes/invites.js'
+import inviteLandingRoutes from './routes/invite-landing.js'
+import landingRoutes from './routes/landing.js'
 
 // Builds and registers everything on a Fastify instance without starting the
 // listener, so tests can exercise routes via `.inject()` against the exact
@@ -47,14 +47,14 @@ export async function buildApp() {
   // Domain-event subscribers are registered here (not in server.ts) so tests
   // exercising routes via buildApp() get the same event->notification wiring
   // production has. Registration is idempotent — see the guard inside.
-  registerNotificationSubscriber();
+  registerNotificationSubscriber()
 
   const fastify = Fastify({
     trustProxy: config.TRUST_PROXY,
     logger: {
       level: config.NODE_ENV === 'test' ? 'silent' : config.NODE_ENV === 'development' ? 'debug' : 'info',
     },
-  });
+  })
 
   // Fastify 5 runs the content-type parser for every body-carrying method,
   // where Fastify 4 skipped it entirely when the request had no body. The JSON
@@ -74,14 +74,14 @@ export async function buildApp() {
   // body only when framed by Transfer-Encoding or a non-zero Content-Length,
   // so this can never touch a request that has one.
   fastify.addHook('onRequest', async (request) => {
-    if (request.headers['content-type'] === undefined) return;
+    if (request.headers['content-type'] === undefined) return
 
-    const contentLength = request.headers['content-length'];
+    const contentLength = request.headers['content-length']
     const framed =
-      request.headers['transfer-encoding'] !== undefined || (contentLength !== undefined && contentLength !== '0');
+      request.headers['transfer-encoding'] !== undefined || (contentLength !== undefined && contentLength !== '0')
 
-    if (!framed) delete request.headers['content-type'];
-  });
+    if (!framed) delete request.headers['content-type']
+  })
 
   // Rate limiting and client-IP logging key off request.ip, which only
   // reflects X-Forwarded-For when TRUST_PROXY is on. If a reverse proxy sits
@@ -89,41 +89,41 @@ export async function buildApp() {
   // resolves to the proxy's single IP — silently collapsing per-client rate
   // limits (login throttling, global cap) into one shared bucket. Warn once
   // so a misconfigured deployment doesn't fail silently.
-  let loggedProxyHeaderMismatch = false;
+  let loggedProxyHeaderMismatch = false
   fastify.addHook('onRequest', async (request) => {
     if (!config.TRUST_PROXY && !loggedProxyHeaderMismatch && request.headers['x-forwarded-for']) {
-      loggedProxyHeaderMismatch = true;
+      loggedProxyHeaderMismatch = true
       fastify.log.warn(
         "Received an X-Forwarded-For header but TRUST_PROXY is not enabled. If this server sits behind a reverse proxy, every request will appear to come from the proxy's IP, collapsing rate limiting across all clients, and X-Forwarded-Proto/Host will be ignored so generated URLs (including OIDC redirect URIs) will use the raw connection scheme. Set TRUST_PROXY=true (only if that proxy is trusted to set these headers)."
-      );
+      )
     }
-  });
+  })
 
   // Explicitly typed: Fastify 5 widened setErrorHandler's error parameter to
   // `unknown` (anything can be thrown), where 4 typed it as FastifyError.
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
-    const t = getT(request);
+    const t = getT(request)
 
     if (error instanceof ZodError) {
-      return reply.status(400).send({ error: t('errors.validationFailed'), details: error.flatten() });
+      return reply.status(400).send({ error: t('errors.validationFailed'), details: error.flatten() })
     }
 
     // Client errors raised by Fastify itself or plugins (bad JSON, payload too
     // large, rate limit exceeded, ...) already carry a safe, specific message.
     if (error.statusCode && error.statusCode < 500) {
-      return reply.status(error.statusCode).send({ error: error.message });
+      return reply.status(error.statusCode).send({ error: error.message })
     }
 
-    fastify.log.error(error);
-    return reply.status(500).send({ error: t('errors.serverError') });
-  });
+    fastify.log.error(error)
+    return reply.status(500).send({ error: t('errors.serverError') })
+  })
 
-  await fs.mkdir(uploadsDir, { recursive: true });
+  await fs.mkdir(uploadsDir, { recursive: true })
   // Holds the true, uncompressed original of a converted upload (see
   // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
   // /uploads/originals/ block in the onRequest hook below. Nested inside
   // uploadsDir so it's covered by the same persistent volume mount.
-  await fs.mkdir(path.join(uploadsDir, 'originals'), { recursive: true });
+  await fs.mkdir(path.join(uploadsDir, 'originals'), { recursive: true })
 
   await fastify.register(helmet, {
     contentSecurityPolicy: {
@@ -149,12 +149,12 @@ export async function buildApp() {
         connectSrc: ["'self'", 'https:'],
       },
     },
-  });
+  })
 
   await fastify.register(rateLimit, {
     max: 300,
     timeWindow: '1 minute',
-  });
+  })
 
   // Auth is bearer-token (Authorization header), never cookies, so there's
   // nothing for `credentials` to protect — leaving it off avoids opting every
@@ -162,14 +162,14 @@ export async function buildApp() {
   await fastify.register(cors, {
     origin: true,
     credentials: false,
-  });
+  })
 
   await fastify.register(multipart, {
     limits: {
       fileSize: 200 * 1024 * 1024, // 200MB (video posts need more headroom than photos)
       files: 10,
     },
-  });
+  })
 
   // Uploaded photos/videos are family content, not public — require either a
   // normal session token (header) or a scoped media token (query string, see
@@ -179,8 +179,8 @@ export async function buildApp() {
     // @fastify/static resolves, so guarding on it lets `//uploads/x.jpg`,
     // `/uploads%2Fx.jpg` and friends skip this hook entirely. See
     // utils/requestPath.ts.
-    const pathname = requestPathname(request.raw.url);
-    if (!pathname.startsWith('/uploads/')) return;
+    const pathname = requestPathname(request.raw.url)
+    if (!pathname.startsWith('/uploads/')) return
 
     // The true, uncompressed original of a converted upload lives here (see
     // routes/uploads.ts) purely for a possible future "download original"
@@ -196,16 +196,16 @@ export async function buildApp() {
       pathname.startsWith(`/uploads/${DERIVED_DIR_NAME}/`) ||
       pathname.startsWith(`/uploads/${BRANDING_DIR_NAME}/`)
     ) {
-      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+      return reply.status(404).send({ error: getT(request)('errors.notFound') })
     }
 
     // Signature/expiry alone isn't enough — authenticateMediaRequest also
     // confirms the token still maps to an active user at its issued
     // tokenVersion, so a deactivated user or a pre-password-reset token can't
     // keep reading family media.
-    const viewerId = await authenticateMediaRequest(request);
+    const viewerId = await authenticateMediaRequest(request)
     if (!viewerId) {
-      return reply.status(401).send({ error: getT(request)('errors.unauthorized') });
+      return reply.status(401).send({ error: getT(request)('errors.unauthorized') })
     }
 
     // Authenticated is not the same as authorized: a Circle-scoped photo must
@@ -219,7 +219,7 @@ export async function buildApp() {
     // 404 rather than 403: whether a given file exists is itself information
     // a non-member shouldn't get, and it matches how a missing file behaves.
     if (!(await canReadUpload(pathname, viewerId))) {
-      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+      return reply.status(404).send({ error: getT(request)('errors.notFound') })
     }
 
     // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a
@@ -228,81 +228,81 @@ export async function buildApp() {
     // other request — and an undecodable file — resolves to null and falls
     // straight through to @fastify/static below. GET only: the point is what
     // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
-    if (request.method !== 'GET') return;
-    const requestedFile = pathname.slice('/uploads/'.length);
-    const rendition = await resolveHeicRendition(uploadsDir, requestedFile);
-    if (!rendition) return;
+    if (request.method !== 'GET') return
+    const requestedFile = pathname.slice('/uploads/'.length)
+    const rendition = await resolveHeicRendition(uploadsDir, requestedFile)
+    if (!rendition) return
 
-    const { size, mtime } = await fs.stat(rendition);
+    const { size, mtime } = await fs.stat(rendition)
     return reply
       .header('content-type', 'image/jpeg')
       .header('content-length', String(size))
       .header('last-modified', mtime.toUTCString())
       .header('cache-control', 'public, max-age=0')
-      .send(createReadStream(rendition));
-  });
+      .send(createReadStream(rendition))
+  })
 
   await fastify.register(staticPlugin, {
     root: uploadsDir,
     prefix: '/uploads/',
-  });
+  })
 
   // Per-family branding logo + favicon (issue #164). Public on purpose: the
   // login page shows them before anyone has a session — the admin UI warns
   // the admin. Content-addressed file names (services/branding/), so they're
   // cached forever; a new logo is a new URL.
   fastify.get('/branding/:file', async (request, reply) => {
-    const { file } = request.params as { file: string };
+    const { file } = request.params as { file: string }
     if (!BRANDING_FILE_RE.test(file)) {
-      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+      return reply.status(404).send({ error: getT(request)('errors.notFound') })
     }
-    const filePath = path.join(brandingDir, file);
-    let size: number;
+    const filePath = path.join(brandingDir, file)
+    let size: number
     try {
-      size = (await fs.stat(filePath)).size;
+      size = (await fs.stat(filePath)).size
     } catch {
-      return reply.status(404).send({ error: getT(request)('errors.notFound') });
+      return reply.status(404).send({ error: getT(request)('errors.notFound') })
     }
     return reply
       .header('content-type', 'image/png')
       .header('content-length', String(size))
       .header('cache-control', 'public, max-age=31536000, immutable')
       .header('cross-origin-resource-policy', 'cross-origin')
-      .send(createReadStream(filePath));
-  });
+      .send(createReadStream(filePath))
+  })
 
   // Read-only mode must be registered before auth routes so it can intercept
   // all mutating requests (except the login/session allow-list) before they
   // reach their handlers.
-  await fastify.register(readOnlyPlugin);
+  await fastify.register(readOnlyPlugin)
 
-  await fastify.register(authPlugin);
+  await fastify.register(authPlugin)
 
-  await fastify.register(authRoutes, { prefix: '/api/auth' });
-  await fastify.register(adminRoutes, { prefix: '/api/admin' });
-  await fastify.register(groupRoutes, { prefix: '/api/groups' });
-  await fastify.register(circleRoutes, { prefix: '/api/circles' });
-  await fastify.register(postRoutes, { prefix: '/api/posts' });
-  await fastify.register(commentRoutes, { prefix: '/api' });
-  await fastify.register(likeRoutes, { prefix: '/api' });
-  await fastify.register(favoriteRoutes, { prefix: '/api' });
-  await fastify.register(chatRoutes, { prefix: '/api/chat' });
-  await fastify.register(storyRoutes, { prefix: '/api/stories' });
-  await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' });
-  await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' });
-  await fastify.register(notificationRoutes, { prefix: '/api/notifications' });
-  await fastify.register(uploadRoutes, { prefix: '/api/uploads' });
-  await fastify.register(immichRoutes, { prefix: '/api/immich' });
-  await fastify.register(mediaRoutes, { prefix: '/api/media' });
-  await fastify.register(inviteRoutes, { prefix: '/api/invites' });
-  await fastify.register(inviteLandingRoutes);
+  await fastify.register(authRoutes, { prefix: '/api/auth' })
+  await fastify.register(adminRoutes, { prefix: '/api/admin' })
+  await fastify.register(groupRoutes, { prefix: '/api/groups' })
+  await fastify.register(circleRoutes, { prefix: '/api/circles' })
+  await fastify.register(postRoutes, { prefix: '/api/posts' })
+  await fastify.register(commentRoutes, { prefix: '/api' })
+  await fastify.register(likeRoutes, { prefix: '/api' })
+  await fastify.register(favoriteRoutes, { prefix: '/api' })
+  await fastify.register(chatRoutes, { prefix: '/api/chat' })
+  await fastify.register(storyRoutes, { prefix: '/api/stories' })
+  await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' })
+  await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' })
+  await fastify.register(notificationRoutes, { prefix: '/api/notifications' })
+  await fastify.register(uploadRoutes, { prefix: '/api/uploads' })
+  await fastify.register(immichRoutes, { prefix: '/api/immich' })
+  await fastify.register(mediaRoutes, { prefix: '/api/media' })
+  await fastify.register(inviteRoutes, { prefix: '/api/invites' })
+  await fastify.register(inviteLandingRoutes)
 
   // Serve admin web UI static build (if present)
-  const adminDir = path.join(process.cwd(), 'dist', 'admin');
-  let adminServed = false;
+  const adminDir = path.join(process.cwd(), 'dist', 'admin')
+  let adminServed = false
   try {
-    await fs.access(adminDir);
-    adminServed = true;
+    await fs.access(adminDir)
+    adminServed = true
     // wildcard: true (default) resolves each request against the filesystem
     // live, instead of registering a fixed route per file found at boot —
     // required so newly built assets (e.g. from `vite build --watch` in dev)
@@ -311,56 +311,56 @@ export async function buildApp() {
       root: adminDir,
       prefix: '/admin/',
       decorateReply: false,
-    });
+    })
 
     fastify.get('/admin', async (_request, reply) => {
-      return reply.sendFile('index.html', adminDir);
-    });
+      return reply.sendFile('index.html', adminDir)
+    })
 
-    fastify.log.info('Admin UI served at /admin');
+    fastify.log.info('Admin UI served at /admin')
   } catch {
-    fastify.log.info('Admin UI build not found, skipping /admin serving');
+    fastify.log.info('Admin UI build not found, skipping /admin serving')
   }
 
   // Serve the member-facing web app build (if present) at / — same
   // single-container pattern as the admin UI above. When there is no web
   // build (e.g. local backend dev without running `npm run build:web`),
   // fall back to the original server-rendered landing page instead.
-  const webDir = path.join(process.cwd(), 'dist', 'web');
-  let webServed = false;
+  const webDir = path.join(process.cwd(), 'dist', 'web')
+  let webServed = false
   // The web SPA's index.html, with the family's branding (CSS token
   // overrides, <title>, favicon) injected server-side so a branded server
   // never flashes the default look before /server-info resolves. Read per
   // request (it's small) so `vite build --watch` rebuilds are picked up.
   const sendWebIndex = async (reply: import('fastify').FastifyReply) => {
-    const html = await fs.readFile(path.join(webDir, 'index.html'), 'utf8');
+    const html = await fs.readFile(path.join(webDir, 'index.html'), 'utf8')
     return reply
       .type('text/html; charset=utf-8')
       .header('cache-control', 'no-cache')
-      .send(injectBrandingIntoHtml(html, await getBranding()));
-  };
+      .send(injectBrandingIntoHtml(html, await getBranding()))
+  }
   try {
     // Check for index.html, not just the directory: the dev compose overlay
     // bind-mounts ./backend/dist/web, which creates an EMPTY directory on
     // first run if the host never built the web app — that must still fall
     // back to the landing page, not serve a 404 at /.
-    await fs.access(path.join(webDir, 'index.html'));
-    webServed = true;
+    await fs.access(path.join(webDir, 'index.html'))
+    webServed = true
     await fastify.register(staticPlugin, {
       root: webDir,
       prefix: '/',
       decorateReply: false,
       // index.html is never served raw: sendWebIndex() injects the brand.
       index: false,
-    });
+    })
 
-    fastify.get('/', async (_request, reply) => sendWebIndex(reply));
-    fastify.get('/index.html', async (_request, reply) => sendWebIndex(reply));
+    fastify.get('/', async (_request, reply) => sendWebIndex(reply))
+    fastify.get('/index.html', async (_request, reply) => sendWebIndex(reply))
 
-    fastify.log.info('Web app served at /');
+    fastify.log.info('Web app served at /')
   } catch {
-    await fastify.register(landingRoutes);
-    fastify.log.info('Web app build not found, serving landing page at /');
+    await fastify.register(landingRoutes)
+    fastify.log.info('Web app build not found, serving landing page at /')
   }
 
   // Anything under /admin (or, when the web app is served, any GET that isn't
@@ -368,9 +368,9 @@ export async function buildApp() {
   // client-side route (or a stale reference to a since-rebuilt asset) — fall
   // back to that SPA's index.html so its router can take over.
   fastify.setNotFoundHandler((request, reply) => {
-    const url = requestPathname(request.raw.url);
+    const url = requestPathname(request.raw.url)
     if (adminServed && url.startsWith('/admin/')) {
-      return reply.sendFile('index.html', adminDir);
+      return reply.sendFile('index.html', adminDir)
     }
     if (
       webServed &&
@@ -379,10 +379,10 @@ export async function buildApp() {
       !url.startsWith('/uploads/') &&
       !url.startsWith('/admin')
     ) {
-      return sendWebIndex(reply);
+      return sendWebIndex(reply)
     }
-    return reply.status(404).send({ error: getT(request)('errors.notFound') });
-  });
+    return reply.status(404).send({ error: getT(request)('errors.notFound') })
+  })
 
   // Polled by the container healthcheck (docker-compose.yml) every 30s, so
   // it's exempt from rate limiting and its request logs are suppressed. It's
@@ -393,20 +393,20 @@ export async function buildApp() {
     { logLevel: config.NODE_ENV === 'test' ? 'silent' : 'warn', config: { rateLimit: false } },
     async (request, reply) => {
       try {
-        await prisma.$queryRaw`SELECT 1`;
+        await prisma.$queryRaw`SELECT 1`
       } catch (err) {
-        request.log.error({ err }, 'health check failed: database unreachable');
-        return reply.status(503).send({ status: 'error' });
+        request.log.error({ err }, 'health check failed: database unreachable')
+        return reply.status(503).send({ status: 'error' })
       }
       try {
-        await fs.access(uploadsDir, fsConstants.W_OK);
+        await fs.access(uploadsDir, fsConstants.W_OK)
       } catch (err) {
-        request.log.error({ err }, 'health check failed: uploads directory not writable');
-        return reply.status(503).send({ status: 'error' });
+        request.log.error({ err }, 'health check failed: uploads directory not writable')
+        return reply.status(503).send({ status: 'error' })
       }
-      return { status: 'ok' };
+      return { status: 'ok' }
     }
-  );
+  )
 
-  return fastify;
+  return fastify
 }

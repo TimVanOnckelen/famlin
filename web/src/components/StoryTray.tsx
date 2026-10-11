@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Story, fetchStoryHighlights, fetchStoryTray, getUploadUrl } from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
-import { StoryViewer } from '@/components/StoryViewer';
-import './Stories.css';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { Story, fetchStoryHighlights, fetchStoryTray, getUploadUrl } from '@famlin/api-client'
+import { Avatar } from '@/components/Avatar'
+import { StoryViewer } from '@/components/StoryViewer'
+import './Stories.css'
 
-type Viewing = { sequences: Story[][]; startSequence: number; startIndex: number } | null;
+type Viewing = { sequences: Story[][]; startSequence: number; startIndex: number } | null
 
 // The feed's story strip: the live tray (one avatar per author, a coloured
 // ring while they have something you haven't seen) followed by the group's
@@ -14,34 +14,34 @@ type Viewing = { sequences: Story[][]; startSequence: number; startIndex: number
 // the feed's family filter. Renders nothing when there's nothing to show,
 // since web can't create stories and an empty strip would be a dead end.
 export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: boolean }) {
-  const { t } = useTranslation();
-  const [viewing, setViewing] = useState<Viewing>(null);
-  const groupKey = [...groupIds].sort().join(',') || 'all';
+  const { t } = useTranslation()
+  const [viewing, setViewing] = useState<Viewing>(null)
+  const groupKey = [...groupIds].sort().join(',') || 'all'
 
   const trayQuery = useQuery({
     queryKey: ['stories', 'tray', groupKey],
     queryFn: () => fetchStoryTray(groupIds),
     enabled,
     refetchInterval: 60_000,
-  });
+  })
   const highlightsQuery = useInfiniteQuery({
     queryKey: ['stories', 'highlights', groupKey],
     queryFn: ({ pageParam }) => fetchStoryHighlights(groupIds, pageParam ?? undefined),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
     enabled,
-  });
+  })
 
-  const authors = trayQuery.data?.authors ?? [];
-  const highlights = highlightsQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const authors = trayQuery.data?.authors ?? []
+  const highlights = highlightsQuery.data?.pages.flatMap((p) => p.items) ?? []
 
-  if (!enabled || (authors.length === 0 && highlights.length === 0)) return null;
+  if (!enabled || (authors.length === 0 && highlights.length === 0)) return null
 
   function openAuthor(authorIndex: number) {
-    const sequences = authors.map((a) => a.stories);
+    const sequences = authors.map((a) => a.stories)
     // Resume at the author's first story you haven't seen yet.
-    const firstUnseen = sequences[authorIndex].findIndex((s) => !s.seen);
-    setViewing({ sequences, startSequence: authorIndex, startIndex: Math.max(0, firstUnseen) });
+    const firstUnseen = sequences[authorIndex].findIndex((s) => !s.seen)
+    setViewing({ sequences, startSequence: authorIndex, startIndex: Math.max(0, firstUnseen) })
   }
 
   return (
@@ -106,5 +106,5 @@ export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: 
         />
       )}
     </>
-  );
+  )
 }

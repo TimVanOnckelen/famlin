@@ -1,9 +1,9 @@
-import { FormEvent, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addAlbumPhotos, uploadFiles, patchPostInCaches } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import './NewPostModal.css';
+import { FormEvent, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { addAlbumPhotos, uploadFiles, patchPostInCaches } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import './NewPostModal.css'
 
 // Contribute photos to an ALBUM post — the write half of the collaborative
 // album (any group member, not just the author). Deliberately file-upload
@@ -11,40 +11,40 @@ import './NewPostModal.css';
 // so linked-album proxy URLs can't be contributed here, mirroring mobile's
 // check-in composer. Uploads first, then POSTs the resulting paths via the
 // interactions endpoint.
-const MAX_PHOTOS = 10;
+const MAX_PHOTOS = 10
 
 export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClose: () => void }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [files, setFiles] = useState<File[]>([]);
-  const [caption, setCaption] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [files, setFiles] = useState<File[]>([])
+  const [caption, setCaption] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const photoUrls = await uploadFiles(files.slice(0, MAX_PHOTOS));
-      return addAlbumPhotos(postId, { photoUrls, caption: caption.trim() || undefined });
+      const photoUrls = await uploadFiles(files.slice(0, MAX_PHOTOS))
+      return addAlbumPhotos(postId, { photoUrls, caption: caption.trim() || undefined })
     },
     onSuccess: (updated) => {
       // Refresh the post (its album enrichment) everywhere it's cached, plus
       // the comments list the contribution now lives in.
-      patchPostInCaches(queryClient, postId, () => updated);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-      onClose();
+      patchPostInCaches(queryClient, postId, () => updated)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['post', postId] })
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] })
+      onClose()
     },
-  });
+  })
 
   function addFiles(list: FileList | null) {
-    if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)].slice(0, MAX_PHOTOS));
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!list) return
+    setFiles((prev) => [...prev, ...Array.from(list)].slice(0, MAX_PHOTOS))
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function submit(e: FormEvent) {
-    e.preventDefault();
-    if (files.length > 0 && !submitMutation.isPending) submitMutation.mutate();
+    e.preventDefault()
+    if (files.length > 0 && !submitMutation.isPending) submitMutation.mutate()
   }
 
   return (
@@ -116,5 +116,5 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
         </div>
       </form>
     </div>
-  );
+  )
 }

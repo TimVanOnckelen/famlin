@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import React from 'react'
+import { StyleSheet } from 'react-native'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 
 // Bottom-of-photo scrim from the styleguide's "text over photo" pattern:
 // transparent fading to rgba(20,10,5,0.72) so white text reads on any photo.
@@ -15,5 +15,5 @@ export function Scrim() {
       </Defs>
       <Rect x="0" y="0" width="1" height="1" fill="url(#scrim)" />
     </Svg>
-  );
+  )
 }
