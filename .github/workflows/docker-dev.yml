@@ -4,6 +4,11 @@ name: Publish development Docker image
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'website/**'
+      - 'mobile/**'
+      - '**/*.md'
 
 permissions:
   contents: read
@@ -17,6 +22,8 @@ concurrency:
 
 jobs:
   publish-dev:
+    # The release workflow already builds this commit; avoid duplicate builds.
+    if: ${{ !contains(github.event.head_commit.message, 'release-please--branches--') }}
     uses: ./.github/workflows/docker-publish.yml
     with:
       development: true
