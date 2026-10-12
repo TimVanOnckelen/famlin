@@ -248,7 +248,8 @@
     "profile": "Profile",
     "chat": "Chat",
     "favorites": "Favorites",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "search": "Search"
   },
   "demo": {
     "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
@@ -378,7 +379,8 @@
     "openPost": "Open post",
     "likePost": "Like post",
     "favoritePost": "Favorite post",
-    "goNotifications": "Go to notifications"
+    "goNotifications": "Go to notifications",
+    "goSearch": "Go to search"
   },
   "notifications": {
     "title": "Notifications",
@@ -388,5 +390,15 @@
     "markFailed": "Could not mark notifications as read. Please try again.",
     "unread": "Unread",
     "storyUnavailable": "This story is no longer available."
+  },
+  "search": {
+    "title": "Search",
+    "family": "Family",
+    "placeholder": "Search posts…",
+    "prompt": "Enter a search term to find posts in this family.",
+    "empty": "No posts found. Try a different search.",
+    "noGroups": "Join a family to search its posts.",
+    "loadFailed": "Could not load search results.",
+    "loadMore": "Load more"
   }
 }

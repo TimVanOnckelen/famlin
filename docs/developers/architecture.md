@@ -107,6 +107,19 @@ Google does not: its OAuth clients require a `client_secret` for the code→toke
 - `requireAdmin` returns a boolean and sends the 403 itself. Callers must `return` when it returns `true`.
 - The global error handler (`app.ts`) maps a thrown `ZodError` to a `400` and hides any other unhandled error behind a generic translated message — route handlers shouldn't leak `err.message` to the client for anything that isn't already a deliberately user-facing, translated string.
 
+## Web search
+
+The web app's `/search?q=…&groupId=…` page searches one family through
+`searchPosts()` (`GET /api/posts/search`), with a 300 ms typing debounce and
+cursor pagination. Query and family changes replace the current URL so a
+search can be refreshed or shared without adding a history entry for each
+keystroke. Opening search from a feed filtered to one family carries that
+family; otherwise it defaults to the first available family. Results reuse
+`PostCard` and open the post detail modal over the search page; trips and
+albums open their dedicated pages. Search appears in the desktop sidebar and
+compact mobile header, following the same family visibility rules as
+Favorites and Notifications. The keyboard shortcut is `g` then `s`.
+
 ## Internationalization
 
 The mobile app, the web app, and the admin UI use `i18next` + `react-i18next`; the backend uses plain `i18next` for error messages, notifications, and server-rendered pages. Supported languages are English (`en`), Dutch (`nl`), and Simplified Chinese (`zh`). Locales live in:

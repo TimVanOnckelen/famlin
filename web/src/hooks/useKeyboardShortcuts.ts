@@ -16,6 +16,7 @@ const NAV_KEYS: Record<string, NavView> = {
   b: 'favorites',
   n: 'notifications',
   u: 'profile',
+  s: 'search',
 }
 
 // Global "g then <letter>" / "n" / "?" shortcuts (the Gmail/Linear-style

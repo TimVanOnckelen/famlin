@@ -16,6 +16,12 @@ import type { CSSProperties } from 'react'
 // Adding an icon: copy the shapes verbatim from feathericons.com rather than
 // eyeballing a path, so the stroke rhythm stays consistent across the set.
 const ICON_PATHS = {
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </>
+  ),
   bell: (
     <>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />

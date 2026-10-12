@@ -14,6 +14,15 @@
 
 > The original step-by-step build brief describes how Famlin was meant to be built from scratch (historical intent, not current state) — see [Original project brief](/developers/project-brief) in the Developers tab.
 
+Web search (`SearchPage.tsx`, `/search?q=…&groupId=…`) uses the existing
+single-family `searchPosts()` endpoint, debounces typing by 300 ms, and keeps
+its query/family in the URL via replace navigation. Entry points follow
+Favorites/Notifications: desktop sidebar and compact mobile header, hidden
+for users without families. The feed passes its single-family filter when
+opening search. Search results use the `['posts', 'search', groupId, query]`
+cache prefix so reactions/favorites stay in sync through `patchPostInCaches`,
+and open the standard post modal over the search URL. Keyboard: `g` then `s`.
+
 ## Commands
 
 Run from the repo root unless noted. `backend/`, `backend/admin/`, `mobile/`, and `docs/` still install independently (`cd backend && npm install`, `cd backend/admin && npm install`, `cd mobile && npm install`, `cd docs && npm install`) — there's no root install for those. `packages/*` and `web/` are an npm workspace instead: a plain root `npm install` builds/links `packages/api-client` (its `prepare` script runs `tsc` automatically) and links `web/`'s `@famlin/api-client` dependency. `mobile/` depends on the package via `file:../packages/api-client`, not the workspace protocol, specifically so it can keep installing independently — after changing `packages/api-client/src/`, run `npm run build --workspace=packages/api-client` (or root `npm install` again) and commit the resulting `packages/api-client/dist/` files before mobile or web pick up the change. The `dist/` output is tracked so that EAS/cloud builds have a usable package even though `file:` dependencies don't get their devDependencies installed before `prepare` runs.

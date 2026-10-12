@@ -234,3 +234,14 @@ describe('FeedPage', () => {
     })
   })
 })
+
+it('opens search with the current single-family filter', async () => {
+  const onOpenSearch = vi.fn()
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onOpenSearch={onOpenSearch} onLogout={() => {}} />
+  )
+  await screen.findByText('Lovely day in the garden.')
+  await userEvent.click(screen.getByRole('button', { name: 'Neefjes' }))
+  await userEvent.click(screen.getAllByRole('button', { name: 'Search' })[0])
+  expect(onOpenSearch).toHaveBeenCalledWith('group-2')
+})
