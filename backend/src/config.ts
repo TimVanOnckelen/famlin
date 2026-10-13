@@ -34,6 +34,11 @@ const envSchema = z.object({
   // it. Without an override, a dev instance with a few hundred MB of photos
   // makes the export tests time out and leaves test files behind.
   UPLOADS_DIR: z.string().optional(),
+  // Which StorageBackend driver holds uploaded media (services/storage/,
+  // issue #221). `local` — files under UPLOADS_DIR — is the default and the
+  // only driver so far; S3-compatible and Azure drivers will add their own
+  // driver-specific variables alongside.
+  STORAGE_DRIVER: z.enum(['local']).default('local'),
 })
 
 export const config = envSchema.parse(process.env)
