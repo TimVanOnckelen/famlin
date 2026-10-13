@@ -2,11 +2,9 @@ import crypto from 'crypto'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
-import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import {
   assertValidStorageKey,
-  assertValidStoragePrefix,
   resolveByteRange,
   type ByteRange,
   type StorageBackend,
@@ -15,9 +13,14 @@ import {
   type StoredObjectInfo,
 } from './types.js'
 
-// Prefix of in-flight write files. Dot-prefixed so list() never reports
-// them (nor any other dotfile, e.g. import.ts's `.restore-*` work dirs).
+// Prefix of in-flight write files. Dot-prefixed, so no valid key can name
+// one and list() never reports it.
 const TEMP_PREFIX = '.tmp-'
+
+// Opening with O_NOFOLLOW makes a symlink at the final path component fail
+// (ELOOP) instead of serving whatever it points at — list() never reports
+// symlinks, so get() mustn't serve them either. 0 where unsupported.
+const O_NOFOLLOW = fs.constants.O_NOFOLLOW ?? 0
 
 // The default driver: objects are plain files under `rootDir` (the uploads
 // volume), at exactly the path their key names — so switching an existing
@@ -53,10 +56,10 @@ export class LocalStorageBackend implements StorageBackend {
     try {
       if (Buffer.isBuffer(body)) {
         await fsp.writeFile(temp, body)
-      } else if (body instanceof Readable) {
-        await pipeline(body, fs.createWriteStream(temp))
-      } else {
+      } else if ('filePath' in body) {
         await fsp.copyFile(body.filePath, temp)
+      } else {
+        await pipeline(body, fs.createWriteStream(temp))
       }
       await fsp.rename(temp, target)
     } catch (err) {
@@ -66,41 +69,21 @@ export class LocalStorageBackend implements StorageBackend {
   }
 
   async get(key: string, options?: { range?: ByteRange }): Promise<StoredObject | null> {
-    const info = await this.stat(key)
-    if (!info) return null
-    const filePath = this.resolve(key)
-
-    if (options?.range) {
-      const range = resolveByteRange(options.range, info.size)
-      return { ...info, range, stream: fs.createReadStream(filePath, range) }
-    }
-    return { ...info, range: null, stream: fs.createReadStream(filePath) }
+    const file = await openLocalFile(this.resolve(key), options?.range)
+    return file && { key, ...file }
   }
 
   async stat(key: string): Promise<StoredObjectInfo | null> {
-    try {
-      const st = await fsp.stat(this.resolve(key))
-      if (!st.isFile()) return null
-      return { key, size: st.size, lastModified: st.mtime }
-    } catch (err) {
-      if (isNotFound(err)) return null
-      throw err
-    }
+    const info = await statLocalFile(this.resolve(key))
+    return info && { key, ...info }
   }
 
   async delete(key: string): Promise<void> {
     await fsp.rm(this.resolve(key), { force: true })
   }
 
-  async *list(prefix = ''): AsyncIterable<StoredObjectInfo> {
-    assertValidStoragePrefix(prefix)
-    // Walk only the deepest directory the prefix fully names, then filter on
-    // the rest — `originals/` walks originals/, `abc` walks the root.
-    const slash = prefix.lastIndexOf('/')
-    const baseKey = slash === -1 ? '' : prefix.slice(0, slash)
-    for await (const info of this.walk(baseKey)) {
-      if (info.key.startsWith(prefix)) yield info
-    }
+  list(): AsyncIterable<StoredObjectInfo> {
+    return this.walk('')
   }
 
   private async *walk(dirKey: string): AsyncIterable<StoredObjectInfo> {
@@ -112,11 +95,10 @@ export class LocalStorageBackend implements StorageBackend {
       throw err
     }
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue
       const key = dirKey ? `${dirKey}/${entry.name}` : entry.name
-      // Skip anything a key couldn't name (stray files with spaces etc.) —
-      // they were never written through Famlin, and list() promises only
-      // keys the other methods accept.
+      // Skip anything a key couldn't name (temp files, dotfiles, stray files
+      // with spaces etc.) — list() promises only keys the other methods
+      // accept. Symlinks are neither isDirectory() nor isFile(), so skipped.
       try {
         assertValidStorageKey(key)
       } catch {
@@ -137,7 +119,49 @@ export class LocalStorageBackend implements StorageBackend {
   }
 }
 
+// One regular file's size and mtime, or null when it's missing, a directory
+// or a symlink.
+export async function statLocalFile(filePath: string): Promise<{ size: number; lastModified: Date } | null> {
+  try {
+    const st = await fsp.lstat(filePath)
+    return st.isFile() ? { size: st.size, lastModified: st.mtime } : null
+  } catch (err) {
+    if (isNotFound(err)) return null
+    throw err
+  }
+}
+
+// Opens one regular file for streaming, optionally a byte range. Sizing and
+// reading go through the same open handle, so a file deleted or replaced
+// after this resolves can't turn into a stream error mid-response. Shared
+// with the local media provider (services/media/local.ts), whose album files
+// aren't storage keys.
+export async function openLocalFile(filePath: string, range?: ByteRange): Promise<Omit<StoredObject, 'key'> | null> {
+  let handle: fsp.FileHandle
+  try {
+    handle = await fsp.open(filePath, fs.constants.O_RDONLY | O_NOFOLLOW)
+  } catch (err) {
+    if (isNotFound(err)) return null
+    throw err
+  }
+  try {
+    const st = await handle.stat()
+    if (!st.isFile()) {
+      await handle.close()
+      return null
+    }
+    const resolved = range ? resolveByteRange(range, st.size) : null
+    // The stream owns the handle from here on and closes it when done.
+    const stream = handle.createReadStream(resolved ?? {})
+    return { size: st.size, lastModified: st.mtime, range: resolved, stream }
+  } catch (err) {
+    await handle.close()
+    throw err
+  }
+}
+
 function isNotFound(err: unknown): boolean {
   const code = (err as NodeJS.ErrnoException).code
-  return code === 'ENOENT' || code === 'ENOTDIR'
+  // ELOOP: a symlink refused by O_NOFOLLOW — treated as not being there.
+  return code === 'ENOENT' || code === 'ENOTDIR' || code === 'ELOOP'
 }

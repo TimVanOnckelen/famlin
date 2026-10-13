@@ -47,6 +47,12 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
     it('round-trips a Buffer, a stream and a local file', async () => {
       await storage.put('a.jpg', Buffer.from('buffer body'))
       await storage.put('b.jpg', Readable.from([Buffer.from('stream '), Buffer.from('body')]))
+      // A stream that isn't Node core's Readable (archiver/unzipper hand out
+      // `readable-stream` instances) must not be mistaken for `{ filePath }`.
+      const foreign = (async function* () {
+        yield Buffer.from('foreign body')
+      })() as unknown as NodeJS.ReadableStream
+      await storage.put('d.jpg', foreign)
       const tmp = await fsp.mkdtemp(path.join(os.tmpdir(), 'famlin-storage-src-'))
       try {
         await fsp.writeFile(path.join(tmp, 'src.jpg'), 'file body')
@@ -61,6 +67,7 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
         ['a.jpg', 'buffer body'],
         ['b.jpg', 'stream body'],
         ['c.jpg', 'file body'],
+        ['d.jpg', 'foreign body'],
       ]) {
         const object = await storage.get(key)
         expect(object).not.toBeNull()
@@ -121,56 +128,64 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
       const clamped = await storage.get('v.mp4', { range: { start: 8, end: 100 } })
       expect(clamped!.range).toEqual({ start: 8, end: 9 })
       expect((await readAll(clamped!.stream)).toString()).toBe('89')
+
+      const suffix = await storage.get('v.mp4', { range: { suffix: 3 } })
+      expect(suffix!.range).toEqual({ start: 7, end: 9 })
+      expect((await readAll(suffix!.stream)).toString()).toBe('789')
+
+      const longSuffix = await storage.get('v.mp4', { range: { suffix: 50 } })
+      expect(longSuffix!.range).toEqual({ start: 0, end: 9 })
+      longSuffix!.stream.destroy()
     })
 
     it('rejects unsatisfiable ranges', async () => {
       await storage.put('v.mp4', Buffer.from('0123456789'))
-      for (const range of [{ start: 10 }, { start: 5, end: 4 }, { start: -1 }]) {
-        await expect(storage.get('v.mp4', { range })).rejects.toMatchObject({ code: 'invalid_range' })
+      for (const range of [{ start: 10 }, { start: 5, end: 4 }, { start: -1 }, { suffix: 0 }]) {
+        await expect(storage.get('v.mp4', { range })).rejects.toMatchObject({ code: 'invalid_range', size: 10 })
       }
     })
 
-    it('lists every key, optionally narrowed by prefix', async () => {
+    it('lists every key', async () => {
       await storage.put('a.jpg', Buffer.from('a'))
       await storage.put('a-thumbnail.jpg', Buffer.from('at'))
-      await storage.put('b.jpg', Buffer.from('b'))
       await storage.put('originals/a.heic', Buffer.from('ao'))
       await storage.put('derived/a.jpg', Buffer.from('ad'))
 
-      expect(await listKeys(storage)).toEqual([
-        'a-thumbnail.jpg',
-        'a.jpg',
-        'b.jpg',
-        'derived/a.jpg',
-        'originals/a.heic',
-      ])
-      expect(await listKeys(storage, 'originals/')).toEqual(['originals/a.heic'])
-      expect(await listKeys(storage, 'a')).toEqual(['a-thumbnail.jpg', 'a.jpg'])
-      expect(await listKeys(storage, 'nothing-here/')).toEqual([])
-
-      for await (const info of storage.list('b')) {
-        expect(info).toMatchObject({ key: 'b.jpg', size: 1 })
+      expect(await listKeys(storage)).toEqual(['a-thumbnail.jpg', 'a.jpg', 'derived/a.jpg', 'originals/a.heic'])
+      for await (const info of storage.list()) {
+        if (info.key !== 'a.jpg') continue
+        expect(info.size).toBe(1)
         expect(info.lastModified).toBeInstanceOf(Date)
       }
     })
 
     it('rejects keys that could escape the storage root', async () => {
-      for (const key of ['', '/abs.jpg', '../escape.jpg', 'a/../../b.jpg', 'a//b.jpg', 'a\\b.jpg', './a.jpg', 'a/']) {
+      // Dot-leading segments too: list() never reports them, so storing one
+      // would make it invisible to exports and migration.
+      const keys = [
+        '',
+        '/abs.jpg',
+        '../escape.jpg',
+        'a/../../b.jpg',
+        'a//b.jpg',
+        'a\\b.jpg',
+        './a.jpg',
+        'a/',
+        '.hidden.jpg',
+      ]
+      for (const key of keys) {
         await expect(storage.put(key, Buffer.from('x'))).rejects.toBeInstanceOf(StorageError)
         await expect(storage.get(key)).rejects.toBeInstanceOf(StorageError)
         await expect(storage.stat(key)).rejects.toBeInstanceOf(StorageError)
         await expect(storage.delete(key)).rejects.toBeInstanceOf(StorageError)
       }
-      await expect(async () => {
-        for await (const _ of storage.list('../')) void _
-      }).rejects.toBeInstanceOf(StorageError)
     })
 
     describe('served through sendStoredObject', () => {
       async function serve(headers: Record<string, string> = {}, key = 'v.mp4') {
         const app = Fastify()
         app.get('/f', async (_request, reply) => {
-          if (await sendStoredObject(reply, storage, key, { contentType: 'video/mp4', rangeHeader: headers.range })) {
+          if (await sendStoredObject(reply, storage, key, { contentType: 'video/mp4' })) {
             return reply
           }
           return reply.status(404).send({ error: 'not found' })
@@ -213,15 +228,49 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
         expect(res.headers['content-range']).toBe('bytes */10')
       })
 
-      it('ignores a Range form it does not support', async () => {
-        const res = await serve({ range: 'bytes=0-1,4-5' })
-        expect(res.statusCode).toBe(200)
-        expect(res.body).toBe('0123456789')
+      it('ignores a Range form it does not support, or an invalid one', async () => {
+        // Multi-range, another unit, and last-pos < first-pos (RFC 9110:
+        // an invalid range-spec means the header is ignored, not a 416).
+        for (const range of ['bytes=0-1,4-5', 'items=0-1', 'bytes=5-2']) {
+          const res = await serve({ range })
+          expect(res.statusCode).toBe(200)
+          expect(res.body).toBe('0123456789')
+        }
+      })
+
+      it('matches the Range unit case-insensitively', async () => {
+        const res = await serve({ range: 'Bytes=0-1' })
+        expect(res.statusCode).toBe(206)
+        expect(res.body).toBe('01')
+      })
+
+      it('answers a revalidation of an unchanged object with 304', async () => {
+        const first = await serve()
+        const etag = first.headers['etag'] as string
+        const lastModified = first.headers['last-modified'] as string
+        expect(etag).toBeTruthy()
+
+        const byEtag = await serve({ 'if-none-match': etag })
+        expect(byEtag.statusCode).toBe(304)
+        expect(byEtag.body).toBe('')
+
+        const byDate = await serve({ 'if-modified-since': lastModified })
+        expect(byDate.statusCode).toBe(304)
+
+        // Conditionals win over Range.
+        const withRange = await serve({ 'if-none-match': etag, range: 'bytes=0-1' })
+        expect(withRange.statusCode).toBe(304)
+      })
+
+      it('sends the object again once it has changed', async () => {
+        const stale = await serve({ 'if-none-match': 'W/"0-0"', 'if-modified-since': new Date(0).toUTCString() })
+        expect(stale.statusCode).toBe(200)
+        expect(stale.body).toBe('0123456789')
       })
 
       it('leaves a missing object to the caller', async () => {
-        const res = await serve({}, 'missing.mp4')
-        expect(res.statusCode).toBe(404)
+        expect((await serve({}, 'missing.mp4')).statusCode).toBe(404)
+        expect((await serve({ 'if-none-match': '"x"' }, 'missing.mp4')).statusCode).toBe(404)
       })
     })
   })

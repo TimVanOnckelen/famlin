@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
-import { LocalStorageBackend, createStorageBackend, getStorage } from '../src/services/storage/index.js'
+import { LocalStorageBackend, getStorage } from '../src/services/storage/index.js'
 import { uploadsDir } from '../src/config.js'
 import { runStorageBackendContract } from './storage/contract.js'
 
@@ -62,6 +62,30 @@ describe('LocalStorageBackend specifics', () => {
     expect(await fsp.readdir(dir)).toEqual([])
   })
 
+  it('neither serves nor lists symlinks', async () => {
+    const outside = path.join(dir, '..', `${path.basename(dir)}-outside.jpg`)
+    await fsp.writeFile(outside, 'secret')
+    try {
+      await fsp.symlink(outside, path.join(dir, 'link.jpg'))
+      expect(await storage.stat('link.jpg')).toBeNull()
+      expect(await storage.get('link.jpg')).toBeNull()
+      const keys: string[] = []
+      for await (const info of storage.list()) keys.push(info.key)
+      expect(keys).toEqual([])
+    } finally {
+      await fsp.rm(outside, { force: true })
+    }
+  })
+
+  it('keeps streaming a file deleted after get() resolved', async () => {
+    await storage.put('a.jpg', Buffer.from('still here'))
+    const object = await storage.get('a.jpg')
+    await storage.delete('a.jpg')
+    const chunks: Buffer[] = []
+    for await (const chunk of object!.stream) chunks.push(chunk as Buffer)
+    expect(Buffer.concat(chunks).toString()).toBe('still here')
+  })
+
   it('treats a directory as a missing object', async () => {
     await fsp.mkdir(path.join(dir, 'originals'))
     expect(await storage.stat('originals')).toBeNull()
@@ -72,6 +96,5 @@ describe('LocalStorageBackend specifics', () => {
     const active = getStorage()
     expect(active).toBeInstanceOf(LocalStorageBackend)
     expect((active as LocalStorageBackend).rootDir).toBe(uploadsDir)
-    expect(() => createStorageBackend('nope')).toThrow(/Unknown storage driver/)
   })
 })

@@ -6,6 +6,8 @@ import crypto from 'crypto'
 import sharp from 'sharp'
 import { getLocalMediaSettings } from '../settings.js'
 import { MediaProviderError, type MediaProvider, type MediaAssetVariant } from './types.js'
+import { sendObject } from '../storage/http.js'
+import { openLocalFile, statLocalFile } from '../storage/local.js'
 
 // Serves photos straight from a directory on disk (typically a NAS share
 // bind-mounted into the container): every immediate subdirectory of the
@@ -113,30 +115,16 @@ const CONTENT_TYPES: Record<string, string> = {
 
 // Streams a file with single-range support — images don't strictly need it,
 // but honoring Range keeps this provider's contract identical to Immich's
-// proxy (and ready for video originals later).
-async function streamFile(filePath: string, contentType: string, reply: FastifyReply, rangeHeader?: string) {
-  const stat = await fsp.stat(filePath)
-
-  reply.header('content-type', contentType)
-  reply.header('accept-ranges', 'bytes')
-
-  const match = rangeHeader?.match(/^bytes=(\d*)-(\d*)$/)
-  if (match && (match[1] || match[2])) {
-    const start = match[1] ? parseInt(match[1], 10) : Math.max(0, stat.size - parseInt(match[2], 10))
-    const end = match[1] && match[2] ? Math.min(parseInt(match[2], 10), stat.size - 1) : stat.size - 1
-    if (start > end || start >= stat.size) {
-      reply.status(416)
-      reply.header('content-range', `bytes */${stat.size}`)
-      return reply.send()
-    }
-    reply.status(206)
-    reply.header('content-range', `bytes ${start}-${end}/${stat.size}`)
-    reply.header('content-length', String(end - start + 1))
-    return reply.send(fs.createReadStream(filePath, { start, end }))
-  }
-
-  reply.header('content-length', String(stat.size))
-  return reply.send(fs.createReadStream(filePath))
+// proxy (and ready for video originals later). Shares the uploads storage's
+// serving code, so both answer Range and conditional requests identically.
+async function streamFile(filePath: string, contentType: string, reply: FastifyReply) {
+  const sent = await sendObject(
+    reply,
+    { stat: () => statLocalFile(filePath), get: (range) => openLocalFile(filePath, range) },
+    { contentType }
+  )
+  if (!sent) throw new MediaProviderError('local', 'unreachable')
+  return reply
 }
 
 // Returns the cached rendition path, (re)generating it when missing or when
@@ -275,7 +263,9 @@ export const localProvider: MediaProvider = {
     assetId: string,
     variant: MediaAssetVariant,
     reply: FastifyReply,
-    rangeHeader?: string
+    // Read straight off reply.request by sendObject(), with the conditional
+    // headers it also honors.
+    _rangeHeader?: string
   ) {
     const fileName = decodeLocalAssetId(assetId)
     if (!fileName || !IMAGE_EXTENSIONS.has(fileExt(fileName))) {
@@ -286,15 +276,10 @@ export const localProvider: MediaProvider = {
 
     try {
       if (variant === 'original') {
-        return await streamFile(
-          filePath,
-          CONTENT_TYPES[fileExt(fileName)] ?? 'application/octet-stream',
-          reply,
-          rangeHeader
-        )
+        return await streamFile(filePath, CONTENT_TYPES[fileExt(fileName)] ?? 'application/octet-stream', reply)
       }
       const rendition = await ensureRendition(externalAlbumId, fileName, filePath, variant)
-      return await streamFile(rendition, 'image/jpeg', reply, rangeHeader)
+      return await streamFile(rendition, 'image/jpeg', reply)
     } catch (err) {
       if (err instanceof MediaProviderError) throw err
       // ENOENT race (file removed between the isAssetInAlbum check and here)
