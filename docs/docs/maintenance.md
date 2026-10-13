@@ -94,6 +94,23 @@ FAMLIN_VERSION=1.2.0
 
 Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
 
+To try the current development build from `main`, set `FAMLIN_VERSION=dev`
+in `.env`, then run the same `pull` and `up -d` commands above. The rolling
+`dev` image is published after pushes or PR merges into `main` that change
+files relevant to the image, for both `linux/amd64` and `linux/arm64`.
+Docs-only, website-only, mobile-only, and Markdown-only changes are skipped,
+as are release PR merges (the release workflow builds those commits).
+
+:::warning Use dev on a test instance only
+
+The container runs `prisma migrate deploy` on startup. A `dev` image may apply
+database migrations that are not included in any release yet. Switching back
+to an older release can leave that release running against an incompatible
+schema. Stay on `dev` until a release containing those migrations ships and
+then pin to it, or restore a backup taken before switching to `dev`.
+
+:::
+
 ## Building from source instead
 
 If you'd rather build the backend image yourself (e.g. you're running a fork, or testing an unreleased change) instead of pulling from `ghcr.io`, replace the `image:` line for `famlin-backend` in your compose file with a `build:` block:
