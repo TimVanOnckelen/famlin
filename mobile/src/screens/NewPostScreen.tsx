@@ -10,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -473,7 +474,7 @@ export function NewPostScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.form} contentContainerStyle={styles.formContent}>
+      <KeyboardAwareScrollView style={styles.form} contentContainerStyle={styles.formContent}>
         {/* Swappable type chip: tapping it returns to the type-chooser step
             (postType and everything already typed is preserved). Its colors
             and icon reflect whichever type is currently selected. */}
@@ -874,7 +875,7 @@ export function NewPostScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <LocationPickerModal
         visible={showLocationPicker}

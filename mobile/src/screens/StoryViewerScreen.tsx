@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   Modal,
   FlatList,
@@ -15,7 +13,7 @@ import {
   StatusBar,
 } from 'react-native'
 import { Image } from 'expo-image'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -255,7 +253,7 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
         accessibilityLabel={t('stories.next')}
       />
 
-      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
+      <KeyboardAvoidingSafeAreaView style={styles.overlay} pointerEvents="box-none">
         <View style={styles.progressRow}>
           {run.map((item, i) => (
             <View key={item.id} style={styles.progressTrack}>
@@ -287,7 +285,7 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
 
         <View style={{ flex: 1 }} pointerEvents="none" />
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View>
           {story.isMine ? (
             <View style={styles.authorBar}>
               <TouchableOpacity style={styles.pill} onPress={() => setInsightsOpen(true)}>
@@ -369,8 +367,8 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
               ) : null}
             </View>
           )}
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </View>
+      </KeyboardAvoidingSafeAreaView>
 
       {story.isMine && (
         <StoryInsightsSheet storyId={story.id} visible={insightsOpen} onClose={() => setInsightsOpen(false)} />

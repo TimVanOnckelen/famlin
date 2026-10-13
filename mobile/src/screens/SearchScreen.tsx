@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, StyleSheet, FlatList, TextInput } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 
@@ -38,7 +38,7 @@ export function SearchScreen() {
   const { isLoading } = query
 
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingSafeAreaView style={styles.container}>
       <ScreenHeader title={t('search.title', { group: groupName })} onBack={() => navigation.goBack()} centered />
 
       <View style={styles.searchBarContainer}>
@@ -67,7 +67,7 @@ export function SearchScreen() {
           )
         }
       />
-    </SafeAreaView>
+    </KeyboardAvoidingSafeAreaView>
   )
 }
 

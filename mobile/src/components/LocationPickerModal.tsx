@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import * as Location from 'expo-location'
 import { useTranslation } from 'react-i18next'
 
@@ -66,7 +66,7 @@ export function LocationPickerModal({ visible, initialLocation, onCancel, onConf
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onCancel}>
-      <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingSafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onCancel}>
             <Text style={styles.headerButton}>{t('common.cancel')}</Text>
@@ -108,7 +108,7 @@ export function LocationPickerModal({ visible, initialLocation, onCancel, onConf
           </View>
           <Text style={styles.hint}>{t('newPost.location.tapHint')}</Text>
         </View>
-      </SafeAreaView>
+      </KeyboardAvoidingSafeAreaView>
     </Modal>
   )
 }
