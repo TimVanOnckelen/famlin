@@ -248,7 +248,8 @@
     "profile": "我的",
     "chat": "聊天",
     "favorites": "收藏",
-    "notifications": "通知"
+    "notifications": "通知",
+    "search": "搜索"
   },
   "demo": {
     "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
@@ -378,7 +379,8 @@
     "openPost": "打开动态",
     "likePost": "点赞动态",
     "favoritePost": "收藏动态",
-    "goNotifications": "前往通知"
+    "goNotifications": "前往通知",
+    "goSearch": "前往搜索"
   },
   "notifications": {
     "title": "通知",
@@ -388,5 +390,15 @@
     "markFailed": "无法将通知标为已读。请重试。",
     "unread": "未读",
     "storyUnavailable": "此限时动态已不可用。"
+  },
+  "search": {
+    "title": "搜索",
+    "family": "家庭",
+    "placeholder": "搜索动态…",
+    "prompt": "输入关键词，搜索此家庭的动态。",
+    "empty": "未找到动态，请尝试其他关键词。",
+    "noGroups": "加入家庭后即可搜索动态。",
+    "loadFailed": "无法加载搜索结果。",
+    "loadMore": "加载更多"
   }
 }

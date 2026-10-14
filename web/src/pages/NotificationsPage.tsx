@@ -20,6 +20,7 @@ export function NotificationsPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenSearch,
   onOpenProfile,
   onOpenPost,
   onLogout,
@@ -29,6 +30,7 @@ export function NotificationsPage({
   onOpenPhotos: () => void
   onOpenChat: () => void
   onOpenFavorites: () => void
+  onOpenSearch?: (groupId?: string) => void
   onOpenProfile: () => void
   onOpenPost: (id: string) => void
   onLogout: () => void
@@ -68,6 +70,7 @@ export function NotificationsPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onSearch={onOpenSearch}
       onNotifications={() => {}}
       onProfile={onOpenProfile}
       onLogout={onLogout}

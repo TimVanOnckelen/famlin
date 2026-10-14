@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import './AppShell.css'
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'profile'
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'profile'
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -37,6 +37,7 @@ export function AppShell({
   onChat,
   onFavorites,
   onNotifications,
+  onSearch,
   onProfile,
   onNewPost,
   onLogout,
@@ -49,6 +50,7 @@ export function AppShell({
   onChat?: () => void
   onFavorites?: () => void
   onNotifications?: () => void
+  onSearch?: () => void
   onProfile: () => void
   onNewPost?: () => void
   onLogout: () => void
@@ -70,7 +72,7 @@ export function AppShell({
   })
   const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
 
-  // Photos, Chat, Favorites and Notifications share the family visibility
+  // Photos, Chat, Favorites, Notifications and Search share the family visibility
   // rules: a user in no families has no entry points to these pages.
   // Feed and Profile remain. Shares the ['groups'] cache key the
   // pages fetch with, seeded by App.tsx's parallel bootstrap fetch — so a
@@ -85,6 +87,8 @@ export function AppShell({
   const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites')
   const showNotificationsNav =
     (!!onNotifications || active === 'notifications') && (hasGroups || active === 'notifications')
+  const showSearchNav = (!!onSearch || active === 'search') && (hasGroups || active === 'search')
+  const searchNav = showSearchNav ? onSearch : undefined
   const notificationsNav = showNotificationsNav ? onNotifications : undefined
   const notificationCount = useQuery({
     queryKey: ['unread-count'],
@@ -102,6 +106,7 @@ export function AppShell({
     else if (view === 'photos') photosNav?.()
     else if (view === 'chat') chatNav?.()
     else if (view === 'favorites') favoritesNav?.()
+    else if (view === 'search') searchNav?.()
     else if (view === 'notifications') notificationsNav?.()
     else onProfile()
   }
@@ -151,6 +156,7 @@ export function AppShell({
       badge: hasUnreadNotifications,
       show: showNotificationsNav,
     },
+    { view: 'search', icon: 'search', label: t('tabs.search'), keys: 'g s', onClick: searchNav, show: showSearchNav },
     { view: 'profile', icon: 'user', label: t('tabs.profile'), keys: 'g u', onClick: onProfile, show: true },
   ]
 
@@ -218,8 +224,19 @@ export function AppShell({
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        {(showFavoritesNav || showNotificationsNav) && (
+        {(showFavoritesNav || showNotificationsNav || showSearchNav) && (
           <div className="mobile-header-actions">
+            {showSearchNav && (
+              <button
+                type="button"
+                className="mobile-header-action"
+                onClick={searchNav}
+                aria-current={active === 'search' ? 'page' : undefined}
+                aria-label={t('tabs.search')}
+              >
+                <Icon name="search" size={20} />
+              </button>
+            )}
             {showFavoritesNav && (
               <button
                 type="button"

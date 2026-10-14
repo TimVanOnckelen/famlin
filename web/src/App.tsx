@@ -10,6 +10,7 @@ import { ProfilePage } from '@/pages/ProfilePage'
 import { PhotosPage } from '@/pages/PhotosPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
+import { SearchPage } from '@/pages/SearchPage'
 import { FavoritesPage } from '@/pages/FavoritesPage'
 import { TripDetailPage } from '@/pages/TripDetailPage'
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
@@ -128,6 +129,8 @@ function AppRoutes({ user }: { user: User }) {
   const location = useLocation()
   const backgroundLocation = (location.state as { backgroundLocation?: typeof location } | null)?.backgroundLocation
 
+  const searchParams = new URLSearchParams((backgroundLocation ?? location).search)
+
   return (
     <>
       <Routes location={backgroundLocation ?? location}>
@@ -141,6 +144,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
               onLogout={() => logout()}
@@ -158,6 +162,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
                 onOpenNotifications={nav.toNotifications}
+                onOpenSearch={nav.toSearch}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
               />
@@ -175,6 +180,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
                 onOpenNotifications={nav.toNotifications}
+                onOpenSearch={nav.toSearch}
                 onLogout={() => logout()}
               />
             </RequireGroups>
@@ -190,6 +196,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
               onLogout={() => logout()}
             />
           }
@@ -204,6 +211,7 @@ function AppRoutes({ user }: { user: User }) {
               user={user}
               onBack={nav.toFeed}
               onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
@@ -224,6 +232,27 @@ function AppRoutes({ user }: { user: User }) {
               onOpenFavorites={nav.toFavorites}
               onOpenProfile={nav.toProfile}
               onOpenPost={nav.toPost}
+              onOpenSearch={nav.toSearch}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.search}
+          element={
+            <SearchPage
+              user={user}
+              query={searchParams.get('q') ?? ''}
+              groupId={searchParams.get('groupId') ?? ''}
+              onSearchChange={nav.updateSearch}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenProfile={nav.toProfile}
+              onOpenTrip={nav.toTrip}
+              onOpenAlbum={nav.toAlbum}
               onLogout={() => logout()}
             />
           }
@@ -285,6 +314,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
   )
@@ -306,6 +336,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
   )
@@ -329,6 +360,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
   )

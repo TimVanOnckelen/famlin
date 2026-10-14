@@ -248,7 +248,8 @@
     "profile": "Profiel",
     "chat": "Chat",
     "favorites": "Favorieten",
-    "notifications": "Meldingen"
+    "notifications": "Meldingen",
+    "search": "Zoeken"
   },
   "demo": {
     "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
@@ -378,7 +379,8 @@
     "openPost": "Bericht openen",
     "likePost": "Bericht liken",
     "favoritePost": "Bericht favorieten",
-    "goNotifications": "Ga naar meldingen"
+    "goNotifications": "Ga naar meldingen",
+    "goSearch": "Naar zoeken"
   },
   "notifications": {
     "title": "Meldingen",
@@ -388,5 +390,15 @@
     "markFailed": "Meldingen konden niet als gelezen worden gemarkeerd. Probeer het opnieuw.",
     "unread": "Ongelezen",
     "storyUnavailable": "Dit verhaal is niet meer beschikbaar."
+  },
+  "search": {
+    "title": "Zoeken",
+    "family": "Familie",
+    "placeholder": "Berichten zoeken…",
+    "prompt": "Voer een zoekterm in om berichten in deze familie te vinden.",
+    "empty": "Geen berichten gevonden. Probeer een andere zoekterm.",
+    "noGroups": "Word lid van een familie om berichten te zoeken.",
+    "loadFailed": "Zoekresultaten konden niet worden geladen.",
+    "loadMore": "Meer laden"
   }
 }

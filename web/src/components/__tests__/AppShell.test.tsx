@@ -225,3 +225,17 @@ it('shows notification links in sidebar and compact header and hides them withou
   renderShell({}, [])
   expect(screen.queryByRole('button', { name: 'Notifications' })).not.toBeInTheDocument()
 })
+
+it('shows Search in the sidebar and compact header and follows the family visibility rules', async () => {
+  const onSearch = vi.fn()
+  const { unmount } = renderShell({ onSearch })
+  const buttons = await screen.findAllByRole('button', { name: 'Search' })
+  expect(buttons).toHaveLength(2)
+  await userEvent.click(buttons[0])
+  await userEvent.click(buttons[1])
+  expect(onSearch).toHaveBeenCalledTimes(2)
+  unmount()
+  vi.mocked(fetchGroups).mockResolvedValue([])
+  renderShell({ onSearch }, [])
+  expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument()
+})
