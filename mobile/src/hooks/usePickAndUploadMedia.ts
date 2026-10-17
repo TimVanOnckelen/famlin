@@ -60,7 +60,7 @@ interface UsePickAndUploadMediaOptions {
    * (photo-0.jpg, photo-1.jpg, ...); the single-select flows don't. */
   includeIndexInName?: boolean
   /** Invoked synchronously with the picked (not-yet-uploaded) assets, right
-   * before the upload starts — lets the caller show an optimistic/pending
+   * before the individual uploads start — lets the caller show an optimistic/pending
    * preview (NewPostScreen's pendingAssets, PostDetailScreen's
    * commentAttachment placeholder) while uploadMedia() is in flight. */
   onPicked?: (assets: PickedMediaAsset[]) => void
@@ -68,6 +68,9 @@ interface UsePickAndUploadMediaOptions {
    * the caller undo anything set in onPicked (PostDetailScreen clears its
    * attachment preview) or log extra diagnostics (NewPostScreen). */
   onError?: (err: any) => void
+  /** Called as each independent request completes, without waiting for other files. */
+  onUploaded?: (url: string, index: number) => void
+  onSettled?: (index: number) => void
 }
 
 /**
@@ -75,8 +78,8 @@ interface UsePickAndUploadMediaOptions {
  * NewPostScreen's photo picker, ProfileScreen's avatar picker, and
  * PostDetailScreen's comment attachment picker: permission check → alert on
  * denial → launchImageLibraryAsync → derive name/type per asset → upload →
- * alert on failure. Returns null on permission denial, on cancel, and on
- * upload failure (the failure alert has already been shown in the last
+ * alert on failure. Returns null on permission denial, on cancel, and when all
+ * uploads fail (the failure alert has already been shown in the last
  * case) — callers only need to branch on truthy/falsy. Each call site still
  * owns its own pending/preview state and post-upload handling (added to a
  * list, saved as the avatar, attached to a comment).
@@ -87,14 +90,15 @@ export function usePickAndUploadMedia({
   includeIndexInName = false,
   onPicked,
   onError,
+  onUploaded,
+  onSettled,
 }: UsePickAndUploadMediaOptions) {
   const { t } = useTranslation()
   const [uploading, setUploading] = useState(false)
-  // Fraction (0-1) of the in-flight batch upload's bytes sent so far — null
-  // until the request actually starts streaming (see uploadMedia's
-  // onProgress). One combined figure for the whole batch, not per-file,
-  // since the client sends every asset as one multipart request.
+  // Existing single-indicator callers use the average; the post composer
+  // displays each file's own progress instead.
   const [progress, setProgress] = useState<number | null>(null)
+  const [fileProgress, setFileProgress] = useState<number[]>([])
 
   async function pick(): Promise<PickAndUploadResult | null> {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -137,17 +141,46 @@ export function usePickAndUploadMedia({
     try {
       setUploading(true)
       setProgress(0)
-      const urls = await uploadMedia(files, setProgress)
-      return { assets, urls }
-    } catch (err: any) {
-      onError?.(err)
-      Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'))
-      return null
+      const fractions = files.map(() => 0)
+      setFileProgress(fractions)
+      const results = await Promise.allSettled(
+        files.map(async (file, index) => {
+          try {
+            const urls = await uploadMedia([file], (fraction) => {
+              fractions[index] = Math.min(1, Math.max(0, fraction))
+              setFileProgress([...fractions])
+              setProgress(fractions.reduce((sum, value) => sum + value, 0) / files.length)
+            })
+            const url = urls[0]
+            if (!url) throw new Error(t('common.tryAgain'))
+            onUploaded?.(url, index)
+            return url
+          } finally {
+            onSettled?.(index)
+          }
+        })
+      )
+      const failed = results.find((result) => result.status === 'rejected')
+      if (failed?.status === 'rejected') {
+        const err = failed.reason
+        onError?.(err)
+        Alert.alert(t('newPost.alerts.uploadFailed'), err.response?.data?.error || err.message || t('common.tryAgain'))
+      }
+      const successfulAssets: PickedMediaAsset[] = []
+      const urls: string[] = []
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulAssets.push(assets[index])
+          urls.push(result.value)
+        }
+      })
+      return urls.length ? { assets: successfulAssets, urls } : null
     } finally {
       setUploading(false)
       setProgress(null)
+      setFileProgress([])
     }
   }
 
-  return { pick, uploading, progress }
+  return { pick, uploading, progress, fileProgress }
 }

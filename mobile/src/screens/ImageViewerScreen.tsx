@@ -1,3 +1,6 @@
+import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
+import { LivePhotoMedia } from '@/components/LivePhotoMedia'
+import { useUploadProcessing } from '@/hooks/useUploadProcessing'
 import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
@@ -37,6 +40,39 @@ import { formatRelativeDate } from '@/i18n/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
 
+function ProcessingPage({
+  url,
+  width,
+  isActive,
+  children,
+}: {
+  url: string
+  width: number
+  isActive: boolean
+  children: React.ReactNode
+}) {
+  const state = useUploadProcessing(url)
+  const { t } = useTranslation()
+  if (state.pending || state.failed) {
+    return (
+      <View style={[styles.page, { width, alignItems: 'center', justifyContent: 'center' }]}>
+        {!state.failed && <ActivityIndicator color="white" />}
+        <Text style={{ color: 'white', padding: 16 }}>
+          {t(state.failed ? 'media.processingFailed' : 'media.processing')}
+        </Text>
+      </View>
+    )
+  }
+  if (state.kind === 'livePhoto' && state.videoUrl) {
+    return (
+      <View style={[styles.page, { width }]}>
+        <LivePhotoMedia imageUrl={url} videoUrl={state.videoUrl} style={styles.image} autoPlay isActive={isActive} />
+      </View>
+    )
+  }
+  return children
+}
+
 function VideoPage({
   url,
   width,
@@ -51,6 +87,7 @@ function VideoPage({
   const player = useVideoPlayer({ uri: url }, (p) => {
     p.loop = true
   })
+  useExclusiveVideo(player)
   const isFocused = useIsFocused()
 
   useEffect(() => {
@@ -561,32 +598,34 @@ export function ImageViewerScreen() {
             scrollEnabled={!isZoomed}
             style={styles.scrollView}
           >
-            {urls.map((url: string, index: number) =>
-              isVideoUrl(url) ? (
-                <VideoPage
-                  key={`${url}-${index}`}
-                  url={url}
-                  width={width}
-                  isActive={index === currentIndex}
-                  accessibilityLabel={t('imageViewer.videoAccessibilityLabel', {
-                    index: index + 1,
-                    total: urls.length,
-                  })}
-                />
-              ) : (
-                <ImagePage
-                  key={`${url}-${index}`}
-                  url={url}
-                  width={width}
-                  isActive={index === currentIndex}
-                  onZoomChange={handleZoomChange}
-                  accessibilityLabel={t('imageViewer.photoAccessibilityLabel', {
-                    index: index + 1,
-                    total: urls.length,
-                  })}
-                />
-              )
-            )}
+            {urls.map((url: string, index: number) => (
+              <ProcessingPage key={`${url}-${index}`} url={url} width={width} isActive={index === currentIndex}>
+                {isVideoUrl(url) ? (
+                  <VideoPage
+                    key={`${url}-${index}`}
+                    url={url}
+                    width={width}
+                    isActive={index === currentIndex}
+                    accessibilityLabel={t('imageViewer.videoAccessibilityLabel', {
+                      index: index + 1,
+                      total: urls.length,
+                    })}
+                  />
+                ) : (
+                  <ImagePage
+                    key={`${url}-${index}`}
+                    url={url}
+                    width={width}
+                    isActive={index === currentIndex}
+                    onZoomChange={handleZoomChange}
+                    accessibilityLabel={t('imageViewer.photoAccessibilityLabel', {
+                      index: index + 1,
+                      total: urls.length,
+                    })}
+                  />
+                )}
+              </ProcessingPage>
+            ))}
           </ScrollView>
 
           {/* Remount per post so the bar never briefly shows the previous

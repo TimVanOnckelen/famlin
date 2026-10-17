@@ -9,7 +9,7 @@ WORKDIR /app
 # OpenSSL for Prisma; ffmpeg for video poster-frame extraction
 # (services/uploadVariants.ts) — needed here too because the dev overlay
 # (docker-compose.override.yml) runs this `base` stage.
-RUN apk add --no-cache openssl ffmpeg
+RUN apk add --no-cache openssl ffmpeg exiftool
 
 # Install dependencies
 COPY backend/package.json backend/package-lock.json* ./
@@ -106,7 +106,7 @@ ENV NODE_ENV=production
 
 # OpenSSL for Prisma; ffmpeg for video poster-frame extraction
 # (services/uploadVariants.ts).
-RUN apk add --no-cache openssl ffmpeg
+RUN apk add --no-cache openssl ffmpeg exiftool
 
 COPY backend/package.json backend/package-lock.json* ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone

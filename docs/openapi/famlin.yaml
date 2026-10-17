@@ -2354,6 +2354,18 @@ paths:
         Max 200 MB per file, 10 files per request, 60 uploads per 10 minutes.
         Pass the returned paths into `uploadedAssetUrls` when creating a post,
         or into `avatarUrl` when updating your profile.
+        Photos and videos return stable future JPEG/MP4 paths plus small previews.
+        Full conversion runs in a persistent background queue. Posts can reference
+        queued media immediately; poll `/api/uploads/status/{assetKey}` until ready.
+      parameters:
+        - name: X-Upload-Session-Id
+          in: header
+          description: Optional draft UUID; matching is restricted to this user and session, and excludes published media
+          schema: { type: string, format: uuid }
+        - name: X-Upload-Session-Exclude
+          in: header
+          description: JSON array of removed upload UUIDs; only owned unbound uploads in this session are affected
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -2378,6 +2390,25 @@ paths:
                     type: array
                     items: { type: string }
                     example: ['/uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg']
+                  sessionMedia:
+                    description: Normalized draft attachments; Live Photo components occupy one entry
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url: { type: string }
+                        thumbnailUrl: { type: string, nullable: true }
+                        videoUrl: { type: string, nullable: true }
+                        kind: { type: string, enum: [image, video, livePhoto] }
+                        status: { type: string, enum: [queued, processing, ready, failed] }
+                  media:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url: { type: string }
+                        thumbnailUrl: { type: string, nullable: true }
+                        status: { type: string, enum: [queued, ready] }
         '400':
           description: Unsupported file type
           content:
@@ -2394,6 +2425,35 @@ paths:
                 $ref: '#/components/schemas/Error'
         '429':
           $ref: '#/components/responses/RateLimited'
+
+  /api/uploads/status/{assetKey}:
+    get:
+      operationId: getUploadProcessingStatus
+      tags: [Uploads & media]
+      summary: Get upload conversion status
+      description: Uses the same uploader, group and circle access rules as the media itself. Legacy uploads are ready.
+      parameters:
+        - name: assetKey
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Current conversion status; poll queued or processing media until ready or failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [queued, processing, ready, failed] }
+                  url: { type: string, nullable: true }
+                  thumbnailUrl: { type: string, nullable: true }
+                  kind: { type: string, enum: [image, video, livePhoto] }
+                  videoUrl: { type: string, nullable: true }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Invalid key or inaccessible upload
 
   /api/uploads/media-token:
     get:

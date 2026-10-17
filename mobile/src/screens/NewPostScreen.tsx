@@ -147,7 +147,7 @@ export function NewPostScreen() {
   // selection moves.
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
   const [uploadedAssetUrls, setUploadedAssetUrls] = useState<string[]>([])
-  const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean }[]>([])
+  const [pendingAssets, setPendingAssets] = useState<{ uri: string; isVideo: boolean; uploadIndex: number }[]>([])
   const [location, setLocation] = useState<PickedLocation | null>(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [showMediaPicker, setShowMediaPicker] = useState(false)
@@ -321,7 +321,7 @@ export function NewPostScreen() {
   const {
     pick: pickDeviceMedia,
     uploading,
-    progress: uploadProgress,
+    fileProgress,
   } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -333,13 +333,14 @@ export function NewPostScreen() {
     includeIndexInName: true,
     // Show the picked assets (with an uploading overlay) while the upload
     // is in flight.
-    onPicked: setPendingAssets,
+    onPicked: (assets) => setPendingAssets(assets.map((asset, uploadIndex) => ({ ...asset, uploadIndex }))),
+    onUploaded: (url) => setUploadedAssetUrls((prev) => [...prev, url]),
+    onSettled: (index) => setPendingAssets((prev) => prev.filter((asset) => asset.uploadIndex !== index)),
     onError: (err) => console.error('Upload error:', err),
   })
 
   async function pickImagesFromDevice() {
-    const result = await pickDeviceMedia()
-    if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls])
+    await pickDeviceMedia()
     setPendingAssets([])
   }
 
@@ -365,6 +366,8 @@ export function NewPostScreen() {
     },
     onError: (err) => console.error('Cover photo upload error:', err),
   })
+
+  const postDisabled = !canSubmit || uploading || tripCoverUploading || createPostMutation.isPending
 
   async function pickTripCoverPhoto() {
     const result = await pickTripCoverMedia()
@@ -466,9 +469,11 @@ export function NewPostScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('newPost.title')}</Text>
         <TouchableOpacity
-          style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-          onPress={() => createPostMutation.mutate()}
-          disabled={!canSubmit}
+          style={[styles.postButton, postDisabled && styles.postButtonDisabled]}
+          onPress={() => {
+            if (!postDisabled) createPostMutation.mutate()
+          }}
+          disabled={postDisabled}
         >
           <Text style={styles.postButtonText}>{t('newPost.postButton')}</Text>
         </TouchableOpacity>
@@ -805,11 +810,7 @@ export function NewPostScreen() {
                   const isVideo = isVideoUrl(asset.url)
                   return (
                     <View key={asset.url} style={styles.selectedAsset}>
-                      {isVideo ? (
-                        <MutedVideoThumb uri={getUploadUrl(asset.url)} style={styles.selectedAssetImage} />
-                      ) : (
-                        <Image source={{ uri: getUploadUrl(asset.url) }} style={styles.selectedAssetImage} />
-                      )}
+                      <Image source={{ uri: getUploadUrl(asset.url, 'thumbnail') }} style={styles.selectedAssetImage} />
                       {isVideo && (
                         <View style={styles.videoBadge} pointerEvents="none">
                           <Icon name="play" size={14} color={colors.white} />
@@ -821,14 +822,14 @@ export function NewPostScreen() {
                     </View>
                   )
                 })}
-                {pendingAssets.map((asset, index) => (
-                  <View key={`pending-${index}`} style={styles.selectedAsset}>
+                {pendingAssets.map((asset) => (
+                  <View key={`pending-${asset.uploadIndex}`} style={styles.selectedAsset}>
                     {asset.isVideo ? (
                       <MutedVideoThumb uri={asset.uri} style={styles.selectedAssetImage} />
                     ) : (
                       <Image source={{ uri: asset.uri }} style={styles.selectedAssetImage} />
                     )}
-                    <UploadProgressOverlay progress={uploadProgress} style={styles.uploadingOverlay} />
+                    <UploadProgressOverlay progress={fileProgress[asset.uploadIndex]} style={styles.uploadingOverlay} />
                   </View>
                 ))}
               </ScrollView>
