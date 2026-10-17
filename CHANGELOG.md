@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.3](https://github.com/TimVanOnckelen/famlin/compare/v0.8.2...v0.8.3) (2026-10-17)
+
+
+### Features
+
+* **backend:** add StorageBackend abstraction with a local driver ([ca5622a](https://github.com/TimVanOnckelen/famlin/commit/ca5622a18e45626abad51f812c64715edfe1f67a))
+* **backend:** add StorageBackend abstraction with a local driver ([9352ac7](https://github.com/TimVanOnckelen/famlin/commit/9352ac77d622b7f3df04fb472afe51c6df4ed989))
+* **web:** add notifications page ([9ec5b7c](https://github.com/TimVanOnckelen/famlin/commit/9ec5b7c13d4991207a3b8899468dd92c38a894aa))
+* **web:** add notifications page ([f3245fa](https://github.com/TimVanOnckelen/famlin/commit/f3245fa29216d63a7aff5392e97f67f4c7c4fce4))
+* **web:** add shareable family-scoped search ([fbce4c9](https://github.com/TimVanOnckelen/famlin/commit/fbce4c906de773bdbc4dabc62e7e0b6e395f6259))
+
+
+### Bug Fixes
+
+* **mobile:** keep input fields visible above the keyboard ([4cadccb](https://github.com/TimVanOnckelen/famlin/commit/4cadccb57a71cfe4a8ac3c9655d498f8cb6040ef))
+* **mobile:** keep input fields visible above the keyboard ([b0577cc](https://github.com/TimVanOnckelen/famlin/commit/b0577ccb2d2dde81d4ff5172d07669c25c930a89))
+* **mobile:** keep input fields visible above the keyboard ([53529f1](https://github.com/TimVanOnckelen/famlin/commit/53529f168acffb3526e56a360d88a5dd3cc2ca6a))
+
 ## [0.8.2](https://github.com/TimVanOnckelen/famlin/compare/v0.8.1...v0.8.2) (2026-10-11)
 
 
