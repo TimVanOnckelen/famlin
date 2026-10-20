@@ -565,10 +565,24 @@ model Upload {
   // Explicitly readable by any authenticated user — user avatars, which
   // appear across every group their owner belongs to.
   serverWide Boolean  @default(false)
+  processingStatus String @default("ready")
+  sourceFilename String?
+  uploadSessionId String?
+  livePhotoIdentifier String?
+  mediaKind String @default("image")
+  motionAssetKey String? @unique
+  motionUpload Upload? @relation("LivePhotoMotion", fields: [motionAssetKey], references: [assetKey], onDelete: SetNull)
+  livePhoto Upload? @relation("LivePhotoMotion")
+  mediaUrl String?
+  thumbnailUrl String?
+  processingStartedAt DateTime?
+  processingError String?
   createdAt  DateTime @default(now())
 
   @@index([circleId])
   @@index([uploaderId])
+  @@index([processingStatus])
+  @@index([uploaderId, uploadSessionId, bound])
 }
 
 // A Story: one photo shared for 24 hours (Instagram-style). Deliberately its

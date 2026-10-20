@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "实况照片", "video": "视频", "pauseLivePhoto": "暂停实况照片", "playLivePhoto": "播放实况照片", "processing": "媒体正在处理中…", "processingFailed": "媒体处理失败"},
   "common": {
     "loading": "加载中…",
     "tryAgain": "重试",

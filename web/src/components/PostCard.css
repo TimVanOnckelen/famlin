@@ -57,6 +57,15 @@
   aspect-ratio: 4 / 3;
 }
 
+/* A pending single attachment has no full-size image to establish its height.
+   Reserve the same hero space as a loading photo and preserve the centered
+   processing label instead of .post-hero-media's display: block. */
+.post-hero > .media-processing.post-hero-media {
+  display: flex;
+  height: auto;
+  aspect-ratio: 4 / 3;
+}
+
 .post-hero-chip {
   position: absolute;
   left: 10px;
