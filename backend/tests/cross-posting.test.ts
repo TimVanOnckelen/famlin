@@ -203,6 +203,38 @@ describe('cross-posting', () => {
     expect(remaining).toBe(0)
   })
 
+  it('PATCH by an admin moderating edits only that one sibling, never the others', async () => {
+    const author = await createUser()
+    const admin = await createUser({ isAdmin: true })
+    const groupA = await createGroupWithMember(author)
+    const groupB = await createGroupWithMember(author)
+    await addMember(groupA.id, admin.id)
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'original' },
+    })
+    const siblingA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, authorId: author.id } })
+    expect(create.statusCode).toBe(200)
+
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/api/posts/${siblingA.id}`,
+      headers: authHeader(admin),
+      payload: { content: 'moderated' },
+    })
+    expect(patch.statusCode).toBe(200)
+    expect(patch.json().content).toBe('moderated')
+    // The admin isn't the author, so the cross-post must stay invisible to them.
+    expect(patch.json()).not.toHaveProperty('sharedWithGroups')
+    expect(patch.json()).not.toHaveProperty('crossPostId')
+
+    const siblingB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, authorId: author.id } })
+    expect(siblingB.content).toBe('original')
+  })
+
   it('PATCH by the author replaces the photos on every sibling', async () => {
     const author = await createUser()
     const groupA = await createGroupWithMember(author)

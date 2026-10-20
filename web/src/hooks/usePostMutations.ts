@@ -1,5 +1,14 @@
 import { useMutation, useQueryClient, QueryClient } from '@tanstack/react-query'
-import { Post, ReactionType, reactToPost, toggleFavoritePost, patchPostInCaches } from '@famlin/api-client'
+import {
+  Post,
+  ReactionType,
+  reactToPost,
+  toggleFavoritePost,
+  patchPostInCaches,
+  updatePost,
+  deletePost,
+  uploadFiles,
+} from '@famlin/api-client'
 
 // One optimistic-update recipe for a post's reaction, shared by PostCard's
 // own reaction button/picker (useReactToPost below) and the feed's `l`
@@ -78,4 +87,62 @@ export function useQuickPostActions() {
   }
 
   return { likeToggle, favoriteToggle }
+}
+
+export interface EditPostInput {
+  content: string
+  // The photos kept from the post, in order — the edit's complete list
+  // before `files` are appended (the server replaces the stored list).
+  uploadedAssetUrls: string[]
+  files?: File[]
+}
+
+// Editing a post (author, or an admin moderating — the server decides). The
+// response carries `people: []` (the server doesn't make an edit wait on the
+// media provider), so only the edited fields are merged into the cached post
+// rather than replacing it wholesale, then the lists refetch for the rest.
+// `files` are uploaded first and appended to `uploadedAssetUrls` — inside the
+// mutation, so isPending covers the upload too.
+export function useEditPost(post: Post) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ content, uploadedAssetUrls, files = [] }: EditPostInput) => {
+      const uploaded = files.length > 0 ? await uploadFiles(files) : []
+      return updatePost(post.id, { content, uploadedAssetUrls: [...uploadedAssetUrls, ...uploaded] })
+    },
+    onSuccess: (updated) => {
+      patchPostInCaches(queryClient, post.id, (p) => ({
+        ...p,
+        content: updated.content,
+        uploadedAssetUrls: updated.uploadedAssetUrls,
+        editedAt: updated.editedAt,
+      }))
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['favorites'] })
+      queryClient.invalidateQueries({ queryKey: ['post', post.id] })
+    },
+  })
+}
+
+// Deleting is permanent (hard delete, no restore), so callers confirm first.
+// The post is dropped from every cached list straight away so the feed
+// underneath the detail modal doesn't flash it back in before refetching;
+// its own ['post', id] entry is left for the caller to navigate away from
+// (refetching it now would just 404 under the still-open view).
+export function useDeletePost(post: Post) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => deletePost(post.id),
+    onSuccess: () => {
+      type Pages = { pages: { items: Post[] }[] }
+      const dropPost = (old: Pages | undefined) =>
+        old?.pages
+          ? { ...old, pages: old.pages.map((page) => ({ ...page, items: page.items.filter((p) => p.id !== post.id) })) }
+          : old
+      queryClient.setQueriesData<Pages>({ queryKey: ['posts'] }, dropPost)
+      queryClient.setQueriesData<Pages>({ queryKey: ['favorites'] }, dropPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['favorites'] })
+    },
+  })
 }

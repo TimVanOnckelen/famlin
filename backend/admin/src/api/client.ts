@@ -331,6 +331,11 @@ export const api = {
 
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
 
+  // Admins may edit any post they can see (never a circle they aren't in) —
+  // text only from here; the member-facing apps also edit photos.
+  updatePostContent: (id: string, content: string) =>
+    request<void>(`/api/posts/${id}`, { method: 'PATCH', body: { content } }),
+
   deleteComment: (id: string) => request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
 
   retriggerPostPush: (id: string) =>

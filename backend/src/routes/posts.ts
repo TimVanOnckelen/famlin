@@ -459,15 +459,26 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (post.authorId !== request.user!.id) {
+    const isAuthor = post.authorId === request.user!.id
+    if (!isAuthor && !request.user!.isAdmin) {
       return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
-    // Editing writes into the group, so it requires *current* membership — a
-    // removed member's old posts stay visible but they can't keep editing them.
-    if (await requireGroupMember(request, reply, post.groupId)) return
+    if (isAuthor) {
+      // Editing writes into the group, so it requires *current* membership — a
+      // removed member's old posts stay visible but they can't keep editing them.
+      if (await requireGroupMember(request, reply, post.groupId)) return
+    } else if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
+      // An admin moderating someone else's post gets the same reach as admin
+      // delete below: any group, but never a circle they aren't in (404, so
+      // the circle's existence can't be probed).
+      return reply.status(404).send({ error: t('errors.postNotFound') })
+    }
 
-    if (post.crossPostId) {
+    // Only the author's own edit fans out to cross-posted siblings. An admin
+    // moderating stays single-row and group-scoped, exactly like admin delete
+    // below, so it falls through to the plain single-post update.
+    if (post.crossPostId && isAuthor) {
       // Cross-posted: every sibling shares identical content, so an edit
       // applies to all of them at once. A linked-album asset in the edit
       // must be authorized against every sibling's group, not just this

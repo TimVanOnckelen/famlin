@@ -82,7 +82,17 @@ export function PostDetailPage({
       </div>
     )
   } else {
-    body = <PostCard post={post} showGroup showComments onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+    // Once deleted there's no post left to show, so land on the feed.
+    body = (
+      <PostCard
+        post={post}
+        showGroup
+        showComments
+        onOpenTrip={onOpenTrip}
+        onOpenAlbum={onOpenAlbum}
+        onDeleted={onOpenFeed ?? onBack}
+      />
+    )
   }
 
   return (

@@ -387,6 +387,22 @@ describe('admin access is management-only', () => {
     expect(res.statusCode).toBe(404)
   })
 
+  it('does not let an admin outside the circle edit or delete the post', async () => {
+    const patch = await app.inject({
+      method: 'PATCH',
+      url: `/api/posts/${circlePostId}`,
+      headers: authHeader(admin),
+      payload: { content: 'moderated' },
+    })
+    expect(patch.statusCode).toBe(404)
+
+    const del = await app.inject({ method: 'DELETE', url: `/api/posts/${circlePostId}`, headers: authHeader(admin) })
+    expect(del.statusCode).toBe(404)
+
+    const row = await prisma.post.findUnique({ where: { id: circlePostId } })
+    expect(row?.content).toBe('Secret circle news')
+  })
+
   it('refuses to delete a non-empty circle without explicit confirmation', async () => {
     const res = await app.inject({
       method: 'DELETE',

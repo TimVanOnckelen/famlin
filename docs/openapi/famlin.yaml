@@ -1010,11 +1010,14 @@ paths:
     patch:
       operationId: updatePost
       tags: [Posts]
-      summary: Edit your own post
+      summary: Edit a post
       description: |
-        Only the author can edit, and only while still a member of the post's
-        group. Sets `editedAt`. Pass `null` for the location fields to clear
-        the location.
+        The author can edit while still a member of the post's group; on a
+        cross-posted post the author's edit applies to every copy. An admin
+        can edit anyone's post (moderation) — only that one copy, never its
+        cross-posted siblings, and never a post in a circle the admin isn't
+        in (`404`, like reading it). Sets `editedAt`. Pass `null` for the
+        location fields to clear the location.
       parameters:
         - name: id
           in: path
@@ -1042,6 +1045,16 @@ paths:
                 locationName:
                   type: string
                   nullable: true
+                uploadedAssetUrls:
+                  type: array
+                  maxItems: 20
+                  items: { type: string }
+                  description: |
+                    The post's complete photo/video list after the edit — it
+                    replaces the stored list wholesale, which is how an edit
+                    both adds and removes photos. Same path shapes as create
+                    (`/uploads/...` from `POST /api/uploads`, or a linked
+                    album's media path). Omit it to leave the photos alone.
       responses:
         '200':
           description: The updated post
@@ -1054,7 +1067,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not the author, or no longer a member of the group
+          description: Not the author or an admin, or an author no longer in the group
           content:
             application/json:
               schema:
@@ -1067,7 +1080,9 @@ paths:
       summary: Delete a post
       description: |
         Permanent — cascades to the post's comments, reactions, and favorites.
-        **There is no undo.** Only the author (or an admin) can delete.
+        **There is no undo.** Only the author (or an admin) can delete. The
+        author's delete removes every cross-posted copy; an admin's removes
+        only that one copy, and a post in a circle the admin isn't in `404`s.
       parameters:
         - name: id
           in: path

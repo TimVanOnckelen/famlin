@@ -266,7 +266,9 @@
     "storyCircle": "Circle",
     "viewsTooltip": "Views",
     "reactionsTooltip": "Reactions",
-    "storyPhoto": "Story photo"
+    "storyPhoto": "Story photo",
+    "editPostTitle": "Edit {{name}}'s post",
+    "editPostHint": "Changes only this post's text — the post is marked as edited. Photos can be changed from the Famlin app."
   },
   "pushLog": {
     "title": "Push notification log",

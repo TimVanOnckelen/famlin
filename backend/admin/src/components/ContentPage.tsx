@@ -52,6 +52,67 @@ function StoryThumb({ imageUrl }: { imageUrl: string }) {
   )
 }
 
+// Text-only moderation edit (fixing a typo, removing something hurtful) —
+// photos are edited from the member-facing apps. Edits only this one post,
+// never a cross-posted copy in another family (moderation is per-group).
+function EditPostDialog({
+  post,
+  onClose,
+  onSaved,
+}: {
+  post: ModerationPost
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useTranslation()
+  const [content, setContent] = useState(post.content ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await api.updatePostContent(post.id, content.trim())
+      onSaved()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('common.error'))
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3>{t('content.editPostTitle', { name: post.author.name })}</h3>
+        <form onSubmit={submit}>
+          <label>
+            {t('content.table.content')}
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={6}
+              maxLength={5000}
+              autoFocus
+            />
+          </label>
+          <p className="hint">{t('content.editPostHint')}</p>
+          {error && <div className="error">{error}</div>}
+          <div className="modal-actions">
+            <button type="button" className="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" disabled={saving || !content.trim()}>
+              {t('common.save')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function DateCell({ iso }: { iso: string }) {
   const date = new Date(iso)
   return (
@@ -73,6 +134,7 @@ export function ContentPage() {
   const [posts, setPosts] = useState<ModerationPost[]>([])
   const [comments, setComments] = useState<ModerationComment[]>([])
   const [stories, setStories] = useState<ModerationStory[]>([])
+  const [editingPost, setEditingPost] = useState<ModerationPost | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
@@ -320,6 +382,14 @@ export function ContentPage() {
                           <Icon name="bell" size={15} />
                         </button>
                         <button
+                          className="icon-button"
+                          title={t('common.edit')}
+                          aria-label={t('common.edit')}
+                          onClick={() => setEditingPost(post)}
+                        >
+                          <Icon name="edit" size={15} />
+                        </button>
+                        <button
                           className="icon-button danger"
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
@@ -458,6 +528,16 @@ export function ContentPage() {
           </div>
         )}
       </div>
+      {editingPost && (
+        <EditPostDialog
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onSaved={() => {
+            setEditingPost(null)
+            load()
+          }}
+        />
+      )}
     </>
   )
 }

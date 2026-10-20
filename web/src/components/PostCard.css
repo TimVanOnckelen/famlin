@@ -518,6 +518,24 @@ a.post-time:focus-visible {
   color: var(--fam-primary);
 }
 
+.post-manage-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.post-delete-btn:hover {
+  background: var(--fam-danger-bg);
+  color: var(--fam-danger);
+}
+
+.post-manage-error {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fam-danger);
+}
+
 .favorite-btn-active {
   color: var(--fam-primary);
 }

@@ -116,6 +116,12 @@
     "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
     "audienceEveryone": "Iedereen"
   },
+  "editPost": {
+    "title": "Bericht bewerken",
+    "contentLabel": "Tekst van het bericht",
+    "save": "Opslaan",
+    "failed": "Je wijzigingen konden niet worden opgeslagen. Probeer het opnieuw."
+  },
   "profile": {
     "title": "Profiel",
     "changePhoto": "Profielfoto wijzigen",
@@ -359,7 +365,11 @@
     "notFound": "Dit bericht bestaat niet, of het is niet met jou gedeeld.",
     "loadFailed": "Dit bericht kon niet geladen worden.",
     "prevPhoto": "Vorige foto",
-    "nextPhoto": "Volgende foto"
+    "nextPhoto": "Volgende foto",
+    "editPost": "Bericht bewerken",
+    "deletePost": "Bericht verwijderen",
+    "deleteConfirm": "Dit bericht verwijderen? Dit kan niet ongedaan worden gemaakt — ook de reacties en emoji-reacties worden verwijderd.",
+    "deleteFailed": "Het bericht kon niet worden verwijderd. Probeer het opnieuw."
   },
   "a11y": {
     "skipToContent": "Ga naar de inhoud"
