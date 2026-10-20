@@ -116,6 +116,12 @@
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
     "audienceEveryone": "所有成员"
   },
+  "editPost": {
+    "title": "编辑帖子",
+    "contentLabel": "帖子内容",
+    "save": "保存",
+    "failed": "无法保存你的更改，请重试。"
+  },
   "profile": {
     "title": "我的",
     "changePhoto": "更换头像",
@@ -359,7 +365,11 @@
     "notFound": "此帖子不存在，或未与你分享。",
     "loadFailed": "无法加载此帖子。",
     "prevPhoto": "上一张照片",
-    "nextPhoto": "下一张照片"
+    "nextPhoto": "下一张照片",
+    "editPost": "编辑帖子",
+    "deletePost": "删除帖子",
+    "deleteConfirm": "要删除这条帖子吗？此操作无法撤销，帖子的评论和回应也会一并删除。",
+    "deleteFailed": "无法删除帖子，请重试。"
   },
   "a11y": {
     "skipToContent": "跳转到主要内容"

@@ -265,7 +265,9 @@
     "storyCircle": "Kring",
     "viewsTooltip": "Weergaven",
     "reactionsTooltip": "Reacties",
-    "storyPhoto": "Foto van het verhaal"
+    "storyPhoto": "Foto van het verhaal",
+    "editPostTitle": "Bericht van {{name}} bewerken",
+    "editPostHint": "Wijzigt alleen de tekst van dit bericht — het bericht wordt als bewerkt gemarkeerd. Foto's kun je in de Famlin-app aanpassen."
   },
   "pushLog": {
     "title": "Pushmeldingenlogboek",

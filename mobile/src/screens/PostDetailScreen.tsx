@@ -389,7 +389,9 @@ export function PostDetailScreen() {
     })
   }
 
-  const isOwnPost = post.authorId === user?.id
+  // Authors manage their own posts; admins may edit or delete anyone's (the
+  // server enforces both, plus the circle boundary).
+  const canManagePost = post.authorId === user?.id || !!user?.isAdmin
 
   function startEditPost() {
     setEditPostContent(post!.content || '')
@@ -496,7 +498,7 @@ export function PostDetailScreen() {
                       {post.editedAt ? ` · ${t('common.edited')}` : ''}
                     </Text>
                   </View>
-                  {isOwnPost && !isEditingPost && (
+                  {canManagePost && !isEditingPost && (
                     <TouchableOpacity
                       onPress={openPostMenu}
                       style={styles.postMenuButton}

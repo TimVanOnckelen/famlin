@@ -234,6 +234,46 @@ describe('posts routes', () => {
 
       expect(res.statusCode).toBe(200)
     })
+
+    it("lets an admin edit another member's post text and photos", async () => {
+      const author = await createUser()
+      const admin = await createUser({ isAdmin: true })
+      const group = await createGroupWithMember(author)
+      await addMember(group.id, admin.id)
+      const [keep, drop] = [`/uploads/${randomUUID()}.jpg`, `/uploads/${randomUUID()}.jpg`]
+      const post = await createPost({ groupId: group.id, authorId: author.id, uploadedAssetUrls: [keep, drop] })
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(admin),
+        payload: { content: 'typo fixed', uploadedAssetUrls: [keep] },
+      })
+
+      expect(res.statusCode).toBe(200)
+      expect(res.json().content).toBe('typo fixed')
+      expect(res.json().uploadedAssetUrls).toEqual([keep])
+      expect(res.json().editedAt).toBeTruthy()
+      // Still the author's post — moderation never reassigns it.
+      expect(res.json().author.id).toBe(author.id)
+    })
+
+    it("lets an admin edit a post in a group they aren't a member of, like admin delete", async () => {
+      const author = await createUser()
+      const admin = await createUser({ isAdmin: true })
+      const group = await createGroupWithMember(author)
+      const post = await createPost({ groupId: group.id, authorId: author.id })
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/posts/${post.id}`,
+        headers: authHeader(admin),
+        payload: { content: 'moderated' },
+      })
+
+      expect(res.statusCode).toBe(200)
+      expect(res.json().content).toBe('moderated')
+    })
   })
 
   describe('soft delete', () => {

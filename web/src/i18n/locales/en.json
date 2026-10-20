@@ -116,6 +116,12 @@
     "audienceHint": "Circles let you share with part of the family. Only people in the circle will see this post.",
     "audienceEveryone": "Everyone"
   },
+  "editPost": {
+    "title": "Edit post",
+    "contentLabel": "Post text",
+    "save": "Save",
+    "failed": "Your changes couldn't be saved. Try again."
+  },
   "profile": {
     "title": "Profile",
     "changePhoto": "Change profile photo",
@@ -359,7 +365,11 @@
     "notFound": "This post doesn't exist, or it isn't shared with you.",
     "loadFailed": "This post couldn't be loaded.",
     "prevPhoto": "Previous photo",
-    "nextPhoto": "Next photo"
+    "nextPhoto": "Next photo",
+    "editPost": "Edit post",
+    "deletePost": "Delete post",
+    "deleteConfirm": "Delete this post? This can't be undone — its comments and reactions are removed too.",
+    "deleteFailed": "The post couldn't be deleted. Try again."
   },
   "a11y": {
     "skipToContent": "Skip to content"

@@ -265,7 +265,9 @@
     "storyCircle": "圈子",
     "viewsTooltip": "浏览",
     "reactionsTooltip": "回应",
-    "storyPhoto": "限时动态照片"
+    "storyPhoto": "限时动态照片",
+    "editPostTitle": "编辑 {{name}} 的帖子",
+    "editPostHint": "仅修改此帖子的文字，帖子会被标记为已编辑。照片可以在 Famlin 应用中修改。"
   },
   "pushLog": {
     "title": "推送通知日志",

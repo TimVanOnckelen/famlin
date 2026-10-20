@@ -160,7 +160,14 @@ export function PostDetailModal({
 
         {post && (
           <div className={`post-detail-modal-body${hasMedia ? ' post-detail-modal-body-with-media' : ''}`}>
-            <PostCard post={post} showGroup showComments onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+            <PostCard
+              post={post}
+              showGroup
+              showComments
+              onOpenTrip={onOpenTrip}
+              onOpenAlbum={onOpenAlbum}
+              onDeleted={onClose}
+            />
           </div>
         )}
       </div>
