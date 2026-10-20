@@ -99,7 +99,8 @@
     "cannotReplyToOwnStory": "You can't reply to your own story",
     "unknownBrandPreset": "Unknown color preset",
     "invalidLogo": "The logo must be a PNG, JPEG or WebP image",
-    "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)"
+    "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)",
+    "backupInProgress": "A backup is already running."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -159,5 +160,13 @@
     "status": "Server is running",
     "title": "Welcome to Famlin",
     "body": "This is your family's private Famlin server. Open the Famlin app on your phone to sign in, or head to /admin to manage the server."
+  },
+  "systemAlerts": {
+    "emailSubject": "Famlin needs your attention",
+    "emailBody": "Your Famlin server reported a problem:\n\n{{alerts}}\n\nOpen the admin panel's System status page for details. You'll get at most one email a day per problem while it lasts.",
+    "backup_failed": "The last scheduled backup failed.",
+    "backup_stale": "No successful backup in {{days}} days.",
+    "disk_low_uploads": "The uploads volume is almost full ({{free}} GiB free).",
+    "disk_low_backups": "The backups volume is almost full ({{free}} GiB free)."
   }
 }

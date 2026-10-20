@@ -36,7 +36,8 @@
     "serverSettings": "Serverinstellingen",
     "logout": "Uitloggen",
     "language": "Taal",
-    "version": "Versie {{version}}"
+    "version": "Versie {{version}}",
+    "systemStatus": "Systeemstatus"
   },
   "login": {
     "title": "Famlin Admin",
@@ -360,7 +361,18 @@
     "localMediaTesting": "Controleren...",
     "localMediaTestOk": "Pad bestaat en is leesbaar.",
     "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
-    "localMediaTestNotADirectory": "Pad bestaat maar is geen map."
+    "localMediaTestNotADirectory": "Pad bestaat maar is geen map.",
+    "backups": "Back-ups",
+    "backupsDesc": "Geplande back-ups van de database en alle geüploade foto's en video's, weggeschreven naar het back-upvolume op deze server.",
+    "backupEnabled": "Geplande back-ups",
+    "backupEnabledHint": "Staat uit tot je het aanzet. Elke run maakt een databasedump en werkt één incrementele kopie van de uploads bij.",
+    "backupSchedule": "Planning",
+    "backupScheduleDaily": "Dagelijks",
+    "backupScheduleWeekly": "Wekelijks (zondag)",
+    "backupHour": "Tijdstip (servertijd)",
+    "backupRetention": "Te bewaren databasedumps",
+    "backupHint": "Uploads worden incrementeel gespiegeld in plaats van telkens volledig gekopieerd. Bestanden die uit Famlin verwijderd worden, blijven nog 30 dagen in de spiegel staan. Beheerders krijgen een e-mail als een back-up mislukt of als er al twee planningsintervallen geen back-up gelukt is (vereist SMTP).",
+    "backupStatusLink": "Bekijk de back-upstatus en start nu een back-up"
   },
   "media": {
     "peopleMapping": {
@@ -460,6 +472,96 @@
       "amber": "Amber",
       "forest": "Bos",
       "slate": "Leisteen"
+    }
+  },
+  "systemStatus": {
+    "title": "Systeemstatus",
+    "refresh": "Vernieuwen",
+    "ok": "OK",
+    "failed": "Mislukt",
+    "running": "Bezig",
+    "never": "Nog nooit uitgevoerd",
+    "alerts": {
+      "backup_failed": "De laatste back-up is mislukt.",
+      "backup_stale": "Al {{days}} dagen geen geslaagde back-up.",
+      "disk_low_uploads": "Het uploadvolume is bijna vol ({{free}} GiB vrij).",
+      "disk_low_backups": "Het back-upvolume is bijna vol ({{free}} GiB vrij).",
+      "viewStatus": "Bekijk systeemstatus"
+    },
+    "backups": {
+      "title": "Back-ups",
+      "schedule": "Planning",
+      "scheduleValue": {
+        "daily_one": "Dagelijks om {{time}}, {{count}} dump bewaren",
+        "daily_other": "Dagelijks om {{time}}, {{count}} dumps bewaren",
+        "weekly_one": "Zondag om {{time}}, {{count}} dump bewaren",
+        "weekly_other": "Zondag om {{time}}, {{count}} dumps bewaren"
+      },
+      "enableInSettings": "Inschakelen in Serverinstellingen",
+      "lastBackup": "Laatste back-up",
+      "size": "Grootte",
+      "sizeValue": "Dump {{dump}} · uploadspiegel {{mirror}}",
+      "nextRun": "Volgende geplande back-up",
+      "location": "Locatie",
+      "notMounted": "De back-upmap is geen gekoppeld volume, dus back-ups gaan verloren als de container opnieuw wordt aangemaakt. Voeg het famlin-backups-volume toe aan je docker-compose.yml.",
+      "dumps_one": "{{count}} databasedump",
+      "dumps_other": "{{count}} databasedumps",
+      "runNow": "Nu back-up maken"
+    },
+    "disk": {
+      "title": "Schijfruimte",
+      "uploads": "Uploads",
+      "backups": "Back-ups",
+      "free": "{{free}} vrij van {{total}}",
+      "low": "Laag",
+      "unavailable": "Niet beschikbaar",
+      "sameVolume": "Back-ups staan op hetzelfde volume als de uploads. Een aparte schijf of NAS-share beschermt ertegen dat je beide tegelijk verliest."
+    },
+    "integrations": {
+      "title": "Integraties",
+      "smtp": "E-mail (SMTP)",
+      "oidc": "Single sign-on (OIDC)",
+      "immich": "Immich",
+      "localMedia": "Lokale mediamap",
+      "notConfigured": "Niet ingesteld",
+      "errors": {
+        "unreachable": "Onbereikbaar",
+        "unauthorized": "Inloggegevens geweigerd",
+        "not_found": "Map niet gevonden",
+        "not_a_directory": "Geen map",
+        "invalid_response": "Ongeldig antwoord"
+      }
+    },
+    "push": {
+      "title": "Pushmeldingen",
+      "last24h": "Afgelopen 24 uur",
+      "last7d": "Afgelopen 7 dagen",
+      "summary": "{{delivered}} afgeleverd · {{failed}} mislukt ({{rate}})",
+      "unhealthy": "Meer dan 20% van de pushmeldingen is de afgelopen 24 uur mislukt.",
+      "viewLog": "Bekijk het pushmeldingenlogboek"
+    },
+    "jobs": {
+      "title": "Achtergrondtaken",
+      "job": "Taak",
+      "lastRun": "Laatst uitgevoerd",
+      "result": "Resultaat",
+      "lastSuccess": "Laatst geslaagd",
+      "names": {
+        "onThisDay": "Meldingen \"Op deze dag\"",
+        "newAssets": "Nieuwe albumfoto's",
+        "expireStories": "Verhalen laten verlopen",
+        "backup": "Back-up",
+        "systemAlerts": "Waarschuwingscontrole"
+      }
+    },
+    "migrations": {
+      "title": "Databasemigraties",
+      "latest": "Laatst toegepast",
+      "applied": "Toegepast",
+      "pending": "In afwachting",
+      "upToDate": "Up-to-date",
+      "unknown": "Onbekend",
+      "failed": "Mislukte migraties vragen aandacht: {{names}}"
     }
   }
 }

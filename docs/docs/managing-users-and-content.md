@@ -56,6 +56,19 @@ There's no bulk delete action.
 
 The **Push notification log** page lists every push-notification send attempt — both automatic (a new post, comment, reaction, ...) and manually resent from the Content page — newest first. Each row shows when it was sent, the notification type, which post it was for (if any), how many people were eligible, how many devices were actually reached, how many failed, and who triggered it ("System" for automatic sends, otherwise the admin who clicked resend).
 
+## System status
+
+The **System status** page gives you one place to check that the server is healthy:
+
+- **Backups**: whether [scheduled backups](./maintenance#scheduled-backups) are on, the last backup's time, result and size, the next scheduled run, the stored database dumps, and a **Run backup now** button. It warns you when the backups folder isn't a mounted volume, because backups there wouldn't survive the container being recreated.
+- **Disk space**: free space on the uploads volume and on the backups volume (shown once if they're the same disk). A volume counts as low below 1 GiB free or below 5% free.
+- **Integrations**: whether SMTP, OIDC sign-in, Immich and the local media folder are reachable right now. Each check is the same connection test Server settings uses; ones you haven't set up show "Not configured".
+- **Push notifications**: delivered and failed sends over the last 24 hours and 7 days. More than 20% failures over the last day is flagged; the [push notification log](#push-notification-log) has the details.
+- **Background jobs**: when each scheduled job (On this day notifications, new album photos, story expiry, backups, the alert check) last ran, whether it succeeded, and its error if it didn't.
+- **Database migrations**: the latest applied migration, and any that are pending or failed.
+
+**Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Server settings → Notifications); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
+
 ## Data export
 
 The **Server settings** page's general section has a **Data export** card with a single **Download export** button. It downloads a zip containing:
@@ -71,7 +84,7 @@ It deliberately does **not** include server configuration or secrets — SMTP se
 
 It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
-There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.
+The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 
 ### Members can export their own data
 

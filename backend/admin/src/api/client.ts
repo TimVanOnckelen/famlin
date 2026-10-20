@@ -23,6 +23,12 @@ import {
   Circle,
   AdminBranding,
   DerivedBrand,
+  SystemStatus,
+  IntegrationsStatus,
+  IntegrationStatus,
+  ActiveAlert,
+  DiskUsage,
+  JobStatus,
 } from '../types'
 
 export type {
@@ -49,6 +55,12 @@ export type {
   Circle,
   AdminBranding,
   DerivedBrand,
+  SystemStatus,
+  IntegrationsStatus,
+  IntegrationStatus,
+  ActiveAlert,
+  DiskUsage,
+  JobStatus,
 }
 
 export class ApiError extends Error {
@@ -333,6 +345,14 @@ export const api = {
   },
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
+
+  getSystemStatus: () => request<SystemStatus>('/api/admin/status'),
+
+  getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
+
+  getSystemAlerts: () => request<{ alerts: ActiveAlert[] }>('/api/admin/status/alerts'),
+
+  runBackup: () => request<{ started: true }>('/api/admin/backups/run', { method: 'POST' }),
 
   getBranding: () => request<AdminBranding>('/api/admin/branding'),
 

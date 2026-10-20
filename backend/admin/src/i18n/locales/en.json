@@ -36,7 +36,8 @@
     "serverSettings": "Server settings",
     "logout": "Log out",
     "language": "Language",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "systemStatus": "System status"
   },
   "login": {
     "title": "Famlin Admin",
@@ -360,7 +361,18 @@
     "localMediaTesting": "Checking...",
     "localMediaTestOk": "Path exists and is readable.",
     "localMediaTestNotFound": "Path not found or not readable from the server.",
-    "localMediaTestNotADirectory": "Path exists but is not a directory."
+    "localMediaTestNotADirectory": "Path exists but is not a directory.",
+    "backups": "Backups",
+    "backupsDesc": "Scheduled backups of the database and every uploaded photo and video, written to the backups volume on this server.",
+    "backupEnabled": "Scheduled backups",
+    "backupEnabledHint": "Off until you turn it on. Each run makes a database dump and updates one incremental copy of the uploads.",
+    "backupSchedule": "Schedule",
+    "backupScheduleDaily": "Daily",
+    "backupScheduleWeekly": "Weekly (Sundays)",
+    "backupHour": "Time (server time)",
+    "backupRetention": "Database dumps to keep",
+    "backupHint": "Uploads are mirrored incrementally rather than copied each time. Files deleted from Famlin stay in the mirror for 30 days before they are removed. Admins get an email if a backup fails or none has succeeded for twice the schedule interval (needs SMTP).",
+    "backupStatusLink": "See backup status and run a backup now"
   },
   "media": {
     "peopleMapping": {
@@ -460,6 +472,96 @@
       "amber": "Amber",
       "forest": "Forest",
       "slate": "Slate"
+    }
+  },
+  "systemStatus": {
+    "title": "System status",
+    "refresh": "Refresh",
+    "ok": "OK",
+    "failed": "Failed",
+    "running": "Running",
+    "never": "Never run",
+    "alerts": {
+      "backup_failed": "The last backup failed.",
+      "backup_stale": "No successful backup in {{days}} days.",
+      "disk_low_uploads": "The uploads volume is almost full ({{free}} GiB free).",
+      "disk_low_backups": "The backups volume is almost full ({{free}} GiB free).",
+      "viewStatus": "View system status"
+    },
+    "backups": {
+      "title": "Backups",
+      "schedule": "Schedule",
+      "scheduleValue": {
+        "daily_one": "Daily at {{time}}, keeping {{count}} dump",
+        "daily_other": "Daily at {{time}}, keeping {{count}} dumps",
+        "weekly_one": "Sundays at {{time}}, keeping {{count}} dump",
+        "weekly_other": "Sundays at {{time}}, keeping {{count}} dumps"
+      },
+      "enableInSettings": "Enable in Server settings",
+      "lastBackup": "Last backup",
+      "size": "Size",
+      "sizeValue": "Dump {{dump}} · uploads mirror {{mirror}}",
+      "nextRun": "Next scheduled backup",
+      "location": "Location",
+      "notMounted": "The backups folder isn't a mounted volume, so backups are lost when the container is recreated. Add the famlin-backups volume to your docker-compose.yml.",
+      "dumps_one": "{{count}} database dump",
+      "dumps_other": "{{count}} database dumps",
+      "runNow": "Run backup now"
+    },
+    "disk": {
+      "title": "Disk space",
+      "uploads": "Uploads",
+      "backups": "Backups",
+      "free": "{{free}} free of {{total}}",
+      "low": "Low",
+      "unavailable": "Not available",
+      "sameVolume": "Backups are on the same volume as the uploads. A separate disk or NAS share protects against losing both at once."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "smtp": "Email (SMTP)",
+      "oidc": "Single sign-on (OIDC)",
+      "immich": "Immich",
+      "localMedia": "Local media folder",
+      "notConfigured": "Not configured",
+      "errors": {
+        "unreachable": "Unreachable",
+        "unauthorized": "Rejected credentials",
+        "not_found": "Folder not found",
+        "not_a_directory": "Not a folder",
+        "invalid_response": "Invalid response"
+      }
+    },
+    "push": {
+      "title": "Push notifications",
+      "last24h": "Last 24 hours",
+      "last7d": "Last 7 days",
+      "summary": "{{delivered}} delivered · {{failed}} failed ({{rate}})",
+      "unhealthy": "More than 20% of push notifications failed in the last 24 hours.",
+      "viewLog": "View push notification log"
+    },
+    "jobs": {
+      "title": "Background jobs",
+      "job": "Job",
+      "lastRun": "Last run",
+      "result": "Result",
+      "lastSuccess": "Last success",
+      "names": {
+        "onThisDay": "On this day notifications",
+        "newAssets": "New album photos",
+        "expireStories": "Expire stories",
+        "backup": "Backup",
+        "systemAlerts": "Alert check"
+      }
+    },
+    "migrations": {
+      "title": "Database migrations",
+      "latest": "Latest applied",
+      "applied": "Applied",
+      "pending": "Pending",
+      "upToDate": "Up to date",
+      "unknown": "Unknown",
+      "failed": "Failed migrations need attention: {{names}}"
     }
   }
 }

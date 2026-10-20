@@ -5,6 +5,7 @@ import { Logo } from './Logo'
 import { User } from '../types'
 import { api } from '../api/client'
 import { LanguageSelector } from './LanguageSelector'
+import { AlertBanner } from './AlertBanner'
 
 interface LayoutProps {
   user: User
@@ -44,6 +45,7 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
           <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
+          <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>
         <div className="user">
@@ -58,7 +60,10 @@ export function Layout({ user, children }: LayoutProps) {
           )}
         </div>
       </aside>
-      <main className="main">{children}</main>
+      <main className="main">
+        <AlertBanner />
+        {children}
+      </main>
     </div>
   )
 }

@@ -70,6 +70,7 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-false}
     volumes:
       - famlin-uploads:/app/uploads
+      - famlin-backups:/app/backups
     ports:
       - "3000:3000"
     healthcheck:
@@ -88,6 +89,7 @@ services:
 volumes:
   famlin-db-data:
   famlin-uploads:
+  famlin-backups:
 ```
 
 This always matches the canonical [`docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml) in the repository root — if the two ever disagree, the repo file is the source of truth.
@@ -96,7 +98,7 @@ This always matches the canonical [`docker-compose.yml`](https://github.com/TimV
 
 Runtime configuration in Famlin is split in two:
 
-- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, and the optional `UPLOADS_DIR`. `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` directly from `.env` to configure the database container and build `DATABASE_URL` for you.
+- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, and the optional `UPLOADS_DIR` and `BACKUPS_DIR`. `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` directly from `.env` to configure the database container and build `DATABASE_URL` for you.
 - **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration).
 
 Create a `.env` file next to `docker-compose.yml`:
@@ -113,6 +115,7 @@ TRUST_PROXY=false
 - `DATABASE_URL` is derived automatically by `docker-compose.yml` from `POSTGRES_PASSWORD` — you don't need to set it yourself unless you're pointing at an external Postgres instance (see [Using an external database](./maintenance#using-an-external-database)), in which case set it directly on the `famlin-backend` service instead of via `.env`.
 - Leave `PORT=3000` as-is unless you have a specific reason to change it; `NODE_ENV=production` is already set in `docker-compose.yml`.
 - `UPLOADS_DIR` — optional; where uploaded photos and videos are stored. Defaults to `uploads` next to the server, which is exactly where the `famlin-uploads` volume mounts, so leave it unset unless you deliberately store media elsewhere (and mount that path into the container). The backend test harness uses it to keep a test run off the real media volume.
+- `BACKUPS_DIR` — optional; where [scheduled backups](./maintenance#scheduled-backups) write their database dumps and uploads mirror. Defaults to `backups` next to the server, which is where the `famlin-backups` volume mounts. To keep backups on another disk or NAS share, bind-mount that folder at `/app/backups` instead of changing this.
 
 ## 3. Start the stack
 

@@ -99,7 +99,8 @@
     "cannotReplyToOwnStory": "不能回复自己的限时动态",
     "unknownBrandPreset": "未知的颜色预设",
     "invalidLogo": "徽标必须是 PNG、JPEG 或 WebP 图片",
-    "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）"
+    "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）",
+    "backupInProgress": "已有备份正在运行。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",
@@ -159,5 +160,13 @@
     "status": "服务器运行正常",
     "title": "欢迎使用 Famlin",
     "body": "这是你们家的私密 Famlin 服务器。请在手机上打开 Famlin 应用登录，或访问 /admin 管理服务器。"
+  },
+  "systemAlerts": {
+    "emailSubject": "Famlin 需要你的关注",
+    "emailBody": "你的 Famlin 服务器报告了一个问题：\n\n{{alerts}}\n\n请在管理面板的“系统状态”页面查看详情。问题持续期间，每个问题每天最多发送一封邮件。",
+    "backup_failed": "上一次计划备份失败。",
+    "backup_stale": "已有 {{days}} 天没有成功的备份。",
+    "disk_low_uploads": "上传卷空间即将用尽（剩余 {{free}} GiB）。",
+    "disk_low_backups": "备份卷空间即将用尽（剩余 {{free}} GiB）。"
   }
 }

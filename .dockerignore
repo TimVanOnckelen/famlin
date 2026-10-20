@@ -24,3 +24,8 @@ website
 design
 graphify-out
 temp
+
+# Runtime data a dev checkout accumulates — family photos, and DB dumps of the
+# whole instance. Never bake them into an image.
+backend/uploads
+backend/backups
