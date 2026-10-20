@@ -5,6 +5,9 @@ import { prisma } from './db.js'
 import { runOnThisDayJob } from './jobs/onThisDay.js'
 import { runNewAssetsJob } from './jobs/newAssets.js'
 import { runExpireStoriesJob } from './jobs/expireStories.js'
+import { recordJobRun } from './services/jobRuns.js'
+import { runScheduledBackupIfDue } from './services/backup/index.js'
+import { runSystemAlertsCheck } from './services/systemAlerts.js'
 
 // Just under docker-compose.yml's stop_grace_period (30s).
 const SHUTDOWN_TIMEOUT_MS = 25_000
@@ -24,23 +27,57 @@ async function start() {
   // Fixed daily time (server-local) rather than an admin-configurable
   // setting — kept simple for an MVP-scale feature.
   const onThisDayTask = cron.schedule('0 8 * * *', () => {
-    runOnThisDayJob().catch((err) => fastify.log.error(err, 'on-this-day job failed'))
+    recordJobRun('onThisDay', () => runOnThisDayJob()).catch((err) => fastify.log.error(err, 'on-this-day job failed'))
   })
 
   // Hourly, offset from the top of the hour so it doesn't compete with other
   // scheduled work — surfaces newly-added assets on MANUAL/AUTO-mode linked
   // albums (see src/jobs/newAssets.ts).
   const newAssetsTask = cron.schedule('15 * * * *', () => {
-    runNewAssetsJob().catch((err) => fastify.log.error(err, 'new-assets job failed'))
+    recordJobRun('newAssets', () => runNewAssetsJob()).catch((err) => fastify.log.error(err, 'new-assets job failed'))
   })
 
   // Every 10 minutes: deletes stories that expired without being pinned,
   // media included (see src/jobs/expireStories.ts). Also run once at boot so
   // a server that was down for a while doesn't keep expired media around
   // until the first tick.
-  const expireStories = () => runExpireStoriesJob().catch((err) => fastify.log.error(err, 'expire-stories job failed'))
+  const expireStories = () =>
+    recordJobRun(
+      'expireStories',
+      () => runExpireStoriesJob(),
+      (deleted) => ({ deleted })
+    ).catch((err) => fastify.log.error(err, 'expire-stories job failed'))
   const expireStoriesTask = cron.schedule('*/10 * * * *', expireStories)
   expireStories()
+
+  // Every hour on the hour: starts the scheduled backup when it's due (opt-in,
+  // admin-configured hour and daily/weekly schedule — see isBackupDue() in
+  // services/backup/index.ts). Checking hourly instead of scheduling the
+  // configured time directly means a settings change applies without
+  // rescheduling anything. The alert check runs right after a backup so a
+  // failure is emailed straight away rather than at the next :45 tick.
+  const backupTask = cron.schedule('0 * * * *', () => {
+    runScheduledBackupIfDue()
+      .then(
+        (result) => result !== null,
+        (err) => {
+          fastify.log.error(err, 'scheduled backup failed')
+          return true
+        }
+      )
+      .then((ran) => (ran ? runSystemAlertsCheck() : undefined))
+      .catch((err) => fastify.log.error(err, 'system alerts check failed'))
+  })
+
+  // Hourly: emails admins about a failed/stale backup or low disk space (at
+  // most once per condition per day — services/systemAlerts.ts).
+  const systemAlertsTask = cron.schedule('45 * * * *', () => {
+    recordJobRun(
+      'systemAlerts',
+      () => runSystemAlertsCheck(),
+      (emailed) => ({ emailed })
+    ).catch((err) => fastify.log.error(err, 'system alerts job failed'))
+  })
 
   // `docker stop` sends SIGTERM, then SIGKILLs after the compose file's
   // stop_grace_period (30s). Drain in-flight requests (an upload mid-write)
@@ -57,7 +94,7 @@ async function start() {
       fastify.log.error('graceful shutdown timed out, forcing exit')
       process.exit(1)
     }, SHUTDOWN_TIMEOUT_MS).unref()
-    for (const task of [onThisDayTask, newAssetsTask, expireStoriesTask]) task.stop()
+    for (const task of [onThisDayTask, newAssetsTask, expireStoriesTask, backupTask, systemAlertsTask]) task.stop()
     try {
       await fastify.close()
       await prisma.$disconnect()

@@ -362,6 +362,10 @@ export const updateServerSettingsBodySchema = z.object({
   // Absolute container-side path for the local-folder media source; empty
   // string = not configured.
   localMediaPath: z.union([z.literal(''), z.string().regex(/^\//, 'Must be an absolute path').max(500)]).optional(),
+  backupEnabled: z.boolean().optional(),
+  backupSchedule: z.enum(['daily', 'weekly']).optional(),
+  backupHour: z.number().int().min(0).max(23).optional(),
+  backupRetention: z.number().int().min(1).max(365).optional(),
 })
 
 // Per-family branding (issue #164, services/branding/). `color` is only

@@ -71,6 +71,84 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  backupEnabled: boolean
+  backupSchedule: BackupSchedule
+  backupHour: number
+  backupRetention: number
+}
+
+export type BackupSchedule = 'daily' | 'weekly'
+
+// GET /api/admin/status (backend/src/services/systemStatus.ts).
+export type AlertCondition = 'backup_failed' | 'backup_stale' | 'disk_low_uploads' | 'disk_low_backups'
+
+export interface ActiveAlert {
+  condition: AlertCondition
+  params: Record<string, string | number>
+}
+
+export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts'
+
+export interface JobStatus {
+  job: JobId
+  lastStartedAt: string | null
+  lastFinishedAt: string | null
+  lastOk: boolean | null
+  lastError: string | null
+  lastDurationMs: number | null
+  lastSuccessAt: string | null
+  lastFailureAt: string | null
+  lastDetails: Record<string, unknown> | null
+  running: boolean
+}
+
+export interface DiskUsage {
+  path: string
+  freeBytes: number
+  totalBytes: number
+  low: boolean
+}
+
+export interface PushWindow {
+  attempts: number
+  delivered: number
+  failed: number
+  failureRate: number | null
+}
+
+export interface SystemStatus {
+  backups: {
+    enabled: boolean
+    schedule: BackupSchedule
+    hour: number
+    retention: number
+    intervalMs: number
+    nextRunAt: string | null
+    running: boolean
+    dir: string
+    dirIsMount: boolean | null
+    dumps: { file: string; bytes: number; createdAt: string }[]
+  }
+  disk: { uploads: DiskUsage | null; backups: DiskUsage | null; sameVolume: boolean }
+  jobs: JobStatus[]
+  migrations: { latestApplied: string | null; appliedCount: number; pending: string[] | null; failed: string[] }
+  push: { last24h: PushWindow; last7d: PushWindow; unhealthy: boolean }
+  alerts: ActiveAlert[]
+}
+
+export type IntegrationError = 'unreachable' | 'unauthorized' | 'not_found' | 'not_a_directory' | 'invalid_response'
+
+export interface IntegrationStatus {
+  configured: boolean
+  ok: boolean | null
+  error?: IntegrationError
+}
+
+export interface IntegrationsStatus {
+  smtp: IntegrationStatus
+  oidc: IntegrationStatus
+  immich: IntegrationStatus
+  localMedia: IntegrationStatus
 }
 
 // A media source members can pick photos from — mirrors the backend's

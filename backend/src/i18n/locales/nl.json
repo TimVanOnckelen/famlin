@@ -99,7 +99,8 @@
     "cannotReplyToOwnStory": "Je kunt niet op je eigen verhaal reageren",
     "unknownBrandPreset": "Onbekende kleurvoorinstelling",
     "invalidLogo": "Het logo moet een PNG-, JPEG- of WebP-afbeelding zijn",
-    "logoTooLarge": "Het logo is te groot (max. 5 MB, 4096×4096 px)"
+    "logoTooLarge": "Het logo is te groot (max. 5 MB, 4096×4096 px)",
+    "backupInProgress": "Er loopt al een back-up."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -159,5 +160,13 @@
     "status": "Server draait",
     "title": "Welkom bij Famlin",
     "body": "Dit is de privéserver van jouw familie voor Famlin. Open de Famlin-app op je telefoon om in te loggen, of ga naar /admin om de server te beheren."
+  },
+  "systemAlerts": {
+    "emailSubject": "Famlin heeft je aandacht nodig",
+    "emailBody": "Je Famlin-server meldt een probleem:\n\n{{alerts}}\n\nOpen de pagina Systeemstatus in het beheerpaneel voor details. Zolang een probleem duurt, krijg je er hooguit één e-mail per dag over.",
+    "backup_failed": "De laatste geplande back-up is mislukt.",
+    "backup_stale": "Al {{days}} dagen geen geslaagde back-up.",
+    "disk_low_uploads": "Het uploadvolume is bijna vol ({{free}} GiB vrij).",
+    "disk_low_backups": "Het back-upvolume is bijna vol ({{free}} GiB vrij)."
   }
 }
