@@ -15,27 +15,27 @@
   },
   "dependencies": {
     "@famlin/api-client": "*",
-    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-query": "^5.104.4",
     "axios": "^1.20.0",
-    "i18next": "^26.4.2",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-i18next": "^17.0.15",
+    "i18next": "^26.5.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-i18next": "^17.1.0",
     "react-router": "^8.4.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
+    "@testing-library/user-event": "^14.6.8",
     "@types/livereload": "^0.9.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "jsdom": "^30.1.2",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
     "livereload": "^0.10.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.3",
-    "vitest": "^5.0.3"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   }
 }
