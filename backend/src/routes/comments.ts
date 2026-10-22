@@ -3,7 +3,8 @@ import { prisma } from '../db.js'
 import { createCommentBodySchema, normalizeCommentAttachments, updateCommentBodySchema } from '../types.js'
 import { emitDomainEvent } from '../events.js'
 import { requireGroupMember } from '../plugins/auth.js'
-import { shapeComment } from '../services/comments.js'
+import { mergedPostComments, shapeComment } from '../services/comments.js'
+import { visibleSiblingPostIds } from '../services/crossPosts.js'
 import { getT } from '../i18n/index.js'
 import { handlerCommentSiblingKey } from '../services/postTypes/registry.js'
 import { canViewPostCircle } from '../services/circles.js'
@@ -29,18 +30,19 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const comments = await prisma.comment.findMany({
-      where: {
-        postId,
-        ...(assetUrl !== undefined ? { assetUrl } : {}),
-      },
-      include: {
+    // A cross-post's thread is merged across the siblings the caller can see
+    // (see services/crossPosts.ts) — each comment still lives on its own
+    // family's copy, but is reported under this postId.
+    const comments = await mergedPostComments(
+      postId,
+      await visibleSiblingPostIds(post, request.user!.id),
+      assetUrl !== undefined ? { assetUrl } : {},
+      {
         author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true } },
         likes: { select: { type: true, userId: true } },
-      },
-      orderBy: { createdAt: 'asc' },
-    })
+      }
+    )
 
     return comments.map((comment) => shapeComment(comment, request.user!.id))
   })
@@ -68,11 +70,27 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     }
 
     let assetUrl = body.assetUrl
+    // Where the comment is stored: this post, except for a reply to a comment
+    // left on another cross-post sibling the caller can see (the merged
+    // thread shows it under this post, see GET above) — the reply then joins
+    // that comment's own family copy, so its thread stays together for the
+    // family it was started in.
+    let target = post
 
     if (body.parentId) {
       const parent = await prisma.comment.findUnique({ where: { id: body.parentId } })
-      if (!parent || parent.postId !== postId) {
+      if (!parent) {
         return reply.status(404).send({ error: t('errors.parentCommentNotFound') })
+      }
+      if (parent.postId !== postId) {
+        const siblingIds = await visibleSiblingPostIds(post, request.user!.id)
+        if (!siblingIds.includes(parent.postId)) {
+          return reply.status(404).send({ error: t('errors.parentCommentNotFound') })
+        }
+        target = await prisma.post.findUniqueOrThrow({
+          where: { id: parent.postId },
+          include: { group: { select: { id: true, name: true } } },
+        })
       }
       // A reply stays attached to whatever the thread it's replying to is
       // pinned to (a specific photo, or the post itself) — the client can't
@@ -89,7 +107,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
 
     const comment = await prisma.comment.create({
       data: {
-        postId,
+        postId: target.id,
         authorId: request.user!.id,
         content: body.content?.trim() ?? '',
         parentId: body.parentId,
@@ -107,17 +125,17 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // A comment's own photos inherit the post's audience: its group, and its
     // circle if it has one — a photo replied onto a circle-private post must
     // not be readable family-wide.
-    await bindAssetsToScope(attachmentUrls, { groupIds: [post.groupId], circleId: post.circleId }, request.user!.id)
+    await bindAssetsToScope(attachmentUrls, { groupIds: [target.groupId], circleId: target.circleId }, request.user!.id)
 
     // Handlers run fire-and-forget (see events.ts) — the notifications
     // subscriber decides who in the thread gets told (and re-validates the
     // client-supplied mention ids against current group membership).
     emitDomainEvent('comment.created', {
       commentId: comment.id,
-      postId: post.id,
-      postAuthorId: post.authorId,
-      groupId: post.groupId,
-      groupName: post.group.name,
+      postId: target.id,
+      postAuthorId: target.authorId,
+      groupId: target.groupId,
+      groupName: target.group.name,
       authorId: request.user!.id,
       authorName: comment.author.name,
       content: comment.content,
@@ -133,7 +151,8 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // hand-built { likeCount: 0, likedByMe: false, myReaction: null,
     // reactions: {} } object it replaces — just routed through the same
     // shapeComment every other comment-returning endpoint uses.
-    return shapeComment(comment, request.user!.id)
+    // Reported under the requested post, like the merged thread it joins.
+    return shapeComment({ ...comment, postId }, request.user!.id)
   })
 
   fastify.patch('/comments/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

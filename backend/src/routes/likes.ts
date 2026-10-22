@@ -4,7 +4,8 @@ import { emitDomainEvent } from '../events.js'
 import { requireGroupMember } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
 import { reactionBodySchema } from '../types.js'
-import { reactionCounts } from '../services/reactions.js'
+import { mergedPostLikes, mergedReactionCounts, reactionCounts } from '../services/reactions.js'
+import { visibleSiblingPostIds } from '../services/crossPosts.js'
 import { isRecordNotFound } from '../utils/prismaErrors.js'
 import { canViewPostCircle } from '../services/circles.js'
 
@@ -13,7 +14,10 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { postId } = request.params as { postId: string }
 
-    const post = await prisma.post.findUnique({ where: { id: postId }, select: { groupId: true, circleId: true } })
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, groupId: true, circleId: true, crossPostId: true },
+    })
 
     if (!post) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
@@ -27,11 +31,9 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const likes = await prisma.like.findMany({
-      where: { postId },
-      select: { type: true, user: { select: { id: true, name: true, avatarUrl: true } } },
-      orderBy: { createdAt: 'desc' },
-    })
+    // A cross-post's reactions are merged across the siblings the caller can
+    // see — the same view post responses give, see mergeCrossPostLikes.
+    const likes = await mergedPostLikes(await visibleSiblingPostIds(post, request.user!.id))
 
     return { items: likes.map((like) => ({ ...like.user, type: like.type })) }
   })
@@ -58,23 +60,32 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    const existing = await prisma.like.findUnique({
-      where: { postId_userId: { postId, userId: request.user!.id } },
+    // For a cross-post, the caller's reaction is whichever one they left on
+    // any sibling they can see (they're shown one merged post, see
+    // mergeCrossPostLikes) — so a tap on this copy removes/switches that
+    // reaction where it lives rather than adding a second one here.
+    const reactionPostIds = await visibleSiblingPostIds(post, request.user!.id)
+    const existing = await prisma.like.findFirst({
+      where: { postId: { in: reactionPostIds }, userId: request.user!.id },
+      orderBy: { createdAt: 'desc' },
     })
 
     let myReaction: string | null
 
     if (existing && existing.type === type) {
-      // Tapping the same reaction again removes it. A concurrent duplicate
-      // tap (double-tap/client retry) may have already deleted this exact
-      // row — P2025 in that case is still the idempotent "removed" outcome
-      // this tap should see, not a 500.
-      try {
-        await prisma.like.delete({ where: { id: existing.id } })
-      } catch (err) {
-        if (!isRecordNotFound(err)) throw err
-      }
+      // Tapping the same reaction again removes it. deleteMany (not delete)
+      // keeps a concurrent duplicate tap (double-tap/client retry) that
+      // already removed it the idempotent "removed" outcome, not a 500.
+      await prisma.like.deleteMany({ where: { postId: { in: reactionPostIds }, userId: request.user!.id } })
       myReaction = null
+    } else if (existing) {
+      // Switching: change it in place (on whichever sibling it was left), so
+      // it stays visible to the group it was left in.
+      await prisma.like.updateMany({
+        where: { postId: { in: reactionPostIds }, userId: request.user!.id },
+        data: { type },
+      })
+      myReaction = type
     } else {
       // No existing reaction, or switching to a different one — both are
       // upsert-shaped. Using upsert (rather than a separate update/create
@@ -104,7 +115,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
       })
     }
 
-    const counts = await reactionCounts({ postId })
+    const counts = await mergedReactionCounts(reactionPostIds)
     return { myReaction, counts }
   })
 
