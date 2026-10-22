@@ -4,7 +4,8 @@ import { emitDomainEvent } from '../events.js'
 import { requireGroupMember } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
 import { reactionBodySchema } from '../types.js'
-import { mergedPostLikes, mergedReactionCounts, reactionCounts, reactionPostIdsFor } from '../services/reactions.js'
+import { mergedPostLikes, mergedReactionCounts, reactionCounts } from '../services/reactions.js'
+import { visibleSiblingPostIds } from '../services/crossPosts.js'
 import { isRecordNotFound } from '../utils/prismaErrors.js'
 import { canViewPostCircle } from '../services/circles.js'
 
@@ -32,7 +33,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
 
     // A cross-post's reactions are merged across the siblings the caller can
     // see — the same view post responses give, see mergeCrossPostLikes.
-    const likes = await mergedPostLikes(await reactionPostIdsFor(post, request.user!.id))
+    const likes = await mergedPostLikes(await visibleSiblingPostIds(post, request.user!.id))
 
     return { items: likes.map((like) => ({ ...like.user, type: like.type })) }
   })
@@ -63,7 +64,7 @@ export default async function likeRoutes(fastify: FastifyInstance) {
     // any sibling they can see (they're shown one merged post, see
     // mergeCrossPostLikes) — so a tap on this copy removes/switches that
     // reaction where it lives rather than adding a second one here.
-    const reactionPostIds = await reactionPostIdsFor(post, request.user!.id)
+    const reactionPostIds = await visibleSiblingPostIds(post, request.user!.id)
     const existing = await prisma.like.findFirst({
       where: { postId: { in: reactionPostIds }, userId: request.user!.id },
       orderBy: { createdAt: 'desc' },

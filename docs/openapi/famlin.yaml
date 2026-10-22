@@ -761,12 +761,13 @@ paths:
         group. For the author it behaves as a single post — editing or
         deleting it edits/deletes every copy — but comments, reactions, and
         favorites stay scoped to each group's own copy, and other members can
-        never tell it was cross-posted. Reactions are *shown* merged, though:
-        a viewer who belongs to several target groups (always the author)
-        sees every copy's reactions combined on whichever copy they open
-        (`likeCount`, `reactions`, `myReaction`, `recentReactors`, and the
-        reactions list), one per person. A member of only one target group
-        sees just that group's reactions. Every target group must be one you
+        never tell it was cross-posted. Reactions and comments are *shown*
+        merged, though: a viewer who belongs to several target groups (always
+        the author) sees every copy's reactions (one per person) and comments
+        combined on whichever copy they open (`likeCount`, `reactions`,
+        `myReaction`, `recentReactors`, `commentCount`, the reactions list and
+        the comment thread). A member of only one target group sees just that
+        group's. Every target group must be one you
         belong to, or the whole request is rejected with no post created.
         Photos sourced from a linked media album (Immich/local) are copied
         server-side into Famlin's own upload storage at post time so every
@@ -1224,6 +1225,12 @@ paths:
       operationId: listComments
       tags: [Comments]
       summary: List a post's comments
+      description: |
+        Oldest first. For a cross-posted post, the thread is merged across
+        every copy in a group the caller belongs to, with each comment
+        reported under the requested `postId` (see `POST /api/posts`). A
+        reply (`parentId`) to a comment from another copy is stored with that
+        copy's thread.
       parameters:
         - name: postId
           in: path

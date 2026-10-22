@@ -126,8 +126,12 @@ describe('cross-posting', () => {
       url: `/api/posts/${postB.id}/comments`,
       headers: authHeader(author),
     })
+    // Stored on A only, but the author belongs to both groups, so both
+    // copies show the merged thread — see the merged-comments test below.
+    expect(await prisma.comment.count({ where: { postId: postB.id } })).toBe(0)
     expect(commentsA.json()).toHaveLength(1)
-    expect(commentsB.json()).toHaveLength(0)
+    expect(commentsB.json()).toHaveLength(1)
+    expect(commentsB.json()[0].postId).toBe(postB.id)
 
     const getA = await app.inject({ method: 'GET', url: `/api/posts/${postA.id}`, headers: authHeader(author) })
     const getB = await app.inject({ method: 'GET', url: `/api/posts/${postB.id}`, headers: authHeader(author) })
@@ -194,6 +198,63 @@ describe('cross-posting', () => {
       headers: authHeader(memberBOnly),
     })
     expect(bOnlyList.json().items.map((r: { id: string }) => r.id)).toEqual([memberBOnly.id])
+  })
+
+  it('merges comments across the siblings a viewer can see, and only those', async () => {
+    const author = await createUser()
+    const memberAOnly = await createUser()
+    const memberBOnly = await createUser()
+    const groupA = await createGroupWithMember(author)
+    const groupB = await createGroupWithMember(author)
+    await addMember(groupA.id, memberAOnly.id)
+    await addMember(groupB.id, memberBOnly.id)
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'merged comments' },
+    })
+    const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, content: 'merged comments' } })
+    const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, content: 'merged comments' } })
+    const comment = (user: Awaited<ReturnType<typeof createUser>>, postId: string, payload: object) =>
+      app.inject({ method: 'POST', url: `/api/posts/${postId}/comments`, headers: authHeader(user), payload })
+    const thread = async (user: Awaited<ReturnType<typeof createUser>>, postId: string) =>
+      (await app.inject({ method: 'GET', url: `/api/posts/${postId}/comments`, headers: authHeader(user) })).json()
+
+    await comment(memberAOnly, postA.id, { content: 'from A' })
+    const fromB = (await comment(memberBOnly, postB.id, { content: 'from B' })).json()
+
+    // The author sees one thread with both families' comments, on either copy.
+    const authorThread = await thread(author, postA.id)
+    expect(authorThread.map((c: { content: string }) => c.content)).toEqual(['from A', 'from B'])
+    expect(authorThread.every((c: { postId: string }) => c.postId === postA.id)).toBe(true)
+    expect(await thread(author, postB.id)).toHaveLength(2)
+    const feed = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) })
+    const [card] = feed.json().items.filter((p: { content: string }) => p.content === 'merged comments')
+    expect(card.commentCount).toBe(2)
+
+    // Replying from copy A to B's comment stores the reply with B's thread,
+    // so B's family sees it and A-only members don't.
+    const reply = await comment(author, postA.id, { content: 'reply', parentId: fromB.id })
+    expect(reply.statusCode).toBe(200)
+    expect(reply.json().postId).toBe(postA.id)
+    expect((await prisma.comment.findUniqueOrThrow({ where: { id: reply.json().id } })).postId).toBe(postB.id)
+    expect((await thread(memberBOnly, postB.id)).map((c: { content: string }) => c.content)).toEqual([
+      'from B',
+      'reply',
+    ])
+    expect((await thread(memberAOnly, postA.id)).map((c: { content: string }) => c.content)).toEqual(['from A'])
+    const aOnlyPost = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postA.id}`,
+      headers: authHeader(memberAOnly),
+    })
+    expect(aOnlyPost.json().commentCount).toBe(1)
+
+    // An A-only member can't reply onto B's comment through copy A.
+    const sneaky = await comment(memberAOnly, postA.id, { content: 'nope', parentId: fromB.id })
+    expect(sneaky.statusCode).toBe(404)
   })
 
   it("toggles the viewer's reaction wherever it lives across siblings", async () => {
@@ -539,5 +600,28 @@ describe('cross-posting', () => {
     expect(res.statusCode).toBe(200)
     const items = res.json().items.filter((p: { content: string }) => p.content === 'duplicate sibling on this day')
     expect(items).toHaveLength(1)
+  })
+})
+
+describe('dedupeHandlerCommentCopies', () => {
+  it("keeps the primary post's copy of a handler comment and re-parents replies to dropped copies", async () => {
+    const { dedupeHandlerCommentCopies } = await import('../src/services/comments.js')
+    const checkin = (id: string, postId: string) => ({
+      id,
+      postId,
+      parentId: null,
+      metadata: { kind: 'trip_checkin', checkinId: 'c1', place: 'Paris', photoUrls: [] },
+    })
+    const result = dedupeHandlerCommentCopies(
+      [
+        checkin('onB', 'B'),
+        checkin('onA', 'A'),
+        { id: 'replyOnB', postId: 'B', parentId: 'onB', metadata: null },
+        { id: 'plain', postId: 'B', parentId: null, metadata: null },
+      ],
+      'A'
+    )
+    expect(result.map((c) => c.id)).toEqual(['onA', 'replyOnB', 'plain'])
+    expect(result.find((c) => c.id === 'replyOnB')!.parentId).toBe('onA')
   })
 })

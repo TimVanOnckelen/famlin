@@ -29,52 +29,6 @@ export function summarizeReactions(likes: { type: ReactionType; userId: string }
   return { counts, myReaction }
 }
 
-// Cross-posting gives every target group its own sibling Post row, and each
-// sibling keeps its own Like rows (a group only ever sees reactions left in
-// it). But a viewer who belongs to several of a cross-post's groups — the
-// author always does — only ever sees ONE sibling in the feed (see
-// dedupeByCrossPostId), while a reaction notification deep-links to whichever
-// sibling was reacted to. Showing per-row reactions made the same post read
-// differently depending on which copy you landed on, so everything a member
-// sees about a post's reactions is merged across the siblings they can see.
-//
-// "Can see" = siblings in groups the viewer is currently a member of, so a
-// member of only one target group gets exactly that copy's reactions and
-// learns nothing about the others (the cross-posting privacy rule). Circle
-// posts can't be cross-posted; the circleId filter is defensive.
-export async function visibleCrossPostSiblingIds(
-  crossPostIds: string[],
-  viewerId: string
-): Promise<Map<string, string[]>> {
-  const byCrossPostId = new Map<string, string[]>()
-  if (crossPostIds.length === 0) return byCrossPostId
-  const siblings = await prisma.post.findMany({
-    where: {
-      crossPostId: { in: crossPostIds },
-      circleId: null,
-      group: { members: { some: { userId: viewerId } } },
-    },
-    select: { id: true, crossPostId: true },
-  })
-  for (const s of siblings) {
-    const list = byCrossPostId.get(s.crossPostId!) ?? []
-    list.push(s.id)
-    byCrossPostId.set(s.crossPostId!, list)
-  }
-  return byCrossPostId
-}
-
-// The post ids whose reactions make up what the viewer sees for this one
-// post: just the post itself, or every sibling of a cross-post they can see.
-export async function reactionPostIdsFor(
-  post: { id: string; crossPostId: string | null },
-  viewerId: string
-): Promise<string[]> {
-  if (!post.crossPostId) return [post.id]
-  const ids = (await visibleCrossPostSiblingIds([post.crossPostId], viewerId)).get(post.crossPostId) ?? []
-  return ids.includes(post.id) ? ids : [post.id, ...ids]
-}
-
 // Reactions are one per user per post, but a member of several sibling
 // groups may have reacted on more than one copy — merged, they count once,
 // with their newest reaction. Expects likes ordered newest-first.
@@ -113,10 +67,11 @@ export async function mergedReactionCounts(postIds: string[]): Promise<Record<st
 }
 
 // Replaces each cross-posted post's own `likes`/`_count.likes` with the
-// merged view across the siblings the viewer can see, so shapePost's
-// reactions/likeCount/myReaction/recentReactors all reflect it. One sibling
-// lookup + one Like query for the whole page; posts that aren't cross-posted
-// (or whose only visible sibling is themselves) are returned untouched.
+// merged view across the siblings the viewer can see (see
+// services/crossPosts.ts), so shapePost's reactions/likeCount/myReaction/
+// recentReactors all reflect it. One Like query for the whole page; posts
+// that aren't cross-posted (or whose only visible sibling is themselves) are
+// returned untouched.
 export async function mergeCrossPostLikes<
   T extends {
     id: string
@@ -124,9 +79,7 @@ export async function mergeCrossPostLikes<
     _count: { comments: number; likes: number }
     likes: { type: ReactionType; userId: string; user: { id: string; name: string; avatarUrl: string | null } }[]
   },
->(posts: T[], viewerId: string): Promise<T[]> {
-  const crossPostIds = [...new Set(posts.map((p) => p.crossPostId).filter((id): id is string => !!id))]
-  const siblingIds = await visibleCrossPostSiblingIds(crossPostIds, viewerId)
+>(posts: T[], siblingIds: Map<string, string[]>): Promise<T[]> {
   const merging = [...siblingIds].filter(([, ids]) => ids.length > 1)
   if (merging.length === 0) return posts
 
