@@ -1,6 +1,6 @@
 import type { ReactionType } from '@prisma/client'
 import { prisma } from '../db.js'
-import { summarizeReactions } from './reactions.js'
+import { mergeCrossPostLikes, summarizeReactions } from './reactions.js'
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js'
 import { getPostTypeHandler } from './postTypes/registry.js'
 
@@ -186,7 +186,8 @@ export async function shapePostsWithPeople<
 ): Promise<
   (ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]
 > {
-  const shaped = posts.map((post) => shapePost(post, userId))
+  const merged = await mergeCrossPostLikes(posts, userId)
+  const shaped = merged.map((post) => shapePost(post, userId))
   const peopleByPostId = await attachPeopleToPosts(shaped)
   const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }))
   await enrichPostTypes(withPeople, userId)

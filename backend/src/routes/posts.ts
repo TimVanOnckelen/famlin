@@ -30,6 +30,7 @@ import {
   postInclude,
 } from '../services/posts.js'
 import { getOnThisDayPosts } from '../services/onThisDay.js'
+import { mergeCrossPostLikes } from '../services/reactions.js'
 import { paginationArgs, paginate } from '../services/pagination.js'
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js'
 import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js'
@@ -528,11 +529,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
         where: { id },
         include: postInclude(request.user!.id),
       })
-      const [shaped] = await attachSharedWithGroups(
-        [shapePost(current!, request.user!.id)],
-        [current!],
-        request.user!.id
-      )
+      const [merged] = await mergeCrossPostLikes([current!], request.user!.id)
+      const [shaped] = await attachSharedWithGroups([shapePost(merged, request.user!.id)], [current!], request.user!.id)
       // Same reasoning as the non-cross-post branch below — don't make an
       // edit wait on Immich.
       return { ...shaped, people: [] }
@@ -576,7 +574,8 @@ export default async function postRoutes(fastify: FastifyInstance) {
     }
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.
-    return { ...shapePost(updated, request.user!.id), people: [] }
+    const [merged] = await mergeCrossPostLikes([updated], request.user!.id)
+    return { ...shapePost(merged, request.user!.id), people: [] }
   })
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

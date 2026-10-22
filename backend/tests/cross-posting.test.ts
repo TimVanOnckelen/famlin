@@ -89,7 +89,7 @@ describe('cross-posting', () => {
     expect(row?.crossPostId).toBeNull()
   })
 
-  it('keeps comments and likes isolated per sibling', async () => {
+  it('keeps comments and likes stored per sibling', async () => {
     const author = await createUser()
     const groupA = await createGroupWithMember(author)
     const groupB = await createGroupWithMember(author)
@@ -131,8 +131,98 @@ describe('cross-posting', () => {
 
     const getA = await app.inject({ method: 'GET', url: `/api/posts/${postA.id}`, headers: authHeader(author) })
     const getB = await app.inject({ method: 'GET', url: `/api/posts/${postB.id}`, headers: authHeader(author) })
+    // The Like row stays on A, but the author belongs to both groups, so
+    // both copies show it — see the merged-reactions test below.
+    expect(await prisma.like.count({ where: { postId: postA.id } })).toBe(1)
+    expect(await prisma.like.count({ where: { postId: postB.id } })).toBe(0)
     expect(getA.json().likeCount).toBe(1)
-    expect(getB.json().likeCount).toBe(0)
+    expect(getB.json().likeCount).toBe(1)
+  })
+
+  it('merges reactions across the siblings a viewer can see, and only those', async () => {
+    const author = await createUser()
+    const memberAOnly = await createUser()
+    const memberBOnly = await createUser()
+    const groupA = await createGroupWithMember(author)
+    const groupB = await createGroupWithMember(author)
+    await addMember(groupA.id, memberAOnly.id)
+    await addMember(groupB.id, memberBOnly.id)
+
+    const create = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'merged reactions' },
+    })
+    expect(create.statusCode).toBe(200)
+    const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, content: 'merged reactions' } })
+    const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, content: 'merged reactions' } })
+
+    await app.inject({
+      method: 'POST',
+      url: `/api/posts/${postA.id}/like`,
+      headers: authHeader(memberAOnly),
+      payload: { type: 'LOVE' },
+    })
+    await app.inject({
+      method: 'POST',
+      url: `/api/posts/${postB.id}/like`,
+      headers: authHeader(memberBOnly),
+      payload: { type: 'HAHA' },
+    })
+
+    // The author sees one feed card carrying both families' reactions, and
+    // the same on whichever sibling a notification opens.
+    const feed = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) })
+    const [card] = feed.json().items.filter((p: { content: string }) => p.content === 'merged reactions')
+    expect(card.likeCount).toBe(2)
+    expect(card.reactions).toEqual({ LOVE: 1, HAHA: 1 })
+    expect(card.recentReactors.map((r: { id: string }) => r.id).sort()).toEqual([memberAOnly.id, memberBOnly.id].sort())
+    for (const id of [postA.id, postB.id]) {
+      const res = await app.inject({ method: 'GET', url: `/api/posts/${id}`, headers: authHeader(author) })
+      expect(res.json().likeCount).toBe(2)
+      const list = await app.inject({ method: 'GET', url: `/api/posts/${id}/reactions`, headers: authHeader(author) })
+      expect(list.json().items).toHaveLength(2)
+    }
+
+    // A single-family member still only sees their own family's reactions.
+    const aOnly = await app.inject({ method: 'GET', url: `/api/posts/${postA.id}`, headers: authHeader(memberAOnly) })
+    expect(aOnly.json().reactions).toEqual({ LOVE: 1 })
+    const bOnlyList = await app.inject({
+      method: 'GET',
+      url: `/api/posts/${postB.id}/reactions`,
+      headers: authHeader(memberBOnly),
+    })
+    expect(bOnlyList.json().items.map((r: { id: string }) => r.id)).toEqual([memberBOnly.id])
+  })
+
+  it("toggles the viewer's reaction wherever it lives across siblings", async () => {
+    const author = await createUser()
+    const groupA = await createGroupWithMember(author)
+    const groupB = await createGroupWithMember(author)
+    await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: authHeader(author),
+      payload: { groupIds: [groupA.id, groupB.id], content: 'toggle across' },
+    })
+    const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, content: 'toggle across' } })
+    const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, content: 'toggle across' } })
+    const react = (postId: string, type: string) =>
+      app.inject({ method: 'POST', url: `/api/posts/${postId}/like`, headers: authHeader(author), payload: { type } })
+
+    // Reacted on B, switched from A: changed in place on B, nothing added on A.
+    expect((await react(postB.id, 'LOVE')).json().myReaction).toBe('LOVE')
+    const switched = await react(postA.id, 'HAHA')
+    expect(switched.json()).toEqual({ myReaction: 'HAHA', counts: { HAHA: 1 } })
+    expect(await prisma.like.findMany({ where: { postId: { in: [postA.id, postB.id] } } })).toMatchObject([
+      { postId: postB.id, type: 'HAHA' },
+    ])
+
+    // Same reaction again from A removes it from B.
+    const removed = await react(postA.id, 'HAHA')
+    expect(removed.json()).toEqual({ myReaction: null, counts: {} })
+    expect(await prisma.like.count({ where: { postId: { in: [postA.id, postB.id] } } })).toBe(0)
   })
 
   it('dedupes the feed for a member of both target groups, and hides sharedWithGroups/crossPostId from a non-author', async () => {

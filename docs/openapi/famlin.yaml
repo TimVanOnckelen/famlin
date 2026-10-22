@@ -761,7 +761,12 @@ paths:
         group. For the author it behaves as a single post — editing or
         deleting it edits/deletes every copy — but comments, reactions, and
         favorites stay scoped to each group's own copy, and other members can
-        never tell it was cross-posted. Every target group must be one you
+        never tell it was cross-posted. Reactions are *shown* merged, though:
+        a viewer who belongs to several target groups (always the author)
+        sees every copy's reactions combined on whichever copy they open
+        (`likeCount`, `reactions`, `myReaction`, `recentReactors`, and the
+        reactions list), one per person. A member of only one target group
+        sees just that group's reactions. Every target group must be one you
         belong to, or the whole request is rejected with no post created.
         Photos sourced from a linked media album (Immich/local) are copied
         server-side into Famlin's own upload storage at post time so every
@@ -1437,7 +1442,8 @@ paths:
       description: |
         The full reactor list, newest first — unlike `Post.recentReactors`
         (capped at 3, no `type`), this is every reactor plus which emoji they
-        left.
+        left.  For a cross-posted post, merged across every copy
+        in a group the caller belongs to (see `POST /api/posts`).
       parameters:
         - name: postId
           in: path
