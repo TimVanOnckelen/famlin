@@ -35,15 +35,15 @@
     "@prisma/client": "^7.10.1",
     "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
-    "dotenv": "^18.0.8",
+    "dotenv": "^18.0.9",
     "expo-server-sdk": "^7.2.0",
     "fastify": "^5.12.5",
     "fastify-plugin": "^6.0.1",
-    "i18next": "^26.5.2",
-    "jose": "^6.2.12",
+    "i18next": "^26.5.10",
+    "jose": "^6.2.13",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.6.0",
-    "nodemailer": "^10.1.2",
+    "nodemailer": "^10.2.1",
     "sharp": "0.34.5",
     "yauzl": "^3.4.0",
     "zod": "^4.6.7"
@@ -63,7 +63,7 @@
     "prisma": "^7.10.1",
     "tsx": "^4.23.15",
     "typescript": "^5.5.2",
-    "typescript-eslint": "^8.71.2",
+    "typescript-eslint": "^8.72.0",
     "vitest": "^5.0.5"
   },
   "prisma": {
