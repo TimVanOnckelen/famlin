@@ -12,6 +12,8 @@ import {
   ScrollView,
   StatusBar,
   LayoutChangeEvent,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
@@ -354,7 +356,7 @@ export function StoryComposerScreen() {
       </View>
 
       <Modal visible={textDraft !== null} transparent animationType="fade" onRequestClose={() => setTextDraft(null)}>
-        <View style={styles.textModal}>
+        <KeyboardAvoidingView style={styles.textModal} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <TextInput
             style={[styles.textInput, { color }]}
             value={textDraft ?? ''}
@@ -384,7 +386,7 @@ export function StoryComposerScreen() {
           >
             <Text style={styles.shareText}>{t('stories.done')}</Text>
           </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={stickersOpen} transparent animationType="slide" onRequestClose={() => setStickersOpen(false)}>

@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  ScrollView,
   Image,
   ActivityIndicator,
   Alert,
 } from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
@@ -115,7 +115,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.form}>
+        <KeyboardAwareScrollView contentContainerStyle={styles.form}>
           <Text style={styles.contextLine}>{t('album.addPhotos.contextLine', { title: albumTitle })}</Text>
 
           <View style={styles.photoGrid}>
@@ -160,7 +160,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
             maxLength={2000}
             multiline
           />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </Modal>
   )

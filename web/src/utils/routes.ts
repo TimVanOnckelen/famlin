@@ -10,6 +10,8 @@ export const paths = {
   chat: '/chat',
   profile: '/profile',
   favorites: '/favorites',
+  notifications: '/notifications',
+  search: '/search',
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
   album: (postId: string) => `/albums/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
@@ -38,6 +40,12 @@ export function useAppNavigation() {
       toChat: () => navigate(paths.chat),
       toProfile: () => navigate(paths.profile),
       toFavorites: () => navigate(paths.favorites),
+      toNotifications: () => navigate(paths.notifications),
+      toSearch: (groupId?: string) =>
+        navigate({ pathname: paths.search, search: groupId ? new URLSearchParams({ groupId }).toString() : '' }),
+      updateSearch: (q: string, groupId: string) =>
+        navigate({ pathname: paths.search, search: new URLSearchParams({ q, groupId }).toString() }, { replace: true }),
+      toPost: (id: string) => navigate(paths.post(id)),
       toTrip: (postId: string, opts?: { replace?: boolean }) => navigate(paths.trip(postId), opts),
       toAlbum: (postId: string, opts?: { replace?: boolean }) => navigate(paths.album(postId), opts),
       back: () => {

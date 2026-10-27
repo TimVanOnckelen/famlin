@@ -23,6 +23,12 @@ import {
   Circle,
   AdminBranding,
   DerivedBrand,
+  SystemStatus,
+  IntegrationsStatus,
+  IntegrationStatus,
+  ActiveAlert,
+  DiskUsage,
+  JobStatus,
 } from '../types'
 
 export type {
@@ -49,6 +55,12 @@ export type {
   Circle,
   AdminBranding,
   DerivedBrand,
+  SystemStatus,
+  IntegrationsStatus,
+  IntegrationStatus,
+  ActiveAlert,
+  DiskUsage,
+  JobStatus,
 }
 
 export class ApiError extends Error {
@@ -319,6 +331,11 @@ export const api = {
 
   deletePost: (id: string) => request<void>(`/api/posts/${id}`, { method: 'DELETE' }),
 
+  // Admins may edit any post they can see (never a circle they aren't in) —
+  // text only from here; the member-facing apps also edit photos.
+  updatePostContent: (id: string, content: string) =>
+    request<void>(`/api/posts/${id}`, { method: 'PATCH', body: { content } }),
+
   deleteComment: (id: string) => request<void>(`/api/comments/${id}`, { method: 'DELETE' }),
 
   retriggerPostPush: (id: string) =>
@@ -333,6 +350,14 @@ export const api = {
   },
 
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
+
+  getSystemStatus: () => request<SystemStatus>('/api/admin/status'),
+
+  getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
+
+  getSystemAlerts: () => request<{ alerts: ActiveAlert[] }>('/api/admin/status/alerts'),
+
+  runBackup: () => request<{ started: true }>('/api/admin/backups/run', { method: 'POST' }),
 
   getBranding: () => request<AdminBranding>('/api/admin/branding'),
 

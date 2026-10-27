@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { User, fetchChatUnreadCounts, fetchGroups } from '@famlin/api-client'
+import { User, fetchChatUnreadCounts, fetchGroups, fetchUnreadNotificationCount } from '@famlin/api-client'
 import { BrandIcon } from '@/components/Logo'
 import { useBranding } from '@/hooks/useBranding'
 import { Icon, IconName } from '@/components/Icon'
@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import './AppShell.css'
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'profile'
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'profile'
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -36,6 +36,8 @@ export function AppShell({
   onPhotos,
   onChat,
   onFavorites,
+  onNotifications,
+  onSearch,
   onProfile,
   onNewPost,
   onLogout,
@@ -47,6 +49,8 @@ export function AppShell({
   onPhotos?: () => void
   onChat?: () => void
   onFavorites?: () => void
+  onNotifications?: () => void
+  onSearch?: () => void
   onProfile: () => void
   onNewPost?: () => void
   onLogout: () => void
@@ -68,9 +72,9 @@ export function AppShell({
   })
   const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0)
 
-  // Photos, Chat and Favorites are family-scoped surfaces: a user in no
-  // families has nothing to see in any of them, so all three collapse for
-  // them (Feed and Profile remain). Shares the ['groups'] cache key the
+  // Photos, Chat, Favorites, Notifications and Search share the family visibility
+  // rules: a user in no families has no entry points to these pages.
+  // Feed and Profile remain. Shares the ['groups'] cache key the
   // pages fetch with, seeded by App.tsx's parallel bootstrap fetch — so a
   // groupless user's tabs are collapsed from the very first render, no
   // flash. Until the query answers (loading or failed) reads as "has
@@ -81,6 +85,18 @@ export function AppShell({
   const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos')
   const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat')
   const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites')
+  const showNotificationsNav =
+    (!!onNotifications || active === 'notifications') && (hasGroups || active === 'notifications')
+  const showSearchNav = (!!onSearch || active === 'search') && (hasGroups || active === 'search')
+  const searchNav = showSearchNav ? onSearch : undefined
+  const notificationsNav = showNotificationsNav ? onNotifications : undefined
+  const notificationCount = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: fetchUnreadNotificationCount,
+    refetchInterval: 30000,
+    enabled: showNotificationsNav,
+  })
+  const hasUnreadNotifications = (notificationCount.data ?? 0) > 0
   const photosNav = showPhotosTab ? onPhotos : undefined
   const chatNav = showChatTab ? onChat : undefined
   const favoritesNav = showFavoritesNav ? onFavorites : undefined
@@ -90,6 +106,8 @@ export function AppShell({
     else if (view === 'photos') photosNav?.()
     else if (view === 'chat') chatNav?.()
     else if (view === 'favorites') favoritesNav?.()
+    else if (view === 'search') searchNav?.()
+    else if (view === 'notifications') notificationsNav?.()
     else onProfile()
   }
 
@@ -129,6 +147,16 @@ export function AppShell({
       badge: hasUnreadChat,
       show: showChatTab,
     },
+    {
+      view: 'notifications',
+      icon: 'bell',
+      label: t('tabs.notifications'),
+      keys: 'g a',
+      onClick: notificationsNav,
+      badge: hasUnreadNotifications,
+      show: showNotificationsNav,
+    },
+    { view: 'search', icon: 'search', label: t('tabs.search'), keys: 'g s', onClick: searchNav, show: showSearchNav },
     { view: 'profile', icon: 'user', label: t('tabs.profile'), keys: 'g u', onClick: onProfile, show: true },
   ]
 
@@ -196,17 +224,45 @@ export function AppShell({
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        {favoritesNav && (
+        {(showFavoritesNav || showNotificationsNav || showSearchNav) && (
           <div className="mobile-header-actions">
-            <button
-              type="button"
-              className="mobile-header-action"
-              onClick={favoritesNav}
-              aria-label={t('tabs.favorites')}
-              title={t('shortcuts.hint', { label: t('tabs.favorites'), keys: 'g b' })}
-            >
-              <Icon name="bookmark" size={20} />
-            </button>
+            {showSearchNav && (
+              <button
+                type="button"
+                className="mobile-header-action"
+                onClick={searchNav}
+                aria-current={active === 'search' ? 'page' : undefined}
+                aria-label={t('tabs.search')}
+              >
+                <Icon name="search" size={20} />
+              </button>
+            )}
+            {showFavoritesNav && (
+              <button
+                type="button"
+                className="mobile-header-action"
+                onClick={favoritesNav}
+                aria-current={active === 'favorites' ? 'page' : undefined}
+                aria-label={t('tabs.favorites')}
+                title={t('shortcuts.hint', { label: t('tabs.favorites'), keys: 'g b' })}
+              >
+                <Icon name="bookmark" size={20} />
+              </button>
+            )}
+            {showNotificationsNav && (
+              <button
+                type="button"
+                className="mobile-header-action"
+                onClick={notificationsNav}
+                aria-label={t('tabs.notifications')}
+                aria-current={active === 'notifications' ? 'page' : undefined}
+              >
+                <span className="bottom-nav-icon-wrap">
+                  <Icon name="bell" size={20} />
+                  {hasUnreadNotifications && <span className="bottom-nav-badge" aria-hidden />}
+                </span>
+              </button>
+            )}
           </div>
         )}
       </header>

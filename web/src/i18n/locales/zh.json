@@ -119,6 +119,12 @@
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
     "audienceEveryone": "所有成员"
   },
+  "editPost": {
+    "title": "编辑帖子",
+    "contentLabel": "帖子内容",
+    "save": "保存",
+    "failed": "无法保存你的更改，请重试。"
+  },
   "profile": {
     "title": "我的",
     "changePhoto": "更换头像",
@@ -250,7 +256,9 @@
     "photos": "照片",
     "profile": "我的",
     "chat": "聊天",
-    "favorites": "收藏"
+    "favorites": "收藏",
+    "notifications": "通知",
+    "search": "搜索"
   },
   "demo": {
     "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
@@ -360,7 +368,11 @@
     "notFound": "此帖子不存在，或未与你分享。",
     "loadFailed": "无法加载此帖子。",
     "prevPhoto": "上一张照片",
-    "nextPhoto": "下一张照片"
+    "nextPhoto": "下一张照片",
+    "editPost": "编辑帖子",
+    "deletePost": "删除帖子",
+    "deleteConfirm": "要删除这条帖子吗？此操作无法撤销，帖子的评论和回应也会一并删除。",
+    "deleteFailed": "无法删除帖子，请重试。"
   },
   "a11y": {
     "skipToContent": "跳转到主要内容"
@@ -379,6 +391,27 @@
     "prevPost": "上一条动态",
     "openPost": "打开动态",
     "likePost": "点赞动态",
-    "favoritePost": "收藏动态"
+    "favoritePost": "收藏动态",
+    "goNotifications": "前往通知",
+    "goSearch": "前往搜索"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "empty": "暂无通知",
+    "loadFailed": "无法加载通知。",
+    "markFailed": "无法将通知标为已读。请重试。",
+    "unread": "未读",
+    "storyUnavailable": "此限时动态已不可用。"
+  },
+  "search": {
+    "title": "搜索",
+    "family": "家庭",
+    "placeholder": "搜索动态…",
+    "prompt": "输入关键词，搜索此家庭的动态。",
+    "empty": "未找到动态，请尝试其他关键词。",
+    "noGroups": "加入家庭后即可搜索动态。",
+    "loadFailed": "无法加载搜索结果。",
+    "loadMore": "加载更多"
   }
 }

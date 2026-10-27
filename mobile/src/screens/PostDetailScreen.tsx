@@ -390,7 +390,9 @@ export function PostDetailScreen() {
     })
   }
 
-  const isOwnPost = post.authorId === user?.id
+  // Authors manage their own posts; admins may edit or delete anyone's (the
+  // server enforces both, plus the circle boundary).
+  const canManagePost = post.authorId === user?.id || !!user?.isAdmin
 
   function startEditPost() {
     setEditPostContent(post!.content || '')
@@ -438,11 +440,7 @@ export function PostDetailScreen() {
     >
       {!showHeroPhoto && <ScreenHeader title={t('postDetail.title')} onBack={() => navigation.goBack()} />}
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-        keyboardVerticalOffset={90}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <FlatList
           data={topLevelGroups}
           keyExtractor={(item) => item.key}
@@ -501,7 +499,7 @@ export function PostDetailScreen() {
                       {post.editedAt ? ` · ${t('common.edited')}` : ''}
                     </Text>
                   </View>
-                  {isOwnPost && !isEditingPost && (
+                  {canManagePost && !isEditingPost && (
                     <TouchableOpacity
                       onPress={openPostMenu}
                       style={styles.postMenuButton}
@@ -1649,7 +1647,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    paddingBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,

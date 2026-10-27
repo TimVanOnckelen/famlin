@@ -31,6 +31,8 @@ export function ProfilePage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenNotifications,
+  onOpenSearch,
   onLogout,
 }: {
   user: User
@@ -38,6 +40,8 @@ export function ProfilePage({
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
   onLogout: () => void
 }) {
   const { t, i18n: i18nInstance } = useTranslation()
@@ -187,6 +191,8 @@ export function ProfilePage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
+      onSearch={onOpenSearch}
       onProfile={() => {}}
       onLogout={onLogout}
     >

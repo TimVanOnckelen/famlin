@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import dotenv from 'dotenv'
+import os from 'os'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -24,6 +25,9 @@ export default defineConfig({
       DATABASE_URL: process.env.DATABASE_URL!,
       JWT_SECRET: process.env.JWT_SECRET!,
       PORT: process.env.PORT!,
+      // Scheduled-backup tests write dumps and an uploads mirror here
+      // (src/config.ts) — never into a real backups volume.
+      BACKUPS_DIR: process.env.BACKUPS_DIR ?? path.join(os.tmpdir(), 'famlin-test-backups'),
     },
   },
 })

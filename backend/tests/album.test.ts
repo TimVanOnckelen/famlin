@@ -269,6 +269,28 @@ describe('ALBUM posts', () => {
         },
       })
       expect(copies).toBe(2)
+
+      // The author sees both copies' threads merged, but one contribution is
+      // still one entry, on either copy — and the feed count agrees.
+      const siblingId = (
+        await prisma.post.findFirstOrThrow({
+          where: { groupId: groupB.id, type: 'ALBUM', typeData: { path: ['title'], equals: 'Shared' } },
+        })
+      ).id
+      for (const id of [postId, siblingId]) {
+        const thread = await app.inject({
+          method: 'GET',
+          url: `/api/posts/${id}/comments`,
+          headers: authHeader(author),
+        })
+        expect(thread.json()).toHaveLength(1)
+        expect(thread.json()[0].postId).toBe(id)
+      }
+      const feed = await app.inject({ method: 'GET', url: '/api/posts', headers: authHeader(author) })
+      const card = feed
+        .json()
+        .items.find((p: { typeData: { title?: string } | null }) => p.typeData?.title === 'Shared')
+      expect(card.commentCount).toBe(1)
     })
 
     it('does not create a copy in a sibling group the contributor is not a member of', async () => {

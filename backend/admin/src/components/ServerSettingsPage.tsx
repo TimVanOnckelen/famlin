@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ServerSettings, User } from '../api/client'
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
@@ -6,7 +7,7 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
-type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media'
+type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
 
 interface SettingsCardProps {
   icon: IconName
@@ -87,6 +88,10 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     localMediaPath: '',
+    backupEnabled: false,
+    backupSchedule: 'daily',
+    backupHour: 3,
+    backupRetention: 7,
   })
 
   const [testingImmich, setTestingImmich] = useState(false)
@@ -264,6 +269,15 @@ export function ServerSettingsPage() {
           immichConfigured || localConfigured
             ? t('serverSettings.statusConfigured')
             : t('serverSettings.statusNotConfigured'),
+      },
+    },
+    {
+      id: 'backups',
+      icon: 'clock',
+      label: t('serverSettings.backups'),
+      status: {
+        ok: form.backupEnabled,
+        label: form.backupEnabled ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled'),
       },
     },
   ]
@@ -617,6 +631,60 @@ export function ServerSettingsPage() {
                   </div>
                 </SettingsCard>
               </>
+            )}
+
+            {activeSection === 'backups' && (
+              <SettingsCard
+                icon="clock"
+                title={t('serverSettings.backups')}
+                desc={t('serverSettings.backupsDesc')}
+                badge={enabledBadge(form.backupEnabled)}
+              >
+                <ToggleRow
+                  title={t('serverSettings.backupEnabled')}
+                  hint={t('serverSettings.backupEnabledHint')}
+                  checked={form.backupEnabled}
+                  onChange={(checked) => updateField('backupEnabled', checked)}
+                />
+                <div className="row">
+                  <label style={{ flex: 1 }}>
+                    {t('serverSettings.backupSchedule')}
+                    <select
+                      value={form.backupSchedule}
+                      onChange={(e) =>
+                        updateField('backupSchedule', e.target.value as ServerSettings['backupSchedule'])
+                      }
+                    >
+                      <option value="daily">{t('serverSettings.backupScheduleDaily')}</option>
+                      <option value="weekly">{t('serverSettings.backupScheduleWeekly')}</option>
+                    </select>
+                  </label>
+                  <label style={{ flex: 1 }}>
+                    {t('serverSettings.backupHour')}
+                    <select value={form.backupHour} onChange={(e) => updateField('backupHour', Number(e.target.value))}>
+                      {Array.from({ length: 24 }, (_, hour) => (
+                        <option key={hour} value={hour}>
+                          {`${String(hour).padStart(2, '0')}:00`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={{ flex: 1 }}>
+                    {t('serverSettings.backupRetention')}
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={form.backupRetention}
+                      onChange={(e) => updateField('backupRetention', Math.max(1, Number(e.target.value) || 1))}
+                    />
+                  </label>
+                </div>
+                <p className="hint">{t('serverSettings.backupHint')}</p>
+                <p className="hint">
+                  <Link to="/status">{t('serverSettings.backupStatusLink')}</Link>
+                </p>
+              </SettingsCard>
             )}
 
             {(dirty || success || error) && (

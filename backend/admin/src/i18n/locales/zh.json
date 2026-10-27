@@ -36,7 +36,8 @@
     "serverSettings": "服务器设置",
     "logout": "退出登录",
     "language": "语言",
-    "version": "版本 {{version}}"
+    "version": "版本 {{version}}",
+    "systemStatus": "系统状态"
   },
   "login": {
     "title": "Famlin 管理后台",
@@ -265,7 +266,9 @@
     "storyCircle": "圈子",
     "viewsTooltip": "浏览",
     "reactionsTooltip": "回应",
-    "storyPhoto": "限时动态照片"
+    "storyPhoto": "限时动态照片",
+    "editPostTitle": "编辑 {{name}} 的帖子",
+    "editPostHint": "仅修改此帖子的文字，帖子会被标记为已编辑。照片可以在 Famlin 应用中修改。"
   },
   "pushLog": {
     "title": "推送通知日志",
@@ -360,7 +363,18 @@
     "localMediaTesting": "正在检查…",
     "localMediaTestOk": "路径存在且可读取。",
     "localMediaTestNotFound": "路径不存在，或服务器无权读取。",
-    "localMediaTestNotADirectory": "路径存在，但不是文件夹。"
+    "localMediaTestNotADirectory": "路径存在，但不是文件夹。",
+    "backups": "备份",
+    "backupsDesc": "定期备份数据库以及所有上传的照片和视频，写入此服务器上的备份卷。",
+    "backupEnabled": "定时备份",
+    "backupEnabledHint": "默认关闭，需要手动开启。每次运行会生成一份数据库转储，并更新一份上传文件的增量副本。",
+    "backupSchedule": "计划",
+    "backupScheduleDaily": "每天",
+    "backupScheduleWeekly": "每周（周日）",
+    "backupHour": "时间（服务器时间）",
+    "backupRetention": "保留的数据库转储数量",
+    "backupHint": "上传文件以增量方式镜像，而不是每次完整复制。从 Famlin 删除的文件会在镜像中保留 30 天后再移除。如果备份失败，或超过两个计划周期没有成功的备份，管理员会收到邮件（需要配置 SMTP）。",
+    "backupStatusLink": "查看备份状态并立即运行备份"
   },
   "media": {
     "peopleMapping": {
@@ -460,6 +474,96 @@
       "amber": "琥珀",
       "forest": "森林",
       "slate": "石板"
+    }
+  },
+  "systemStatus": {
+    "title": "系统状态",
+    "refresh": "刷新",
+    "ok": "正常",
+    "failed": "失败",
+    "running": "运行中",
+    "never": "从未运行",
+    "alerts": {
+      "backup_failed": "上一次备份失败。",
+      "backup_stale": "已有 {{days}} 天没有成功的备份。",
+      "disk_low_uploads": "上传卷空间即将用尽（剩余 {{free}} GiB）。",
+      "disk_low_backups": "备份卷空间即将用尽（剩余 {{free}} GiB）。",
+      "viewStatus": "查看系统状态"
+    },
+    "backups": {
+      "title": "备份",
+      "schedule": "计划",
+      "scheduleValue": {
+        "daily_one": "每天 {{time}}，保留 {{count}} 份转储",
+        "daily_other": "每天 {{time}}，保留 {{count}} 份转储",
+        "weekly_one": "每周日 {{time}}，保留 {{count}} 份转储",
+        "weekly_other": "每周日 {{time}}，保留 {{count}} 份转储"
+      },
+      "enableInSettings": "在服务器设置中启用",
+      "lastBackup": "上次备份",
+      "size": "大小",
+      "sizeValue": "转储 {{dump}} · 上传镜像 {{mirror}}",
+      "nextRun": "下次计划备份",
+      "location": "位置",
+      "notMounted": "备份目录不是挂载的卷，重新创建容器时备份会丢失。请在 docker-compose.yml 中添加 famlin-backups 卷。",
+      "dumps_one": "{{count}} 份数据库转储",
+      "dumps_other": "{{count}} 份数据库转储",
+      "runNow": "立即备份"
+    },
+    "disk": {
+      "title": "磁盘空间",
+      "uploads": "上传",
+      "backups": "备份",
+      "free": "共 {{total}}，剩余 {{free}}",
+      "low": "不足",
+      "unavailable": "不可用",
+      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。"
+    },
+    "integrations": {
+      "title": "集成",
+      "smtp": "邮件（SMTP）",
+      "oidc": "单点登录（OIDC）",
+      "immich": "Immich",
+      "localMedia": "本地媒体文件夹",
+      "notConfigured": "未配置",
+      "errors": {
+        "unreachable": "无法连接",
+        "unauthorized": "凭据被拒绝",
+        "not_found": "找不到文件夹",
+        "not_a_directory": "不是文件夹",
+        "invalid_response": "响应无效"
+      }
+    },
+    "push": {
+      "title": "推送通知",
+      "last24h": "最近 24 小时",
+      "last7d": "最近 7 天",
+      "summary": "已送达 {{delivered}} · 失败 {{failed}}（{{rate}}）",
+      "unhealthy": "最近 24 小时内超过 20% 的推送通知发送失败。",
+      "viewLog": "查看推送通知日志"
+    },
+    "jobs": {
+      "title": "后台任务",
+      "job": "任务",
+      "lastRun": "上次运行",
+      "result": "结果",
+      "lastSuccess": "上次成功",
+      "names": {
+        "onThisDay": "“那年今日”通知",
+        "newAssets": "相册新照片",
+        "expireStories": "清理过期限时动态",
+        "backup": "备份",
+        "systemAlerts": "告警检查"
+      }
+    },
+    "migrations": {
+      "title": "数据库迁移",
+      "latest": "最近应用",
+      "applied": "已应用",
+      "pending": "待应用",
+      "upToDate": "已是最新",
+      "unknown": "未知",
+      "failed": "以下迁移失败，需要处理：{{names}}"
     }
   }
 }

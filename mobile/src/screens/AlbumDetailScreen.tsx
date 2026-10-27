@@ -136,7 +136,7 @@ export function AlbumDetailScreen() {
         )}
       </View>
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll}>
           {coverUrl ? (
             <MediaThumbnail url={getUploadUrl(coverUrl)} style={styles.cover} />

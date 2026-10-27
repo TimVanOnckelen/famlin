@@ -668,3 +668,30 @@ model StoryReply {
 
   @@unique([storyId, fromUserId])
 }
+
+// Last-run bookkeeping for each background job (src/jobs/, the scheduled
+// backup) — one row per job, upserted by recordJobRun() in
+// services/jobRuns.ts and read by the admin status panel. Deliberately the
+// latest run only, not a history: expireStories alone runs 144×/day.
+model JobStatus {
+  job            String    @id
+  lastStartedAt  DateTime
+  lastFinishedAt DateTime?
+  // null while a run is in progress (or was interrupted by a restart).
+  lastOk         Boolean?
+  lastError      String?
+  lastDurationMs Int?
+  lastSuccessAt  DateTime?
+  lastFailureAt  DateTime?
+  // Job-specific summary of the latest run (a backup's dump file + size,
+  // mirror counts, ...).
+  lastDetails    Json?
+}
+
+// Throttle state for admin alert emails (services/systemAlerts.ts): at most
+// one email per condition per day. The banner itself is computed live and
+// doesn't read this table.
+model SystemAlert {
+  condition     String   @id
+  lastEmailedAt DateTime
+}

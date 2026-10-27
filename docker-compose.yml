@@ -47,6 +47,11 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-false}
     volumes:
       - famlin-uploads:/app/uploads
+      # Scheduled backups (opt-in, admin Server settings → Backups): rotating
+      # database dumps plus a mirror of the uploads. Kept on its own volume so
+      # backups don't sit on the volume they protect — better still, bind-mount
+      # a folder on another disk or NAS share here instead.
+      - famlin-backups:/app/backups
     ports:
       - "3000:3000"
     # /health checks the database and the uploads volume (200 or 503). The
@@ -72,3 +77,4 @@ services:
 volumes:
   famlin-db-data:
   famlin-uploads:
+  famlin-backups:

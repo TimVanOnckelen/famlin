@@ -16,6 +16,9 @@ const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/us/app/famlin/id6786783660
 // under a different bundle id adds theirs to the appleBundleIds setting.
 const DEFAULT_APPLE_BUNDLE_ID = 'be.xeweb.famlin'
 
+export const BACKUP_SCHEDULES = ['daily', 'weekly'] as const
+export type BackupSchedule = (typeof BACKUP_SCHEDULES)[number]
+
 export interface ServerSettings {
   defaultLanguage: SupportedLanguage
   appStoreUrl: string
@@ -37,6 +40,13 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  // Scheduled backups (services/backup/) — opt-in, off by default.
+  backupEnabled: boolean
+  backupSchedule: BackupSchedule
+  // Server-local hour (0–23) the backup runs at; weekly backups run Sundays.
+  backupHour: number
+  // How many DB dumps to keep.
+  backupRetention: number
   // Per-family branding (services/branding/). Deliberately not writable via
   // PATCH /api/admin/settings — only the validated /api/admin/branding routes
   // set these.
@@ -68,6 +78,10 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'immichServerUrl',
   'immichApiKey',
   'localMediaPath',
+  'backupEnabled',
+  'backupSchedule',
+  'backupHour',
+  'backupRetention',
   'brandPreset',
   'brandColor',
   'brandName',
@@ -98,6 +112,20 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
   }
   if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled') {
     return value !== 'false'
+  }
+  if (key === 'backupEnabled') {
+    return value === 'true'
+  }
+  if (key === 'backupSchedule') {
+    return BACKUP_SCHEDULES.includes(value as BackupSchedule) ? value : 'daily'
+  }
+  if (key === 'backupHour') {
+    const n = parseInt(value, 10)
+    return isNaN(n) || n < 0 || n > 23 ? 3 : n
+  }
+  if (key === 'backupRetention') {
+    const n = parseInt(value, 10)
+    return isNaN(n) || n < 1 ? 7 : n
   }
   if (key === 'defaultLanguage') {
     return SUPPORTED_LANGUAGES.includes(value as SupportedLanguage) ? value : DEFAULT_LANGUAGE
@@ -144,6 +172,10 @@ async function loadAllSettings(): Promise<ServerSettings> {
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
+    backupEnabled: parseValue('backupEnabled', map.get('backupEnabled') || 'false'),
+    backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),
+    backupHour: parseValue('backupHour', map.get('backupHour') || '3'),
+    backupRetention: parseValue('backupRetention', map.get('backupRetention') || '7'),
     brandPreset: parseValue('brandPreset', map.get('brandPreset') || ''),
     brandColor: parseValue('brandColor', map.get('brandColor') || ''),
     brandName: parseValue('brandName', map.get('brandName') || ''),

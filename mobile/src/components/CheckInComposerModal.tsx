@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  ScrollView,
   Image,
   ActivityIndicator,
   Alert,
 } from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
@@ -127,7 +127,7 @@ export function CheckInComposerModal({
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.form}>
+        <KeyboardAwareScrollView contentContainerStyle={styles.form}>
           <Text style={styles.contextLine}>{t('trip.checkin.contextLine', { title: tripTitle, day: dayNumber })}</Text>
 
           <View>
@@ -187,7 +187,7 @@ export function CheckInComposerModal({
               </TouchableOpacity>
             )}
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
     </Modal>
   )

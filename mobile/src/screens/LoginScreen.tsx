@@ -54,6 +54,7 @@ export function LoginScreen() {
   const [ssoConfig, setSsoConfig] = useState<OidcConfig | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const passwordInputRef = useRef<TextInput>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [isCheckingServer, setIsCheckingServer] = useState(false)
@@ -152,7 +153,7 @@ export function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <LoginBackground />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={styles.content}
@@ -228,12 +229,16 @@ export function LoginScreen() {
                   autoCorrect={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>{t('login.passwordLabel')}</Text>
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
@@ -241,6 +246,12 @@ export function LoginScreen() {
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   textContentType="password"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="go"
+                  onSubmitEditing={() => {
+                    if (!isLoading) handlePasswordLogin()
+                  }}
                 />
               </View>
 

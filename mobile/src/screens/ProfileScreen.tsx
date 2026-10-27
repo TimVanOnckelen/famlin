@@ -10,7 +10,9 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
 } from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -185,7 +187,7 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('profile.title')}</Text>
         </View>
@@ -406,7 +408,7 @@ export function ProfileScreen() {
           selectedLanguage={(i18nInstance.language as SupportedLanguage) || 'en'}
           onSelect={handleLanguageChange}
         />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   )
 }
@@ -478,8 +480,12 @@ function DeleteAccountModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.sheet}>
+      <KeyboardAvoidingView style={modalStyles.overlay} behavior="padding">
+        <ScrollView
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={modalStyles.sheet}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={modalStyles.handle} />
           <Text style={modalStyles.title}>{t('profile.deleteAccount')}</Text>
           <Text style={modalStyles.body}>{t('profile.deleteAccountWarning')}</Text>
@@ -512,8 +518,8 @@ function DeleteAccountModal({
           <TouchableOpacity style={modalStyles.closeButton} onPress={onCancel} disabled={deleting}>
             <Text style={modalStyles.closeButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

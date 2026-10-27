@@ -10,6 +10,7 @@ import { GroupsPage } from './components/GroupsPage'
 import { ContentPage } from './components/ContentPage'
 import { PushLogPage } from './components/PushLogPage'
 import { ServerSettingsPage } from './components/ServerSettingsPage'
+import { SystemStatusPage } from './components/SystemStatusPage'
 import { api, User } from './api/client'
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
         <Route path="/content" element={<ContentPage />} />
         <Route path="/push-log" element={<PushLogPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
+        <Route path="/status" element={<SystemStatusPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -8,7 +8,6 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 import { testImmichConnection } from '../services/media/immich.js'
 import { getMediaProvider, mediaErrorKey, mediaErrorStatus, MediaProviderError } from '../services/media/registry.js'
-import fsp from 'fs/promises'
 import {
   createGroupBodySchema,
   groupMemberBodySchema,
@@ -49,6 +48,17 @@ import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
 import { isGroupMember } from '../services/groups.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
+import {
+  getBackupOverview,
+  getDiskOverview,
+  getIntegrationStatus,
+  getJobStatuses,
+  getMigrationStatus,
+  getPushHealth,
+  testLocalMediaPath,
+} from '../services/systemStatus.js'
+import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAlerts.js'
+import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -960,6 +970,51 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return updateSettings(body)
   })
 
+  // System status panel (issue #228): backups + disk, jobs + migrations,
+  // push health and the active alerts. Integrations are a separate request
+  // because they probe external services and can take seconds.
+  fastify.get('/status', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    const now = new Date()
+    const [backups, disk, jobs, migrations, push, alerts] = await Promise.all([
+      getBackupOverview(now),
+      getDiskOverview(),
+      getJobStatuses(),
+      getMigrationStatus(),
+      getPushHealth(now),
+      computeActiveAlerts(now),
+    ])
+    return { backups, disk, jobs, migrations, push, alerts }
+  })
+
+  fastify.get('/status/integrations', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    return getIntegrationStatus()
+  })
+
+  // Just the alert conditions, for the banner every admin page shows.
+  fastify.get('/status/alerts', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    return { alerts: await computeActiveAlerts() }
+  })
+
+  // "Run backup now". A full run can take minutes (the first uploads mirror
+  // copies the whole library), so it runs in the background: 202 right away,
+  // and the status panel polls GET /status for the outcome.
+  fastify.post('/backups/run', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    if (isBackupRunning()) {
+      return reply.status(409).send({ error: getT(request)('errors.backupInProgress') })
+    }
+    runBackup('manual')
+      .catch((err) => {
+        if (!(err instanceof BackupInProgressError)) request.log.error(err, 'manual backup failed')
+      })
+      .then(() => runSystemAlertsCheck())
+      .catch((err) => request.log.error(err, 'system alerts check failed'))
+    return reply.status(202).send({ started: true })
+  })
+
   // Per-family branding (issue #164, services/branding/). One brand per
   // server; the palette is derived server-side so mobile and web can't drift.
   fastify.get('/branding', async (request, reply) => {
@@ -1042,14 +1097,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return
 
     const body = testLocalMediaBodySchema.parse(request.body)
-    try {
-      const stat = await fsp.stat(body.rootPath)
-      if (!stat.isDirectory()) return { ok: false as const, error: 'not_a_directory' as const }
-      await fsp.access(body.rootPath, fsp.constants.R_OK)
-      return { ok: true as const }
-    } catch {
-      return { ok: false as const, error: 'not_found' as const }
-    }
+    return testLocalMediaPath(body.rootPath)
   })
 
   // The admin "link an album" picker's catalog, per provider.

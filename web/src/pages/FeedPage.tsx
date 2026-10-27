@@ -33,6 +33,8 @@ export function FeedPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenNotifications,
+  onOpenSearch,
   onOpenTrip,
   onOpenAlbum,
   onLogout,
@@ -42,6 +44,8 @@ export function FeedPage({
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
   onLogout: () => void
@@ -169,6 +173,10 @@ export function FeedPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
+      onSearch={
+        onOpenSearch ? () => onOpenSearch(selectedGroupIds.length === 1 ? selectedGroupIds[0] : undefined) : undefined
+      }
       onProfile={onOpenProfile}
       onNewPost={hasGroups ? () => setComposerOpen(true) : undefined}
       onLogout={onLogout}

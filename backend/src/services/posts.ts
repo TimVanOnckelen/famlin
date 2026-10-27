@@ -1,7 +1,9 @@
 import type { ReactionType } from '@prisma/client'
 import { prisma } from '../db.js'
 import { attachUploadProcessing, type shapeUploadProcessing } from './uploadMetadata.js'
-import { summarizeReactions } from './reactions.js'
+import { mergeCrossPostLikes, summarizeReactions } from './reactions.js'
+import { mergeCrossPostCommentCounts } from './comments.js'
+import { visibleSiblingsForPage } from './crossPosts.js'
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js'
 import { getPostTypeHandler } from './postTypes/registry.js'
 
@@ -64,6 +66,16 @@ export function shapePost<
     recentReactors: likes.slice(0, 3).map((like) => like.user),
     favoritedByMe: favorites.length > 0,
   }
+}
+
+// For each cross-posted post, swaps its own reactions and comment count for
+// the merged view across the siblings the viewer can see — see
+// services/crossPosts.ts for why. Call before shapePost.
+export async function mergeCrossPostActivity<
+  T extends Parameters<typeof shapePost>[0] & { id: string; crossPostId: string | null },
+>(posts: T[], viewerId: string): Promise<T[]> {
+  const siblingIds = await visibleSiblingsForPage(posts, viewerId)
+  return mergeCrossPostCommentCounts(await mergeCrossPostLikes(posts, siblingIds), siblingIds)
 }
 
 // Removes every sibling-but-one of a cross-post from a page of results,
@@ -191,7 +203,8 @@ export async function shapePostsWithPeople<
     uploadProcessing: Record<string, ReturnType<typeof shapeUploadProcessing>>
   })[]
 > {
-  const shaped = posts.map((post) => shapePost(post, userId))
+  const merged = await mergeCrossPostActivity(posts, userId)
+  const shaped = merged.map((post) => shapePost(post, userId))
   const peopleByPostId = await attachPeopleToPosts(shaped)
   const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }))
   await enrichPostTypes(withPeople, userId)

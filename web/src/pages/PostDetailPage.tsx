@@ -25,6 +25,8 @@ export function PostDetailPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenNotifications,
+  onOpenSearch,
   onLogout,
 }: {
   user: User
@@ -37,6 +39,8 @@ export function PostDetailPage({
   onOpenChat?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -78,7 +82,17 @@ export function PostDetailPage({
       </div>
     )
   } else {
-    body = <PostCard post={post} showGroup showComments onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+    // Once deleted there's no post left to show, so land on the feed.
+    body = (
+      <PostCard
+        post={post}
+        showGroup
+        showComments
+        onOpenTrip={onOpenTrip}
+        onOpenAlbum={onOpenAlbum}
+        onDeleted={onOpenFeed ?? onBack}
+      />
+    )
   }
 
   return (
@@ -88,6 +102,8 @@ export function PostDetailPage({
       onFeed={onOpenFeed ?? onBack}
       onPhotos={onOpenPhotos}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
+      onSearch={onOpenSearch}
       onChat={onOpenChat}
       onProfile={onOpenProfile ?? (() => {})}
       onLogout={onLogout}

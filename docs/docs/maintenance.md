@@ -11,6 +11,8 @@ Two things need backing up:
 - **`famlin-db-data`** (Docker volume) — the Postgres database: users, groups, posts, comments, settings.
 - **`famlin-uploads`** (Docker volume) — uploaded photos.
 
+Famlin can do this for you on a schedule (see [Scheduled backups](#scheduled-backups) below), or you can include the volumes in a backup routine you already have.
+
 Both are named volumes declared in `docker-compose.yml`. Find their host paths with:
 
 ```bash
@@ -24,6 +26,75 @@ A simple logical backup of just the database can also be taken with `pg_dump`:
 ```bash
 docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 ```
+
+### Scheduled backups
+
+Famlin can back itself up on a schedule. It's **off by default**: turn it on under **Server settings → Backups** in `/admin`, and pick:
+
+- **Schedule**: daily, or weekly on Sundays.
+- **Time**: the hour it runs, in the server's time zone. The suggested default is 03:00.
+- **Database dumps to keep**: how many database dumps to keep (default 7). Older ones are deleted after each run.
+
+Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the container:
+
+- `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database in custom format (compressed, restored with `pg_restore`). Only the newest *N* are kept.
+- `uploads/`: **one** mirror of the uploads volume, updated incrementally. Uploaded files never change once written, so each run only copies new files. A file that disappears from Famlin (a deleted post, an expired story) is moved to `uploads/.deleted/<date>/` and kept there for **30 days** before it's removed for good. That covers accidental deletes without the mirror growing forever.
+
+Backups are deliberately not data-export zips: an export holds a full copy of every photo, so keeping seven of them would cost seven times your media library.
+
+**System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content#system-status).
+
+:::tip Keep backups off the machine they protect
+`famlin-backups` is a separate volume, but by default it's on the same disk as everything else. For real protection, bind-mount a folder on another disk or a NAS share instead:
+
+```yaml
+    volumes:
+      - famlin-uploads:/app/uploads
+      - /volume2/backups/famlin:/app/backups
+```
+
+The container runs as the unprivileged `node` user (uid 1000), so that folder must be writable by uid 1000. You can also keep backing up the `famlin-backups` volume itself with your existing tools.
+:::
+
+:::warning Older compose files
+`famlin-backups` was added to `docker-compose.yml` together with scheduled backups. If your copy of the compose file predates it, backups are written inside the container and **lost when the container is recreated** (for example on every update). System status warns about this. Add the volume as shown in the repository's [`docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml).
+:::
+
+### Restoring from a scheduled backup
+
+Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
+
+1. List the dumps and pick one:
+
+   ```bash
+   docker compose run --rm --no-deps famlin-backend ls -l /app/backups/db
+   ```
+
+2. Stop the backend and empty the database:
+
+   ```bash
+   docker compose stop famlin-backend
+   docker compose exec famlin-db psql -U famlin -d postgres \
+     -c 'DROP DATABASE famlin WITH (FORCE);' -c 'CREATE DATABASE famlin OWNER famlin;'
+   ```
+
+3. Restore the dump. Use the backend image's `pg_restore`, not the database container's: the backend ships a newer Postgres client, and an older `pg_restore` can't read a newer `pg_dump`'s files.
+
+   ```bash
+   docker compose run --rm --no-deps famlin-backend sh -c \
+     'pg_restore --no-owner --no-privileges -d "${DATABASE_URL%%\?*}" /app/backups/db/famlin-<timestamp>.dump'
+   ```
+
+4. If the uploads volume was lost too, copy the mirror back:
+
+   ```bash
+   docker compose run --rm --no-deps famlin-backend sh -c \
+     'cp -a /app/backups/uploads/. /app/uploads/ && rm -rf /app/uploads/.deleted'
+   ```
+
+   Photos of posts deleted in the last 30 days are in `/app/backups/uploads/.deleted/<date>/`. Copy them back the same way if you're restoring a dump from before the delete.
+
+5. Start Famlin again with `docker compose up -d`. If the dump came from an older Famlin version, pending migrations are applied on startup as usual. Your settings, accounts and passwords all come back, because the dump is the whole database.
 
 ### Restoring from a data export
 
@@ -93,6 +164,23 @@ FAMLIN_VERSION=1.2.0
 ```
 
 Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
+
+To try the current development build from `main`, set `FAMLIN_VERSION=dev`
+in `.env`, then run the same `pull` and `up -d` commands above. The rolling
+`dev` image is published after pushes or PR merges into `main` that change
+files relevant to the image, for both `linux/amd64` and `linux/arm64`.
+Docs-only, website-only, mobile-only, and Markdown-only changes are skipped,
+as are release PR merges (the release workflow builds those commits).
+
+:::warning Use dev on a test instance only
+
+The container runs `prisma migrate deploy` on startup. A `dev` image may apply
+database migrations that are not included in any release yet. Switching back
+to an older release can leave that release running against an incompatible
+schema. Stay on `dev` until a release containing those migrations ships and
+then pin to it, or restore a backup taken before switching to `dev`.
+
+:::
 
 ## Building from source instead
 

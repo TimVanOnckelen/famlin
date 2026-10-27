@@ -201,7 +201,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "api-reference/update-post",
-          label: "Edit your own post",
+          label: "Edit a post",
           className: "api-method patch",
         },
         {

@@ -14,7 +14,9 @@ import { UploadMedia } from '@/components/UploadMedia'
 import { postTypeRenderers } from '@/components/postTypes'
 import { TripFeedCard } from '@/components/postTypes/TripFeedCard'
 import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard'
-import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
+import { EditPostModal } from '@/components/EditPostModal'
+import { useDeletePost, useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
+import { useAuthStore } from '@/stores/authStore'
 import { formatRelativeDate } from '@/utils/time'
 import { isVideoUrl } from '@/utils/media'
 import { paths } from '@/utils/routes'
@@ -126,6 +128,7 @@ export function PostCard({
   onOpenTrip,
   onOpenAlbum,
   showComments = false,
+  onDeleted,
 }: {
   post: Post
   showGroup?: boolean
@@ -135,6 +138,9 @@ export function PostCard({
   // feed shows only the comment-count line (clicking it opens that page) —
   // there is no inline expand/collapse any more (issue: web redesign phase 2).
   showComments?: boolean
+  // Called once the post was deleted from the detail view (where the
+  // edit/delete actions live), so the page/modal can navigate away.
+  onDeleted?: () => void
 }) {
   // TRIP posts get a wholesale-different card (different hero source, no
   // inline comments, a "follow/view diary" CTA instead of a comment button)
@@ -163,7 +169,7 @@ export function PostCard({
 
   return (
     <UploadProcessingContext.Provider value={post.uploadProcessing}>
-      <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} />
+      <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} onDeleted={onDeleted} />
     </UploadProcessingContext.Provider>
   )
 }
@@ -172,10 +178,12 @@ function DefaultPostCard({
   post,
   showGroup = false,
   showComments = false,
+  onDeleted,
 }: {
   post: Post
   showGroup?: boolean
   showComments?: boolean
+  onDeleted?: () => void
 }) {
   const { t, i18n } = useTranslation()
   const isMilestone = post.type === 'MILESTONE'
@@ -188,6 +196,20 @@ function DefaultPostCard({
 
   const reactMutation = useReactToPost(post)
   const favoriteMutation = useToggleFavorite(post)
+  const deleteMutation = useDeletePost(post)
+  const [editing, setEditing] = useState(false)
+
+  // Authors manage their own posts; admins may edit or delete anyone's (the
+  // server enforces both, plus the circle boundary). Offered only in the
+  // detail view, so the feed's cards stay uncluttered — same placement as
+  // mobile, whose post menu lives on PostDetailScreen.
+  const currentUser = useAuthStore((s) => s.user)
+  const canManage = showComments && !!currentUser && (currentUser.id === post.authorId || currentUser.isAdmin)
+
+  function confirmDelete() {
+    if (!window.confirm(t('postDetail.deleteConfirm'))) return
+    deleteMutation.mutate(undefined, { onSuccess: () => onDeleted?.() })
+  }
 
   const timeLine = `${formatRelativeDate(post.createdAt, i18n.language)}${
     post.editedAt ? ` · ${t('common.edited')}` : ''
@@ -369,7 +391,37 @@ function DefaultPostCard({
               <Icon name="message-square" size={18} />
               {t('feed.comments', { count: post.commentCount })}
             </button>
+
+            {canManage && (
+              <div className="post-manage-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setEditing(true)}
+                  aria-label={t('postDetail.editPost')}
+                  title={t('postDetail.editPost')}
+                >
+                  <Icon name="edit-3" size={18} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn post-delete-btn"
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  aria-label={t('postDetail.deletePost')}
+                  title={t('postDetail.deletePost')}
+                >
+                  <Icon name="trash" size={18} />
+                </button>
+              </div>
+            )}
           </div>
+
+          {deleteMutation.isError && (
+            <div className="post-manage-error" role="alert">
+              {t('postDetail.deleteFailed')}
+            </div>
+          )}
 
           {showComments && <CommentsSection post={post} />}
         </div>
@@ -382,6 +434,8 @@ function DefaultPostCard({
           onClose={() => setLightboxIndex(null)}
         />
       )}
+
+      {editing && <EditPostModal post={post} onClose={() => setEditing(false)} />}
     </div>
   )
 }

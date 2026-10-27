@@ -45,6 +45,7 @@ The **Content** page gives admins cross-group visibility into posts and comments
 - Switch between the **Posts**, **Comments** and **Stories** tabs, and narrow the list with the filter bar: a text search over the content, a group filter, and an author filter (combine them freely; **Clear filters** resets everything).
 - The posts tab also shows each post's comment/like counts and marks milestone posts; the comments tab shows a snippet of the post each comment was left on.
 - **Delete** (trash icon) removes a post or comment permanently — the same as a member's own delete. This can't be undone.
+- **Edit** (pencil icon, posts only) changes a post's text — to fix a typo or take out something that shouldn't be there. The post shows as *edited*; it stays the author's post. Photos can't be changed from here; admins can edit a post's text and photos from the post's detail view in the web or mobile app, the same way authors edit their own. If the post was shared with several families, only that family's copy changes.
 - The **Stories** tab lists live stories and Highlights (with a thumbnail, whether it's still live or kept as a Highlight, and its view/reaction counts); it has no text search, since stories are photos. Deleting a story removes it and its photo permanently. **Private replies to stories are never shown to admins** — they're between the viewer and the story's author only.
 - **Resend push notification** (bell icon, posts only) re-delivers a post's push notification to the group — useful if a member's device was offline or missed it the first time. It only resends the push itself; it doesn't send another email or add a duplicate entry to anyone's in-app notification history.
 - **Content in circles you're not in isn't listed here.** Family Circles are a real privacy boundary that applies to admins too, so posts and stories shared with a circle you don't belong to are excluded from every tab — see the Circles bullet under [Groups](#groups) above.
@@ -55,6 +56,19 @@ There's no bulk delete action.
 ## Push notification log
 
 The **Push notification log** page lists every push-notification send attempt — both automatic (a new post, comment, reaction, ...) and manually resent from the Content page — newest first. Each row shows when it was sent, the notification type, which post it was for (if any), how many people were eligible, how many devices were actually reached, how many failed, and who triggered it ("System" for automatic sends, otherwise the admin who clicked resend).
+
+## System status
+
+The **System status** page gives you one place to check that the server is healthy:
+
+- **Backups**: whether [scheduled backups](./maintenance#scheduled-backups) are on, the last backup's time, result and size, the next scheduled run, the stored database dumps, and a **Run backup now** button. It warns you when the backups folder isn't a mounted volume, because backups there wouldn't survive the container being recreated.
+- **Disk space**: free space on the uploads volume and on the backups volume (shown once if they're the same disk). A volume counts as low below 1 GiB free or below 5% free.
+- **Integrations**: whether SMTP, OIDC sign-in, Immich and the local media folder are reachable right now. Each check is the same connection test Server settings uses; ones you haven't set up show "Not configured".
+- **Push notifications**: delivered and failed sends over the last 24 hours and 7 days. More than 20% failures over the last day is flagged; the [push notification log](#push-notification-log) has the details.
+- **Background jobs**: when each scheduled job (On this day notifications, new album photos, story expiry, backups, the alert check) last ran, whether it succeeded, and its error if it didn't.
+- **Database migrations**: the latest applied migration, and any that are pending or failed.
+
+**Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Server settings → Notifications); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
 
 ## Data export
 
@@ -71,7 +85,7 @@ It deliberately does **not** include server configuration or secrets — SMTP se
 
 It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
-There's no scheduling or automatic backup built around this — it's a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos.
+The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 
 ### Members can export their own data
 
