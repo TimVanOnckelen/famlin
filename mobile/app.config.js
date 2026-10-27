@@ -131,6 +131,29 @@ export default ({ config }) => ({
         isAccessMediaLocationEnabled: false,
       },
     ],
+    [
+      // "Share → Famlin" from the OS share sheet (issue #199): photos and
+      // videos only, several at once, handed to the new-post composer. On iOS
+      // this adds a share extension target (be.xeweb.famlin.share-extension)
+      // sharing the App Group group.be.xeweb.famlin with the app — both need
+      // provisioning on EAS, see docs/developers/ios-app-review.md.
+      // The extension only hands the files to the app; it never sees the
+      // auth token. iOS caps the count above the composer's 10 on purpose:
+      // more are accepted and the composer reports the skipped ones.
+      'expo-share-intent',
+      {
+        iosActivationRules: {
+          NSExtensionActivationSupportsImageWithMaxCount: 50,
+          NSExtensionActivationSupportsMovieWithMaxCount: 50,
+        },
+        // Shown under the icon in the iOS share sheet, and (stripped of
+        // spaces) the Xcode target name — plain "Famlin" would collide with
+        // the app's own target.
+        iosShareExtensionName: 'Famlin Share',
+        androidIntentFilters: ['image/*', 'video/*'],
+        androidMultiIntentFilters: ['image/*', 'video/*'],
+      },
+    ],
     'expo-apple-authentication',
     'expo-font',
     'expo-localization',

@@ -26,6 +26,22 @@ Sign in with Apple needs the entitlement on your App ID. `mobile/app.config.js` 
 
 Your build also has its own bundle identifier, and Apple's identity tokens are issued to *that* identifier. Add it to **Extra Apple bundle IDs** in `/admin` → Server settings so your server accepts them — see [Sign in with Apple](/docs/admin-configuration#sign-in-with-apple).
 
+### Share extension and App Group
+
+"Share → Famlin" from the iOS share sheet (photos and videos, handed to the new-post composer) is a **share extension** — a second app target inside the iOS build — added by the [`expo-share-intent`](https://github.com/achorein/expo-share-intent) config plugin in `mobile/app.config.js`. It needs two things beyond the main app's own App ID:
+
+| What | Official build | Your own build |
+| --- | --- | --- |
+| Extension bundle identifier | `be.xeweb.famlin.share-extension` | `<your bundle id>.share-extension` |
+| App Group (shared by the app and the extension) | `group.be.xeweb.famlin` | `group.<your bundle id>` |
+
+Both are derived from `ios.bundleIdentifier`, so changing that one value is enough; set `iosShareExtensionBundleIdentifier` / `iosAppGroupIdentifier` in the plugin options only if you need different ids. The plugin also registers the extension with EAS (as `extra.eas.build.experimental.ios.appExtensions`, target `FamlinShare`) — don't add a second `appExtensions` entry for it by hand, the plugin refuses to build with a duplicate.
+
+- **EAS-managed credentials:** `eas build` asks to create a provisioning profile for the extension too, and registers its identifier and the App Group with Apple. Say yes; there's nothing else to do.
+- **Self-managed credentials:** in the Apple Developer portal, register the App Group, create an App ID for the extension's bundle identifier, enable the **App Groups** capability on *both* App IDs with that group selected, and create a provisioning profile for each. EAS then needs both profiles (`credentials.json` lists one entry per target).
+
+The extension only copies the shared files into the App Group container and opens the main app via `famlin://`; it has no network access and never sees the Famlin session token, which stays in the main app's keychain. Android needs no extra setup: the same plugin just adds `SEND`/`SEND_MULTIPLE` intent filters for `image/*` and `video/*` to the main activity.
+
 ### A reachable demo server
 
 This is the one that isn't a code change. Famlin's login screen asks for a *server address* before anything else, because there's no central Famlin service to sign up to. A reviewer with no address gets no further than the first screen — and an app that appears to do nothing gets rejected under guideline 2.2 as an incomplete or trial build.
