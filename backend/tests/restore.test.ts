@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { ZipArchive } from 'archiver'
 import crypto from 'crypto'
@@ -17,6 +17,12 @@ import {
   createComment,
   authHeader,
 } from './helpers.js'
+
+// Inspect restored queue state before a worker can claim it.
+vi.mock('../src/services/uploadProcessing.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../src/services/uploadProcessing.js')>()),
+  startUploadWorker: () => async () => {},
+}))
 
 async function truncateAll() {
   const tables = await prisma.$queryRaw<{ tablename: string }[]>`
@@ -122,7 +128,54 @@ describe('POST /api/auth/setup/restore', () => {
     fs.writeFileSync(path.join(uploadsDir, `${assetKey}.jpg`), 'fake-jpeg-bytes')
     fs.mkdirSync(path.join(uploadsDir, 'originals'), { recursive: true })
     fs.writeFileSync(path.join(uploadsDir, 'originals', `${assetKey}.png`), 'fake-original-bytes')
-    await prisma.upload.create({ data: { assetKey, uploaderId: admin.id, circleId: circle.id, bound: true } })
+    const motionKey = crypto.randomUUID()
+    const sessionId = crypto.randomUUID()
+    await prisma.upload.create({
+      data: {
+        assetKey,
+        uploaderId: admin.id,
+        circleId: circle.id,
+        bound: true,
+        mediaKind: 'livePhoto',
+        mediaUrl: assetPath,
+        thumbnailUrl: `/uploads/${assetKey}-thumbnail.jpg`,
+        sourceFilename: `${assetKey}.png`,
+        livePhotoIdentifier: 'live-photo-id',
+        uploadSessionId: sessionId,
+      },
+    })
+    await prisma.upload.create({
+      data: {
+        assetKey: motionKey,
+        uploaderId: admin.id,
+        circleId: circle.id,
+        bound: true,
+        mediaKind: 'video',
+        mediaUrl: `/uploads/${motionKey}.mp4`,
+        sourceFilename: `${motionKey}/IMG_001.MOV`,
+        livePhotoIdentifier: 'live-photo-id',
+        uploadSessionId: sessionId,
+      },
+    })
+    await prisma.upload.update({ where: { assetKey }, data: { motionAssetKey: motionKey } })
+    const pendingKeys: string[] = []
+    for (const processingStatus of ['queued', 'processing']) {
+      const key = crypto.randomUUID()
+      pendingKeys.push(key)
+      fs.mkdirSync(path.join(uploadsDir, 'originals', key), { recursive: true })
+      fs.writeFileSync(path.join(uploadsDir, 'originals', key, 'photo.jpg'), 'pending-source')
+      await prisma.upload.create({
+        data: {
+          assetKey: key,
+          uploaderId: admin.id,
+          processingStatus,
+          sourceFilename: `${key}/photo.jpg`,
+          mediaUrl: `/uploads/${key}.jpg`,
+          processingStartedAt: new Date(),
+          processingError: 'interrupted',
+        },
+      })
+    }
 
     const circlePost = await prisma.post.create({
       data: {
@@ -272,6 +325,8 @@ describe('POST /api/auth/setup/restore', () => {
     fs.rmSync(path.join(uploadsDir, `${liveKey}.jpg`))
     fs.rmSync(path.join(uploadsDir, 'branding'), { recursive: true })
 
+    for (const key of pendingKeys) fs.rmSync(path.join(uploadsDir, 'originals', key), { recursive: true })
+
     // --- restore, as the admin whose account is in the backup -----------
     const res = await restore({ email: 'Admin@Example.com', name: 'Ignored', password: 'new-password-1' }, archive)
     expect(res.statusCode).toBe(200)
@@ -294,7 +349,7 @@ describe('POST /api/auth/setup/restore', () => {
       chatReads: 1,
       mediaAlbumLinks: 1,
       mediaPersonLinks: 1,
-      uploads: 2,
+      uploads: 5,
       highlights: 1,
       branding: 3,
     })
@@ -303,7 +358,17 @@ describe('POST /api/auth/setup/restore', () => {
     expect(await prisma.setting.findUnique({ where: { key: 'smtpPass' } })).toBeNull()
     expect(fs.readFileSync(path.join(uploadsDir, 'branding', 'logo-0123456789abcdef.png'), 'utf8')).toBe('logo-bytes')
     fs.rmSync(path.join(uploadsDir, 'branding'), { recursive: true })
-    expect(after).toEqual(before)
+    expect(after).toEqual({
+      ...before,
+      uploads: before.uploads.map((upload) =>
+        pendingKeys.includes(upload.assetKey)
+          ? { ...upload, processingStatus: 'queued', processingStartedAt: null, processingError: null }
+          : upload
+      ),
+    })
+    for (const key of pendingKeys) {
+      expect(fs.readFileSync(path.join(uploadsDir, 'originals', key, 'photo.jpg'), 'utf8')).toBe('pending-source')
+    }
 
     // Files are back under their original paths.
     expect(fs.readFileSync(path.join(uploadsDir, `${assetKey}.jpg`), 'utf8')).toBe('fake-jpeg-bytes')
@@ -362,6 +427,37 @@ describe('POST /api/auth/setup/restore', () => {
     const restored = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } })
     expect(restored.isAdmin).toBe(true)
     expect(restored.passwordHash).toBeNull()
+  })
+
+  it('restores legacy uploads without processing fields using schema defaults', async () => {
+    const assetKey = crypto.randomUUID()
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({ serverVersion: pkg.version }),
+      'data/users.json': '[]',
+      'data/groups.json': '[]',
+      'data/uploads.json': JSON.stringify([
+        {
+          id: 'legacy-upload',
+          assetKey,
+          uploaderId: null,
+          circleId: null,
+          bound: true,
+          createdAt: new Date().toISOString(),
+        },
+      ]),
+    })
+    const res = await restore(adminFields, archive)
+    expect(res.statusCode).toBe(200)
+    expect(await prisma.upload.findUniqueOrThrow({ where: { assetKey } })).toMatchObject({
+      processingStatus: 'ready',
+      mediaKind: 'image',
+      sourceFilename: null,
+      mediaUrl: null,
+      thumbnailUrl: null,
+      motionAssetKey: null,
+      groupIds: [],
+      serverWide: false,
+    })
   })
 
   it('409s once the instance has any user, and writes nothing', async () => {

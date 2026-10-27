@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -142,17 +143,29 @@ export function PostCard({
   // surface in a generic inline comment list, which this branch guarantees
   // simply by never mounting CommentsSection for a TRIP post.
   if (post.type === 'TRIP') {
-    return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
   // ALBUM posts likewise get their own card (collage hero, contributor stack,
   // an "Add photos"/"Open album" CTA) — its photo contributions live as
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
-    return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} />
+  return (
+    <UploadProcessingContext.Provider value={post.uploadProcessing}>
+      <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} />
+    </UploadProcessingContext.Provider>
+  )
 }
 
 function DefaultPostCard({

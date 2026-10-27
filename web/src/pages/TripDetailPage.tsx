@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import { ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -90,7 +91,7 @@ export function TripDetailPage({
       >
         <div className="trip-detail-column">
           <ScreenHeader title={t('trip.detail.headerTitle')} onBack={onBack} />
-          {children}
+          <UploadProcessingContext.Provider value={post?.uploadProcessing}>{children}</UploadProcessingContext.Provider>
         </div>
       </AppShell>
     )

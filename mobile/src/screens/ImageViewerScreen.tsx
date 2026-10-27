@@ -1,6 +1,6 @@
 import { useExclusiveVideo } from '@/hooks/useExclusiveVideo'
 import { LivePhotoMedia } from '@/components/LivePhotoMedia'
-import { useUploadProcessing } from '@/hooks/useUploadProcessing'
+import { UploadProcessingContext, useUploadProcessing } from '@/hooks/useUploadProcessing'
 import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
@@ -494,6 +494,11 @@ export function ImageViewerScreen() {
   const currentAssetUrl: string | undefined = items ? currentItem?.assetUrl : assetUrls?.[currentIndex]
   const canComment = !!currentPostId && !!currentAssetUrl
   const currentDownloadUrl: string = currentItem?.downloadUrl ?? urls[currentIndex]
+  const { data: mediaPost } = useQuery({
+    queryKey: ['post', currentPostId],
+    queryFn: () => fetchPost(currentPostId!),
+    enabled: !!currentPostId,
+  })
 
   // While a photo is zoomed, paging and the swipe-down dismiss are disabled
   // so drags pan the photo instead. State drives scrollEnabled; the ref is
@@ -567,7 +572,7 @@ export function ImageViewerScreen() {
     setCurrentIndex(index)
   }
 
-  return (
+  const content = (
     <Animated.View style={[styles.root, { opacity: viewerOpacity }]} needsOffscreenAlphaCompositing>
       <View style={styles.backdrop} />
       <Animated.View style={[styles.animatedContent, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
@@ -650,6 +655,9 @@ export function ImageViewerScreen() {
         </SafeAreaView>
       </Animated.View>
     </Animated.View>
+  )
+  return (
+    <UploadProcessingContext.Provider value={mediaPost?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
   )
 }
 

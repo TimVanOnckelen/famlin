@@ -2357,6 +2357,11 @@ paths:
         Photos and videos return stable future JPEG/MP4 paths plus small previews.
         Full conversion runs in a persistent background queue. Posts can reference
         queued media immediately; poll `/api/uploads/status/{assetKey}` until ready.
+        For clients without processing-status support, missing converted files
+        serve the original source while queued, processing or failed. HEIC/HEIF
+        uses the JPEG thumbnail when available, otherwise the original source.
+        Fallback responses use the source's Content-Type and Cache-Control: no-store;
+        video byte ranges are supported. Once available, the converted file is served.
       parameters:
         - name: X-Upload-Session-Id
           in: header
@@ -3369,6 +3374,21 @@ components:
           type: array
           items: { type: string }
           description: '`/uploads/...` or `/api/immich/assets/...` paths — auth-gated, see Uploads & media.'
+        uploadProcessing:
+          type: object
+          description: |
+            Media metadata keyed by upload UUID, including album/trip preview assets.
+            Loaded in one batch per post response. Clients can render ready media
+            immediately and poll the status endpoint only for queued/processing assets.
+            Optional for compatibility with older servers; existing URLs are unchanged.
+          additionalProperties:
+            type: object
+            properties:
+              status: { type: string, enum: [queued, processing, ready, failed] }
+              url: { type: string, nullable: true }
+              thumbnailUrl: { type: string, nullable: true }
+              kind: { type: string, enum: [image, video, livePhoto] }
+              videoUrl: { type: string, nullable: true }
         latitude:
           type: number
           nullable: true

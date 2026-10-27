@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
@@ -72,7 +73,7 @@ export function PostDetailModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [mediaCount, lightboxIndex])
 
-  return (
+  const content = (
     <div className="modal-overlay post-detail-overlay" onClick={onClose}>
       <div
         className={`post-detail-modal${hasMedia ? ' post-detail-modal-with-media' : ''}`}
@@ -165,4 +166,5 @@ export function PostDetailModal({
       )}
     </div>
   )
+  return <UploadProcessingContext.Provider value={post?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
 }

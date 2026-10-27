@@ -1,3 +1,4 @@
+import { shapeUploadProcessing } from '../services/uploadMetadata.js'
 import { z } from 'zod'
 import { readLivePhotoIdentifier, reconcileUploadSession } from '../services/livePhotos.js'
 import { FastifyInstance } from 'fastify'
@@ -49,22 +50,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       }
       const upload = await prisma.upload.findUnique({ where: { assetKey }, include: { motionUpload: true } })
       reply.header('cache-control', 'no-store')
-      const motion = upload?.motionUpload
-      const statuses = [upload?.processingStatus ?? 'ready', ...(motion ? [motion.processingStatus] : [])]
-      const status = statuses.includes('failed')
-        ? 'failed'
-        : statuses.includes('processing')
-          ? 'processing'
-          : statuses.includes('queued')
-            ? 'queued'
-            : 'ready'
-      return {
-        status,
-        url: upload?.mediaUrl ?? null,
-        thumbnailUrl: upload?.thumbnailUrl ?? null,
-        kind: motion ? 'livePhoto' : isPosterableVideo(path.extname(upload?.mediaUrl ?? '')) ? 'video' : 'image',
-        videoUrl: motion?.mediaUrl ?? null,
-      }
+      return shapeUploadProcessing(upload)
     }
   )
   fastify.post(

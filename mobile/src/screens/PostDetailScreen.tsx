@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
@@ -430,7 +431,7 @@ export function PostDetailScreen() {
   // button, the sheet's overlap) has to follow the same flag.
   const showHeroPhoto = hasPhotos && !isEditingPost
 
-  return (
+  const content = (
     <SafeAreaView
       style={styles.container}
       edges={showHeroPhoto ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
@@ -817,6 +818,7 @@ export function PostDetailScreen() {
       <ReactionsModal postId={reactionsModalOpen ? postId : null} onClose={() => setReactionsModalOpen(false)} />
     </SafeAreaView>
   )
+  return <UploadProcessingContext.Provider value={post?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
 }
 
 function CommentItem({

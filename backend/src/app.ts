@@ -10,6 +10,7 @@ import { createReadStream, constants as fsConstants } from 'fs'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
+import { uploadSourcePath } from './services/uploadSources.js'
 import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
 import { injectBrandingIntoHtml } from './services/branding/css.js'
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js'
@@ -182,11 +183,10 @@ export async function buildApp() {
     const pathname = requestPathname(request.raw.url)
     if (!pathname.startsWith('/uploads/')) return
 
-    // The true, uncompressed original of a converted upload lives here (see
-    // routes/uploads.ts) purely for a possible future "download original"
-    // feature — it's never served today, regardless of auth. The generated
-    // HEIC renditions below are internal too: they're served under the
-    // original upload's URL, never their own.
+    // Original storage paths are private, even when authenticated. Pending
+    // or failed conversions can serve their source at the canonical URL
+    // after the authorization check below. HEIC renditions are internal too:
+    // they're served under the original upload's URL, never their own.
     //
     // The branding logo renditions live in uploads/branding/ for the volume
     // and export, but they're public and served at /branding/* only — never
@@ -220,6 +220,49 @@ export async function buildApp() {
     // a non-member shouldn't get, and it matches how a missing file behaves.
     if (!(await canReadUpload(pathname, viewerId))) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') })
+    }
+
+    // Released clients only know the canonical URL, not processing states.
+    // Until conversion succeeds, serve the source through the same auth
+    // checks and static sender (including video Range/HEAD support).
+    const canonical = /^\/uploads\/([0-9a-f-]{36})\.(jpg|mp4)$/i.exec(pathname)
+    if (canonical && (request.method === 'GET' || request.method === 'HEAD')) {
+      const exists = await fs
+        .stat(path.join(uploadsDir, path.basename(pathname)))
+        .then((stat) => stat.isFile())
+        .catch((error: NodeJS.ErrnoException) => {
+          if (error.code === 'ENOENT') return false
+          throw error
+        })
+      if (!exists) {
+        const upload = await prisma.upload.findUnique({ where: { assetKey: canonical[1] } })
+        if (upload?.sourceFilename && ['queued', 'processing', 'failed'].includes(upload.processingStatus)) {
+          let source: string | undefined
+          try {
+            source = uploadSourcePath(upload.sourceFilename)
+          } catch {
+            /* Invalid archived source path. */
+          }
+          if (source) {
+            if (/\.(heic|heif)$/i.test(source)) {
+              const preview = path.join(uploadsDir, `${upload.assetKey}-thumbnail.jpg`)
+              if (
+                await fs
+                  .stat(preview)
+                  .then((stat) => stat.isFile())
+                  .catch(() => false)
+              )
+                source = preview
+            }
+            return reply.header('cache-control', 'no-store').sendFile(path.basename(source), path.dirname(source), {
+              acceptRanges: true,
+              cacheControl: false,
+              etag: false,
+              lastModified: false,
+            })
+          }
+        }
+      }
     }
 
     // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a

@@ -1,3 +1,5 @@
+import type { UploadProcessing } from './uploads'
+
 export const REACTION_TYPES = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'] as const
 export type ReactionType = (typeof REACTION_TYPES)[number]
 
@@ -241,6 +243,8 @@ export interface Post {
   milestoneTag?: string | null
   uploadedAssetUrls: string[]
   createdAt: string
+  // Keyed by upload UUID. Optional for compatibility with older servers.
+  uploadProcessing?: Record<string, UploadProcessing>
   editedAt?: string | null
   latitude?: number | null
   longitude?: number | null

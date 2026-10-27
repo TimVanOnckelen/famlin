@@ -217,6 +217,16 @@ const uploadRow = z.object({
   // row restores as a legacy bound row, exactly the state it was in.
   groupIds: z.array(z.string()).default([]),
   serverWide: z.boolean().default(false),
+  processingStatus: z.enum(['ready', 'queued', 'processing', 'failed']).optional(),
+  sourceFilename: nullableString,
+  uploadSessionId: nullableString,
+  livePhotoIdentifier: nullableString,
+  mediaKind: z.enum(['image', 'video', 'livePhoto']).optional(),
+  motionAssetKey: nullableString,
+  mediaUrl: nullableString,
+  thumbnailUrl: nullableString,
+  processingStartedAt: nullableDate,
+  processingError: nullableString,
   createdAt: date,
 })
 
@@ -496,7 +506,21 @@ async function insertAll(
   await tx.favorite.createMany({ data: data.favorites })
   await tx.chatMessage.createMany({ data: parentsFirst(data.chatMessages, (m) => m.replyToMessageId) })
   await tx.chatRead.createMany({ data: data.chatReads })
-  await tx.upload.createMany({ data: data.uploads })
+  // Motion rows may follow their photos in the archive. Restore the links
+  // only after all referenced asset keys exist.
+  await tx.upload.createMany({
+    data: data.uploads.map(({ motionAssetKey: _motion, ...upload }) => ({
+      ...upload,
+      ...(upload.processingStatus === 'queued' || upload.processingStatus === 'processing'
+        ? { processingStatus: 'queued', processingStartedAt: null, processingError: null }
+        : {}),
+    })),
+  })
+  for (const upload of data.uploads) {
+    if (upload.motionAssetKey) {
+      await tx.upload.update({ where: { assetKey: upload.assetKey }, data: { motionAssetKey: upload.motionAssetKey } })
+    }
+  }
   await tx.story.createMany({
     data: data.highlights.map(({ reactions: _reactions, expiresAt, ...story }) => ({
       ...story,

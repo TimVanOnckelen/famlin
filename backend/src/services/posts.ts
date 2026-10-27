@@ -1,5 +1,6 @@
 import type { ReactionType } from '@prisma/client'
 import { prisma } from '../db.js'
+import { attachUploadProcessing, type shapeUploadProcessing } from './uploadMetadata.js'
 import { summarizeReactions } from './reactions.js'
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js'
 import { getPostTypeHandler } from './postTypes/registry.js'
@@ -184,11 +185,15 @@ export async function shapePostsWithPeople<
   posts: T[],
   userId: string
 ): Promise<
-  (ReturnType<typeof shapePost> & { people: PersonTag[]; sharedWithGroups?: { id: string; name: string }[] })[]
+  (ReturnType<typeof shapePost> & {
+    people: PersonTag[]
+    sharedWithGroups?: { id: string; name: string }[]
+    uploadProcessing: Record<string, ReturnType<typeof shapeUploadProcessing>>
+  })[]
 > {
   const shaped = posts.map((post) => shapePost(post, userId))
   const peopleByPostId = await attachPeopleToPosts(shaped)
   const withPeople = shaped.map((post) => ({ ...post, people: peopleByPostId.get(post.id) ?? [] }))
   await enrichPostTypes(withPeople, userId)
-  return attachSharedWithGroups(withPeople, posts, userId)
+  return attachSharedWithGroups(await attachUploadProcessing(withPeople), posts, userId)
 }

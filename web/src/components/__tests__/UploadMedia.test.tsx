@@ -5,7 +5,7 @@ import { renderWithQueryClient } from '@/test/fixtures'
 import { UploadMedia } from '../UploadMedia'
 import { PostCard } from '../PostCard'
 import { Lightbox } from '../Lightbox'
-import { makePost } from '@/test/fixtures'
+import { makePost, createTestQueryClient } from '@/test/fixtures'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -18,6 +18,76 @@ beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
 })
 afterEach(() => vi.restoreAllMocks())
+
+it('renders ready post media immediately without a status request, including after remount', () => {
+  const key = '11111111-1111-4111-8111-111111111111'
+  const post = makePost({
+    uploadedAssetUrls: [url],
+    uploadProcessing: {
+      [key]: { status: 'ready', kind: 'video', url, thumbnailUrl: url.replace('.mp4', '-thumbnail.jpg') },
+    },
+  })
+  const first = renderWithQueryClient(<PostCard post={post} />)
+  expect(first.container.querySelector('.media-video-preview img')).not.toBeNull()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+  first.unmount()
+  renderWithQueryClient(<PostCard post={post} />)
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+})
+
+it('shows a failed post attachment immediately without polling', () => {
+  renderWithQueryClient(
+    <PostCard
+      post={makePost({
+        uploadedAssetUrls: [url],
+        uploadProcessing: {
+          '11111111-1111-4111-8111-111111111111': { status: 'failed', url, thumbnailUrl: null },
+        },
+      })}
+    />
+  )
+  expect(screen.getByText('Media processing failed')).toBeInTheDocument()
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+})
+
+it('uses a fresh ready post response even when the status cache still says processing', () => {
+  const key = '11111111-1111-4111-8111-111111111111'
+  const queryClient = createTestQueryClient()
+  queryClient.setQueryData(['upload-processing', key], { status: 'processing', url, thumbnailUrl: null })
+  const { container } = renderWithQueryClient(
+    <PostCard
+      post={makePost({
+        uploadedAssetUrls: [url],
+        uploadProcessing: { [key]: { status: 'ready', url, thumbnailUrl: null } },
+      })}
+    />,
+    { queryClient }
+  )
+  expect(container.querySelector('.media-video-preview')).not.toBeNull()
+  expect(screen.queryByText('Media is processing…')).not.toBeInTheDocument()
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+})
+
+it('uses pending post metadata immediately and polls until ready', async () => {
+  const thumbnailUrl = url.replace('.mp4', '-thumbnail.jpg')
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'ready', url, thumbnailUrl })
+  const { container } = renderWithQueryClient(
+    <PostCard
+      post={makePost({
+        uploadedAssetUrls: [url],
+        uploadProcessing: {
+          '11111111-1111-4111-8111-111111111111': { status: 'queued', url, thumbnailUrl },
+        },
+      })}
+    />
+  )
+  expect(screen.getByText('Media is processing…')).toBeInTheDocument()
+  expect(container.querySelector('.media-processing img')).toHaveAttribute('src', getUploadUrl(thumbnailUrl))
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+  await waitFor(() => expect(container.querySelector('.media-video-preview')).not.toBeNull(), { timeout: 4000 })
+  expect(fetchUploadProcessing).toHaveBeenCalledTimes(1)
+})
 
 it.each([1, 2])('shows a video poster and opens playback in the lightbox with %i attachments', async (count) => {
   const user = userEvent.setup()
