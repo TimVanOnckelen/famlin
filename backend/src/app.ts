@@ -1,3 +1,6 @@
+import { getStorage } from './services/storage/registry.js'
+import { sendStoredObject } from './services/storage/http.js'
+import { StorageError } from './services/storage/types.js'
 import Fastify, { type FastifyError } from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
@@ -6,9 +9,9 @@ import multipart from '@fastify/multipart'
 import staticPlugin from '@fastify/static'
 import path from 'path'
 import fs from 'fs/promises'
-import { createReadStream, constants as fsConstants } from 'fs'
+import { createReadStream } from 'fs'
 import { ZodError } from 'zod'
-import { DERIVED_DIR_NAME, resolveHeicRendition } from './services/uploadVariants.js'
+import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
 import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
 import { injectBrandingIntoHtml } from './services/branding/css.js'
@@ -118,6 +121,7 @@ export async function buildApp() {
     return reply.status(500).send({ error: t('errors.serverError') })
   })
 
+  await getStorage().init()
   await fs.mkdir(uploadsDir, { recursive: true })
   // Holds the true, uncompressed original of a converted upload (see
   // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
@@ -221,30 +225,42 @@ export async function buildApp() {
     if (!(await canReadUpload(pathname, viewerId))) {
       return reply.status(404).send({ error: getT(request)('errors.notFound') })
     }
-
-    // HEIC/HEIF uploads are unreadable in every browser but Safari, so serve a
-    // JPEG rendition under the requested URL rather than the stored bytes (see
-    // the HEIC/HEIF renditions block in services/uploadVariants.ts). Every
-    // other request — and an undecodable file — resolves to null and falls
-    // straight through to @fastify/static below. GET only: the point is what
-    // an <img>/<Image> actually fetches, and a HEAD shouldn't pay for a decode.
-    if (request.method !== 'GET') return
-    const requestedFile = pathname.slice('/uploads/'.length)
-    const rendition = await resolveHeicRendition(uploadsDir, requestedFile)
-    if (!rendition) return
-
-    const { size, mtime } = await fs.stat(rendition)
-    return reply
-      .header('content-type', 'image/jpeg')
-      .header('content-length', String(size))
-      .header('last-modified', mtime.toUTCString())
-      .header('cache-control', 'public, max-age=0')
-      .send(createReadStream(rendition))
   })
 
-  await fastify.register(staticPlugin, {
-    root: uploadsDir,
-    prefix: '/uploads/',
+  fastify.route({
+    method: ['GET', 'HEAD'],
+    url: '/uploads/*',
+    async handler(request, reply) {
+      const requestedFile = requestPathname(request.raw.url).slice('/uploads/'.length)
+      try {
+        const rendition = request.method === 'GET' ? await resolveStoredHeicRendition(requestedFile) : null
+        const types: Record<string, string> = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.heic': 'image/heic',
+          '.heif': 'image/heif',
+          '.mp4': 'video/mp4',
+          '.m4v': 'video/mp4',
+          '.mov': 'video/quicktime',
+          '.webm': 'video/webm',
+        }
+        if (
+          await sendStoredObject(reply, getStorage(), rendition ?? requestedFile, {
+            contentType: rendition
+              ? 'image/jpeg'
+              : (types[path.extname(requestedFile).toLowerCase()] ?? 'application/octet-stream'),
+            cacheControl: 'private, max-age=0',
+          })
+        )
+          return
+      } catch (err) {
+        if (!(err instanceof StorageError && err.code === 'invalid_key')) throw err
+      }
+      return reply.status(404).send({ error: getT(request)('errors.notFound') })
+    },
   })
 
   // Per-family branding logo + favicon (issue #164). Public on purpose: the
@@ -399,9 +415,9 @@ export async function buildApp() {
         return reply.status(503).send({ status: 'error' })
       }
       try {
-        await fs.access(uploadsDir, fsConstants.W_OK)
+        if (!(await getStorage().isWritable())) throw new Error('Storage unavailable')
       } catch (err) {
-        request.log.error({ err }, 'health check failed: uploads directory not writable')
+        request.log.error({ err }, 'health check failed: media storage not writable')
         return reply.status(503).send({ status: 'error' })
       }
       return { status: 'ok' }

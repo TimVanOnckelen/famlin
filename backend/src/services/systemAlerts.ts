@@ -1,3 +1,4 @@
+import { getStorage } from './storage/registry.js'
 import i18n from '../i18n/index.js'
 import { prisma } from '../db.js'
 import { backupsDir, uploadsDir } from '../config.js'
@@ -56,7 +57,7 @@ export async function computeActiveAlerts(now = new Date()): Promise<ActiveAlert
   const [backupJob, enabledRow, uploadsDisk, backupsDisk] = await Promise.all([
     prisma.jobStatus.findUnique({ where: { job: 'backup' } }),
     prisma.setting.findUnique({ where: { key: 'backupEnabled' }, select: { updatedAt: true } }),
-    getDiskUsage(uploadsDir),
+    getStorage().id === 'local' ? getDiskUsage(uploadsDir) : Promise.resolve(null),
     getDiskUsage(backupsDir),
   ])
 

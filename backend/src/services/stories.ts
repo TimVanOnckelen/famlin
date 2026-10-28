@@ -228,17 +228,16 @@ export async function deleteStoriesWithMedia(where: Prisma.StoryWhereInput): Pro
   const doomed = await prisma.story.findMany({ where, select: { id: true, imageUrl: true } })
   if (doomed.length === 0) return 0
 
-  await prisma.story.deleteMany({ where: { id: { in: doomed.map((s) => s.id) } } })
-
   const imageUrls = [...new Set(doomed.map((s) => s.imageUrl))]
   const stillReferenced = await prisma.story.findMany({
-    where: { imageUrl: { in: imageUrls } },
+    where: { imageUrl: { in: imageUrls }, id: { notIn: doomed.map((s) => s.id) } },
     select: { imageUrl: true },
   })
   const keep = new Set(stillReferenced.map((s) => s.imageUrl))
   for (const url of imageUrls) {
     if (keep.has(url)) continue
-    await deleteUploadFiles(url).catch((err) => console.error(`Failed to delete story media ${url}`, err))
+    await deleteUploadFiles(url)
   }
+  await prisma.story.deleteMany({ where: { id: { in: doomed.map((s) => s.id) } } })
   return doomed.length
 }

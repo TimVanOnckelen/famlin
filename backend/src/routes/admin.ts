@@ -1,3 +1,5 @@
+import { z } from 'zod'
+import { storageStatus, startStorageMigration, StorageMigrationError } from '../services/storage/migration.js'
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../db.js'
 import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js'
@@ -987,6 +989,27 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return { backups, disk, jobs, migrations, push, alerts }
   })
 
+  fastify.get('/storage', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    return storageStatus()
+  })
+  for (const action of ['migration', 'cleanup'] as const) {
+    fastify.post(`/storage/${action}`, async (request, reply) => {
+      if (requireAdmin(request, reply)) return
+      const source =
+        action === 'cleanup'
+          ? z.object({ confirmSource: z.string().min(1) }).parse(request.body).confirmSource
+          : undefined
+      try {
+        await startStorageMigration(source)
+      } catch (err) {
+        if (err instanceof StorageMigrationError) return reply.status(409).send({ error: err.message })
+        throw err
+      }
+      return reply.status(202).send({ started: true })
+    })
+  }
+
   fastify.get('/status/integrations', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     return getIntegrationStatus()
@@ -1320,7 +1343,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/export', async (request, reply) => {
     if (requireAdmin(request, reply)) return
 
-    const archive = await buildExportArchive()
+    const query = z.object({ includeMedia: z.enum(['true', 'false']).optional() }).parse(request.query)
+    const archive = await buildExportArchive(query.includeMedia !== 'false')
     archive.on('error', (err) => {
       request.log.error(err, 'export archive stream error')
     })

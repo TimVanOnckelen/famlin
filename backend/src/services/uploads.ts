@@ -1,7 +1,6 @@
-import fsp from 'fs/promises'
 import path from 'path'
 import { prisma } from '../db.js'
-import { uploadsDir } from '../config.js'
+import { getStorage } from './storage/registry.js'
 import { isCircleMember } from './circles.js'
 import { DERIVED_DIR_NAME } from './uploadVariants.js'
 
@@ -230,13 +229,15 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
 
   const served = path.basename(assetPath)
   const candidates = [
-    path.join(uploadsDir, served),
-    path.join(uploadsDir, `${assetKey}-thumbnail.jpg`),
-    ...ORIGINAL_EXTENSIONS.map((ext) => path.join(uploadsDir, 'originals', `${assetKey}${ext}`)),
-    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}.jpg`),
-    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
+    served,
+    `${assetKey}-thumbnail.jpg`,
+    ...ORIGINAL_EXTENSIONS.map((ext) => `originals/${assetKey}${ext}`),
+    path.posix.join(DERIVED_DIR_NAME, `${assetKey}.jpg`),
+    path.posix.join(DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
   ]
-  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})))
+  const results = await Promise.allSettled(candidates.map((key) => getStorage().delete(key)))
+  const failure = results.find((result) => result.status === 'rejected')
+  if (failure?.status === 'rejected') throw failure.reason
 
   await prisma.upload.deleteMany({ where: { assetKey } })
   invalidateUploadCache([assetKey])

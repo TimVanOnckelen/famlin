@@ -1,3 +1,7 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { randomUUID } from 'node:crypto'
+import { uploadsDir } from '../src/config.js'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
@@ -70,6 +74,33 @@ describe('GET /api/admin/export', () => {
     expect(body).toContain('data/posts.json')
     expect(body).toContain(admin.email)
     expect(body).toContain('A very distinctive post body for the export test')
+  })
+
+  it('omits media bytes but retains required keys, sizes and branding when includeMedia=false', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const key = `${randomUUID()}.jpg`
+    await fs.writeFile(path.join(uploadsDir, key), 'distinctive-media-payload')
+    await fs.mkdir(path.join(uploadsDir, 'branding'), { recursive: true })
+    const brand = `export-${randomUUID()}.png`
+    await fs.writeFile(path.join(uploadsDir, 'branding', brand), 'distinctive-branding-payload')
+    try {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/admin/export?includeMedia=false',
+        headers: authHeader(admin),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.rawPayload.toString('utf8')
+      expect(body).toContain('"includeMedia": false')
+      expect(body).toContain(`"key": "${key}"`)
+      expect(body).toContain('"size": 25')
+      expect(body).not.toContain('distinctive-media-payload')
+      expect(body).toContain('distinctive-branding-payload')
+      expect(body).not.toContain('StorageMigration')
+    } finally {
+      await fs.rm(path.join(uploadsDir, key), { force: true })
+      await fs.rm(path.join(uploadsDir, 'branding', brand), { force: true })
+    }
   })
 
   it('never includes password hashes', async () => {

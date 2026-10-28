@@ -1,3 +1,4 @@
+import { StoragePage } from './components/StoragePage'
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -81,6 +82,7 @@ function App() {
         <Route path="/content" element={<ContentPage />} />
         <Route path="/push-log" element={<PushLogPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
+        <Route path="/storage" element={<StoragePage />} />
         <Route path="/status" element={<SystemStatusPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

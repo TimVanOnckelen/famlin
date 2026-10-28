@@ -88,6 +88,7 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     localMediaPath: '',
+    backupIncludeMedia: true,
     backupEnabled: false,
     backupSchedule: 'daily',
     backupHour: 3,
@@ -100,6 +101,7 @@ export function ServerSettingsPage() {
   const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null)
 
   const [exporting, setExporting] = useState(false)
+  const [exportIncludeMedia, setExportIncludeMedia] = useState(true)
   const [exportError, setExportError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -163,7 +165,7 @@ export function ServerSettingsPage() {
     setExporting(true)
     setExportError(null)
     try {
-      const { blob, filename } = await api.downloadExport()
+      const { blob, filename } = await api.downloadExport(exportIncludeMedia)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -368,6 +370,12 @@ export function ServerSettingsPage() {
                 desc={t('serverSettings.dataExportDesc')}
               >
                 <div className="settings-test-row">
+                  <ToggleRow
+                    title={t('serverSettings.exportIncludeMedia')}
+                    hint={t('serverSettings.exportIncludeMediaHint')}
+                    checked={exportIncludeMedia}
+                    onChange={setExportIncludeMedia}
+                  />
                   <button type="button" className="secondary" onClick={handleExport} disabled={exporting}>
                     {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}
                   </button>
@@ -645,6 +653,12 @@ export function ServerSettingsPage() {
                   hint={t('serverSettings.backupEnabledHint')}
                   checked={form.backupEnabled}
                   onChange={(checked) => updateField('backupEnabled', checked)}
+                />
+                <ToggleRow
+                  title={t('serverSettings.backupIncludeMedia')}
+                  hint={t('serverSettings.backupIncludeMediaHint')}
+                  checked={form.backupIncludeMedia}
+                  onChange={(checked) => updateField('backupIncludeMedia', checked)}
                 />
                 <div className="row">
                   <label style={{ flex: 1 }}>

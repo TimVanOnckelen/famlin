@@ -45,6 +45,7 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
           <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
+          <NavLink to="/storage">{t('storage.title')}</NavLink>
           <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppIcon } from './Logo'
 import { LanguageSelector } from './LanguageSelector'
-import { api, User } from '../api/client'
+import { api, User, ApiError } from '../api/client'
 
 interface SetupPageProps {
   onSetupComplete: (user: User) => void
@@ -21,10 +21,12 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
   // restoring admin's login.
   const [mode, setMode] = useState<'create' | 'restore'>('create')
   const [archive, setArchive] = useState<File | null>(null)
+  const [missingMedia, setMissingMedia] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setMissingMedia([])
 
     if (password !== confirmPassword) {
       setError(t('setup.passwordMismatch'))
@@ -44,8 +46,9 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
           : await api.setup({ email, name, password })
       localStorage.setItem('famlin_admin_token', result.token)
       onSetupComplete(result.user)
-    } catch (err: any) {
-      setError(err.message || t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'))
+      if (err instanceof ApiError) setMissingMedia(err.missingMedia ?? [])
     } finally {
       setIsLoading(false)
     }
@@ -118,12 +121,31 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
           onClick={() => {
             setMode(mode === 'restore' ? 'create' : 'restore')
             setError(null)
+            setMissingMedia([])
           }}
         >
           {t(mode === 'restore' ? 'setup.modeCreate' : 'setup.modeRestore')}
         </button>
 
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        {missingMedia.length > 0 && (
+          <div>
+            <p>
+              {t('storage.files')}: {missingMedia.length.toLocaleString()}
+            </p>
+            <ul>
+              {missingMedia.slice(0, 100).map((key) => (
+                <li key={key}>
+                  <code>{key}</code>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <LanguageSelector className="login-language" />
       </div>

@@ -4,7 +4,7 @@
 # is built from (docusaurus-plugin-openapi-docs — see docusaurus.config.ts and
 # the gen-api-docs script in package.json). It is maintained by hand: when a
 # backend route or response shape changes, update it here and regenerate.
-# Admin-only endpoints under /api/admin are deliberately not described.
+# Storage administration and export endpoints are included for operators. Other admin endpoints are not described.
 openapi: 3.0.3
 
 info:
@@ -90,6 +90,8 @@ tags:
       permanently deleted — photo included — once its 24 hours are up.
   - name: Notifications
     description: Your in-app notification history.
+  - name: Storage administration
+    description: Administrator-only storage operations.
   - name: Uploads & media
     description: |
       Upload photos/videos and read them back. Files under `/uploads/*` are
@@ -2926,6 +2928,94 @@ paths:
                   groupId: { type: string }
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /api/admin/settings:
+    patch:
+      operationId: updateAdminBackupSettings
+      tags: [Storage administration]
+      summary: Update server settings (admin only; backup option shown here)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backupIncludeMedia:
+                  type: boolean
+                  default: true
+                  description: When false, backup the database and local branding without downloading media or deleting the existing media mirror.
+      responses:
+        '200': { description: Updated server settings }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required }
+  /api/admin/storage:
+    get:
+      operationId: getAdminStorage
+      tags: [Storage administration]
+      summary: Storage configuration, availability, counts and migration progress (admin only)
+      responses:
+        '200':
+          description: Redacted primary/fallback locations, fingerprints, job status, grouped file/byte progress and up to 100 item errors. No credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  primary: { type: object }
+                  fallback: { type: object, nullable: true }
+                  migration: { type: object, nullable: true }
+                  progress: { type: array, items: { type: object } }
+                  errors: { type: array, items: { type: object } }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required }
+  /api/admin/storage/migration:
+    post:
+      operationId: startStorageMigration
+      tags: [Storage administration]
+      summary: Start or retry primary/fallback migration (admin only)
+      responses:
+        '202': { description: Background operation accepted; poll storage status }
+        '409': { description: No fallback or an operation is already running }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required }
+  /api/admin/storage/cleanup:
+    post:
+      operationId: cleanupStorageSource
+      tags: [Storage administration]
+      summary: Remove verified source copies after migration (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmSource]
+              properties:
+                confirmSource: { type: string, description: Exact fallback fingerprint returned by storage status }
+      responses:
+        '202': { description: Cleanup accepted; each copy is reverified before source deletion }
+        '409': { description: Confirmation mismatch, incomplete migration or operation already running }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required }
+  /api/admin/export:
+    get:
+      operationId: exportAdminData
+      tags: [Storage administration]
+      summary: Portable family export (admin only)
+      parameters:
+        - in: query
+          name: includeMedia
+          schema: { type: boolean, default: true }
+          description: False omits media and records required keys and sizes in the manifest. Branding is always included.
+      responses:
+        '200':
+          description: ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required }
 
 components:
   securitySchemes:

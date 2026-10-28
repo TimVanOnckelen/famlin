@@ -3,6 +3,7 @@ import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import { LocalStorageBackend, getStorage } from '../src/services/storage/index.js'
+import { getStorageConfiguration } from '../src/services/storage/registry.js'
 import { uploadsDir } from '../src/config.js'
 import { runStorageBackendContract } from './storage/contract.js'
 
@@ -94,7 +95,7 @@ describe('LocalStorageBackend specifics', () => {
 
   it('is the default driver, rooted at UPLOADS_DIR', () => {
     const active = getStorage()
-    expect(active).toBeInstanceOf(LocalStorageBackend)
-    expect((active as LocalStorageBackend).rootDir).toBe(uploadsDir)
+    expect(active.id).toBe('local')
+    expect(getStorageConfiguration().primary.location).toEqual({ driver: 'local', directory: uploadsDir })
   })
 })
