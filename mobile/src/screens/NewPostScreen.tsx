@@ -38,6 +38,8 @@ import {
   reconcilePostTypeSelection,
 } from '@/utils/newPost'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
+import { usePendingShareStore, PendingShare } from '@/stores/pendingShareStore'
+import { MAX_POST_ATTACHMENTS, MAX_VIDEO_DURATION_SECONDS, fitSharedItems } from '@/utils/sharedMedia'
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const
 // Feather names, not emoji — same reasoning as POST_TYPE_ICON below. The chip
@@ -320,15 +322,16 @@ export function NewPostScreen() {
 
   const {
     pick: pickDeviceMedia,
+    upload: uploadDeviceMedia,
     uploading,
     progress: uploadProgress,
   } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
-      selectionLimit: 10,
+      selectionLimit: MAX_POST_ATTACHMENTS,
       quality: 0.8,
-      videoMaxDuration: 120,
+      videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
     },
     includeIndexInName: true,
     // Show the picked assets (with an uploading overlay) while the upload
@@ -339,6 +342,45 @@ export function NewPostScreen() {
 
   async function pickImagesFromDevice() {
     const result = await pickDeviceMedia()
+    if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls])
+    setPendingAssets([])
+  }
+
+  // Photos/videos shared in from the OS share sheet (issue #199) land in the
+  // pending-share store; App opens this composer for them, or — when it's
+  // already open — this effect simply appends them to the current draft.
+  // Waits for an in-flight upload so the cap counts what it adds.
+  const pendingShare = usePendingShareStore((state) => state.share)
+  React.useEffect(() => {
+    if (!pendingShare || uploading) return
+    const share = usePendingShareStore.getState().takeShare()
+    if (share) attachSharedMedia(share)
+  }, [pendingShare, uploading])
+
+  async function attachSharedMedia(share: PendingShare) {
+    if (share.items.length > 0) {
+      // A trip's only photo is its cover, so it has no attachment row — the
+      // shared media goes on the first offered type that has one instead.
+      if (postType === 'TRIP' || composerStep === 'type') {
+        setPostType(offeredPostTypes.find((type) => type !== 'TRIP') ?? 'UPDATE')
+      }
+      setComposerStep('compose')
+    }
+
+    const { toAttach, skipped } = fitSharedItems(uploadedAssetUrls.length, share.items)
+    const notices = [
+      skipped > 0 && t('newPost.share.skippedOverLimit', { count: skipped, max: MAX_POST_ATTACHMENTS }),
+      share.unsupported > 0 && t('newPost.share.unsupported', { count: share.unsupported }),
+      share.tooLong > 0 &&
+        t('newPost.share.videoTooLong', { count: share.tooLong, seconds: MAX_VIDEO_DURATION_SECONDS }),
+    ].filter(Boolean)
+    if (notices.length > 0) Alert.alert(t('newPost.share.title'), notices.join('\n'))
+
+    if (toAttach.length === 0) return
+    const result = await uploadDeviceMedia(
+      toAttach.map((item) => ({ ...item, fromOutsidePicker: true })),
+      { individually: true }
+    )
     if (result) setUploadedAssetUrls((prev) => [...prev, ...result.urls])
     setPendingAssets([])
   }
