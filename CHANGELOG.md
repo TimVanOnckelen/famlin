@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.4](https://github.com/TimVanOnckelen/famlin/compare/v0.8.3...v0.8.4) (2026-10-28)
+
+
+### Features
+
+* edit and delete posts from web, and let admins edit any post ([51891d8](https://github.com/TimVanOnckelen/famlin/commit/51891d87337c0d00959f51a989dfee24bc8a632e)), closes [#246](https://github.com/TimVanOnckelen/famlin/issues/246)
+* **mobile:** share photos and videos to Famlin from the OS share sheet ([16908b9](https://github.com/TimVanOnckelen/famlin/commit/16908b9a02bb67e667bb1d89305020a192cdb2ba))
+* scheduled backups and admin system status panel with email alerts ([c99c160](https://github.com/TimVanOnckelen/famlin/commit/c99c160c1d188c494673fda94d8ff33bd5bc6fbb))
+
+
+### Bug Fixes
+
+* **posts:** show cross-posted comments merged across visible copies ([fdf76f1](https://github.com/TimVanOnckelen/famlin/commit/fdf76f1d8764ea5c41d2544391d9423278b5865c))
+* **posts:** show cross-posted reactions and comments merged across visible copies ([bbc4a34](https://github.com/TimVanOnckelen/famlin/commit/bbc4a34aa73a1696683c40e3b22ccd890b39e74b))
+* **posts:** show cross-posted reactions merged across visible copies ([8394c06](https://github.com/TimVanOnckelen/famlin/commit/8394c067bcce23dca06974f9a7b573a7e7756479))
+
 ## [0.8.3](https://github.com/TimVanOnckelen/famlin/compare/v0.8.2...v0.8.3) (2026-10-17)
 
 
