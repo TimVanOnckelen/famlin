@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StorageError, type ByteRange, type StorageBackend, type StoredObject } from './types.js'
 
@@ -43,7 +44,28 @@ export async function sendObject(reply: FastifyReply, source: ObjectSource, opti
     }
   }
 
-  const range = parseRangeHeader(request.headers.range)
+  // HEAD sends metadata without opening a body stream.
+  if (request.method === 'HEAD') {
+    const info = await source.stat()
+    if (!info) return false
+    setCommonHeaders(reply, info, options)
+    // An empty stream also preserves Content-Length with Fastify's
+    // automatically generated HEAD route (undefined payload resets it to 0).
+    await reply.header('content-length', String(info.size)).send(Readable.from([]))
+    return true
+  }
+
+  const ifRange = request.headers['if-range']
+  let allowRange = true
+  if (ifRange) {
+    const info = await source.stat()
+    if (!info) return false
+    // Weak validators cannot satisfy If-Range.
+    allowRange =
+      !Number.isNaN(Date.parse(String(ifRange))) &&
+      Math.floor(info.lastModified.getTime() / 1000) * 1000 <= Date.parse(String(ifRange))
+  }
+  const range = allowRange ? parseRangeHeader(request.headers.range) : null
   let object
   try {
     object = await source.get(range ?? undefined)

@@ -274,3 +274,20 @@ The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famli
 ## Next steps
 
 Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
+
+### Optional S3 media storage
+
+The backend defaults to its local uploads volume. For S3 or an S3-compatible
+service, pass `STORAGE_DRIVER=s3`, `S3_BUCKET`, and `S3_REGION` to the backend
+container; optionally set `S3_ENDPOINT`, `S3_PREFIX`, and
+`S3_FORCE_PATH_STYLE=true`. Use `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`
+(optionally `S3_SESSION_TOKEN`), or the standard AWS credential chain. The supplied Compose file forwards these variables from `.env` to the backend.
+For custom deployments, forward them in the service's `environment` section or
+via an `env_file`.
+
+Keep the uploads volume: branding stays local. Media processing uses temporary
+local disk space, so size the container's temporary filesystem for concurrent
+uploads (up to 200 MB per file) and image/video processing. See
+[Moving media between local and S3 storage](maintenance.md#moving-media-between-local-and-s3-storage)
+before changing an existing installation. All backend instances must share the
+same primary/fallback configuration during migration.

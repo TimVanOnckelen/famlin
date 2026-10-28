@@ -72,7 +72,8 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    public missingMedia?: string[]
   ) {
     super(message)
   }
@@ -140,7 +141,32 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
   return res.json()
 }
 
+export interface StorageLocationStatus {
+  driver: 'local' | 's3'
+  directory?: string
+  bucket?: string
+  prefix?: string
+  endpoint?: string
+  region?: string
+  forcePathStyle?: boolean
+  fingerprint: string
+  available: boolean
+  files: number | null
+  bytes: number | null
+}
+export interface StorageStatus {
+  primary: StorageLocationStatus
+  fallback: StorageLocationStatus | null
+  migration: { status: string; error: string | null } | null
+  progress: { status: string; files: number; bytes: number }[]
+  errors: { key: string; status: string; error: string | null }[]
+}
+
 export const api = {
+  getStorage: () => request<StorageStatus>('/api/admin/storage'),
+  migrateStorage: () => request('/api/admin/storage/migration', { method: 'POST' }),
+  cleanupStorage: (confirmSource: string) =>
+    request('/api/admin/storage/cleanup', { method: 'POST', body: { confirmSource } }),
   getSetupStatus: () => request<{ needsSetup: boolean }>('/api/auth/setup-status'),
 
   setup: (data: { email: string; name: string; password: string }) =>
@@ -166,7 +192,14 @@ export const api = {
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
-      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
+      throw new ApiError(
+        res.status,
+        body.error || `HTTP ${res.status}`,
+        body.code,
+        Array.isArray(body.missingMedia)
+          ? body.missingMedia.filter((key: unknown) => typeof key === 'string')
+          : undefined
+      )
     }
     return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>
   },
@@ -440,14 +473,14 @@ export const api = {
 
   // Not a JSON endpoint (returns a zip stream), so this bypasses request()
   // and does its own auth header + error handling instead.
-  downloadExport: async (): Promise<{ blob: Blob; filename: string }> => {
+  downloadExport: async (includeMedia = true): Promise<{ blob: Blob; filename: string }> => {
     const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
     const token = getToken()
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const res = await fetch('/api/admin/export', { headers })
+    const res = await fetch(`/api/admin/export?includeMedia=${includeMedia}`, { headers })
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: i18n.t('common.error') }))

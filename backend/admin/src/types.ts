@@ -71,6 +71,7 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  backupIncludeMedia: boolean
   backupEnabled: boolean
   backupSchedule: BackupSchedule
   backupHour: number

@@ -21,9 +21,9 @@ async function readAll(stream: Readable): Promise<Buffer> {
   return Buffer.concat(chunks)
 }
 
-async function listKeys(storage: StorageBackend, prefix?: string): Promise<string[]> {
+async function listKeys(storage: StorageBackend): Promise<string[]> {
   const keys: string[] = []
-  for await (const info of storage.list(prefix)) keys.push(info.key)
+  for await (const info of storage.list()) keys.push(info.key)
   return keys.sort()
 }
 
@@ -182,7 +182,7 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
     })
 
     describe('served through sendStoredObject', () => {
-      async function serve(headers: Record<string, string> = {}, key = 'v.mp4') {
+      async function serve(headers: Record<string, string> = {}, key = 'v.mp4', method: 'GET' | 'HEAD' = 'GET') {
         const app = Fastify()
         app.get('/f', async (_request, reply) => {
           if (await sendStoredObject(reply, storage, key, { contentType: 'video/mp4' })) {
@@ -191,7 +191,7 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
           return reply.status(404).send({ error: 'not found' })
         })
         try {
-          return await app.inject({ method: 'GET', url: '/f', headers })
+          return await app.inject({ method, url: '/f', headers })
         } finally {
           await app.close()
         }
@@ -208,6 +208,21 @@ export function runStorageBackendContract(name: string, harness: ContractHarness
         expect(res.headers['content-length']).toBe('10')
         expect(res.headers['content-type']).toBe('video/mp4')
         expect(res.headers['accept-ranges']).toBe('bytes')
+      })
+
+      it('answers HEAD without a body and ignores Range on HEAD', async () => {
+        const head = await serve({ range: 'bytes=2-4' }, 'v.mp4', 'HEAD')
+        expect(head.statusCode).toBe(200)
+        expect(head.body).toBe('')
+        expect(head.headers['content-length']).toBe('10')
+      })
+
+      it('applies If-Range only for a current date validator', async () => {
+        const first = await serve()
+        const current = await serve({ range: 'bytes=2-4', 'if-range': first.headers['last-modified'] as string })
+        expect(current.statusCode).toBe(206)
+        expect((await serve({ range: 'bytes=2-4', 'if-range': new Date(0).toUTCString() })).statusCode).toBe(200)
+        expect((await serve({ range: 'bytes=2-4', 'if-range': first.headers.etag as string })).statusCode).toBe(200)
       })
 
       it('answers a Range request with 206', async () => {

@@ -14,6 +14,9 @@ import {
   runScheduledBackupIfDue,
 } from '../src/services/backup/index.js'
 import { sanitizeJobError } from '../src/services/jobRuns.js'
+import { getStorage } from '../src/services/storage/registry.js'
+import { uploadsDir } from '../src/config.js'
+import { BACKUP_UPLOADS_DIR } from '../src/services/backup/index.js'
 import { updateSettings } from '../src/services/settings.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -181,6 +184,26 @@ describe('runBackup', () => {
     expect(status.lastOk).toBe(true)
     expect(status.lastSuccessAt).not.toBeNull()
     expect(status.lastDetails).toMatchObject({ trigger: 'manual', dumpBytes: 4, prunedDumps: 1 })
+  })
+
+  it('keeps media mirrors without downloading when includeMedia is disabled', async () => {
+    await updateSettings({ backupIncludeMedia: false })
+    await write(path.join(BACKUP_UPLOADS_DIR, 'retained.jpg'), 'retained')
+    const historical = path.join(BACKUP_UPLOADS_DIR, DELETED_DIR, '2020-01-01', 'historical.jpg')
+    await write(historical, 'historical')
+    await write(path.join(uploadsDir, 'branding', 'backup-test.png'), 'branding')
+    const read = vi.spyOn(getStorage(), 'get').mockRejectedValue(new Error('Media must not be read'))
+    vi.spyOn(backupDeps, 'dumpDatabase').mockResolvedValue({ file: 'test.dump', bytes: 4 })
+    try {
+      await runBackup('manual')
+      expect(read).not.toHaveBeenCalled()
+      expect(await fsp.readFile(historical, 'utf8')).toBe('historical')
+      expect(await fsp.readFile(path.join(BACKUP_UPLOADS_DIR, 'retained.jpg'), 'utf8')).toBe('retained')
+      expect(await fsp.readFile(path.join(BACKUP_UPLOADS_DIR, 'branding', 'backup-test.png'), 'utf8')).toBe('branding')
+    } finally {
+      await updateSettings({ backupIncludeMedia: true })
+      await fsp.rm(path.join(uploadsDir, 'branding', 'backup-test.png'), { force: true })
+    }
   })
 
   it('allows only one backup at a time', async () => {

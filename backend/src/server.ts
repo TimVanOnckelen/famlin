@@ -1,3 +1,4 @@
+import { resumeStorageMigration } from './services/storage/migration.js'
 import cron from 'node-cron'
 import { buildApp } from './app.js'
 import { config } from './config.js'
@@ -23,6 +24,8 @@ async function start() {
     fastify.log.error(err)
     process.exit(1)
   }
+
+  resumeStorageMigration().catch(() => fastify.log.error('Storage migration resume failed'))
 
   // Fixed daily time (server-local) rather than an admin-configurable
   // setting — kept simple for an MVP-scale feature.

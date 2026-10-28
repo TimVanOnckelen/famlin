@@ -24,9 +24,7 @@ const O_NOFOLLOW = fs.constants.O_NOFOLLOW ?? 0
 
 // The default driver: objects are plain files under `rootDir` (the uploads
 // volume), at exactly the path their key names — so switching an existing
-// deployment to this driver is a no-op, and its files stay usable by
-// @fastify/static and the archiver until every caller goes through the
-// StorageBackend interface.
+// deployment to this driver is a no-op.
 export class LocalStorageBackend implements StorageBackend {
   readonly id = 'local'
 
@@ -91,7 +89,9 @@ export class LocalStorageBackend implements StorageBackend {
     try {
       entries = await fsp.readdir(dirKey ? this.resolve(dirKey) : this.rootDir, { withFileTypes: true })
     } catch (err) {
-      if (isNotFound(err)) return
+      // A missing nested directory can race with deletion; a missing root
+      // means unavailable storage and must not masquerade as an empty library.
+      if (dirKey && isNotFound(err)) return
       throw err
     }
     for (const entry of entries) {

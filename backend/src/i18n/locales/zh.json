@@ -100,7 +100,8 @@
     "unknownBrandPreset": "未知的颜色预设",
     "invalidLogo": "徽标必须是 PNG、JPEG 或 WebP 图片",
     "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）",
-    "backupInProgress": "已有备份正在运行。"
+    "backupInProgress": "已有备份正在运行。",
+    "restoreMediaMissing": "配置的存储中缺少所需媒体，或文件大小不匹配。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

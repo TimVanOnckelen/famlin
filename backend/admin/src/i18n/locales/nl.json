@@ -374,7 +374,11 @@
     "backupHour": "Tijdstip (servertijd)",
     "backupRetention": "Te bewaren databasedumps",
     "backupHint": "Uploads worden incrementeel gespiegeld in plaats van telkens volledig gekopieerd. Bestanden die uit Famlin verwijderd worden, blijven nog 30 dagen in de spiegel staan. Beheerders krijgen een e-mail als een back-up mislukt of als er al twee planningsintervallen geen back-up gelukt is (vereist SMTP).",
-    "backupStatusLink": "Bekijk de back-upstatus en start nu een back-up"
+    "backupStatusLink": "Bekijk de back-upstatus en start nu een back-up",
+    "backupIncludeMedia": "Media opnemen in back-ups",
+    "backupIncludeMediaHint": "Indien uitgeschakeld worden alleen de database en huisstijl opgeslagen. De bestaande mediaspiegel blijft behouden.",
+    "exportIncludeMedia": "Media opnemen in export",
+    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen."
   },
   "media": {
     "peopleMapping": {
@@ -564,6 +568,44 @@
       "upToDate": "Up-to-date",
       "unknown": "Onbekend",
       "failed": "Mislukte migraties vragen aandacht: {{names}}"
+    }
+  },
+  "storage": {
+    "title": "Opslag",
+    "description": "Configureer opslag via omgevingsvariabelen en herstart. Nieuwe media gaan naar de primaire opslag; lezen gebruikt ook de terugvalbron.",
+    "primary": "Primaire opslag",
+    "fallback": "Terugvalbron",
+    "progress": "Voortgang",
+    "idle": "Niet gestart",
+    "state": "Status",
+    "files": "Bestanden",
+    "bytes": "Bytes",
+    "migrate": "Migratie starten / opnieuw proberen",
+    "cleanup": "Bron opruimen",
+    "cleanupHint": "Opruimen verwijdert geverifieerde bronkopieën. Voer de bovenstaande bronvingerafdruk in ter bevestiging.",
+    "confirmSource": "Bronvingerafdruk",
+    "removeFallback": "Verwijder na het opruimen de terugvalvariabelen en herstart.",
+    "notConfigured": "Niet geconfigureerd",
+    "driver": "Stuurprogramma",
+    "directory": "Map",
+    "bucket": "Bucket",
+    "prefix": "Voorvoegsel",
+    "endpoint": "Eindpunt",
+    "region": "Regio",
+    "availability": "Beschikbaarheid",
+    "available": "Beschikbaar",
+    "unavailable": "Niet beschikbaar",
+    "states": {
+      "running": "Kopiëren",
+      "cleaning": "Bron opruimen",
+      "verified": "Geverifieerd",
+      "failed": "Mislukt",
+      "cleaned": "Bron opgeruimd",
+      "cleanup_failed": "Opruimen mislukt",
+      "error": "Fout",
+      "conflict": "Conflict",
+      "deleted": "Verwijderd",
+      "source_removed": "Bron verwijderd"
     }
   }
 }

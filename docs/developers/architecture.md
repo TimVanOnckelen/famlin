@@ -206,3 +206,23 @@ A `TRIP` post's check-in is a `Comment` under the hood, but the subscriber recog
 **Push delivery logging.** Every push send attempt (one Expo API call, organic or admin-triggered) writes a `PushDeliveryLog` row — `sendPush()` in `services/notificationChannels/push.ts` is the single write path, called both by `pushChannel.send()` (the organic `notify()` flow) and directly by `resendPostPush()` in `services/notifications.ts` (see below). Each row records `postId`, `notifyType`, `recipientCount` (who was eligible), `tokenCount` (registered Expo tokens actually attempted), `successCount`/`failureCount` (per-ticket Expo results), and `triggeredByAdminId` (null for organic sends). Viewable in the admin UI's "Push notification log" page, backed by `GET /api/admin/push-log`.
 
 **Manual resend.** An admin can resend a specific post's push notification (e.g. a member's device was offline when it first fired) from the content-moderation UI — `POST /api/admin/content/posts/:id/retrigger-push` calls `resendPostPush()`, which re-derives the post's group members (excluding the author), re-resolves the `new_post` message, and calls `sendPush()` directly. It's push-only: it doesn't touch email and doesn't duplicate the in-app `Notification` row from the original event. 400s `errors.pushNotificationsDisabled` if push is off server-wide.
+
+### Media storage and migration
+
+`services/storage/` implements the `StorageBackend` contract: local filesystem
+and streaming S3 (`@aws-sdk/client-s3`, `@aws-sdk/lib-storage`). S3 multipart
+uploads use two 8 MiB parts in flight. `ApplicationStorage` writes to primary,
+reads primary then fallback on genuine absence, deletes source then primary,
+and lists their union. Keys are URL-relative; access checks still run before
+`sendStoredObject` handles Range, HEAD and conditional responses. Originals and
+`derived/` belong to media storage; `branding/` remains local. Sharp/ffmpeg use
+request-scoped temporary directories removed on success and failure.
+
+Migration uses the operational `StorageMigration` / `StorageMigrationItem`
+tables, a PostgreSQL advisory job lock, and shared per-key transaction locks
+with writes/deletes. Each copy is checked by streamed SHA-256 reads; conflicts
+are preserved. Cleanup requires a matching source fingerprint and repeats
+verification. Job/location fingerprints exclude secrets and permit resumptions
+only for matching locations. Exports omit the operational journal; media-free
+exports list required keys/sizes for restore validation. Backup media mirroring
+is independently optional and retains existing mirrors when disabled.

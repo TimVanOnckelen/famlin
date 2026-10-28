@@ -6,7 +6,8 @@ import { randomUUID } from 'crypto'
 import { createMediaToken } from '../plugins/auth.js'
 import { prisma } from '../db.js'
 import { getT } from '../i18n/index.js'
-import { uploadsDir } from '../config.js'
+import os from 'node:os'
+import { getStorage } from '../services/storage/registry.js'
 import {
   isConvertibleImage,
   isPosterableVideo,
@@ -35,118 +36,72 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate], config: { rateLimit: { max: 60, timeWindow: '10 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
-      const parts = request.parts()
-      const writtenPaths: string[] = []
+      const storage = getStorage()
+      const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-upload-'))
+      const storedKeys: string[] = []
       const uploadedUrls: string[] = []
-
-      async function cleanup() {
-        await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})))
+      async function cleanupStored() {
+        // Report deletion failures instead of losing track of source copies.
+        const results = await Promise.allSettled(storedKeys.map((key) => storage.delete(key)))
+        const failure = results.find((r) => r.status === 'rejected')
+        if (failure?.status === 'rejected') throw failure.reason
       }
-
       try {
-        for await (const part of parts) {
-          if (part.type === 'file') {
-            const ext = path.extname(part.filename).toLowerCase()
-            if (!ALLOWED_EXTENSIONS.has(ext)) {
-              part.file.resume()
-              await cleanup()
-              return reply.status(400).send({ error: t('errors.unsupportedFileType', { ext: ext || 'unknown' }) })
-            }
-            const uuid = randomUUID()
-
-            if (isConvertibleImage(ext)) {
-              // The true original is kept for a possible future "download
-              // original" feature but is never served (see the /uploads/
-              // onRequest hook in app.ts) — everything else derives from it.
-              const originalPath = path.join(uploadsDir, 'originals', `${uuid}${ext}`)
-
-              // Record the path before writing so a mid-stream failure (client
-              // abort, disk error) still gets cleaned up by the catch below.
-              writtenPaths.push(originalPath)
-              await pipeline(part.file, (await fs.open(originalPath, 'w')).createWriteStream())
-
-              if (part.file.truncated) {
-                await cleanup()
-                return reply.status(413).send({ error: t('errors.fileTooLarge') })
-              }
-
-              const displayFilename = `${uuid}.jpg`
-              const displayPath = path.join(uploadsDir, displayFilename)
-              const thumbnailPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`)
-
-              // Only the display copy blocks the response — it's the one URL
-              // this route actually returns. The 400px thumbnail keeps
-              // generating after we've moved on (not tracked in writtenPaths,
-              // so a later part's failure in this same batch won't clean it
-              // up — an accepted, harmless orphan-file trade-off for not
-              // serializing every photo's full resize cost into one request).
-              const { display, thumbnail } = generateDisplayVariant(originalPath, displayPath, thumbnailPath)
-              thumbnail.catch((err) =>
-                request.log.warn({ err, thumbnailPath }, 'background thumbnail generation failed')
-              )
-
+        for await (const part of request.parts()) {
+          if (part.type !== 'file') continue
+          const ext = path.extname(part.filename).toLowerCase()
+          if (!ALLOWED_EXTENSIONS.has(ext)) {
+            part.file.resume()
+            await cleanupStored()
+            return reply.status(400).send({ error: t('errors.unsupportedFileType', { ext: ext || 'unknown' }) })
+          }
+          const uuid = randomUUID()
+          const input = path.join(scratch, `${uuid}${ext}`)
+          await pipeline(part.file, (await fs.open(input, 'w')).createWriteStream())
+          if (part.file.truncated) {
+            await cleanupStored()
+            return reply.status(413).send({ error: t('errors.fileTooLarge') })
+          }
+          let servedKey = `${uuid}${ext}`
+          const files = new Map<string, string>()
+          const thumb = path.join(scratch, `${uuid}-thumbnail.jpg`)
+          if (isConvertibleImage(ext)) {
+            const display = path.join(scratch, `${uuid}-display.jpg`)
+            const generated = generateDisplayVariant(input, display, thumb)
+            // Both sharp pipelines must finish before scratch cleanup.
+            const [displayResult, thumbnailResult] = await Promise.allSettled([generated.display, generated.thumbnail])
+            if (displayResult.status === 'fulfilled') {
+              servedKey = `${uuid}.jpg`
+              files.set(`originals/${uuid}${ext}`, input)
+              files.set(servedKey, display)
+              if (thumbnailResult.status === 'fulfilled') files.set(`${uuid}-thumbnail.jpg`, thumb)
+            } else files.set(servedKey, input)
+          } else {
+            files.set(servedKey, input)
+            if (isPosterableVideo(ext)) {
               try {
-                await display
-                writtenPaths.push(displayPath)
-                uploadedUrls.push(`/uploads/${displayFilename}`)
+                await generateVideoPoster(input, thumb)
+                files.set(`${uuid}-thumbnail.jpg`, thumb)
               } catch {
-                // sharp couldn't decode this file (corrupt/unsupported) — fall
-                // back to serving the raw upload as-is, exactly like before
-                // this feature existed, instead of stranding it unreachably
-                // in originals/. Wait for the background thumbnail attempt
-                // (almost certainly failing for the same reason) first, so it
-                // can't write a stray file after originalPath is renamed away.
-                await thumbnail.catch(() => {})
-                await fs.unlink(displayPath).catch(() => {})
-                await fs.unlink(thumbnailPath).catch(() => {})
-                const fallbackFilename = `${uuid}${ext}`
-                const fallbackPath = path.join(uploadsDir, fallbackFilename)
-                await fs.rename(originalPath, fallbackPath)
-                writtenPaths[writtenPaths.indexOf(originalPath)] = fallbackPath
-                uploadedUrls.push(`/uploads/${fallbackFilename}`)
-              }
-            } else {
-              const filename = `${uuid}${ext}`
-              const filepath = path.join(uploadsDir, filename)
-
-              writtenPaths.push(filepath)
-              await pipeline(part.file, (await fs.open(filepath, 'w')).createWriteStream())
-
-              if (part.file.truncated) {
-                await cleanup()
-                return reply.status(413).send({ error: t('errors.fileTooLarge') })
-              }
-
-              uploadedUrls.push(`/uploads/${filename}`)
-
-              // Best-effort poster frame for video grid/list tiles. Not
-              // awaited — ffmpeg (up to a 30s timeout) would otherwise block
-              // the response for every video in the batch, and the poster
-              // doesn't affect the URL this route returns either way. A
-              // missing poster (ffmpeg absent, undecodable video, or just
-              // not finished yet) means clients fall back to rendering the
-              // video itself for that tile, as before this feature existed.
-              if (isPosterableVideo(ext)) {
-                const posterPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`)
-                generateVideoPoster(filepath, posterPath).catch((err) => {
-                  request.log.warn({ err, posterPath }, 'background video poster generation failed')
-                  fs.unlink(posterPath).catch(() => {})
-                })
+                request.log.warn('Video poster generation failed')
               }
             }
           }
+          // Authorization metadata exists before any file becomes readable.
+          await recordUpload(`/uploads/${servedKey}`, request.user!.id)
+          for (const [key, filePath] of files) {
+            storedKeys.push(key)
+            await storage.put(key, { filePath })
+          }
+          uploadedUrls.push(`/uploads/${servedKey}`)
+          for (const filePath of new Set(files.values())) await fs.rm(filePath, { force: true })
         }
       } catch (err) {
-        await cleanup()
+        await cleanupStored()
         throw err
+      } finally {
+        await fs.rm(scratch, { recursive: true, force: true })
       }
-
-      // Register each file so /uploads/* can authorize reads of it later
-      // (see the Upload model in schema.prisma). The row starts unbound, so
-      // until the client attaches the file to a post/comment/message/avatar
-      // only the uploader can read it back — which is exactly what a composer
-      // draft should be.
-      await Promise.all(uploadedUrls.map((url) => recordUpload(url, request.user!.id)))
 
       return { urls: uploadedUrls }
     }
