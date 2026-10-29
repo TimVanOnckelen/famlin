@@ -11,6 +11,7 @@ import {
 } from '@/utils/storage'
 import { setApiBaseUrl, setMediaToken, unregisterPushToken } from '@famlin/api-client'
 import { refreshMediaToken } from '@/api/uploads'
+import { usePendingShareStore } from '@/stores/pendingShareStore'
 
 interface AuthState {
   user: User | null
@@ -55,6 +56,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     await deleteToken()
     await deleteServerUrl()
     setMediaToken(null)
+    // An unconsumed OS share must never surface in whoever signs in next.
+    // (clearSession below deliberately keeps it: an expired session resumes
+    // into the composer with the share once the same user logs back in.)
+    usePendingShareStore.getState().clear()
     set({ user: null, token: null, serverUrl: null, isLoading: false })
   },
 

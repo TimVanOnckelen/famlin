@@ -220,7 +220,16 @@
     },
     "audience": "Wie kan dit zien?",
     "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
-    "audienceEveryone": "Iedereen"
+    "audienceEveryone": "Iedereen",
+    "share": {
+      "title": "Niet alles is toegevoegd",
+      "skippedOverLimit_one": "{{count}} item is overgeslagen: een bericht kan maximaal {{max}} foto's en video's bevatten.",
+      "skippedOverLimit_other": "{{count}} items zijn overgeslagen: een bericht kan maximaal {{max}} foto's en video's bevatten.",
+      "unsupported_one": "{{count}} item is geen foto of video die Famlin kan delen.",
+      "unsupported_other": "{{count}} items zijn geen foto's of video's die Famlin kan delen.",
+      "videoTooLong_one": "{{count}} video is langer dan {{seconds}} seconden.",
+      "videoTooLong_other": "{{count}} video's zijn langer dan {{seconds}} seconden."
+    }
   },
   "poll": {
     "questionPlaceholder": "Stel een vraag...",

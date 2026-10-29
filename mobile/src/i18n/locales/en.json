@@ -220,7 +220,16 @@
     },
     "audience": "Who can see this?",
     "audienceHint": "Circles let you share with part of the family. Only people in the circle will see this post.",
-    "audienceEveryone": "Everyone"
+    "audienceEveryone": "Everyone",
+    "share": {
+      "title": "Some items weren't added",
+      "skippedOverLimit_one": "{{count}} item was skipped: a post can have at most {{max}} photos and videos.",
+      "skippedOverLimit_other": "{{count}} items were skipped: a post can have at most {{max}} photos and videos.",
+      "unsupported_one": "{{count}} item isn't a photo or video Famlin can share.",
+      "unsupported_other": "{{count}} items aren't photos or videos Famlin can share.",
+      "videoTooLong_one": "{{count}} video is longer than {{seconds}} seconds.",
+      "videoTooLong_other": "{{count}} videos are longer than {{seconds}} seconds."
+    }
   },
   "poll": {
     "questionPlaceholder": "Ask a question...",

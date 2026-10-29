@@ -103,3 +103,23 @@ it('keeps successful files when another upload fails and waits for all requests 
   expect(hook.result.current.uploading).toBe(false)
   await hook.unmount()
 })
+
+it('uploads shared files through the same completion callbacks without opening the picker', async () => {
+  jest.mocked(uploadMedia).mockResolvedValueOnce(['/uploads/shared.mp4'])
+  const onUploaded = jest.fn()
+  const onSettled = jest.fn()
+  const hook = await renderHook(() => usePickAndUploadMedia({ pickerOptions: {}, onUploaded, onSettled }))
+  let response: Awaited<ReturnType<typeof hook.result.current.upload>>
+  await act(async () => {
+    response = await hook.result.current.upload([
+      { uri: 'file:///shared.mp4', isVideo: true, mimeType: 'video/mp4', fromOutsidePicker: true },
+    ])
+  })
+  expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled()
+  expect(response!.urls).toEqual(['/uploads/shared.mp4'])
+  expect(onUploaded).toHaveBeenCalledTimes(1)
+  expect(onUploaded).toHaveBeenCalledWith('/uploads/shared.mp4', 0)
+  expect(onSettled).toHaveBeenCalledWith(0)
+  expect(hook.result.current.uploading).toBe(false)
+  await hook.unmount()
+})

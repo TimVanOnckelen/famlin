@@ -27,6 +27,7 @@ import { ActivityIndicator, View, AppState } from 'react-native'
 import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client'
 import { fetchMe } from '@/api/auth'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useReceiveShareIntents, useOpenComposerForShares } from '@/hooks/useIncomingShares'
 import { getServerUrl, mobileStorageAdapter } from '@/utils/storage'
 import { ensureFreshMediaToken } from '@/api/uploads'
 import { areScreensLoaded, prepareBrandingForMainScreens } from '@/branding'
@@ -105,6 +106,10 @@ function AppContent() {
   })
 
   usePushNotifications()
+  // Photos/videos shared in from the OS share sheet (issue #199): queued right
+  // away, whatever the auth state, then handed to the composer once signed in.
+  useReceiveShareIntents()
+  useOpenComposerForShares(!!user && brandReady)
 
   useEffect(() => {
     // The rest of the app is built for portrait only; the fullscreen media

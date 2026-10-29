@@ -109,4 +109,41 @@ describe('authStore', () => {
     // serverUrl is intentionally left as-is (not reset to null in clearSession).
     expect(state.serverUrl).toBe('http://example.com')
   })
+
+  describe('pending OS share (issue #199)', () => {
+    const share = {
+      items: [
+        {
+          uri: 'file:///cache/shared/a.jpg',
+          mimeType: 'image/jpeg',
+          fileName: 'a.jpg',
+          isVideo: false,
+          width: 1,
+          height: 1,
+        },
+      ],
+      unsupported: 0,
+      tooLong: 0,
+    }
+
+    it('logout clears a pending share so it never reaches the next account', async () => {
+      const { useAuthStore } = require('@/stores/authStore')
+      const { usePendingShareStore } = require('@/stores/pendingShareStore')
+      usePendingShareStore.getState().addShare(share)
+
+      await useAuthStore.getState().logout()
+
+      expect(usePendingShareStore.getState().share).toBeNull()
+    })
+
+    it('clearSession keeps a pending share, so it resumes into the composer after logging back in', async () => {
+      const { useAuthStore } = require('@/stores/authStore')
+      const { usePendingShareStore } = require('@/stores/pendingShareStore')
+      usePendingShareStore.getState().addShare(share)
+
+      await useAuthStore.getState().clearSession()
+
+      expect(usePendingShareStore.getState().share).toEqual(share)
+    })
+  })
 })

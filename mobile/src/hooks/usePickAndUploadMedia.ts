@@ -37,9 +37,55 @@ async function resizeForUpload(
   return { uri: manipulated.uri, resized: true }
 }
 
+// The picker's `quality: 0.8` — the OS picker re-encodes with it before the
+// asset ever reaches us; a file shared in from another app skips the picker,
+// so it gets the same compression here instead.
+const PICKER_IMAGE_QUALITY = 0.8
+
+// Re-encodes a shared image the way the picker would have (JPEG at the
+// picker's quality), downscaling it past MAX_UPLOAD_DIMENSION like any picked
+// photo. When the share didn't report dimensions, the first re-encode
+// reveals them. GIFs are left alone, as re-encoding would drop the animation.
+async function compressSharedImage(
+  uri: string,
+  mimeType: string | undefined,
+  width?: number | null,
+  height?: number | null
+): Promise<{ uri: string; recompressed: boolean }> {
+  if (mimeType === 'image/gif') return { uri, recompressed: false }
+  const options = { compress: PICKER_IMAGE_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
+  const resizeFor = (w: number, h: number) =>
+    Math.max(w, h) > MAX_UPLOAD_DIMENSION
+      ? [{ resize: w >= h ? { width: MAX_UPLOAD_DIMENSION } : { height: MAX_UPLOAD_DIMENSION } }]
+      : []
+  if (width && height) {
+    const manipulated = await ImageManipulator.manipulateAsync(uri, resizeFor(width, height), options)
+    return { uri: manipulated.uri, recompressed: true }
+  }
+  const encoded = await ImageManipulator.manipulateAsync(uri, [], options)
+  const actions = resizeFor(encoded.width, encoded.height)
+  if (actions.length === 0) return { uri: encoded.uri, recompressed: true }
+  const resized = await ImageManipulator.manipulateAsync(encoded.uri, actions, options)
+  return { uri: resized.uri, recompressed: true }
+}
+
 export interface PickedMediaAsset {
   uri: string
   isVideo: boolean
+}
+
+/** A local photo/video to upload — from the picker, or shared into the app
+ * from the OS share sheet (see `upload`). */
+export interface UploadableMediaAsset {
+  uri: string
+  isVideo: boolean
+  width?: number | null
+  height?: number | null
+  fileName?: string | null
+  mimeType?: string | null
+  /** Set for files that didn't come through the picker (an OS share), so
+   * they get the compression the picker would otherwise have applied. */
+  fromOutsidePicker?: boolean
 }
 
 export interface PickAndUploadResult {
@@ -83,6 +129,10 @@ interface UsePickAndUploadMediaOptions {
  * case) — callers only need to branch on truthy/falsy. Each call site still
  * owns its own pending/preview state and post-upload handling (added to a
  * list, saved as the avatar, attached to a comment).
+ *
+ * `upload` is the second half on its own, for files that are already on the
+ * device without going through the picker — photos/videos shared into the
+ * app from the OS share sheet (NewPostScreen, issue #199).
  */
 export function usePickAndUploadMedia({
   pickerOptions,
@@ -100,37 +150,48 @@ export function usePickAndUploadMedia({
   const [progress, setProgress] = useState<number | null>(null)
   const [fileProgress, setFileProgress] = useState<number[]>([])
 
-  async function pick(): Promise<PickAndUploadResult | null> {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'))
+  async function toUploadFile(asset: UploadableMediaAsset, index: number) {
+    const indexSuffix = includeIndexInName ? `-${index}` : ''
+    if (asset.isVideo) {
+      return {
+        uri: asset.uri,
+        name: asset.fileName || `video${indexSuffix}.mp4`,
+        type: asset.mimeType || 'video/mp4',
+      }
+    }
+    if (asset.fromOutsidePicker) {
+      const { uri, recompressed } = await compressSharedImage(
+        asset.uri,
+        asset.mimeType ?? undefined,
+        asset.width,
+        asset.height
+      )
+      return recompressed
+        ? { uri, name: `${fileNamePrefix}${indexSuffix}.jpg`, type: 'image/jpeg' }
+        : { uri, name: asset.fileName || `${fileNamePrefix}${indexSuffix}.gif`, type: asset.mimeType || 'image/gif' }
+    }
+    const { uri, resized } = await resizeForUpload(asset.uri, asset.width ?? undefined, asset.height ?? undefined)
+    return resized
+      ? { uri, name: `${fileNamePrefix}${indexSuffix}.jpg`, type: 'image/jpeg' }
+      : {
+          uri,
+          name: asset.fileName || `${fileNamePrefix}${indexSuffix}.jpg`,
+          type: asset.mimeType || 'image/jpeg',
+        }
+  }
+
+  /** Uploads each local asset independently, preserving successful uploads
+   * when another file fails. Used by both the picker and OS shares. */
+  async function upload(sourceAssets: UploadableMediaAsset[]): Promise<PickAndUploadResult | null> {
+    if (sourceAssets.length === 0) return null
+    let files: { uri: string; name: string; type: string }[]
+    try {
+      files = await Promise.all(sourceAssets.map(toUploadFile))
+    } catch (err: any) {
+      onError?.(err)
+      Alert.alert(t('newPost.alerts.uploadFailed'), err.message || t('common.tryAgain'))
       return null
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync(pickerOptions)
-    if (result.canceled) return null
-
-    const files = await Promise.all(
-      result.assets.map(async (asset, index) => {
-        const isVideo = asset.type === 'video'
-        const indexSuffix = includeIndexInName ? `-${index}` : ''
-        if (isVideo) {
-          return {
-            uri: asset.uri,
-            name: asset.fileName || `video${indexSuffix}.mp4`,
-            type: asset.mimeType || 'video/mp4',
-          }
-        }
-        const { uri, resized } = await resizeForUpload(asset.uri, asset.width, asset.height)
-        return resized
-          ? { uri, name: `${fileNamePrefix}${indexSuffix}.jpg`, type: 'image/jpeg' }
-          : {
-              uri,
-              name: asset.fileName || `${fileNamePrefix}${indexSuffix}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            }
-      })
-    )
 
     const assets: PickedMediaAsset[] = files.map((file) => ({
       uri: file.uri,
@@ -138,9 +199,9 @@ export function usePickAndUploadMedia({
     }))
     onPicked?.(assets)
 
+    setUploading(true)
+    setProgress(0)
     try {
-      setUploading(true)
-      setProgress(0)
       const fractions = files.map(() => 0)
       setFileProgress(fractions)
       const results = await Promise.allSettled(
@@ -182,5 +243,27 @@ export function usePickAndUploadMedia({
     }
   }
 
-  return { pick, uploading, progress, fileProgress }
+  async function pick(): Promise<PickAndUploadResult | null> {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert(t('newPost.alerts.permissionRequiredTitle'), t('newPost.alerts.permissionRequiredMessage'))
+      return null
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync(pickerOptions)
+    if (result.canceled) return null
+
+    return upload(
+      result.assets.map((asset) => ({
+        uri: asset.uri,
+        isVideo: asset.type === 'video',
+        width: asset.width,
+        height: asset.height,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      }))
+    )
+  }
+
+  return { pick, upload, uploading, progress, fileProgress }
 }

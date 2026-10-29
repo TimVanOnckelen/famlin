@@ -220,7 +220,16 @@
     },
     "audience": "谁可以看到？",
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
-    "audienceEveryone": "所有成员"
+    "audienceEveryone": "所有成员",
+    "share": {
+      "title": "部分内容未添加",
+      "skippedOverLimit_one": "已跳过 {{count}} 项：每条动态最多可包含 {{max}} 张照片和视频。",
+      "skippedOverLimit_other": "已跳过 {{count}} 项：每条动态最多可包含 {{max}} 张照片和视频。",
+      "unsupported_one": "{{count}} 项不是 Famlin 可分享的照片或视频。",
+      "unsupported_other": "{{count}} 项不是 Famlin 可分享的照片或视频。",
+      "videoTooLong_one": "{{count}} 个视频超过 {{seconds}} 秒。",
+      "videoTooLong_other": "{{count}} 个视频超过 {{seconds}} 秒。"
+    }
   },
   "poll": {
     "questionPlaceholder": "提个问题…",
