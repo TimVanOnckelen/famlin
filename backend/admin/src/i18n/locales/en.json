@@ -521,7 +521,8 @@
       "free": "{{free}} free of {{total}}",
       "low": "Low",
       "unavailable": "Not available",
-      "sameVolume": "Backups are on the same volume as the uploads. A separate disk or NAS share protects against losing both at once."
+      "sameVolume": "Backups are on the same volume as the uploads. A separate disk or NAS share protects against losing both at once.",
+      "s3Capacity": "Media is stored in S3. Total and free bucket capacity are not reported by the S3 API."
     },
     "integrations": {
       "title": "Integrations",
@@ -606,6 +607,11 @@
       "conflict": "Conflict",
       "deleted": "Deleted",
       "source_removed": "Source removed"
-    }
+    },
+    "size": "Size",
+    "migrationTitle": "Migration",
+    "errors": "Errors ({{count}})",
+    "cleanupLocked": "Complete migration verification before cleaning up the source.",
+    "confirmPlaceholder": "Paste the source fingerprint"
   }
 }
