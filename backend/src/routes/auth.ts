@@ -285,6 +285,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
           if (err.code === 'notEmpty') {
             return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
           }
+          if (err.code === 'missingMedia') {
+            return reply.status(400).send({ error: t('errors.restoreMediaMissing'), missingMedia: err.missingKeys })
+          }
           if (err.code === 'archiveTooNew') {
             return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
           }

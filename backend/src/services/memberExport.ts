@@ -31,15 +31,12 @@
 //
 // Same store-mode and "caller owns finalize()" contract as export.ts.
 import { ZipArchive, type Archiver } from 'archiver'
-import fs from 'fs'
-import path from 'path'
 import { prisma } from '../db.js'
-import { uploadsDir } from '../config.js'
+import { getStorage } from './storage/registry.js'
+import { appendStoredObject } from './storage/archive.js'
 import { getUserCircleIds, visiblePostsWhere } from './circles.js'
-import { uploadAssetKey } from './uploads.js'
+import { uploadAssetKey, canReadUpload } from './uploads.js'
 import pkg from '../../package.json' with { type: 'json' }
-
-const ORIGINALS_DIR_NAME = 'originals'
 
 // Matches every /uploads/<file> path embedded anywhere in the exported rows —
 // uploadedAssetUrls, comment attachments/assetUrl, trip/album typeData cover
@@ -53,16 +50,6 @@ export function collectUploadKeys(serialized: string): Set<string> {
     keys.add(uploadAssetKey(match[1]))
   }
   return keys
-}
-
-async function listFiles(dir: string): Promise<string[]> {
-  try {
-    const entries = await fs.promises.readdir(dir, { withFileTypes: true })
-    return entries.filter((e) => e.isFile()).map((e) => e.name)
-  } catch {
-    // Fresh installs may not have an uploads (or originals) directory yet.
-    return []
-  }
 }
 
 export async function buildMemberExportArchive(userId: string): Promise<Archiver> {
@@ -156,24 +143,22 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true },
+    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, motionAssetKey: true },
   })
   const circleSet = new Set(circleIds)
   for (const row of uploadRows) {
     const readable = row.circleId ? circleSet.has(row.circleId) : row.bound || row.uploaderId === userId
     if (!readable) referencedKeys.delete(row.assetKey)
+    else if (row.motionAssetKey && (await canReadUpload(`/uploads/${row.motionAssetKey}.mp4`, userId)))
+      referencedKeys.add(row.motionAssetKey)
   }
 
-  const [topLevel, originals] = await Promise.all([
-    listFiles(uploadsDir),
-    listFiles(path.join(uploadsDir, ORIGINALS_DIR_NAME)),
-  ])
-  const uploadFiles = [
-    ...topLevel.filter((f) => referencedKeys.has(uploadAssetKey(f))).map((f) => ({ rel: f })),
-    ...originals
-      .filter((f) => referencedKeys.has(uploadAssetKey(f)))
-      .map((f) => ({ rel: path.posix.join(ORIGINALS_DIR_NAME, f) })),
-  ]
+  const uploadFiles: { rel: string }[] = []
+  for await (const file of getStorage().list()) {
+    if ((file.key.includes('/') && !file.key.startsWith('originals/')) || !referencedKeys.has(uploadAssetKey(file.key)))
+      continue
+    uploadFiles.push({ rel: file.key })
+  }
 
   const archive: Archiver = new ZipArchive({ store: true })
 
@@ -204,7 +189,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   archive.append(serialized.chatMessages, { name: 'data/chat-messages.json' })
 
   for (const file of uploadFiles) {
-    archive.file(path.join(uploadsDir, file.rel), { name: `uploads/${file.rel}` })
+    appendStoredObject(archive, file.rel)
   }
 
   return archive

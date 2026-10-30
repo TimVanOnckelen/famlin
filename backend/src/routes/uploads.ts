@@ -9,7 +9,9 @@ import { randomUUID } from 'crypto'
 import { createMediaToken } from '../plugins/auth.js'
 import { prisma } from '../db.js'
 import { getT } from '../i18n/index.js'
-import { uploadsDir } from '../config.js'
+import os from 'node:os'
+import { getStorage } from '../services/storage/registry.js'
+import { uploadSourceKey } from '../services/uploadSources.js'
 import { isConvertibleImage, isPosterableVideo } from '../services/uploadVariants.js'
 import { uploadAssetKey, invalidateUploadCache, canReadUpload } from '../services/uploads.js'
 import { createUploadPreview, startUploadWorker } from '../services/uploadProcessing.js'
@@ -72,8 +74,9 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         .pipe(z.array(z.string().uuid()).max(1000))
         .parse(String(request.headers['x-upload-session-exclude'] ?? '[]'))
       const parts = request.parts()
-      const writtenPaths: string[] = []
-      const sourceDirectories: string[] = []
+      const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-upload-'))
+      const storedKeys: string[] = []
+      const storage = getStorage()
       const uploadedUrls: string[] = []
       const media: { url: string; thumbnailUrl: string | null; status: string }[] = []
       const jobs: {
@@ -87,107 +90,112 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
       }[] = []
 
       async function cleanup() {
-        await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})))
-        await Promise.all(sourceDirectories.map((p) => fs.rmdir(p).catch(() => {})))
+        const results = await Promise.allSettled(storedKeys.map((key) => storage.delete(key)))
+        const failed = results.find((result) => result.status === 'rejected')
+        if (failed?.status === 'rejected') throw failed.reason
       }
-
       try {
-        for await (const part of parts) {
-          if (part.type === 'file') {
-            const ext = path.extname(part.filename).toLowerCase()
-            if (!ALLOWED_EXTENSIONS.has(ext)) {
-              part.file.resume()
-              await cleanup()
-              return reply.status(400).send({ error: t('errors.unsupportedFileType', { ext: ext || 'unknown' }) })
-            }
-            const uuid = randomUUID()
-
-            const video = isPosterableVideo(ext)
-            const processMedia = video || isConvertibleImage(ext)
-            const sourceFilename = processMedia
-              ? `${uuid}/${path.basename(part.filename.replace(/\\/g, '/'))}`
-              : `${uuid}${ext}`
-            const sourcePath = path.join(uploadsDir, ...(processMedia ? ['originals'] : []), sourceFilename)
-            if (processMedia) {
-              const sourceDirectory = path.dirname(sourcePath)
-              await fs.mkdir(sourceDirectory, { recursive: true })
-              sourceDirectories.push(sourceDirectory)
-            }
-            writtenPaths.push(sourcePath)
-            await pipeline(part.file, (await fs.open(sourcePath, 'w')).createWriteStream())
-            if (part.file.truncated) {
-              await cleanup()
-              return reply.status(413).send({ error: t('errors.fileTooLarge') })
-            }
-            const url = `/uploads/${uuid}${processMedia ? (video ? '.mp4' : '.jpg') : ext}`
-            let thumbnailUrl: string | null = null
-            if (processMedia) {
-              const previewPath = path.join(uploadsDir, `${uuid}-thumbnail.jpg`)
-              writtenPaths.push(previewPath)
-              try {
-                await createUploadPreview(sourcePath, previewPath, video)
-                thumbnailUrl = `/uploads/${uuid}-thumbnail.jpg`
-              } catch (error) {
-                request.log.warn({ err: error }, 'Upload preview generation failed')
-                await fs.unlink(previewPath).catch(() => {})
+        try {
+          for await (const part of parts) {
+            if (part.type === 'file') {
+              const ext = path.extname(part.filename).toLowerCase()
+              if (!ALLOWED_EXTENSIONS.has(ext)) {
+                part.file.resume()
+                await cleanup()
+                return reply.status(400).send({ error: t('errors.unsupportedFileType', { ext: ext || 'unknown' }) })
               }
-              let livePhotoIdentifier: string | null = null
-              let uploadSessionId = sessionId ?? null
-              if (sessionId && /\.(heic|heif|jpe?g|mov)$/i.test(sourceFilename)) {
+              const uuid = randomUUID()
+
+              const video = isPosterableVideo(ext)
+              const processMedia = video || isConvertibleImage(ext)
+              const sourceFilename = processMedia
+                ? `${uuid}/${path.basename(part.filename.replace(/\\/g, '/'))}`
+                : `${uuid}${ext}`
+              const sourcePath = path.join(scratch, `${uuid}${ext}`)
+              await pipeline(part.file, (await fs.open(sourcePath, 'w')).createWriteStream())
+              if (part.file.truncated) {
+                await cleanup()
+                return reply.status(413).send({ error: t('errors.fileTooLarge') })
+              }
+              const url = `/uploads/${uuid}${processMedia ? (video ? '.mp4' : '.jpg') : ext}`
+              let thumbnailUrl: string | null = null
+              if (processMedia) {
+                const previewPath = path.join(scratch, `${uuid}-thumbnail.jpg`)
                 try {
-                  livePhotoIdentifier = await readLivePhotoIdentifier(sourceFilename)
+                  await createUploadPreview(sourcePath, previewPath, video)
+                  thumbnailUrl = `/uploads/${uuid}-thumbnail.jpg`
                 } catch (error) {
-                  request.log.warn({ err: error }, 'Live Photo metadata unavailable; leaving file separate')
-                  uploadSessionId = null
+                  request.log.warn({ err: error }, 'Upload preview generation failed')
+                  await fs.unlink(previewPath).catch(() => {})
                 }
-              }
-              jobs.push({
-                assetKey: uuid,
-                sourceFilename,
-                uploadSessionId,
-                livePhotoIdentifier,
-                mediaKind: video ? 'video' : 'image',
-                mediaUrl: url,
-                thumbnailUrl,
-              })
-            }
-            uploadedUrls.push(url)
-            media.push({ url, thumbnailUrl, status: processMedia ? 'queued' : 'ready' })
-          }
-        }
-      } catch (err) {
-        await cleanup()
-        throw err
-      }
-
-      try {
-        // Publish jobs only after every source has been saved and authorized.
-        await prisma.$transaction(async (tx) => {
-          for (const url of uploadedUrls) {
-            const job = jobs.find((item) => item.mediaUrl === url)
-            if (job) {
-              await tx.upload.create({ data: { ...job, uploaderId: request.user!.id, processingStatus: 'queued' } })
-            } else {
-              await tx.upload.create({
-                data: {
-                  assetKey: uploadAssetKey(url),
-                  uploaderId: request.user!.id,
+                if (thumbnailUrl) {
+                  const key = `${uuid}-thumbnail.jpg`
+                  storedKeys.push(key)
+                  await storage.put(key, { filePath: previewPath })
+                }
+                let livePhotoIdentifier: string | null = null
+                let uploadSessionId = sessionId ?? null
+                if (sessionId && /\.(heic|heif|jpe?g|mov)$/i.test(sourceFilename)) {
+                  try {
+                    livePhotoIdentifier = await readLivePhotoIdentifier(sourceFilename, sourcePath)
+                  } catch (error) {
+                    request.log.warn({ err: error }, 'Live Photo metadata unavailable; leaving file separate')
+                    uploadSessionId = null
+                  }
+                }
+                jobs.push({
+                  assetKey: uuid,
+                  sourceFilename,
+                  uploadSessionId,
+                  livePhotoIdentifier,
+                  mediaKind: video ? 'video' : 'image',
                   mediaUrl: url,
-                  uploadSessionId: sessionId ?? null,
-                },
-              })
+                  thumbnailUrl,
+                })
+              }
+              const sourceKey = processMedia ? uploadSourceKey(sourceFilename) : `${uuid}${ext}`
+              storedKeys.push(sourceKey)
+              await storage.put(sourceKey, { filePath: sourcePath })
+              uploadedUrls.push(url)
+              media.push({ url, thumbnailUrl, status: processMedia ? 'queued' : 'ready' })
             }
           }
-        })
-        invalidateUploadCache(uploadedUrls.map(uploadAssetKey))
-      } catch (error) {
-        await cleanup()
-        throw error
+        } catch (err) {
+          await cleanup()
+          throw err
+        }
+
+        try {
+          // Publish jobs only after every source has been saved and authorized.
+          await prisma.$transaction(async (tx) => {
+            for (const url of uploadedUrls) {
+              const job = jobs.find((item) => item.mediaUrl === url)
+              if (job) {
+                await tx.upload.create({ data: { ...job, uploaderId: request.user!.id, processingStatus: 'queued' } })
+              } else {
+                await tx.upload.create({
+                  data: {
+                    assetKey: uploadAssetKey(url),
+                    uploaderId: request.user!.id,
+                    mediaUrl: url,
+                    uploadSessionId: sessionId ?? null,
+                  },
+                })
+              }
+            }
+          })
+          invalidateUploadCache(uploadedUrls.map(uploadAssetKey))
+        } catch (error) {
+          await cleanup()
+          throw error
+        }
+        const sessionMedia = sessionId
+          ? await reconcileUploadSession(sessionId, request.user!.id, excludedKeys)
+          : undefined
+        return { urls: uploadedUrls, media, ...(sessionMedia ? { sessionMedia } : {}) }
+      } finally {
+        await fs.rm(scratch, { recursive: true, force: true })
       }
-      const sessionMedia = sessionId
-        ? await reconcileUploadSession(sessionId, request.user!.id, excludedKeys)
-        : undefined
-      return { urls: uploadedUrls, media, ...(sessionMedia ? { sessionMedia } : {}) }
     }
   )
 

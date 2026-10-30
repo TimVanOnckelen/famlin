@@ -374,7 +374,11 @@
     "backupHour": "时间（服务器时间）",
     "backupRetention": "保留的数据库转储数量",
     "backupHint": "上传文件以增量方式镜像，而不是每次完整复制。从 Famlin 删除的文件会在镜像中保留 30 天后再移除。如果备份失败，或超过两个计划周期没有成功的备份，管理员会收到邮件（需要配置 SMTP）。",
-    "backupStatusLink": "查看备份状态并立即运行备份"
+    "backupStatusLink": "查看备份状态并立即运行备份",
+    "backupIncludeMedia": "备份包含媒体",
+    "backupIncludeMediaHint": "关闭后仅备份数据库和品牌文件，保留现有媒体镜像。",
+    "exportIncludeMedia": "导出包含媒体",
+    "exportIncludeMediaHint": "关闭后，恢复时要求所有列出的媒体已存在于配置的存储中。品牌文件始终包含在内。"
   },
   "media": {
     "peopleMapping": {
@@ -564,6 +568,44 @@
       "upToDate": "已是最新",
       "unknown": "未知",
       "failed": "以下迁移失败，需要处理：{{names}}"
+    }
+  },
+  "storage": {
+    "title": "存储",
+    "description": "通过环境变量配置存储并重启。新媒体写入主存储，读取也会使用备用存储。",
+    "primary": "主存储",
+    "fallback": "备用来源",
+    "progress": "进度",
+    "idle": "尚未开始",
+    "state": "状态",
+    "files": "文件",
+    "bytes": "字节",
+    "migrate": "开始或重试迁移",
+    "cleanup": "清理来源",
+    "cleanupHint": "清理会删除已验证的来源副本。请输入上方显示的来源指纹以确认。",
+    "confirmSource": "来源指纹",
+    "removeFallback": "清理成功后，删除备用存储环境变量并重启。",
+    "notConfigured": "未配置",
+    "driver": "驱动",
+    "directory": "目录",
+    "bucket": "存储桶",
+    "prefix": "前缀",
+    "endpoint": "端点",
+    "region": "区域",
+    "availability": "可用性",
+    "available": "可用",
+    "unavailable": "不可用",
+    "states": {
+      "running": "复制中",
+      "cleaning": "清理来源中",
+      "verified": "已验证",
+      "failed": "失败",
+      "cleaned": "来源已清理",
+      "cleanup_failed": "清理失败",
+      "error": "错误",
+      "conflict": "冲突",
+      "deleted": "已删除",
+      "source_removed": "来源已移除"
     }
   }
 }

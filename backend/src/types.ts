@@ -365,6 +365,7 @@ export const updateServerSettingsBodySchema = z.object({
   backupEnabled: z.boolean().optional(),
   backupSchedule: z.enum(['daily', 'weekly']).optional(),
   backupHour: z.number().int().min(0).max(23).optional(),
+  backupIncludeMedia: z.boolean().optional(),
   backupRetention: z.number().int().min(1).max(365).optional(),
 })
 

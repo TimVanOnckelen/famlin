@@ -1,7 +1,8 @@
-import fsp from 'fs/promises'
 import path from 'path'
 import { prisma } from '../db.js'
-import { uploadsDir } from '../config.js'
+import { getStorageConfiguration } from './storage/registry.js'
+import { withStorageKeys } from './storage/locks.js'
+import { uploadSourceKey, uploadLifecycleKey } from './uploadSources.js'
 import { isCircleMember } from './circles.js'
 import { DERIVED_DIR_NAME } from './uploadVariants.js'
 
@@ -19,6 +20,10 @@ const THUMBNAIL_SUFFIX = '-thumbnail'
 // Getting this wrong would leave thumbnails unprotected, which is the whole
 // asset at 400px — tests/circles-uploads.test.ts pins every rendition shape.
 export function uploadAssetKey(pathOrFilename: string): string {
+  const nestedOriginal = /(?:^|\/)originals\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\//i.exec(
+    pathOrFilename
+  )
+  if (nestedOriginal) return nestedOriginal[1]
   const filename = pathOrFilename.split('/').pop() ?? ''
   const dot = filename.lastIndexOf('.')
   const stem = dot === -1 ? filename : filename.slice(0, dot)
@@ -269,16 +274,23 @@ export async function deleteUploadFiles(assetPath: string): Promise<void> {
   if (livePhoto?.motionUpload?.mediaUrl) await deleteUploadFiles(livePhoto.motionUpload.mediaUrl)
   const served = path.basename(assetPath)
   const candidates = [
-    path.join(uploadsDir, served),
-    path.join(uploadsDir, `${assetKey}-thumbnail.jpg`),
-    ...ORIGINAL_EXTENSIONS.map((ext) => path.join(uploadsDir, 'originals', `${assetKey}${ext}`)),
-    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}.jpg`),
-    path.join(uploadsDir, DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
+    ...(livePhoto?.sourceFilename ? [uploadSourceKey(livePhoto.sourceFilename)] : []),
+    served,
+    `${assetKey}-thumbnail.jpg`,
+    ...ORIGINAL_EXTENSIONS.map((ext) => `originals/${assetKey}${ext}`),
+    path.posix.join(DERIVED_DIR_NAME, `${assetKey}.jpg`),
+    path.posix.join(DERIVED_DIR_NAME, `${assetKey}-thumbnail.jpg`),
   ]
-  await Promise.all(candidates.map((p) => fsp.unlink(p).catch(() => {})))
-  await fsp.rm(path.join(uploadsDir, 'originals', assetKey), { recursive: true, force: true })
+  await withStorageKeys([...candidates, uploadLifecycleKey(assetKey)], async (tx) => {
+    const { primary, fallback } = getStorageConfiguration()
+    for (const key of new Set(candidates)) {
+      await fallback?.backend.delete(key)
+      await primary.backend.delete(key)
+      await tx.storageMigrationItem.updateMany({ where: { key }, data: { status: 'deleted', error: null } })
+    }
+    await tx.upload.deleteMany({ where: { assetKey } })
+  })
 
-  await prisma.upload.deleteMany({ where: { assetKey } })
   invalidateUploadCache([assetKey])
 }
 

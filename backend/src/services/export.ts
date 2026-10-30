@@ -43,12 +43,14 @@ import { uploadsDir } from '../config.js'
 import { uploadAssetKey } from './uploads.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
 import pkg from '../../package.json' with { type: 'json' }
-import { RESTORE_WORKDIR_PREFIX } from './import.js'
+import { getStorage } from './storage/registry.js'
+import { appendStoredObject } from './storage/archive.js'
+import path from 'node:path'
 
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
 // stream, so headers can be sent before/while archiver produces bytes.
-export async function buildExportArchive(): Promise<Archiver> {
+export async function buildExportArchive(includeMedia = true): Promise<Archiver> {
   const [
     users,
     groups,
@@ -131,7 +133,11 @@ export async function buildExportArchive(): Promise<Archiver> {
 
   const archive: Archiver = new ZipArchive({ store: true })
 
+  const requiredMedia: { key: string; size: number }[] = []
+
   const manifest = {
+    includeMedia,
+    requiredMedia,
     exportedAt: new Date().toISOString(),
     serverVersion: pkg.version,
     counts: {
@@ -153,7 +159,6 @@ export async function buildExportArchive(): Promise<Archiver> {
     },
   }
 
-  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
   archive.append(JSON.stringify(users, null, 2), { name: 'data/users.json' })
   archive.append(JSON.stringify(groups, null, 2), { name: 'data/groups.json' })
   archive.append(JSON.stringify(circles, null, 2), { name: 'data/circles.json' })
@@ -175,7 +180,12 @@ export async function buildExportArchive(): Promise<Archiver> {
   // authorization row for a file that isn't in the archive. A cross-post
   // sibling that is pinned keeps the file in.
   const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)))
+  for (const upload of uploads)
+    if (pinnedKeys.has(upload.assetKey) && upload.motionAssetKey) pinnedKeys.add(upload.motionAssetKey)
   const liveOnlyKeys = new Set(liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key)))
+  for (const upload of uploads)
+    if (liveOnlyKeys.has(upload.assetKey) && upload.motionAssetKey && !pinnedKeys.has(upload.motionAssetKey))
+      liveOnlyKeys.add(upload.motionAssetKey)
   archive.append(
     JSON.stringify(
       uploads.filter((u) => !liveOnlyKeys.has(u.assetKey)),
@@ -185,18 +195,14 @@ export async function buildExportArchive(): Promise<Archiver> {
     { name: 'data/uploads.json' }
   )
 
-  // Fresh installs may not have an uploads directory yet — skip silently
-  // rather than failing the whole export.
-  if (fs.existsSync(uploadsDir)) {
-    // Skips the scratch directory of a restore (services/import.ts) that is
-    // in progress or was interrupted — it's a half-extracted archive, not
-    // family media — and every rendition of a live story's photo.
-    archive.directory(uploadsDir, 'uploads', (entry) =>
-      entry.name.startsWith(`uploads/${RESTORE_WORKDIR_PREFIX}`) || liveOnlyKeys.has(uploadAssetKey(entry.name))
-        ? false
-        : entry
-    )
+  for await (const object of getStorage().list()) {
+    if (liveOnlyKeys.has(uploadAssetKey(object.key))) continue
+    requiredMedia.push({ key: object.key, size: object.size })
+    if (includeMedia) appendStoredObject(archive, object.key)
   }
+  const brandingDir = path.join(uploadsDir, 'branding')
+  if (fs.existsSync(brandingDir)) archive.directory(brandingDir, 'uploads/branding')
+  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
 
   return archive
 }

@@ -22,6 +22,11 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       NODE_ENV: 'test',
+      // Application tests always use local, throwaway storage. The S3 suites
+      // construct isolated UUID buckets using TEST_S3_ENDPOINT explicitly.
+      STORAGE_DRIVER: 'local',
+      STORAGE_FALLBACK_DRIVER: '',
+      UPLOADS_DIR: process.env.UPLOADS_DIR ?? path.join(os.tmpdir(), 'famlin-test-uploads'),
       DATABASE_URL: process.env.DATABASE_URL!,
       JWT_SECRET: process.env.JWT_SECRET!,
       PORT: process.env.PORT!,

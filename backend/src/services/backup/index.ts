@@ -1,3 +1,6 @@
+import { getStorage } from '../storage/registry.js'
+import { LocalStorageBackend } from '../storage/local.js'
+import type { StorageBackend } from '../storage/types.js'
 import path from 'path'
 import { backupsDir, uploadsDir } from '../../config.js'
 import { prisma } from '../../db.js'
@@ -73,7 +76,28 @@ export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<Bac
       const settings = await getAllSettings()
       const dump = await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
       const pruned = await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
-      const mirror = await backupDeps.mirrorUploads(uploadsDir, BACKUP_UPLOADS_DIR, now)
+      const local = new LocalStorageBackend(uploadsDir)
+      const media = getStorage()
+      const source: StorageBackend = {
+        id: media.id,
+        init: () => media.init(),
+        isWritable: () => media.isWritable(),
+        put: (key, body) => media.put(key, body),
+        delete: (key) => media.delete(key),
+        get: (key, options) => (key.startsWith('branding/') ? local.get(key, options) : media.get(key, options)),
+        stat: (key) => (key.startsWith('branding/') ? local.stat(key) : media.stat(key)),
+        async *list() {
+          if (settings.backupIncludeMedia) yield* media.list()
+          for await (const object of local.list()) if (object.key.startsWith('branding/')) yield object
+        },
+      }
+      const mirror = await backupDeps.mirrorUploads(
+        source,
+        BACKUP_UPLOADS_DIR,
+        now,
+        undefined,
+        !settings.backupIncludeMedia
+      )
       return { trigger, dumpFile: dump.file, dumpBytes: dump.bytes, prunedDumps: pruned.length, mirror }
     },
     (result) => ({ ...result, mirror: { ...result.mirror } })

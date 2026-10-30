@@ -221,3 +221,83 @@ Make sure the database and user already exist — Famlin does not create the dat
 **Can't reach `/admin` through the reverse proxy but the container works on `localhost:3000`** — check that the proxy forwards the full path (not just `/`) and doesn't strip the `/admin` prefix.
 
 See also the [Security policy](./security) page for hardening recommendations.
+
+## Moving media between local and S3 storage
+
+Local storage remains the default. Media URLs and Upload authorization records
+stay unchanged when changing drivers. Azure and linked local albums
+(`localMediaPath`) are independent of this feature. Branding always remains on
+the local uploads volume.
+
+Configure the backend environment, then restart **all backend instances with the
+same primary and fallback configuration**. During migration, new uploads go to
+the primary; reads try the primary, then the fallback only when an object is
+missing. An access or connection error is reported, rather than treated as a
+missing object.
+
+For local → S3:
+
+```dotenv
+STORAGE_DRIVER=s3
+S3_BUCKET=famlin
+S3_ENDPOINT=https://s3.example.com
+S3_REGION=us-east-1
+S3_PREFIX=media
+S3_FORCE_PATH_STYLE=true
+STORAGE_FALLBACK_DRIVER=local
+STORAGE_FALLBACK_UPLOADS_DIR=/app/uploads
+```
+
+Supply `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` together, optionally with
+`S3_SESSION_TOKEN`. Omit all three to use the standard AWS credential chain.
+`S3_ENDPOINT` is optional for AWS S3. `S3_FORCE_PATH_STYLE` defaults to `false`.
+For S3 → local set `STORAGE_DRIVER=local`, `STORAGE_FALLBACK_DRIVER=s3`, and
+configure the source with `STORAGE_FALLBACK_S3_BUCKET`,
+`STORAGE_FALLBACK_S3_ENDPOINT`, `STORAGE_FALLBACK_S3_REGION`,
+`STORAGE_FALLBACK_S3_ACCESS_KEY_ID`, `STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY`,
+`STORAGE_FALLBACK_S3_SESSION_TOKEN`, `STORAGE_FALLBACK_S3_PREFIX`, and
+`STORAGE_FALLBACK_S3_FORCE_PATH_STYLE`. Source and destination must not overlap.
+
+Open **Admin → Storage**, inspect the locations and start migration. The worker
+lists the source, including legacy objects without Upload rows, and excludes
+branding, temporary and internal objects. It streams each copy and reads the
+destination again to verify SHA-256. S3 ETags are not used as hashes. Existing
+identical objects are verified; different objects are recorded as conflicts and
+never overwritten. Resolve conflicts deliberately, then retry. PostgreSQL locks
+coordinate workers and application writes/deletes. Do not modify the source
+externally during migration or cleanup.
+
+Interrupted running jobs resume after restart only when both location
+fingerprints still match. Credentials are not part of the fingerprint, allowing
+credential rotation. Errors and conflicts are retained in the operational journal;
+it is not part of portable family exports.
+
+Cleanup is a separate action. It is available after a complete verification and
+requires entering the fallback's fingerprint. Each source object and its copy
+are checked again before the source is removed. Changed, conflicting, or
+unverified objects remain. After successful cleanup, remove the fallback env
+variables yourself and restart all instances. Famlin never rewrites environment
+configuration. Keep backups while moving storage.
+
+The backend needs list, read, write, multipart-upload and delete permissions for
+its configured S3 prefix, plus access to check the bucket. `/health` tests primary
+storage with a small temporary write/delete; the admin Storage page reports
+fallback availability. S3 capacity is not represented by local disk statistics.
+MinIO tests establish behavior against MinIO only, not compatibility with every
+S3-compatible provider.
+
+### Exports and backups with external media
+
+Admin export accepts `GET /api/admin/export?includeMedia=false` (default `true`).
+Branding is always included. A media-free export records `includeMedia: false`
+and the required storage keys and sizes in its manifest. Restore validates that
+those objects are already present in the configured primary or fallback before
+writing database rows, and reports missing or size-mismatched objects. Old
+archives remain supported. Full and member exports stream media through storage.
+
+**Server settings → Backups → Include media in backups** defaults to enabled.
+When disabled, scheduled/manual backups keep the database dump and local
+branding, without downloading media or deleting an existing media mirror. When
+enabled, the mirror reads primary and fallback without duplicates, retaining the
+existing policy of keeping deleted files for 30 days. S3 does not replace a
+backup: keep independent copies and test recovery.

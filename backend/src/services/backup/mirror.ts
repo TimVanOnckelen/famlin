@@ -1,3 +1,6 @@
+import { pipeline } from 'node:stream/promises'
+import { createWriteStream } from 'node:fs'
+import type { StorageBackend } from '../storage/types.js'
 import fsp from 'fs/promises'
 import path from 'path'
 
@@ -59,10 +62,11 @@ export function dayStamp(date: Date): string {
 // hashing), move mirror files whose source is gone into today's `.deleted/`
 // folder, and prune `.deleted/` folders older than the retention window.
 export async function mirrorUploads(
-  src: string,
+  src: string | StorageBackend,
   dest: string,
   now: Date,
-  deletedRetentionDays = DELETED_RETENTION_DAYS
+  deletedRetentionDays = DELETED_RETENTION_DAYS,
+  preserveMedia = false
 ): Promise<MirrorResult> {
   await fsp.mkdir(dest, { recursive: true })
   const result: MirrorResult = {
@@ -74,7 +78,16 @@ export async function mirrorUploads(
     prunedDeletedDays: 0,
   }
 
-  const srcFiles = await listFiles(src)
+  const srcFiles = new Map<string, number>()
+  if (typeof src === 'string') {
+    for (const [key, size] of await listFiles(src)) srcFiles.set(key, size)
+  } else {
+    // Complete enumeration before modifying the mirror: a failed fallback
+    // must never make its library look deleted.
+    for await (const object of src.list()) {
+      if (!SKIPPED_TOP_LEVEL.has(object.key.split('/')[0])) srcFiles.set(object.key, object.size)
+    }
+  }
   const destFiles = await listFiles(dest)
 
   for (const [rel, size] of srcFiles) {
@@ -86,7 +99,16 @@ export async function mirrorUploads(
     await fsp.mkdir(path.dirname(target), { recursive: true })
     // Copy-then-rename, so an interrupted copy never leaves a partial file
     // under the real name (a leftover temp file is cleaned up below).
-    await fsp.copyFile(path.join(src, rel), target + TMP_SUFFIX)
+    if (typeof src === 'string') await fsp.copyFile(path.join(src, rel), target + TMP_SUFFIX)
+    else {
+      const object = await src.get(rel)
+      if (!object) throw new Error('Backup media disappeared')
+      try {
+        await pipeline(object.stream, createWriteStream(target + TMP_SUFFIX))
+      } finally {
+        object.stream.destroy()
+      }
+    }
     await fsp.rename(target + TMP_SUFFIX, target)
     result.copied += 1
     result.copiedBytes += size
@@ -94,7 +116,7 @@ export async function mirrorUploads(
 
   const deletedToday = path.join(dest, DELETED_DIR, dayStamp(now))
   for (const rel of destFiles.keys()) {
-    if (srcFiles.has(rel)) continue
+    if (srcFiles.has(rel) || (preserveMedia && !rel.startsWith('branding/'))) continue
     const from = path.join(dest, rel)
     if (rel.endsWith(TMP_SUFFIX)) {
       await fsp.rm(from, { force: true })
@@ -106,7 +128,11 @@ export async function mirrorUploads(
     result.movedToDeleted += 1
   }
 
-  result.prunedDeletedDays = await pruneDeleted(path.join(dest, DELETED_DIR), now, deletedRetentionDays)
+  // Disabling media backups preserves the entire existing media mirror,
+  // including its retained deletion history.
+  result.prunedDeletedDays = preserveMedia
+    ? 0
+    : await pruneDeleted(path.join(dest, DELETED_DIR), now, deletedRetentionDays)
   return result
 }
 

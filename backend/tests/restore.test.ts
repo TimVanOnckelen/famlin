@@ -488,6 +488,35 @@ describe('POST /api/auth/setup/restore', () => {
     expect(await prisma.user.count()).toBe(0)
   })
 
+  it('refuses a media-free restore before DB writes when required files are absent or changed', async () => {
+    const key = `${crypto.randomUUID()}.jpg`
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({
+        serverVersion: pkg.version,
+        includeMedia: false,
+        requiredMedia: [{ key, size: 8 }],
+      }),
+      'data/users.json': '[]',
+      'data/groups.json': '[]',
+    })
+    const absent = await restore(adminFields, archive)
+    expect(absent.statusCode).toBe(400)
+    expect(absent.json().missingMedia).toEqual([key])
+    expect(await prisma.user.count()).toBe(0)
+    fs.writeFileSync(path.join(uploadsDir, key), 'wrong size')
+    try {
+      const changed = await restore(adminFields, archive)
+      expect(changed.statusCode).toBe(400)
+      expect(await prisma.user.count()).toBe(0)
+      fs.writeFileSync(path.join(uploadsDir, key), '12345678')
+      const restored = await restore(adminFields, archive)
+      expect(restored.statusCode).toBe(200)
+      expect(fs.readFileSync(path.join(uploadsDir, key), 'utf8')).toBe('12345678')
+    } finally {
+      fs.rmSync(path.join(uploadsDir, key), { force: true })
+    }
+  })
+
   it('refuses an archive from a newer server version', async () => {
     const archive = await zipOf({
       'manifest.json': JSON.stringify({ serverVersion: '999.0.0' }),

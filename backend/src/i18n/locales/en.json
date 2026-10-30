@@ -100,7 +100,8 @@
     "unknownBrandPreset": "Unknown color preset",
     "invalidLogo": "The logo must be a PNG, JPEG or WebP image",
     "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)",
-    "backupInProgress": "A backup is already running."
+    "backupInProgress": "A backup is already running.",
+    "restoreMediaMissing": "Required media is missing or has a different size in the configured storage."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

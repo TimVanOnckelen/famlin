@@ -1,3 +1,4 @@
+import { getStorage } from './storage/registry.js'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
@@ -216,7 +217,10 @@ export async function getBackupOverview(now: Date) {
 }
 
 export async function getDiskOverview() {
-  const [uploads, backups] = await Promise.all([getDiskUsage(uploadsDir), getDiskUsage(backupsDir)])
+  const [uploads, backups] = await Promise.all([
+    getStorage().id === 'local' ? getDiskUsage(uploadsDir) : Promise.resolve(null),
+    getDiskUsage(backupsDir),
+  ])
   return { uploads, backups, sameVolume: !!uploads && !!backups && sameDevice(uploadsDir, backupsDir) }
 }
 

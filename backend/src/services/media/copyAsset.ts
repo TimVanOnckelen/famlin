@@ -1,6 +1,4 @@
 import path from 'path'
-import fs from 'fs/promises'
-import { pipeline } from 'stream/promises'
 import { randomUUID } from 'crypto'
 import { prisma } from '../../db.js'
 import { parseMediaAssetPath } from '../../types.js'
@@ -8,7 +6,7 @@ import { parseMediaAssetPath } from '../../types.js'
 // up indistinguishable from a directly-uploaded one, which is the point: it
 // lets a cross-posted sibling in a group without the source album linked
 // still display the photo/video (see the module doc comment below).
-import { uploadsDir } from '../../config.js'
+import { getStorage } from '../storage/registry.js'
 import { getMediaProvider } from './registry.js'
 import { recordServerCopy } from '../uploads.js'
 
@@ -82,20 +80,20 @@ export async function copyMediaAssetsToUploads(
       // as parseMediaAssetPath's own regex validation.
       const ext = path.extname(url)
       const filename = `${randomUUID()}${ext}`
-      const filepath = path.join(uploadsDir, filename)
+      const filepath = filename
       writtenPaths.push(filepath)
 
+      await recordServerCopy(`/uploads/${filename}`, uploaderId, allowedGroupIds)
       try {
-        await pipeline(asset.stream, (await fs.open(filepath, 'w')).createWriteStream())
+        await getStorage().put(filename, asset.stream)
       } catch {
         throw new CrossPostAssetCopyError('unavailable')
       }
 
-      await recordServerCopy(`/uploads/${filename}`, uploaderId, allowedGroupIds)
       result.set(url, `/uploads/${filename}`)
     }
   } catch (err) {
-    await Promise.all(writtenPaths.map((p) => fs.unlink(p).catch(() => {})))
+    await Promise.all(writtenPaths.map((p) => getStorage().delete(p)))
     throw err
   }
 

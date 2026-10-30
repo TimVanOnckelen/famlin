@@ -1,3 +1,5 @@
+import { getStorage } from './storage/registry.js'
+import { assertValidStorageKey } from './storage/types.js'
 // Restores an archive produced by buildExportArchive() (services/export.ts)
 // into an EMPTY instance — the inverse of the admin export, used by the
 // first-run setup screen's "restore from a backup" path
@@ -30,12 +32,13 @@ import { invalidateSettingsCache } from './settings.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
 import pkg from '../../package.json' with { type: 'json' }
 
-export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty'
+export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty' | 'missingMedia'
 
 export class RestoreError extends Error {
   constructor(
     public readonly code: RestoreErrorCode,
-    message?: string
+    message?: string,
+    public readonly missingKeys?: string[]
   ) {
     super(message ?? code)
     this.name = 'RestoreError'
@@ -258,6 +261,8 @@ const brandingRow = z.object({
 
 const manifestSchema = z.object({
   serverVersion: z.string(),
+  includeMedia: z.boolean().default(true),
+  requiredMedia: z.array(z.object({ key: z.string(), size: z.number().int().nonnegative() })).default([]),
 })
 
 // Archive file → schema. Files missing from an archive (one exported before
@@ -385,6 +390,11 @@ async function readArchive(zipPath: string, filesDir: string): Promise<ReadArchi
         if (name.startsWith('uploads/')) {
           const rel = name.slice('uploads/'.length)
           if (!rel || rel.startsWith(RESTORE_WORKDIR_PREFIX)) return
+          try {
+            assertValidStorageKey(rel)
+          } catch {
+            throw new RestoreError('invalidArchive', `unsafe path: ${name}`)
+          }
           const target = path.resolve(filesDir, rel)
           if (!target.startsWith(filesDir + path.sep)) {
             throw new RestoreError('invalidArchive', `unsafe path: ${name}`)
@@ -543,10 +553,10 @@ async function insertAll(
 // Files
 // ---------------------------------------------------------------------------
 
-// Moves every extracted file from the working directory into uploadsDir,
-// preserving its relative path — the /uploads/<uuid>.jpg URLs stored in the
+// Installs extracted media into the active storage backend, keeping branding
+// local and preserving every relative path — the /uploads/<uuid>.jpg URLs stored in the
 // restored rows resolve unchanged.
-async function installFiles(fromDir: string, toDir: string): Promise<void> {
+async function installFiles(fromDir: string, toDir: string, prefix = ''): Promise<void> {
   let entries: fs.Dirent[]
   try {
     entries = await fsp.readdir(fromDir, { withFileTypes: true })
@@ -558,8 +568,12 @@ async function installFiles(fromDir: string, toDir: string): Promise<void> {
   for (const entry of entries) {
     const from = path.join(fromDir, entry.name)
     const to = path.join(toDir, entry.name)
-    if (entry.isDirectory()) await installFiles(from, to)
-    else if (entry.isFile()) await fsp.rename(from, to)
+    const key = prefix + entry.name
+    if (entry.isDirectory()) await installFiles(from, to, `${key}/`)
+    else if (entry.isFile()) {
+      if (key.startsWith('branding/')) await fsp.rename(from, to)
+      else await getStorage().put(key, { filePath: from })
+    }
   }
 }
 
@@ -595,13 +609,30 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
   }
   const data = validateData(rawData)
 
+  if (!manifest.includeMedia) {
+    const missing: string[] = []
+    for (const object of manifest.requiredMedia) {
+      try {
+        assertValidStorageKey(object.key)
+      } catch {
+        throw new RestoreError('invalidArchive', 'Invalid media key')
+      }
+      const info = await getStorage().stat(object.key)
+      if (!info || info.size !== object.size) missing.push(object.key)
+    }
+    if (missing.length)
+      throw new RestoreError('missingMedia', 'Required media is missing or has a different size', missing)
+  }
+
   let adminUserId: string
   try {
     ;({ adminUserId } = await prisma.$transaction(
       async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${opts.lockKey})`
         if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty')
-        return insertAll(tx, data, opts.admin)
+        const result = await insertAll(tx, data, opts.admin)
+        await installFiles(filesDir, uploadsDir)
+        return result
       },
       // A large family's history is a lot of rows; the default 5s
       // interactive-transaction timeout is sized for request handlers.
@@ -617,9 +648,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     throw err
   }
 
-  // Only now, with the rows committed, does anything touch the live media
-  // directory.
-  await installFiles(filesDir, uploadsDir)
+  // Media installation succeeded before committing the restored rows.
   if (data.branding.length > 0) invalidateSettingsCache()
 
   const counts: RestoreCounts = {

@@ -45,6 +45,26 @@ services:
       # sets (and overwrites) X-Forwarded-*, e.g. nginx/Caddy/Traefik in front
       # of it — see backend/.env.example.
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Media backend and optional previous storage for online migration.
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_SESSION_TOKEN: ${S3_SESSION_TOKEN:-}
+      S3_PREFIX: ${S3_PREFIX:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      STORAGE_FALLBACK_DRIVER: ${STORAGE_FALLBACK_DRIVER:-}
+      STORAGE_FALLBACK_UPLOADS_DIR: ${STORAGE_FALLBACK_UPLOADS_DIR:-/app/uploads}
+      STORAGE_FALLBACK_S3_BUCKET: ${STORAGE_FALLBACK_S3_BUCKET:-}
+      STORAGE_FALLBACK_S3_ENDPOINT: ${STORAGE_FALLBACK_S3_ENDPOINT:-}
+      STORAGE_FALLBACK_S3_REGION: ${STORAGE_FALLBACK_S3_REGION:-us-east-1}
+      STORAGE_FALLBACK_S3_ACCESS_KEY_ID: ${STORAGE_FALLBACK_S3_ACCESS_KEY_ID:-}
+      STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY: ${STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY:-}
+      STORAGE_FALLBACK_S3_SESSION_TOKEN: ${STORAGE_FALLBACK_S3_SESSION_TOKEN:-}
+      STORAGE_FALLBACK_S3_PREFIX: ${STORAGE_FALLBACK_S3_PREFIX:-}
+      STORAGE_FALLBACK_S3_FORCE_PATH_STYLE: ${STORAGE_FALLBACK_S3_FORCE_PATH_STYLE:-false}
     volumes:
       - famlin-uploads:/app/uploads
       # Scheduled backups (opt-in, admin Server settings → Backups): rotating

@@ -137,6 +137,53 @@ jobs:
         working-directory: backend
         run: npx vitest run --passWithNoTests
 
+  storage-s3:
+    name: Storage contracts and migration (MinIO)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: famlin
+          POSTGRES_PASSWORD: famlin
+          POSTGRES_DB: famlin_storage_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U famlin -d famlin_storage_test"
+          --health-interval 5s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://famlin:famlin@localhost:5432/famlin_storage_test
+      JWT_SECRET: ci-test-secret-at-least-32-characters-long
+      UPLOADS_DIR: /tmp/famlin-storage-test-uploads
+      BACKUPS_DIR: /tmp/famlin-storage-test-backups
+      TEST_S3_ENDPOINT: http://127.0.0.1:9000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install media processing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg libimage-exiftool-perl
+      - name: Start isolated MinIO
+        run: |
+          docker run -d --name minio-test -p 127.0.0.1:9000:9000 -e MINIO_ROOT_USER=famlin-test -e MINIO_ROOT_PASSWORD=famlin-test-secret pgsty/minio@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372 server /data
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/ready; then exit 0; fi
+            sleep 1
+          done
+          docker logs minio-test
+          exit 1
+      - run: npm ci
+        working-directory: backend
+      - run: npx prisma generate
+        working-directory: backend
+      - run: npx vitest run tests/storage-local.test.ts tests/storage-s3.test.ts tests/storage-migration.test.ts tests/storage-app-s3.test.ts
+        working-directory: backend
+
   admin:
     name: Admin UI
     runs-on: ubuntu-latest

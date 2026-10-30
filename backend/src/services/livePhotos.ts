@@ -1,4 +1,4 @@
-import { uploadSourcePath } from './uploadSources.js'
+import { withUploadSource } from './uploadSources.js'
 import path from 'path'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
@@ -6,10 +6,11 @@ import { prisma } from '../db.js'
 import { invalidateUploadCache } from './uploads.js'
 const exec = promisify(execFile)
 
-export async function readLivePhotoIdentifier(sourceFilename: string): Promise<string | null> {
+export async function readLivePhotoIdentifier(sourceFilename: string, localPath?: string): Promise<string | null> {
+  if (!localPath) return withUploadSource(sourceFilename, (source) => readLivePhotoIdentifier(sourceFilename, source))
   const { stdout } = await exec(
     'exiftool',
-    ['-json', '-G1', '-a', '-ContentIdentifier', '-MediaGroupUUID', uploadSourcePath(sourceFilename)],
+    ['-json', '-G1', '-a', '-ContentIdentifier', '-MediaGroupUUID', localPath],
     { timeout: 15000, maxBuffer: 256 * 1024 }
   )
   const rows: Record<string, unknown>[] = JSON.parse(stdout)

@@ -1,15 +1,67 @@
-import { uploadsDir } from '../../config.js'
-import { LocalStorageBackend } from './local.js'
-import type { StorageBackend } from './types.js'
+import { readStorageConfig, assertDisjoint, type StorageConfiguration } from './config.js'
+import { withStorageKey } from './locks.js'
+import type { StorageBackend, StorageBody, ByteRange, StoredObjectInfo } from './types.js'
 
-// The active storage backend. Only the `local` driver exists so far, so
-// there's nothing to select yet — the S3-compatible and Azure drivers
-// (issue #221) will add a STORAGE_DRIVER env var and a driver map here,
-// mirroring services/media/registry.ts. Callers go through this rather than
-// constructing a driver, so that switch touches only this file.
-let active: StorageBackend | null = null
+export function isMediaKey(key: string): boolean {
+  return (
+    !['branding', 'internal', 'tmp'].includes(key.split('/')[0]) &&
+    !key.endsWith('.tmp') &&
+    !key.endsWith('.famlin-tmp')
+  )
+}
+const primary = readStorageConfig(process.env)!
+const fallback = readStorageConfig(process.env, true)
+if (fallback) assertDisjoint(primary.location, fallback.location)
+export function getStorageConfiguration() {
+  return { primary, fallback }
+}
 
+// Only genuine absence permits fallback. Permission/network errors propagate.
+export class ApplicationStorage implements StorageBackend {
+  constructor(
+    private readonly primary: StorageConfiguration,
+    private readonly fallback: StorageConfiguration | null
+  ) {}
+  get id() {
+    return this.primary.backend.id
+  }
+  async init() {
+    await this.primary.backend.init()
+  }
+  isWritable() {
+    return this.primary.backend.isWritable()
+  }
+  put(key: string, body: StorageBody) {
+    return withStorageKey(key, () => this.primary.backend.put(key, body))
+  }
+  async get(key: string, options?: { range?: ByteRange }) {
+    return (await this.primary.backend.get(key, options)) ?? (await this.fallback?.backend.get(key, options)) ?? null
+  }
+  async stat(key: string) {
+    return (await this.primary.backend.stat(key)) ?? (await this.fallback?.backend.stat(key)) ?? null
+  }
+  delete(key: string) {
+    return withStorageKey(key, async (tx) => {
+      // Remove source first: a partially failed deletion can never be copied
+      // back by migration. Keep the Upload row until both deletions succeed.
+      await this.fallback?.backend.delete(key)
+      await this.primary.backend.delete(key)
+      await tx.storageMigrationItem.updateMany({ where: { key }, data: { status: 'deleted', error: null } })
+    })
+  }
+  async *list(): AsyncIterable<StoredObjectInfo> {
+    const seen = new Set<string>()
+    for (const backend of [this.primary.backend, this.fallback?.backend]) {
+      if (!backend) continue
+      for await (const object of backend.list()) {
+        if (!isMediaKey(object.key) || seen.has(object.key)) continue
+        seen.add(object.key)
+        yield object
+      }
+    }
+  }
+}
+const active = new ApplicationStorage(primary, fallback)
 export function getStorage(): StorageBackend {
-  active ??= new LocalStorageBackend(uploadsDir)
   return active
 }

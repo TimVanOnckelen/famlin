@@ -1,7 +1,7 @@
 import type { Readable } from 'stream'
 
 // Where uploaded media physically lives — the local uploads volume today,
-// an S3-compatible or Azure bucket next (issue #221). One file per driver in
+// or an S3-compatible bucket (issue #221). One file per driver in
 // this directory, mirroring the MediaProvider pattern in services/media/.
 //
 // Contract notes:
@@ -54,9 +54,9 @@ export interface StorageBackend {
   list(): AsyncIterable<StoredObjectInfo>
 }
 
-// Any readable stream, not just Node core's Readable — archiver/unzipper
+// Any readable stream or async iterable, not just Node core's Readable — archiver/unzipper
 // hand out `readable-stream` instances, which fail an instanceof check.
-export type StorageBody = Buffer | NodeJS.ReadableStream | { filePath: string }
+export type StorageBody = Buffer | NodeJS.ReadableStream | AsyncIterable<Uint8Array | string> | { filePath: string }
 
 // `end` is inclusive, like HTTP; omitted = to the end of the object.
 // `suffix` is the last N bytes (`Range: bytes=-N`), resolved against the

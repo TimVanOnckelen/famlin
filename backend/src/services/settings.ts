@@ -41,6 +41,7 @@ export interface ServerSettings {
   immichApiKey: string
   localMediaPath: string
   // Scheduled backups (services/backup/) — opt-in, off by default.
+  backupIncludeMedia: boolean
   backupEnabled: boolean
   backupSchedule: BackupSchedule
   // Server-local hour (0–23) the backup runs at; weekly backups run Sundays.
@@ -78,6 +79,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'immichServerUrl',
   'immichApiKey',
   'localMediaPath',
+  'backupIncludeMedia',
   'backupEnabled',
   'backupSchedule',
   'backupHour',
@@ -113,7 +115,7 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
   if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled') {
     return value !== 'false'
   }
-  if (key === 'backupEnabled') {
+  if (key === 'backupEnabled' || key === 'backupIncludeMedia') {
     return value === 'true'
   }
   if (key === 'backupSchedule') {
@@ -172,6 +174,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
+    backupIncludeMedia: parseValue('backupIncludeMedia', map.get('backupIncludeMedia') ?? 'true'),
     backupEnabled: parseValue('backupEnabled', map.get('backupEnabled') || 'false'),
     backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),
     backupHour: parseValue('backupHour', map.get('backupHour') || '3'),

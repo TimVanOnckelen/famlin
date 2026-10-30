@@ -695,3 +695,28 @@ model SystemAlert {
   condition     String   @id
   lastEmailedAt DateTime
 }
+
+// Operational journal. Deliberately excluded from portable family exports.
+model StorageMigration {
+  id          String @id @default(uuid())
+  source      String
+  destination String
+  status      String @default("running")
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       StorageMigrationItem[]
+  @@unique([source, destination])
+}
+
+model StorageMigrationItem {
+  migrationId String
+  key         String
+  size        BigInt @default(0)
+  sha256      String?
+  status      String
+  error       String?
+  updatedAt   DateTime @updatedAt
+  migration   StorageMigration @relation(fields: [migrationId], references: [id], onDelete: Cascade)
+  @@id([migrationId, key])
+}

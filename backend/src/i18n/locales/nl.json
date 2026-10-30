@@ -100,7 +100,8 @@
     "unknownBrandPreset": "Onbekende kleurvoorinstelling",
     "invalidLogo": "Het logo moet een PNG-, JPEG- of WebP-afbeelding zijn",
     "logoTooLarge": "Het logo is te groot (max. 5 MB, 4096×4096 px)",
-    "backupInProgress": "Er loopt al een back-up."
+    "backupInProgress": "Er loopt al een back-up.",
+    "restoreMediaMissing": "Vereiste media ontbreken of hebben een andere grootte in de geconfigureerde opslag."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

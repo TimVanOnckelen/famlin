@@ -1,11 +1,11 @@
-import { uploadSourcePath } from './uploadSources.js'
-import fs from 'fs/promises'
+import { withUploadSource, uploadLifecycleKey } from './uploadSources.js'
 import path from 'path'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import sharp from 'sharp'
 import { prisma } from '../db.js'
-import { uploadsDir } from '../config.js'
+import { getStorageConfiguration } from './storage/registry.js'
+import { withStorageKeys } from './storage/locks.js'
 
 const exec = promisify(execFile)
 
@@ -113,23 +113,23 @@ export function startUploadWorker(log: { warn: (error: unknown, message: string)
         })
         continue
       }
-      const source = uploadSourcePath(job.sourceFilename)
-      const target = path.join(uploadsDir, path.basename(job.mediaUrl))
-      const temporary = path.join(uploadsDir, 'originals', `${job.assetKey}.processing`)
+      const targetKey = path.basename(job.mediaUrl)
       try {
-        await convertUpload(source, temporary, target.endsWith('.mp4'))
-        // Story expiry may delete this upload while encoding is running.
-        if (!(await prisma.upload.findUnique({ where: { id: job.id }, select: { id: true } }))) {
-          await fs.unlink(temporary).catch(() => {})
-          continue
-        }
-        await fs.rename(temporary, target)
-        await prisma.upload.updateMany({
-          where: { id: job.id },
-          data: { processingStatus: 'ready', processingError: null },
+        await withUploadSource(job.sourceFilename, async (source, directory) => {
+          const temporary = path.join(directory, `converted${path.extname(targetKey)}`)
+          await convertUpload(source, temporary, targetKey.endsWith('.mp4'))
+          // One lifecycle/key lock set coordinates deletion and migration.
+          // Publishing and checking the row must happen under that same lock.
+          await withStorageKeys([targetKey, uploadLifecycleKey(job.assetKey)], async (tx) => {
+            if (!(await tx.upload.findUnique({ where: { id: job.id }, select: { id: true } }))) return
+            await getStorageConfiguration().primary.backend.put(targetKey, { filePath: temporary })
+            await tx.upload.updateMany({
+              where: { id: job.id },
+              data: { processingStatus: 'ready', processingError: null },
+            })
+          })
         })
       } catch (error) {
-        await fs.unlink(temporary).catch(() => {})
         log.warn(error, 'Upload conversion failed')
         await prisma.upload.updateMany({
           where: { id: job.id },

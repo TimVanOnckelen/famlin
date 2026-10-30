@@ -374,7 +374,11 @@
     "backupHour": "Time (server time)",
     "backupRetention": "Database dumps to keep",
     "backupHint": "Uploads are mirrored incrementally rather than copied each time. Files deleted from Famlin stay in the mirror for 30 days before they are removed. Admins get an email if a backup fails or none has succeeded for twice the schedule interval (needs SMTP).",
-    "backupStatusLink": "See backup status and run a backup now"
+    "backupStatusLink": "See backup status and run a backup now",
+    "backupIncludeMedia": "Include media in backups",
+    "backupIncludeMediaHint": "When disabled, only the database and branding are backed up. The existing media mirror is retained.",
+    "exportIncludeMedia": "Include media in export",
+    "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included."
   },
   "media": {
     "peopleMapping": {
@@ -564,6 +568,44 @@
       "upToDate": "Up to date",
       "unknown": "Unknown",
       "failed": "Failed migrations need attention: {{names}}"
+    }
+  },
+  "storage": {
+    "title": "Storage",
+    "description": "Configure storage through environment variables and restart. New media is written to primary storage; reads also use fallback.",
+    "primary": "Primary storage",
+    "fallback": "Fallback source",
+    "progress": "Progress",
+    "idle": "Not started",
+    "state": "State",
+    "files": "Files",
+    "bytes": "Bytes",
+    "migrate": "Start / retry migration",
+    "cleanup": "Clean up source",
+    "cleanupHint": "Cleanup deletes verified source copies. Enter the source fingerprint shown above to confirm.",
+    "confirmSource": "Source fingerprint",
+    "removeFallback": "After successful cleanup, remove the fallback environment variables and restart.",
+    "notConfigured": "Not configured",
+    "driver": "Driver",
+    "directory": "Directory",
+    "bucket": "Bucket",
+    "prefix": "Prefix",
+    "endpoint": "Endpoint",
+    "region": "Region",
+    "availability": "Availability",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "states": {
+      "running": "Copying",
+      "cleaning": "Cleaning source",
+      "verified": "Verified",
+      "failed": "Failed",
+      "cleaned": "Source cleaned",
+      "cleanup_failed": "Cleanup failed",
+      "error": "Error",
+      "conflict": "Conflict",
+      "deleted": "Deleted",
+      "source_removed": "Source removed"
     }
   }
 }
