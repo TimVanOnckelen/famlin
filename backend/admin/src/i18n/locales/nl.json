@@ -521,7 +521,8 @@
       "free": "{{free}} vrij van {{total}}",
       "low": "Laag",
       "unavailable": "Niet beschikbaar",
-      "sameVolume": "Back-ups staan op hetzelfde volume als de uploads. Een aparte schijf of NAS-share beschermt ertegen dat je beide tegelijk verliest."
+      "sameVolume": "Back-ups staan op hetzelfde volume als de uploads. Een aparte schijf of NAS-share beschermt ertegen dat je beide tegelijk verliest.",
+      "s3Capacity": "Media wordt opgeslagen in S3. De S3-API geeft geen totale of vrije bucketcapaciteit door."
     },
     "integrations": {
       "title": "Integraties",
@@ -606,6 +607,11 @@
       "conflict": "Conflict",
       "deleted": "Verwijderd",
       "source_removed": "Bron verwijderd"
-    }
+    },
+    "size": "Grootte",
+    "migrationTitle": "Migratie",
+    "errors": "Fouten ({{count}})",
+    "cleanupLocked": "Voltooi de migratiecontrole voordat je de bron opruimt.",
+    "confirmPlaceholder": "Plak de bronvingerafdruk"
   }
 }

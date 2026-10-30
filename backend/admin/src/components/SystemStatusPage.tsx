@@ -258,7 +258,17 @@ export function SystemStatusPage() {
 
         <section className="card">
           <h3>{t('systemStatus.disk.title')}</h3>
-          <DiskRow label={t('systemStatus.disk.uploads')} disk={disk.uploads} />
+          {disk.uploadsDriver === 's3' ? (
+            <>
+              <div className="status-row">
+                <span>{t('systemStatus.disk.uploads')}</span>
+                <span className="badge">S3</span>
+              </div>
+              <p className="hint">{t('systemStatus.disk.s3Capacity')}</p>
+            </>
+          ) : (
+            <DiskRow label={t('systemStatus.disk.uploads')} disk={disk.uploads} />
+          )}
           {!disk.sameVolume && <DiskRow label={t('systemStatus.disk.backups')} disk={disk.backups} />}
           {disk.sameVolume && <p className="hint">{t('systemStatus.disk.sameVolume')}</p>}
         </section>
