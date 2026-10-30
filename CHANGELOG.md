@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/TimVanOnckelen/famlin/compare/v0.8.4...v0.8.5) (2026-10-30)
+
+
+### Features
+
+* **backend:** add S3-compatible media storage and bidirectional migration ([bc81251](https://github.com/TimVanOnckelen/famlin/commit/bc81251c8656e61a9ed7509d4d1438d4c01e10f2))
+
 ## [0.8.4](https://github.com/TimVanOnckelen/famlin/compare/v0.8.3...v0.8.4) (2026-10-28)
 
 
