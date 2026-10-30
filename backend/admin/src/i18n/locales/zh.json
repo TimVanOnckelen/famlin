@@ -521,7 +521,8 @@
       "free": "共 {{total}}，剩余 {{free}}",
       "low": "不足",
       "unavailable": "不可用",
-      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。"
+      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。",
+      "s3Capacity": "媒体存储在 S3 中。S3 API 不提供存储桶的总容量和可用容量。"
     },
     "integrations": {
       "title": "集成",
@@ -606,6 +607,11 @@
       "conflict": "冲突",
       "deleted": "已删除",
       "source_removed": "来源已移除"
-    }
+    },
+    "size": "大小",
+    "migrationTitle": "迁移",
+    "errors": "错误（{{count}}）",
+    "cleanupLocked": "完成迁移校验后才能清理源存储。",
+    "confirmPlaceholder": "粘贴源存储指纹"
   }
 }

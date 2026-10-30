@@ -1976,3 +1976,119 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Storage follows the server settings card and field styles. */
+.storage-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+.storage-grid .settings-card-heading h3 {
+  margin: 0;
+}
+.storage-grid .settings-card-header {
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.storage-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.storage-metrics span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+}
+.storage-metrics strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.storage-details {
+  margin: 0.75rem 0 0;
+}
+.storage-details dt {
+  color: var(--text-secondary);
+}
+.storage-details dd {
+  margin: 0;
+  text-align: right;
+  max-width: 75%;
+}
+.storage-fingerprint {
+  margin-top: 1rem;
+}
+.storage-fingerprint code {
+  display: block;
+  margin-top: 0.75rem;
+}
+.storage-empty {
+  padding: 1rem 0;
+}
+.storage-direction {
+  margin-bottom: 1rem;
+}
+.storage-direction span {
+  padding: 0 0.25rem;
+  color: var(--primary);
+}
+.storage-progress-table {
+  margin: 1rem 0;
+}
+.storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.storage-actions button {
+  max-width: 100%;
+}
+.storage-cleanup-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  max-width: 760px;
+  margin-top: 1.25rem;
+}
+.storage-cleanup-form label {
+  flex: 1;
+  min-width: 0;
+}
+.storage-cleanup-form input {
+  min-width: 0;
+}
+.storage-cleanup-form button {
+  flex-shrink: 0;
+}
+.storage-grid .storage-cleanup-note {
+  margin-top: 1.25rem;
+}
+.storage-config-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+}
+.storage-config-note svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.storage-loading {
+  min-height: 220px;
+  color: var(--text-secondary);
+}
+@media (max-width: 1100px) {
+  .storage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .storage-cleanup-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

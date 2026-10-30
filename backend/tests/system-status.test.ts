@@ -1,3 +1,4 @@
+import * as storageRegistry from '../src/services/storage/registry.js'
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
@@ -157,11 +158,26 @@ describe('admin status routes', () => {
     }
   })
 
+  it('GET /status identifies S3 uploads without treating bucket capacity as a local disk', async () => {
+    const storage = storageRegistry.getStorage()
+    const backend = vi.spyOn(storageRegistry, 'getStorage').mockReturnValue({ ...storage, id: 's3' } as typeof storage)
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/admin/status', headers: authHeader(admin) })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().disk).toMatchObject({ uploadsDriver: 's3', uploads: null, sameVolume: false })
+      // The independently measured backup volume remains in the response.
+      expect(res.json().disk).toHaveProperty('backups')
+    } finally {
+      backend.mockRestore()
+    }
+  })
+
   it('GET /status reports every signal group', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/admin/status', headers: authHeader(admin) })
     expect(res.statusCode).toBe(200)
     const body = res.json()
     expect(body.backups).toMatchObject({ enabled: false, schedule: 'daily', hour: 3, retention: 7, running: false })
+    expect(body.disk.uploadsDriver).toBe('local')
     expect(body.disk.uploads.totalBytes).toBeGreaterThan(0)
     expect(body.jobs.map((j: { job: string }) => j.job)).toEqual([
       'onThisDay',
