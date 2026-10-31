@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 
 import { colors } from '@/constants/colors'
 import { Icon, IconName } from '@/components/Icon'
+import { DateField } from '@/components/DateField'
 import { Avatar } from '@/components/Avatar'
 import { Group, PostType } from '@/types'
 import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client'
@@ -123,8 +124,7 @@ export function NewPostScreen() {
   // Poll composer state: option text inputs, starting at the minimum of 2.
   // Only non-empty ones are sent (see createPostMutation below).
   const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
-  // Trip composer state (design 6g) — dates are plain 'YYYY-MM-DD' text,
-  // there's no date-picker dependency in this app yet.
+  // Trip calendar dates use the API's YYYY-MM-DD format.
   const [tripTitle, setTripTitle] = useState('')
   const [tripDestination, setTripDestination] = useState('')
   const [tripStartDate, setTripStartDate] = useState('')
@@ -228,7 +228,8 @@ export function NewPostScreen() {
     })
   }, [isTrip, travelerCandidatesLoaded, travelerCandidateIdsKey])
   const tripStartDateValid = TRIP_DATE_REGEX.test(tripStartDate)
-  const tripEndDateValid = tripEndDate.length === 0 || TRIP_DATE_REGEX.test(tripEndDate)
+  const tripEndDateValid =
+    tripEndDate.length === 0 || (TRIP_DATE_REGEX.test(tripEndDate) && tripEndDate >= tripStartDate)
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
@@ -673,28 +674,28 @@ export function NewPostScreen() {
             <View style={styles.tripDateRow}>
               <View style={styles.tripDateField}>
                 <Text style={styles.sectionLabel}>{t('newPost.trip.startDateLabel')} *</Text>
-                <TextInput
-                  style={[styles.tripInput, tripStartDate.length > 0 && !tripStartDateValid && styles.tripInputInvalid]}
+                <DateField
+                  label={t('newPost.trip.startDateLabel')}
                   placeholder={t('newPost.trip.datePlaceholder')}
-                  placeholderTextColor={colors.textMuted}
                   value={tripStartDate}
-                  onChangeText={setTripStartDate}
-                  maxLength={10}
+                  onChange={(date) => {
+                    setTripStartDate(date)
+                    if (tripEndDate && tripEndDate < date) setTripEndDate('')
+                  }}
                 />
               </View>
               <View style={styles.tripDateField}>
                 <Text style={styles.sectionLabel}>{t('newPost.trip.endDateLabel')}</Text>
-                <TextInput
-                  style={[styles.tripInput, tripEndDate.length > 0 && !tripEndDateValid && styles.tripInputInvalid]}
+                <DateField
+                  label={t('newPost.trip.endDateLabel')}
                   placeholder={t('newPost.trip.endDateOptional')}
-                  placeholderTextColor={colors.textMuted}
                   value={tripEndDate}
-                  onChangeText={setTripEndDate}
-                  maxLength={10}
+                  onChange={setTripEndDate}
+                  minimumDate={tripStartDate || undefined}
+                  optional
                 />
               </View>
             </View>
-            <Text style={styles.tripDateHint}>{t('newPost.trip.dateHint')}</Text>
 
             {tripCoverPhotoUrl ? (
               <View style={styles.tripCoverPreviewWrap}>
@@ -1394,21 +1395,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
-  tripInputInvalid: {
-    borderColor: colors.accent,
-  },
   tripDateRow: {
     flexDirection: 'row',
     gap: 10,
   },
   tripDateField: {
     flex: 1,
-  },
-  tripDateHint: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: -8,
   },
   tripCoverButton: {
     flexDirection: 'row',
