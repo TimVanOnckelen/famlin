@@ -123,7 +123,9 @@ export function renderAuthenticatedScreens(Stack: Stack) {
         name="StoryViewer"
         component={StoryViewerScreen}
         options={{
-          presentation: 'fullScreenModal',
+          presentation: 'transparentModal',
+          contentStyle: { backgroundColor: 'transparent' },
+          gestureEnabled: false,
           animation: 'fade',
         }}
       />
