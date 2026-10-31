@@ -586,17 +586,6 @@ h3 {
   font-size: 0.85rem;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 34, 42, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  z-index: 100;
-}
-
 .modal {
   background: var(--surface);
   border-radius: var(--radius);
@@ -862,13 +851,15 @@ h3 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.1rem 1.25rem;
+  padding: 0.85rem 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .stat-tile-icon {
+  flex-shrink: 0;
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -877,6 +868,14 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.stat-tile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .stat-tile-value {
@@ -1656,8 +1655,7 @@ h3 {
 }
 
 .md-circle-members {
-  border-top: 1px solid var(--border, #e2e8f0);
-  padding-top: 10px;
+  padding-top: 0;
 }
 
 /* Stories moderation tab — a small 9:16 thumbnail next to its status. */
@@ -1975,4 +1973,74 @@ h3 {
   .status-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Custom dialogs share the existing modal surface, above nested edit forms. */
+.admin-dialog {
+  border: 0;
+  color: var(--text);
+  margin: auto;
+  max-height: calc(100dvh - 3rem);
+}
+.admin-dialog::backdrop {
+  background: rgba(15, 34, 42, 0.45);
+}
+.admin-dialog-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+.admin-dialog input:not([type='checkbox']):not([type='radio']) {
+  width: 100%;
+}
+.checkbox-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+.checkbox-row input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.checkbox-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.checkbox-help {
+  margin: 0 0 0 1.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.membership-row > .checkbox-field {
+  width: 100%;
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.admin-modal-header h3 {
+  margin: 0;
+}
+.admin-member-picker {
+  max-height: 55dvh;
+  overflow-y: auto;
+}
+
+button.mini-toggle {
+  padding: 0;
+  border: 0;
 }

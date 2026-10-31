@@ -74,6 +74,15 @@ const paths: Record<string, ReactNode> = {
       <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
     </>
   ),
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  'user-plus': (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="20" y1="8" x2="20" y2="14" />
+      <line x1="17" y1="11" x2="23" y2="11" />
+    </>
+  ),
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
   globe: (
     <>

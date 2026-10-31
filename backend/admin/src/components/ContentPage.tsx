@@ -1,3 +1,5 @@
+import { AdminModal } from './AdminModal'
+import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, Group, ModerationComment, ModerationPost, ModerationStory, User } from '../api/client'
@@ -83,33 +85,24 @@ function EditPostDialog({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{t('content.editPostTitle', { name: post.author.name })}</h3>
-        <form onSubmit={submit}>
-          <label>
-            {t('content.table.content')}
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={6}
-              maxLength={5000}
-              autoFocus
-            />
-          </label>
-          <p className="hint">{t('content.editPostHint')}</p>
-          {error && <div className="error">{error}</div>}
-          <div className="modal-actions">
-            <button type="button" className="secondary" onClick={onClose}>
-              {t('common.cancel')}
-            </button>
-            <button type="submit" disabled={saving || !content.trim()}>
-              {t('common.save')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <AdminModal title={t('content.editPostTitle', { name: post.author.name })} onClose={onClose} busy={saving}>
+      <form onSubmit={submit}>
+        <label>
+          {t('content.table.content')}
+          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} maxLength={5000} autoFocus />
+        </label>
+        <p className="hint">{t('content.editPostHint')}</p>
+        {error && <div className="error">{error}</div>}
+        <div className="modal-actions">
+          <button type="button" className="secondary" onClick={onClose} disabled={saving}>
+            {t('common.cancel')}
+          </button>
+          <button type="submit" disabled={saving || !content.trim()}>
+            {t('common.save')}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
   )
 }
 
@@ -124,6 +117,7 @@ function DateCell({ iso }: { iso: string }) {
 
 export function ContentPage() {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [tab, setTab] = useState<Tab>('posts')
   const [groups, setGroups] = useState<Group[]>([])
   const [users, setUsers] = useState<User[]>([])
@@ -229,31 +223,43 @@ export function ContentPage() {
   }
 
   const handleDeletePost = async (post: ModerationPost) => {
-    if (!confirm(t('content.deleteConfirm'))) return
-    await api.deletePost(post.id)
-    load()
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deletePost(post.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
   const handleRetriggerPush = async (post: ModerationPost) => {
     try {
       const result = await api.retriggerPostPush(post.id)
-      alert(t('content.retriggerPushResult', { ...result }))
+      await dialogs.showMessage(t('content.retriggerPushResult', { ...result }))
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('content.retriggerPushError', { error: message }))
+      await dialogs.showMessage(t('content.retriggerPushError', { error: message }))
     }
   }
 
   const handleDeleteComment = async (comment: ModerationComment) => {
-    if (!confirm(t('content.deleteConfirm'))) return
-    await api.deleteComment(comment.id)
-    load()
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deleteComment(comment.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
   const handleDeleteStory = async (story: ModerationStory) => {
-    if (!confirm(t('content.deleteConfirm'))) return
-    await api.deleteStory(story.id)
-    load()
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deleteStory(story.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
   const items = tab === 'posts' ? posts : tab === 'comments' ? comments : stories

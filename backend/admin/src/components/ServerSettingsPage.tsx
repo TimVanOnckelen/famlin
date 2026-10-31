@@ -1,3 +1,4 @@
+import { CheckboxField } from './CheckboxField'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -43,18 +44,7 @@ interface ToggleRowProps {
 }
 
 function ToggleRow({ title, hint, checked, onChange }: ToggleRowProps) {
-  return (
-    <label className="toggle-row">
-      <span className="toggle-row-text">
-        <span className="toggle-row-title">{title}</span>
-        <span className="toggle-row-hint">{hint}</span>
-      </span>
-      <span className="switch">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="switch-slider" />
-      </span>
-    </label>
-  )
+  return <CheckboxField label={title} hint={hint} checked={checked} onChange={onChange} />
 }
 
 export function ServerSettingsPage() {

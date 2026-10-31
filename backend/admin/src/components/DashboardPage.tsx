@@ -236,9 +236,11 @@ function StatTile({ icon, label, value, sub }: StatTileProps) {
       <span className="stat-tile-icon">
         <Icon name={icon} size={18} />
       </span>
-      <span className="stat-tile-value">{value.toLocaleString(i18n.language)}</span>
-      <span className="stat-tile-label">{label}</span>
-      {sub && <span className="stat-tile-sub">{sub}</span>}
+      <div className="stat-tile-content">
+        <span className="stat-tile-value">{value.toLocaleString(i18n.language)}</span>
+        <span className="stat-tile-label">{label}</span>
+        {sub && <span className="stat-tile-sub">{sub}</span>}
+      </div>
     </div>
   )
 }
