@@ -12,9 +12,35 @@ There's no public sign-up page — family members join through an invite link an
 
 ## What happens when they open it
 
-- It opens a small page hosted by your Famlin server, styled and translated to match the app, which hands off to the mobile app via a `famlin://invite/<token>?server=...` deep link. They need the Famlin app already installed for that to do anything — the page shows App Store and Google Play download buttons by default (the official pre-built apps), which you can override or hide in [Admin configuration](./admin-configuration#first-login).
-- If they don't have an account yet, the app walks them through creating one (OIDC or email/password) — the invite itself is the authorization, so it works even if their email isn't allow-listed.
-- If they're already logged in on that device, opening the link just adds their existing account to the group.
+The invitation opens a page hosted by your Famlin server. Choose **Continue in
+the browser** to join on the web, or **Open in the Famlin app** to use the mobile
+app. Store download buttons remain available for people who want to install it.
+
+### In the browser
+
+The link opens `/join/<token>` and shows the family name, description and who
+invited you. You can open this page without being signed in.
+
+- **New account:** choose **Create an account**, enter your name, email and a
+  password of at least 8 characters, then create the account and join. A valid
+  invitation bypasses the allowed-email list.
+- **Existing account:** choose **Sign in** and enter your email and password,
+  or use the configured single sign-on provider. The invitation accompanies
+  sign-in, including the SSO redirect, so signing in also joins the family.
+- **Already signed in:** choose **Join <family>** to confirm. You are then taken
+  to the feed filtered to that family. If the invite is for a different email,
+  sign out on the invitation page and use the invited account.
+
+Email-restricted invitations prefill the invited email address. Expired, used
+or invalid links show a clear message; ask the admin for a new link if needed.
+A temporary connection error offers a retry instead of treating the link as
+invalid.
+
+### In the mobile app
+
+The app hand-off uses a `famlin://invite/<token>?server=...` deep link. If you
+do not have an account, the app walks you through creating one with SSO or
+email/password. If you are already signed in, you can join with that account.
 
 ## Good to know
 

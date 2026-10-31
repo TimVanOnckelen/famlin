@@ -17,7 +17,8 @@ export function UsersPage() {
   const [managingUser, setManagingUser] = useState<User | null>(null)
 
   const load = () => {
-    setLoading(true)
+    // Only the initial load replaces the page. Background refreshes must keep
+    // open dialogs mounted, including the newly generated invitation link.
     Promise.all([api.getUsers(), api.getGroups()])
       .then(([page, g]) => {
         setUsers(page.items)

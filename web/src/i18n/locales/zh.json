@@ -410,5 +410,28 @@
     "noGroups": "加入家庭后即可搜索动态。",
     "loadFailed": "无法加载搜索结果。",
     "loadMore": "加载更多"
+  },
+  "join": {
+    "title": "加入你的家庭",
+    "invitedBy": "{{name}} 邀请了你",
+    "signedInAs": "当前登录账号：{{email}}",
+    "emailMismatch": "此邀请仅适用于 {{email}}。请退出登录后使用该账号。",
+    "joinButton": "加入 {{family}}",
+    "switchAccount": "退出并使用其他账号",
+    "accountOptions": "账号选项",
+    "register": "创建账号",
+    "login": "登录",
+    "name": "你的姓名",
+    "createAndJoin": "创建账号并加入",
+    "loginAndJoin": "登录并加入",
+    "continueToApp": "前往 Famlin",
+    "loadFailed": "无法加载此邀请，请重试。",
+    "actionFailed": "无法加入家庭，请重试。",
+    "passwordHint": "请使用至少 8 个字符。",
+    "status": {
+      "expired": "此邀请已过期，请联系家庭管理员获取新链接。",
+      "used": "此邀请已被使用。请直接登录，或联系家庭管理员获取新链接。",
+      "not_found": "未找到此邀请，请联系家庭管理员获取新链接。"
+    }
   }
 }

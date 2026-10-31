@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   fetchOidcConfig,
@@ -10,9 +10,10 @@ import {
 } from '@famlin/api-client'
 import { BrandIcon } from '@/components/Logo'
 import { useBranding } from '@/hooks/useBranding'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/stores/authStore'
-import { rememberReturnPath, takeReturnPath } from '@/utils/routes'
+import { rememberReturnPath, takeReturnPath, inviteTokenFromReturnPath, paths } from '@/utils/routes'
 import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n'
 import './LoginPage.css'
 
@@ -45,6 +46,8 @@ export function LoginPage() {
   const branding = useBranding()
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
+  const client = useQueryClient()
+  const ssoStarted = useRef(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -65,14 +68,18 @@ export function LoginPage() {
     const code = params.get('code')
     const state = params.get('state')
     const providerError = params.get('error')
+    if ((!providerError && !code) || ssoStarted.current) return
+    ssoStarted.current = true
+    const returnPath = takeReturnPath()
+    const inviteToken = inviteTokenFromReturnPath(returnPath)
+    const failedPath = inviteToken ? `${paths.join(inviteToken)}?loginError=1` : window.location.pathname
 
     // The provider redirected back without a code (user denied consent, or
     // the authorization failed upstream) — abort the stored round trip and
     // tell the user, instead of silently landing back on the form.
     if (providerError) {
       clearBrowserOidcLogin()
-      takeReturnPath()
-      navigate(window.location.pathname, { replace: true })
+      navigate(failedPath, { replace: true })
       setError(t('login.ssoLoginFailed'))
       return
     }
@@ -81,17 +88,18 @@ export function LoginPage() {
     async function finishSsoLogin() {
       setIsSsoLoading(true)
       try {
-        const result = await completeBrowserOidcLogin(code!, state, getOidcRedirectUri())
+        const result = await completeBrowserOidcLogin(code!, state, getOidcRedirectUri(), inviteToken)
         // Drop ?code=&state= from the URL and restore the deep link the user
         // started from (see rememberReturnPath) before the app takes over —
         // setAuth unmounts this page.
-        navigate(takeReturnPath() ?? window.location.pathname, { replace: true })
+        if (inviteToken) client.removeQueries({ queryKey: ['groups'] })
+        navigate(inviteToken ? paths.feed : (returnPath ?? window.location.pathname), { replace: true })
         await setAuth(result.user, result.token)
       } catch (err: any) {
         // err.message is an untranslated slug from the shared helper — show
         // the backend's translated error when there is one, else the generic.
         setError(err.response?.data?.error || t('login.ssoLoginFailed'))
-        navigate(window.location.pathname, { replace: true })
+        navigate(failedPath, { replace: true })
       } finally {
         setIsSsoLoading(false)
       }

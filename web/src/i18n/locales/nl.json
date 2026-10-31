@@ -410,5 +410,28 @@
     "noGroups": "Word lid van een familie om berichten te zoeken.",
     "loadFailed": "Zoekresultaten konden niet worden geladen.",
     "loadMore": "Meer laden"
+  },
+  "join": {
+    "title": "Word lid van je familie",
+    "invitedBy": "Uitgenodigd door {{name}}",
+    "signedInAs": "Ingelogd als {{email}}",
+    "emailMismatch": "Deze uitnodiging is voor {{email}}. Log uit om dat account te gebruiken.",
+    "joinButton": "Lid worden van {{family}}",
+    "switchAccount": "Uitloggen en een ander account gebruiken",
+    "accountOptions": "Accountopties",
+    "register": "Account maken",
+    "login": "Inloggen",
+    "name": "Je naam",
+    "createAndJoin": "Account maken en lid worden",
+    "loginAndJoin": "Inloggen en lid worden",
+    "continueToApp": "Doorgaan naar Famlin",
+    "loadFailed": "Deze uitnodiging kon niet worden geladen. Probeer het opnieuw.",
+    "actionFailed": "Je kon geen lid worden van de familie. Probeer het opnieuw.",
+    "passwordHint": "Gebruik minstens 8 tekens.",
+    "status": {
+      "expired": "Deze uitnodiging is verlopen. Vraag je familiebeheerder om een nieuwe link.",
+      "used": "Deze uitnodiging is al gebruikt. Log normaal in of vraag je familiebeheerder om een nieuwe link.",
+      "not_found": "Deze uitnodiging is niet gevonden. Vraag je familiebeheerder om een nieuwe link."
+    }
   }
 }

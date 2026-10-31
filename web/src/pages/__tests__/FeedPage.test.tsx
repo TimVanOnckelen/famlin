@@ -245,3 +245,13 @@ it('opens search with the current single-family filter', async () => {
   await userEvent.click(screen.getAllByRole('button', { name: 'Search' })[0])
   expect(onOpenSearch).toHaveBeenCalledWith('group-2')
 })
+
+it('starts with the accepted invitation family selected', async () => {
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} initialGroupId="group-2" onOpenProfile={() => {}} onLogout={() => {}} />
+  )
+  await waitFor(() =>
+    expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-2'], circleIds: [], cursor: undefined })
+  )
+  expect(await screen.findByRole('button', { name: 'Neefjes' })).toHaveAttribute('aria-pressed', 'true')
+})

@@ -148,13 +148,14 @@
     "invitedByTitle": "{{inviter}} heeft je uitgenodigd voor \"{{group}}\"",
     "invitedTitle": "Je bent uitgenodigd voor \"{{group}}\"",
     "pageTitle": "Word lid van {{group}} op Famlin",
-    "subtitle": "Open deze link op je telefoon om lid te worden van de familie op Famlin.",
+    "subtitle": "Word lid van je familie in de browser of open de Famlin-app.",
     "openButton": "Openen in de Famlin app",
     "appStore": "Downloaden in de App Store",
     "playStore": "Ophalen via Google Play",
     "hint": "Heb je de app nog niet? Vraag je familiebeheerder hoe je die installeert en tik daarna nogmaals op deze link.",
     "hintWithStores": "Heb je de app nog niet? Download hem hieronder en tik daarna nogmaals op deze link.",
-    "pageTitleBranded": "Word lid van {{group}} · {{name}}"
+    "pageTitleBranded": "Word lid van {{group}} · {{name}}",
+    "continueBrowser": "Doorgaan in de browser"
   },
   "landing": {
     "pageTitle": "Famlin",

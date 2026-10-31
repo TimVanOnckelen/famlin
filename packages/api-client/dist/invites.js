@@ -5,14 +5,14 @@ exports.registerViaInvite = registerViaInvite;
 exports.acceptInvite = acceptInvite;
 const client_1 = require("./client");
 async function fetchInvitePreview(token) {
-    const response = await client_1.api.get(`/invites/${token}`);
+    const response = await client_1.api.get(`/invites/${encodeURIComponent(token)}`);
     return response.data;
 }
 async function registerViaInvite(token, data) {
-    const response = await client_1.api.post(`/invites/${token}/register`, data);
+    const response = await client_1.api.post(`/invites/${encodeURIComponent(token)}/register`, data);
     return response.data;
 }
 async function acceptInvite(token) {
-    const response = await client_1.api.post(`/invites/${token}/accept`);
+    const response = await client_1.api.post(`/invites/${encodeURIComponent(token)}/accept`);
     return response.data;
 }

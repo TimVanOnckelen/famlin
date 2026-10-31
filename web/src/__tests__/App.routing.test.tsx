@@ -16,11 +16,21 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   fetchServerInfo: vi.fn().mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null }),
 }))
 vi.mock('@/components/ReadOnlyBanner', () => ({ ReadOnlyBanner: () => null }))
+vi.mock('@/pages/JoinPage', () => ({
+  JoinPage: (p: { token: string; user: unknown; onJoined: (id: string) => void; onSignOut: () => Promise<void> }) => (
+    <div>
+      join page {p.token} {p.user ? 'signed in' : 'signed out'}
+      <button onClick={() => p.onJoined('joined-family')}>accept invite</button>
+      <button onClick={() => void p.onSignOut()}>switch account</button>
+    </div>
+  ),
+}))
 vi.mock('@/pages/LoginPage', () => ({ LoginPage: () => <div>login page</div> }))
 vi.mock('@/pages/FeedPage', () => ({
-  FeedPage: (p: { onOpenTrip: (id: string) => void; onOpenProfile: () => void }) => (
+  FeedPage: (p: { initialGroupId?: string; onOpenTrip: (id: string) => void; onOpenProfile: () => void }) => (
     <div>
       feed page
+      {p.initialGroupId && <span>selected family {p.initialGroupId}</span>}
       <button onClick={() => p.onOpenTrip('trip-9')}>open trip</button>
       <button onClick={() => p.onOpenProfile()}>open profile</button>
     </div>
@@ -107,6 +117,8 @@ describe('App routing', () => {
     ['/photos', 'photos page'],
     ['/chat', 'chat page'],
     ['/profile', 'profile page'],
+    ['/join/invite-1', 'join page invite-1 signed in'],
+    ['/?groupId=joined-family', 'selected family joined-family'],
     ['/favorites', 'favorites page'],
     ['/notifications', 'notifications page'],
     ['/search?q=garden&groupId=group-1', 'search page garden group-1'],
@@ -131,6 +143,26 @@ describe('App routing', () => {
     renderWithQueryClient(<App />, { route })
     expect(await screen.findByText('feed page')).toBeInTheDocument()
     expect(screen.queryByText(/(photos|chat) page/)).not.toBeInTheDocument()
+  })
+
+  it('renders invitation preview while signed out', async () => {
+    signedOut()
+    renderWithQueryClient(<App />, { route: '/join/invite-1' })
+    expect(await screen.findByText('join page invite-1 signed out')).toBeInTheDocument()
+    expect(screen.queryByText('login page')).not.toBeInTheDocument()
+  })
+  it('opens the accepted family in the feed', async () => {
+    signIn()
+    renderWithQueryClient(<App />, { route: '/join/invite-1' })
+    await userEvent.click(await screen.findByRole('button', { name: 'accept invite' }))
+    expect(await screen.findByText('selected family joined-family')).toBeInTheDocument()
+  })
+  it('keeps the invitation route when signing out to switch accounts', async () => {
+    signIn()
+    renderWithQueryClient(<App />, { route: '/join/invite-1' })
+    await userEvent.click(await screen.findByRole('button', { name: 'switch account' }))
+    expect(await screen.findByText('join page invite-1 signed out')).toBeInTheDocument()
+    expect(screen.queryByText('login page')).not.toBeInTheDocument()
   })
 
   it('navigates between pages and back', async () => {

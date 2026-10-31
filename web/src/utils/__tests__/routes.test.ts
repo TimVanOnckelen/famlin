@@ -1,4 +1,4 @@
-import { paths, rememberReturnPath, takeReturnPath } from '@/utils/routes'
+import { paths, rememberReturnPath, takeReturnPath, inviteTokenFromReturnPath } from '@/utils/routes'
 
 beforeEach(() => {
   sessionStorage.clear()
@@ -29,5 +29,22 @@ describe('return path across the SSO round trip', () => {
     expect(takeReturnPath()).toBeNull()
     sessionStorage.setItem('famlin.web.returnTo', path)
     expect(takeReturnPath()).toBeNull()
+  })
+})
+
+describe('invitation return paths', () => {
+  it('builds and reads encoded join paths', () => {
+    expect(paths.join('a/b')).toBe('/join/a%2Fb')
+    expect(inviteTokenFromReturnPath('/join/a%2Fb?loginError=1')).toBe('a/b')
+  })
+  it.each([
+    null,
+    '/',
+    '/search?inviteToken=secret',
+    '//evil.example/join/token',
+    'https://evil.example/join/token',
+    '/join/%ZZ',
+  ])('does not accept a token from %s', (path) => {
+    expect(inviteTokenFromReturnPath(path)).toBeUndefined()
   })
 })
