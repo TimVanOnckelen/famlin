@@ -130,11 +130,8 @@
   gap: 5px;
 }
 
-/* The right side panel (FeedSidePanel.tsx) only has room on very wide
-   screens — hidden below 1200px rather than reflowing under the feed, since
-   its content (On this day / family members) is a bonus, not core feed
-   content. Always rendered (so its data fetches regardless of viewport,
-   same as everything else on this page); CSS alone decides visibility. */
+/* Family selection sits above the member card in the wide-screen sidebar.
+   On narrower screens it is hidden; horizontal chips remain above the feed. */
 .feed-side-panel {
   display: none;
 }
@@ -148,5 +145,13 @@
     flex-shrink: 0;
     position: sticky;
     top: 24px;
+    max-height: calc(100dvh - 48px);
+  }
+}
+
+/* Narrow screens retain the original horizontal family chips. */
+@media (min-width: 1200px) {
+  .feed-family-filter {
+    display: none;
   }
 }

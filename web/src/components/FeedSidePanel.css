@@ -57,8 +57,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 360px;
-  overflow-y: auto;
 }
 
 .side-panel-member {
@@ -68,4 +66,112 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--fam-text-body);
+}
+
+.side-panel-members-body {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.side-panel-member-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.side-panel-member-name {
+  overflow-wrap: anywhere;
+}
+
+.side-panel-member-groups {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fam-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.side-panel-message {
+  font-size: 13px;
+  color: var(--fam-text-muted);
+  margin: 12px 0;
+}
+
+.side-panel-retry {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--fam-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.side-panel-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--fam-text-body);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.side-panel-group-row + .side-panel-group-row {
+  margin-top: 4px;
+}
+.side-panel-group-row:hover {
+  background: var(--fam-bg);
+}
+.side-panel-group-row[aria-pressed='true'] {
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+}
+.side-panel-group-row:focus-visible {
+  outline: 2px solid var(--fam-primary);
+  outline-offset: 2px;
+}
+.side-panel-group-row > svg {
+  flex-shrink: 0;
+}
+.side-panel-group-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.side-panel-group-title {
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.side-panel-group-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fam-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.side-panel-section {
+  flex-shrink: 0;
+}
+.side-panel-members-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex-shrink: 1;
+}
+.side-panel-members-card > .side-panel-title {
+  flex-shrink: 0;
+}
+.side-panel-groups {
+  max-height: 40dvh;
+  overflow-y: auto;
+  flex-shrink: 1;
 }

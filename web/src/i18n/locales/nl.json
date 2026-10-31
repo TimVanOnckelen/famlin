@@ -74,7 +74,10 @@
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
-    "membersTitle": "Gezinsleden"
+    "membersTitle": "Gezinsleden",
+    "membersLoadFailed": "Sommige leden konden niet worden geladen.",
+    "membersRetry": "Opnieuw proberen",
+    "membersEmpty": "Geen leden gevonden."
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
