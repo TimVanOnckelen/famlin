@@ -1,5 +1,10 @@
 {
   "common": {
+    "retry": "Opnieuw proberen",
+    "confirm": "Bevestigen",
+    "confirmTitle": "Actie bevestigen",
+    "messageTitle": "Melding",
+    "changePassword": "Wachtwoord wijzigen",
     "loading": "Laden...",
     "loadMore": "Meer laden",
     "cancel": "Annuleer",
@@ -104,6 +109,8 @@
     "uploads": "Uploads"
   },
   "users": {
+    "grantAdminConfirm": "{{name}} ({{email}}) beheerderstoegang geven? Deze gebruiker kan dan gebruikers, groepen en serverinstellingen beheren.",
+    "revokeAdminConfirm": "Beheerderstoegang van {{name}} ({{email}}) intrekken?",
     "title": "Gebruikers",
     "newUser": "Nieuwe gebruiker",
     "createUser": "Gebruiker aanmaken",
@@ -405,6 +412,9 @@
     }
   },
   "members": {
+    "noneAvailable": "Alle beschikbare gebruikers zijn al toegevoegd.",
+    "addNamed": "{{name}} toevoegen",
+    "removeNamed": "{{name}} verwijderen",
     "addMember": "Lid toevoegen",
     "modeInvite": "Uitnodigen",
     "modeCreate": "Aanmaken met wachtwoord",
@@ -422,6 +432,8 @@
     "ALBUM": "Album"
   },
   "circles": {
+    "edit": "Kring bewerken",
+    "removeMemberConfirm": "{{name}} uit de kring \"{{circle}}\" verwijderen?",
     "heading_one": "{{count}} kring",
     "heading_other": "{{count}} kringen",
     "hint": "Met kringen deelt een deel van de familie privé. Leden buiten een kring zien de berichten, foto's en reacties nooit — en weten niet eens dat de kring bestaat.",

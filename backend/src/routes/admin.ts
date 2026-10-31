@@ -222,7 +222,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'asc' },
       ...paginationArgs({ cursor, take }),
       select: {
         ...userSelect,

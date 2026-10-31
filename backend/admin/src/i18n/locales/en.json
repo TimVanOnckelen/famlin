@@ -1,5 +1,10 @@
 {
   "common": {
+    "retry": "Try again",
+    "confirm": "Confirm",
+    "confirmTitle": "Confirm action",
+    "messageTitle": "Notice",
+    "changePassword": "Change password",
     "loading": "Loading...",
     "loadMore": "Load more",
     "cancel": "Cancel",
@@ -104,6 +109,8 @@
     "uploads": "Uploads"
   },
   "users": {
+    "grantAdminConfirm": "Grant administrator access to {{name}} ({{email}})? They will be able to manage users, groups and server settings.",
+    "revokeAdminConfirm": "Remove administrator access from {{name}} ({{email}})?",
     "title": "Users",
     "newUser": "New user",
     "createUser": "Create user",
@@ -405,6 +412,9 @@
     }
   },
   "members": {
+    "noneAvailable": "All available users have already been added.",
+    "addNamed": "Add {{name}}",
+    "removeNamed": "Remove {{name}}",
     "addMember": "Add member",
     "modeInvite": "Invite",
     "modeCreate": "Create with password",
@@ -422,6 +432,8 @@
     "ALBUM": "Album"
   },
   "circles": {
+    "edit": "Edit circle",
+    "removeMemberConfirm": "Remove {{name}} from the circle \"{{circle}}\"?",
     "heading_one": "{{count}} circle",
     "heading_other": "{{count}} circles",
     "hint": "Circles let part of a family share privately. Members outside a circle never see its posts, photos or comments — and never learn it exists.",

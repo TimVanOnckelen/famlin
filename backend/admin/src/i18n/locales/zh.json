@@ -1,5 +1,10 @@
 {
   "common": {
+    "retry": "重试",
+    "confirm": "确认",
+    "confirmTitle": "确认操作",
+    "messageTitle": "提示",
+    "changePassword": "修改密码",
     "loading": "加载中…",
     "loadMore": "加载更多",
     "cancel": "取消",
@@ -104,6 +109,8 @@
     "uploads": "上传文件"
   },
   "users": {
+    "grantAdminConfirm": "授予 {{name}}（{{email}}）管理员权限？该用户将能够管理用户、群组和服务器设置。",
+    "revokeAdminConfirm": "撤销 {{name}}（{{email}}）的管理员权限？",
     "title": "用户",
     "newUser": "新建用户",
     "createUser": "创建用户",
@@ -405,6 +412,9 @@
     }
   },
   "members": {
+    "noneAvailable": "所有可用用户均已添加。",
+    "addNamed": "添加 {{name}}",
+    "removeNamed": "移除 {{name}}",
     "addMember": "添加成员",
     "modeInvite": "邀请",
     "modeCreate": "使用密码创建",
@@ -422,6 +432,8 @@
     "ALBUM": "相册"
   },
   "circles": {
+    "edit": "编辑圈子",
+    "removeMemberConfirm": "将 {{name}} 从圈子“{{circle}}”中移除？",
     "heading_one": "{{count}} 个圈子",
     "heading_other": "{{count}} 个圈子",
     "hint": "圈子供部分家人私密分享，圈外成员无法查看其中的动态、照片或评论，也不会获知圈子的存在。",
