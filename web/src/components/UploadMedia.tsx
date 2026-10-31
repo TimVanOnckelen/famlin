@@ -77,7 +77,8 @@ export function UploadMedia({
   const { t } = useTranslation()
   const state = useUploadProcessing(url)
   const previewUrl = thumbnailUrl ?? state.thumbnailUrl
-  if (state.pending || state.failed) {
+  // Failed video jobs remain playable through the backend’s original-file fallback.
+  if (state.pending || (state.failed && !isVideoUrl(url))) {
     return (
       <div className={`media-processing ${className ?? ''}`} role="status">
         {state.thumbnailUrl && <img src={getUploadUrl(state.thumbnailUrl)} alt="" />}

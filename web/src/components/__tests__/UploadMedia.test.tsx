@@ -36,7 +36,7 @@ it('renders ready post media immediately without a status request, including aft
   expect(fetchUploadProcessing).not.toHaveBeenCalled()
 })
 
-it('shows a failed post attachment immediately without polling', () => {
+it('opens a failed video attachment using the original-file fallback without polling', async () => {
   renderWithQueryClient(
     <PostCard
       post={makePost({
@@ -47,8 +47,11 @@ it('shows a failed post attachment immediately without polling', () => {
       })}
     />
   )
-  expect(screen.getByText('Media processing failed')).toBeInTheDocument()
+  expect(screen.queryByText('Media processing failed')).not.toBeInTheDocument()
   expect(fetchUploadProcessing).not.toHaveBeenCalled()
+  await userEvent.click(screen.getByRole('button', { name: 'Play video' }))
+  const dialog = await screen.findByRole('dialog')
+  expect(dialog.querySelector('video')).toHaveAttribute('src', getUploadUrl(url))
 })
 
 it('uses a fresh ready post response even when the status cache still says processing', () => {
@@ -156,9 +159,17 @@ it('shows processing with a preview, then replaces it with the ready video', asy
   expect(screen.queryByText('Media is processing…')).not.toBeInTheDocument()
 })
 
-it('shows a failure instead of an endless processing indicator', async () => {
+it('plays the original when video processing fails', async () => {
   vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'failed', url, thumbnailUrl: null })
   const { container } = renderWithQueryClient(<UploadMedia url={url} />)
+  await waitFor(() => expect(container.querySelector('video')).toHaveAttribute('src', getUploadUrl(url)))
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+})
+
+it('keeps the failure message for an unconvertible photo', async () => {
+  const photoUrl = url.replace('.mp4', '.jpg')
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'failed', url: photoUrl, thumbnailUrl: null })
+  const { container } = renderWithQueryClient(<UploadMedia url={photoUrl} />)
   expect(await screen.findByText('Media processing failed')).toBeInTheDocument()
   expect(container.querySelector('video')).toBeNull()
 })

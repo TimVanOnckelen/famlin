@@ -53,7 +53,8 @@ function ProcessingPage({
 }) {
   const state = useUploadProcessing(url)
   const { t } = useTranslation()
-  if (state.pending || state.failed) {
+  // Failed video jobs remain playable through the backend’s original-file fallback.
+  if (state.pending || (state.failed && !isVideoUrl(url))) {
     return (
       <View style={[styles.page, { width, alignItems: 'center', justifyContent: 'center' }]}>
         {!state.failed && <ActivityIndicator color="white" />}

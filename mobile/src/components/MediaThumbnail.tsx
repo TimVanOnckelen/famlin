@@ -54,7 +54,8 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
   const [fellBack, setFellBack] = useState(false)
   const [posterFailed, setPosterFailed] = useState(false)
 
-  if (state.pending || state.failed) {
+  // Failed video jobs remain playable through the backend’s original-file fallback.
+  if (state.pending || (state.failed && !isVideoUrl(url))) {
     return (
       <View style={[style as StyleProp<ViewStyle>, styles.processing]}>
         {state.thumbnailUrl && (
