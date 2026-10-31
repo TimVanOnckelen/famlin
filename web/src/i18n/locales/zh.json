@@ -74,7 +74,9 @@
       "contributedBy_other": "由 {{name}} 等 {{others}} 人添加",
       "addPhotosCta": "添加照片",
       "openCta": "打开相册 →"
-    }
+    },
+    "viewMembers": "查看成员",
+    "viewAllMembers": "查看所有成员"
   },
   "comments": {
     "placeholder": "写下评论…",
@@ -410,5 +412,19 @@
     "noGroups": "加入家庭后即可搜索动态。",
     "loadFailed": "无法加载搜索结果。",
     "loadMore": "加载更多"
+  },
+  "members": {
+    "title": "成员",
+    "description": "你加入的所有家庭及私密圈子。",
+    "yourCircles": "你的圈子",
+    "noCircles": "你尚未加入此家庭中的任何圈子。",
+    "noFamilies": "你尚未加入任何家庭。请联系家庭管理员添加你。",
+    "noMembers": "暂无成员。",
+    "familiesFailed": "无法加载你的家庭。",
+    "familyMembersFailed": "无法加载此家庭的成员。",
+    "circlesFailed": "无法加载你在此家庭中的圈子。",
+    "circleMembersFailed": "无法加载此圈子的成员。",
+    "count_one": "{{count}} 位成员",
+    "count_other": "{{count}} 位成员"
   }
 }

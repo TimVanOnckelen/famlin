@@ -74,7 +74,9 @@
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
-    "membersTitle": "Gezinsleden"
+    "membersTitle": "Gezinsleden",
+    "viewMembers": "Leden bekijken",
+    "viewAllMembers": "Alle leden bekijken"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -410,5 +412,19 @@
     "noGroups": "Word lid van een familie om berichten te zoeken.",
     "loadFailed": "Zoekresultaten konden niet worden geladen.",
     "loadMore": "Meer laden"
+  },
+  "members": {
+    "title": "Leden",
+    "description": "Je families en de kringen waar je bij hoort.",
+    "yourCircles": "Jouw kringen",
+    "noCircles": "Je zit niet in een kring binnen deze familie.",
+    "noFamilies": "Je bent nog geen lid van een familie. Vraag de beheerder van je familie om je toe te voegen.",
+    "noMembers": "Geen leden om te tonen.",
+    "familiesFailed": "Je families konden niet worden geladen.",
+    "familyMembersFailed": "De leden van deze familie konden niet worden geladen.",
+    "circlesFailed": "Je kringen binnen deze familie konden niet worden geladen.",
+    "circleMembersFailed": "De leden van deze kring konden niet worden geladen.",
+    "count_one": "{{count}} lid",
+    "count_other": "{{count}} leden"
   }
 }
