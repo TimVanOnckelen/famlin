@@ -11,6 +11,7 @@ import { PhotosPage } from '@/pages/PhotosPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
 import { SearchPage } from '@/pages/SearchPage'
+import { MembersPage } from '@/pages/MembersPage'
 import { FavoritesPage } from '@/pages/FavoritesPage'
 import { TripDetailPage } from '@/pages/TripDetailPage'
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
@@ -145,6 +146,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
               onOpenSearch={nav.toSearch}
+              onOpenMembers={nav.toMembers}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
               onLogout={() => logout()}
@@ -233,6 +235,23 @@ function AppRoutes({ user }: { user: User }) {
               onOpenProfile={nav.toProfile}
               onOpenPost={nav.toPost}
               onOpenSearch={nav.toSearch}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.members}
+          element={
+            <MembersPage
+              user={user}
+              groupId={searchParams.get('groupId') ?? undefined}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
+              onOpenProfile={nav.toProfile}
               onLogout={() => logout()}
             />
           }

@@ -12,6 +12,7 @@ export const paths = {
   favorites: '/favorites',
   notifications: '/notifications',
   search: '/search',
+  members: '/members',
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
   album: (postId: string) => `/albums/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
@@ -41,6 +42,8 @@ export function useAppNavigation() {
       toProfile: () => navigate(paths.profile),
       toFavorites: () => navigate(paths.favorites),
       toNotifications: () => navigate(paths.notifications),
+      toMembers: (groupId?: string) =>
+        navigate({ pathname: paths.members, search: groupId ? new URLSearchParams({ groupId }).toString() : '' }),
       toSearch: (groupId?: string) =>
         navigate({ pathname: paths.search, search: groupId ? new URLSearchParams({ groupId }).toString() : '' }),
       updateSearch: (q: string, groupId: string) =>
