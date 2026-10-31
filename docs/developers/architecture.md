@@ -13,6 +13,10 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Web feed member panel
+
+On screens at least 1200px wide, the right column shows the family filter above a permanent member card. Each family has its own row with its name and optional description. The family filter is omitted entirely for a single membership. Selecting families filters both the feed and the member list; there is no separate member filter or search. Multiple families produce one list deduplicated by user ID, with family names under each member. The member card fits its content and only scrolls when the right column reaches the available viewport height. Member queries reuse the per-family React Query cache for 60 seconds and report partial failures with a retry action. “On this day” remains tied to a single selected family and appears below the member card. On narrower screens, the entire sidebar stays hidden and the original horizontal family-filter chips remain above the feed. Both filter layouts share the same selection.
+
 ## Backend routes
 
 | File | Prefix | Notes |

@@ -74,7 +74,10 @@
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
-    "membersTitle": "Family members"
+    "membersTitle": "Family members",
+    "membersLoadFailed": "Some members could not be loaded.",
+    "membersRetry": "Try again",
+    "membersEmpty": "No members found."
   },
   "comments": {
     "placeholder": "Write a comment…",
