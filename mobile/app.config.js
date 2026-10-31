@@ -107,12 +107,8 @@ export default ({ config }) => ({
       {
         photosPermission:
           "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
-        // Famlin only ever opens the library picker, never the camera or the
-        // microphone. `false` deletes those purpose strings (and blocks the
-        // Android permissions) instead of shipping the plugin's vague
-        // defaults for capabilities the app doesn't use — an unused, generic
-        // purpose string is exactly what guideline 5.1.1(ii) rejects.
-        cameraPermission: false,
+        cameraPermission: 'Allow Famlin to use your camera so you can take photos for your family stories.',
+        // Story capture takes still photos and does not need microphone access.
         microphonePermission: false,
       },
     ],
