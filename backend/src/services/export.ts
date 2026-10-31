@@ -180,7 +180,12 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   // authorization row for a file that isn't in the archive. A cross-post
   // sibling that is pinned keeps the file in.
   const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)))
+  for (const upload of uploads)
+    if (pinnedKeys.has(upload.assetKey) && upload.motionAssetKey) pinnedKeys.add(upload.motionAssetKey)
   const liveOnlyKeys = new Set(liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key)))
+  for (const upload of uploads)
+    if (liveOnlyKeys.has(upload.assetKey) && upload.motionAssetKey && !pinnedKeys.has(upload.motionAssetKey))
+      liveOnlyKeys.add(upload.motionAssetKey)
   archive.append(
     JSON.stringify(
       uploads.filter((u) => !liveOnlyKeys.has(u.assetKey)),

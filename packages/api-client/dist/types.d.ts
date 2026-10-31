@@ -1,3 +1,4 @@
+import type { UploadProcessing } from './uploads';
 export declare const REACTION_TYPES: readonly ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'];
 export type ReactionType = (typeof REACTION_TYPES)[number];
 export interface PostReactor {
@@ -160,6 +161,7 @@ export interface Post {
     milestoneTag?: string | null;
     uploadedAssetUrls: string[];
     createdAt: string;
+    uploadProcessing?: Record<string, UploadProcessing>;
     editedAt?: string | null;
     latitude?: number | null;
     longitude?: number | null;

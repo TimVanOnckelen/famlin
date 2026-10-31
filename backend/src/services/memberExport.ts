@@ -35,7 +35,7 @@ import { prisma } from '../db.js'
 import { getStorage } from './storage/registry.js'
 import { appendStoredObject } from './storage/archive.js'
 import { getUserCircleIds, visiblePostsWhere } from './circles.js'
-import { uploadAssetKey } from './uploads.js'
+import { uploadAssetKey, canReadUpload } from './uploads.js'
 import pkg from '../../package.json' with { type: 'json' }
 
 // Matches every /uploads/<file> path embedded anywhere in the exported rows —
@@ -143,12 +143,14 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true },
+    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, motionAssetKey: true },
   })
   const circleSet = new Set(circleIds)
   for (const row of uploadRows) {
     const readable = row.circleId ? circleSet.has(row.circleId) : row.bound || row.uploaderId === userId
     if (!readable) referencedKeys.delete(row.assetKey)
+    else if (row.motionAssetKey && (await canReadUpload(`/uploads/${row.motionAssetKey}.mp4`, userId)))
+      referencedKeys.add(row.motionAssetKey)
   }
 
   const uploadFiles: { rel: string }[] = []

@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -155,17 +156,29 @@ export const PostCard = React.memo(function PostCard({ post, showGroup = false }
   // precedent as web's PostCard. This wrapper itself calls no hooks, so
   // branching here on post.type can never violate the rules of hooks.
   if (post.type === 'TRIP') {
-    return <TripCard post={post} showGroup={showGroup} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <TripCard post={post} showGroup={showGroup} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
   // ALBUM posts likewise get their own card (collage hero, contributor stack,
   // an "Add photos"/"Open album" CTA) — its photo contributions live as
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
-    return <AlbumCard post={post} showGroup={showGroup} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <AlbumCard post={post} showGroup={showGroup} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} />
+  return (
+    <UploadProcessingContext.Provider value={post.uploadProcessing}>
+      <DefaultPostCard post={post} showGroup={showGroup} />
+    </UploadProcessingContext.Provider>
+  )
 })
 
 function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {

@@ -1,12 +1,13 @@
-import { screen } from '@testing-library/react'
+import { screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PostDetailModal } from '@/components/PostDetailModal'
 import { makePost, makeTrip, renderWithQueryClient } from '@/test/fixtures'
-import { fetchComments, fetchPost } from '@famlin/api-client'
+import { fetchComments, fetchPost, fetchUploadProcessing } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchPost: vi.fn(),
+  fetchUploadProcessing: vi.fn(),
   fetchComments: vi.fn(),
   getUploadUrl: vi.fn((url: string) => `http://localhost:3000${url}`),
 }))
@@ -64,4 +65,64 @@ describe('PostDetailModal', () => {
 
     await vi.waitFor(() => expect(onOpenTrip).toHaveBeenCalledWith('trip-1'))
   })
+})
+
+it('autoplays Live Photo in the post media pane and stops when switching', async () => {
+  const url = '/uploads/11111111-1111-4111-8111-111111111111.jpg'
+  vi.mocked(fetchPost).mockResolvedValue(makePost({ uploadedAssetUrls: [url, '/uploads/next.jpg'] }))
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({
+    status: 'ready',
+    url,
+    thumbnailUrl: null,
+    kind: 'livePhoto',
+    videoUrl: '/uploads/motion.mp4',
+  })
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback(
+          [{ isIntersecting: true, target } as IntersectionObserverEntry],
+          this as unknown as IntersectionObserver
+        )
+      }
+      disconnect() {}
+    }
+  )
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: false }))
+  )
+  const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+  const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  const { container, unmount } = renderWithQueryClient(<PostDetailModal postId="post-7" onClose={() => {}} />)
+  await waitFor(() => expect(container.querySelector('.post-detail-modal-media')).not.toBeNull())
+  const mediaPane = container.querySelector<HTMLElement>('.post-detail-modal-media')!
+  expect(await within(mediaPane).findByRole('button', { name: 'Pause Live Photo' })).toBeInTheDocument()
+  const video = mediaPane.querySelector('video')!
+  await waitFor(() => expect(play.mock.instances).toContain(video))
+  pause.mockClear()
+  await userEvent.click(screen.getByRole('button', { name: 'Next photo' }))
+  expect(pause.mock.instances).toContain(video)
+  unmount()
+  pause.mockRestore()
+  play.mockRestore()
+  vi.unstubAllGlobals()
+})
+
+it('shows processing status over the preview in the media pane', async () => {
+  const url = '/uploads/11111111-1111-4111-8111-111111111111.jpg'
+  const thumbnailUrl = url.replace('.jpg', '-thumbnail.jpg')
+  vi.mocked(fetchPost).mockResolvedValue(makePost({ uploadedAssetUrls: [url] }))
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'processing', url, thumbnailUrl })
+  const { container } = renderWithQueryClient(<PostDetailModal postId="post-7" onClose={() => {}} />)
+  await waitFor(() => expect(container.querySelector('.post-detail-modal-media')).not.toBeNull())
+  const mediaPane = container.querySelector<HTMLElement>('.post-detail-modal-media')!
+  const status = await within(mediaPane).findByRole('status')
+  expect(status).toHaveTextContent('Media is processing…')
+  await waitFor(() =>
+    expect(status.querySelector('img')).toHaveAttribute('src', `http://localhost:3000${thumbnailUrl}`)
+  )
+  expect(mediaPane.querySelector('video')).toBeNull()
 })

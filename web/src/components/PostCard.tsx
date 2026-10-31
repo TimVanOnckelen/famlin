@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -9,7 +10,7 @@ import { Icon } from '@/components/Icon'
 import { CircleBadge } from '@/components/CircleBadge'
 import { CommentsSection } from '@/components/CommentsSection'
 import { Lightbox } from '@/components/Lightbox'
-import { ShimmerImage } from '@/components/ShimmerImage'
+import { UploadMedia } from '@/components/UploadMedia'
 import { postTypeRenderers } from '@/components/postTypes'
 import { TripFeedCard } from '@/components/postTypes/TripFeedCard'
 import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard'
@@ -31,14 +32,22 @@ const COLLAGE_MAX_PHOTOS = 4
 // Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
 function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: (index: number) => void }) {
   const tile = (assetUrl: string, index: number, overlay?: ReactNode) => (
-    <button key={assetUrl} className="post-collage-tile" onClick={() => onSelect(index)}>
-      {isVideoUrl(assetUrl) ? (
-        <video src={getUploadUrl(assetUrl)} preload="metadata" />
-      ) : (
-        <ShimmerImage src={getUploadUrl(assetUrl, 'thumbnail')} fallbackSrc={getUploadUrl(assetUrl)} loading="lazy" />
-      )}
+    <div
+      key={assetUrl}
+      className="post-collage-tile"
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(index)}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          onSelect(index)
+        }
+      }}
+    >
+      <UploadMedia url={assetUrl} thumbnail />
       {overlay}
-    </button>
+    </div>
   )
 
   if (assetUrls.length === 2) {
@@ -140,17 +149,29 @@ export function PostCard({
   // surface in a generic inline comment list, which this branch guarantees
   // simply by never mounting CommentsSection for a TRIP post.
   if (post.type === 'TRIP') {
-    return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
   // ALBUM posts likewise get their own card (collage hero, contributor stack,
   // an "Add photos"/"Open album" CTA) — its photo contributions live as
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
-    return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
+    return (
+      <UploadProcessingContext.Provider value={post.uploadProcessing}>
+        <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
+      </UploadProcessingContext.Provider>
+    )
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} onDeleted={onDeleted} />
+  return (
+    <UploadProcessingContext.Provider value={post.uploadProcessing}>
+      <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} onDeleted={onDeleted} />
+    </UploadProcessingContext.Provider>
+  )
 }
 
 function DefaultPostCard({
@@ -247,13 +268,11 @@ function DefaultPostCard({
           <div className="post-hero">
             {isCollage ? (
               <PhotoCollage assetUrls={post.uploadedAssetUrls} onSelect={setLightboxIndex} />
-            ) : isVideoUrl(post.uploadedAssetUrls[0]) ? (
-              <video src={heroUrl} className="post-hero-media" controls preload="metadata" />
             ) : (
-              <ShimmerImage
-                src={heroUrl}
+              <UploadMedia
+                url={post.uploadedAssetUrls[0]}
+                thumbnail={isVideoUrl(post.uploadedAssetUrls[0])}
                 className="post-hero-media post-hero-clickable"
-                loading="lazy"
                 onClick={() => setLightboxIndex(0)}
               />
             )}

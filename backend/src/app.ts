@@ -13,6 +13,7 @@ import { createReadStream } from 'fs'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
+import { uploadSourceKey } from './services/uploadSources.js'
 import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
 import { injectBrandingIntoHtml } from './services/branding/css.js'
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js'
@@ -186,11 +187,10 @@ export async function buildApp() {
     const pathname = requestPathname(request.raw.url)
     if (!pathname.startsWith('/uploads/')) return
 
-    // The true, uncompressed original of a converted upload lives here (see
-    // routes/uploads.ts) purely for a possible future "download original"
-    // feature — it's never served today, regardless of auth. The generated
-    // HEIC renditions below are internal too: they're served under the
-    // original upload's URL, never their own.
+    // Original storage paths are private, even when authenticated. Pending
+    // or failed conversions can serve their source at the canonical URL
+    // after the authorization check below. HEIC renditions are internal too:
+    // they're served under the original upload's URL, never their own.
     //
     // The branding logo renditions live in uploads/branding/ for the volume
     // and export, but they're public and served at /branding/* only — never
@@ -233,6 +233,47 @@ export async function buildApp() {
     async handler(request, reply) {
       const requestedFile = requestPathname(request.raw.url).slice('/uploads/'.length)
       try {
+        const storage = getStorage()
+        const canonical = /^([0-9a-f-]{36})\.(jpg|mp4)$/i.exec(requestedFile)
+        if (canonical && !(await storage.stat(requestedFile))) {
+          const upload = await prisma.upload.findUnique({ where: { assetKey: canonical[1] } })
+          if (upload?.sourceFilename && ['queued', 'processing', 'failed'].includes(upload.processingStatus)) {
+            let sourceKey: string | undefined
+            try {
+              sourceKey = uploadSourceKey(upload.sourceFilename)
+            } catch {
+              /* Invalid archived source. */
+            }
+            if (sourceKey) {
+              if (
+                /\.(heic|heif)$/i.test(upload.sourceFilename) &&
+                (await storage.stat(`${upload.assetKey}-thumbnail.jpg`))
+              )
+                sourceKey = `${upload.assetKey}-thumbnail.jpg`
+              const sourceTypes: Record<string, string> = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.heic': 'image/heic',
+                '.heif': 'image/heif',
+                '.mov': 'video/quicktime',
+                '.mp4': 'video/mp4',
+                '.m4v': 'video/mp4',
+                '.webm': 'video/webm',
+              }
+              // Pending media must never validate a stale cached response.
+              if (
+                await sendStoredObject(reply, storage, sourceKey, {
+                  contentType: sourceTypes[path.extname(sourceKey).toLowerCase()] ?? 'application/octet-stream',
+                  cacheControl: 'no-store',
+                  conditional: false,
+                })
+              )
+                return
+            }
+          }
+        }
         const rendition = request.method === 'GET' ? await resolveStoredHeicRendition(requestedFile) : null
         const types: Record<string, string> = {
           '.jpg': 'image/jpeg',

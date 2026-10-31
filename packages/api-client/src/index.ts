@@ -66,7 +66,16 @@ export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich'
 export type { InvitePreview } from './invites'
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites'
 
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS } from './uploads'
+export {
+  getUploadUrl,
+  refreshMediaToken,
+  ensureFreshMediaToken,
+  uploadFiles,
+  fetchUploadProcessing,
+  uploadFilesInSession,
+  uploadKey,
+  UPLOAD_TIMEOUT_MS,
+} from './uploads'
 
 export type {
   ReactionType,
@@ -182,3 +191,7 @@ export {
 
 export type { Circle, CircleMember } from './types'
 export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles'
+
+export type { UploadProcessing } from './uploads'
+
+export type { UploadResult, UploadSessionMedia } from './uploads'

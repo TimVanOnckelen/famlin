@@ -11,7 +11,7 @@ export type { ImmichGroupAlbum, ImmichAsset } from './immich';
 export { getGroupImmichAlbums, getImmichAlbumAssets } from './immich';
 export type { InvitePreview } from './invites';
 export { fetchInvitePreview, registerViaInvite, acceptInvite } from './invites';
-export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, UPLOAD_TIMEOUT_MS, } from './uploads';
+export { getUploadUrl, refreshMediaToken, ensureFreshMediaToken, uploadFiles, fetchUploadProcessing, uploadFilesInSession, uploadKey, UPLOAD_TIMEOUT_MS, } from './uploads';
 export type { ReactionType, User, Group, Post, PostPerson, PostReactor, PostType, PollOptionResult, PostPoll, PollCreateData, TripTypeData, TripTraveler, TripLatestCheckin, TripEnrichment, TripCheckinMetadata, AlbumTypeData, AlbumContributor, AlbumLatestContribution, AlbumEnrichment, AlbumPhotoMetadata, Comment, Notification, } from './types';
 export { REACTION_TYPES } from './types';
 export { patchPostInCaches } from './postCache';
@@ -22,9 +22,9 @@ export { fetchPosts, fetchAlbumPosts, fetchPost, fetchOnThisDay, searchPosts, fe
 export type { CreateCommentBody, UpdateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
 export type { CommentGroup } from './commentGroups';
-export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments, } from './commentGroups';
+export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups';
 export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat';
-export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts, } from './chat';
+export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat';
 export { fetchNotifications, fetchUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, } from './notifications';
 export { registerPushToken, unregisterPushToken } from './pushTokens';
 export type { ApiToken, CreatedApiToken } from './apiTokens';
@@ -33,3 +33,5 @@ export type { Story, StoryAuthor, StoryTray, StoryTrayAuthor, StoryHighlightsPag
 export { fetchStoryTray, fetchStoryHighlights, fetchStory, createStory, markStoryViewed, fetchStoryViews, reactToStory, fetchStoryReactions, replyToStory, fetchStoryReplies, pinStory, unpinStory, deleteStory, isStoryLive, } from './stories';
 export type { Circle, CircleMember } from './types';
 export { fetchMyCircles, fetchCircleMembers, leaveCircle } from './circles';
+export type { UploadProcessing } from './uploads';
+export type { UploadResult, UploadSessionMedia } from './uploads';
