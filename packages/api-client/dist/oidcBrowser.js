@@ -69,7 +69,7 @@ async function startBrowserOidcLogin(config, redirectUri) {
 // secret (e.g. Google), directly against the token endpoint otherwise — and
 // always clears the stored round-trip state, success or failure. Errors are
 // thrown with slug messages, not user-facing text; callers translate.
-async function completeBrowserOidcLogin(code, state, redirectUri) {
+async function completeBrowserOidcLogin(code, state, redirectUri, inviteToken) {
     try {
         const storedState = sessionStorage.getItem(STATE_KEY);
         const verifier = sessionStorage.getItem(VERIFIER_KEY);
@@ -82,7 +82,7 @@ async function completeBrowserOidcLogin(code, state, redirectUri) {
             // Providers that require a client secret reject a secretless PKCE
             // exchange from the browser — hand the code to the backend instead,
             // which holds the secret and does the exchange.
-            return await (0, auth_1.exchangeOidcCode)(code, redirectUri, verifier);
+            return await (0, auth_1.exchangeOidcCode)(code, redirectUri, verifier, inviteToken);
         }
         const tokenRes = await fetch(config.tokenEndpoint, {
             method: 'POST',
@@ -102,7 +102,7 @@ async function completeBrowserOidcLogin(code, state, redirectUri) {
         if (!tokenData.id_token) {
             throw new Error('oidc_token_exchange_failed');
         }
-        return await (0, auth_1.loginWithOidc)(tokenData.id_token);
+        return await (0, auth_1.loginWithOidc)(tokenData.id_token, inviteToken);
     }
     finally {
         clearBrowserOidcLogin();

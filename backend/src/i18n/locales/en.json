@@ -148,13 +148,14 @@
     "invitedByTitle": "{{inviter}} invited you to join \"{{group}}\"",
     "invitedTitle": "You've been invited to join \"{{group}}\"",
     "pageTitle": "Join {{group}} on Famlin",
-    "subtitle": "Open this link on your phone to join the family on Famlin.",
+    "subtitle": "Join your family in the browser or open the Famlin app.",
     "openButton": "Open in the Famlin app",
     "appStore": "Download on the App Store",
     "playStore": "Get it on Google Play",
     "hint": "Don't have the app yet? Ask your family admin how to install it, then tap this link again.",
     "hintWithStores": "Don't have the app yet? Download it below, then tap this link again.",
-    "pageTitleBranded": "Join {{group}} · {{name}}"
+    "pageTitleBranded": "Join {{group}} · {{name}}",
+    "continueBrowser": "Continue in the browser"
   },
   "landing": {
     "pageTitle": "Famlin",

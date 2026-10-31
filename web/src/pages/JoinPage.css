@@ -1,0 +1,76 @@
+.join-panel {
+  max-width: 480px;
+}
+.join-brand-name {
+  color: var(--fam-primary);
+  font-weight: 900;
+  font-size: 24px;
+  margin: 12px 0 0;
+}
+.join-card h1 {
+  font-size: 22px;
+  margin: 0 0 16px;
+  color: var(--fam-text-title);
+}
+.join-family {
+  font-size: 24px;
+  color: var(--fam-primary);
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.join-card p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.join-description {
+  white-space: pre-wrap;
+  color: var(--fam-text-muted);
+}
+.join-modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 20px 0;
+  background: var(--fam-bg);
+  border-radius: var(--r-pill);
+}
+.join-modes button {
+  flex: 1;
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 10px 8px;
+  background: transparent;
+  color: var(--fam-text-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.join-modes button[aria-pressed='true'] {
+  background: var(--fam-surface);
+  color: var(--fam-primary);
+  box-shadow: var(--shadow-card);
+}
+.join-text-button {
+  display: block;
+  margin: 16px auto 0;
+  border: 0;
+  padding: 4px;
+  background: none;
+  color: var(--fam-primary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.join-card button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.join-password-hint {
+  margin: 0;
+  color: var(--fam-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

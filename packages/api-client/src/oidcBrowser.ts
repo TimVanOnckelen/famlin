@@ -74,7 +74,8 @@ export async function startBrowserOidcLogin(config: OidcConfig, redirectUri: str
 export async function completeBrowserOidcLogin(
   code: string,
   state: string | null,
-  redirectUri: string
+  redirectUri: string,
+  inviteToken?: string
 ): Promise<LoginResponse> {
   try {
     const storedState = sessionStorage.getItem(STATE_KEY)
@@ -89,7 +90,7 @@ export async function completeBrowserOidcLogin(
       // Providers that require a client secret reject a secretless PKCE
       // exchange from the browser — hand the code to the backend instead,
       // which holds the secret and does the exchange.
-      return await exchangeOidcCode(code, redirectUri, verifier)
+      return await exchangeOidcCode(code, redirectUri, verifier, inviteToken)
     }
 
     const tokenRes = await fetch(config.tokenEndpoint, {
@@ -110,7 +111,7 @@ export async function completeBrowserOidcLogin(
     if (!tokenData.id_token) {
       throw new Error('oidc_token_exchange_failed')
     }
-    return await loginWithOidc(tokenData.id_token)
+    return await loginWithOidc(tokenData.id_token, inviteToken)
   } finally {
     clearBrowserOidcLogin()
   }

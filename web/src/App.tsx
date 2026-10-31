@@ -1,9 +1,27 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import axios from 'axios'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router'
-import { ensureFreshMediaToken, fetchGroups, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client'
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useParams,
+  matchPath,
+} from 'react-router'
+import {
+  ensureFreshMediaToken,
+  fetchGroups,
+  fetchMe,
+  setUnauthorizedHandler,
+  startBrowserOidcLogin,
+  type LoginResponse,
+  User,
+} from '@famlin/api-client'
 import { useAuthStore } from '@/stores/authStore'
+import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { FeedPage } from '@/pages/FeedPage'
 import { ProfilePage } from '@/pages/ProfilePage'
@@ -20,7 +38,7 @@ import { ReadOnlyBanner } from '@/components/ReadOnlyBanner'
 import { useTranslation } from 'react-i18next'
 import { useBranding } from '@/hooks/useBranding'
 import { applyBranding } from '@/utils/branding'
-import { paths, useAppNavigation } from '@/utils/routes'
+import { paths, useAppNavigation, rememberReturnPath } from '@/utils/routes'
 
 export default function App() {
   const { user, setAuth, clearSession, loadToken, isLoading } = useAuthStore()
@@ -28,6 +46,7 @@ export default function App() {
   const { t } = useTranslation()
   const branding = useBranding()
   const navigate = useNavigate()
+  const location = useLocation()
 
   // Per-family branding (issue #164). The server already injected it into
   // index.html; this keeps the page in sync with /server-info afterwards.
@@ -45,10 +64,10 @@ export default function App() {
   useEffect(() => {
     if (previousUserRef.current && !user) {
       queryClient.clear()
-      navigate(paths.feed, { replace: true })
+      if (!matchPath('/join/:token', location.pathname)) navigate(paths.feed, { replace: true })
     }
     previousUserRef.current = user
-  }, [user, navigate, queryClient])
+  }, [user, navigate, queryClient, location.pathname])
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -97,15 +116,25 @@ export default function App() {
     return null
   }
 
-  if (!user) {
-    return <LoginPage />
-  }
-
   return (
     <>
       <ScrollToTopOnNavigate />
-      <ReadOnlyBanner />
-      <AppRoutes user={user} />
+      <Routes>
+        <Route path="/join/:token" element={<JoinRoute user={user} />} />
+        <Route
+          path="*"
+          element={
+            user ? (
+              <>
+                <ReadOnlyBanner />
+                <AppRoutes user={user} />
+              </>
+            ) : (
+              <LoginPage />
+            )
+          }
+        />
+      </Routes>
     </>
   )
 }
@@ -138,7 +167,9 @@ function AppRoutes({ user }: { user: User }) {
           path={paths.feed}
           element={
             <FeedPage
+              key={searchParams.get('groupId') ?? 'all'}
               user={user}
+              initialGroupId={searchParams.get('groupId') ?? undefined}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
@@ -282,6 +313,36 @@ function RequireGroups({ children }: { children: ReactNode }) {
     return <Navigate to={paths.feed} replace />
   }
   return <>{children}</>
+}
+
+function JoinRoute({ user }: { user: User | null }) {
+  const { token } = useParams<{ token: string }>()
+  const location = useLocation()
+  const nav = useAppNavigation()
+  const client = useQueryClient()
+  const { setAuth, logout } = useAuthStore()
+  async function authenticated(result: LoginResponse) {
+    await setAuth(result.user, result.token)
+    await client.invalidateQueries({ queryKey: ['groups'] })
+    nav.toFamilyFeed()
+  }
+  return (
+    <JoinPage
+      key={token}
+      token={token!}
+      user={user}
+      loginFailed={new URLSearchParams(location.search).get('loginError') === '1'}
+      onAuthenticated={authenticated}
+      onJoined={nav.toFamilyFeed}
+      onCancel={nav.toFeed}
+      onSignOut={() => logout()}
+      onStartSso={async (config) => {
+        const url = await startBrowserOidcLogin(config, new URL('/', window.location.origin).toString())
+        rememberReturnPath(paths.join(token!))
+        window.location.assign(url)
+      }}
+    />
+  )
 }
 
 function PostDetailModalRoute() {

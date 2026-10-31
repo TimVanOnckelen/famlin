@@ -29,6 +29,7 @@ const CARD_INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, video, [r
 
 export function FeedPage({
   user,
+  initialGroupId,
   onOpenProfile,
   onOpenPhotos,
   onOpenChat,
@@ -40,6 +41,7 @@ export function FeedPage({
   onLogout,
 }: {
   user: User
+  initialGroupId?: string
   onOpenProfile: () => void
   onOpenPhotos?: () => void
   onOpenChat?: () => void
@@ -53,7 +55,7 @@ export function FeedPage({
   const { t, i18n } = useTranslation()
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(initialGroupId ? [initialGroupId] : [])
   // Circles narrow the feed further, to just those circles' posts. Kept in
   // its own state (rather than mixed into selectedGroupIds) because the two
   // filters mean different things: groups widen the pool, circles narrow it.

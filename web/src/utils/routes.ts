@@ -12,6 +12,7 @@ export const paths = {
   favorites: '/favorites',
   notifications: '/notifications',
   search: '/search',
+  join: (token: string) => `/join/${encodeURIComponent(token)}`,
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
   album: (postId: string) => `/albums/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
@@ -36,6 +37,12 @@ export function useAppNavigation() {
   return useMemo(
     () => ({
       toFeed: () => navigate(paths.feed),
+      toJoin: (token: string) => navigate(paths.join(token)),
+      toFamilyFeed: (groupId?: string) =>
+        navigate(
+          { pathname: paths.feed, search: groupId ? new URLSearchParams({ groupId }).toString() : '' },
+          { replace: true }
+        ),
       toPhotos: () => navigate(paths.photos),
       toChat: () => navigate(paths.chat),
       toProfile: () => navigate(paths.profile),
@@ -93,5 +100,17 @@ export function takeReturnPath(): string | null {
     return isSafeReturnPath(path) ? path : null
   } catch {
     return null
+  }
+}
+
+// Read the invitation only from a same-app join return path, never an
+// external URL or another page's query parameters.
+export function inviteTokenFromReturnPath(path: string | null): string | undefined {
+  const match = path?.match(/^\/join\/([^/?#]+)(?:[?#]|$)/)
+  if (!match) return undefined
+  try {
+    return decodeURIComponent(match[1]) || undefined
+  } catch {
+    return undefined
   }
 }
