@@ -35,6 +35,7 @@ import {
 } from '@famlin/api-client'
 
 import { colors } from '@/constants/colors'
+import { SwipeToDismiss } from '@/components/SwipeToDismiss'
 import { REACTION_EMOJI } from '@/constants/reactions'
 import { Avatar } from '@/components/Avatar'
 import { Icon } from '@/components/Icon'
@@ -93,13 +94,14 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
   const [position, setPosition] = useState(start)
   const [elapsed, setElapsed] = useState(0)
   const [holding, setHolding] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
   const [typing, setTyping] = useState(false)
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [replyText, setReplyText] = useState('')
 
   const story = sequences[position.seq]?.[position.idx]
   const storyId = story?.id
-  const paused = holding || typing || insightsOpen
+  const paused = holding || typing || insightsOpen || dismissing
 
   const close = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['stories'] })
@@ -141,8 +143,8 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
   }, [paused, storyId])
 
   useEffect(() => {
-    if (elapsed >= STORY_DURATION_MS) goNext()
-  }, [elapsed, goNext])
+    if (!paused && elapsed >= STORY_DURATION_MS) goNext()
+  }, [elapsed, goNext, paused])
 
   function patchStory(id: string, patch: Partial<Story>) {
     setSequences((seqs) => seqs.map((run) => run.map((s) => (s.id === id ? { ...s, ...patch } : s))))
@@ -234,7 +236,13 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
   }
 
   return (
-    <View style={styles.container}>
+    <SwipeToDismiss
+      topInset={90}
+      bottomInset={180}
+      disabled={typing || insightsOpen}
+      onActiveChange={setDismissing}
+      onClose={close}
+    >
       <StatusBar barStyle="light-content" />
       <Image source={{ uri: getUploadUrl(story.imageUrl) }} style={StyleSheet.absoluteFill} contentFit="contain" />
 
@@ -373,7 +381,7 @@ function StoryPlayer({ sequences: initial, start }: { sequences: Story[][]; star
       {story.isMine && (
         <StoryInsightsSheet storyId={story.id} visible={insightsOpen} onClose={() => setInsightsOpen(false)} />
       )}
-    </View>
+    </SwipeToDismiss>
   )
 }
 

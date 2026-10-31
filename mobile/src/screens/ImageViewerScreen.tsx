@@ -27,6 +27,7 @@ import * as MediaLibrary from 'expo-media-library'
 import { File, Paths } from 'expo-file-system'
 
 import { colors } from '@/constants/colors'
+import { SwipeToDismiss } from '@/components/SwipeToDismiss'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { ReactionPicker } from '@/components/ReactionPicker'
@@ -444,7 +445,7 @@ export function ImageViewerScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const { urls, initialIndex = 0, postId, assetUrls, items } = route.params
-  const { width, height } = useWindowDimensions()
+  const { width } = useWindowDimensions()
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [commentsVisible, setCommentsVisible] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
@@ -458,54 +459,9 @@ export function ImageViewerScreen() {
   const canComment = !!currentPostId && !!currentAssetUrl
   const currentDownloadUrl: string = currentItem?.downloadUrl ?? urls[currentIndex]
 
-  // While a photo is zoomed, paging and the swipe-down dismiss are disabled
-  // so drags pan the photo instead. State drives scrollEnabled; the ref is
-  // read inside the PanResponder callbacks (created once).
+  // A zoomed photo owns its pans; the comments sheet owns its scrolling.
   const [isZoomed, setIsZoomed] = useState(false)
-  const isZoomedRef = useRef(false)
-  function handleZoomChange(zoomed: boolean) {
-    isZoomedRef.current = zoomed
-    setIsZoomed(zoomed)
-  }
-
-  const translateY = useRef(new Animated.Value(0)).current
-  const viewerOpacity = translateY.interpolate({
-    inputRange: [0, height],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  })
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
-        // Single-finger only, and never while zoomed: two-finger pinches and
-        // pans of a zoomed photo must reach the ImagePage underneath.
-        gestureState.numberActiveTouches === 1 &&
-        !isZoomedRef.current &&
-        Math.abs(gestureState.dy) > 10 &&
-        Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
-      onPanResponderMove: (_evt, gestureState) => {
-        if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy)
-        }
-      },
-      onPanResponderRelease: (_evt, gestureState) => {
-        if (gestureState.dy > 120 || gestureState.vy > 0.8) {
-          Animated.timing(translateY, {
-            toValue: height,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => navigation.goBack())
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 0,
-          }).start()
-        }
-      },
-    })
-  ).current
+  const [dismissing, setDismissing] = useState(false)
 
   useEffect(() => {
     ScreenOrientation.unlockAsync()
@@ -531,86 +487,89 @@ export function ImageViewerScreen() {
   }
 
   return (
-    <Animated.View style={[styles.root, { opacity: viewerOpacity }]} needsOffscreenAlphaCompositing>
-      <View style={styles.backdrop} />
-      <Animated.View style={[styles.animatedContent, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
-        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} hitSlop={16}>
-              <Icon name="x" size={24} color={colors.white} />
-            </TouchableOpacity>
-            {urls.length > 1 && (
-              <Text style={styles.counter}>
-                {currentIndex + 1} / {urls.length}
-              </Text>
-            )}
-            <View style={styles.placeholder} />
-          </View>
+    <SwipeToDismiss
+      disabled={isZoomed || commentsVisible}
+      onActiveChange={setDismissing}
+      onClose={() => navigation.goBack()}
+      topInset={90}
+      bottomInset={100}
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} hitSlop={16}>
+            <Icon name="x" size={24} color={colors.white} />
+          </TouchableOpacity>
+          {urls.length > 1 && (
+            <Text style={styles.counter}>
+              {currentIndex + 1} / {urls.length}
+            </Text>
+          )}
+          <View style={styles.placeholder} />
+        </View>
 
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            snapToInterval={width}
-            snapToAlignment="start"
-            disableIntervalMomentum
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: initialIndex * width, y: 0 }}
-            decelerationRate="normal"
-            scrollEventThrottle={16}
-            onScroll={handleScroll}
-            scrollEnabled={!isZoomed}
-            style={styles.scrollView}
-          >
-            {urls.map((url: string, index: number) =>
-              isVideoUrl(url) ? (
-                <VideoPage
-                  key={`${url}-${index}`}
-                  url={url}
-                  width={width}
-                  isActive={index === currentIndex}
-                  accessibilityLabel={t('imageViewer.videoAccessibilityLabel', {
-                    index: index + 1,
-                    total: urls.length,
-                  })}
-                />
-              ) : (
-                <ImagePage
-                  key={`${url}-${index}`}
-                  url={url}
-                  width={width}
-                  isActive={index === currentIndex}
-                  onZoomChange={handleZoomChange}
-                  accessibilityLabel={t('imageViewer.photoAccessibilityLabel', {
-                    index: index + 1,
-                    total: urls.length,
-                  })}
-                />
-              )
-            )}
-          </ScrollView>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          snapToInterval={width}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          contentOffset={{ x: initialIndex * width, y: 0 }}
+          decelerationRate="normal"
+          scrollEventThrottle={16}
+          onScroll={handleScroll}
+          scrollEnabled={!isZoomed && !dismissing}
+          style={styles.scrollView}
+        >
+          {urls.map((url: string, index: number) =>
+            isVideoUrl(url) ? (
+              <VideoPage
+                key={`${url}-${index}`}
+                url={url}
+                width={width}
+                isActive={index === currentIndex}
+                accessibilityLabel={t('imageViewer.videoAccessibilityLabel', {
+                  index: index + 1,
+                  total: urls.length,
+                })}
+              />
+            ) : (
+              <ImagePage
+                key={`${url}-${index}`}
+                url={url}
+                width={width}
+                isActive={index === currentIndex}
+                onZoomChange={setIsZoomed}
+                accessibilityLabel={t('imageViewer.photoAccessibilityLabel', {
+                  index: index + 1,
+                  total: urls.length,
+                })}
+              />
+            )
+          )}
+        </ScrollView>
 
-          {/* Remount per post so the bar never briefly shows the previous
+        {/* Remount per post so the bar never briefly shows the previous
               post's counts while swiping across posts in the photos tab.
               Without a post it still renders (download-only). */}
-          <PhotoActionsBar
-            key={currentPostId ?? 'no-post'}
-            postId={currentPostId}
-            canComment={canComment}
-            downloadUrl={currentDownloadUrl}
-            onOpenComments={() => setCommentsVisible(true)}
-          />
+        <PhotoActionsBar
+          key={currentPostId ?? 'no-post'}
+          postId={currentPostId}
+          canComment={canComment}
+          downloadUrl={currentDownloadUrl}
+          onOpenComments={() => setCommentsVisible(true)}
+        />
 
-          {canComment && (
-            <PhotoCommentsSheet
-              visible={commentsVisible}
-              onClose={() => setCommentsVisible(false)}
-              postId={currentPostId!}
-              assetUrl={currentAssetUrl!}
-            />
-          )}
-        </SafeAreaView>
-      </Animated.View>
-    </Animated.View>
+        {canComment && (
+          <PhotoCommentsSheet
+            visible={commentsVisible}
+            onClose={() => setCommentsVisible(false)}
+            postId={currentPostId!}
+            assetUrl={currentAssetUrl!}
+          />
+        )}
+      </SafeAreaView>
+    </SwipeToDismiss>
   )
 }
 
@@ -741,16 +700,6 @@ function PhotoCommentsSheet({
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: '#000',
-  },
-  animatedContent: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: 'transparent',
