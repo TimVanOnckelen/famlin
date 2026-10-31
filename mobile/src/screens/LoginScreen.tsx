@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as WebBrowser from 'expo-web-browser'
+import Constants from 'expo-constants'
 import { useTranslation } from 'react-i18next'
 
 import { Icon } from '@/components/Icon'
@@ -318,11 +319,21 @@ export function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Text style={styles.appVersion}>
+        {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
+      </Text>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  appVersion: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textMuted,
+    paddingVertical: 12,
+    textAlign: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: colors.bg,
