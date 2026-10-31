@@ -208,6 +208,7 @@
       "startDateLabel": "Startdatum",
       "endDateLabel": "Einddatum",
       "endDateOptional": "optioneel",
+      "clearEndDate": "Einddatum wissen",
       "datePlaceholder": "JJJJ-MM-DD",
       "dateHint": "Notatie: JJJJ-MM-DD",
       "coverPhotoTitle": "Coverfoto toevoegen",

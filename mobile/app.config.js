@@ -74,6 +74,7 @@ export default ({ config }) => ({
     },
   },
   plugins: [
+    '@react-native-community/datetimepicker',
     [
       'expo-build-properties',
       {
