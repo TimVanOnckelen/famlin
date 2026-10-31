@@ -35,6 +35,7 @@ export function FeedPage({
   onOpenFavorites,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onOpenTrip,
   onOpenAlbum,
   onLogout,
@@ -46,6 +47,7 @@ export function FeedPage({
   onOpenFavorites?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: (groupId?: string) => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
   onLogout: () => void
@@ -183,6 +185,21 @@ export function FeedPage({
     >
       <div className="feed-layout">
         <div className="feed-column">
+          {hasGroups && onOpenMembers && (
+            <div className="feed-heading">
+              <h1>{singleActiveGroup?.name ?? t('feed.allFamilies')}</h1>
+              <button
+                type="button"
+                className="feed-members-button"
+                onClick={() => onOpenMembers(singleActiveGroup?.id)}
+                aria-label={t('feed.viewMembers')}
+                title={t('feed.viewMembers')}
+              >
+                <Icon name="users" size={18} />
+                <span>{t('members.title')}</span>
+              </button>
+            </div>
+          )}
           {groups.length > 1 && (
             <div className="feed-filter" role="group" aria-label={t('feed.filterLabel')}>
               <button
@@ -290,7 +307,9 @@ export function FeedPage({
           )}
         </div>
 
-        {singleActiveGroup && <FeedSidePanel groupId={singleActiveGroup.id} onOpenPost={openPostModal} />}
+        {singleActiveGroup && (
+          <FeedSidePanel groupId={singleActiveGroup.id} onOpenPost={openPostModal} onOpenMembers={onOpenMembers} />
+        )}
       </div>
 
       {composerOpen && (

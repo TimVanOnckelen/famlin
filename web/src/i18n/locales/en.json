@@ -74,7 +74,9 @@
     "onThisDayTitle": "On this day",
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
-    "membersTitle": "Family members"
+    "membersTitle": "Family members",
+    "viewMembers": "View members",
+    "viewAllMembers": "View all members"
   },
   "comments": {
     "placeholder": "Write a comment…",
@@ -410,5 +412,19 @@
     "noGroups": "Join a family to search its posts.",
     "loadFailed": "Could not load search results.",
     "loadMore": "Load more"
+  },
+  "members": {
+    "title": "Members",
+    "description": "Your families and the circles you belong to.",
+    "yourCircles": "Your circles",
+    "noCircles": "You are not in any circles in this family.",
+    "noFamilies": "You are not part of any family yet. Ask your family’s admin to add you.",
+    "noMembers": "No members to show.",
+    "familiesFailed": "Could not load your families.",
+    "familyMembersFailed": "Could not load this family’s members.",
+    "circlesFailed": "Could not load your circles in this family.",
+    "circleMembersFailed": "Could not load this circle’s members.",
+    "count_one": "{{count}} member",
+    "count_other": "{{count}} members"
   }
 }
