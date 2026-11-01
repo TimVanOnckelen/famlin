@@ -495,7 +495,7 @@ function ManagePanel({
   const [occasionDate, setOccasionDate] = useState(giftList.occasionDate ?? '')
   const [budget, setBudget] = useState(giftList.budget ?? '')
   const [drawEnabled, setDrawEnabled] = useState(giftList.drawEnabled)
-  const [exclusions, setExclusions] = useState<Array<[string, string]>>(giftList.exclusions ?? [])
+  const [exclusions, setExclusions] = useState<[string, string][]>(giftList.exclusions ?? [])
   const [pairStart, setPairStart] = useState<string | null>(null)
   const nameOf = (id: string) => giftList.participants.find((p) => p.id === id)?.name ?? '?'
   const dateValid = !occasionDate || /^\d{4}-\d{2}-\d{2}$/.test(occasionDate)

@@ -226,8 +226,6 @@ export function NewPostScreen() {
   const [giftDrawEnabled, setGiftDrawEnabled] = useState(false)
   const [giftBudget, setGiftBudget] = useState('')
   const giftDateValid = giftDate.length === 0 || TRIP_DATE_REGEX.test(giftDate)
-  // Participants come from the selected family — switching family resets them.
-  React.useEffect(() => setGiftParticipants([]), [primaryGroupId])
 
   // Valid trip co-travelers = members of EVERY selected group (the server
   // enforces this per target group on a cross-posted trip). Shares the
@@ -482,6 +480,8 @@ export function NewPostScreen() {
                       style={[styles.groupChip, isActive && styles.groupChipActive]}
                       onPress={() => {
                         setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
+                        // Gift list participants come from the selected family.
+                        setGiftParticipants([])
                         // A circle belongs to one family, so a previous
                         // choice stops being valid once the family moves.
                         setSelectedCircleId(null)
@@ -607,6 +607,8 @@ export function NewPostScreen() {
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
                     onPress={() => {
                       setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
+                      // Gift list participants come from the selected family.
+                      setGiftParticipants([])
                       // A circle belongs to one family, so a previous
                       // choice stops being valid once the family moves.
                       setSelectedCircleId(null)
