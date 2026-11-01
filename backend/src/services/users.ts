@@ -34,5 +34,6 @@ export function sanitizeUser(user: User) {
     pushOnNewLike: user.pushOnNewLike,
     pushOnChitchat: user.pushOnChitchat,
     pushOnStory: user.pushOnStory,
+    pushOnGiftList: user.pushOnGiftList,
   }
 }

@@ -279,6 +279,7 @@ export const notificationPrefsSchema = z.object({
   pushOnNewLike: z.boolean().optional(),
   pushOnChitchat: z.boolean().optional(),
   pushOnStory: z.boolean().optional(),
+  pushOnGiftList: z.boolean().optional(),
 })
 
 // Clients always upload the photo first and pass back the resulting

@@ -37,6 +37,7 @@ export function FeedPage({
   onOpenSearch,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onLogout,
 }: {
   user: User
@@ -48,6 +49,7 @@ export function FeedPage({
   onOpenSearch?: (groupId?: string) => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
   onLogout: () => void
 }) {
   const { t, i18n } = useTranslation()
@@ -140,6 +142,7 @@ export function FeedPage({
   function openPost(post: Post) {
     if (post.type === 'TRIP') onOpenTrip?.(post.id)
     else if (post.type === 'ALBUM') onOpenAlbum?.(post.id)
+    else if (post.type === 'GIFT_LIST') onOpenGiftList?.(post.id)
     else openPostModal(post.id)
   }
 
@@ -273,6 +276,7 @@ export function FeedPage({
                     showGroup={showGroupOnCards}
                     onOpenTrip={onOpenTrip}
                     onOpenAlbum={onOpenAlbum}
+                    onOpenGiftList={onOpenGiftList}
                   />
                 </div>
               ))}

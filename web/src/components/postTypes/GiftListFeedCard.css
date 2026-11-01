@@ -1,0 +1,55 @@
+/* Gift list feed card (postTypes/GiftListFeedCard). Reuses post-card /
+   post-card-inner's flat positioning + shadow/radius. */
+
+.gift-card-inner {
+  border-color: var(--fam-primary-tint);
+}
+
+.gift-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gift-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gift-card-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: var(--fam-text-title);
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gift-card-muted {
+  font-size: 13px;
+  color: var(--fam-text-muted);
+}
+
+.gift-card-recipient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.gift-card-actions {
+  align-self: stretch;
+  display: flex;
+  justify-content: flex-end;
+}

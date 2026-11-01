@@ -116,6 +116,8 @@ export function PostDetailScreen() {
       navigation.replace('TripDetail', { postId })
     } else if (post?.type === 'ALBUM') {
       navigation.replace('AlbumDetail', { postId })
+    } else if (post?.type === 'GIFT_LIST') {
+      navigation.replace('GiftList', { postId })
     }
   }, [post?.type, postId])
 

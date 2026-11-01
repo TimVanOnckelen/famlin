@@ -331,3 +331,29 @@
   align-items: center;
   gap: 8px;
 }
+
+/* "My gift lists" rows. */
+.profile-gift-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--fam-border);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-gift-list-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-gift-list-meta {
+  font-size: 13px;
+  color: var(--fam-text-muted);
+}

@@ -94,6 +94,7 @@ const userRow = z.object({
   pushOnNewLike: optionalBool,
   pushOnChitchat: optionalBool,
   pushOnStory: optionalBool,
+  pushOnGiftList: optionalBool,
 })
 
 const groupMemberRow = z.object({ id, groupId: id, userId: id, joinedAt: date })
@@ -118,6 +119,8 @@ const circleRow = z.object({
   description: nullableString,
   avatarUrl: nullableString,
   createdById: nullableString,
+  // Absent before gift lists: every older circle is a Family Circle.
+  kind: z.string().optional(),
   createdAt: date,
   updatedAt: date,
   members: z.array(circleMemberRow).default([]),
@@ -223,6 +226,21 @@ const uploadRow = z.object({
   createdAt: date,
 })
 
+const giftListItemRow = z.object({
+  id,
+  postId: id,
+  ownerId: id,
+  title: z.string(),
+  note: nullableString,
+  url: nullableString,
+  photoUrl: nullableString,
+  position: z.number().int(),
+  createdAt: date,
+  updatedAt: date,
+})
+
+const giftDrawAssignmentRow = z.object({ id, postId: id, giverId: id, recipientId: id, createdAt: date })
+
 const storyReactionRow = z.object({ id, userId: id, type: z.enum(ReactionType).optional(), createdAt: date })
 
 // Only pinned stories (Highlights) are ever exported — live stories, views
@@ -274,6 +292,12 @@ const DATA_FILES = {
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
   highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
   branding: { file: 'data/branding.json', schema: z.array(brandingRow), required: false },
+  giftListItems: { file: 'data/gift-list-items.json', schema: z.array(giftListItemRow), required: false },
+  giftDrawAssignments: {
+    file: 'data/gift-draw-assignments.json',
+    schema: z.array(giftDrawAssignmentRow),
+    required: false,
+  },
 } as const
 
 type DataKey = keyof typeof DATA_FILES
@@ -518,6 +542,8 @@ async function insertAll(
   await tx.storyReaction.createMany({
     data: data.highlights.flatMap((story) => story.reactions.map((r) => ({ ...r, storyId: story.id }))),
   })
+  await tx.giftListItem.createMany({ data: data.giftListItems })
+  await tx.giftDrawAssignment.createMany({ data: data.giftDrawAssignments })
   for (const row of data.branding) {
     await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row })
   }
@@ -645,6 +671,8 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     uploads: data.uploads.length,
     highlights: data.highlights.length,
     branding: data.branding.length,
+    giftListItems: data.giftListItems.length,
+    giftDrawAssignments: data.giftDrawAssignments.length,
     files: fileCount,
   }
 

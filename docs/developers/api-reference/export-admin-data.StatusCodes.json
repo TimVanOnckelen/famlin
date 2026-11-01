@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes","content":{"application/zip":{"schema":{"type":"string","format":"binary"}}}},"401":{"description":"Authentication required"},"403":{"description":"Administrator required"}}}

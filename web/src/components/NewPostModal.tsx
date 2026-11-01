@@ -14,13 +14,15 @@ import {
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import { MediaPickerModal } from '@/components/MediaPickerModal'
+import { GiftListParticipantPicker } from '@/components/GiftListParticipantPicker'
+import { useAuthStore } from '@/stores/authStore'
 import { ShimmerImage } from '@/components/ShimmerImage'
 import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM'] as const
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM', 'GIFT_LIST'] as const
 type ComposerType = (typeof COMPOSER_TYPES)[number]
 
 export function NewPostModal({
@@ -52,6 +54,14 @@ export function NewPostModal({
   // ALBUM: the album's title lives in typeData, not content (content stays an
   // optional description).
   const [albumTitle, setAlbumTitle] = useState('')
+  // GIFT_LIST (issue #307): title and settings in typeData, content stays an
+  // optional description; participants come from the one selected family.
+  const selfId = useAuthStore((s) => s.user?.id ?? '')
+  const [giftTitle, setGiftTitle] = useState('')
+  const [giftDate, setGiftDate] = useState('')
+  const [giftParticipants, setGiftParticipants] = useState<string[]>([])
+  const [giftDrawEnabled, setGiftDrawEnabled] = useState(false)
+  const [giftBudget, setGiftBudget] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(
     initialAsset && initialAsset.source === 'album'
@@ -112,11 +122,14 @@ export function NewPostModal({
   // several target groups selected, only the INTERSECTION of their lists is
   // offered — every target group must accept the type, since cross-posting
   // creates one post per group.
-  const offeredTypes = COMPOSER_TYPES.filter((candidate) =>
-    selectedGroupIds.every((id) => {
-      const allowed = groups.find((g) => g.id === id)?.allowedPostTypes
-      return !allowed || allowed.includes(candidate)
-    })
+  const offeredTypes = COMPOSER_TYPES.filter(
+    (candidate) =>
+      // A gift list's participants come from one family — never cross-posted.
+      (candidate !== 'GIFT_LIST' || selectedGroupIds.length === 1) &&
+      selectedGroupIds.every((id) => {
+        const allowed = groups.find((g) => g.id === id)?.allowedPostTypes
+        return !allowed || allowed.includes(candidate)
+      })
   )
 
   // When the group selection changes and the current type is no longer
@@ -159,6 +172,22 @@ export function NewPostModal({
         return post
       }
 
+      if (type === 'GIFT_LIST') {
+        return createPost({
+          groupId: primaryGroupId,
+          content: content.trim() || undefined,
+          type,
+          typeData: {
+            title: giftTitle.trim(),
+            occasionDate: giftDate || null,
+            participantUserIds: giftParticipants,
+            drawEnabled: giftDrawEnabled,
+            budget: giftBudget.trim() || null,
+          },
+          uploadedAssetUrls: [],
+        })
+      }
+
       // previewUrl is a JPEG still even for a video, so videos attach their
       // original rendition instead (mirrors mobile's MediaPickerModal).
       const mediaUrls = mediaAssets.map((a) => (a.type === 'VIDEO' ? a.originalUrl : a.previewUrl))
@@ -179,6 +208,7 @@ export function NewPostModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['gift-lists'] })
       onClose()
     },
   })
@@ -222,7 +252,9 @@ export function NewPostModal({
       ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
       : type === 'ALBUM'
         ? albumTitle.trim().length > 0
-        : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
+        : type === 'GIFT_LIST'
+          ? giftTitle.trim().length > 0
+          : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -249,7 +281,7 @@ export function NewPostModal({
           </div>
         )}
 
-        {circles.length > 0 && (
+        {circles.length > 0 && type !== 'GIFT_LIST' && (
           <div className="field">
             <span className="field-label">{t('newPost.audience')}</span>
             <span className="field-hint">{t('newPost.audienceHint')}</span>
@@ -324,6 +356,16 @@ export function NewPostModal({
                 {t('newPost.typeAlbum')}
               </button>
             )}
+            {offeredTypes.includes('GIFT_LIST') && (
+              <button
+                type="button"
+                className={`type-chip${type === 'GIFT_LIST' ? ' type-chip-active' : ''}`}
+                onClick={() => setType('GIFT_LIST')}
+              >
+                <Icon name="gift" size={15} />
+                {t('newPost.typeGiftList')}
+              </button>
+            )}
           </div>
         ) : (
           <div className="modal-error">{t('newPost.noAllowedTypes')}</div>
@@ -341,6 +383,61 @@ export function NewPostModal({
           />
         )}
 
+        {type === 'GIFT_LIST' && offeredTypes.includes('GIFT_LIST') && (
+          <>
+            <input
+              className="field-input album-title-input"
+              type="text"
+              value={giftTitle}
+              onChange={(e) => setGiftTitle(e.target.value)}
+              placeholder={t('newPost.giftListTitlePlaceholder')}
+              maxLength={120}
+              autoFocus
+            />
+            <label className="field">
+              <span className="field-label">{t('giftList.occasionDate')}</span>
+              <input
+                className="field-input"
+                type="date"
+                value={giftDate}
+                onChange={(e) => setGiftDate(e.target.value)}
+              />
+            </label>
+            <div className="field">
+              <span className="field-label">{t('giftList.participants')}</span>
+              <span className="field-hint">{t('newPost.giftListParticipantsHint')}</span>
+              <GiftListParticipantPicker
+                groupId={primaryGroupId}
+                selfId={selfId}
+                selected={giftParticipants}
+                onChange={setGiftParticipants}
+              />
+            </div>
+            <label className="field">
+              <span>
+                <input
+                  type="checkbox"
+                  checked={giftDrawEnabled}
+                  onChange={(e) => setGiftDrawEnabled(e.target.checked)}
+                />{' '}
+                {t('giftList.drawEnabled')}
+              </span>
+            </label>
+            {giftDrawEnabled && (
+              <label className="field">
+                <span className="field-label">{t('giftList.budget')}</span>
+                <input
+                  className="field-input"
+                  value={giftBudget}
+                  onChange={(e) => setGiftBudget(e.target.value)}
+                  placeholder={t('giftList.budgetPlaceholder')}
+                  maxLength={40}
+                />
+              </label>
+            )}
+          </>
+        )}
+
         <textarea
           className="modal-textarea"
           value={content}
@@ -352,11 +449,13 @@ export function NewPostModal({
                 ? t('newPost.pollPlaceholder')
                 : type === 'ALBUM'
                   ? t('newPost.albumDescriptionPlaceholder')
-                  : t('newPost.placeholder')
+                  : type === 'GIFT_LIST'
+                    ? t('newPost.giftListDescriptionPlaceholder')
+                    : t('newPost.placeholder')
           }
           rows={type === 'UPDATE' ? 5 : 2}
           maxLength={5000}
-          autoFocus={type !== 'ALBUM'}
+          autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
         />
 
         {type === 'POLL' && offeredTypes.includes('POLL') && (
@@ -442,32 +541,34 @@ export function NewPostModal({
           hidden
           onChange={(e) => addFiles(e.target.files)}
         />
-        <div className="attach-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              // Clear before opening the picker, so the same file can be
-              // re-picked after removal. Clearing in the change handler
-              // instead races Chromium's input+change event pair: the first
-              // handler run wipes the value (which resets the FileList) and
-              // the second run reads an empty list, silently dropping the
-              // picked photos. Firefox only fires one event, which is why
-              // the old code worked there.
-              if (fileInputRef.current) fileInputRef.current.value = ''
-              fileInputRef.current?.click()
-            }}
-          >
-            <Icon name="image" size={18} />
-            {t('newPost.addPhotos')}
-          </button>
-          {hasLinkedAlbums && type !== 'ALBUM' && (
-            <button type="button" className="btn btn-secondary" onClick={() => setMediaPickerOpen(true)}>
-              <Icon name="disc" size={18} />
-              {t('newPost.addFromAlbums')}
+        {type !== 'GIFT_LIST' && (
+          <div className="attach-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                // Clear before opening the picker, so the same file can be
+                // re-picked after removal. Clearing in the change handler
+                // instead races Chromium's input+change event pair: the first
+                // handler run wipes the value (which resets the FileList) and
+                // the second run reads an empty list, silently dropping the
+                // picked photos. Firefox only fires one event, which is why
+                // the old code worked there.
+                if (fileInputRef.current) fileInputRef.current.value = ''
+                fileInputRef.current?.click()
+              }}
+            >
+              <Icon name="image" size={18} />
+              {t('newPost.addPhotos')}
             </button>
-          )}
-        </div>
+            {hasLinkedAlbums && type !== 'ALBUM' && (
+              <button type="button" className="btn btn-secondary" onClick={() => setMediaPickerOpen(true)}>
+                <Icon name="disc" size={18} />
+                {t('newPost.addFromAlbums')}
+              </button>
+            )}
+          </div>
+        )}
 
         {submitMutation.isError && <div className="modal-error">{t('newPost.failed')}</div>}
 

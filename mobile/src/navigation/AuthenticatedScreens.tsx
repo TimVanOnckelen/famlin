@@ -5,6 +5,7 @@ import { MainTabs } from '@/navigation/MainTabs'
 import { PostDetailScreen } from '@/screens/PostDetailScreen'
 import { TripDetailScreen } from '@/screens/TripDetailScreen'
 import { AlbumDetailScreen } from '@/screens/AlbumDetailScreen'
+import { GiftListScreen } from '@/screens/GiftListScreen'
 import { NewPostScreen } from '@/screens/NewPostScreen'
 import { NotificationsScreen } from '@/screens/NotificationsScreen'
 import { FavoritesScreen } from '@/screens/FavoritesScreen'
@@ -49,6 +50,14 @@ export function renderAuthenticatedScreens(Stack: Stack) {
       <Stack.Screen
         name="AlbumDetail"
         component={AlbumDetailScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="GiftList"
+        component={GiftListScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',

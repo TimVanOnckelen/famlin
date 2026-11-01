@@ -16,6 +16,8 @@ import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useNavigation } from '@react-navigation/native'
+import { fetchMyGiftLists } from '@famlin/api-client'
 import * as ImagePicker from 'expo-image-picker'
 import Constants from 'expo-constants'
 import { File, Paths } from 'expo-file-system'
@@ -37,10 +39,14 @@ import {
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 import { setLanguage } from '@/utils/storage'
+import { formatDayMonth } from '@/utils/giftList'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 
 export function ProfileScreen() {
   const { t, i18n: i18nInstance } = useTranslation()
+  const navigation = useNavigation<any>()
+  // "My gift lists" (issue #307): every gift list the user takes part in.
+  const { data: giftLists = [] } = useQuery({ queryKey: ['gift-lists'], queryFn: fetchMyGiftLists })
   const { user, logout, serverUrl, updateUser } = useAuthStore()
   const queryClient = useQueryClient()
   const [languageModalVisible, setLanguageModalVisible] = useState(false)
@@ -177,6 +183,7 @@ export function ProfileScreen() {
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
+    { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
   ]
 
   async function handleLanguageChange(lang: SupportedLanguage) {
@@ -216,6 +223,34 @@ export function ProfileScreen() {
             </View>
           )}
         </View>
+
+        {giftLists.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.myGiftLists')}</Text>
+            {giftLists.map((post) => (
+              <TouchableOpacity
+                key={post.id}
+                style={styles.giftListRow}
+                onPress={() => navigation.navigate('GiftList', { postId: post.id })}
+              >
+                <Icon name="gift" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>{post.giftList?.title}</Text>
+                  <Text style={styles.settingDescription}>
+                    {[
+                      post.giftList?.occasionDate && formatDayMonth(post.giftList.occasionDate, i18nInstance.language),
+                      post.group?.name,
+                      post.giftList?.myRecipient && t('giftList.buyingFor', { name: post.giftList.myRecipient.name }),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {(showPush || showEmail) && (
           <View style={styles.section}>
@@ -710,6 +745,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
+  },
+  giftListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
   },
   sectionTitle: {
     fontFamily: 'Nunito_800ExtraBold',

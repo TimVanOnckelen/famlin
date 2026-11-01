@@ -21,6 +21,7 @@ export function PostDetailPage({
   onOpenFeed,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onOpenPhotos,
   onOpenChat,
   onOpenProfile,
@@ -35,6 +36,7 @@ export function PostDetailPage({
   onOpenFeed?: () => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenProfile?: () => void
@@ -52,7 +54,8 @@ export function PostDetailPage({
   useEffect(() => {
     if (post?.type === 'TRIP' && onOpenTrip) onOpenTrip(post.id)
     else if (post?.type === 'ALBUM' && onOpenAlbum) onOpenAlbum(post.id)
-  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum])
+    else if (post?.type === 'GIFT_LIST' && onOpenGiftList) onOpenGiftList(post.id)
+  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum, onOpenGiftList])
 
   // The API answers 404 (or 403) for a post that doesn't exist *or* that the
   // viewer can't see — deliberately indistinguishable, so the page is too.
@@ -90,6 +93,7 @@ export function PostDetailPage({
         showComments
         onOpenTrip={onOpenTrip}
         onOpenAlbum={onOpenAlbum}
+        onOpenGiftList={onOpenGiftList}
         onDeleted={onOpenFeed ?? onBack}
       />
     )
