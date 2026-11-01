@@ -82,10 +82,13 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
-          # Per-platform cache scope, so the two runners don't evict each
-          # other's layers.
-          cache-from: type=gha,scope=${{ steps.image.outputs.pair }}
-          cache-to: type=gha,mode=max,scope=${{ steps.image.outputs.pair }}
+          # Layer cache lives in the registry (one overwritten tag per
+          # platform), not in GitHub's Actions cache: mode=max exports every
+          # intermediate stage, and in the Actions cache each build piles up
+          # gigabytes of fresh blobs that count toward the (billed beyond
+          # 10 GB) Actions cache storage. ci.yml reads these tags too.
+          cache-from: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ steps.image.outputs.pair }}
+          cache-to: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ steps.image.outputs.pair }},mode=max,image-manifest=true,oci-mediatypes=true
 
       - name: Export digest
         run: |

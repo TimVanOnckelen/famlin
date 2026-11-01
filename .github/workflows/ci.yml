@@ -397,10 +397,11 @@ jobs:
           push: false
           load: true
           tags: famlin-ci:test
-          # Same per-platform scopes as docker-publish.yml, so a release
-          # build reuses the layers CI already built.
-          cache-from: type=gha,scope=${{ matrix.cache-scope }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.cache-scope }}
+          # Read-only: reuse the registry layer cache docker-publish.yml
+          # writes on every push to main (public, so fork PRs can pull it
+          # too). CI never writes a cache — per-PR cache entries were what
+          # filled up the billed Actions cache storage.
+          cache-from: type=registry,ref=ghcr.io/timvanonckelen/famlin:buildcache-${{ matrix.cache-scope }}
       # The native bits a build can't catch: sharp's from-source compile
       # against the system libvips (with HEIC decode) and ffmpeg must actually
       # load and run on this architecture.
