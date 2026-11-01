@@ -217,11 +217,12 @@ export async function getBackupOverview(now: Date) {
 }
 
 export async function getDiskOverview() {
+  const uploadsDriver = getStorage().id
   const [uploads, backups] = await Promise.all([
-    getStorage().id === 'local' ? getDiskUsage(uploadsDir) : Promise.resolve(null),
+    uploadsDriver === 'local' ? getDiskUsage(uploadsDir) : Promise.resolve(null),
     getDiskUsage(backupsDir),
   ])
-  return { uploads, backups, sameVolume: !!uploads && !!backups && sameDevice(uploadsDir, backupsDir) }
+  return { uploadsDriver, uploads, backups, sameVolume: !!uploads && !!backups && sameDevice(uploadsDir, backupsDir) }
 }
 
 // --- Integrations ----------------------------------------------------------

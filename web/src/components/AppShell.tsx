@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import './AppShell.css'
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'profile'
+export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'profile' | 'members'
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
