@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.6](https://github.com/TimVanOnckelen/famlin/compare/v0.8.5...v0.8.6) (2026-11-01)
+
+
+### Bug Fixes
+
+* **backend:** serve admin index.html without reply.sendFile ([4720bf3](https://github.com/TimVanOnckelen/famlin/commit/4720bf356a1d933bcf45157f59f63598fb45b5cd))
+* **backend:** serve admin index.html without reply.sendFile ([b9310af](https://github.com/TimVanOnckelen/famlin/commit/b9310af4cd344e2f6a8162383e9467f79eb23d6b))
+
 ## [0.8.5](https://github.com/TimVanOnckelen/famlin/compare/v0.8.4...v0.8.5) (2026-11-01)
 
 
