@@ -323,6 +323,41 @@ describe('wishlists', () => {
     expect(del.statusCode).toBe(200)
   })
 
+  it('gives concurrent adds distinct positions', async () => {
+    const results = await Promise.all(['A', 'B', 'C', 'D', 'E'].map((title) => addItem(bob, postId, { title })))
+    expect(results.every((r) => r.statusCode === 200)).toBe(true)
+    const positions = results.map((r) => r.json().position).sort()
+    expect(new Set(positions).size).toBe(5)
+  })
+
+  it("deletes a wish photo's files with the wish, but never a photo shared elsewhere", async () => {
+    const post = await prisma.post.findUnique({ where: { id: postId } })
+    const wishOnly = randomUUID()
+    const shared = randomUUID()
+    await prisma.upload.createMany({
+      data: [
+        { assetKey: wishOnly, uploaderId: alice.id, bound: false },
+        // Already in a family post: group-scoped, so not the wish's to delete.
+        { assetKey: shared, uploaderId: alice.id, bound: true, groupIds: [group.id] },
+      ],
+    })
+    const a = (await addItem(alice, postId, { title: 'Lamp', photoUrl: `/uploads/${wishOnly}.jpg` })).json()
+    const b = (await addItem(alice, postId, { title: 'Vase', photoUrl: `/uploads/${shared}.jpg` })).json()
+    expect((await prisma.upload.findUnique({ where: { assetKey: wishOnly } }))?.circleId).toBe(post!.circleId)
+
+    for (const item of [a, b]) {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/gift-lists/${postId}/items/${item.id}`,
+        headers: authHeader(alice),
+      })
+      expect(res.statusCode).toBe(200)
+    }
+    expect(await prisma.upload.findUnique({ where: { assetKey: wishOnly } })).toBeNull()
+    expect(await prisma.upload.findUnique({ where: { assetKey: shared } })).not.toBeNull()
+    await prisma.upload.delete({ where: { assetKey: shared } })
+  })
+
   it('only accepts http(s) shop links', async () => {
     const res = await addItem(alice, postId, { title: 'Bad', url: 'javascript:alert(1)' })
     expect(res.statusCode).toBe(400)

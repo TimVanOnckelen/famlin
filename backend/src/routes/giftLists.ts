@@ -16,6 +16,7 @@ import {
   MAX_ITEMS_PER_WISHLIST,
   MIN_DRAW_PARTICIPANTS,
   computeDraw,
+  deleteUnusedWishPhotos,
   getParticipantIds,
   lockGiftListPost,
   normalizeExclusions,
@@ -201,26 +202,31 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     const list = await loadGiftList(request, reply)
     if (!list) return
 
-    const existing = await prisma.giftListItem.aggregate({
-      where: { postId: list.id, ownerId: userId },
-      _count: true,
-      _max: { position: true },
-    })
-    if (existing._count >= MAX_ITEMS_PER_WISHLIST) {
-      return reply.status(400).send({ error: getT(request)('errors.giftListTooManyItems') })
-    }
+    // Under the list's lock: two quick adds can't both pass the cap or share
+    // a position, and a wish can't land after its owner just left.
+    let item!: Awaited<ReturnType<typeof prisma.giftListItem.create>>
+    const ok = await inLockedTransaction(request, reply, list.id, async (tx) => {
+      if (!(await getParticipantIds(list, tx)).includes(userId)) throw new GiftListError('giftListNotFound', 404)
+      const existing = await tx.giftListItem.aggregate({
+        where: { postId: list.id, ownerId: userId },
+        _count: true,
+        _max: { position: true },
+      })
+      if (existing._count >= MAX_ITEMS_PER_WISHLIST) throw new GiftListError('giftListTooManyItems')
 
-    const item = await prisma.giftListItem.create({
-      data: {
-        postId: list.id,
-        ownerId: userId,
-        title: body.title,
-        note: body.note || null,
-        url: body.url || null,
-        photoUrl: body.photoUrl ?? null,
-        position: (existing._max.position ?? -1) + 1,
-      },
+      item = await tx.giftListItem.create({
+        data: {
+          postId: list.id,
+          ownerId: userId,
+          title: body.title,
+          note: body.note || null,
+          url: body.url || null,
+          photoUrl: body.photoUrl ?? null,
+          position: (existing._max.position ?? -1) + 1,
+        },
+      })
     })
+    if (!ok) return
     // Readable by the list's participants only, like the list itself.
     await bindAssetsToScope([item.photoUrl], { groupIds: [list.groupId], circleId: list.circleId }, userId)
 
@@ -249,6 +255,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
       },
     })
     await bindAssetsToScope([body.photoUrl], { groupIds: [list.groupId], circleId: list.circleId }, userId)
+    if (item.photoUrl !== updated.photoUrl) await deleteUnusedWishPhotos([item.photoUrl])
     return updated
   })
 
@@ -257,10 +264,13 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     const list = await loadGiftList(request, reply)
     if (!list) return
 
-    const { count } = await prisma.giftListItem.deleteMany({
+    const item = await prisma.giftListItem.findFirst({
       where: { id: itemId, postId: list.id, ownerId: request.user!.id },
+      select: { photoUrl: true },
     })
-    if (count === 0) return reply.status(404).send({ error: getT(request)('errors.giftListItemNotFound') })
+    if (!item) return reply.status(404).send({ error: getT(request)('errors.giftListItemNotFound') })
+    await prisma.giftListItem.delete({ where: { id: itemId } })
+    await deleteUnusedWishPhotos([item.photoUrl])
     return { success: true }
   })
 
@@ -355,6 +365,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
 
     const wanted = participantsOf(userId, body.userIds)
     let added: string[] = []
+    let removedPhotos: (string | null)[] = []
     let redrawn = false
     const ok = await inLockedTransaction(request, reply, list.id, async (tx, locked) => {
       // Checked under the lock; getParticipantIds re-checks the family too,
@@ -370,6 +381,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
 
       if (removed.length > 0) {
         await tx.circleMember.deleteMany({ where: { circleId: list.circleId, userId: { in: removed } } })
+        removedPhotos = await wishPhotosOf(tx, list.id, removed)
         await tx.giftListItem.deleteMany({ where: { postId: list.id, ownerId: { in: removed } } })
       }
       if (added.length > 0) {
@@ -382,6 +394,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     })
     if (!ok) return
 
+    await deleteUnusedWishPhotos(removedPhotos)
     if (added.length > 0) {
       emitDomainEvent('giftList.participantsAdded', {
         postId: list.id,
@@ -428,14 +441,25 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     }
 
     let redrawn = false
+    let leftPhotos: (string | null)[] = []
     const ok = await inLockedTransaction(request, reply, list.id, async (tx, locked) => {
       await tx.circleMember.deleteMany({ where: { circleId: list.circleId, userId } })
+      leftPhotos = await wishPhotosOf(tx, list.id, [userId])
       await tx.giftListItem.deleteMany({ where: { postId: list.id, ownerId: userId } })
       redrawn = (await saveGiftList(tx, list.id, list, locked.typeData)) === 'drawn'
     })
     if (!ok) return
 
+    await deleteUnusedWishPhotos(leftPhotos)
     if (redrawn) emitDomainEvent('giftList.drawn', { postId: list.id, actorId: userId })
     return { success: true }
   })
+}
+
+async function wishPhotosOf(tx: Prisma.TransactionClient, postId: string, ownerIds: string[]) {
+  const items = await tx.giftListItem.findMany({
+    where: { postId, ownerId: { in: ownerIds }, photoUrl: { not: null } },
+    select: { photoUrl: true },
+  })
+  return items.map((i) => i.photoUrl)
 }

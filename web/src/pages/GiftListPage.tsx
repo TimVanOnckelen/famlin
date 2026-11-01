@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createGiftListItem,
   deleteGiftListItem,
-  deletePost,
   drawGiftList,
   fetchGiftListItems,
   fetchPost,
@@ -30,6 +29,8 @@ import { Badge } from '@/components/Badge'
 import { Icon } from '@/components/Icon'
 import { GiftListParticipantPicker } from '@/components/GiftListParticipantPicker'
 import { formatDayMonth } from '@/utils/time'
+import { useDeletePost } from '@/hooks/usePostMutations'
+import '@/components/postTypes/GiftListFeedCard.css'
 import './GiftListPage.css'
 
 // A gift list (issue #307), routed at /gift-lists/:postId: every
@@ -154,7 +155,7 @@ export function GiftListPage({
 
         {recipient ? (
           <a
-            className="gift-page-recipient"
+            className="gift-card-recipient gift-page-recipient"
             href={`#wishlist-${recipient.id}`}
             onClick={(e) => {
               // Scroll without a fragment navigation: that would add a history
@@ -192,21 +193,7 @@ export function GiftListPage({
                 <Icon name="users" size={16} />
                 {t('giftList.manageCta')}
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  if (!window.confirm(t('giftList.deleteConfirm'))) return
-                  actionMutation.mutate(async () => {
-                    await deletePost(postId)
-                    queryClient.invalidateQueries({ queryKey: ['posts'] })
-                    queryClient.invalidateQueries({ queryKey: ['gift-lists'] })
-                    onBack()
-                  })
-                }}
-              >
-                {t('giftList.deleteCta')}
-              </button>
+              <DeleteGiftListButton post={post} onDeleted={onBack} />
             </>
           ) : (
             <button
@@ -260,6 +247,32 @@ export function GiftListPage({
         />
       ))}
     </>
+  )
+}
+
+// The shared post-delete hook drops the list from every cached feed page; a
+// component of its own because the hook needs the loaded post.
+function DeleteGiftListButton({ post, onDeleted }: { post: Post; onDeleted: () => void }) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const deleteMutation = useDeletePost(post)
+  return (
+    <button
+      type="button"
+      className="btn btn-secondary"
+      disabled={deleteMutation.isPending}
+      onClick={() => {
+        if (!window.confirm(t('giftList.deleteConfirm'))) return
+        deleteMutation.mutate(undefined, {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['gift-lists'] })
+            onDeleted()
+          },
+        })
+      }}
+    >
+      {t('giftList.deleteCta')}
+    </button>
   )
 }
 

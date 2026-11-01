@@ -26,8 +26,6 @@ export function GiftListFeedCard({
   const giftList = post.giftList
   if (!giftList) return null
 
-  const open = () => onOpenGiftList?.(post.id)
-
   return (
     <div className="post-card">
       <div className="post-card-inner gift-card-inner">
@@ -39,9 +37,7 @@ export function GiftListFeedCard({
             </Badge>
             {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
           </div>
-          <button type="button" className="gift-card-title" onClick={open}>
-            {giftList.title}
-          </button>
+          <h3 className="gift-card-title">{giftList.title}</h3>
           <div className="gift-card-muted">
             {[
               giftList.occasionDate && formatDayMonth(giftList.occasionDate, i18n.language),
@@ -63,7 +59,7 @@ export function GiftListFeedCard({
           )}
 
           <div className="gift-card-actions">
-            <button type="button" className="btn btn-primary" onClick={open}>
+            <button type="button" className="btn btn-primary" onClick={() => onOpenGiftList?.(post.id)}>
               {t('giftList.openCta')}
             </button>
           </div>

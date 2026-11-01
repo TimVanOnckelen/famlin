@@ -2,6 +2,7 @@ import { randomInt } from 'crypto'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../db.js'
 import { emitDomainEvent } from '../events.js'
+import { deleteUploadFiles, uploadAssetKey } from './uploads.js'
 
 // Gift lists (issue #307): a GIFT_LIST post whose audience is a hidden,
 // system-managed Circle (Circle.kind = GIFT_LIST_CIRCLE_KIND) holding exactly
@@ -270,10 +271,7 @@ export async function saveGiftList(
 // with no hand-over, those go (account deletion cascades them anyway; a
 // family removal deletes them explicitly). `joined` are the lists they only
 // participate in, whose draws need redoing.
-export async function giftListsOfUser(
-  userId: string,
-  groupId?: string
-): Promise<{ started: string[]; joined: string[] }> {
+export async function giftListsOfUser(userId: string, groupId?: string): Promise<GiftListsOfUser> {
   const posts = await prisma.post.findMany({
     where: {
       type: GIFT_LIST_POST_TYPE,
@@ -282,16 +280,32 @@ export async function giftListsOfUser(
     },
     select: { id: true, authorId: true },
   })
+  const started = posts.filter((p) => p.authorId === userId).map((p) => p.id)
+  // Wish photos that are about to lose their wish: every wish on a list they
+  // started (it's deleted), and their own wishes on the rest. Collected now,
+  // because an account deletion cascades the rows away before we run again.
+  const photos = await prisma.giftListItem.findMany({
+    where: {
+      postId: { in: posts.map((p) => p.id) },
+      photoUrl: { not: null },
+      OR: [{ postId: { in: started } }, { ownerId: userId }],
+    },
+    select: { photoUrl: true },
+  })
   return {
-    started: posts.filter((p) => p.authorId === userId).map((p) => p.id),
+    started,
     joined: posts.filter((p) => p.authorId !== userId).map((p) => p.id),
+    photoUrls: photos.map((p) => p.photoUrl!),
   }
 }
 
-export async function afterGiftListParticipantsRemoved(
-  lists: { started: string[]; joined: string[] },
-  actorId: string
-): Promise<void> {
+export interface GiftListsOfUser {
+  started: string[]
+  joined: string[]
+  photoUrls: string[]
+}
+
+export async function afterGiftListParticipantsRemoved(lists: GiftListsOfUser, actorId: string): Promise<void> {
   if (lists.started.length > 0) await prisma.post.deleteMany({ where: { id: { in: lists.started } } })
   await deleteOrphanedGiftListCircles()
 
@@ -304,6 +318,51 @@ export async function afterGiftListParticipantsRemoved(
       return saveGiftList(tx, postId, locked, locked.typeData)
     })
     if (outcome === 'drawn') emitDomainEvent('giftList.drawn', { postId, actorId })
+  }
+  await deleteUnusedWishPhotos(lists.photoUrls)
+}
+
+// Removes the files of wish photos that no longer belong to any wish. A
+// wish photo is uploaded for the wish and bound to the list's hidden circle,
+// so once no wish (and no comment on a gift list, the only other thing that
+// can carry a circle-bound file) references it, nobody can read it anymore.
+// Anything not bound to a gift-list circle — a photo the uploader also
+// shared in a post, say — is left alone. Best-effort: a failed unlink never
+// fails the request that deleted the wish.
+export async function deleteUnusedWishPhotos(photoUrls: (string | null | undefined)[]): Promise<void> {
+  const paths = [...new Set(photoUrls.filter((p): p is string => !!p))]
+  if (paths.length === 0) return
+
+  const [stillUsed, comments, uploads] = await Promise.all([
+    prisma.giftListItem.findMany({ where: { photoUrl: { in: paths } }, select: { photoUrl: true } }),
+    prisma.comment.findMany({
+      where: { OR: [{ attachmentUrl: { in: paths } }, { attachmentUrls: { hasSome: paths } }] },
+      select: { attachmentUrl: true, attachmentUrls: true },
+    }),
+    prisma.upload.findMany({
+      where: { assetKey: { in: paths.map(uploadAssetKey) }, circleId: { not: null } },
+      select: { assetKey: true, circleId: true },
+    }),
+  ])
+  const used = new Set([
+    ...stillUsed.map((i) => i.photoUrl),
+    ...comments.flatMap((c) => [c.attachmentUrl, ...c.attachmentUrls]),
+  ])
+  // A circle id that no longer exists was a gift list's (deleted with it).
+  const circles = await prisma.circle.findMany({
+    where: { id: { in: uploads.map((u) => u.circleId!) } },
+    select: { id: true, kind: true },
+  })
+  const kindOf = new Map(circles.map((c) => [c.id, c.kind]))
+  const giftListScoped = new Set(
+    uploads
+      .filter((u) => (kindOf.get(u.circleId!) ?? GIFT_LIST_CIRCLE_KIND) === GIFT_LIST_CIRCLE_KIND)
+      .map((u) => u.assetKey)
+  )
+
+  for (const path of paths) {
+    if (used.has(path) || !giftListScoped.has(uploadAssetKey(path))) continue
+    await deleteUploadFiles(path).catch((err) => console.error('Failed to delete wish photo', err))
   }
 }
 

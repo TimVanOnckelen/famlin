@@ -43,14 +43,10 @@
 }
 
 .gift-page-recipient {
+  /* The pill itself is .gift-card-recipient (GiftListFeedCard.css); this
+     only makes it a full-width link. */
   align-self: stretch;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 12px 14px;
-  border-radius: var(--r-md);
-  background: var(--fam-primary-tint);
-  color: var(--fam-primary);
   font-weight: 800;
   text-decoration: none;
 }

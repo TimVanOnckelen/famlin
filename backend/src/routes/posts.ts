@@ -35,7 +35,12 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js'
 import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js'
 import { getT } from '../i18n/index.js'
-import { GIFT_LIST_POST_TYPE, deleteOrphanedGiftListCircles, redactGiftListTypeData } from '../services/giftLists.js'
+import {
+  GIFT_LIST_POST_TYPE,
+  deleteOrphanedGiftListCircles,
+  deleteUnusedWishPhotos,
+  redactGiftListTypeData,
+} from '../services/giftLists.js'
 
 // A post's uploadedAssetUrls can include media proxy URLs (see
 // routes/media.ts and the legacy routes/immich.ts) alongside normal
@@ -621,6 +626,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
+    // A gift list's wish photos go with it (collected before the cascade).
+    const wishPhotos =
+      post.type === GIFT_LIST_POST_TYPE
+        ? (await prisma.giftListItem.findMany({ where: { postId: id }, select: { photoUrl: true } })).map(
+            (i) => i.photoUrl
+          )
+        : []
+
     // Only the author's OWN delete fans out to every cross-posted sibling.
     // An admin moderating content (post.authorId !== request.user!.id, only
     // reachable via the isAdmin bypass above) always stays single-row and
@@ -632,7 +645,10 @@ export default async function postRoutes(fastify: FastifyInstance) {
       await prisma.post.delete({ where: { id } })
     }
     // A GIFT_LIST post's hidden audience circle exists only for it.
-    if (post.type === GIFT_LIST_POST_TYPE) await deleteOrphanedGiftListCircles()
+    if (post.type === GIFT_LIST_POST_TYPE) {
+      await deleteOrphanedGiftListCircles()
+      await deleteUnusedWishPhotos(wishPhotos)
+    }
 
     return { success: true }
   })
