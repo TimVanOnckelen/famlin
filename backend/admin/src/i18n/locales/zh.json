@@ -419,7 +419,8 @@
     "MILESTONE": "成长时刻",
     "POLL": "投票",
     "TRIP": "旅程",
-    "ALBUM": "相册"
+    "ALBUM": "相册",
+    "GIFT_LIST": "礼物清单"
   },
   "circles": {
     "heading_one": "{{count}} 个圈子",

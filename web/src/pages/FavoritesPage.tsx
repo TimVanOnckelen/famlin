@@ -27,6 +27,7 @@ export function FavoritesPage({
   onOpenChat,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onLogout,
   onOpenNotifications,
   onOpenSearch,
@@ -38,6 +39,7 @@ export function FavoritesPage({
   onOpenChat?: () => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
   onLogout: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
@@ -58,6 +60,7 @@ export function FavoritesPage({
   function openPost(post: Post) {
     if (post.type === 'TRIP') onOpenTrip?.(post.id)
     else if (post.type === 'ALBUM') onOpenAlbum?.(post.id)
+    else if (post.type === 'GIFT_LIST') onOpenGiftList?.(post.id)
     else openPostModal(post.id)
   }
 
@@ -108,7 +111,13 @@ export function FavoritesPage({
           <div className="favorites-list">
             {posts.map((post) => (
               <div key={post.id} className="favorites-card" role="article" onClick={(e) => onCardClick(e, post)}>
-                <PostCard post={post} showGroup onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+                <PostCard
+                  post={post}
+                  showGroup
+                  onOpenTrip={onOpenTrip}
+                  onOpenAlbum={onOpenAlbum}
+                  onOpenGiftList={onOpenGiftList}
+                />
               </div>
             ))}
           </div>

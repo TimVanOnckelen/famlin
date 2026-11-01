@@ -419,7 +419,8 @@
     "MILESTONE": "Milestone",
     "POLL": "Poll",
     "TRIP": "Trip",
-    "ALBUM": "Album"
+    "ALBUM": "Album",
+    "GIFT_LIST": "Gift list"
   },
   "circles": {
     "heading_one": "{{count}} circle",

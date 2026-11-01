@@ -22,6 +22,7 @@ import { getValidInvite, consumeInvite } from '../services/invites.js'
 import { completeOidcLogin } from '../services/oidcLogin.js'
 import { completeAppleLogin, AppleAuthError } from '../services/appleLogin.js'
 import { createOidcHandoff, consumeOidcHandoff } from '../services/oidcHandoff.js'
+import { afterGiftListParticipantsRemoved, giftListsOfUser } from '../services/giftLists.js'
 import { getT } from '../i18n/index.js'
 import { sanitizeUser, hashPassword } from '../services/users.js'
 import { config, uploadsDir } from '../config.js'
@@ -763,8 +764,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     // Stories cascade with the user, but their photos would stay on disk —
     // delete them (media included) first.
     await deleteStoriesWithMedia({ authorId: userId })
+    const giftLists = await giftListsOfUser(userId)
     await prisma.user.delete({ where: { id: userId } })
     invalidateSessionCache(userId)
+    await afterGiftListParticipantsRemoved(giftLists, userId)
     return { success: true }
   })
 

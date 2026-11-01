@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 
 // Thrown for expected, user-facing post-type validation/interaction failures
 // so routes can map them to a translated message instead of leaking
@@ -100,6 +101,20 @@ export interface PostTypeHandler {
    * typeData.
    */
   collectAssets?(typeData: unknown): string[]
+  /**
+   * A type whose audience is its own hidden, system-managed Circle (GIFT_LIST
+   * today, see services/giftLists.ts) creates that circle here, inside the
+   * same transaction as the post, and returns its id — routes/posts.ts then
+   * stores the post with that circleId. Such a type can't be combined with a
+   * client-sent circleId or cross-posting. `typeData` is the validated
+   * CLIENT-SENT typeData (before transformCreate).
+   */
+  createAudience?(args: {
+    tx: Prisma.TransactionClient
+    groupId: string
+    authorId: string
+    typeData: unknown
+  }): Promise<string>
   /** Batch-attach computed fields to already-shaped posts of this type (mutate in place). ONE query per page, no N+1. */
   enrichPosts?(
     posts: Array<Record<string, unknown> & { id: string; typeData?: unknown }>,
