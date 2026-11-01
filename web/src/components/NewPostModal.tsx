@@ -220,6 +220,8 @@ export function NewPostModal({
 
   function toggleGroup(id: string) {
     setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]))
+    // Gift list participants come from the selected family.
+    setGiftParticipants([])
     // A circle belongs to one family, so any previous choice stops being
     // valid the moment the family selection moves.
     setSelectedCircleId(null)

@@ -467,6 +467,7 @@
     "removeExclusion": "删除排除规则",
     "exclusionPerson": "第 {{number}} 人",
     "addExclusion": "添加排除规则",
-    "saveSettings": "保存设置"
+    "saveSettings": "保存设置",
+    "photoUploadFailed": "照片无法上传，请换一张试试。"
   }
 }

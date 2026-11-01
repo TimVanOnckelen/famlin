@@ -567,7 +567,6 @@
     "budgetValue": "Budget {{budget}}",
     "buyingFor": "Jij koopt een cadeau voor {{name}}",
     "drawPending": "Nog geen lootjes getrokken",
-    "notAvailable": "Deze cadeaulijst is niet beschikbaar.",
     "actionFailed": "Dat is niet gelukt. Probeer opnieuw.",
     "redrawConfirm": "Deze wijziging maakt de huidige trekking ongedaan. Alle lootjes opnieuw trekken?",
     "drawCta": "Lootjes trekken",
@@ -606,6 +605,8 @@
     "exclusions": "Uitsluitingen",
     "removeExclusion": "Uitsluiting verwijderen",
     "saveSettings": "Instellingen opslaan",
-    "exclusionsHintMobile": "Tik op een persoon en daarna op een andere, zodat ze elkaar niet kunnen trekken (bv. partners)."
+    "exclusionsHintMobile": "Tik op een persoon en daarna op een andere, zodat ze elkaar niet kunnen trekken (bv. partners).",
+    "continue": "Doorgaan",
+    "notAvailable": "Deze cadeaulijst is niet beschikbaar."
   }
 }

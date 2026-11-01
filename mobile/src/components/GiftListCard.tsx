@@ -6,19 +6,19 @@ import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { Post } from '@/types'
-import { formatDayMonth } from '@/utils/giftList'
+import { formatDayMonth } from '@/i18n/utils'
 
 // The feed card for a GIFT_LIST post (issue #307): title, occasion date,
 // participants, draw status and — once drawn — who YOU are buying for. The
 // whole card opens GiftListScreen. Mirrors web's GiftListFeedCard.
 export function GiftListCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const giftList = post.giftList
   if (!giftList) return null
 
   const meta = [
-    giftList.occasionDate && formatDayMonth(giftList.occasionDate, i18n.language),
+    giftList.occasionDate && formatDayMonth(giftList.occasionDate),
     t('giftList.participantCount', { count: giftList.participants.length }),
     giftList.budget && t('giftList.budgetValue', { budget: giftList.budget }),
   ]

@@ -153,7 +153,16 @@ export function GiftListPage({
         <AvatarStack people={giftList.participants} size={28} max={12} />
 
         {recipient ? (
-          <a className="gift-page-recipient" href={`#wishlist-${recipient.id}`}>
+          <a
+            className="gift-page-recipient"
+            href={`#wishlist-${recipient.id}`}
+            onClick={(e) => {
+              // Scroll without a fragment navigation: that would add a history
+              // entry the in-app "back" can't tell apart from leaving the app.
+              e.preventDefault()
+              document.getElementById(`wishlist-${recipient.id}`)?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          >
             <Avatar name={recipient.name} avatarUrl={recipient.avatarUrl} size={36} />
             <span>{t('giftList.buyingFor', { name: recipient.name })}</span>
             <Icon name="chevron-right" size={18} />
@@ -221,6 +230,9 @@ export function GiftListPage({
 
       {giftList.isManager && editingSettings && (
         <ManagePanel
+          // Re-seeded after every save, so exclusions of someone just removed
+          // don't linger in the form and fail the next save.
+          key={`${giftList.participants.map((p) => p.id).join()}|${giftList.drawnAt}`}
           post={post}
           selfId={user.id}
           busy={actionMutation.isPending}
@@ -425,15 +437,19 @@ function ItemForm({
   const [url, setUrl] = useState(initial?.url ?? '')
   const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photoUrl ?? null)
   const [uploading, setUploading] = useState(false)
+  const [uploadFailed, setUploadFailed] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const urlValid = !url.trim() || /^https?:\/\/\S+$/i.test(url.trim())
 
   async function pickPhoto(file: File | undefined) {
     if (!file) return
     setUploading(true)
+    setUploadFailed(false)
     try {
       const [uploaded] = await uploadFiles([file])
       setPhotoUrl(uploaded ?? null)
+    } catch {
+      setUploadFailed(true)
     } finally {
       setUploading(false)
     }
@@ -493,6 +509,7 @@ function ItemForm({
           </button>
         )}
       </div>
+      {uploadFailed && <div className="modal-error">{t('giftList.photoUploadFailed')}</div>}
       <div className="modal-actions">
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
           {t('common.cancel')}

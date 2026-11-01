@@ -567,7 +567,6 @@
     "budgetValue": "预算 {{budget}}",
     "buyingFor": "你要为 {{name}} 准备礼物",
     "drawPending": "尚未抽签",
-    "notAvailable": "这个礼物清单不可用。",
     "actionFailed": "操作失败，请重试。",
     "redrawConfirm": "这个更改会作废当前的神秘圣诞老人抽签结果。要重新抽签吗？",
     "drawCta": "抽签",
@@ -606,6 +605,8 @@
     "exclusions": "排除规则",
     "removeExclusion": "删除排除规则",
     "saveSettings": "保存设置",
-    "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。"
+    "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。",
+    "continue": "继续",
+    "notAvailable": "这个礼物清单不可用。"
   }
 }

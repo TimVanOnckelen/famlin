@@ -467,6 +467,7 @@
     "removeExclusion": "Uitsluiting verwijderen",
     "exclusionPerson": "Persoon {{number}}",
     "addExclusion": "Uitsluiting toevoegen",
-    "saveSettings": "Instellingen opslaan"
+    "saveSettings": "Instellingen opslaan",
+    "photoUploadFailed": "De foto kon niet worden geüpload. Probeer een andere."
   }
 }

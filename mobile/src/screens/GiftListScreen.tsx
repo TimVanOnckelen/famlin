@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -41,20 +41,23 @@ import { GiftListParticipantPicker } from '@/components/GiftListParticipantPicke
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 import { getUploadUrl } from '@/api/uploads'
 import { useAuthStore } from '@/stores/authStore'
-import { formatDayMonth, isValidShopUrl } from '@/utils/giftList'
+import { formatDayMonth } from '@/i18n/utils'
 
 // A gift list (issue #307): every participant's wishlist, your own editable,
 // plus — for the starter — participants, settings and the Secret Santa draw.
 // Full parity with web's GiftListPage.
 export function GiftListScreen() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const { postId } = useRoute<any>().params as { postId: string }
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const [managing, setManaging] = useState(false)
 
-  const { data: post } = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
+  const { data: post, isLoading } = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
+  // "You're buying for X" scrolls to X's wishlist: each list reports its y.
+  const scrollRef = useRef<ScrollView>(null)
+  const wishlistY = useRef<Record<string, number>>({})
   const { data: items = [] } = useQuery({
     queryKey: ['gift-list-items', postId],
     queryFn: () => fetchGiftListItems(postId),
@@ -83,21 +86,31 @@ export function GiftListScreen() {
         if (!isGiftDrawResetConflict(err)) throw err
         Alert.alert(t('giftList.redrawConfirm'), undefined, [
           { text: t('common.cancel'), style: 'cancel' },
-          { text: t('giftList.drawCta'), onPress: () => action.mutate(async () => refresh(await run(true))) },
+          { text: t('giftList.continue'), onPress: () => action.mutate(async () => refresh(await run(true))) },
         ])
       }
     })
   }
 
-  function confirmThen(message: string, run: () => Promise<unknown>) {
+  function confirmThen(message: string, confirmLabel: string, run: () => Promise<unknown>) {
     Alert.alert(message, undefined, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.done'), style: 'destructive', onPress: () => action.mutate(run) },
+      { text: confirmLabel, style: 'destructive', onPress: () => action.mutate(run) },
     ])
   }
 
   const giftList = post?.giftList
-  if (!post || !giftList || !user) return null
+  if (!user) return null
+  if (!post || !giftList) {
+    // A list you were removed from (or a stale link) 404s — say so rather
+    // than showing a blank screen without a way back.
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScreenHeader title={t('giftList.headerTitle')} onBack={() => navigation.goBack()} />
+        {!isLoading && <Text style={[styles.muted, styles.scroll]}>{t('giftList.notAvailable')}</Text>}
+      </SafeAreaView>
+    )
+  }
 
   const recipient = giftList.myRecipient
   const rank = (id: string) => (id === user.id ? 0 : id === recipient?.id ? 1 : 2)
@@ -105,7 +118,7 @@ export function GiftListScreen() {
     (a, b) => rank(a.id) - rank(b.id) || a.name.localeCompare(b.name)
   )
   const meta = [
-    giftList.occasionDate && formatDayMonth(giftList.occasionDate, i18n.language),
+    giftList.occasionDate && formatDayMonth(giftList.occasionDate),
     giftList.budget && t('giftList.budgetValue', { budget: giftList.budget }),
   ]
     .filter(Boolean)
@@ -115,7 +128,7 @@ export function GiftListScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader title={t('giftList.headerTitle')} onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.section}>
             <View style={styles.badge}>
               <Icon name="gift" size={11} color={colors.white} />
@@ -125,10 +138,14 @@ export function GiftListScreen() {
             {!!meta && <Text style={styles.muted}>{meta}</Text>}
             {!!post.content && <Text style={styles.body}>{post.content}</Text>}
             {recipient ? (
-              <View style={styles.recipient}>
+              <TouchableOpacity
+                style={styles.recipient}
+                onPress={() => scrollRef.current?.scrollTo({ y: wishlistY.current[recipient.id] ?? 0, animated: true })}
+              >
                 <Avatar name={recipient.name} avatarUrl={recipient.avatarUrl} size={34} />
                 <Text style={styles.recipientText}>{t('giftList.buyingFor', { name: recipient.name })}</Text>
-              </View>
+                <Icon name="chevron-down" size={18} color={colors.primaryDark} />
+              </TouchableOpacity>
             ) : (
               giftList.drawEnabled && <Text style={styles.muted}>{t('giftList.drawPending')}</Text>
             )}
@@ -147,7 +164,7 @@ export function GiftListScreen() {
                   <Button
                     label={t('giftList.deleteCta')}
                     onPress={() =>
-                      confirmThen(t('giftList.deleteConfirm'), async () => {
+                      confirmThen(t('giftList.deleteConfirm'), t('giftList.deleteCta'), async () => {
                         await deletePost(postId)
                         refresh()
                         navigation.goBack()
@@ -159,7 +176,7 @@ export function GiftListScreen() {
                 <Button
                   label={t('giftList.leaveCta')}
                   onPress={() =>
-                    confirmThen(t('giftList.leaveConfirm'), async () => {
+                    confirmThen(t('giftList.leaveConfirm'), t('giftList.leaveCta'), async () => {
                       await leaveGiftList(postId)
                       refresh()
                       navigation.goBack()
@@ -175,6 +192,9 @@ export function GiftListScreen() {
 
           {giftList.isManager && managing && (
             <ManagePanel
+              // Re-seeded after every save, so exclusions of someone just
+              // removed don't linger in the form and fail the next save.
+              key={`${giftList.participants.map((p) => p.id).join()}|${giftList.drawnAt}`}
               post={post}
               selfId={user.id}
               busy={action.isPending}
@@ -195,7 +215,11 @@ export function GiftListScreen() {
               isMine={p.id === user.id}
               isRecipient={p.id === recipient?.id}
               items={items.filter((item) => item.ownerId === p.id)}
-              onChanged={() => refresh()}
+              onLayout={(y) => (wishlistY.current[p.id] = y)}
+              onChanged={() => {
+                queryClient.invalidateQueries({ queryKey: ['post', postId] })
+                queryClient.invalidateQueries({ queryKey: ['gift-list-items', postId] })
+              }}
             />
           ))}
         </ScrollView>
@@ -233,6 +257,7 @@ function Wishlist({
   isRecipient,
   items,
   onChanged,
+  onLayout,
 }: {
   postId: string
   participant: { id: string; name: string; avatarUrl: string | null }
@@ -240,6 +265,7 @@ function Wishlist({
   isRecipient: boolean
   items: GiftListItem[]
   onChanged: () => void
+  onLayout: (y: number) => void
 }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<string | 'new' | null>(null)
@@ -260,7 +286,10 @@ function Wishlist({
   }
 
   return (
-    <View style={[styles.section, isRecipient && styles.recipientSection]}>
+    <View
+      style={[styles.section, isRecipient && styles.recipientSection]}
+      onLayout={(e) => onLayout(e.nativeEvent.layout.y)}
+    >
       <View style={styles.wishlistHeader}>
         <Avatar name={participant.name} avatarUrl={participant.avatarUrl} size={30} />
         <Text style={styles.wishlistTitle}>
@@ -300,13 +329,13 @@ function Wishlist({
               <View style={styles.itemActions}>
                 <IconButton
                   name="chevron-up"
-                  disabled={index === 0}
+                  disabled={index === 0 || mutation.isPending}
                   onPress={() => move(index, -1)}
                   label={t('giftList.moveUp')}
                 />
                 <IconButton
                   name="chevron-down"
-                  disabled={index === items.length - 1}
+                  disabled={index === items.length - 1 || mutation.isPending}
                   onPress={() => move(index, 1)}
                   label={t('giftList.moveDown')}
                 />
@@ -387,7 +416,8 @@ function ItemForm({
   const { pick, uploading } = usePickAndUploadMedia({
     pickerOptions: { mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: false, quality: 0.8 },
   })
-  const urlValid = isValidShopUrl(url)
+  // http(s) only — mirrors the server's validation of a wish's shop link.
+  const urlValid = !url.trim() || /^https?:\/\/\S+$/i.test(url.trim())
 
   return (
     <View style={styles.form}>

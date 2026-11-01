@@ -39,7 +39,7 @@ import {
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 import { setLanguage } from '@/utils/storage'
-import { formatDayMonth } from '@/utils/giftList'
+import { formatDayMonth } from '@/i18n/utils'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 
 export function ProfileScreen() {
@@ -238,7 +238,7 @@ export function ProfileScreen() {
                   <Text style={styles.settingLabel}>{post.giftList?.title}</Text>
                   <Text style={styles.settingDescription}>
                     {[
-                      post.giftList?.occasionDate && formatDayMonth(post.giftList.occasionDate, i18nInstance.language),
+                      post.giftList?.occasionDate && formatDayMonth(post.giftList.occasionDate),
                       post.group?.name,
                       post.giftList?.myRecipient && t('giftList.buyingFor', { name: post.giftList.myRecipient.name }),
                     ]

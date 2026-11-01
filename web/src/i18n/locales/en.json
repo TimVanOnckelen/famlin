@@ -467,6 +467,7 @@
     "removeExclusion": "Remove exclusion",
     "exclusionPerson": "Person {{number}}",
     "addExclusion": "Add exclusion",
-    "saveSettings": "Save settings"
+    "saveSettings": "Save settings",
+    "photoUploadFailed": "The photo couldn't be uploaded. Try another one."
   }
 }

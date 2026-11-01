@@ -567,7 +567,6 @@
     "budgetValue": "Budget {{budget}}",
     "buyingFor": "You're buying for {{name}}",
     "drawPending": "Names not drawn yet",
-    "notAvailable": "This gift list is not available.",
     "actionFailed": "That didn't work. Try again.",
     "redrawConfirm": "This change discards the current Secret Santa draw. Draw all names again?",
     "drawCta": "Draw names",
@@ -606,6 +605,8 @@
     "exclusions": "Exclusions",
     "removeExclusion": "Remove exclusion",
     "saveSettings": "Save settings",
-    "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners)."
+    "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners).",
+    "continue": "Continue",
+    "notAvailable": "This gift list is not available."
   }
 }
