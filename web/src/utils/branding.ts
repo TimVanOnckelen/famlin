@@ -57,17 +57,13 @@ export function brandingCssVars(branding: Branding): Record<string, string> {
 
 function setFavicon(href: string | null) {
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-  if (!href) {
-    link?.remove()
-    return
-  }
   if (!link) {
     link = document.createElement('link')
     link.rel = 'icon'
-    link.type = 'image/png'
     document.head.appendChild(link)
   }
-  link.href = href
+  link.type = href ? 'image/png' : 'image/x-icon'
+  link.href = href || '/favicon.ico'
 }
 
 let applied: string[] = []
