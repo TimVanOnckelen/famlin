@@ -93,9 +93,16 @@
   },
   "newPost": {
     "title": "发布动态",
-    "group": "家庭群组",
+    "group": "分享给",
     "groupHint": "选择要分享的一个或多个家庭。",
-    "typeLabel": "动态类型",
+    "typeLabel": "你想分享什么？",
+    "typeDescriptions": {
+      "UPDATE": "分享日常近况、照片和视频。",
+      "MILESTONE": "庆祝生日、成就或特别时刻。",
+      "POLL": "提出问题，让家人投票。",
+      "ALBUM": "一起在共享相册中收集照片。",
+      "GIFT_LIST": "分享愿望清单，并可选择抽取神秘圣诞老人名单。"
+    },
     "typeUpdate": "日常动态",
     "typeMilestone": "成长时刻",
     "typePoll": "投票",

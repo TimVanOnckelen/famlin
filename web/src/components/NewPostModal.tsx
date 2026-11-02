@@ -1,3 +1,5 @@
+import { PostTypeSelect } from './PostTypeSelect'
+import { Switch } from './Switch'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -266,7 +268,6 @@ export function NewPostModal({
         {groups.length > 1 && (
           <div className="field">
             <span className="field-label">{t('newPost.group')}</span>
-            <span className="field-hint">{t('newPost.groupHint')}</span>
             <div className="group-select-chips" role="group" aria-label={t('newPost.group')}>
               {groups.map((group) => (
                 <button
@@ -317,58 +318,21 @@ export function NewPostModal({
         )}
 
         {offeredTypes.length > 0 ? (
-          <div className="type-chips" role="radiogroup" aria-label={t('newPost.typeLabel')}>
-            {offeredTypes.includes('UPDATE') && (
-              <button
-                type="button"
-                className={`type-chip${type === 'UPDATE' ? ' type-chip-active' : ''}`}
-                onClick={() => setType('UPDATE')}
-              >
-                <Icon name="edit-3" size={15} />
-                {t('newPost.typeUpdate')}
-              </button>
-            )}
-            {offeredTypes.includes('MILESTONE') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-milestone${type === 'MILESTONE' ? ' type-chip-milestone-active' : ''}`}
-                onClick={() => setType('MILESTONE')}
-              >
-                <Icon name="gift" size={15} />
-                {t('newPost.typeMilestone')}
-              </button>
-            )}
-            {offeredTypes.includes('POLL') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-poll${type === 'POLL' ? ' type-chip-poll-active' : ''}`}
-                onClick={() => setType('POLL')}
-              >
-                <Icon name="bar-chart-2" size={15} />
-                {t('newPost.typePoll')}
-              </button>
-            )}
-            {offeredTypes.includes('ALBUM') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-album${type === 'ALBUM' ? ' type-chip-album-active' : ''}`}
-                onClick={() => setType('ALBUM')}
-              >
-                <Icon name="image" size={15} />
-                {t('newPost.typeAlbum')}
-              </button>
-            )}
-            {offeredTypes.includes('GIFT_LIST') && (
-              <button
-                type="button"
-                className={`type-chip${type === 'GIFT_LIST' ? ' type-chip-active' : ''}`}
-                onClick={() => setType('GIFT_LIST')}
-              >
-                <Icon name="gift" size={15} />
-                {t('newPost.typeGiftList')}
-              </button>
-            )}
-          </div>
+          <PostTypeSelect
+            label={t('newPost.typeLabel')}
+            value={type}
+            onChange={setType}
+            options={offeredTypes.map((value) => ({
+              value,
+              label: t(
+                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
+              ),
+              description: t(`newPost.typeDescriptions.${value}`),
+              icon: (
+                { UPDATE: 'edit-3', MILESTONE: 'gift', POLL: 'bar-chart-2', ALBUM: 'image', GIFT_LIST: 'gift' } as const
+              )[value],
+            }))}
+          />
         ) : (
           <div className="modal-error">{t('newPost.noAllowedTypes')}</div>
         )}
@@ -415,15 +379,9 @@ export function NewPostModal({
                 onChange={setGiftParticipants}
               />
             </div>
-            <label className="field">
-              <span>
-                <input
-                  type="checkbox"
-                  checked={giftDrawEnabled}
-                  onChange={(e) => setGiftDrawEnabled(e.target.checked)}
-                />{' '}
-                {t('giftList.drawEnabled')}
-              </span>
+            <label className="gift-draw-toggle">
+              <span className="field-label">{t('giftList.drawEnabled')}</span>
+              <Switch checked={giftDrawEnabled} onCheckedChange={setGiftDrawEnabled} />
             </label>
             {giftDrawEnabled && (
               <label className="field">

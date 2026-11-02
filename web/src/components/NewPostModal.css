@@ -96,53 +96,12 @@
   background: var(--fam-primary);
 }
 
-/* ── Type chips (styleguide "Inputs & chips") ───────────────────────────── */
-
-.type-chips {
+.gift-draw-toggle {
   display: flex;
-  gap: 8px;
-}
-
-.type-chip {
-  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 8px 16px;
-  border-radius: var(--r-pill);
-  border: 1.5px solid var(--fam-border);
-  background: var(--fam-surface);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--fam-text-muted);
+  justify-content: space-between;
+  gap: 16px;
   cursor: pointer;
-}
-
-.type-chip-active {
-  border: 2px solid var(--fam-primary);
-  background: var(--fam-primary-tint);
-  color: var(--fam-primary-dark);
-  font-weight: 700;
-}
-
-.type-chip-milestone-active {
-  border: 2px solid var(--fam-milestone);
-  background: var(--fam-milestone-bg);
-  color: var(--fam-milestone-ink);
-  font-weight: 700;
-}
-
-.type-chip-poll-active {
-  border: 2px solid var(--fam-accent);
-  background: var(--fam-circle-tint);
-  color: var(--fam-accent-ink);
-  font-weight: 700;
-}
-
-.type-chip-album-active {
-  border: 2px solid var(--fam-primary);
-  background: var(--fam-primary-tint);
-  color: var(--fam-primary-dark);
-  font-weight: 700;
 }
 
 /* Album title — a single-line title field above the description textarea. */
