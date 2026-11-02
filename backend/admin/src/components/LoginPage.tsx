@@ -24,6 +24,16 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
 
+  const finishLogin = (result: { token: string; user: User }) => {
+    if (!result.user.isAdmin) {
+      localStorage.removeItem('famlin_admin_token')
+      setError(t('app.noAccessMessage'))
+      return
+    }
+    localStorage.setItem('famlin_admin_token', result.token)
+    onLogin(result.user)
+  }
+
   useEffect(() => {
     api
       .getOidcConfig()
@@ -55,8 +65,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       setIsSsoLoading(true)
       try {
         const result = await completeBrowserOidcLogin(code, state, getOidcRedirectUri())
-        localStorage.setItem('famlin_admin_token', result.token)
-        onLogin(result.user as User)
+        finishLogin({ token: result.token, user: result.user as User })
       } catch (err: any) {
         // err.message is an untranslated slug from the shared helper — show
         // the backend's translated error when there is one, else the generic.
@@ -92,8 +101,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
     try {
       const result = await api.loginWithPassword(email, password)
-      localStorage.setItem('famlin_admin_token', result.token)
-      onLogin(result.user)
+      finishLogin(result)
     } catch (err: any) {
       setError(err.message || t('login.loginFailed'))
     } finally {
