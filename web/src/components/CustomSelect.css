@@ -1,12 +1,12 @@
-.post-type-select {
+.custom-select-select {
   position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.post-type-trigger,
-.post-type-option {
+.custom-select-trigger,
+.custom-select-option {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -17,22 +17,22 @@
   color: var(--fam-text-title);
   cursor: pointer;
 }
-.post-type-trigger {
+.custom-select-trigger {
   border: 1.5px solid var(--fam-border);
   border-radius: var(--r-sm);
   background: var(--fam-surface);
   padding: 12px;
 }
-.post-type-trigger:focus-visible {
+.custom-select-trigger:focus-visible {
   outline: 2px solid var(--fam-primary);
   outline-offset: 2px;
 }
-.post-type-trigger > svg,
-.post-type-option > svg {
+.custom-select-trigger > svg,
+.custom-select-option > svg {
   flex-shrink: 0;
   color: var(--fam-primary);
 }
-.post-type-icon {
+.custom-select-icon {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
@@ -42,7 +42,7 @@
   color: var(--fam-primary);
   background: var(--fam-primary-tint);
 }
-.post-type-copy {
+.custom-select-copy {
   min-width: 0;
   flex: 1;
   display: flex;
@@ -50,16 +50,16 @@
   gap: 3px;
   overflow-wrap: anywhere;
 }
-.post-type-name {
+.custom-select-name {
   font-size: 14px;
   font-weight: 800;
 }
-.post-type-description {
+.custom-select-description {
   font-size: 12px;
   line-height: 1.45;
   color: var(--fam-text-muted);
 }
-.post-type-options {
+.custom-select-options {
   position: absolute;
   top: 100%;
   margin-top: 6px;
@@ -74,16 +74,16 @@
   background: var(--fam-surface);
   box-shadow: var(--shadow-raised);
 }
-.post-type-option {
+.custom-select-option {
   border: 0;
   border-radius: 10px;
   background: transparent;
   padding: 10px;
 }
-.post-type-option.is-active,
-.post-type-option:hover {
+.custom-select-option.is-active,
+.custom-select-option:hover {
   background: var(--fam-bg);
 }
-.post-type-option[aria-selected='true'] {
+.custom-select-option[aria-selected='true'] {
   background: var(--fam-primary-tint);
 }

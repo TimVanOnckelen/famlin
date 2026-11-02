@@ -1,4 +1,4 @@
-import { PostTypeSelect } from './PostTypeSelect'
+import { CustomSelect } from './CustomSelect'
 import { Switch } from './Switch'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -318,7 +318,7 @@ export function NewPostModal({
         )}
 
         {offeredTypes.length > 0 ? (
-          <PostTypeSelect
+          <CustomSelect
             label={t('newPost.typeLabel')}
             value={type}
             onChange={setType}
@@ -329,8 +329,35 @@ export function NewPostModal({
               ),
               description: t(`newPost.typeDescriptions.${value}`),
               icon: (
-                { UPDATE: 'edit-3', MILESTONE: 'gift', POLL: 'bar-chart-2', ALBUM: 'image', GIFT_LIST: 'gift' } as const
-              )[value],
+                <Icon
+                  name={
+                    (
+                      {
+                        UPDATE: 'edit-3',
+                        MILESTONE: 'gift',
+                        POLL: 'bar-chart-2',
+                        ALBUM: 'image',
+                        GIFT_LIST: 'gift',
+                      } as const
+                    )[value]
+                  }
+                  size={20}
+                />
+              ),
+              iconStyle: {
+                color:
+                  value === 'UPDATE'
+                    ? 'var(--fam-accent)'
+                    : value === 'MILESTONE'
+                      ? 'var(--fam-milestone-text)'
+                      : 'var(--fam-primary)',
+                background:
+                  value === 'UPDATE'
+                    ? 'var(--fam-update-bg)'
+                    : value === 'MILESTONE'
+                      ? 'var(--fam-milestone-bg)'
+                      : 'var(--fam-primary-tint)',
+              },
             }))}
           />
         ) : (

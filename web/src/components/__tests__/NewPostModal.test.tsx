@@ -46,6 +46,23 @@ beforeEach(() => {
 })
 
 describe('NewPostModal', () => {
+  it('uses the mobile semantic icon colors for Update and Milestone', async () => {
+    const { container } = renderWithQueryClient(
+      <NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />
+    )
+    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
+      color: 'var(--fam-accent)',
+      background: 'var(--fam-update-bg)',
+    })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('combobox'))
+    await user.click(screen.getByRole('option', { name: 'Milestone' }))
+    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
+      color: 'var(--fam-milestone-text)',
+      background: 'var(--fam-milestone-bg)',
+    })
+  })
+
   it('closes the type picker on Escape before closing the composer', async () => {
     const onClose = vi.fn()
     renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={onClose} />)

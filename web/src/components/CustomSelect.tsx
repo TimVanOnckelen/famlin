@@ -1,15 +1,15 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { Icon, type IconName } from './Icon'
-import './PostTypeSelect.css'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type CSSProperties } from 'react'
+import { Icon } from './Icon'
+import './CustomSelect.css'
 
-export function PostTypeSelect<T extends string>({
+export function CustomSelect<T extends string>({
   value,
   options,
   label,
   onChange,
 }: {
   value: T
-  options: { value: T; label: string; description: string; icon: IconName }[]
+  options: { value: T; label: string; description?: string; icon?: ReactNode; iconStyle?: CSSProperties }[]
   label: string
   onChange: (value: T) => void
 }) {
@@ -55,19 +55,21 @@ export function PostTypeSelect<T extends string>({
   function content(option: typeof selected) {
     return (
       <>
-        <span className="post-type-icon">
-          <Icon name={option.icon} size={20} />
-        </span>
-        <span className="post-type-copy">
-          <span className="post-type-name">{option.label}</span>
-          <span className="post-type-description">{option.description}</span>
+        {option.icon && (
+          <span className="custom-select-icon" style={option.iconStyle}>
+            {option.icon}
+          </span>
+        )}
+        <span className="custom-select-copy">
+          <span className="custom-select-name">{option.label}</span>
+          {option.description && <span className="custom-select-description">{option.description}</span>}
         </span>
       </>
     )
   }
   return (
     <div
-      className="post-type-select"
+      className="custom-select-select"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
       }}
@@ -92,7 +94,7 @@ export function PostTypeSelect<T extends string>({
         aria-controls={`${id}-options`}
         aria-haspopup="listbox"
         aria-activedescendant={open ? `${id}-option-${activeIndex}` : undefined}
-        className="post-type-trigger"
+        className="custom-select-trigger"
         onKeyDown={onKeyDown}
         onClick={() => (open ? setOpen(false) : show())}
       >
@@ -100,7 +102,7 @@ export function PostTypeSelect<T extends string>({
         <Icon name="chevron-down" size={18} />
       </button>
       {open && (
-        <div id={`${id}-options`} role="listbox" aria-labelledby={`${id}-label`} className="post-type-options">
+        <div id={`${id}-options`} role="listbox" aria-labelledby={`${id}-label`} className="custom-select-options">
           {options.map((option, index) => (
             <button
               key={option.value}
@@ -108,22 +110,26 @@ export function PostTypeSelect<T extends string>({
               type="button"
               role="option"
               aria-label={option.label}
-              aria-describedby={`${id}-description-${index}`}
+              aria-describedby={option.description ? `${id}-description-${index}` : undefined}
               aria-selected={option.value === value}
               tabIndex={-1}
-              className={`post-type-option${index === activeIndex ? ' is-active' : ''}`}
+              className={`custom-select-option${index === activeIndex ? ' is-active' : ''}`}
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => choose(index)}
             >
-              <span className="post-type-icon">
-                <Icon name={option.icon} size={20} />
-              </span>
-              <span className="post-type-copy">
-                <span className="post-type-name">{option.label}</span>
-                <span id={`${id}-description-${index}`} className="post-type-description">
-                  {option.description}
+              {option.icon && (
+                <span className="custom-select-icon" style={option.iconStyle}>
+                  {option.icon}
                 </span>
+              )}
+              <span className="custom-select-copy">
+                <span className="custom-select-name">{option.label}</span>
+                {option.description && (
+                  <span id={`${id}-description-${index}`} className="custom-select-description">
+                    {option.description}
+                  </span>
+                )}
               </span>
               {option.value === value && <Icon name="check" size={18} />}
             </button>
