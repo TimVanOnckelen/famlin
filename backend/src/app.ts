@@ -338,7 +338,7 @@ export async function buildApp() {
       decorateReply: false,
     })
 
-    fastify.get('/admin', async (_request, reply) => sendAdminIndex(reply))
+    fastify.get('/admin', async (request, reply) => reply.redirect(`/admin/${request.url.slice('/admin'.length)}`, 302))
 
     fastify.log.info('Admin UI served at /admin')
   } catch {
