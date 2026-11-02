@@ -1,8 +1,9 @@
 import { useStore } from 'zustand'
+import { randomUUID } from '@/utils/uuid'
 import { useAuthStore } from '@/stores/authStore'
 import { getPostDraft, postDraftStorageKey, type DraftAttachment, type PostDraftState } from '@/stores/postDraft'
 import { groupLivePhotoFiles } from '@/utils/livePhotos'
-import { LivePhotoIcon } from './LivePhotoIcon'
+import { ComposerUploadPreview } from './ComposerUploadPreview'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -21,7 +22,6 @@ import {
 import { Icon } from '@/components/Icon'
 import { MediaPickerModal } from '@/components/MediaPickerModal'
 import { ShimmerImage } from '@/components/ShimmerImage'
-import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
@@ -53,7 +53,7 @@ export function NewPostModal({
       pollOptions: ['', ''],
       albumTitle: '',
       files: [],
-      uploadSessionId: crypto.randomUUID(),
+      uploadSessionId: randomUUID(),
       sessionMedia: [],
       mediaAssets:
         initialAsset?.source === 'album'
@@ -556,43 +556,16 @@ export function NewPostModal({
         {(files.length > 0 || mediaAssets.length > 0) && (
           <div className="photo-previews">
             {displayFiles.map((attachment) => {
-              const { file, previewUrl } = attachment
               return (
                 <div key={attachment.id} className="photo-preview">
-                  {attachment.url ? (
-                    <ShimmerImage
-                      src={getUploadUrl(attachment.url, 'thumbnail')}
-                      fallbackSrc={file.type.startsWith('video/') ? undefined : getUploadUrl(attachment.url)}
-                      alt={file.name}
-                    />
-                  ) : file.type.startsWith('video/') ? (
-                    <video src={previewUrl} />
-                  ) : isBrowserDecodableImage(file) ? (
-                    <img src={previewUrl} alt={file.name} />
-                  ) : (
-                    // No browser but Safari can decode a HEIC blob — show what
-                    // was picked rather than a broken image. It still uploads
-                    // fine; the backend serves it back as JPEG.
-                    <span className="photo-preview-placeholder" title={file.name}>
-                      <Icon name="image" size={20} />
-                      <span className="photo-preview-format">{fileFormatLabel(file)}</span>
-                    </span>
-                  )}
-                  {attachment.motionFile ||
-                  sessionMedia.some((media) => media.kind === 'livePhoto' && media.url === attachment.url) ? (
-                    <span className="photo-preview-kind" aria-label={t('media.livePhoto')}>
-                      <LivePhotoIcon size={17} />
-                    </span>
-                  ) : file.type.startsWith('video/') || /\.(mov|mp4|m4v|webm)$/i.test(file.name) ? (
-                    <span className="photo-preview-kind" aria-label={t('media.video')}>
-                      <Icon name="play" size={15} />
-                    </span>
-                  ) : null}
-                  {(!attachment.url || attachment.pending) && (
-                    <div className="photo-upload-overlay">
-                      <span className="photo-upload-spinner" role="status" aria-label={t('common.loading')} />
-                    </div>
-                  )}
+                  <ComposerUploadPreview
+                    item={attachment}
+                    livePhoto={
+                      !!attachment.motionFile ||
+                      sessionMedia.some((media) => media.kind === 'livePhoto' && media.url === attachment.url)
+                    }
+                    pending={attachment.pending}
+                  />
                   <button
                     type="button"
                     className="photo-preview-remove"

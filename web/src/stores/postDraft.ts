@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import { randomUUID } from '@/utils/uuid'
 import type { MediaAsset, UploadSessionMedia } from '@famlin/api-client'
 
 export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'ALBUM'
@@ -190,7 +191,7 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
       clearing = true
       store.setState({
         ...initial,
-        uploadSessionId: crypto.randomUUID(),
+        uploadSessionId: randomUUID(),
         files: [],
         sessionMedia: [],
         mediaAssets: [],

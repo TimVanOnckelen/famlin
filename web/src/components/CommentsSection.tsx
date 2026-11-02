@@ -2,7 +2,6 @@ import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  uploadFiles,
   Post,
   Comment,
   CommentGroup,
@@ -18,7 +17,8 @@ import { Icon } from '@/components/Icon'
 import { Lightbox } from '@/components/Lightbox'
 import { UploadMedia } from '@/components/UploadMedia'
 import { formatRelativeDate } from '@/utils/time'
-import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
+import { useComposerUploads } from '@/hooks/useComposerUploads'
+import { ComposerUploadPreview } from './ComposerUploadPreview'
 
 // Up to this many photos on one comment card lay out as a wrapping grid;
 // beyond it the card becomes a horizontally scrolling gallery instead, so a
@@ -151,7 +151,7 @@ export function CommentsSection({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
-  const [pending, setPending] = useState<{ file: File; previewUrl: string }[]>([])
+  const uploads = useComposerUploads(MAX_COMMENT_ATTACHMENTS)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const commentsQuery = useQuery({
@@ -160,8 +160,7 @@ export function CommentsSection({
   })
 
   const createMutation = useMutation({
-    mutationFn: async ({ content, files }: { content: string; files: File[] }) => {
-      const attachmentUrls = files.length ? await uploadFiles(files) : undefined
+    mutationFn: async ({ content, attachmentUrls }: { content: string; attachmentUrls?: string[] }) => {
       return createComment(post.id, { content: content || undefined, attachmentUrls })
     },
     onSuccess: (created) => {
@@ -173,40 +172,26 @@ export function CommentsSection({
   })
 
   function clearAttachments() {
-    pending.forEach((item) => URL.revokeObjectURL(item.previewUrl))
-    setPending([])
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  function removeAttachment(index: number) {
-    setPending((old) => {
-      const removed = old[index]
-      if (removed) URL.revokeObjectURL(removed.previewUrl)
-      return old.filter((_, i) => i !== index)
-    })
+    uploads.clear()
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function pickAttachments(e: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    if (!files.length) return
-    setPending((old) => {
-      // Picking again adds to what's already staged; anything past the
-      // server's per-comment cap is dropped rather than failing the send.
-      const room = MAX_COMMENT_ATTACHMENTS - old.length
-      const added = files.slice(0, Math.max(0, room)).map((file) => ({
-        file,
-        previewUrl: URL.createObjectURL(file),
-      }))
-      return [...old, ...added]
-    })
+    if (createMutation.isPending) return
+    void uploads.add(Array.from(e.target.files ?? []))
   }
 
   function submit(e: FormEvent) {
     e.preventDefault()
     const content = draft.trim()
-    if ((content || pending.length) && !createMutation.isPending) {
-      createMutation.mutate({ content, files: pending.map((item) => item.file) })
+    if (
+      (content || uploads.urls.length) &&
+      !uploads.uploading &&
+      !uploads.incomplete &&
+      !uploads.error &&
+      !createMutation.isPending
+    ) {
+      createMutation.mutate({ content, attachmentUrls: uploads.urls.length ? uploads.urls : undefined })
     }
   }
 
@@ -236,27 +221,20 @@ export function CommentsSection({
       ))}
 
       <form className="comment-composer-form" onSubmit={submit}>
-        {pending.length > 0 && (
+        {uploads.items.length > 0 && (
           <div className="comment-attachment-previews">
-            {pending.map((item, index) => (
-              <div className="comment-attachment-preview" key={item.previewUrl}>
-                {item.file.type.startsWith('video/') ? (
-                  <video src={item.previewUrl} muted />
-                ) : isBrowserDecodableImage(item.file) ? (
-                  <img src={item.previewUrl} alt="" />
-                ) : (
-                  // HEIC can't be decoded from a blob: URL outside Safari —
-                  // show the format instead of a broken image (the upload
-                  // itself works, and comes back as JPEG).
-                  <span className="comment-attachment-placeholder" title={item.file.name}>
-                    <Icon name="image" size={18} />
-                    <span className="comment-attachment-format">{fileFormatLabel(item.file)}</span>
-                  </span>
-                )}
+            {uploads.items.map((item) => (
+              <div className="comment-attachment-preview" key={item.id}>
+                <ComposerUploadPreview
+                  item={item}
+                  pending={item.pending}
+                  livePhoto={item.motionId !== undefined || item.processing?.kind === 'livePhoto'}
+                />
                 <button
                   type="button"
                   className="comment-attachment-remove"
-                  onClick={() => removeAttachment(index)}
+                  onClick={() => void uploads.remove(item)}
+                  disabled={createMutation.isPending}
                   aria-label={t('comments.removeAttachment')}
                 >
                   <Icon name="x" size={12} strokeWidth={2.5} />
@@ -284,7 +262,7 @@ export function CommentsSection({
               if (fileInputRef.current) fileInputRef.current.value = ''
               fileInputRef.current?.click()
             }}
-            disabled={pending.length >= MAX_COMMENT_ATTACHMENTS}
+            disabled={uploads.count >= MAX_COMMENT_ATTACHMENTS || createMutation.isPending}
             aria-label={t('comments.addAttachment')}
           >
             <Icon name="image" size={18} />
@@ -299,12 +277,31 @@ export function CommentsSection({
           <button
             type="submit"
             className="btn btn-primary comment-send"
-            disabled={(!draft.trim() && !pending.length) || createMutation.isPending}
+            disabled={
+              (!draft.trim() && !uploads.urls.length) ||
+              uploads.uploading ||
+              uploads.incomplete ||
+              uploads.error ||
+              createMutation.isPending
+            }
           >
             {t('comments.send')}
           </button>
         </div>
       </form>
+      {uploads.error && (
+        <div className="comments-hint">
+          {t('comments.uploadFailed')}{' '}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={uploads.uploading}
+            onClick={() => void uploads.retry()}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
       {createMutation.isError && <div className="comments-hint">{t('comments.sendFailed')}</div>}
     </div>
   )

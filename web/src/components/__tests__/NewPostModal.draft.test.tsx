@@ -60,6 +60,22 @@ it('restores text, poll settings and selected groups after closing the editor', 
   expect(saved().uploadSessionId).toBe(session)
 })
 
+it('opens the composer and resets its upload session without native randomUUID', async () => {
+  const getRandomValues = crypto.getRandomValues.bind(crypto)
+  vi.stubGlobal('crypto', { getRandomValues })
+  try {
+    const user = userEvent.setup()
+    open()
+    await user.type(screen.getByPlaceholderText('Share an update with your family…'), 'HTTP draft')
+    expect(saved().uploadSessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    await user.click(screen.getByRole('button', { name: 'Post' }))
+    await waitFor(() => expect(localStorage.getItem(key)).toBeNull())
+    expect(createPost).toHaveBeenCalledOnce()
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})
+
 it('restores serialized Live Photo URLs without uploading again or persisting file bytes', async () => {
   const user = userEvent.setup()
   localStorage.setItem(

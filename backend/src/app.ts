@@ -146,7 +146,9 @@ export async function buildApp() {
         fontSrc: ["'self'", 'https:', 'data:'],
         // 'self' covers /uploads; https: covers OIDC-provided avatar
         // pictures, which are external URLs by nature (see routes/auth.ts).
-        imgSrc: ["'self'", 'data:', 'https:'],
+        // blob: allows local photo/video previews before composer uploads.
+        imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+        mediaSrc: ["'self'", 'https:', 'blob:'],
         // The admin SPA's OIDC login (LoginPage.tsx) does its PKCE code
         // exchange with a direct fetch() to the provider's token endpoint,
         // and that provider is whatever issuer the admin configures at
