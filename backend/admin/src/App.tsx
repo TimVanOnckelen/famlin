@@ -38,7 +38,10 @@ function App() {
 
         api
           .getMe()
-          .then(setUser)
+          .then((currentUser) => {
+            if (currentUser.isAdmin) setUser(currentUser)
+            else localStorage.removeItem('famlin_admin_token')
+          })
           .catch(() => localStorage.removeItem('famlin_admin_token'))
           .finally(() => setLoading(false))
       })
@@ -60,17 +63,8 @@ function App() {
     )
   }
 
-  if (!user) {
+  if (!user?.isAdmin) {
     return <LoginPage onLogin={setUser} />
-  }
-
-  if (!user.isAdmin) {
-    return (
-      <div className="error">
-        <h2>{t('app.noAccessTitle')}</h2>
-        <p>{t('app.noAccessMessage')}</p>
-      </div>
-    )
   }
 
   return (
