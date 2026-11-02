@@ -50,6 +50,8 @@ import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
 import { isGroupMember } from '../services/groups.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
+import { afterGiftListParticipantsRemoved, giftListsOfUser, redactGiftListTypeData } from '../services/giftLists.js'
+import { MANAGED_CIRCLE_KIND } from '../services/circles.js'
 import {
   getBackupOverview,
   getDiskOverview,
@@ -104,6 +106,7 @@ const userSelect = {
   pushOnNewLike: true,
   pushOnChitchat: true,
   pushOnStory: true,
+  pushOnGiftList: true,
   createdAt: true,
 } as const
 
@@ -291,8 +294,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       // Stories cascade with the user; delete them first so their photos
       // leave the disk too.
       await deleteStoriesWithMedia({ authorId: id })
+      const giftLists = await giftListsOfUser(id)
       await prisma.user.delete({ where: { id } })
       invalidateSessionCache(id)
+      await afterGiftListParticipantsRemoved(giftLists, request.user!.id)
       return { success: true }
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.userNotFound') })
@@ -468,6 +473,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       // Their posts and comments in those circles stay, matching the existing
       // rule that removing a group member leaves their content visible to the
       // remaining members.
+      // Gift lists in this family lose them as a participant too (their hidden
+      // circles are Circles): collected first so their draws can be redone,
+      // and the ones they started (no hand-over) deleted.
+      const giftLists = await giftListsOfUser(userId, id)
       await prisma.$transaction(async (tx) => {
         await tx.circleMember.deleteMany({
           where: { userId, circle: { groupId: id } },
@@ -476,6 +485,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           where: { groupId_userId: { groupId: id, userId } },
         })
       })
+      await afterGiftListParticipantsRemoved(giftLists, request.user!.id)
       return { success: true }
     } catch (err) {
       if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.memberNotFound') })
@@ -573,8 +583,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const { id } = request.params as { id: string }
 
+    // Family Circles only — a gift list's hidden audience circle is owned by
+    // its starter, not by admins (services/giftLists.ts).
     const circles = await prisma.circle.findMany({
-      where: { groupId: id },
+      where: { groupId: id, kind: MANAGED_CIRCLE_KIND },
       include: {
         _count: { select: { members: true, posts: true } },
         members: { include: { user: { select: userSelect } }, orderBy: { joinedAt: 'asc' } },
@@ -645,7 +657,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     try {
       const circle = await prisma.circle.update({
-        where: { id: circleId },
+        where: { id: circleId, kind: MANAGED_CIRCLE_KIND },
         data: {
           ...(body.name !== undefined ? { name: body.name } : {}),
           ...('description' in body ? { description: body.description ?? null } : {}),
@@ -682,7 +694,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { deleteContent } = adminDeleteCircleQuerySchema.parse(request.query)
 
     const circle = await prisma.circle.findUnique({
-      where: { id: circleId },
+      where: { id: circleId, kind: MANAGED_CIRCLE_KIND },
       select: { id: true, _count: { select: { posts: true } } },
     })
     if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
@@ -707,7 +719,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { circleId } = request.params as { circleId: string }
     const body = circleMemberBodySchema.parse(request.body)
 
-    const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } })
+    const circle = await prisma.circle.findUnique({
+      where: { id: circleId, kind: MANAGED_CIRCLE_KIND },
+      select: { groupId: true },
+    })
     if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
     // Same rule as seeding at creation: a circle can only ever narrow the
@@ -734,12 +749,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { circleId, userId } = request.params as { circleId: string; userId: string }
 
-    try {
-      await prisma.circleMember.delete({ where: { circleId_userId: { circleId, userId } } })
-    } catch (err) {
-      if (isRecordNotFound(err)) return reply.status(404).send({ error: t('errors.circleMemberNotFound') })
-      throw err
-    }
+    const { count } = await prisma.circleMember.deleteMany({
+      where: { circleId, userId, circle: { kind: MANAGED_CIRCLE_KIND } },
+    })
+    if (count === 0) return reply.status(404).send({ error: t('errors.circleMemberNotFound') })
 
     // Removing someone from a circle revokes their access to its posts and
     // media immediately: every read path re-resolves circle membership per
@@ -788,7 +801,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     return {
       items: items.map(({ _count, ...post }) => ({
-        ...post,
+        // A participating admin who didn't start a gift list mustn't see its
+        // exclusions here either (services/giftLists.ts).
+        ...redactGiftListTypeData(post, request.user!.id),
         commentCount: _count.comments,
         likeCount: _count.likes,
       })),

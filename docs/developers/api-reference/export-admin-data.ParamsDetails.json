@@ -1,0 +1,1 @@
+{"parameters":[{"in":"query","name":"includeMedia","schema":{"type":"boolean","default":true},"description":"False omits media and records required keys and sizes in the manifest. Branding is always included."}]}

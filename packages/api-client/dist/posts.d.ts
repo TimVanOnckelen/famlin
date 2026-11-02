@@ -1,4 +1,4 @@
-import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
+import { AlbumTypeData, GiftListTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -28,7 +28,7 @@ export interface CreatePostBody {
     groupIds?: string[];
     content?: string;
     type: PostType;
-    typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>;
+    typeData?: PollCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
     circleId?: string | null;
