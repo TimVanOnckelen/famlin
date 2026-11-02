@@ -24,6 +24,19 @@ beforeEach(() => {
 
 const actions = { onOpenPost: vi.fn(), onToggleGroup: vi.fn(), onSelectAllGroups: vi.fn() }
 
+it.each([
+  { selectedGroupIds: ['one'], target: 'one' },
+  { selectedGroupIds: [], target: undefined },
+  { selectedGroupIds: ['one', 'two'], target: undefined },
+])('opens member navigation for selection $selectedGroupIds', async ({ selectedGroupIds, target }) => {
+  const onOpenMembers = vi.fn()
+  renderWithQueryClient(
+    <FeedSidePanel groups={groups} selectedGroupIds={selectedGroupIds} onOpenMembers={onOpenMembers} {...actions} />
+  )
+  await userEvent.click(await screen.findByRole('button', { name: 'View all members' }))
+  expect(onOpenMembers).toHaveBeenCalledWith(target)
+})
+
 it('combines selected groups, deduplicates members and labels their groups without member controls', async () => {
   renderWithQueryClient(<FeedSidePanel groups={groups} selectedGroupIds={[]} {...actions} />)
   expect(await screen.findByText('Olga')).toBeInTheDocument()

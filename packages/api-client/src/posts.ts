@@ -1,5 +1,14 @@
 import { api } from './client'
-import { AlbumTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types'
+import {
+  AlbumTypeData,
+  GiftListTypeData,
+  Post,
+  PollCreateData,
+  PostReactor,
+  PostType,
+  ReactionType,
+  TripTypeData,
+} from './types'
 
 export interface FetchPostsParams {
   // Subset of the user's groups to show; omit (or pass empty) for all of them.
@@ -84,7 +93,7 @@ export interface CreatePostBody {
   // UPDATE/MILESTONE. TRIP posts cross-post like every other type (groupIds
   // 1–20), with each travelerUserId required to be a member of every target
   // group.
-  typeData?: PollCreateData | TripTypeData | AlbumTypeData | Record<string, unknown>
+  typeData?: PollCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>
   milestoneTag?: string
   uploadedAssetUrls: string[]
   // Narrows the audience from the whole group to one Circle within it.

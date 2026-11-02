@@ -27,6 +27,7 @@ import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
 import groupRoutes from './routes/groups.js'
 import circleRoutes from './routes/circles.js'
+import giftListRoutes from './routes/giftLists.js'
 import postRoutes from './routes/posts.js'
 import commentRoutes from './routes/comments.js'
 import likeRoutes from './routes/likes.js'
@@ -299,6 +300,7 @@ export async function buildApp() {
   await fastify.register(groupRoutes, { prefix: '/api/groups' })
   await fastify.register(circleRoutes, { prefix: '/api/circles' })
   await fastify.register(postRoutes, { prefix: '/api/posts' })
+  await fastify.register(giftListRoutes, { prefix: '/api/gift-lists' })
   await fastify.register(commentRoutes, { prefix: '/api' })
   await fastify.register(likeRoutes, { prefix: '/api' })
   await fastify.register(favoriteRoutes, { prefix: '/api' })
@@ -316,6 +318,13 @@ export async function buildApp() {
   // Serve admin web UI static build (if present)
   const adminDir = path.join(process.cwd(), 'dist', 'admin')
   let adminServed = false
+  // Read index.html ourselves rather than via reply.sendFile(): every
+  // @fastify/static registration here uses decorateReply: false (two
+  // registrations can't both decorate), so sendFile doesn't exist on reply.
+  const sendAdminIndex = async (reply: import('fastify').FastifyReply) => {
+    const html = await fs.readFile(path.join(adminDir, 'index.html'), 'utf8')
+    return reply.type('text/html; charset=utf-8').header('cache-control', 'no-cache').send(html)
+  }
   try {
     await fs.access(adminDir)
     adminServed = true
@@ -329,9 +338,7 @@ export async function buildApp() {
       decorateReply: false,
     })
 
-    fastify.get('/admin', async (_request, reply) => {
-      return reply.sendFile('index.html', adminDir)
-    })
+    fastify.get('/admin', async (_request, reply) => sendAdminIndex(reply))
 
     fastify.log.info('Admin UI served at /admin')
   } catch {
@@ -386,7 +393,7 @@ export async function buildApp() {
   fastify.setNotFoundHandler((request, reply) => {
     const url = requestPathname(request.raw.url)
     if (adminServed && url.startsWith('/admin/')) {
-      return reply.sendFile('index.html', adminDir)
+      return sendAdminIndex(reply)
     }
     if (
       webServed &&

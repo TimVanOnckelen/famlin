@@ -18,7 +18,7 @@ export interface PushSendResult {
 // MVP-scale feature set.
 const PUSH_PREF_FIELD: Record<
   NotifyType,
-  'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat' | 'pushOnStory'
+  'pushOnNewPost' | 'pushOnNewComment' | 'pushOnNewLike' | 'pushOnChitchat' | 'pushOnStory' | 'pushOnGiftList'
 > = {
   new_post: 'pushOnNewPost',
   new_comment: 'pushOnNewComment',
@@ -33,6 +33,9 @@ const PUSH_PREF_FIELD: Record<
   new_story: 'pushOnStory',
   story_reply: 'pushOnNewComment',
   story_reaction: 'pushOnNewLike',
+  gift_list_invite: 'pushOnGiftList',
+  gift_draw: 'pushOnGiftList',
+  gift_list_updated: 'pushOnGiftList',
 }
 
 // The actual send, plus its PushDeliveryLog write — shared by the organic

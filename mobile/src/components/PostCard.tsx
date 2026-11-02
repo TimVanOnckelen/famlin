@@ -14,6 +14,7 @@ import { ReactorStack } from '@/components/ReactorStack'
 import { Scrim } from '@/components/Scrim'
 import { postTypeRenderers } from '@/components/postTypes'
 import { TripCard } from '@/components/TripCard'
+import { GiftListCard } from '@/components/GiftListCard'
 import { AlbumCard } from '@/components/AlbumCard'
 import { Post, PostPerson, ReactionType } from '@/types'
 import { REACTION_EMOJI } from '@/constants/reactions'
@@ -163,6 +164,11 @@ export const PostCard = React.memo(function PostCard({ post, showGroup = false }
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
     return <AlbumCard post={post} showGroup={showGroup} />
+  }
+
+  // GIFT_LIST posts open their own screen (wishlists, the draw).
+  if (post.type === 'GIFT_LIST') {
+    return <GiftListCard post={post} showGroup={showGroup} />
   }
 
   return <DefaultPostCard post={post} showGroup={showGroup} />

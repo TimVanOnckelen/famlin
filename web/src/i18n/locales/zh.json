@@ -77,7 +77,9 @@
       "contributedBy_other": "由 {{name}} 等 {{others}} 人添加",
       "addPhotosCta": "添加照片",
       "openCta": "打开相册 →"
-    }
+    },
+    "viewMembers": "查看成员",
+    "viewAllMembers": "查看所有成员"
   },
   "comments": {
     "placeholder": "写下评论…",
@@ -117,7 +119,11 @@
     "failed": "发布失败，请重试。",
     "audience": "谁可以看到？",
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
-    "audienceEveryone": "所有成员"
+    "audienceEveryone": "所有成员",
+    "typeGiftList": "礼物清单",
+    "giftListTitlePlaceholder": "礼物清单标题（例如：2026 圣诞节）",
+    "giftListParticipantsHint": "选择参与者。你始终是参与者之一。",
+    "giftListDescriptionPlaceholder": "给参与者留个言…（可选）"
   },
   "editPost": {
     "title": "编辑帖子",
@@ -169,7 +175,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "限时动态（仅推送）"
+    "notifyNewStory": "限时动态（仅推送）",
+    "myGiftLists": "我的礼物清单",
+    "notifyGiftList": "礼物清单"
   },
   "apiTokens": {
     "menuItem": "API 令牌",
@@ -413,5 +421,72 @@
     "noGroups": "加入家庭后即可搜索动态。",
     "loadFailed": "无法加载搜索结果。",
     "loadMore": "加载更多"
+  },
+  "members": {
+    "title": "成员",
+    "description": "你加入的所有家庭及私密圈子。",
+    "yourCircles": "你的圈子",
+    "noCircles": "你尚未加入此家庭中的任何圈子。",
+    "noFamilies": "你尚未加入任何家庭。请联系家庭管理员添加你。",
+    "noMembers": "暂无成员。",
+    "familiesFailed": "无法加载你的家庭。",
+    "familyMembersFailed": "无法加载此家庭的成员。",
+    "circlesFailed": "无法加载你在此家庭中的圈子。",
+    "circleMembersFailed": "无法加载此圈子的成员。",
+    "count_one": "{{count}} 位成员",
+    "count_other": "{{count}} 位成员"
+  },
+  "giftList": {
+    "badge": "礼物清单",
+    "headerTitle": "礼物清单",
+    "openCta": "打开礼物清单",
+    "participantCount_one": "{{count}} 位参与者",
+    "participantCount_other": "{{count}} 位参与者",
+    "budgetValue": "预算 {{budget}}",
+    "buyingFor": "你要为 {{name}} 准备礼物",
+    "drawPending": "尚未抽签",
+    "notAvailable": "这个礼物清单不可用。",
+    "actionFailed": "操作失败，请重试。",
+    "redrawConfirm": "这个更改会作废当前的神秘圣诞老人抽签结果。要重新抽签吗？",
+    "drawCta": "抽签",
+    "drawNeedsThree": "抽签至少需要 3 位参与者。",
+    "manageCta": "管理",
+    "deleteCta": "删除礼物清单",
+    "deleteConfirm": "删除这个礼物清单以及所有人的愿望吗？",
+    "leaveCta": "退出礼物清单",
+    "leaveConfirm": "退出这个礼物清单吗？你的愿望将被删除。",
+    "myWishlist": "我的愿望清单",
+    "wishlistOf": "{{name}} 的愿望清单",
+    "recipientBadge": "你为他们准备礼物",
+    "myWishlistEmpty": "你的愿望清单是空的。添加第一个愿望吧。",
+    "wishlistEmpty": "还没有愿望。",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "editItem": "编辑愿望",
+    "deleteItem": "删除愿望",
+    "deleteItemConfirm": "删除这个愿望吗？",
+    "addItem": "添加愿望",
+    "itemTitlePlaceholder": "你想要什么？",
+    "itemNotePlaceholder": "备注（尺码、颜色…）— 可选",
+    "itemUrlPlaceholder": "商店链接 — 可选",
+    "itemUrlInvalid": "请使用以 http:// 或 https:// 开头的链接",
+    "addPhoto": "添加照片",
+    "changePhoto": "更换照片",
+    "removePhoto": "移除照片",
+    "participants": "参与者",
+    "saveParticipants": "保存参与者",
+    "settings": "设置",
+    "titleLabel": "标题",
+    "occasionDate": "日期",
+    "budget": "预算",
+    "budgetPlaceholder": "例如 €25",
+    "drawEnabled": "神秘圣诞老人抽签",
+    "exclusions": "排除规则",
+    "exclusionsHint": "互相不能抽到对方的组合，例如伴侣。",
+    "removeExclusion": "删除排除规则",
+    "exclusionPerson": "第 {{number}} 人",
+    "addExclusion": "添加排除规则",
+    "saveSettings": "保存设置",
+    "photoUploadFailed": "照片无法上传，请换一张试试。"
   }
 }

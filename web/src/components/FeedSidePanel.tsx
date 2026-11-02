@@ -9,6 +9,7 @@ export function FeedSidePanel({
   groups,
   selectedGroupIds,
   onOpenPost,
+  onOpenMembers,
   onToggleGroup,
   onSelectAllGroups,
 }: {
@@ -17,6 +18,7 @@ export function FeedSidePanel({
   onToggleGroup: (groupId: string) => void
   onSelectAllGroups: () => void
   onOpenPost: (postId: string) => void
+  onOpenMembers?: (groupId?: string) => void
 }) {
   const { t } = useTranslation()
   const memberGroups = selectedGroupIds.length ? groups.filter((g) => selectedGroupIds.includes(g.id)) : groups
@@ -132,6 +134,11 @@ export function FeedSidePanel({
             ))}
           </ul>
         </div>
+        {onOpenMembers && members.length > 0 && (
+          <button type="button" className="side-panel-members-link" onClick={() => onOpenMembers(memoryGroupId)}>
+            {t('feed.viewAllMembers')}
+          </button>
+        )}
       </section>
       {onThisDay.length > 0 && (
         <section className="side-panel-section">

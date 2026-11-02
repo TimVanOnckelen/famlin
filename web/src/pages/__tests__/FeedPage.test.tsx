@@ -273,3 +273,45 @@ it('shares the family selection between narrow-screen chips and the desktop side
   await userEvent.click(familyFilter().getByRole('button', { name: 'All families' }))
   expect(within(panel).getByRole('button', { name: 'All families' })).toHaveAttribute('aria-pressed', 'true')
 })
+
+it('opens all members from the feed header and scopes navigation when one family is selected', async () => {
+  const onOpenMembers = vi.fn()
+  const user = userEvent.setup()
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={onOpenMembers} />
+  )
+  await user.click(await screen.findByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
+  await user.click(familyFilter().getByRole('button', { name: 'Neefjes' }))
+  await user.click(screen.getByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-2')
+  await user.click(familyFilter().getByRole('button', { name: 'Familie de Vries' }))
+  await user.click(screen.getByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
+})
+
+it('offers both header and side-panel navigation for a user in one family', async () => {
+  vi.mocked(fetchGroups).mockResolvedValue([groups[0]])
+  vi.mocked(fetchGroupMembers).mockResolvedValue([
+    { id: 'member-1', name: 'Anna', email: 'anna@example.com', joinedAt: '2026-01-01' },
+  ])
+  const onOpenMembers = vi.fn()
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={onOpenMembers} />
+  )
+  await userEvent.click(await screen.findByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-1')
+  await userEvent.click(await screen.findByRole('button', { name: 'View all members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-1')
+})
+
+it('does not show member navigation for a user with no families', async () => {
+  vi.mocked(fetchGroups).mockResolvedValue([])
+  vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null })
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={vi.fn()} />
+  )
+  await screen.findByText(/You're not part of any family yet/)
+  expect(screen.queryByRole('button', { name: 'View members' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'View all members' })).not.toBeInTheDocument()
+})

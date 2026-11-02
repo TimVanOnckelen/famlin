@@ -36,6 +36,16 @@ export type NotifyType =
   | 'story_reply'
   // A reaction on the recipient's story — push-only, reuses pushOnNewLike.
   | 'story_reaction'
+  // Gift lists (issue #307) — push-only, all on pushOnGiftList. Every one
+  // concerns a GIFT_LIST post whose audience is its hidden circle, so
+  // notify()'s circle filter keeps them to participants.
+  // You were added as a participant (at creation or later).
+  | 'gift_list_invite'
+  // The Secret Santa draw happened or was redone. Its text must NEVER name
+  // the recipient — pushes render on the lock screen.
+  | 'gift_draw'
+  // The person you're buying for added a wish; same-day additions bundle.
+  | 'gift_list_updated'
 
 // The recipient shape notify() loads once and hands to every channel — each
 // channel picks the preference columns it cares about via wants().
@@ -50,6 +60,7 @@ export interface Recipient {
   pushOnNewLike: boolean
   pushOnChitchat: boolean
   pushOnStory: boolean
+  pushOnGiftList: boolean
 }
 
 export interface ChannelSendArgs {

@@ -24,7 +24,7 @@ export interface PostPerson {
 // types the server ships today, but the `(string & {})` branch keeps this
 // widen-able (custom types added server-side) without TS narrowing string
 // literals away.
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | (string & {})
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | (string & {})
 
 export interface PollOptionResult {
   id: string
@@ -172,6 +172,57 @@ export interface AlbumPhotoMetadata {
   contributionId: string
 }
 
+// The shape a client sends as `typeData` when creating a GIFT_LIST post (issue
+// #307). participantUserIds are the OTHER participants — the creator is always
+// one. All of them must be members of the (single) target group.
+export interface GiftListTypeData {
+  title: string
+  occasionDate?: string | null
+  participantUserIds?: string[]
+  drawEnabled?: boolean
+  budget?: string | null
+  exclusions?: Array<[string, string]>
+}
+
+export interface GiftListParticipant {
+  id: string
+  name: string
+  avatarUrl: string | null
+  itemCount: number
+}
+
+// Present only when type === 'GIFT_LIST' — participants, wishlist counts and
+// the viewer's OWN Secret Santa recipient. The server never sends anyone
+// else's pairing.
+export interface GiftListEnrichment {
+  title: string
+  occasionDate: string | null
+  drawEnabled: boolean
+  budget: string | null
+  drawn: boolean
+  drawnAt: string | null
+  managerId: string
+  isManager: boolean
+  participants: GiftListParticipant[]
+  itemCount: number
+  // Only for the starter; null for everyone else.
+  exclusions: Array<[string, string]> | null
+  myRecipient: { id: string; name: string; avatarUrl: string | null } | null
+}
+
+export interface GiftListItem {
+  id: string
+  postId: string
+  ownerId: string
+  title: string
+  note: string | null
+  url: string | null
+  photoUrl: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface User {
   id: string
   email: string
@@ -188,6 +239,8 @@ export interface User {
   pushOnNewLike: boolean
   // Opt-in push for other members' new stories. Missing = older server.
   pushOnStory?: boolean
+  // Push for gift lists (added, draw, recipient's new wishes). Missing = older server.
+  pushOnGiftList?: boolean
 }
 
 export interface Group {
@@ -233,6 +286,8 @@ export interface Post {
   trip?: TripEnrichment
   // Present only when type === 'ALBUM' — see AlbumEnrichment.
   album?: AlbumEnrichment
+  // Present only when type === 'GIFT_LIST' — see GiftListEnrichment.
+  giftList?: GiftListEnrichment
   // The Circle this post was shared with, or null/absent for a whole-family
   // post. Only ever present on a post you're allowed to see, so it's safe to
   // render as the "shared in <Circle>" badge.

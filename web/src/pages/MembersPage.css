@@ -1,0 +1,129 @@
+.members-column {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+}
+.members-intro,
+.members-description,
+.members-hint {
+  color: var(--fam-text-muted);
+  line-height: 1.6;
+}
+.members-intro {
+  margin: 8px 0 24px;
+}
+.members-family {
+  padding: 24px;
+  margin-bottom: 20px;
+  background: var(--fam-surface);
+  border: 1px solid var(--fam-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+.members-family-highlighted {
+  border-color: var(--fam-primary);
+  box-shadow: 0 0 0 2px var(--fam-primary-tint);
+}
+.members-family-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.members-family h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--fam-text-title);
+  overflow-wrap: anywhere;
+}
+.members-count,
+.members-admin {
+  color: var(--fam-primary);
+  background: var(--fam-primary-tint);
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.members-description {
+  margin: 8px 0 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.members-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+.members-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.members-person-name {
+  font-weight: 700;
+  color: var(--fam-text-title);
+  overflow-wrap: anywhere;
+}
+.members-admin {
+  margin-left: auto;
+}
+.members-circles {
+  border-top: 1px solid var(--fam-border);
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.members-circles h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--fam-text-title);
+}
+.members-circle {
+  border: 1px solid var(--fam-border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-top: 12px;
+}
+.members-circle h4 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--fam-text-title);
+  overflow-wrap: anywhere;
+}
+.members-error {
+  line-height: 1.6;
+}
+.members-retry {
+  border: 0;
+  background: none;
+  color: var(--fam-primary);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.members-empty {
+  color: var(--fam-text-muted);
+  text-align: center;
+  padding: 48px 16px;
+}
+@media (max-width: 720px) {
+  .members-column {
+    padding: 16px 16px 96px;
+  }
+  .members-family {
+    padding: 20px 16px;
+  }
+  .members-circle {
+    padding: 16px;
+  }
+  .members-list {
+    grid-template-columns: 1fr;
+  }
+}

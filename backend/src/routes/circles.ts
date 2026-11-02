@@ -2,12 +2,16 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
 import { requireGroupMember } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
+import { MANAGED_CIRCLE_KIND } from '../services/circles.js'
 
 // Member-facing Circle routes. Deliberately READ-ONLY plus one self-service
 // mutation (leaving), mirroring how routes/groups.ts is read-only and every
 // group mutation lives in routes/admin.ts. Creating, editing, deleting a
 // circle and managing its membership are admin operations — see the Family
 // Circles block in routes/admin.ts.
+// Only Family Circles (kind CIRCLE) are visible here. A gift list's hidden
+// audience circle is managed through routes/giftLists.ts instead — leaving it
+// here would bypass its redraw logic.
 export default async function circleRoutes(fastify: FastifyInstance) {
   // Circles are FULLY PRIVATE: this returns only the circles the caller is
   // actually in. A group member outside a circle gets no name, no avatar, no
@@ -21,7 +25,7 @@ export default async function circleRoutes(fastify: FastifyInstance) {
     if (await requireGroupMember(request, reply, groupId)) return
 
     const memberships = await prisma.circleMember.findMany({
-      where: { userId: request.user!.id, circle: { groupId } },
+      where: { userId: request.user!.id, circle: { groupId, kind: MANAGED_CIRCLE_KIND } },
       include: {
         circle: {
           include: { _count: { select: { members: true } } },
@@ -53,8 +57,8 @@ export default async function circleRoutes(fastify: FastifyInstance) {
     // Membership is checked before the circle is even looked up, so a
     // non-member can't distinguish "exists but not yours" from "no such
     // circle" by timing or status code.
-    const membership = await prisma.circleMember.findUnique({
-      where: { circleId_userId: { circleId, userId: request.user!.id } },
+    const membership = await prisma.circleMember.findFirst({
+      where: { circleId, userId: request.user!.id, circle: { kind: MANAGED_CIRCLE_KIND } },
     })
     if (!membership) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
@@ -80,8 +84,8 @@ export default async function circleRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { circleId } = request.params as { circleId: string }
 
-    const membership = await prisma.circleMember.findUnique({
-      where: { circleId_userId: { circleId, userId: request.user!.id } },
+    const membership = await prisma.circleMember.findFirst({
+      where: { circleId, userId: request.user!.id, circle: { kind: MANAGED_CIRCLE_KIND } },
     })
     if (!membership) return reply.status(404).send({ error: t('errors.circleNotFound') })
 

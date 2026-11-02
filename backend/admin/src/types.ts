@@ -130,7 +130,7 @@ export interface SystemStatus {
     dirIsMount: boolean | null
     dumps: { file: string; bytes: number; createdAt: string }[]
   }
-  disk: { uploads: DiskUsage | null; backups: DiskUsage | null; sameVolume: boolean }
+  disk: { uploadsDriver: 'local' | 's3'; uploads: DiskUsage | null; backups: DiskUsage | null; sameVolume: boolean }
   jobs: JobStatus[]
   migrations: { latestApplied: string | null; appliedCount: number; pending: string[] | null; failed: string[] }
   push: { last24h: PushWindow; last7d: PushWindow; unhealthy: boolean }
