@@ -268,7 +268,7 @@ jobs:
   # archives. Make it a real download page: attach a docker-compose.yml pinned
   # to this exact version (+ .env.example), and append a "Downloads" section
   # with the multi-arch image's pull command/digest and the mobile apps,
-  # preceded by a "Thank you" section crediting outside contributors
+  # preceded by a "Thank you" section crediting contributors
   # (.github/scripts/release-thanks.sh).
   # Runs after enhance-release-notes because that job overwrites the whole
   # body, and after publish-docker so the image is only advertised once it
@@ -323,8 +323,9 @@ jobs:
             name=$(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith(".apk"))][0] // empty' || true)
             if [ -n "$name" ]; then APK_TAG="$tag"; APK_NAME="$name"; break; fi
           done
-          # Credit outside contributors and issue reporters (no bots, AI
-          # accounts or the repo owner). Best-effort: a failed lookup just
+          # Credit contributors and issue reporters (no bots or AI accounts;
+          # the repo owner only for work they authored, not for merges).
+          # Best-effort: a failed lookup just
           # leaves the section out rather than failing the release.
           PREV_TAG=$(git describe --tags --abbrev=0 "$TAG_NAME^" 2>/dev/null || true)
           if [ -n "$PREV_TAG" ]; then

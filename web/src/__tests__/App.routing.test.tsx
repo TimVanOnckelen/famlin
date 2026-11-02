@@ -27,12 +27,19 @@ vi.mock('@/pages/JoinPage', () => ({
 }))
 vi.mock('@/pages/LoginPage', () => ({ LoginPage: () => <div>login page</div> }))
 vi.mock('@/pages/FeedPage', () => ({
-  FeedPage: (p: { initialGroupId?: string; onOpenTrip: (id: string) => void; onOpenProfile: () => void }) => (
+  FeedPage: (p: {
+    initialGroupId?: string
+    onOpenTrip: (id: string) => void
+    onOpenProfile: () => void
+    onOpenMembers: (groupId?: string) => void
+  }) => (
     <div>
       feed page
       {p.initialGroupId && <span>selected family {p.initialGroupId}</span>}
       <button onClick={() => p.onOpenTrip('trip-9')}>open trip</button>
       <button onClick={() => p.onOpenProfile()}>open profile</button>
+      <button onClick={() => p.onOpenMembers('group-1')}>open family members</button>
+      <button onClick={() => p.onOpenMembers()}>open all members</button>
     </div>
   ),
 }))
@@ -52,6 +59,9 @@ vi.mock('@/pages/SearchPage', () => ({
       search page {p.query} {p.groupId}
     </div>
   ),
+}))
+vi.mock('@/pages/MembersPage', () => ({
+  MembersPage: (p: { groupId?: string }) => <div>members page {p.groupId}</div>,
 }))
 vi.mock('@/pages/FavoritesPage', () => ({ FavoritesPage: () => <div>favorites page</div> }))
 vi.mock('@/pages/TripDetailPage', () => ({
@@ -119,6 +129,8 @@ describe('App routing', () => {
     ['/profile', 'profile page'],
     ['/join/invite-1', 'join page invite-1 signed in'],
     ['/?groupId=joined-family', 'selected family joined-family'],
+    ['/members', 'members page'],
+    ['/members?groupId=group-1', 'members page group-1'],
     ['/favorites', 'favorites page'],
     ['/notifications', 'notifications page'],
     ['/search?q=garden&groupId=group-1', 'search page garden group-1'],
@@ -163,6 +175,23 @@ describe('App routing', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'switch account' }))
     expect(await screen.findByText('join page invite-1 signed out')).toBeInTheDocument()
     expect(screen.queryByText('login page')).not.toBeInTheDocument()
+  })
+
+  it('keeps the members page available for a user with no families', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([])
+    signIn()
+    renderWithQueryClient(<App />, { route: '/members' })
+    expect(await screen.findByText('members page')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['open family members', 'members page group-1'],
+    ['open all members', 'members page'],
+  ])('opens the members route from the feed: %s', async (button, page) => {
+    signIn()
+    renderWithQueryClient(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: button }))
+    expect(await screen.findByText(page)).toBeInTheDocument()
   })
 
   it('navigates between pages and back', async () => {

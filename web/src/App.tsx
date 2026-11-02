@@ -29,9 +29,11 @@ import { PhotosPage } from '@/pages/PhotosPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
 import { SearchPage } from '@/pages/SearchPage'
+import { MembersPage } from '@/pages/MembersPage'
 import { FavoritesPage } from '@/pages/FavoritesPage'
 import { TripDetailPage } from '@/pages/TripDetailPage'
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
+import { GiftListPage } from '@/pages/GiftListPage'
 import { PostDetailPage } from '@/pages/PostDetailPage'
 import { PostDetailModal } from '@/components/PostDetailModal'
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner'
@@ -176,8 +178,10 @@ function AppRoutes({ user }: { user: User }) {
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
               onOpenSearch={nav.toSearch}
+              onOpenMembers={nav.toMembers}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
               onLogout={() => logout()}
             />
           }
@@ -223,6 +227,7 @@ function AppRoutes({ user }: { user: User }) {
             <ProfilePage
               user={user}
               onBack={nav.toFeed}
+              onOpenGiftList={nav.toGiftList}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
@@ -234,6 +239,7 @@ function AppRoutes({ user }: { user: User }) {
         />
         <Route path="/trips/:postId" element={<TripRoute user={user} />} />
         <Route path="/albums/:postId" element={<AlbumRoute user={user} />} />
+        <Route path="/gift-lists/:postId" element={<GiftListRoute user={user} />} />
         <Route path="/posts/:postId" element={<PostRoute user={user} />} />
         <Route
           path={paths.favorites}
@@ -248,6 +254,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenChat={nav.toChat}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
               onLogout={() => logout()}
             />
           }
@@ -269,6 +276,23 @@ function AppRoutes({ user }: { user: User }) {
           }
         />
         <Route
+          path={paths.members}
+          element={
+            <MembersPage
+              user={user}
+              groupId={searchParams.get('groupId') ?? undefined}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
+              onOpenProfile={nav.toProfile}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
           path={paths.search}
           element={
             <SearchPage
@@ -284,6 +308,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenProfile={nav.toProfile}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
               onLogout={() => logout()}
             />
           }
@@ -355,6 +380,7 @@ function PostDetailModalRoute() {
       onClose={() => navigate(-1)}
       onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
       onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+      onOpenGiftList={(id) => nav.toGiftList(id, { replace: true })}
     />
   )
 }
@@ -403,6 +429,28 @@ function AlbumRoute({ user }: { user: User }) {
   )
 }
 
+function GiftListRoute({ user }: { user: User }) {
+  const { postId } = useParams<{ postId: string }>()
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
+  return (
+    <GiftListPage
+      key={postId}
+      user={user}
+      postId={postId!}
+      onBack={nav.back}
+      onOpenFeed={nav.toFeed}
+      onOpenPhotos={nav.toPhotos}
+      onOpenChat={nav.toChat}
+      onOpenProfile={nav.toProfile}
+      onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
+      onLogout={() => logout()}
+    />
+  )
+}
+
 function PostRoute({ user }: { user: User }) {
   const { postId } = useParams<{ postId: string }>()
   const { logout } = useAuthStore()
@@ -416,6 +464,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenFeed={nav.toFeed}
       onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
       onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+      onOpenGiftList={(id) => nav.toGiftList(id, { replace: true })}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}

@@ -5,6 +5,13 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
+      label: 'Using Famlin',
+      collapsible: true,
+      collapsed: false,
+      items: ['gift-lists'],
+    },
+    {
+      type: 'category',
       label: 'Self-hosting',
       collapsible: true,
       collapsed: false,

@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Switch,
 } from 'react-native'
 import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -24,6 +25,7 @@ import { Avatar } from '@/components/Avatar'
 import { Group, PostType } from '@/types'
 import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client'
 import { useAuthStore } from '@/stores/authStore'
+import { GiftListParticipantPicker } from '@/components/GiftListParticipantPicker'
 import { getUploadUrl } from '@/api/uploads'
 import { isVideoUrl } from '@/utils/media'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
@@ -52,7 +54,7 @@ const MILESTONE_TAG_ICON: Record<string, IconName> = {
   graduation: 'award',
   custom: 'edit-3',
 }
-const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM'] as const
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
 const MIN_POLL_OPTIONS = 2
 const MAX_POLL_OPTIONS = 10
 // 'YYYY-MM-DD' — matches the backend contract's typeData.startDate/endDate
@@ -68,6 +70,7 @@ const POST_TYPE_ICON: Record<string, IconName> = {
   POLL: 'bar-chart-2',
   TRIP: 'briefcase',
   ALBUM: 'image',
+  GIFT_LIST: 'gift',
 }
 const POST_TYPE_ICON_COLOR: Record<string, string> = {
   UPDATE: colors.accent,
@@ -75,6 +78,7 @@ const POST_TYPE_ICON_COLOR: Record<string, string> = {
   POLL: colors.primary,
   TRIP: colors.trip,
   ALBUM: colors.primary,
+  GIFT_LIST: colors.primary,
 }
 const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
@@ -82,6 +86,7 @@ const POST_TYPE_ICON_BG: Record<string, string> = {
   POLL: colors.primaryTint,
   TRIP: colors.tripTint,
   ALBUM: colors.primaryTint,
+  GIFT_LIST: colors.primaryTint,
 }
 
 // Colors for the swappable type chip at the top of the compose step — one
@@ -97,6 +102,7 @@ const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg:
   POLL: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
   ALBUM: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
+  GIFT_LIST: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
 }
 
 function MutedVideoThumb({ uri, style }: { uri: string; style: any }) {
@@ -192,7 +198,11 @@ export function NewPostScreen() {
   // so the segmented control must not offer a type a target group rejects.
   // An empty intersection (possible when cross-posting to groups with
   // disjoint allow-lists) disables submit with a notice instead.
-  const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds)
+  // A gift list's participants come from one family, so it's only offered
+  // for a single-family post.
+  const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds).filter(
+    (type) => type !== 'GIFT_LIST' || selectedGroupIds.length === 1
+  )
   const noOfferedPostTypes = offeredPostTypes.length === 0
 
   // When the group selection changes and the current type is no longer
@@ -207,6 +217,15 @@ export function NewPostScreen() {
   const nonEmptyPollOptions = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0)
   const isTrip = postType === 'TRIP'
   const isAlbum = postType === 'ALBUM'
+  const isGiftList = postType === 'GIFT_LIST'
+  // GIFT_LIST (issue #307): title + settings in typeData; content stays an
+  // optional description.
+  const [giftTitle, setGiftTitle] = useState('')
+  const [giftDate, setGiftDate] = useState('')
+  const [giftParticipants, setGiftParticipants] = useState<string[]>([])
+  const [giftDrawEnabled, setGiftDrawEnabled] = useState(false)
+  const [giftBudget, setGiftBudget] = useState('')
+  const giftDateValid = giftDate.length === 0 || TRIP_DATE_REGEX.test(giftDate)
 
   // Valid trip co-travelers = members of EVERY selected group (the server
   // enforces this per target group on a cross-posted trip). Shares the
@@ -257,6 +276,22 @@ export function NewPostScreen() {
         return album
       }
 
+      if (isGiftList) {
+        return createPost({
+          ...buildGroupSelectionPayload(selectedGroupIds),
+          content: content.trim() || undefined,
+          type: postType,
+          typeData: {
+            title: giftTitle.trim(),
+            occasionDate: giftDate || null,
+            participantUserIds: giftParticipants,
+            drawEnabled: giftDrawEnabled,
+            budget: giftBudget.trim() || null,
+          },
+          uploadedAssetUrls: [],
+        })
+      }
+
       return createPost({
         ...buildGroupSelectionPayload(selectedGroupIds),
         // Omitted entirely for a whole-family post, so older servers that
@@ -289,6 +324,7 @@ export function NewPostScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['gift-lists'] })
       navigation.goBack()
     },
     onError: (err: any) => {
@@ -304,9 +340,11 @@ export function NewPostScreen() {
       ? tripTitle.trim().length > 0 && tripStartDateValid && tripEndDateValid
       : isAlbum
         ? albumTitle.trim().length > 0
-        : postType === 'POLL'
-          ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
-          : content.trim().length > 0 || uploadedAssetUrls.length > 0)
+        : isGiftList
+          ? giftTitle.trim().length > 0 && giftDateValid
+          : postType === 'POLL'
+            ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
+            : content.trim().length > 0 || uploadedAssetUrls.length > 0)
 
   function addPollOption() {
     setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']))
@@ -442,6 +480,8 @@ export function NewPostScreen() {
                       style={[styles.groupChip, isActive && styles.groupChipActive]}
                       onPress={() => {
                         setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
+                        // Gift list participants come from the selected family.
+                        setGiftParticipants([])
                         // A circle belongs to one family, so a previous
                         // choice stops being valid once the family moves.
                         setSelectedCircleId(null)
@@ -567,6 +607,8 @@ export function NewPostScreen() {
                     style={[styles.groupChip, isActive && styles.groupChipActive]}
                     onPress={() => {
                       setSelectedGroupIds((prev) => toggleGroupSelection(prev, group.id))
+                      // Gift list participants come from the selected family.
+                      setGiftParticipants([])
                       // A circle belongs to one family, so a previous
                       // choice stops being valid once the family moves.
                       setSelectedCircleId(null)
@@ -581,7 +623,7 @@ export function NewPostScreen() {
           </View>
         )}
 
-        {circles.length > 0 && (
+        {circles.length > 0 && !isGiftList && (
           <View style={styles.groupSelector}>
             <Text style={styles.sectionLabel}>{t('newPost.audience')}</Text>
             <Text style={styles.audienceHint}>{t('newPost.audienceHint')}</Text>
@@ -627,15 +669,73 @@ export function NewPostScreen() {
           </View>
         )}
 
+        {isGiftList && offeredPostTypes.includes('GIFT_LIST') && primaryGroupId && (
+          <View style={styles.tripFields}>
+            <View>
+              <Text style={styles.sectionLabel}>{t('giftList.titleLabel')} *</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('newPost.giftListTitlePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={giftTitle}
+                onChangeText={setGiftTitle}
+                maxLength={120}
+                autoFocus
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>{t('giftList.occasionDate')}</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.textMuted}
+                value={giftDate}
+                onChangeText={setGiftDate}
+                maxLength={10}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>{t('giftList.participants')}</Text>
+              <Text style={styles.tripHelperText}>{t('newPost.giftListParticipantsHint')}</Text>
+              <GiftListParticipantPicker
+                groupId={primaryGroupId}
+                selfId={user?.id ?? ''}
+                selected={giftParticipants}
+                onChange={setGiftParticipants}
+              />
+            </View>
+            <View style={styles.giftSwitchRow}>
+              <Text style={styles.sectionLabel}>{t('giftList.drawEnabled')}</Text>
+              <Switch value={giftDrawEnabled} onValueChange={setGiftDrawEnabled} />
+            </View>
+            {giftDrawEnabled && (
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('giftList.budgetPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={giftBudget}
+                onChangeText={setGiftBudget}
+                maxLength={40}
+              />
+            )}
+          </View>
+        )}
+
         {!isTrip && (
           <TextInput
             style={styles.textInput}
-            placeholder={isAlbum ? t('newPost.album.descriptionPlaceholder') : contentPlaceholder}
+            placeholder={
+              isAlbum
+                ? t('newPost.album.descriptionPlaceholder')
+                : isGiftList
+                  ? t('newPost.giftListDescriptionPlaceholder')
+                  : contentPlaceholder
+            }
             placeholderTextColor={colors.textMuted}
             multiline
             value={content}
             onChangeText={setContent}
-            autoFocus={!isAlbum}
+            autoFocus={!isAlbum && !isGiftList}
           />
         )}
 
@@ -827,13 +927,13 @@ export function NewPostScreen() {
           </View>
         )}
 
-        {!isTrip && <View style={styles.divider} />}
+        {!isTrip && !isGiftList && <View style={styles.divider} />}
 
         {/* Attachments: a compact, growable pill row instead of stacked
             cards, plus a thumbnail strip for whatever's already added. Not
             shown for TRIP — its only photo is the optional cover above,
             handled by the trip fields block. */}
-        {!isTrip && (
+        {!isTrip && !isGiftList && (
           <View style={styles.attachSection}>
             <Text style={styles.sectionLabel}>{t('newPost.attachLabel')}</Text>
 
@@ -1109,6 +1209,11 @@ const styles = StyleSheet.create({
   },
   // Warm circle palette so choosing a circle looks visibly different from
   // choosing a family — mirrors the feed chips and the post badge.
+  giftSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   circleChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,

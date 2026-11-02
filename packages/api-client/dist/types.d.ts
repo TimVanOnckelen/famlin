@@ -14,7 +14,7 @@ export interface PostPerson {
     userName: string | null;
     userAvatarUrl: string | null;
 }
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | (string & {});
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | (string & {});
 export interface PollOptionResult {
     id: string;
     text: string;
@@ -108,6 +108,50 @@ export interface AlbumPhotoMetadata {
     photoUrls: string[];
     contributionId: string;
 }
+export interface GiftListTypeData {
+    title: string;
+    occasionDate?: string | null;
+    participantUserIds?: string[];
+    drawEnabled?: boolean;
+    budget?: string | null;
+    exclusions?: Array<[string, string]>;
+}
+export interface GiftListParticipant {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    itemCount: number;
+}
+export interface GiftListEnrichment {
+    title: string;
+    occasionDate: string | null;
+    drawEnabled: boolean;
+    budget: string | null;
+    drawn: boolean;
+    drawnAt: string | null;
+    managerId: string;
+    isManager: boolean;
+    participants: GiftListParticipant[];
+    itemCount: number;
+    exclusions: Array<[string, string]> | null;
+    myRecipient: {
+        id: string;
+        name: string;
+        avatarUrl: string | null;
+    } | null;
+}
+export interface GiftListItem {
+    id: string;
+    postId: string;
+    ownerId: string;
+    title: string;
+    note: string | null;
+    url: string | null;
+    photoUrl: string | null;
+    position: number;
+    createdAt: string;
+    updatedAt: string;
+}
 export interface User {
     id: string;
     email: string;
@@ -122,6 +166,7 @@ export interface User {
     pushOnNewComment: boolean;
     pushOnNewLike: boolean;
     pushOnStory?: boolean;
+    pushOnGiftList?: boolean;
 }
 export interface Group {
     id: string;
@@ -152,6 +197,7 @@ export interface Post {
     poll?: PostPoll;
     trip?: TripEnrichment;
     album?: AlbumEnrichment;
+    giftList?: GiftListEnrichment;
     circleId?: string | null;
     circle?: {
         id: string;

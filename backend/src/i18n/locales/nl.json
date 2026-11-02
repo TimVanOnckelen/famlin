@@ -101,7 +101,21 @@
     "invalidLogo": "Het logo moet een PNG-, JPEG- of WebP-afbeelding zijn",
     "logoTooLarge": "Het logo is te groot (max. 5 MB, 4096×4096 px)",
     "backupInProgress": "Er loopt al een back-up.",
-    "restoreMediaMissing": "Vereiste media ontbreken of hebben een andere grootte in de geconfigureerde opslag."
+    "restoreMediaMissing": "Vereiste media ontbreken of hebben een andere grootte in de geconfigureerde opslag.",
+    "giftListNoCrossPost": "Een cadeaulijst hoort bij één familie en kan niet met meerdere tegelijk gedeeld worden.",
+    "giftListParticipantNotMember": "Elke deelnemer moet lid zijn van deze familie.",
+    "giftListInvalidExclusion": "Een uitsluiting kan alleen twee verschillende deelnemers koppelen.",
+    "giftListNotFound": "Cadeaulijst niet gevonden.",
+    "giftListNotManager": "Alleen wie deze cadeaulijst gestart is, kan dat doen.",
+    "giftListManagerCannotLeave": "Je hebt deze cadeaulijst gestart en kunt hem dus niet verlaten. Verwijder hem in de plaats.",
+    "giftListItemNotFound": "Wens niet gevonden.",
+    "giftListTooManyItems": "Een verlanglijst kan maximaal 100 wensen bevatten.",
+    "giftListInvalidOrder": "De nieuwe volgorde moet elk van je wensen precies één keer bevatten.",
+    "giftDrawDisabled": "Lootjes trekken staat niet aan voor deze cadeaulijst.",
+    "giftDrawTooFewParticipants": "Lootjes trekken kan pas vanaf 3 deelnemers.",
+    "giftDrawImpossible": "Met deze uitsluitingen is geen trekking mogelijk. Verwijder enkele uitsluitingen en probeer opnieuw.",
+    "giftAlreadyDrawn": "De lootjes zijn al getrokken.",
+    "giftDrawWillReset": "Deze wijziging maakt de huidige trekking ongedaan. Bevestig om opnieuw lootjes te trekken."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
@@ -128,7 +142,11 @@
     "newStory": "{{author}} deelde een verhaal in {{group}}",
     "storyReply": "{{author}} reageerde op je verhaal: \"{{excerpt}}\"",
     "storyReaction": "{{author}} reageerde met {{emoji}} op je verhaal in {{group}}",
-    "emailSubjectBranded": "Nieuwe activiteit bij {{name}}"
+    "emailSubjectBranded": "Nieuwe activiteit bij {{name}}",
+    "giftListInvite": "{{author}} heeft je toegevoegd aan de cadeaulijst \"{{title}}\"",
+    "giftDraw": "Je lootje voor \"{{title}}\" is getrokken.",
+    "giftListUpdated_one": "{{author}} heeft een wens toegevoegd aan hun lijst in \"{{title}}\"",
+    "giftListUpdated_other": "{{author}} heeft vandaag {{count}} wensen toegevoegd aan hun lijst in \"{{title}}\""
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} deelde een mijlpaal: {{milestoneTag}}",

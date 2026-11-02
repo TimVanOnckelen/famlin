@@ -4,6 +4,7 @@ import { milestoneHandler } from './milestone.js'
 import { pollHandler } from './poll.js'
 import { tripHandler, isTripCheckinMetadata } from './trip.js'
 import { albumHandler, isAlbumPhotoMetadata } from './album.js'
+import { giftListHandler } from './giftList.js'
 
 // The static post-type registry — adding a custom post type (an RSVP, ...) =
 // implement PostTypeHandler in a new file in this directory and add it here.
@@ -15,6 +16,7 @@ const handlers = new Map<string, PostTypeHandler>([
   [pollHandler.id, pollHandler],
   [tripHandler.id, tripHandler],
   [albumHandler.id, albumHandler],
+  [giftListHandler.id, giftListHandler],
 ])
 
 // A handler-authored Comment (a TRIP check-in, an ALBUM photo contribution)
