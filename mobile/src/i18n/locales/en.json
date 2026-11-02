@@ -158,14 +158,16 @@
       "milestone": "Milestone",
       "poll": "Poll",
       "trip": "Trip",
-      "album": "Album"
+      "album": "Album",
+      "gift_list": "Gift list"
     },
     "postTypeSubtitle": {
       "update": "Share a moment, photo or video",
       "milestone": "Birthday, birth, anniversary",
       "poll": "Ask the family a question",
       "trip": "Track a journey with check-ins",
-      "album": "A photo album the whole family adds to"
+      "album": "A photo album the whole family adds to",
+      "gift_list": "Wishlists, with an optional Secret Santa draw"
     },
     "album": {
       "titleLabel": "Album title",
@@ -229,7 +231,10 @@
       "unsupported_other": "{{count}} items aren't photos or videos Famlin can share.",
       "videoTooLong_one": "{{count}} video is longer than {{seconds}} seconds.",
       "videoTooLong_other": "{{count}} videos are longer than {{seconds}} seconds."
-    }
+    },
+    "giftListTitlePlaceholder": "Gift list title (e.g. Christmas 2026)",
+    "giftListParticipantsHint": "Pick who joins. You are always a participant.",
+    "giftListDescriptionPlaceholder": "Add a note for the participants… (optional)"
   },
   "poll": {
     "questionPlaceholder": "Ask a question...",
@@ -368,7 +373,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "Stories"
+    "notifyNewStory": "Stories",
+    "myGiftLists": "My gift lists",
+    "notifyGiftList": "Gift lists"
   },
   "tabs": {
     "feed": "Feed",
@@ -551,5 +558,56 @@
     "remove": "Remove",
     "share": "Share",
     "shareFailed": "Your story couldn't be shared."
+  },
+  "giftList": {
+    "badge": "GIFT LIST",
+    "headerTitle": "Gift list",
+    "openCta": "Open gift list",
+    "participantCount_one": "{{count}} participant",
+    "participantCount_other": "{{count}} participants",
+    "budgetValue": "Budget {{budget}}",
+    "buyingFor": "You're buying for {{name}}",
+    "drawPending": "Names not drawn yet",
+    "actionFailed": "That didn't work. Try again.",
+    "redrawConfirm": "This change discards the current Secret Santa draw. Draw all names again?",
+    "drawCta": "Draw names",
+    "drawNeedsThree": "A draw needs at least 3 participants.",
+    "manageCta": "Manage",
+    "deleteCta": "Delete gift list",
+    "deleteConfirm": "Delete this gift list and everyone's wishes?",
+    "leaveCta": "Leave gift list",
+    "leaveConfirm": "Leave this gift list? Your wishes will be removed.",
+    "myWishlist": "My wishlist",
+    "wishlistOf": "{{name}}'s wishlist",
+    "recipientBadge": "You buy for them",
+    "myWishlistEmpty": "Your wishlist is empty. Add your first wish.",
+    "wishlistEmpty": "No wishes yet.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "editItem": "Edit wish",
+    "deleteItem": "Delete wish",
+    "deleteItemConfirm": "Delete this wish?",
+    "addItem": "Add a wish",
+    "itemTitlePlaceholder": "What would you like?",
+    "itemNotePlaceholder": "Note (size, color…) — optional",
+    "itemUrlPlaceholder": "Link to a shop — optional",
+    "itemUrlInvalid": "Use a link starting with http:// or https://",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "participants": "Participants",
+    "saveParticipants": "Save participants",
+    "settings": "Settings",
+    "titleLabel": "Title",
+    "occasionDate": "Occasion date",
+    "budget": "Budget",
+    "budgetPlaceholder": "e.g. €25",
+    "drawEnabled": "Secret Santa draw",
+    "exclusions": "Exclusions",
+    "removeExclusion": "Remove exclusion",
+    "saveSettings": "Save settings",
+    "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners).",
+    "continue": "Continue",
+    "notAvailable": "This gift list is not available."
   }
 }

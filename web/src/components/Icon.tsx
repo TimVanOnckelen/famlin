@@ -72,6 +72,15 @@ const ICON_PATHS = {
   check: <polyline points="20 6 9 17 4 12" />,
   'chevron-left': <polyline points="15 18 9 12 15 6" />,
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
+  'chevron-up': <polyline points="18 15 12 9 6 15" />,
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  'external-link': (
+    <>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </>
+  ),
   bookmark: <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
   heart: (
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />

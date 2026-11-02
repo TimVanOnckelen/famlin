@@ -23,6 +23,7 @@ export function SearchPage({
   onOpenNotifications,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onLogout,
 }: {
   user: User
@@ -37,6 +38,7 @@ export function SearchPage({
   onOpenNotifications?: () => void
   onOpenTrip?: (id: string) => void
   onOpenAlbum?: (id: string) => void
+  onOpenGiftList?: (id: string) => void
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -69,6 +71,7 @@ export function SearchPage({
     if (target && !target.classList.contains('post-comments-btn')) return
     if (post.type === 'TRIP') onOpenTrip?.(post.id)
     else if (post.type === 'ALBUM') onOpenAlbum?.(post.id)
+    else if (post.type === 'GIFT_LIST') onOpenGiftList?.(post.id)
     else openPostModal(post.id)
   }
   return (
@@ -141,7 +144,13 @@ export function SearchPage({
           <div className="search-results">
             {posts.map((post) => (
               <div key={post.id} role="article" onClick={(event) => openPost(event, post)}>
-                <PostCard post={post} showGroup onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+                <PostCard
+                  post={post}
+                  showGroup
+                  onOpenTrip={onOpenTrip}
+                  onOpenAlbum={onOpenAlbum}
+                  onOpenGiftList={onOpenGiftList}
+                />
               </div>
             ))}
           </div>

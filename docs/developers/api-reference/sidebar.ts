@@ -432,6 +432,76 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Gift lists",
+      link: {
+        type: "doc",
+        id: "api-reference/gift-lists",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-my-gift-lists",
+          label: "List your gift lists",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/update-gift-list-settings",
+          label: "Change a gift list's settings",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/set-gift-list-participants",
+          label: "Replace a gift list's participants",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/leave-gift-list",
+          label: "Leave a gift list",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/draw-gift-list",
+          label: "Draw the Secret Santa names",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-gift-list-items",
+          label: "List every participant's wishes",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-gift-list-item",
+          label: "Add a wish to your list",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/reorder-gift-list-items",
+          label: "Reorder your wishes",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/update-gift-list-item",
+          label: "Edit one of your wishes",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-gift-list-item",
+          label: "Delete one of your wishes",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Notifications",
       link: {
         type: "doc",
@@ -461,6 +531,46 @@ const sidebar: SidebarsConfig = {
           id: "api-reference/mark-all-notifications-read",
           label: "Mark all notifications read",
           className: "api-method post",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Storage administration",
+      link: {
+        type: "doc",
+        id: "api-reference/storage-administration",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/update-admin-backup-settings",
+          label: "Update server settings (admin only; backup option shown here)",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-admin-storage",
+          label: "Storage configuration, availability, counts and migration progress (admin only)",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/start-storage-migration",
+          label: "Start or retry primary/fallback migration (admin only)",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/cleanup-storage-source",
+          label: "Remove verified source copies after migration (admin only)",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/export-admin-data",
+          label: "Portable family export (admin only)",
+          className: "api-method get",
         },
       ],
     },
@@ -756,6 +866,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/storymyreply",
           label: "StoryMyReply",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/postgiftlist",
+          label: "PostGiftList",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/giftlistitem",
+          label: "GiftListItem",
           className: "schema",
         },
         {

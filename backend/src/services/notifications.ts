@@ -68,6 +68,10 @@ const MESSAGE_KEY: Record<NotifyType, string> = {
   new_story: 'notifications.newStory',
   story_reply: 'notifications.storyReply',
   story_reaction: 'notifications.storyReaction',
+  gift_list_invite: 'notifications.giftListInvite',
+  gift_draw: 'notifications.giftDraw',
+  // count-pluralized like trip_checkin (same-day bundling).
+  gift_list_updated: 'notifications.giftListUpdated',
 }
 
 // Posts (and the posts on-this-day resurfaces) can be photo/video-only with
@@ -155,6 +159,7 @@ async function notify(options: NotifyOptions) {
       pushOnNewLike: true,
       pushOnChitchat: true,
       pushOnStory: true,
+      pushOnGiftList: true,
     },
   })
   if (recipients.length === 0) return
@@ -356,6 +361,7 @@ export async function resendPostPush(postId: string, triggeredByAdminId: string)
       pushOnNewLike: true,
       pushOnChitchat: true,
       pushOnStory: true,
+      pushOnGiftList: true,
     },
   })
 

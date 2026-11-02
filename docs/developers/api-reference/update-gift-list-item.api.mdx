@@ -1,0 +1,69 @@
+---
+id: update-gift-list-item
+title: "Edit one of your wishes"
+description: "Only your own wishes; anyone else's is `404`."
+sidebar_label: "Edit one of your wishes"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlV9tuGzcQ/ZXBvMQ2aMkJ/LQtCiiB27hIEcN2EBSWkaV2R1rGXJIhubJVQUA/ol/YLymGXFmK5bQJGuQlerF5mduZ4ZnZJVpHXkZlzWmNBXaulpF+UdP4SoV4GqlFgVHOAhZXyNugVYgBrwXWFCqvHItiga+NXsDCdh7srYFbFRoKP4A0C2sISAd6EkAFKI+PjssBCvT0oaMQn9t6gcUyLZWnGovoOxJYWRPJRD6SzmlVJReH7wMbW2KoGmol/xcXjrBAO3lPVUSBznNAUVFIpypq2roWoldmhgJbZV6RmcUGi6cCW3m3Xj07OloJNDY+KmY6reWEVWY3twSfHiXJzuv/FlwJdI2N9s1nXU4/Riw4a0IO7NnREf/5OAeXDUFOYJ0ygF8NR1Xv+slB2BBPHz+yt4b8J84+nZVvnIeHRTwyUDYxur2wX0JorAOtzM0Avyhfjykddk5bWYfhYDAowcnYCPAka5aCyQJiQ+lhPQngpI+qUk6aGMAavRj0SKus7968MpFm5Pm08sRJH8XHvJta38qIBXJhHEbVEov0dfL5Ipu84Uf0kIvz+LF6PDVzqVUN/VuHvYms4UNHfsFRypYi+SCgM6FzznouW+ftXNXkBVCsBvtfr4LJe+sfi/Vjl192rTSH69QIiF6aoNOLmiuZ8lSOqopcPHwlzayTMyqhIVmTh72STDksjS73B5hf7JrUrnr71xsQT9LGGr2nu+j9pkJQZiZAZRgF0J1jdQKsB09ze0M1VJ5qMlFJ/d1gdbyL1TkF2/mKwNgIU9uZ+rtAg4nh/iFhcbVEI1u+0hOzQMWuMd+g2OmxOwCsGXol7hWpSO3/UHQtsKXY2DoLVyydlBQ4lE4NZ2oaD9NEMVxmn1dDNhmGy2x5hQID+fk6vkTryBwdiuFwKlutzIDuZOs0DSrb7qTl9/VI8nO6CzU5bRct1wV7F6jqvIqLpHxC0pMfdezf1fX28QVHmMth+9J9wOwQ9kDwOl/acWYEjnywRmqQVUUhQLQ3ZGCvzJG8czK+4xYhoKd0UCaVzi1NQDq3D9aPjYRAIShr4Ne3lzD1toXy7PXFJSRMZRebobYzZcoBPLexAekJApmYNAXZEtzKRTE2JUdhvfojPYwCniev4cfk1E/lYGxSMfKDOd+MaycZ7a3xaqsTpn69Wed03S83TXRrGlBmareV9YkanZ2iQE58xq7qvOesPcT0ZM79pBfKpcJEaQMFiI0KcH5yccnaoDP81koGqYS///xrAwefxobGxk6nqlJSQ2snShNIU6+hD9AFGsBbxYDC1aOJvN4b1jQnzfQR2M7+2CxsB5U0MOmUrjcTcureefAOIGdSmRDz6VS2Si+ehD6YwdiMzUhr6OmMp+hQWUc1Dw4HBzNvOwcttRPyoVHu4KCAtU0eH9KckQPxKtLY3OsxkGQD7CWTisJ+kpyQtmYG0YokFhvyxFaN5boB6ZlfITYyjo0jn0MfwAURXL3hlpWAHZ2d7sIBU+uBC5RbVuZjkTya84Y1IZu8tZ57W/+uQyrEPG22MnF3z04ntYrAHxh2mrHL3x0Pa2S5aQVf/J3SP/BId3HotFTJk364zEx2hdIpFLjhMhRYbBiY6Yx3eiq9FtjYEFluuZzIQG+8Xq14O01GzDwC59KrPFFeLbFWgf+vsZhKHR7Ol9vB7Z33zLwPn3K935Rmwa9L6o5XKPCGFpu+wQ3gG1rtkVldrwTmjpjizocvsp3DS1axEd7p6Oxzlshd9l/vbvels9Hli5cocNJ/ira2ZiEvb7nVydvsqU2Bpw6Q9pao+y6OBWal/PsHmdBPCQ==
+sidebar_class_name: "patch api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Edit one of your wishes"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"patch"}
+  path={"/api/gift-lists/{postId}/items/{itemId}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Only your own wishes; anyone else's is `404`.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./update-gift-list-item.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./update-gift-list-item.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./update-gift-list-item.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

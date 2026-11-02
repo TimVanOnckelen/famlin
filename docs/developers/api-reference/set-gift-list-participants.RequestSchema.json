@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"userIds":{"type":"array","maxItems":49,"items":{"type":"string"}},"confirmRedraw":{"type":"boolean"}}}}}}}

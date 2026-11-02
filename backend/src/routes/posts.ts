@@ -35,6 +35,12 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js'
 import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js'
 import { getT } from '../i18n/index.js'
+import {
+  GIFT_LIST_POST_TYPE,
+  deleteOrphanedGiftListCircles,
+  deleteUnusedWishPhotos,
+  redactGiftListTypeData,
+} from '../services/giftLists.js'
 
 // A post's uploadedAssetUrls can include media proxy URLs (see
 // routes/media.ts and the legacy routes/immich.ts) alongside normal
@@ -259,7 +265,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // same 403 on purpose: a circle is fully private, so a non-member must
     // not be able to distinguish "not yours" from "doesn't exist" and probe
     // for circles they can't see.
-    const circleId = body.circleId ?? null
+    let circleId = body.circleId ?? null
     if (circleId && (await validateCircleTarget(circleId, targets[0], request.user!.id))) {
       return reply.status(403).send({ error: t('errors.notCircleMember') })
     }
@@ -325,21 +331,38 @@ export default async function postRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: t('errors.assetNotFoundOnPost') })
       }
 
-      const post = await prisma.post.create({
-        data: {
-          authorId: request.user!.id,
-          groupId,
-          content: body.content,
-          type: body.type,
-          typeData: toJsonInput(persistedTypeData),
-          milestoneTag: body.milestoneTag,
-          uploadedAssetUrls: body.uploadedAssetUrls || [],
-          latitude: body.latitude,
-          longitude: body.longitude,
-          locationName: body.locationName,
-          circleId,
-        },
-        include: postInclude(request.user!.id),
+      // A type with its own hidden audience (GIFT_LIST) creates that circle
+      // in the same transaction as the post, so neither can exist without
+      // the other. It can't also target a client-chosen circle.
+      if (postTypeHandler.createAudience && circleId) {
+        return reply.status(400).send({ error: t('errors.invalidPostTypeData') })
+      }
+
+      const post = await prisma.$transaction(async (tx) => {
+        if (postTypeHandler.createAudience) {
+          circleId = await postTypeHandler.createAudience({
+            tx,
+            groupId,
+            authorId: request.user!.id,
+            typeData: parsedTypeData,
+          })
+        }
+        return tx.post.create({
+          data: {
+            authorId: request.user!.id,
+            groupId,
+            content: body.content,
+            type: body.type,
+            typeData: toJsonInput(persistedTypeData),
+            milestoneTag: body.milestoneTag,
+            uploadedAssetUrls: body.uploadedAssetUrls || [],
+            latitude: body.latitude,
+            longitude: body.longitude,
+            locationName: body.locationName,
+            circleId,
+          },
+          include: postInclude(request.user!.id),
+        })
       })
 
       // Bind this post's photos to its audience so /uploads/* can authorize
@@ -575,7 +598,9 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.
     const [merged] = await mergeCrossPostActivity([updated], request.user!.id)
-    return { ...shapePost(merged, request.user!.id), people: [] }
+    // An admin moderating someone else's gift list gets it un-enriched, so
+    // strip the starter-only exclusions here (services/giftLists.ts).
+    return { ...redactGiftListTypeData(shapePost(merged, request.user!.id), request.user!.id), people: [] }
   })
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -601,6 +626,14 @@ export default async function postRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
+    // A gift list's wish photos go with it (collected before the cascade).
+    const wishPhotos =
+      post.type === GIFT_LIST_POST_TYPE
+        ? (await prisma.giftListItem.findMany({ where: { postId: id }, select: { photoUrl: true } })).map(
+            (i) => i.photoUrl
+          )
+        : []
+
     // Only the author's OWN delete fans out to every cross-posted sibling.
     // An admin moderating content (post.authorId !== request.user!.id, only
     // reachable via the isAdmin bypass above) always stays single-row and
@@ -610,6 +643,11 @@ export default async function postRoutes(fastify: FastifyInstance) {
       await prisma.post.deleteMany({ where: { crossPostId: post.crossPostId, authorId: request.user!.id } })
     } else {
       await prisma.post.delete({ where: { id } })
+    }
+    // A GIFT_LIST post's hidden audience circle exists only for it.
+    if (post.type === GIFT_LIST_POST_TYPE) {
+      await deleteOrphanedGiftListCircles()
+      await deleteUnusedWishPhotos(wishPhotos)
     }
 
     return { success: true }

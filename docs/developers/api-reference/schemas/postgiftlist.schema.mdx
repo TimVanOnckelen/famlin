@@ -1,0 +1,34 @@
+---
+id: postgiftlist
+title: "PostGiftList"
+description: "The enriched, read-time view of a `GIFT_LIST` post. Draw secrecy:"
+sidebar_label: "PostGiftList"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"title":"string","occasionDate":"2026-12-25","drawEnabled":true,"budget":"€25","drawn":true,"drawnAt":"2024-07-29T15:51:28.071Z","managerId":"string","isManager":true,"participants":[{"id":"string","name":"string","avatarUrl":"string","itemCount":0}],"itemCount":0,"exclusions":["string"],"myRecipient":{"id":"string","name":"string","avatarUrl":"string"}}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostGiftList"}
+>
+</Heading>
+
+
+
+The enriched, read-time view of a `GIFT_LIST` post. Draw secrecy:
+`myRecipient` is the only pairing any response ever carries.
+
+
+<Schema
+  {...require("./postgiftlist.Schema.json")}
+>
+  
+</Schema>
+            

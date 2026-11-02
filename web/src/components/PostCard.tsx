@@ -12,6 +12,7 @@ import { Lightbox } from '@/components/Lightbox'
 import { ShimmerImage } from '@/components/ShimmerImage'
 import { postTypeRenderers } from '@/components/postTypes'
 import { TripFeedCard } from '@/components/postTypes/TripFeedCard'
+import { GiftListFeedCard } from '@/components/postTypes/GiftListFeedCard'
 import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard'
 import { EditPostModal } from '@/components/EditPostModal'
 import { useDeletePost, useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
@@ -118,6 +119,7 @@ export function PostCard({
   showGroup = false,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   showComments = false,
   onDeleted,
 }: {
@@ -125,6 +127,7 @@ export function PostCard({
   showGroup?: boolean
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
   // The single-post page/modal shows the full thread unconditionally; the
   // feed shows only the comment-count line (clicking it opens that page) —
   // there is no inline expand/collapse any more (issue: web redesign phase 2).
@@ -148,6 +151,12 @@ export function PostCard({
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
     return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
+  }
+
+  // GIFT_LIST posts open their own page (wishlists, the draw) — the card is a
+  // summary with a "You're buying for X" line once the names are drawn.
+  if (post.type === 'GIFT_LIST') {
+    return <GiftListFeedCard post={post} showGroup={showGroup} onOpenGiftList={onOpenGiftList} />
   }
 
   return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} onDeleted={onDeleted} />

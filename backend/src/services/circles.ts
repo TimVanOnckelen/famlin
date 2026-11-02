@@ -6,6 +6,12 @@ import { prisma } from '../db.js'
 // never widens it — so every query below is written to be composed with the
 // existing group filter rather than to replace it.
 
+// Circle.kind of an admin-managed Family Circle. Any other kind is a system
+// audience owned by the feature that created it (GIFT_LIST, see
+// services/giftLists.ts) and must stay out of every circle listing and
+// management surface.
+export const MANAGED_CIRCLE_KIND = 'CIRCLE'
+
 export async function isCircleMember(circleId: string, userId: string): Promise<boolean> {
   const membership = await prisma.circleMember.findUnique({
     where: { circleId_userId: { circleId, userId } },
@@ -99,7 +105,10 @@ export async function validateCircleTarget(
   groupId: string,
   userId: string
 ): Promise<CircleTargetError | null> {
-  const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true } })
+  const circle = await prisma.circle.findUnique({ where: { id: circleId }, select: { groupId: true, kind: true } })
+  // A system circle (a gift list's hidden audience) is never a valid target
+  // for an ordinary post or story — it exists only for its one post.
+  if (circle && circle.kind !== MANAGED_CIRCLE_KIND) return 'circleNotFound'
   // A non-member must not be able to tell a circle apart from a circle that
   // doesn't exist, so "wrong group" and "not a member" are reported
   // distinctly here but collapse to the same 403 in the route.
