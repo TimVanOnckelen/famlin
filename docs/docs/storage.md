@@ -178,7 +178,7 @@ S3_SECRET_ACCESS_KEY=...
 
    For Nuremberg or Helsinki, replace `fsn1` in both lines with `nbg1` or `hel1`.
 
-Hetzner's S3 credentials give access to **every bucket in the project**, and you can't limit them to one bucket. Put Famlin in its own Hetzner project if that project also holds other buckets.
+By default, Hetzner's S3 credentials give access to **every bucket in the project**. You can restrict individual keys with [bucket policies](https://docs.hetzner.com/storage/object-storage/faq/s3-credentials/#how-do-i-restrict-access-per-key), or put Famlin in its own Hetzner project to isolate its storage.
 
 </details>
 
@@ -243,7 +243,7 @@ Create an application key or API token with read/write access to the bucket in t
 | `S3_REGION` | no | Defaults to `us-east-1`. Many self-hosted services accept any value. |
 | `S3_ENDPOINT` | no | Leave empty for AWS. For anything else, the service's URL (`http://` or `https://`, without user/password or query string). |
 | `S3_FORCE_PATH_STYLE` | no | `true` or `false` (default). Most self-hosted services (MinIO, Garage) need `true`. |
-| `S3_PREFIX` | no | Store everything under this "folder" in the bucket, e.g. `famlin` or `family/media`. Only letters, digits, `.`, `_` and `-` per segment. Useful to share a bucket. |
+| `S3_PREFIX` | no | Store everything under this "folder" in the bucket, e.g. `famlin` or `family/media`. Each segment must start with a letter, digit, `_` or `-`; subsequent characters may also include `.`. Empty segments are not allowed. Useful to share a bucket. |
 | `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | no | Set both, or neither. With neither, the standard AWS credential chain is used (for example an IAM role on an EC2 instance). |
 | `S3_SESSION_TOKEN` | no | Only for temporary credentials, together with the two above. |
 
@@ -253,8 +253,8 @@ Create an application key or API token with read/write access to the bucket in t
 docker compose -f docker-compose.yml up -d
 ```
 
-- If a setting is wrong, the backend stops right away with a clear message in `docker compose logs famlin-backend`. See [Troubleshooting](#troubleshooting).
-- `docker compose ps` shows `famlin-backend` as `healthy` once Famlin can write to the bucket. The health check writes and deletes a tiny test object every 30 seconds.
+- Invalid configuration, such as missing bucket names or incomplete credentials, stops startup with an error in `docker compose logs famlin-backend`. See [Troubleshooting](#troubleshooting). The S3 startup availability check has a five-second timeout. If primary initialization fails, Famlin logs an error and continues with the configured fallback if it initializes successfully. Fallback reads and writes remain active until restart, and media deletion, migration and cleanup are disabled until primary access is restored and the server is restarted. Without a usable fallback, startup fails.
+- `docker compose ps` shows `famlin-backend` as `healthy` once Famlin can reach the database and write to the active storage (primary, or fallback after startup failover). With active S3 storage, the health check writes and deletes a tiny test object every 30 seconds.
 - **Admin → Storage** shows the bucket, prefix, endpoint and region it uses, and whether the bucket is available.
 - Upload a photo in the app and check that it appears in the bucket.
 
@@ -338,7 +338,7 @@ Make sure the uploads volume has enough free space for the whole media library f
 
 The worker lists the source, copies each object by streaming it, and reads the destination again to verify the SHA-256 checksum. An existing identical object in the destination is verified and counted. A different one is recorded as a conflict and never overwritten. PostgreSQL advisory locks coordinate the worker with uploads and deletes in the running app, so a file deleted during the migration doesn't come back.
 
-Reads fall back to the old storage only when a file is *missing* from the primary. An access or connection error is reported as an error, never treated as "missing", so a misconfigured primary can't silently hide behind the fallback.
+When primary storage initializes successfully, reads fall back to the old storage only when a file is *missing* from the primary. An access or connection error during a read is reported as an error, never treated as "missing". Startup failover is separate: if primary initialization fails, the server logs the failure and uses an initialized fallback for reads and writes until restart. Migration and cleanup are blocked in that mode; restore primary access and restart before migrating files written to fallback.
 
 An interrupted migration resumes after a restart only when both locations' fingerprints still match. Cleanup is a separate action: it's only possible after a complete verification, and it needs the fallback's fingerprint typed in as confirmation. Before deleting, each source file and its copy are checked again. Changed, conflicting or unverified files are left in place.
 
@@ -366,12 +366,12 @@ An interrupted migration resumes after a restart only when both locations' finge
 | `S3 credentials must be configured together` | Set both the access key ID *and* the secret, or neither. A session token needs both. |
 | `Invalid S3 endpoint` | Use a full `http://` or `https://` URL, without user/password, `?query` or `#hash`. |
 | `S3_FORCE_PATH_STYLE must be true or false` | Use exactly `true` or `false`. |
-| `Invalid S3 prefix` | Use only letters, digits, `.`, `_` and `-`, with `/` between segments. |
+| `Invalid S3 prefix` | Separate non-empty segments with `/`. Start each segment with a letter, digit, `_` or `-`; use only letters, digits, `.`, `_` and `-` after that. For example, use `family/media`, not `.media` or `family//media`. |
 | `Unsupported storage driver` | `STORAGE_DRIVER` / `STORAGE_FALLBACK_DRIVER` must be `local` or `s3`. |
 | `Fallback storage directory must already exist` | The `STORAGE_FALLBACK_UPLOADS_DIR` folder doesn't exist in the container. Check the volume mount. |
 | `Storage directories overlap` / `Storage prefixes overlap` | Primary and fallback point to (part of) the same place. Use a different folder or prefix. |
 
-**`famlin-backend` shows as `unhealthy`.** The health check fails when the database is unreachable or Famlin can't write to its primary storage. `docker compose logs famlin-backend` says which one (`media storage not writable`). Check folder permissions (uid 1000) for local storage, and the key's permissions and the endpoint for S3.
+**`famlin-backend` shows as `unhealthy`.** The health check fails when the database is unreachable or Famlin can't write to its active storage (primary, or fallback after startup failover). `docker compose logs famlin-backend` says which one (`media storage not writable`). Check folder permissions (uid 1000) for local storage, and the key's permissions and the endpoint for S3.
 
 **Permission denied on a bind-mounted folder.** Run `chown -R 1000:1000` on the host folder, or on SMB mount it with `uid=1000,gid=1000`.
 
