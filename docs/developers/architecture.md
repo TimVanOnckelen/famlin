@@ -225,6 +225,12 @@ and lists their union. Keys are URL-relative; access checks still run before
 `derived/` belong to media storage; `branding/` remains local. Sharp/ffmpeg use
 request-scoped temporary directories removed on success and failure.
 
+On startup failure of primary initialization (S3 probe timeout: five seconds),
+an initialized fallback becomes the read/write backend for the process lifetime.
+The admin storage endpoint exposes `usingFallback` and marks primary unavailable
+without listing the failed backend. Deletes, migration and cleanup are blocked
+in this mode; restore access and restart before migrating fallback writes.
+
 Migration uses the operational `StorageMigration` / `StorageMigrationItem`
 tables, a PostgreSQL advisory job lock, and shared per-key transaction locks
 with writes/deletes. Each copy is checked by streamed SHA-256 reads; conflicts

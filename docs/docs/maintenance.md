@@ -235,6 +235,15 @@ the primary; reads try the primary, then the fallback only when an object is
 missing. An access or connection error is reported, rather than treated as a
 missing object.
 
+At startup, the S3 availability check has a five-second timeout. If primary
+initialization fails and the configured fallback initializes successfully,
+the server logs an error and continues with fallback reads and writes. The
+admin Storage page reports the unavailable primary and active fallback.
+This mode lasts until restart; media deletion, migration and cleanup are
+disabled to avoid leaving copies that could reappear after recovery. Restore
+primary access, restart, then migrate the files written to fallback. If no
+usable fallback exists, startup fails.
+
 For local → S3:
 
 ```dotenv

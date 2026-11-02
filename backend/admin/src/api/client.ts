@@ -155,6 +155,7 @@ export interface StorageLocationStatus {
   bytes: number | null
 }
 export interface StorageStatus {
+  usingFallback: boolean
   primary: StorageLocationStatus
   fallback: StorageLocationStatus | null
   migration: { status: string; error: string | null } | null

@@ -573,6 +573,7 @@
     }
   },
   "storage": {
+    "usingFallback": "Primary storage is unavailable. Fallback is being used for reads and writes. Media deletion, migration and cleanup are disabled. Restore access to primary storage and restart the server before migrating fallback data.",
     "title": "Storage",
     "description": "Configure storage through environment variables and restart. New media is written to primary storage; reads also use fallback.",
     "primary": "Primary storage",
