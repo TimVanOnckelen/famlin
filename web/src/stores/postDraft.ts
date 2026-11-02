@@ -2,7 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { randomUUID } from '@/utils/uuid'
 import type { MediaAsset, UploadSessionMedia } from '@famlin/api-client'
 
-export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'ALBUM'
+export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'ALBUM' | 'GIFT_LIST'
 export interface DraftAttachment {
   id: number
   file: Pick<File, 'name' | 'type'>
@@ -19,6 +19,11 @@ export interface PostDraftState {
   content: string
   pollOptions: string[]
   albumTitle: string
+  giftTitle: string
+  giftDate: string
+  giftParticipants: string[]
+  giftDrawEnabled: boolean
+  giftBudget: string
   files: DraftAttachment[]
   uploadSessionId: string
   sessionMedia: UploadSessionMedia[]
@@ -39,7 +44,7 @@ export interface PostDraftController {
   clear: () => void
 }
 const drafts = new Map<string, PostDraftController>()
-const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM']
+const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM', 'GIFT_LIST']
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const uploadUrl = (value: unknown): value is string => typeof value === 'string' && /^\/uploads\/[^/?#]+$/.test(value)
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -106,6 +111,11 @@ function restore(key: string | null, initial: PostDraftState): PostDraftState {
       type: draftTypes.includes(String(saved.type)) ? (saved.type as PostDraftType) : initial.type,
       content: typeof saved.content === 'string' ? saved.content.slice(0, 5000) : '',
       albumTitle: typeof saved.albumTitle === 'string' ? saved.albumTitle.slice(0, 120) : '',
+      giftTitle: typeof saved.giftTitle === 'string' ? saved.giftTitle.slice(0, 120) : '',
+      giftDate: typeof saved.giftDate === 'string' ? saved.giftDate.slice(0, 10) : '',
+      giftParticipants: strings(saved.giftParticipants) ? saved.giftParticipants : [],
+      giftDrawEnabled: saved.giftDrawEnabled === true,
+      giftBudget: typeof saved.giftBudget === 'string' ? saved.giftBudget.slice(0, 40) : '',
       pollOptions:
         strings(saved.pollOptions) && saved.pollOptions.length >= 2
           ? saved.pollOptions.slice(0, 10).map((item) => item.slice(0, 100))
@@ -157,6 +167,11 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
           content: draft.content,
           pollOptions: draft.pollOptions,
           albumTitle: draft.albumTitle,
+          giftTitle: draft.giftTitle,
+          giftDate: draft.giftDate,
+          giftParticipants: draft.giftParticipants,
+          giftDrawEnabled: draft.giftDrawEnabled,
+          giftBudget: draft.giftBudget,
           uploadSessionId: draft.uploadSessionId,
           sessionMedia: draft.sessionMedia,
           mediaAssets: draft.mediaAssets,
@@ -217,6 +232,7 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
     state.files.length ||
     state.mediaAssets.length ||
     state.albumTitle ||
+    state.giftTitle ||
     state.pollOptions.some(Boolean)
   )
     persist(state)

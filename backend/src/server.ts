@@ -111,4 +111,7 @@ async function start() {
   process.once('SIGINT', shutdown)
 }
 
-start()
+start().catch((err) => {
+  console.error('Backend startup failed:', err)
+  process.exit(1)
+})

@@ -159,14 +159,16 @@
       "milestone": "成长时刻",
       "poll": "投票",
       "trip": "旅程",
-      "album": "相册"
+      "album": "相册",
+      "gift_list": "礼物清单"
     },
     "postTypeSubtitle": {
       "update": "分享瞬间、照片或视频",
       "milestone": "生日、出生、纪念日",
       "poll": "问家人一个问题",
       "trip": "通过打卡记录旅程",
-      "album": "全家人一起添加照片的相册"
+      "album": "全家人一起添加照片的相册",
+      "gift_list": "愿望清单，可选神秘圣诞老人抽签"
     },
     "album": {
       "titleLabel": "相册标题",
@@ -229,7 +231,10 @@
       "unsupported_other": "{{count}} 项不是 Famlin 可分享的照片或视频。",
       "videoTooLong_one": "{{count}} 个视频超过 {{seconds}} 秒。",
       "videoTooLong_other": "{{count}} 个视频超过 {{seconds}} 秒。"
-    }
+    },
+    "giftListTitlePlaceholder": "礼物清单标题（例如：2026 圣诞节）",
+    "giftListParticipantsHint": "选择参与者。你始终是参与者之一。",
+    "giftListDescriptionPlaceholder": "给参与者留个言…（可选）"
   },
   "poll": {
     "questionPlaceholder": "提个问题…",
@@ -368,7 +373,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "限时动态"
+    "notifyNewStory": "限时动态",
+    "myGiftLists": "我的礼物清单",
+    "notifyGiftList": "礼物清单"
   },
   "tabs": {
     "feed": "动态",
@@ -551,5 +558,56 @@
     "remove": "移除",
     "share": "分享",
     "shareFailed": "故事分享失败。"
+  },
+  "giftList": {
+    "badge": "礼物清单",
+    "headerTitle": "礼物清单",
+    "openCta": "打开礼物清单",
+    "participantCount_one": "{{count}} 位参与者",
+    "participantCount_other": "{{count}} 位参与者",
+    "budgetValue": "预算 {{budget}}",
+    "buyingFor": "你要为 {{name}} 准备礼物",
+    "drawPending": "尚未抽签",
+    "actionFailed": "操作失败，请重试。",
+    "redrawConfirm": "这个更改会作废当前的神秘圣诞老人抽签结果。要重新抽签吗？",
+    "drawCta": "抽签",
+    "drawNeedsThree": "抽签至少需要 3 位参与者。",
+    "manageCta": "管理",
+    "deleteCta": "删除礼物清单",
+    "deleteConfirm": "删除这个礼物清单以及所有人的愿望吗？",
+    "leaveCta": "退出礼物清单",
+    "leaveConfirm": "退出这个礼物清单吗？你的愿望将被删除。",
+    "myWishlist": "我的愿望清单",
+    "wishlistOf": "{{name}} 的愿望清单",
+    "recipientBadge": "你为他们准备礼物",
+    "myWishlistEmpty": "你的愿望清单是空的。添加第一个愿望吧。",
+    "wishlistEmpty": "还没有愿望。",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "editItem": "编辑愿望",
+    "deleteItem": "删除愿望",
+    "deleteItemConfirm": "删除这个愿望吗？",
+    "addItem": "添加愿望",
+    "itemTitlePlaceholder": "你想要什么？",
+    "itemNotePlaceholder": "备注（尺码、颜色…）— 可选",
+    "itemUrlPlaceholder": "商店链接 — 可选",
+    "itemUrlInvalid": "请使用以 http:// 或 https:// 开头的链接",
+    "addPhoto": "添加照片",
+    "changePhoto": "更换照片",
+    "removePhoto": "移除照片",
+    "participants": "参与者",
+    "saveParticipants": "保存参与者",
+    "settings": "设置",
+    "titleLabel": "标题",
+    "occasionDate": "日期",
+    "budget": "预算",
+    "budgetPlaceholder": "例如 €25",
+    "drawEnabled": "神秘圣诞老人抽签",
+    "exclusions": "排除规则",
+    "removeExclusion": "删除排除规则",
+    "saveSettings": "保存设置",
+    "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。",
+    "continue": "继续",
+    "notAvailable": "这个礼物清单不可用。"
   }
 }

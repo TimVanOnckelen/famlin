@@ -110,6 +110,26 @@ export interface DomainEvents {
     fromUserName: string
     content: string
   }
+  // Gift lists (issue #307, routes/giftLists.ts). Payloads carry ids only:
+  // the subscriber re-reads the list's title and current participants, so a
+  // stale payload can never notify someone who has since left.
+  'giftList.participantsAdded': {
+    postId: string
+    actorId: string
+    actorName: string
+    userIds: string[]
+  }
+  // A Secret Santa draw was made or redone. Deliberately carries no pairing
+  // — notifications must never name anyone's recipient.
+  'giftList.drawn': {
+    postId: string
+    actorId: string
+  }
+  'giftList.itemAdded': {
+    postId: string
+    ownerId: string
+    ownerName: string
+  }
 }
 
 type Handler<K extends keyof DomainEvents> = (payload: DomainEvents[K]) => void | Promise<void>

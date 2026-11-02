@@ -75,7 +75,9 @@
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
-    "membersTitle": "Gezinsleden"
+    "membersTitle": "Gezinsleden",
+    "viewMembers": "Leden bekijken",
+    "viewAllMembers": "Alle leden bekijken"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -117,7 +119,11 @@
     "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw.",
     "audience": "Wie kan dit zien?",
     "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
-    "audienceEveryone": "Iedereen"
+    "audienceEveryone": "Iedereen",
+    "typeGiftList": "Cadeaulijst",
+    "giftListTitlePlaceholder": "Titel van de cadeaulijst (bv. Kerstmis 2026)",
+    "giftListParticipantsHint": "Kies wie meedoet. Jij doet altijd mee.",
+    "giftListDescriptionPlaceholder": "Voeg een berichtje toe voor de deelnemers… (optioneel)"
   },
   "editPost": {
     "title": "Bericht bewerken",
@@ -169,7 +175,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "Verhalen (alleen push)"
+    "notifyNewStory": "Verhalen (alleen push)",
+    "myGiftLists": "Mijn cadeaulijsten",
+    "notifyGiftList": "Cadeaulijsten"
   },
   "apiTokens": {
     "menuItem": "API-tokens",
@@ -413,5 +421,72 @@
     "noGroups": "Word lid van een familie om berichten te zoeken.",
     "loadFailed": "Zoekresultaten konden niet worden geladen.",
     "loadMore": "Meer laden"
+  },
+  "members": {
+    "title": "Leden",
+    "description": "Je families en de kringen waar je bij hoort.",
+    "yourCircles": "Jouw kringen",
+    "noCircles": "Je zit niet in een kring binnen deze familie.",
+    "noFamilies": "Je bent nog geen lid van een familie. Vraag de beheerder van je familie om je toe te voegen.",
+    "noMembers": "Geen leden om te tonen.",
+    "familiesFailed": "Je families konden niet worden geladen.",
+    "familyMembersFailed": "De leden van deze familie konden niet worden geladen.",
+    "circlesFailed": "Je kringen binnen deze familie konden niet worden geladen.",
+    "circleMembersFailed": "De leden van deze kring konden niet worden geladen.",
+    "count_one": "{{count}} lid",
+    "count_other": "{{count}} leden"
+  },
+  "giftList": {
+    "badge": "CADEAULIJST",
+    "headerTitle": "Cadeaulijst",
+    "openCta": "Cadeaulijst openen",
+    "participantCount_one": "{{count}} deelnemer",
+    "participantCount_other": "{{count}} deelnemers",
+    "budgetValue": "Budget {{budget}}",
+    "buyingFor": "Jij koopt een cadeau voor {{name}}",
+    "drawPending": "Nog geen lootjes getrokken",
+    "notAvailable": "Deze cadeaulijst is niet beschikbaar.",
+    "actionFailed": "Dat is niet gelukt. Probeer opnieuw.",
+    "redrawConfirm": "Deze wijziging maakt de huidige trekking ongedaan. Alle lootjes opnieuw trekken?",
+    "drawCta": "Lootjes trekken",
+    "drawNeedsThree": "Lootjes trekken kan pas vanaf 3 deelnemers.",
+    "manageCta": "Beheren",
+    "deleteCta": "Cadeaulijst verwijderen",
+    "deleteConfirm": "Deze cadeaulijst en ieders wensen verwijderen?",
+    "leaveCta": "Cadeaulijst verlaten",
+    "leaveConfirm": "Deze cadeaulijst verlaten? Je wensen worden verwijderd.",
+    "myWishlist": "Mijn verlanglijst",
+    "wishlistOf": "Verlanglijst van {{name}}",
+    "recipientBadge": "Jij koopt voor hen",
+    "myWishlistEmpty": "Je verlanglijst is leeg. Voeg je eerste wens toe.",
+    "wishlistEmpty": "Nog geen wensen.",
+    "moveUp": "Omhoog",
+    "moveDown": "Omlaag",
+    "editItem": "Wens bewerken",
+    "deleteItem": "Wens verwijderen",
+    "deleteItemConfirm": "Deze wens verwijderen?",
+    "addItem": "Wens toevoegen",
+    "itemTitlePlaceholder": "Wat wil je graag?",
+    "itemNotePlaceholder": "Opmerking (maat, kleur…) — optioneel",
+    "itemUrlPlaceholder": "Link naar een webshop — optioneel",
+    "itemUrlInvalid": "Gebruik een link die begint met http:// of https://",
+    "addPhoto": "Foto toevoegen",
+    "changePhoto": "Foto wijzigen",
+    "removePhoto": "Foto verwijderen",
+    "participants": "Deelnemers",
+    "saveParticipants": "Deelnemers opslaan",
+    "settings": "Instellingen",
+    "titleLabel": "Titel",
+    "occasionDate": "Datum van de gelegenheid",
+    "budget": "Budget",
+    "budgetPlaceholder": "bv. €25",
+    "drawEnabled": "Lootjes trekken",
+    "exclusions": "Uitsluitingen",
+    "exclusionsHint": "Koppels die elkaar niet mogen trekken, zoals partners.",
+    "removeExclusion": "Uitsluiting verwijderen",
+    "exclusionPerson": "Persoon {{number}}",
+    "addExclusion": "Uitsluiting toevoegen",
+    "saveSettings": "Instellingen opslaan",
+    "photoUploadFailed": "De foto kon niet worden geüpload. Probeer een andere."
   }
 }

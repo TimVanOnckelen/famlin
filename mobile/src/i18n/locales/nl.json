@@ -159,14 +159,16 @@
       "milestone": "Mijlpaal",
       "poll": "Poll",
       "trip": "Reis",
-      "album": "Album"
+      "album": "Album",
+      "gift_list": "Cadeaulijst"
     },
     "postTypeSubtitle": {
       "update": "Deel een moment, foto of video",
       "milestone": "Verjaardag, geboorte, jubileum",
       "poll": "Stel de familie een vraag",
       "trip": "Volg een reis met check-ins",
-      "album": "Een fotoalbum waar de hele familie aan toevoegt"
+      "album": "Een fotoalbum waar de hele familie aan toevoegt",
+      "gift_list": "Verlanglijstjes, eventueel met lootjes trekken"
     },
     "album": {
       "titleLabel": "Albumtitel",
@@ -229,7 +231,10 @@
       "unsupported_other": "{{count}} items zijn geen foto's of video's die Famlin kan delen.",
       "videoTooLong_one": "{{count}} video is langer dan {{seconds}} seconden.",
       "videoTooLong_other": "{{count}} video's zijn langer dan {{seconds}} seconden."
-    }
+    },
+    "giftListTitlePlaceholder": "Titel van de cadeaulijst (bv. Kerstmis 2026)",
+    "giftListParticipantsHint": "Kies wie meedoet. Jij doet altijd mee.",
+    "giftListDescriptionPlaceholder": "Voeg een berichtje toe voor de deelnemers… (optioneel)"
   },
   "poll": {
     "questionPlaceholder": "Stel een vraag...",
@@ -368,7 +373,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "Verhalen"
+    "notifyNewStory": "Verhalen",
+    "myGiftLists": "Mijn cadeaulijsten",
+    "notifyGiftList": "Cadeaulijsten"
   },
   "tabs": {
     "feed": "Feed",
@@ -551,5 +558,56 @@
     "remove": "Verwijderen",
     "share": "Delen",
     "shareFailed": "Je verhaal kon niet worden gedeeld."
+  },
+  "giftList": {
+    "badge": "CADEAULIJST",
+    "headerTitle": "Cadeaulijst",
+    "openCta": "Cadeaulijst openen",
+    "participantCount_one": "{{count}} deelnemer",
+    "participantCount_other": "{{count}} deelnemers",
+    "budgetValue": "Budget {{budget}}",
+    "buyingFor": "Jij koopt een cadeau voor {{name}}",
+    "drawPending": "Nog geen lootjes getrokken",
+    "actionFailed": "Dat is niet gelukt. Probeer opnieuw.",
+    "redrawConfirm": "Deze wijziging maakt de huidige trekking ongedaan. Alle lootjes opnieuw trekken?",
+    "drawCta": "Lootjes trekken",
+    "drawNeedsThree": "Lootjes trekken kan pas vanaf 3 deelnemers.",
+    "manageCta": "Beheren",
+    "deleteCta": "Cadeaulijst verwijderen",
+    "deleteConfirm": "Deze cadeaulijst en ieders wensen verwijderen?",
+    "leaveCta": "Cadeaulijst verlaten",
+    "leaveConfirm": "Deze cadeaulijst verlaten? Je wensen worden verwijderd.",
+    "myWishlist": "Mijn verlanglijst",
+    "wishlistOf": "Verlanglijst van {{name}}",
+    "recipientBadge": "Jij koopt voor hen",
+    "myWishlistEmpty": "Je verlanglijst is leeg. Voeg je eerste wens toe.",
+    "wishlistEmpty": "Nog geen wensen.",
+    "moveUp": "Omhoog",
+    "moveDown": "Omlaag",
+    "editItem": "Wens bewerken",
+    "deleteItem": "Wens verwijderen",
+    "deleteItemConfirm": "Deze wens verwijderen?",
+    "addItem": "Wens toevoegen",
+    "itemTitlePlaceholder": "Wat wil je graag?",
+    "itemNotePlaceholder": "Opmerking (maat, kleur…) — optioneel",
+    "itemUrlPlaceholder": "Link naar een webshop — optioneel",
+    "itemUrlInvalid": "Gebruik een link die begint met http:// of https://",
+    "addPhoto": "Foto toevoegen",
+    "changePhoto": "Foto wijzigen",
+    "removePhoto": "Foto verwijderen",
+    "participants": "Deelnemers",
+    "saveParticipants": "Deelnemers opslaan",
+    "settings": "Instellingen",
+    "titleLabel": "Titel",
+    "occasionDate": "Datum van de gelegenheid",
+    "budget": "Budget",
+    "budgetPlaceholder": "bv. €25",
+    "drawEnabled": "Lootjes trekken",
+    "exclusions": "Uitsluitingen",
+    "removeExclusion": "Uitsluiting verwijderen",
+    "saveSettings": "Instellingen opslaan",
+    "exclusionsHintMobile": "Tik op een persoon en daarna op een andere, zodat ze elkaar niet kunnen trekken (bv. partners).",
+    "continue": "Doorgaan",
+    "notAvailable": "Deze cadeaulijst is niet beschikbaar."
   }
 }

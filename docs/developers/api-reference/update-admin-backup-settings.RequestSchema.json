@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"backupIncludeMedia":{"type":"boolean","default":true,"description":"When false, backup the database and local branding without downloading media or deleting the existing media mirror."}}}}}}}

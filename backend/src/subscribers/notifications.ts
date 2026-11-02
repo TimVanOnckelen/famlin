@@ -1,10 +1,18 @@
 import { onDomainEvent } from '../events.js'
 import { prisma } from '../db.js'
-import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js'
+import {
+  notifyGroup,
+  notifyUser,
+  notifyUsers,
+  excerptText,
+  reactionEmoji,
+  SYSTEM_SENDER_ID,
+} from '../services/notifications.js'
 import { getAllSettings } from '../services/settings.js'
 import i18n from '../i18n/index.js'
 import { isTripCheckinMetadata } from '../services/postTypes/trip.js'
 import { isAlbumPhotoMetadata } from '../services/postTypes/album.js'
+import { GIFT_LIST_POST_TYPE, getParticipantIds, isGiftListTypeData } from '../services/giftLists.js'
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
@@ -21,6 +29,14 @@ export function registerNotificationSubscriber(): void {
   registered = true
 
   onDomainEvent('post.created', async (event) => {
+    // A gift list notifies its participants they were added — never the
+    // generic new_post (the hidden circle would narrow that to participants
+    // anyway, but "X added you to Y" is the useful message).
+    if (event.type === GIFT_LIST_POST_TYPE) {
+      await notifyGiftListInvite(event.posts[0].postId, event.authorId, event.authorName)
+      return
+    }
+
     // Cross-posting fans one write out into several sibling Posts (one per
     // target group) — a member of more than one target group must still get
     // exactly one notification, not one per group they're in. Every member
@@ -381,6 +397,54 @@ export function registerNotificationSubscriber(): void {
     })
   })
 
+  onDomainEvent('giftList.participantsAdded', async (event) => {
+    await notifyGiftListInvite(event.postId, event.actorId, event.actorName, event.userIds)
+  })
+
+  onDomainEvent('giftList.drawn', async (event) => {
+    const list = await loadGiftList(event.postId)
+    if (!list) return
+    // No recipient name anywhere in this text: it renders on lock screens.
+    // Sent by the system, so the person whose action triggered a (re)draw —
+    // a participating admin, the starter — learns their new name too.
+    await notifyUsers({
+      type: 'gift_draw',
+      userIds: list.participantIds,
+      senderId: SYSTEM_SENDER_ID,
+      postId: event.postId,
+      params: { title: list.title },
+    })
+  })
+
+  onDomainEvent('giftList.itemAdded', async (event) => {
+    // Only the GIVER of the wisher hears about it, and only while a draw is
+    // active — without a draw nobody is "responsible" for this person, so
+    // it stays silent (no spam to the whole list).
+    const list = await loadGiftList(event.postId)
+    if (!list?.drawn) return
+    const assignment = await prisma.giftDrawAssignment.findUnique({
+      where: { postId_recipientId: { postId: event.postId, recipientId: event.ownerId } },
+      select: { giverId: true },
+    })
+    if (!assignment) return
+
+    const startOfTodayUtc = new Date()
+    startOfTodayUtc.setUTCHours(0, 0, 0, 0)
+    // Wishes added before today's draw aren't news to this giver.
+    const since = new Date(Math.max(startOfTodayUtc.getTime(), list.drawnAt!.getTime()))
+    const count = await prisma.giftListItem.count({
+      where: { postId: event.postId, ownerId: event.ownerId, createdAt: { gte: since } },
+    })
+    await notifyUsers({
+      type: 'gift_list_updated',
+      userIds: [assignment.giverId],
+      senderId: event.ownerId,
+      postId: event.postId,
+      params: { author: event.ownerName, title: list.title, count },
+      bundleSince: startOfTodayUtc,
+    })
+  })
+
   onDomainEvent('chat.created', async (event) => {
     // The one central group chat notifies every OTHER member of the group
     // (notifyGroup already excludes the sender) — mirrors new_post's
@@ -401,5 +465,39 @@ export function registerNotificationSubscriber(): void {
         excerpt: excerptText(event.content, event.hasAttachment ? '📷' : ''),
       },
     })
+  })
+}
+
+async function loadGiftList(postId: string) {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { typeData: true, circleId: true, groupId: true },
+  })
+  if (!post?.circleId || !isGiftListTypeData(post.typeData)) return null
+  return {
+    title: post.typeData.title,
+    drawn: !!post.typeData.drawnAt,
+    drawnAt: post.typeData.drawnAt ? new Date(post.typeData.drawnAt) : null,
+    participantIds: await getParticipantIds({ circleId: post.circleId, groupId: post.groupId }),
+  }
+}
+
+async function notifyGiftListInvite(
+  postId: string,
+  actorId: string,
+  actorName: string,
+  // Omitted at creation: everyone on the list (bar the starter) is new.
+  userIds?: string[]
+): Promise<void> {
+  const list = await loadGiftList(postId)
+  if (!list) return
+  await notifyUsers({
+    type: 'gift_list_invite',
+    // Narrowed to the CURRENT participants, which (unlike notify()'s circle
+    // filter) also requires them to still be in the family.
+    userIds: userIds ? userIds.filter((id) => list.participantIds.includes(id)) : list.participantIds,
+    senderId: actorId,
+    postId,
+    params: { author: actorName, title: list.title },
   })
 }

@@ -27,11 +27,13 @@ export function PostDetailModal({
   onClose,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
 }: {
   postId: string
   onClose: () => void
   onOpenTrip?: (postId: string) => void
   onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
 }) {
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -50,7 +52,8 @@ export function PostDetailModal({
   useEffect(() => {
     if (post?.type === 'TRIP' && onOpenTrip) onOpenTrip(post.id)
     else if (post?.type === 'ALBUM' && onOpenAlbum) onOpenAlbum(post.id)
-  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum])
+    else if (post?.type === 'GIFT_LIST' && onOpenGiftList) onOpenGiftList(post.id)
+  }, [post?.id, post?.type, onOpenTrip, onOpenAlbum, onOpenGiftList])
 
   // The API answers 404 (or 403) for a post that doesn't exist *or* that the
   // viewer can't see — deliberately indistinguishable, so this is too.
@@ -158,6 +161,7 @@ export function PostDetailModal({
               showComments
               onOpenTrip={onOpenTrip}
               onOpenAlbum={onOpenAlbum}
+              onOpenGiftList={onOpenGiftList}
               onDeleted={onClose}
             />
           </div>

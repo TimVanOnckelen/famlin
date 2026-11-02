@@ -419,7 +419,8 @@
     "MILESTONE": "成长时刻",
     "POLL": "投票",
     "TRIP": "旅程",
-    "ALBUM": "相册"
+    "ALBUM": "相册",
+    "GIFT_LIST": "礼物清单"
   },
   "circles": {
     "heading_one": "{{count}} 个圈子",
@@ -521,7 +522,8 @@
       "free": "共 {{total}}，剩余 {{free}}",
       "low": "不足",
       "unavailable": "不可用",
-      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。"
+      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。",
+      "s3Capacity": "媒体存储在 S3 中。S3 API 不提供存储桶的总容量和可用容量。"
     },
     "integrations": {
       "title": "集成",
@@ -571,6 +573,7 @@
     }
   },
   "storage": {
+    "usingFallback": "主存储不可用，正在使用备用存储进行读写。媒体删除、迁移和清理已禁用。请恢复主存储访问并重启服务器，然后迁移备用数据。",
     "title": "存储",
     "description": "通过环境变量配置存储并重启。新媒体写入主存储，读取也会使用备用存储。",
     "primary": "主存储",
@@ -606,6 +609,11 @@
       "conflict": "冲突",
       "deleted": "已删除",
       "source_removed": "来源已移除"
-    }
+    },
+    "size": "大小",
+    "migrationTitle": "迁移",
+    "errors": "错误（{{count}}）",
+    "cleanupLocked": "完成迁移校验后才能清理源存储。",
+    "confirmPlaceholder": "粘贴源存储指纹"
   }
 }

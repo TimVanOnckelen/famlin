@@ -36,6 +36,7 @@ import { getStorage } from './storage/registry.js'
 import { appendStoredObject } from './storage/archive.js'
 import { getUserCircleIds, visiblePostsWhere } from './circles.js'
 import { uploadAssetKey, canReadUpload } from './uploads.js'
+import { redactGiftListTypeData } from './giftLists.js'
 import pkg from '../../package.json' with { type: 'json' }
 
 // Matches every /uploads/<file> path embedded anywhere in the exported rows —
@@ -101,7 +102,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   const chatGroupIds = groups.filter((g) => g.chitchatEnabled).map((g) => g.id)
   const otherUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))].filter((id) => id !== userId)
 
-  const [comments, favorites, chatMessages, otherUsers] = await Promise.all([
+  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftDrawAssignments] = await Promise.all([
     prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
     prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
     // Only groups with chat switched on — a disabled group's chat is
@@ -113,6 +114,11 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
       where: { id: { in: otherUserIds } },
       select: { id: true, email: true, name: true, avatarUrl: true },
     }),
+    // Every wishlist on the gift lists the caller can see (posts above are
+    // already narrowed to their hidden circles) — as in the app.
+    prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
+    // Secret Santa: ONLY the caller's own assignment, never anyone else's.
+    prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
   ])
 
   const commentIds = comments.map((c) => c.id)
@@ -125,11 +131,15 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   const data = {
     users,
     groups,
-    posts,
+    // A gift list's exclusions are the starter's configuration (and hint at
+    // pairings), so they're stripped exactly as the app strips them.
+    posts: posts.map((post) => redactGiftListTypeData(post, userId)),
     comments,
     reactions,
     favorites,
     chatMessages: visibleChat,
+    giftListItems,
+    giftDrawAssignments,
   }
   const serialized = Object.fromEntries(
     Object.entries(data).map(([key, rows]) => [key, JSON.stringify(rows, null, 2)])
@@ -175,6 +185,8 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
       reactions: reactions.length,
       favorites: favorites.length,
       chatMessages: visibleChat.length,
+      giftListItems: giftListItems.length,
+      giftDrawAssignments: giftDrawAssignments.length,
       uploadFiles: uploadFiles.length,
     },
   }
@@ -187,6 +199,8 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   archive.append(serialized.reactions, { name: 'data/reactions.json' })
   archive.append(serialized.favorites, { name: 'data/favorites.json' })
   archive.append(serialized.chatMessages, { name: 'data/chat-messages.json' })
+  archive.append(serialized.giftListItems, { name: 'data/gift-list-items.json' })
+  archive.append(serialized.giftDrawAssignments, { name: 'data/gift-draw-assignments.json' })
 
   for (const file of uploadFiles) {
     appendStoredObject(archive, file.rel)

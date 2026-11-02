@@ -47,6 +47,12 @@ model User {
   // one push per author per group per day (see the story.created handler in
   // src/subscribers/notifications.ts). Push-only, no email counterpart.
   pushOnStory       Boolean           @default(false)
+  // Push for gift lists (issue #307): being added to one, the Secret Santa
+  // draw happening, and the person you're buying for adding wishes.
+  pushOnGiftList    Boolean           @default(true)
+  giftListItems     GiftListItem[]
+  giftsToGive       GiftDrawAssignment[] @relation("GiftDrawGiver")
+  giftsToReceive    GiftDrawAssignment[] @relation("GiftDrawRecipient")
   stories           Story[]
   storyViews        StoryView[]
   storyReactions    StoryReaction[]
@@ -164,6 +170,8 @@ model Post {
   likes             Like[]
   favorites         Favorite[]
   notifications     Notification[]
+  giftListItems     GiftListItem[]
+  giftDrawAssignments GiftDrawAssignment[]
   // System chat messages (kind: SYSTEM_MILESTONE) that deep-link back to this
   // post — see ChatMessage.refPostId below.
   chatMessages      ChatMessage[]
@@ -487,6 +495,14 @@ model Circle {
   group       Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   name        String
   description String?
+  // 'CIRCLE' = an admin-managed Family Circle. 'GIFT_LIST' = the hidden,
+  // system-managed audience of one GIFT_LIST post (services/giftLists.ts):
+  // reusing Circle means visiblePostsWhere, filterRecipientsByCircle, upload
+  // scoping and the admin content exclusions all fail closed for gift lists
+  // with no extra code. Non-'CIRCLE' circles are hidden from GET /api/circles
+  // and from every admin circle-management route; their membership is owned
+  // by the gift list's starter.
+  kind        String         @default("CIRCLE")
   // An /uploads/ path like User.avatarUrl. Deliberately readable by anyone
   // who can see the circle at all (i.e. its members) — bound with a null
   // scope so the avatar itself isn't circle-restricted media.
@@ -719,4 +735,47 @@ model StorageMigrationItem {
   updatedAt   DateTime @updatedAt
   migration   StorageMigration @relation(fields: [migrationId], references: [id], onDelete: Cascade)
   @@id([migrationId, key])
+}
+
+// One wish on a participant's wishlist inside a GIFT_LIST post (issue #307).
+// Mutable, per-owner rows — hence a table rather than Comment.metadata.
+// There is deliberately no "claimed"/"bought" state: the Secret Santa draw
+// prevents duplicate gifts instead.
+model GiftListItem {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title     String
+  note      String?
+  // http(s) only, validated in routes/giftLists.ts.
+  url       String?
+  // An /uploads/ path, bound to the gift list's hidden circle.
+  photoUrl  String?
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, ownerId, position])
+  @@index([ownerId])
+}
+
+// One Secret Santa pairing. SECRET: only ever returned to its own giver
+// (routes/giftLists.ts) — no member-facing response, admin screen or log
+// exposes the full set. The admin backup export is the one exception.
+model GiftDrawAssignment {
+  id          String   @id @default(cuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  giverId     String
+  giver       User     @relation("GiftDrawGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User     @relation("GiftDrawRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([postId, giverId])
+  @@unique([postId, recipientId])
+  @@index([giverId])
+  @@index([recipientId])
 }

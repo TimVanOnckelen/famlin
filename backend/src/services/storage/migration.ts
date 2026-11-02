@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { prisma } from '../../db.js'
-import { getStorageConfiguration, isMediaKey } from './registry.js'
+import { getStorageConfiguration, getStorageRuntimeStatus, isMediaKey } from './registry.js'
 import { withStorageKey } from './locks.js'
 import type { StorageBackend } from './types.js'
 
@@ -38,6 +38,7 @@ export async function storageStatus() {
   const { primary, fallback } = getStorageConfiguration()
   async function describe(c: typeof primary) {
     try {
+      if (c === primary && getStorageRuntimeStatus().usingFallback) throw new Error('Primary storage unavailable')
       let files = 0,
         bytes = 0
       for await (const o of c.backend.list()) {
@@ -72,6 +73,7 @@ export async function storageStatus() {
       })
     : []
   return {
+    ...getStorageRuntimeStatus(),
     primary: await describe(primary),
     fallback: fallback ? await describe(fallback) : null,
     migration,
@@ -81,6 +83,10 @@ export async function storageStatus() {
 }
 
 export async function startStorageMigration(cleanupSource?: string): Promise<void> {
+  if (getStorageRuntimeStatus().usingFallback)
+    throw new StorageMigrationError(
+      'Primary storage unavailable; restore access and restart before migration or cleanup'
+    )
   const { primary, fallback } = configured()
   if (running || starting) throw new StorageMigrationError('Storage operation already running')
   starting = true

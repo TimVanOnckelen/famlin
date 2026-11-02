@@ -1,6 +1,7 @@
 // Admin-only full data export: everything a family would consider "their
 // content" — users (safe fields only), groups/membership, circles and their
-// members, posts (with poll votes and other per-type interactions),
+// members, posts (with poll votes and other per-type interactions), gift
+// list wishes and Secret Santa pairings,
 // comments, reactions, favorites, chat messages and read positions, linked
 // media albums and people mappings, the Upload access-index rows, and the
 // whole uploads directory (including originals) — bundled as a single zip
@@ -67,6 +68,8 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
     uploads,
     highlights,
     liveStories,
+    giftListItems,
+    giftDrawAssignments,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -84,6 +87,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
         pushOnNewLike: true,
         pushOnChitchat: true,
         pushOnStory: true,
+        pushOnGiftList: true,
       },
     }),
     prisma.group.findMany({
@@ -122,6 +126,11 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
       },
     }),
     prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
+    prisma.giftListItem.findMany(),
+    // Secret Santa pairings: a backup must restore a gift list exactly, so
+    // they're in the archive — the one place the full set leaves the
+    // database (an admin-only download, never a member-facing response).
+    prisma.giftDrawAssignment.findMany(),
   ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
@@ -155,6 +164,8 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
       mediaPersonLinks: mediaPersonLinks.length,
       uploads: uploads.length,
       highlights: highlights.length,
+      giftListItems: giftListItems.length,
+      giftDrawAssignments: giftDrawAssignments.length,
       branding: branding.length,
     },
   }
@@ -173,6 +184,8 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
   archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
   archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
+  archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
+  archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)

@@ -1,0 +1,72 @@
+---
+id: leave-gift-list
+title: "Leave a gift list"
+description: "Removes you and your wishlist. The starter can't leave (`400`) — they"
+sidebar_label: "Leave a gift list"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVs2O20YMfhViLrEXirwtchKKAg66bbfYosHuBkGwXkS0RFmTjGYmM5S9jiGgD9En7JMUHGl/Gqc99dScbM2QQ/Ij+ZEH5TwFZO3sea0KZQi39JNu+EJHVpli3ERV3Cg5AqMjR3WbqZpiFbQXLVWoS+rcliLsXQ9oa/kNsNOxFfkcrluCyBiYAlRonzEkIzArX5yelnP48/c/gFvar2xNhpjkA7yLDNpGJqxzWFrAivWWoA64Ax0hUO0swU5z63pOpme0pbBfWY+BdaU9WhZJ61g3mup5Bi5AZQgD1bBryYJmsA6MsxsK8LFHI4IxX1mVKY8BO2IKEv5BWexIFUrcOq9VprQE7pFblalAH3sdqFYFh54yFauWOlTFQfHei1bkoO1GDcOtCEfvbKQo99+ensrP3+F863ow1Aj6lbNMlkUGvTe6SolavI8ieDg25NbvqRJFHyStrEczsa8qivGJ4No5Qyhx0h123tDo+zBkijXLp7qalIZBTl98ydNzu0WjaxAAKDLM1ljDx57CHh7hy6C3sffeBaYafHBbXVPIgLjK5/9djBSCC8eYf16rP/cd2ueBsMa1oQw4oI0GxbWtxlR65bKqyPPzC7SbHjdUQktYU4BZSbZclNaU81wJKI+Jv5ns3z7id5YO7tH75hi9X3WM2m4y0COMGdCdl+dSoQbaug9UQxWoJssazVeD1YtjrC4puj5UJN0Mjett/VWgMWSqI26dMPNIjomZuFWFWqDXi41u+Hmi5cVh5KZh8YT/4qITjUhhe09kfTCqUC2zj8Vi0WBntM0nEsgr1x3F/VbY3O0s/JhkoSZv3L4T4IXPIlV90LxPj6+FXMOyFwdvbp9eX0kyRryfCj2ALg6piToTQSWhI2eW4ClEZ9EAJnoCdh/IwqwcI3nnkd/leV5m0jgpOdqm3OxoDej9HFxYWYRIMWpn4Zc319AE10H56rera0igYs/twriNtmUOLx23gIEgkuX0UsSOYIf7YmVLicIF/SlVXgEvk9fwXXLq+1ImieRQ28alWKcET0guX52rTElmxuCqPgSB9fOgz2Su3cM/5lKowkWKwK2OcHl2dS2vQW+l2kqJoryfq6O/csstraxrGl1pNNC5tTaUBvaETYQ+Ug5vtEQMN19E+na2qGlLRhooip35ysrwrdDCutdmmv5SL9oybcbVIgJuUKb5eNtgp83+WZyCyVd2ZZfGwNTQMrVj5TzVsN7DyckmuN5DR92aQmy1Pzkp4N6ms2YP0pRjIEEzrezDOxaSboRZMqkpzpPmmmToA7ssqXFLgcZdQRILGIRhgFvklfUUxtBzuCKCm9dC2gnY5avzYzigcQGkgoS0R0bKkkdbOXA2jiZ3Lgi7T42Xdo4hS+tFh4m9poXjIq1KCJv7/evz6jg80uD/cxGbCILpjhfeoE5AJRY7TFR4o9BrlalHMlSZKh5Wtad8qIRQhWtbF1k0D4c1RnodzDDIcVpehLsytcWghekTsdU6yv9aFQ2aSP+Sg9nlRO1z+Cfnp0O0e2l/NL18qUx9oP3jijncDpkax0fyYLwcB8wTtaPBJ6T7MDN+OLs4uz5Tw/AXyxQvYQ==
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Leave a gift list"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/gift-lists/{postId}/participants/me"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Removes you and your wishlist. The starter can't leave (`400`) — they
+delete the post instead. An active draw is redone without you (every
+participant is notified), or cleared when it no longer qualifies.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./leave-gift-list.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./leave-gift-list.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./leave-gift-list.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

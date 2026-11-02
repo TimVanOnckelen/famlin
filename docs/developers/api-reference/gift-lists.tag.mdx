@@ -1,0 +1,27 @@
+---
+id: gift-lists
+title: "Gift lists"
+description: "Gift lists"
+custom_edit_url: null
+---
+
+
+
+Wishlists with an optional Secret Santa draw (`GIFT_LIST` posts). A gift
+list is created through `POST /api/posts` with `type: "GIFT_LIST"`; its
+audience is a hidden set of hand-picked participants from one family,
+and every endpoint here returns `404` to anyone who isn't one of them.
+After the draw each participant sees **only their own** recipient
+(`giftList.myRecipient` on the post) — no response exposes the full
+set of pairings, not even to the starter.
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

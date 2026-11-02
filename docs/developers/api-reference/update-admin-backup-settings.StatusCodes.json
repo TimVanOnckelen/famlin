@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"Updated server settings"},"401":{"description":"Authentication required"},"403":{"description":"Administrator required"}}}

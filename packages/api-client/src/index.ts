@@ -98,6 +98,10 @@ export type {
   AlbumLatestContribution,
   AlbumEnrichment,
   AlbumPhotoMetadata,
+  GiftListTypeData,
+  GiftListParticipant,
+  GiftListEnrichment,
+  GiftListItem,
   Comment,
   Notification,
 } from './types'
@@ -139,6 +143,21 @@ export {
   addAlbumPhotos,
   closeAlbum,
 } from './posts'
+
+export type { GiftListItemBody, GiftListSettingsBody } from './giftLists'
+export {
+  fetchMyGiftLists,
+  fetchGiftListItems,
+  createGiftListItem,
+  updateGiftListItem,
+  deleteGiftListItem,
+  reorderGiftListItems,
+  updateGiftListSettings,
+  setGiftListParticipants,
+  drawGiftList,
+  leaveGiftList,
+  isGiftDrawResetConflict,
+} from './giftLists'
 
 export type { CreateCommentBody, UpdateCommentBody } from './comments'
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments'

@@ -69,3 +69,20 @@
   font-weight: 600;
   color: var(--fam-text-body);
 }
+
+.side-panel-members-link {
+  display: block;
+  margin-top: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fam-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.side-panel-members-link:hover {
+  text-decoration: underline;
+}

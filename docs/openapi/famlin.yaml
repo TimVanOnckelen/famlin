@@ -88,6 +88,15 @@ tags:
       sees who viewed, reacted and replied. An author can pin a live story to
       keep it forever as one of the group's Highlights; an unpinned story is
       permanently deleted — photo included — once its 24 hours are up.
+  - name: Gift lists
+    description: |
+      Wishlists with an optional Secret Santa draw (`GIFT_LIST` posts). A gift
+      list is created through `POST /api/posts` with `type: "GIFT_LIST"`; its
+      audience is a hidden set of hand-picked participants from one family,
+      and every endpoint here returns `404` to anyone who isn't one of them.
+      After the draw each participant sees **only their own** recipient
+      (`giftList.myRecipient` on the post) — no response exposes the full
+      set of pairings, not even to the starter.
   - name: Notifications
     description: Your in-app notification history.
   - name: Storage administration
@@ -291,6 +300,9 @@ paths:
                 pushOnStory:
                   type: boolean
                   description: Opt-in push for other members' new stories (push only, off by default).
+                pushOnGiftList:
+                  type: boolean
+                  description: Push for gift lists — being added, the Secret Santa draw, and wishes added by the person you're buying for (push only, on by default).
       responses:
         '200':
           description: Updated user
@@ -823,6 +835,17 @@ paths:
         cross-posted album stays **one** album whose contributions land in
         every target group's copy. The album's photos are stored as its
         contribution comments, not on `uploadedAssetUrls`.
+
+        `type: "GIFT_LIST"` creates a gift list in **one** family (no
+        cross-posting, no `circleId`): `typeData` carries
+        `{ title, occasionDate?, participantUserIds?, drawEnabled?, budget?, exclusions? }`
+        — `title` (1-120 chars) is required; `occasionDate` is `YYYY-MM-DD`;
+        `participantUserIds` (up to 49) are the other participants, each a
+        member of the group (you are always one); `budget` is free text (≤40
+        chars); `exclusions` are pairs of participant ids that may not draw
+        each other (symmetric). Only participants can see the post anywhere.
+        Wishlists, participant changes, settings and the draw are managed
+        through the Gift lists endpoints afterwards.
       requestBody:
         required: true
         content:
@@ -857,9 +880,9 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST]
                   default: UPDATE
-                  description: A server may support additional types beyond these five.
+                  description: A server may support additional types beyond these six.
                 typeData:
                   type: object
                   description: |
@@ -869,6 +892,8 @@ paths:
                     For `TRIP`: `{ title, destination?, startDate, endDate?, coverPhotoUrl?, travelerUserIds? }`
                     (see the `TRIP` description above). For `ALBUM`:
                     `{ title, coverPhotoUrl? }` (see the `ALBUM` description above).
+                    For `GIFT_LIST`: `{ title, occasionDate?, participantUserIds?, drawEnabled?, budget?, exclusions? }`
+                    (see the `GIFT_LIST` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -2857,6 +2882,375 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /api/gift-lists:
+    get:
+      operationId: listMyGiftLists
+      tags: [Gift lists]
+      summary: List your gift lists
+      description: |
+        Every gift list you participate in, across all your families, newest
+        occasion date first (lists without a date sort by creation date).
+        Not paginated — capped at 200.
+      responses:
+        '200':
+          description: Your gift lists, as posts carrying `giftList`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/gift-lists/{postId}:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      operationId: updateGiftListSettings
+      tags: [Gift lists]
+      summary: Change a gift list's settings
+      description: |
+        Starter only. Turning the draw off or changing `exclusions` after the
+        names were drawn discards the draw: that is refused with `409` unless
+        `confirmRedraw: true`, which then redraws (and notifies every
+        participant) — or, with the draw turned off, simply clears it. New
+        exclusions that make every draw impossible are refused (`400`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                occasionDate: { type: string, nullable: true, example: '2026-12-25' }
+                drawEnabled: { type: boolean }
+                budget: { type: string, nullable: true, maxLength: 40 }
+                exclusions:
+                  type: array
+                  items:
+                    type: array
+                    minItems: 2
+                    maxItems: 2
+                    items: { type: string }
+                confirmRedraw: { type: boolean }
+      responses:
+        '200':
+          description: The updated post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You didn't start this gift list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The change would discard the draw; resend with `confirmRedraw`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/gift-lists/{postId}/participants:
+    put:
+      operationId: setGiftListParticipants
+      tags: [Gift lists]
+      summary: Replace a gift list's participants
+      description: |
+        Starter only. `userIds` are everyone besides the starter, each a
+        member of the family. Removed participants lose their wishlist. New
+        participants get a `gift_list_invite` notification. After the draw a
+        change needs `confirmRedraw: true` (`409` otherwise) and then redraws
+        from scratch, notifying every participant — or clears the draw when it
+        no longer qualifies (fewer than 3 people, impossible exclusions).
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  maxItems: 49
+                  items: { type: string }
+                confirmRedraw: { type: boolean }
+      responses:
+        '200':
+          description: The updated post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You didn't start this gift list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The change would discard the draw; resend with `confirmRedraw`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/gift-lists/{postId}/participants/me:
+    delete:
+      operationId: leaveGiftList
+      tags: [Gift lists]
+      summary: Leave a gift list
+      description: |
+        Removes you and your wishlist. The starter can't leave (`400`) — they
+        delete the post instead. An active draw is redone without you (every
+        participant is notified), or cleared when it no longer qualifies.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: You left
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/gift-lists/{postId}/draw:
+    post:
+      operationId: drawGiftList
+      tags: [Gift lists]
+      summary: Draw the Secret Santa names
+      description: |
+        Starter only, once, with the draw enabled and at least 3
+        participants. Everyone gives to exactly one other participant and
+        never to someone they're excluded with; `400` when no such draw
+        exists. Every participant gets a `gift_draw` notification, which never
+        names their recipient.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The post, with your own `giftList.myRecipient`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You didn't start this gift list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The names were already drawn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/gift-lists/{postId}/items:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listGiftListItems
+      tags: [Gift lists]
+      summary: List every participant's wishes
+      description: |
+        Everyone's wishlist, the wisher's own included — there is no way to
+        mark a wish as claimed or bought. Ordered by owner, then position.
+      responses:
+        '200':
+          description: All wishes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GiftListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createGiftListItem
+      tags: [Gift lists]
+      summary: Add a wish to your list
+      description: |
+        Appended at the end of your list (at most 100 wishes). While a draw is
+        active, the person buying for you gets a `gift_list_updated`
+        notification (same-day additions are bundled).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 1, maxLength: 200 }
+                note: { type: string, nullable: true, maxLength: 1000 }
+                url: { type: string, nullable: true, description: An `http(s)` link. }
+                photoUrl: { type: string, nullable: true, description: An `/uploads/...` path. }
+      responses:
+        '200':
+          description: The new wish
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftListItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/gift-lists/{postId}/items/order:
+    put:
+      operationId: reorderGiftListItems
+      tags: [Gift lists]
+      summary: Reorder your wishes
+      description: '`itemIds` must list each of your own wishes exactly once, in the new order.'
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemIds]
+              properties:
+                itemIds:
+                  type: array
+                  items: { type: string }
+      responses:
+        '200':
+          description: Your wishes in their new order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GiftListItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/gift-lists/{postId}/items/{itemId}:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: itemId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      operationId: updateGiftListItem
+      tags: [Gift lists]
+      summary: Edit one of your wishes
+      description: Only your own wishes; anyone else's is `404`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1, maxLength: 200 }
+                note: { type: string, nullable: true, maxLength: 1000 }
+                url: { type: string, nullable: true }
+                photoUrl: { type: string, nullable: true }
+      responses:
+        '200':
+          description: The updated wish
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftListItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteGiftListItem
+      tags: [Gift lists]
+      summary: Delete one of your wishes
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /api/push-tokens:
     post:
       operationId: registerPushToken
@@ -3302,6 +3696,11 @@ components:
           description: |
             Push notifications for other members' new stories — off by default,
             at most one per author per group per day (email variant not supported).
+        pushOnGiftList:
+          type: boolean
+          description: |
+            Push notifications for gift lists (`gift_list_invite`, `gift_draw`,
+            `gift_list_updated`) — on by default (email variant not supported).
 
     Group:
       type: object
@@ -3484,6 +3883,15 @@ components:
             of the album (photo/contributor counts, resolved contributors, a
             small photo collage). Computed on every read, so — like `poll` and
             `trip` — it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
+        giftList:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostGiftList'
+          description: |
+            Present only when `type` is `GIFT_LIST` — participants, wishlist
+            counts and **your own** Secret Santa recipient. Computed on every
+            read, so it's absent from `POST /api/posts` and
             `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
@@ -3881,6 +4289,73 @@ components:
         content: { type: string }
         createdAt: { type: string, format: date-time }
 
+    PostGiftList:
+      type: object
+      description: |
+        The enriched, read-time view of a `GIFT_LIST` post. Draw secrecy:
+        `myRecipient` is the only pairing any response ever carries.
+      properties:
+        title: { type: string }
+        occasionDate:
+          type: string
+          nullable: true
+          example: '2026-12-25'
+        drawEnabled: { type: boolean }
+        budget:
+          type: string
+          nullable: true
+          example: €25
+        drawn: { type: boolean }
+        drawnAt:
+          type: string
+          format: date-time
+          nullable: true
+        managerId:
+          type: string
+          description: The starter, who manages participants, settings and the draw.
+        isManager: { type: boolean }
+        participants:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/UserSummary'
+              - type: object
+                properties:
+                  itemCount: { type: integer }
+        itemCount: { type: integer }
+        exclusions:
+          type: array
+          nullable: true
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items: { type: string }
+          description: Pairs that may not draw each other — only returned to the starter (`null` for everyone else).
+        myRecipient:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          description: Who you're buying for, once the names are drawn.
+    GiftListItem:
+      type: object
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        ownerId: { type: string }
+        title: { type: string, maxLength: 200 }
+        note: { type: string, nullable: true, maxLength: 1000 }
+        url:
+          type: string
+          nullable: true
+          description: An `http(s)` shop link.
+        photoUrl:
+          type: string
+          nullable: true
+          description: An `/uploads/...` path, readable by the list's participants only.
+        position: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     Story:
       type: object
       properties:
@@ -4018,7 +4493,7 @@ components:
         id: { type: string }
         type:
           type: string
-          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, `trip_checkin`, `album_photo`, `new_story`, `story_reply`, or `story_reaction`.'
+          description: '`new_post`, `new_comment`, `new_like_post`, `new_like_comment`, `mention`, `on_this_day`, `trip_checkin`, `album_photo`, `new_story`, `story_reply`, `story_reaction`, `gift_list_invite`, `gift_draw`, or `gift_list_updated`. A `gift_draw` message never names your recipient.'
         message: { type: string }
         relatedPostId:
           type: string

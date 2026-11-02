@@ -15,6 +15,7 @@ import { ReactorStack } from '@/components/ReactorStack'
 import { Scrim } from '@/components/Scrim'
 import { postTypeRenderers } from '@/components/postTypes'
 import { TripCard } from '@/components/TripCard'
+import { GiftListCard } from '@/components/GiftListCard'
 import { AlbumCard } from '@/components/AlbumCard'
 import { Post, PostPerson, ReactionType } from '@/types'
 import { REACTION_EMOJI } from '@/constants/reactions'
@@ -172,6 +173,11 @@ export const PostCard = React.memo(function PostCard({ post, showGroup = false }
         <AlbumCard post={post} showGroup={showGroup} />
       </UploadProcessingContext.Provider>
     )
+  }
+
+  // GIFT_LIST posts open their own screen (wishlists, the draw).
+  if (post.type === 'GIFT_LIST') {
+    return <GiftListCard post={post} showGroup={showGroup} />
   }
 
   return (

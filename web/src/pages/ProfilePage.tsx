@@ -2,6 +2,7 @@ import { FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
+  fetchMyGiftLists,
   uploadFiles,
   changePassword,
   deleteAccount,
@@ -17,6 +18,7 @@ import { Avatar } from '@/components/Avatar'
 import { AppShell } from '@/components/AppShell'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { ApiTokensModal } from '@/components/ApiTokensModal'
+import { formatDayMonth } from '@/utils/time'
 import { useAuthStore } from '@/stores/authStore'
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n'
 import './ProfilePage.css'
@@ -28,6 +30,7 @@ import './ProfilePage.css'
 export function ProfilePage({
   user,
   onBack,
+  onOpenGiftList,
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
@@ -37,6 +40,7 @@ export function ProfilePage({
 }: {
   user: User
   onBack: () => void
+  onOpenGiftList?: (postId: string) => void
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenFavorites?: () => void
@@ -67,6 +71,9 @@ export function ProfilePage({
   })
   const showPush = notificationConfig?.pushEnabled ?? true
   const showEmail = notificationConfig?.emailEnabled ?? true
+
+  // "My gift lists" (issue #307): every gift list the user takes part in.
+  const { data: giftLists = [] } = useQuery({ queryKey: ['gift-lists'], queryFn: fetchMyGiftLists })
 
   const { data: serverInfo } = useQuery({
     queryKey: ['server-info'],
@@ -176,6 +183,7 @@ export function ProfilePage({
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
+    { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
   ]
 
   function handleLanguageChange(lang: SupportedLanguage) {
@@ -221,6 +229,35 @@ export function ProfilePage({
             </div>
           )}
         </section>
+
+        {giftLists.length > 0 && (
+          <section className="profile-section">
+            <h2 className="profile-section-title">{t('profile.myGiftLists')}</h2>
+            {giftLists.map((post) => (
+              <button
+                key={post.id}
+                type="button"
+                className="profile-gift-list-row"
+                onClick={() => onOpenGiftList?.(post.id)}
+              >
+                <Icon name="gift" size={18} />
+                <span className="profile-gift-list-text">
+                  <span className="profile-setting-label">{post.giftList?.title}</span>
+                  <span className="profile-gift-list-meta">
+                    {[
+                      post.giftList?.occasionDate && formatDayMonth(post.giftList.occasionDate, i18nInstance.language),
+                      post.group?.name,
+                      post.giftList?.myRecipient && t('giftList.buyingFor', { name: post.giftList.myRecipient.name }),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </span>
+                <Icon name="chevron-right" size={18} />
+              </button>
+            ))}
+          </section>
+        )}
 
         {(showPush || showEmail) && (
           <section className="profile-section">

@@ -1,6 +1,12 @@
 import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createPost, fetchMyCircles, getGroupMediaAlbums, uploadFilesInSession } from '@famlin/api-client'
+import {
+  createPost,
+  fetchGroupMembers,
+  fetchMyCircles,
+  getGroupMediaAlbums,
+  uploadFilesInSession,
+} from '@famlin/api-client'
 import { NewPostModal } from '../NewPostModal'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
 import { useAuthStore } from '@/stores/authStore'
@@ -10,6 +16,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   getGroupMediaAlbums: vi.fn(),
   fetchMyCircles: vi.fn(),
+  fetchGroupMembers: vi.fn(),
   uploadFilesInSession: vi.fn(),
   createPost: vi.fn(),
   addAlbumPhotos: vi.fn(),
@@ -33,6 +40,9 @@ beforeEach(() => {
   useAuthStore.setState({ user: makeUser({ id: userId }) })
   vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
   vi.mocked(fetchMyCircles).mockResolvedValue([])
+  vi.mocked(fetchGroupMembers).mockResolvedValue([
+    { id: 'participant', name: 'Anna', email: 'anna@example.com', joinedAt: '2026-01-01' },
+  ])
   vi.mocked(createPost).mockResolvedValue({ id: 'created-post' } as never)
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-preview')
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
@@ -40,6 +50,53 @@ beforeEach(() => {
 afterEach(() => {
   act(() => useAuthStore.setState({ user: null }))
   vi.restoreAllMocks()
+})
+
+it('restores gift-list settings from a saved draft and publishes them without media', async () => {
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      version: 1,
+      uploadSessionId: '11111111-1111-4111-8111-111111111111',
+      type: 'GIFT_LIST',
+      selectedGroupIds: ['group-1'],
+      giftTitle: 'Christmas',
+      giftDate: '2026-12-25',
+      giftParticipants: ['participant'],
+      giftDrawEnabled: true,
+      giftBudget: '€50',
+    })
+  )
+  const first = open()
+  expect(screen.getByPlaceholderText('Gift list title (e.g. Christmas 2026)')).toHaveValue('Christmas')
+  expect(screen.getByLabelText('Occasion date')).toHaveValue('2026-12-25')
+  expect(screen.getByRole('checkbox', { name: 'Secret Santa draw' })).toBeChecked()
+  expect(await screen.findByRole('button', { name: 'Anna' })).toHaveAttribute('aria-pressed', 'true')
+  const user = userEvent.setup()
+  await user.type(screen.getByPlaceholderText('Gift list title (e.g. Christmas 2026)'), ' party')
+  expect(saved().giftTitle).toBe('Christmas party')
+  first.unmount()
+  open()
+  expect(screen.getByPlaceholderText('Gift list title (e.g. Christmas 2026)')).toHaveValue('Christmas party')
+  expect(screen.queryByRole('button', { name: 'Add photos' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Post' }))
+  await waitFor(() =>
+    expect(createPost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'GIFT_LIST',
+        groupId: 'group-1',
+        typeData: {
+          title: 'Christmas party',
+          occasionDate: '2026-12-25',
+          participantUserIds: ['participant'],
+          drawEnabled: true,
+          budget: '€50',
+        },
+        uploadedAssetUrls: [],
+      })
+    )
+  )
+  await waitFor(() => expect(localStorage.getItem(key)).toBeNull())
 })
 
 it('restores text, poll settings and selected groups after closing the editor', async () => {

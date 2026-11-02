@@ -3,13 +3,15 @@ import userEvent from '@testing-library/user-event'
 import { useLocation } from 'react-router'
 import { FeedPage } from '@/pages/FeedPage'
 import { createTestQueryClient, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { fetchGroups, fetchMyCircles, fetchPosts } from '@famlin/api-client'
+import { fetchGroups, fetchMyCircles, fetchPosts, fetchGroupMembers, fetchOnThisDay } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchGroups: vi.fn(),
   fetchMyCircles: vi.fn(),
   fetchPosts: vi.fn(),
+  fetchGroupMembers: vi.fn(),
+  fetchOnThisDay: vi.fn(),
 }))
 
 // Surfaces the router's current location as text, so a test can assert on
@@ -33,6 +35,8 @@ const groups = [
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchGroups).mockResolvedValue(groups)
+  vi.mocked(fetchGroupMembers).mockResolvedValue([])
+  vi.mocked(fetchOnThisDay).mockResolvedValue([])
   // No circles by default — the circle filter row only appears for a viewer
   // who is actually in one.
   vi.mocked(fetchMyCircles).mockResolvedValue([])
@@ -244,4 +248,46 @@ it('opens search with the current single-family filter', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Neefjes' }))
   await userEvent.click(screen.getAllByRole('button', { name: 'Search' })[0])
   expect(onOpenSearch).toHaveBeenCalledWith('group-2')
+})
+
+it('opens all members from the feed header and scopes navigation when one family is selected', async () => {
+  const onOpenMembers = vi.fn()
+  const user = userEvent.setup()
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={onOpenMembers} />
+  )
+  await user.click(await screen.findByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
+  await user.click(screen.getByRole('button', { name: 'Neefjes' }))
+  await user.click(screen.getByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-2')
+  await user.click(screen.getByRole('button', { name: 'Familie de Vries' }))
+  await user.click(screen.getByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
+})
+
+it('offers both header and side-panel navigation for a user in one family', async () => {
+  vi.mocked(fetchGroups).mockResolvedValue([groups[0]])
+  vi.mocked(fetchGroupMembers).mockResolvedValue([
+    { id: 'member-1', name: 'Anna', email: 'anna@example.com', joinedAt: '2026-01-01' },
+  ])
+  const onOpenMembers = vi.fn()
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={onOpenMembers} />
+  )
+  await userEvent.click(await screen.findByRole('button', { name: 'View members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-1')
+  await userEvent.click(await screen.findByRole('button', { name: 'View all members' }))
+  expect(onOpenMembers).toHaveBeenLastCalledWith('group-1')
+})
+
+it('does not show member navigation for a user with no families', async () => {
+  vi.mocked(fetchGroups).mockResolvedValue([])
+  vi.mocked(fetchPosts).mockResolvedValue({ items: [], nextCursor: null })
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} onOpenMembers={vi.fn()} />
+  )
+  await screen.findByText(/You're not part of any family yet/)
+  expect(screen.queryByRole('button', { name: 'View members' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'View all members' })).not.toBeInTheDocument()
 })

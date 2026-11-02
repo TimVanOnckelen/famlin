@@ -235,6 +235,36 @@ describe('POST /api/auth/setup/restore', () => {
       data: { provider: 'immich', externalPersonId: 'p1', label: 'Grandma', userId: member.id },
     })
 
+    // A gift list: hidden circle, a wish, and a (two-person, test-only) draw.
+    const giftCircle = await prisma.circle.create({
+      data: {
+        groupId: group.id,
+        kind: 'GIFT_LIST',
+        name: 'Xmas',
+        members: { create: [{ userId: admin.id }, { userId: member.id }] },
+      },
+    })
+    const giftList = await prisma.post.create({
+      data: {
+        groupId: group.id,
+        authorId: admin.id,
+        circleId: giftCircle.id,
+        type: 'GIFT_LIST',
+        typeData: { title: 'Xmas', occasionDate: null, drawEnabled: true, budget: null, exclusions: [], drawnAt: null },
+        uploadedAssetUrls: [],
+      },
+    })
+    await prisma.giftListItem.create({
+      data: { postId: giftList.id, ownerId: member.id, title: 'Scarf', url: 'https://example.com', position: 0 },
+    })
+    await prisma.giftDrawAssignment.createMany({
+      data: [
+        { postId: giftList.id, giverId: admin.id, recipientId: member.id },
+        { postId: giftList.id, giverId: member.id, recipientId: admin.id },
+      ],
+    })
+    await prisma.user.update({ where: { id: member.id }, data: { pushOnGiftList: false } })
+
     // Stories: a pinned Highlight (restored, with its reaction) and a live
     // story (deliberately not exported — nor are views or private replies).
     await prisma.group.update({ where: { id: group.id }, data: { storiesEnabled: false } })
@@ -305,6 +335,8 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: await prisma.upload.findMany({ where: { assetKey: { not: liveKey } }, orderBy: { id: 'asc' } }),
       stories: await prisma.story.findMany({ where: { pinnedAt: { not: null } }, orderBy: { id: 'asc' } }),
       storyReactions: await prisma.storyReaction.findMany({ orderBy: { id: 'asc' } }),
+      giftListItems: await prisma.giftListItem.findMany({ orderBy: { id: 'asc' } }),
+      giftDrawAssignments: await prisma.giftDrawAssignment.findMany({ orderBy: { id: 'asc' } }),
       branding: await prisma.setting.findMany({
         where: { key: { startsWith: 'brand' } },
         orderBy: { key: 'asc' },
@@ -338,9 +370,9 @@ describe('POST /api/auth/setup/restore', () => {
       users: 2,
       groups: 1,
       groupMembers: 2,
-      circles: 1,
-      circleMembers: 1,
-      posts: 3,
+      circles: 2,
+      circleMembers: 3,
+      posts: 4,
       postInteractions: 1,
       comments: 2,
       reactions: 2,
@@ -352,6 +384,8 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: 5,
       highlights: 1,
       branding: 3,
+      giftListItems: 1,
+      giftDrawAssignments: 2,
     })
 
     const after = await snapshot()

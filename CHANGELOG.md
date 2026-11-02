@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.6](https://github.com/TimVanOnckelen/famlin/compare/v0.8.5...v0.8.6) (2026-11-01)
+
+
+### Bug Fixes
+
+* **backend:** serve admin index.html without reply.sendFile ([4720bf3](https://github.com/TimVanOnckelen/famlin/commit/4720bf356a1d933bcf45157f59f63598fb45b5cd))
+* **backend:** serve admin index.html without reply.sendFile ([b9310af](https://github.com/TimVanOnckelen/famlin/commit/b9310af4cd344e2f6a8162383e9467f79eb23d6b))
+
+## [0.8.5](https://github.com/TimVanOnckelen/famlin/compare/v0.8.4...v0.8.5) (2026-11-01)
+
+
+### Features
+
+* **backend:** add S3-compatible media storage and bidirectional migration ([bc81251](https://github.com/TimVanOnckelen/famlin/commit/bc81251c8656e61a9ed7509d4d1438d4c01e10f2))
+* gift lists with optional Secret Santa draw ([6986e9d](https://github.com/TimVanOnckelen/famlin/commit/6986e9d9fe8ca0cdd1620c84f79c3702aea5f04e))
+* gift lists with optional Secret Santa draw ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([c14a8ef](https://github.com/TimVanOnckelen/famlin/commit/c14a8efef2564ca84d55d1e86bafb913dff843eb))
+* **web:** add family members and circles overview ([d02a725](https://github.com/TimVanOnckelen/famlin/commit/d02a725e52731a1d8da90bb57ad60554a5bd5e60))
+
+
+### Bug Fixes
+
+* address gift list client review and lean check ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([c053603](https://github.com/TimVanOnckelen/famlin/commit/c053603fcdc82ad15d37969360bc8f30ef761a2e))
+* **gift-lists:** serialize wish adds, clean up wish photos, reuse delete hook ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([5f4bb8c](https://github.com/TimVanOnckelen/famlin/commit/5f4bb8cfd250a112885ef005f65abd5ccf2846b3))
+* **mobile:** resolve two new gift list lint warnings ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([e4cf4c7](https://github.com/TimVanOnckelen/famlin/commit/e4cf4c72c3683bc6402ce2c8198f13130a0b5514))
+
 ## [0.8.4](https://github.com/TimVanOnckelen/famlin/compare/v0.8.3...v0.8.4) (2026-10-28)
 
 

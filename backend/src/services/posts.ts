@@ -6,6 +6,7 @@ import { mergeCrossPostCommentCounts } from './comments.js'
 import { visibleSiblingsForPage } from './crossPosts.js'
 import { attachPeopleToPosts, type PersonTag } from './media/personTags.js'
 import { getPostTypeHandler } from './postTypes/registry.js'
+import { MANAGED_CIRCLE_KIND } from './circles.js'
 
 // Shared Prisma include shape for fetching a post as a member should see it —
 // used by every post-returning endpoint (feed, detail, search, on-this-day,
@@ -20,7 +21,7 @@ export const postInclude = (userId: string) => ({
   // circle check, so naming its circle tells them nothing new — and it's
   // what renders the "shared in Grandparents" badge. null for a
   // whole-family post.
-  circle: { select: { id: true, name: true } },
+  circle: { select: { id: true, name: true, kind: true } },
   _count: { select: { comments: true, likes: true } },
   // All reaction rows (not just this user's) so the response can show a
   // per-emoji breakdown, not just a total — see services/reactions.ts.
@@ -44,6 +45,12 @@ export const postInclude = (userId: string) => ({
 // that id can never leak into any shaped response. The AUTHOR-only
 // `sharedWithGroups` field is attached separately, see attachSharedWithGroups
 // below.
+function publicCircle(circle: unknown): { id: string; name: string } | null {
+  if (!circle || typeof circle !== 'object') return null
+  const { id, name, kind } = circle as { id: string; name: string; kind?: string }
+  return kind === undefined || kind === MANAGED_CIRCLE_KIND ? { id, name } : null
+}
+
 export function shapePost<
   T extends {
     crossPostId: string | null
@@ -56,6 +63,10 @@ export function shapePost<
   const { counts, myReaction } = summarizeReactions(likes, userId)
   return {
     ...rest,
+    // Only a Family Circle gets the "shared in <circle>" badge. A gift list's
+    // hidden audience circle (services/giftLists.ts) is an implementation
+    // detail — its participants are on the post's giftList field instead.
+    ...('circle' in rest ? { circle: publicCircle(rest.circle) } : {}),
     commentCount: _count.comments,
     likeCount: _count.likes,
     likedByMe: myReaction !== null,
