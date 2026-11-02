@@ -13,6 +13,18 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+The web post composer also creates `TRIP` posts via `createPost`: title,
+optional destination, calendar start/end dates, optional uploaded cover and up
+to 20 companions. Companions are drawn from the intersection of selected
+families, excluding the author; selection is reconciled only after all member
+queries load. Cross-posting and circle audiences use the existing post contract.
+Check-ins can be added from the web trip detail page by the author and companions
+while the trip is started and open. Closing and later companion edits still
+use the mobile app. `TripCheckinModal` uploads up to ten attachments, calls
+`checkInTrip`, patches post/feed/favorites caches and invalidates the comments
+query to refresh the timeline. Failed saves retain the draft and uploaded URLs
+for retry.
+
 ## Backend routes
 
 | File | Prefix | Notes |

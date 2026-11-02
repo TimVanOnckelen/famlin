@@ -99,6 +99,28 @@
     "typeUpdate": "日常动态",
     "typeMilestone": "成长时刻",
     "typePoll": "投票",
+    "typeTrip": "旅行",
+    "trip": {
+      "helper": "在旅行详情页添加旅途打卡，让家人了解最新动态。",
+      "titleLabel": "标题",
+      "titlePlaceholder": "例如：意大利自驾游",
+      "destinationLabel": "目的地",
+      "destinationPlaceholder": "例如：意大利托斯卡纳和艾米利亚-罗马涅",
+      "startDateLabel": "开始日期",
+      "endDateLabel": "结束日期",
+      "endDateOptional": "选填",
+      "datePlaceholder": "YYYY-MM-DD",
+      "dateHint": "格式：YYYY-MM-DD",
+      "coverPhotoTitle": "添加封面照片",
+      "coverPhotoSubtitle": "选填，也可以稍后设置",
+      "travelersLabel": "旅伴",
+      "travelersSubtitle": "选填，同伴也可以打卡",
+      "travelersSelected_one": "{{count}} 位同行者",
+      "travelersSelected_other": "{{count}} 位同行者",
+      "membersFailed": "无法加载同行者。",
+      "retry": "重试",
+      "noCompanions": "没有其他成员同时属于所有选中的家庭。"
+    },
     "typeAlbum": "相册",
     "noAllowedTypes": "所选家庭没有共同支持的动态类型，请调整选择。",
     "placeholder": "和家人分享新鲜事…",
@@ -270,6 +292,7 @@
   },
   "trip": {
     "detail": {
+      "addCheckinButton": "打卡",
       "headerTitle": "旅行",
       "activeBadge": "旅途中 · 第 {{day}} 天",
       "closedBadge": "已结束",
@@ -293,6 +316,19 @@
       "closingLine": "{{author}} 于 {{date}} 结束旅程",
       "emptyTitle": "旅程开始了…",
       "emptyDescription": "暂无打卡，{{name}} 出发后将在这里分享沿途足迹。"
+    },
+    "checkin": {
+      "headerTitle": "打卡",
+      "submitButton": "打卡",
+      "contextLine": "{{title}} · 第 {{day}} 天",
+      "placeLabel": "你在哪里？*",
+      "placePlaceholder": "例如：博洛尼亚",
+      "textPlaceholder": "聊聊这一站…（选填）",
+      "addPhotoLabel": "照片 / 视频",
+      "alerts": {
+        "failed": "打卡失败"
+      },
+      "mediaLimit": "最多添加 {{max}} 张照片或段视频。"
     }
   },
   "album": {

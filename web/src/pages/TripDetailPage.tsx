@@ -1,3 +1,4 @@
+import { TripCheckinModal } from '@/components/TripCheckinModal'
 import { ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -25,15 +26,8 @@ import { formatDayMonth, formatTime } from '@/utils/time'
 import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip'
 import './TripDetailPage.css'
 
-// Web's counterpart of mobile's TripDetailScreen — VIEWING ONLY (see
-// design/trip-tracker-brief.md), routed at /trips/:postId (see App.tsx).
-// AppShell always keeps the Feed tab highlighted here — a trip is only ever
-// opened from the feed. Composing check-ins, closing the trip, and editing
-// travelers are deliberately not here — those stay mobile/backend-only for
-// now; this page only reads post.trip + the post's comments (splitting
-// check-ins from trip-level comments client-side, see utils/trip.ts) and
-// lets members react to / reply on individual check-ins and comment on the
-// trip overall.
+// Trip journal, reactions and replies. Authors and companions can add
+// check-ins while the trip is active; closing and traveler edits use mobile.
 export function TripDetailPage({
   user,
   postId,
@@ -61,6 +55,7 @@ export function TripDetailPage({
   onLogout: () => void
 }) {
   const { t, i18n } = useTranslation()
+  const [checkinOpen, setCheckinOpen] = useState(false)
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null)
 
   const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
@@ -114,6 +109,10 @@ export function TripDetailPage({
 
   const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0] || null
   const travelers = trip.travelers ?? []
+  const canCheckIn =
+    !trip.closed &&
+    trip.dayNumber != null &&
+    (post.authorId === user.id || travelers.some((traveler) => traveler.id === user.id))
 
   return shell(
     <>
@@ -172,6 +171,15 @@ export function TripDetailPage({
         )}
       </section>
 
+      {canCheckIn && sortedCheckins.length > 0 && (
+        <div className="trip-detail-checkin-action">
+          <button type="button" className="btn btn-primary" onClick={() => setCheckinOpen(true)}>
+            <Icon name="plus" size={18} />
+            {t('trip.detail.addCheckinButton')}
+          </button>
+        </div>
+      )}
+
       <section className="trip-detail-comments-section">
         <h2 className="trip-detail-section-title">
           <Icon name="message-square" size={16} />
@@ -195,6 +203,14 @@ export function TripDetailPage({
           <div className="trip-detail-empty-description">
             {t('trip.detail.emptyDescription', { name: post.author.name })}
           </div>
+          {canCheckIn && (
+            <div className="trip-detail-checkin-action">
+              <button type="button" className="btn btn-primary" onClick={() => setCheckinOpen(true)}>
+                <Icon name="plus" size={18} />
+                {t('trip.detail.addCheckinButton')}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <ol className="trip-detail-timeline">
@@ -218,6 +234,16 @@ export function TripDetailPage({
             date: formatDayMonth(trip.closedAt || trip.endDate || trip.startDate, i18n.language),
           })}
         </div>
+      )}
+
+      {checkinOpen && canCheckIn && (
+        <TripCheckinModal
+          key={postId}
+          postId={postId}
+          tripTitle={trip.title}
+          dayNumber={trip.dayNumber!}
+          onClose={() => setCheckinOpen(false)}
+        />
       )}
 
       {lightbox && (

@@ -99,6 +99,28 @@
     "typeUpdate": "Update",
     "typeMilestone": "Milestone",
     "typePoll": "Poll",
+    "typeTrip": "Trip",
+    "trip": {
+      "helper": "Add check-ins from the trip detail page to keep your family up to date.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "E.g. Road trip Italy",
+      "destinationLabel": "Destination",
+      "destinationPlaceholder": "E.g. Tuscany & Emilia-Romagna, Italy",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "endDateOptional": "optional",
+      "datePlaceholder": "YYYY-MM-DD",
+      "dateHint": "Format: YYYY-MM-DD",
+      "coverPhotoTitle": "Add cover photo",
+      "coverPhotoSubtitle": "Optional — you can also set this later",
+      "travelersLabel": "Travel companions",
+      "travelersSubtitle": "Optional — they can check in too",
+      "travelersSelected_one": "{{count}} travel companion",
+      "travelersSelected_other": "{{count}} travel companions",
+      "membersFailed": "Could not load travel companions.",
+      "retry": "Try again",
+      "noCompanions": "No other members belong to every selected family."
+    },
     "typeAlbum": "Album",
     "noAllowedTypes": "The selected families don't have any post type in common — change the selection to post.",
     "placeholder": "Share an update with your family…",
@@ -270,6 +292,7 @@
   },
   "trip": {
     "detail": {
+      "addCheckinButton": "Check-in",
       "headerTitle": "Trip",
       "activeBadge": "ACTIVE · DAY {{day}}",
       "closedBadge": "CLOSED",
@@ -293,6 +316,19 @@
       "closingLine": "Trip closed by {{author}} · {{date}}",
       "emptyTitle": "The trip has begun…",
       "emptyDescription": "No check-ins yet. Once {{name}} is on the way, the first stops will appear here."
+    },
+    "checkin": {
+      "headerTitle": "Check-in",
+      "submitButton": "Check in",
+      "contextLine": "{{title}} · Day {{day}}",
+      "placeLabel": "Where are you? *",
+      "placePlaceholder": "E.g. Bologna",
+      "textPlaceholder": "Tell something about this stop (optional)...",
+      "addPhotoLabel": "Photo / video",
+      "alerts": {
+        "failed": "Check-in failed"
+      },
+      "mediaLimit": "Up to {{max}} photos or videos."
     }
   },
   "album": {

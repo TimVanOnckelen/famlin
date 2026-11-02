@@ -99,6 +99,28 @@
     "typeUpdate": "Update",
     "typeMilestone": "Mijlpaal",
     "typePoll": "Peiling",
+    "typeTrip": "Reis",
+    "trip": {
+      "helper": "Voeg check-ins toe op de reispagina om je familie op de hoogte te houden.",
+      "titleLabel": "Titel",
+      "titlePlaceholder": "Bijv. Roadtrip Italië",
+      "destinationLabel": "Bestemming",
+      "destinationPlaceholder": "Bijv. Toscane & Emilia-Romagna, Italië",
+      "startDateLabel": "Startdatum",
+      "endDateLabel": "Einddatum",
+      "endDateOptional": "optioneel",
+      "datePlaceholder": "JJJJ-MM-DD",
+      "dateHint": "Notatie: JJJJ-MM-DD",
+      "coverPhotoTitle": "Coverfoto toevoegen",
+      "coverPhotoSubtitle": "Optioneel — je kunt deze ook later instellen",
+      "travelersLabel": "Reisgenoten",
+      "travelersSubtitle": "Optioneel — zij kunnen ook inchecken",
+      "travelersSelected_one": "{{count}} reisgenoot",
+      "travelersSelected_other": "{{count}} reisgenoten",
+      "membersFailed": "Reisgenoten konden niet worden geladen.",
+      "retry": "Opnieuw proberen",
+      "noCompanions": "Geen andere leden behoren tot elk geselecteerd gezin."
+    },
     "typeAlbum": "Album",
     "noAllowedTypes": "De geselecteerde families hebben geen enkel berichttype gemeen — wijzig de selectie om te kunnen plaatsen.",
     "placeholder": "Deel een update met je familie…",
@@ -270,6 +292,7 @@
   },
   "trip": {
     "detail": {
+      "addCheckinButton": "Check-in",
       "headerTitle": "Reis",
       "activeBadge": "ACTIEF · DAG {{day}}",
       "closedBadge": "AFGESLOTEN",
@@ -293,6 +316,19 @@
       "closingLine": "Reis afgesloten door {{author}} · {{date}}",
       "emptyTitle": "De reis is begonnen…",
       "emptyDescription": "Nog geen check-ins. Zodra {{name}} onderweg is, verschijnen de eerste stops hier."
+    },
+    "checkin": {
+      "headerTitle": "Check-in",
+      "submitButton": "Inchecken",
+      "contextLine": "{{title}} · Dag {{day}}",
+      "placeLabel": "Waar ben je? *",
+      "placePlaceholder": "Bijv. Bologna",
+      "textPlaceholder": "Vertel iets over deze stop (optioneel)...",
+      "addPhotoLabel": "Foto / video",
+      "alerts": {
+        "failed": "Inchecken mislukt"
+      },
+      "mediaLimit": "Maximaal {{max}} foto’s of video’s."
     }
   },
   "album": {

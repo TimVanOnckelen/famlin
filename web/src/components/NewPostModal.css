@@ -145,6 +145,13 @@
   font-weight: 700;
 }
 
+.type-chip-trip-active {
+  border: 2px solid var(--fam-trip);
+  background: var(--fam-trip-tint);
+  color: var(--fam-trip-dark);
+  font-weight: 700;
+}
+
 /* Album title — a single-line title field above the description textarea. */
 .album-title-input {
   font-size: 16px;
@@ -295,4 +302,41 @@
 select.field-input {
   appearance: auto;
   padding-right: 12px;
+}
+
+.trip-composer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.trip-composer-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.trip-composer-dates .field,
+.trip-composer-dates input {
+  min-width: 0;
+  width: 100%;
+}
+.trip-companions {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.trip-companions .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.type-chips {
+  flex-wrap: wrap;
+}
+@media (max-width: 420px) {
+  .trip-composer-dates {
+    grid-template-columns: 1fr;
+  }
 }
