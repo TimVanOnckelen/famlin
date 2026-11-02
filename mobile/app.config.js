@@ -107,7 +107,8 @@ export default ({ config }) => ({
       {
         photosPermission:
           "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
-        cameraPermission: 'Allow Famlin to use your camera so you can take photos for your family stories.',
+        cameraPermission:
+          "Famlin uses your camera so you can take a photo to share as a story with your family. Photos are uploaded only to the family server you're signed in to.",
         // Story capture takes still photos and does not need microphone access.
         microphonePermission: false,
       },
