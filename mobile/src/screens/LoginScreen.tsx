@@ -30,6 +30,7 @@ import { setApiBaseUrl } from '@/api/client'
 import { LoginBackground } from '@/components/LoginBackground'
 import { getBranding } from '@/branding'
 import { QrScannerModal } from '@/components/QrScannerModal'
+import { serverHostLabel } from '@/utils/connectQr'
 import { usePendingConnectStore } from '@/stores/pendingConnectStore'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -119,8 +120,18 @@ export function LoginScreen() {
     if (!pendingConnectServer) return
     usePendingConnectStore.getState().clear()
     setScannerOpen(false)
-    setServerUrlInput(pendingConnectServer)
-    connectToServer(pendingConnectServer)
+    // Links and scans are untrusted input: a crafted one could point at a
+    // phishing server. Prefill, then ask before the credentials step.
+    const server = pendingConnectServer
+    setServerUrlInput(server)
+    Alert.alert(
+      t('connect.confirmTitle', { host: serverHostLabel(server) }),
+      t('connect.confirmMessage', { host: serverHostLabel(server) }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('connect.confirmConnect'), onPress: () => connectToServer(server) },
+      ]
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingConnectServer])
 

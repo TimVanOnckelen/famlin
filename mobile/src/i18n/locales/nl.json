@@ -36,7 +36,10 @@
     "allowCamera": "Camera toestaan",
     "differentServerTitle": "Andere server",
     "differentServerMessage": "Deze link is voor {{server}}, maar je bent aangemeld bij een andere server. Afmelden om ermee te verbinden?",
-    "signOutAndConnect": "Afmelden en verbinden"
+    "signOutAndConnect": "Afmelden en verbinden",
+    "confirmTitle": "Verbinden met {{host}}?",
+    "confirmMessage": "Ga alleen verder als je {{host}} vertrouwt. Daarna word je om je Famlin-gegevens gevraagd.",
+    "confirmConnect": "Verbinden"
   },
   "login": {
     "subtitle": "Jouw familie, dichterbij",

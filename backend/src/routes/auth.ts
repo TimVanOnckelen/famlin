@@ -202,7 +202,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     // Scheduled backups are on by default for new installs only: the global
     // default stays off so existing instances are untouched.
-    await updateSettings({ backupEnabled: true })
+    try {
+      await updateSettings({ backupEnabled: true })
+    } catch (err) {
+      request.log.warn({ err }, 'could not enable scheduled backups by default')
+    }
 
     const token = createUserToken({
       id: user.id,
@@ -302,7 +306,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
         // New install (restored or not): backups on by default, unless the
         // archive itself carried an explicit choice.
         if (!(await prisma.setting.findUnique({ where: { key: 'backupEnabled' } }))) {
-          await updateSettings({ backupEnabled: true })
+          try {
+            await updateSettings({ backupEnabled: true })
+          } catch (err) {
+            request.log.warn({ err }, 'could not enable scheduled backups by default')
+          }
         }
 
         const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })

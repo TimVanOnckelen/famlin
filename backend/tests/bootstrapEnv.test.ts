@@ -70,3 +70,40 @@ describe('zero-config bootstrap env', () => {
     expect(deriveDatabaseUrl({})).toBeUndefined()
   })
 })
+
+describe('resolveJwtSecret failure modes', () => {
+  it('throws a descriptive error when the data dir is not writable', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'famlin-bootstrap-'))
+    const blocker = path.join(base, 'blocker')
+    fs.writeFileSync(blocker, 'x') // a file where the directory should be: mkdir fails
+    try {
+      expect(() => resolveJwtSecret({}, blocker, () => {})).toThrow(/set JWT_SECRET or make DATA_DIR/)
+    } finally {
+      fs.rmSync(base, { recursive: true, force: true })
+    }
+  })
+
+  it('waits for a concurrently created, still-empty secret file', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'famlin-bootstrap-'))
+    const file = path.join(base, 'secrets', 'jwt_secret')
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, '') // empty: the other process hasn't written yet
+    // readFileSync of an empty file reads as "missing", so the first read
+    // misses and the exclusive create hits EEXIST; fill it mid-retry.
+    const timer = setTimeout(() => {}, 0)
+    clearTimeout(timer)
+    const realRead = fs.readFileSync
+    let reads = 0
+    const spy = (p: any, ...rest: any[]) => {
+      if (String(p) === file && ++reads === 3) fs.writeFileSync(file, 'winner-secret')
+      return (realRead as any)(p, ...rest)
+    }
+    ;(fs as any).readFileSync = spy
+    try {
+      expect(resolveJwtSecret({}, base, () => {})).toBe('winner-secret')
+    } finally {
+      ;(fs as any).readFileSync = realRead
+      fs.rmSync(base, { recursive: true, force: true })
+    }
+  })
+})

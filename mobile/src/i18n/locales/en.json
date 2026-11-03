@@ -36,7 +36,10 @@
     "allowCamera": "Allow camera",
     "differentServerTitle": "Different server",
     "differentServerMessage": "This link is for {{server}}, but you're signed in to another server. Sign out to connect to it?",
-    "signOutAndConnect": "Sign out and connect"
+    "signOutAndConnect": "Sign out and connect",
+    "confirmTitle": "Connect to {{host}}?",
+    "confirmMessage": "Only continue if you trust {{host}}. You'll be asked for your Famlin credentials next.",
+    "confirmConnect": "Connect"
   },
   "login": {
     "subtitle": "Your family, closer",

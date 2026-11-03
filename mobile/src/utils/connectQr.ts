@@ -45,6 +45,14 @@ export function parseConnectQr(data: string): string | null {
   return web ? toOrigin(web[1]) : null
 }
 
+/** Host (and port) of a server origin, for showing the user where a link or QR code would take them. */
+export function serverHostLabel(server: string): string {
+  return server
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '')
+}
+
 /** True when two server addresses name the same origin. */
 export function isSameServer(a: string | null | undefined, b: string | null | undefined): boolean {
   if (!a || !b) return false
