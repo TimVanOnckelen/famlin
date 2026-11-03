@@ -15,6 +15,12 @@ jest.mock('@react-native-community/datetimepicker', () => ({
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/Icon', () => ({ Icon: () => null }))
 
+// The first render in this file pays the one-off cost of loading
+// @testing-library/react-native and the RN component tree (~3s cold on a
+// fast machine). On a busy CI runner with every suite in parallel that
+// regularly crossed Jest's 5s default, failing whichever test ran first.
+jest.setTimeout(15000)
+
 const originalPlatform = Platform.OS
 afterEach(() => {
   Platform.OS = originalPlatform
