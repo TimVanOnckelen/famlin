@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
       collapsible: true,
       collapsed: false,
       items: [
+        'install-vps',
         'server-setup',
         'storage',
         'admin-configuration',

@@ -359,26 +359,23 @@
     <div class="wrap">
       <div>
         <h2>Install</h2>
-        <p class="lead">Famlin is one Docker container plus Postgres. It runs on amd64 and arm64, so a Raspberry Pi 4 or 5, a Synology NAS or a cheap VPS all work.</p>
+        <p class="lead">Famlin is one Docker container plus Postgres. It runs on amd64 and arm64, so a cheap VPS, a Raspberry Pi 4 or 5 or a Synology NAS all work.</p>
         <ol>
-          <li><strong>Start the server</strong> with the commands on the right, and put it behind a reverse proxy for HTTPS.</li>
+          <li><strong>Run the installer</strong> on a fresh Debian or Ubuntu server (a few euros a month is plenty). It sets up Docker, HTTPS and automatic updates.</li>
           <li><strong>Open <code>/admin</code></strong> and create the first admin account. Then pick how people sign in.</li>
           <li><strong>Invite your family.</strong> They install the app and enter your server's address, or just open it in a browser.</li>
         </ol>
       </div>
       <div>
-        <div class="terminal" role="region" aria-label="Install commands"><span class="c"># download the compose file</span>
-<span class="p">$ </span>mkdir famlin &amp;&amp; cd famlin
-<span class="p">$ </span>curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.yml
+        <div class="terminal" role="region" aria-label="Install commands"><span class="c"># on a fresh Debian/Ubuntu server</span>
+<span class="p">$ </span>curl -fsSL https://famlin.app/install.sh | sh
 
-<span class="c"># set two secrets</span>
-<span class="p">$ </span>echo "JWT_SECRET=$(openssl rand -base64 48)" &gt; .env
-<span class="p">$ </span>echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)" &gt;&gt; .env
-
-<span class="c"># start it</span>
-<span class="p">$ </span>docker compose -f docker-compose.yml up -d</div>
+<span class="c"># prefer to read it first?</span>
+<span class="p">$ </span>curl -fsSLO https://famlin.app/install.sh
+<span class="p">$ </span>less install.sh &amp;&amp; sh install.sh</div>
         <div class="install-links">
-          <a href="/docs/server-setup">Full setup guide</a>
+          <a href="/docs/install-vps">10-minute server guide</a>
+          <a href="/docs/server-setup">Manual setup</a>
           <a href="/docs/server-setup#example-synology-nas-with-container-manager-no-ssh-required">Synology without SSH</a>
           <a href="/docs/admin-configuration">After the first start</a>
           <a href="/docs/maintenance">Updates &amp; backups</a>
