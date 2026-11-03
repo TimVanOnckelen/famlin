@@ -52,6 +52,9 @@
     "onThisDayCount_one": "往年今日的 {{count}} 个回忆",
     "onThisDayCount_other": "往年今日的 {{count}} 个回忆",
     "membersTitle": "家庭成员",
+    "membersLoadFailed": "部分成员无法加载。",
+    "membersRetry": "重试",
+    "membersEmpty": "未找到成员。",
     "trip": {
       "activeBadge": "第 {{day}} 天 · 旅途中",
       "lastStopLabel": "上一站：",

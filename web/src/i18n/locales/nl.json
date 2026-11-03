@@ -75,6 +75,9 @@
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
     "membersTitle": "Gezinsleden",
+    "membersLoadFailed": "Sommige leden konden niet worden geladen.",
+    "membersRetry": "Opnieuw proberen",
+    "membersEmpty": "Geen leden gevonden.",
     "viewMembers": "Leden bekijken",
     "viewAllMembers": "Alle leden bekijken"
   },
