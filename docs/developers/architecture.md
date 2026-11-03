@@ -13,6 +13,20 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Web trip composer
+
+The web post composer also creates `TRIP` posts via `createPost`: title,
+optional destination, calendar start/end dates, optional uploaded cover and up
+to 20 companions. Companions are drawn from the intersection of selected
+families, excluding the author; selection is reconciled only after all member
+queries load. Cross-posting and circle audiences use the existing post contract.
+Check-ins can be added from the web trip detail page by the author and companions
+while the trip is started and open. Closing and later companion edits still
+use the mobile app. `TripCheckinModal` uploads up to ten attachments, calls
+`checkInTrip`, patches post/feed/favorites caches and invalidates the comments
+query to refresh the timeline. Failed saves retain the draft and uploaded URLs
+for retry.
+
 ## Web feed member panel
 
 On screens at least 1200px wide, the right column shows the family filter above a permanent member card. Each family has its own row with its name and optional description. The family filter is omitted entirely for a single membership. Selecting families filters both the feed and the member list; there is no separate member filter or search. Multiple families produce one list deduplicated by user ID, with family names under each member. The member card fits its content and only scrolls when the right column reaches the available viewport height. Member queries reuse the per-family React Query cache for 60 seconds and report partial failures with a retry action. “On this day” remains tied to a single selected family and appears below the member card. On narrower screens, the entire sidebar stays hidden and the original horizontal family-filter chips remain above the feed. Both filter layouts share the same selection. The feed header and member card retain navigation to the full Members page: one effective family scopes the destination to that family; multiple families open the all-families view.
