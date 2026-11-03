@@ -50,17 +50,20 @@ describe('NewPostModal', () => {
     const { container } = renderWithQueryClient(
       <NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />
     )
-    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
-      color: 'var(--fam-accent)',
-      background: 'var(--fam-update-bg)',
-    })
+    let icon: HTMLElement
+    // Inline style, not toHaveStyle: jsdom >=30.1.3 expands the computed
+    // `background` shorthand, so an unresolved var() no longer round-trips.
+    icon = container.querySelector<HTMLElement>('.custom-select-trigger .custom-select-icon')!
+    expect(icon.style.color).toBe('var(--fam-accent)')
+    expect(icon.style.background).toBe('var(--fam-update-bg)')
     const user = userEvent.setup()
     await user.click(screen.getByRole('combobox'))
     await user.click(screen.getByRole('option', { name: 'Milestone' }))
-    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
-      color: 'var(--fam-milestone-text)',
-      background: 'var(--fam-milestone-bg)',
-    })
+    // Inline style, not toHaveStyle: jsdom >=30.1.3 expands the computed
+    // `background` shorthand, so an unresolved var() no longer round-trips.
+    icon = container.querySelector<HTMLElement>('.custom-select-trigger .custom-select-icon')!
+    expect(icon.style.color).toBe('var(--fam-milestone-text)')
+    expect(icon.style.background).toBe('var(--fam-milestone-bg)')
   })
 
   it('closes the type picker on Escape before closing the composer', async () => {
