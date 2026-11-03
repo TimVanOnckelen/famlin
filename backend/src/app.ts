@@ -242,6 +242,10 @@ export async function buildApp() {
   fastify.route({
     method: ['GET', 'HEAD'],
     url: '/uploads/*',
+    // A gallery can request hundreds of thumbnails at once. Media reads
+    // must not consume the shared API budget; the access hook above still
+    // authenticates and authorizes them. POST /api/uploads keeps its limit.
+    config: { rateLimit: false },
     async handler(request, reply) {
       const requestedFile = requestPathname(request.raw.url).slice('/uploads/'.length)
       try {
