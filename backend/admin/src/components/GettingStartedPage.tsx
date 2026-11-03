@@ -35,6 +35,7 @@ export function GettingStartedPage() {
   const [index, setIndex] = useState(readStep)
   const [group, setGroup] = useState<Group | null>(null)
   const [ready, setReady] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const step: Step = STEPS[index]
 
   useEffect(() => {
@@ -67,9 +68,14 @@ export function GettingStartedPage() {
           </li>
         ))}
       </ol>
+      {notice && (
+        <div className="hint" role="status">
+          {notice}
+        </div>
+      )}
       <div className="card wizard-card">
         <h3>{t(`wizard.steps.${step}`)}</h3>
-        {step === 'family' && <FamilyStep group={group} onGroup={setGroup} onNext={next} />}
+        {step === 'family' && <FamilyStep group={group} onGroup={setGroup} onNotice={setNotice} onNext={next} />}
         {step === 'invite' && <InviteStep group={group} onNext={next} onBack={() => go(0)} />}
         {step === 'app' && <AppStep onNext={next} />}
         {step === 'backups' && <BackupsStep onNext={next} />}
@@ -108,10 +114,12 @@ function StepActions({
 function FamilyStep({
   group,
   onGroup,
+  onNotice,
   onNext,
 }: {
   group: Group | null
   onGroup: (g: Group) => void
+  onNotice: (message: string) => void
   onNext: () => void
 }) {
   const { t } = useTranslation()
@@ -120,6 +128,9 @@ function FamilyStep({
   const [preset, setPreset] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The group created by an earlier attempt: a retry after a failed
+  // addGroupMember must not create a second family.
+  const [created, setCreated] = useState<Group | null>(null)
 
   useEffect(() => {
     api
@@ -137,12 +148,20 @@ function FamilyStep({
     setError(null)
     try {
       const me = await api.getMe()
-      const created = await api.createGroup({ name: name.trim() })
+      let target = created
+      if (!target) {
+        target = await api.createGroup({ name: name.trim() })
+        setCreated(target)
+      }
       // Existing membership endpoint: the admin is a member of their own family.
-      await api.addGroupMember(created.id, me.id)
-      onGroup(created)
+      await api.addGroupMember(target.id, me.id)
+      onGroup(target)
       if (brand && preset && preset !== brand.preset) {
-        await api.updateBranding({ preset, color: null, name: brand.name })
+        try {
+          await api.updateBranding({ preset, color: null, name: brand.name })
+        } catch {
+          onNotice(t('wizard.family.brandingFailed'))
+        }
       }
       onNext()
     } catch (err) {

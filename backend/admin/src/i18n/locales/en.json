@@ -658,6 +658,7 @@
       "done": "Done"
     },
     "family": {
+      "brandingFailed": "The family was created, but the color could not be saved. You can change it later under Branding.",
       "description": "Families are the private spaces where members share updates. Create yours now; you are added as its first member.",
       "nameLabel": "Family name",
       "namePlaceholder": "The Smiths",

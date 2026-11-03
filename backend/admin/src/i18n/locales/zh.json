@@ -658,6 +658,7 @@
       "done": "完成"
     },
     "family": {
+      "brandingFailed": "家庭已创建,但颜色未能保存。你可以稍后在品牌设置中修改。",
       "description": "家庭是成员分享动态的私密空间。现在创建你的家庭,你会自动成为第一位成员。",
       "nameLabel": "家庭名称",
       "namePlaceholder": "张家",

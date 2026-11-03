@@ -658,6 +658,7 @@
       "done": "Klaar"
     },
     "family": {
+      "brandingFailed": "De familie is aangemaakt, maar de kleur kon niet worden opgeslagen. Je kunt die later wijzigen onder Huisstijl.",
       "description": "Families zijn de privéruimtes waar leden updates delen. Maak de jouwe nu aan; je wordt als eerste lid toegevoegd.",
       "nameLabel": "Familienaam",
       "namePlaceholder": "Familie Jansen",
