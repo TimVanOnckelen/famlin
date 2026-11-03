@@ -304,8 +304,13 @@ jobs:
           grep -q "FAMLIN_VERSION:-$VERSION}" assets/docker-compose.yml
           # No leading dot: GitHub renames dotfile assets to default.<name>.
           cp .env.example assets/env.example
+          # HTTPS overlays (used together with the pinned docker-compose.yml
+          # above, which they extend, so they carry no version of their own)
+          # and the Caddyfile the Caddy overlay mounts from its own folder.
+          cp docker-compose.caddy.yml docker-compose.tunnel.yml Caddyfile assets/
           gh release upload "$TAG_NAME" -R "$GITHUB_REPOSITORY" --clobber \
-            assets/docker-compose.yml assets/env.example
+            assets/docker-compose.yml assets/env.example \
+            assets/docker-compose.caddy.yml assets/docker-compose.tunnel.yml assets/Caddyfile
 
       - name: Append downloads section to the release notes
         env:
@@ -359,7 +364,7 @@ jobs:
               echo "Digest: \`$DIGEST\`"
               echo
             fi
-            echo "Upgrading an existing install: set \`FAMLIN_VERSION=$VERSION\` in your \`.env\` (or stay on \`latest\`), then \`docker compose pull && docker compose up -d\`. New install: download the \`docker-compose.yml\` (pinned to $VERSION) and \`env.example\` (save it as \`.env\`) attached below, and follow the [server setup guide](https://famlin.app/docs/server-setup)."
+            echo "Upgrading an existing install: set \`FAMLIN_VERSION=$VERSION\` in your \`.env\` (or stay on \`latest\`), then \`docker compose pull && docker compose up -d\`. New install: download the \`docker-compose.yml\` (pinned to $VERSION) and \`env.example\` (save it as \`.env\`) attached below, and follow the [server setup guide](https://famlin.app/docs/server-setup). For automatic HTTPS, also download \`docker-compose.caddy.yml\` and \`Caddyfile\` (Caddy) or \`docker-compose.tunnel.yml\` (Cloudflare Tunnel) into the same folder — see the guide."
             echo
             echo "### Mobile apps"
             echo
