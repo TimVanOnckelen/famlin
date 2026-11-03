@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
       collapsible: true,
       collapsed: false,
       items: [
+        'install-vps',
         'server-setup',
         'install-umbrel-casaos',
         'install-home-assistant',

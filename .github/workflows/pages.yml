@@ -6,6 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'docs/**'
+      - 'scripts/install.sh'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -38,6 +39,8 @@ jobs:
         run: |
           mkdir -p _site
           cp -r website/. _site/
+          # Served as `curl -fsSL https://famlin.app/install.sh | sh`.
+          cp scripts/install.sh _site/install.sh
           mkdir -p _site/docs
           cp -r docs/build/. _site/docs/
       - uses: actions/configure-pages@v6
