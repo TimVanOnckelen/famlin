@@ -1,3 +1,4 @@
+import { Switch } from '@/components/Switch'
 import { FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -274,12 +275,9 @@ export function ProfilePage({
                   <span className="profile-setting-label profile-notification-label">{t(labelKey)}</span>
                   {showPush && (
                     <span className="profile-notification-col">
-                      <input
-                        type="checkbox"
-                        role="switch"
-                        className="profile-toggle"
+                      <Switch
                         checked={user[pushKey] ?? false}
-                        onChange={(e) => updatePrefs.mutate({ [pushKey]: e.target.checked })}
+                        onCheckedChange={(checked) => updatePrefs.mutate({ [pushKey]: checked })}
                         aria-label={`${t(labelKey)} — ${t('profile.push')}`}
                       />
                     </span>
@@ -287,12 +285,9 @@ export function ProfilePage({
                   {showEmail && !emailKey && <span className="profile-notification-col" />}
                   {showEmail && emailKey && (
                     <span className="profile-notification-col">
-                      <input
-                        type="checkbox"
-                        role="switch"
-                        className="profile-toggle"
+                      <Switch
                         checked={user[emailKey] ?? false}
-                        onChange={(e) => updatePrefs.mutate({ [emailKey]: e.target.checked })}
+                        onCheckedChange={(checked) => updatePrefs.mutate({ [emailKey]: checked })}
                         aria-label={`${t(labelKey)} — ${t('profile.email')}`}
                       />
                     </span>

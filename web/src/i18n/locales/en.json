@@ -96,9 +96,16 @@
   },
   "newPost": {
     "title": "New post",
-    "group": "Group",
+    "group": "Share with",
     "groupHint": "Choose one or more families to share this post with.",
-    "typeLabel": "Post type",
+    "typeLabel": "What do you want to share?",
+    "typeDescriptions": {
+      "UPDATE": "Share everyday news, photos and videos.",
+      "MILESTONE": "Celebrate a birthday, achievement or special moment.",
+      "POLL": "Ask a question and let your family vote.",
+      "ALBUM": "Collect photos together in a shared album.",
+      "GIFT_LIST": "Share wishlists and optionally draw Secret Santa names."
+    },
     "typeUpdate": "Update",
     "typeMilestone": "Milestone",
     "typePoll": "Poll",

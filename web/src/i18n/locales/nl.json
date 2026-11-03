@@ -96,9 +96,16 @@
   },
   "newPost": {
     "title": "Nieuw bericht",
-    "group": "Groep",
+    "group": "Delen met",
     "groupHint": "Kies één of meer families om dit bericht mee te delen.",
-    "typeLabel": "Berichttype",
+    "typeLabel": "Wat wil je delen?",
+    "typeDescriptions": {
+      "UPDATE": "Deel dagelijks nieuws, foto’s en video’s.",
+      "MILESTONE": "Vier een verjaardag, prestatie of bijzonder moment.",
+      "POLL": "Stel een vraag en laat je familie stemmen.",
+      "ALBUM": "Verzamel samen foto’s in een gedeeld album.",
+      "GIFT_LIST": "Deel verlanglijstjes en trek eventueel lootjes."
+    },
     "typeUpdate": "Update",
     "typeMilestone": "Mijlpaal",
     "typePoll": "Peiling",
