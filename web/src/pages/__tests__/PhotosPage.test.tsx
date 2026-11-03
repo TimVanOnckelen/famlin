@@ -1,12 +1,19 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PhotosPage } from '@/pages/PhotosPage'
 import { makeAlbum, makePost, makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client'
+import {
+  fetchAlbumPosts,
+  fetchGroups,
+  getGroupPhotoTimeline,
+  getGroupMediaPeople,
+  fetchUploadProcessing,
+} from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchAlbumPosts: vi.fn(),
+  fetchUploadProcessing: vi.fn(),
   fetchGroups: vi.fn(),
   getGroupPhotoTimeline: vi.fn(),
   getGroupMediaPeople: vi.fn(),
@@ -174,7 +181,90 @@ describe('PhotosPage', () => {
 
     await screen.findByText('July 2026')
     // The play icon is rendered as part of the photo tile
-    const playIcon = screen.getByText('▶')
-    expect(playIcon).toBeInTheDocument()
+    const tile = screen.getByRole('button', { name: 'Open photo' })
+    expect(tile.querySelector('.media-video-play')).toBeInTheDocument()
+    expect(tile.querySelector('img')).toHaveAttribute(
+      'src',
+      'http://localhost:3000/api/media/assets/link-1/asset-1/thumbnail.jpg'
+    )
+    expect(tile.querySelector('video')).toBeNull()
   })
+})
+
+it('uses video posters and Live Photo controls for uploaded media, then autoplays the opened media', async () => {
+  const videoUrl = '/uploads/11111111-1111-4111-8111-111111111111.mp4'
+  const photoUrl = '/uploads/22222222-2222-4222-8222-222222222222.jpg'
+  const motionUrl = '/uploads/33333333-3333-4333-8333-333333333333.mp4'
+  vi.mocked(getGroupPhotoTimeline).mockResolvedValue({
+    items: [videoUrl, photoUrl].map((url, index) => ({
+      id: `post-photo-${index}`,
+      source: 'post',
+      type: index === 0 ? 'VIDEO' : 'IMAGE',
+      takenAt: '2026-07-10T10:00:00Z',
+      width: null,
+      height: null,
+      thumbnailUrl: url,
+      previewUrl: url,
+      originalUrl: url,
+    })),
+    nextCursor: null,
+  })
+  vi.mocked(fetchUploadProcessing).mockImplementation(async (key) =>
+    key.startsWith('111')
+      ? {
+          status: 'ready',
+          url: videoUrl,
+          thumbnailUrl: videoUrl.replace('.mp4', '-thumbnail.jpg'),
+          kind: 'video',
+        }
+      : {
+          status: 'ready',
+          url: photoUrl,
+          thumbnailUrl: photoUrl.replace('.jpg', '-thumbnail.jpg'),
+          kind: 'livePhoto',
+          videoUrl: motionUrl,
+        }
+  )
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback(
+          [{ isIntersecting: true, target } as IntersectionObserverEntry],
+          this as unknown as IntersectionObserver
+        )
+      }
+      disconnect() {}
+    }
+  )
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: false }))
+  )
+  const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+  const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  const { container, unmount } = renderWithQueryClient(
+    <PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />
+  )
+  await screen.findByRole('button', { name: 'Play Live Photo' })
+  await waitFor(() =>
+    expect(container.querySelector('.media-video-preview img')).toHaveAttribute(
+      'src',
+      `http://localhost:3000${videoUrl.replace('.mp4', '-thumbnail.jpg')}`
+    )
+  )
+  expect(container.querySelector('.live-photo video')).not.toHaveAttribute('src')
+  expect(play).not.toHaveBeenCalled()
+  await userEvent.click(screen.getAllByRole('button', { name: 'Open photo' })[1])
+  const lightbox = container.querySelector<HTMLElement>('.lightbox')!
+  await within(lightbox).findByRole('button', { name: 'Pause Live Photo' })
+  await waitFor(() =>
+    expect(lightbox.querySelector('video')).toHaveAttribute('src', `http://localhost:3000${motionUrl}`)
+  )
+  expect(play).toHaveBeenCalled()
+  unmount()
+  play.mockRestore()
+  pause.mockRestore()
+  vi.unstubAllGlobals()
 })

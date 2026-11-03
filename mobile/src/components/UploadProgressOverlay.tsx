@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ActivityIndicator, StyleProp, ViewStyle } from 
 import { colors } from '@/constants/colors'
 
 interface UploadProgressOverlayProps {
-  // Fraction (0-1) of the batch upload sent so far. Shown as a percentage
+  // Fraction (0-1) of the upload sent so far. Shown as a percentage
   // next to the spinner once it's a real number; while it's null (upload not
   // yet started, or in the CPU-bound resize step before the request opens)
   // the overlay falls back to a plain spinner, same as before this existed.
@@ -12,12 +12,8 @@ interface UploadProgressOverlayProps {
   style?: StyleProp<ViewStyle>
 }
 
-// Shared "this attachment is still uploading" overlay for pending photo/video
-// tiles (the new-post composer, comment/chat attachments). A single combined
-// percentage for the whole batch — not per-file, since the client sends every
-// picked asset as one multipart request — but that's still far more
-// reassuring than an indefinite spinner for the several-second uploads large
-// phone photos or videos can take.
+// Shared uploading overlay. The post composer passes per-file progress;
+// flows with one combined indicator pass the average across their files.
 export function UploadProgressOverlay({ progress, style }: UploadProgressOverlayProps) {
   return (
     <View style={[styles.overlay, style]} pointerEvents="none">

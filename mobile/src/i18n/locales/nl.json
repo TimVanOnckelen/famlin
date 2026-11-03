@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Live Photo pauzeren", "playLivePhoto": "Live Photo afspelen", "processing": "Media wordt verwerkt…", "processingFailed": "Verwerken van media mislukt"},
   "common": {
     "loading": "Bezig...",
     "tryAgain": "Probeer het opnieuw",

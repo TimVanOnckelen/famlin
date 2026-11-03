@@ -1,8 +1,10 @@
 import { FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { addAlbumPhotos, uploadFiles, patchPostInCaches } from '@famlin/api-client'
+import { addAlbumPhotos, patchPostInCaches } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
+import { useComposerUploads } from '@/hooks/useComposerUploads'
+import { ComposerUploadPreview } from './ComposerUploadPreview'
 import './NewPostModal.css'
 
 // Contribute photos to an ALBUM post — the write half of the collaborative
@@ -16,13 +18,13 @@ const MAX_PHOTOS = 10
 export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClose: () => void }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [files, setFiles] = useState<File[]>([])
+  const uploads = useComposerUploads(MAX_PHOTOS)
   const [caption, setCaption] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const photoUrls = await uploadFiles(files.slice(0, MAX_PHOTOS))
+      const photoUrls = uploads.urls
       return addAlbumPhotos(postId, { photoUrls, caption: caption.trim() || undefined })
     },
     onSuccess: (updated) => {
@@ -38,13 +40,21 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
 
   function addFiles(list: FileList | null) {
     if (!list) return
-    setFiles((prev) => [...prev, ...Array.from(list)].slice(0, MAX_PHOTOS))
+    if (submitMutation.isPending) return
+    void uploads.add(Array.from(list))
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    if (files.length > 0 && !submitMutation.isPending) submitMutation.mutate()
+    if (
+      uploads.urls.length > 0 &&
+      !uploads.uploading &&
+      !uploads.incomplete &&
+      !uploads.error &&
+      !submitMutation.isPending
+    )
+      submitMutation.mutate()
   }
 
   return (
@@ -52,19 +62,20 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
       <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h2 className="modal-title">{t('album.addPhotosTitle')}</h2>
 
-        {files.length > 0 && (
+        {uploads.items.length > 0 && (
           <div className="photo-previews">
-            {files.map((file, i) => (
-              <div key={`${file.name}-${i}`} className="photo-preview">
-                {file.type.startsWith('video/') ? (
-                  <video src={URL.createObjectURL(file)} />
-                ) : (
-                  <img src={URL.createObjectURL(file)} alt={file.name} />
-                )}
+            {uploads.items.map((item) => (
+              <div key={item.id} className="photo-preview">
+                <ComposerUploadPreview
+                  item={item}
+                  pending={item.pending}
+                  livePhoto={item.motionId !== undefined || item.processing?.kind === 'livePhoto'}
+                />
                 <button
                   type="button"
                   className="photo-preview-remove"
-                  onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                  onClick={() => void uploads.remove(item)}
+                  disabled={submitMutation.isPending}
                   aria-label={t('newPost.removePhoto')}
                 >
                   <Icon name="x" size={14} strokeWidth={2.5} />
@@ -87,7 +98,7 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
             type="button"
             className="btn btn-secondary"
             onClick={() => fileInputRef.current?.click()}
-            disabled={files.length >= MAX_PHOTOS}
+            disabled={uploads.count >= MAX_PHOTOS || submitMutation.isPending}
           >
             <Icon name="image" size={18} />
             {t('newPost.addPhotos')}
@@ -104,13 +115,37 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
           maxLength={2000}
         />
 
+        {uploads.error && (
+          <div className="modal-error">
+            {t('comments.uploadFailed')}{' '}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={uploads.uploading}
+              onClick={() => void uploads.retry()}
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
         {submitMutation.isError && <div className="modal-error">{t('album.addPhotosFailed')}</div>}
 
         <div className="modal-actions">
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             {t('common.cancel')}
           </button>
-          <button type="submit" className="btn btn-primary" disabled={files.length === 0 || submitMutation.isPending}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={
+              !uploads.urls.length ||
+              uploads.uploading ||
+              uploads.incomplete ||
+              uploads.error ||
+              submitMutation.isPending
+            }
+          >
             {submitMutation.isPending ? t('common.loading') : t('album.addPhotosSubmit')}
           </button>
         </div>

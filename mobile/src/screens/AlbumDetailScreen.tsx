@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import React, { useMemo, useState } from 'react'
 import {
   View,
@@ -117,7 +118,7 @@ export function AlbumDetailScreen() {
     if (trimmed && !commentMutation.isPending) commentMutation.mutate(trimmed)
   }
 
-  return (
+  const content = (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
@@ -266,6 +267,7 @@ export function AlbumDetailScreen() {
       />
     </SafeAreaView>
   )
+  return <UploadProcessingContext.Provider value={post?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
 }
 
 const styles = StyleSheet.create({

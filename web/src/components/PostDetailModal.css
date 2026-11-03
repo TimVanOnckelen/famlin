@@ -190,3 +190,19 @@
   box-shadow: none;
   border: none;
 }
+
+.post-detail-modal-media-item.live-photo > img,
+.post-detail-modal-media-item.live-photo > video {
+  object-fit: contain;
+  max-height: 70vh;
+}
+
+.post-detail-modal-media-item.media-processing {
+  display: flex;
+  min-height: 320px;
+  cursor: default;
+}
+
+.post-detail-modal-media-item.media-processing > img {
+  object-fit: contain;
+}

@@ -1,12 +1,13 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { fetchPost, getUploadUrl } from '@famlin/api-client'
+import { fetchPost } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import { PostCard } from '@/components/PostCard'
 import { Lightbox } from '@/components/Lightbox'
-import { ShimmerImage } from '@/components/ShimmerImage'
+import { UploadMedia } from '@/components/UploadMedia'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { isVideoUrl } from '@/utils/media'
 import './PostDetailModal.css'
@@ -75,7 +76,7 @@ export function PostDetailModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [mediaCount, lightboxIndex])
 
-  return (
+  const content = (
     <div className="modal-overlay post-detail-overlay" onClick={onClose}>
       <div
         className={`post-detail-modal${hasMedia ? ' post-detail-modal-with-media' : ''}`}
@@ -114,22 +115,13 @@ export function PostDetailModal({
               const url = urls[mediaIndex] ?? urls[0]
               return (
                 <>
-                  {isVideoUrl(url) ? (
-                    <video
-                      key={url}
-                      src={getUploadUrl(url)}
-                      className="post-detail-modal-media-item"
-                      controls
-                      preload="metadata"
-                    />
-                  ) : (
-                    <ShimmerImage
-                      key={url}
-                      src={getUploadUrl(url)}
-                      className="post-detail-modal-media-item"
-                      onClick={() => setLightboxIndex(mediaIndex)}
-                    />
-                  )}
+                  <UploadMedia
+                    key={`${url}-${lightboxIndex !== null}`}
+                    url={url}
+                    autoPlay={lightboxIndex === null}
+                    className="post-detail-modal-media-item"
+                    onClick={isVideoUrl(url) ? undefined : () => setLightboxIndex(mediaIndex)}
+                  />
                   {urls.length > 1 && (
                     <>
                       <button
@@ -185,4 +177,5 @@ export function PostDetailModal({
       )}
     </div>
   )
+  return <UploadProcessingContext.Provider value={post?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
 }

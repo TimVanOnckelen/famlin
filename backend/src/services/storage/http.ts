@@ -21,7 +21,7 @@ export interface ObjectSource {
   get(range?: ByteRange): Promise<Omit<StoredObject, 'key'> | null>
 }
 
-type SendOptions = { contentType: string; cacheControl?: string }
+type SendOptions = { contentType: string; cacheControl?: string; conditional?: boolean }
 
 // Sends one object as the response — 304 when the client's cached copy is
 // current, 200, 206 for a satisfiable Range, 416 otherwise — or returns
@@ -34,7 +34,7 @@ export async function sendObject(reply: FastifyReply, source: ObjectSource, opti
   const { request } = reply
   // Conditionals take precedence over Range (RFC 9110 §13.2.2), so check
   // them before opening anything — one extra stat, on revalidations only.
-  if (request.headers['if-none-match'] || request.headers['if-modified-since']) {
+  if (options.conditional !== false && (request.headers['if-none-match'] || request.headers['if-modified-since'])) {
     const info = await source.stat()
     if (!info) return false
     if (isNotModified(request, info)) {
