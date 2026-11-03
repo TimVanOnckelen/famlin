@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'server-setup',
+        'storage',
         'admin-configuration',
         'inviting-family',
         'managing-users-and-content',

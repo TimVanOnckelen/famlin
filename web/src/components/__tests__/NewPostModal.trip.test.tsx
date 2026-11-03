@@ -22,7 +22,8 @@ const coverUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg'
 const open = (onClose = vi.fn()) =>
   renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="one" onClose={onClose} />)
 async function chooseTrip() {
-  await userEvent.click(screen.getByRole('button', { name: 'Trip' }))
+  await userEvent.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+  await userEvent.click(screen.getByRole('option', { name: 'Trip' }))
   await userEvent.type(screen.getByPlaceholderText('E.g. Road trip Italy'), 'Italy')
   fireEvent.change(screen.getByLabelText('Start date *'), { target: { value: '2026-07-01' } })
 }
@@ -49,7 +50,8 @@ afterEach(() => {
 it('requires a title and start date and creates a minimal trip without uploading unrelated media', async () => {
   const onClose = vi.fn()
   open(onClose)
-  await userEvent.click(screen.getByRole('button', { name: 'Trip' }))
+  await userEvent.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+  await userEvent.click(screen.getByRole('option', { name: 'Trip' }))
   expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled()
   await userEvent.type(screen.getByPlaceholderText('E.g. Road trip Italy'), 'Italy')
   expect(screen.getByRole('button', { name: 'Post' })).toBeDisabled()
@@ -154,11 +156,12 @@ it('shows retry for companion load errors and preserves the form after upload fa
   expect(screen.getByPlaceholderText('E.g. Road trip Italy')).toHaveValue('Italy')
 })
 
-it('does not offer trips when the selected family disallows them', () => {
+it('does not offer trips when the selected family disallows them', async () => {
   renderWithQueryClient(
     <NewPostModal groups={[{ ...groups[0], allowedPostTypes: ['UPDATE'] }]} defaultGroupId="one" onClose={vi.fn()} />
   )
-  expect(screen.queryByRole('button', { name: 'Trip' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+  expect(screen.queryByRole('option', { name: 'Trip' })).not.toBeInTheDocument()
 })
 
 it('shows one Update-style cover preview and restores the picker only after removal', async () => {

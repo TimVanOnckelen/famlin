@@ -68,6 +68,27 @@ services:
       DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Media backend and optional previous storage for online migration —
+      # see the Storage page. Leave unset for the default local volume.
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_SESSION_TOKEN: ${S3_SESSION_TOKEN:-}
+      S3_PREFIX: ${S3_PREFIX:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      STORAGE_FALLBACK_DRIVER: ${STORAGE_FALLBACK_DRIVER:-}
+      STORAGE_FALLBACK_UPLOADS_DIR: ${STORAGE_FALLBACK_UPLOADS_DIR:-/app/uploads}
+      STORAGE_FALLBACK_S3_BUCKET: ${STORAGE_FALLBACK_S3_BUCKET:-}
+      STORAGE_FALLBACK_S3_ENDPOINT: ${STORAGE_FALLBACK_S3_ENDPOINT:-}
+      STORAGE_FALLBACK_S3_REGION: ${STORAGE_FALLBACK_S3_REGION:-us-east-1}
+      STORAGE_FALLBACK_S3_ACCESS_KEY_ID: ${STORAGE_FALLBACK_S3_ACCESS_KEY_ID:-}
+      STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY: ${STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY:-}
+      STORAGE_FALLBACK_S3_SESSION_TOKEN: ${STORAGE_FALLBACK_S3_SESSION_TOKEN:-}
+      STORAGE_FALLBACK_S3_PREFIX: ${STORAGE_FALLBACK_S3_PREFIX:-}
+      STORAGE_FALLBACK_S3_FORCE_PATH_STYLE: ${STORAGE_FALLBACK_S3_FORCE_PATH_STYLE:-false}
     volumes:
       - famlin-uploads:/app/uploads
       - famlin-backups:/app/backups
@@ -98,8 +119,8 @@ This always matches the canonical [`docker-compose.yml`](https://github.com/TimV
 
 Runtime configuration in Famlin is split in two:
 
-- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, and the optional `UPLOADS_DIR` and `BACKUPS_DIR`. `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` directly from `.env` to configure the database container and build `DATABASE_URL` for you.
-- **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration).
+- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, the optional `UPLOADS_DIR` and `BACKUPS_DIR`, and the optional media storage settings (`STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*`, see [Storage](./storage)). `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` directly from `.env` to configure the database container and build `DATABASE_URL` for you.
+- **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications, media integrations, branding, backups): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration).
 
 Create a `.env` file next to `docker-compose.yml`:
 
@@ -116,6 +137,7 @@ TRUST_PROXY=false
 - Leave `PORT=3000` as-is unless you have a specific reason to change it; `NODE_ENV=production` is already set in `docker-compose.yml`.
 - `UPLOADS_DIR` — optional; where uploaded photos and videos are stored. Defaults to `uploads` next to the server, which is exactly where the `famlin-uploads` volume mounts, so leave it unset unless you deliberately store media elsewhere (and mount that path into the container). The backend test harness uses it to keep a test run off the real media volume.
 - `BACKUPS_DIR` — optional; where [scheduled backups](./maintenance#scheduled-backups) write their database dumps and uploads mirror. Defaults to `backups` next to the server, which is where the `famlin-backups` volume mounts. To keep backups on another disk or NAS share, bind-mount that folder at `/app/backups` instead of changing this.
+- `STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*` — optional; where uploaded media is stored. Leave them unset to keep media on the `famlin-uploads` volume. To store media in an S3-compatible bucket instead, or to move an existing installation, see [Storage](./storage).
 
 ## 3. Start the stack
 
@@ -275,19 +297,6 @@ The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famli
 
 Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
 
-### Optional S3 media storage
+### Optional: where media is stored
 
-The backend defaults to its local uploads volume. For S3 or an S3-compatible
-service, pass `STORAGE_DRIVER=s3`, `S3_BUCKET`, and `S3_REGION` to the backend
-container; optionally set `S3_ENDPOINT`, `S3_PREFIX`, and
-`S3_FORCE_PATH_STYLE=true`. Use `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY`
-(optionally `S3_SESSION_TOKEN`), or the standard AWS credential chain. The supplied Compose file forwards these variables from `.env` to the backend.
-For custom deployments, forward them in the service's `environment` section or
-via an `env_file`.
-
-Keep the uploads volume: branding stays local. Media processing uses temporary
-local disk space, so size the container's temporary filesystem for concurrent
-uploads (up to 200 MB per file) and image/video processing. See
-[Moving media between local and S3 storage](maintenance.md#moving-media-between-local-and-s3-storage)
-before changing an existing installation. All backend instances must share the
-same primary/fallback configuration during migration.
+By default, uploaded photos and videos live on the `famlin-uploads` volume. To put them on another disk, on a NAS share or in an S3-compatible bucket (AWS S3, MinIO, Garage, …), see [Storage](./storage).

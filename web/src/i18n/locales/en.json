@@ -75,6 +75,9 @@
     "onThisDayCount_one": "{{count}} memory from this day",
     "onThisDayCount_other": "{{count}} memories from this day",
     "membersTitle": "Family members",
+    "membersLoadFailed": "Some members could not be loaded.",
+    "membersRetry": "Try again",
+    "membersEmpty": "No members found.",
     "viewMembers": "View members",
     "viewAllMembers": "View all members"
   },
@@ -93,9 +96,17 @@
   },
   "newPost": {
     "title": "New post",
-    "group": "Group",
+    "group": "Share with",
     "groupHint": "Choose one or more families to share this post with.",
-    "typeLabel": "Post type",
+    "typeLabel": "What do you want to share?",
+    "typeDescriptions": {
+      "UPDATE": "Share everyday news, photos and videos.",
+      "MILESTONE": "Celebrate a birthday, achievement or special moment.",
+      "POLL": "Ask a question and let your family vote.",
+      "TRIP": "Plan a trip and share updates along the way.",
+      "ALBUM": "Collect photos together in a shared album.",
+      "GIFT_LIST": "Share wishlists and optionally draw Secret Santa names."
+    },
     "typeUpdate": "Update",
     "typeMilestone": "Milestone",
     "typePoll": "Poll",
