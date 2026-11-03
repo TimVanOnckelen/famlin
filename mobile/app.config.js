@@ -24,6 +24,11 @@ function versionCodeFromVersion(version) {
   return getExpoMajorVersion() * 10000000 + major * 10000 + minor * 100 + patch
 }
 
+// Camera is used for story photos (expo-image-picker) and for scanning the
+// server's "connect" QR code on the login screen (expo-camera, issue #345).
+const CAMERA_PERMISSION =
+  "Famlin uses your camera so you can take a photo to share as a story with your family, or scan the QR code your family server shows to connect the app to it. Photos are uploaded only to the family server you're signed in to; nothing the camera sees when scanning is saved."
+
 export default ({ config }) => ({
   ...config,
   name: 'Famlin',
@@ -108,10 +113,19 @@ export default ({ config }) => ({
       {
         photosPermission:
           "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
-        cameraPermission:
-          "Famlin uses your camera so you can take a photo to share as a story with your family. Photos are uploaded only to the family server you're signed in to.",
+        cameraPermission: CAMERA_PERMISSION,
         // Story capture takes still photos and does not need microphone access.
         microphonePermission: false,
+      },
+    ],
+    [
+      'expo-camera',
+      {
+        // Same string as expo-image-picker's: both plugins write the one
+        // NSCameraUsageDescription, so it has to describe both uses.
+        cameraPermission: CAMERA_PERMISSION,
+        microphonePermission: false,
+        recordAudioAndroid: false,
       },
     ],
     [

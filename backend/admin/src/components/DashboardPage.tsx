@@ -4,18 +4,28 @@ import { api, DashboardStats } from '../api/client'
 import { Icon, IconName } from './Icon'
 import i18n from '../i18n'
 import { avatarColor, initials } from '../avatar'
+import { ConnectAppQr } from './ConnectAppQr'
 
 export function DashboardPage() {
   const { t } = useTranslation()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<number | null>(null)
+  const [storeLinks, setStoreLinks] = useState<{ appStoreUrl?: string | null; playStoreUrl?: string | null }>({})
 
   useEffect(() => {
     api
       .getStats()
       .then(setStats)
       .finally(() => setLoading(false))
+  }, [])
+
+  // Store links for the "Connect the mobile app" card; the card works without them.
+  useEffect(() => {
+    api
+      .getServerInfo()
+      .then((info) => setStoreLinks({ appStoreUrl: info.appStoreUrl, playStoreUrl: info.playStoreUrl }))
+      .catch(() => {})
   }, [])
 
   if (loading || !stats) return <div className="loading">{t('common.loading')}</div>
@@ -149,6 +159,11 @@ export function DashboardPage() {
                 ))}
               </ul>
             )}
+          </div>
+
+          <div className="card">
+            <h3>{t('connectApp.title')}</h3>
+            <ConnectAppQr appStoreUrl={storeLinks.appStoreUrl} playStoreUrl={storeLinks.playStoreUrl} />
           </div>
 
           <div className="card">

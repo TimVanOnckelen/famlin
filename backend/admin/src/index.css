@@ -2169,3 +2169,34 @@ button.mini-toggle {
     align-items: stretch;
   }
 }
+
+.connect-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.connect-qr-image {
+  /* Always dark-on-white: scanners need the quiet zone and contrast. */
+  background: #fff;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  padding: 4px;
+}
+
+.connect-qr-url {
+  display: block;
+  word-break: break-all;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.connect-qr-stores {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+}

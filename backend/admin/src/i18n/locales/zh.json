@@ -103,6 +103,13 @@
     "apiDocs": "API 文档",
     "uploads": "上传文件"
   },
+  "connectApp": {
+    "title": "连接手机应用",
+    "description": "用手机相机扫描此二维码，即可打开 Famlin 并连接到此服务器。",
+    "qrAlt": "用于将 Famlin 应用连接到此服务器的二维码",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "users": {
     "grantAdminConfirm": "授予 {{name}}（{{email}}）管理员权限？该用户将能够管理用户、群组和服务器设置。",
     "revokeAdminConfirm": "撤销 {{name}}（{{email}}）的管理员权限？",

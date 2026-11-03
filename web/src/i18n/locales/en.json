@@ -1,4 +1,11 @@
 {
+  "connectApp": {
+    "title": "Connect your phone",
+    "description": "Scan this code with your phone's camera to open Famlin and connect it to this server.",
+    "qrAlt": "QR code to connect the Famlin app to this server",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Pause Live Photo", "playLivePhoto": "Play Live Photo", "playVideo": "Play video", "processing": "Media is processing…", "processingFailed": "Media processing failed"},
   "common": {
     "appName": "Famlin",
