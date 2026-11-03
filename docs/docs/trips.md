@@ -8,7 +8,7 @@ A **Trip** is a travel journal your family can follow through check-ins, photos
 and updates. You can start a trip in either the mobile app or the web app.
 
 <figure>
-  <img src="/img/user-guide/trips.webp" alt="A Famlin trip showing its destination, travelers, and a photo check-in timeline" width="320" />
+  <img src="/docs/img/user-guide/trips.webp" alt="A Famlin trip showing its destination, travelers, and a photo check-in timeline" width="320" />
   <figcaption>A trip keeps travel check-ins and photos together in one shared timeline.</figcaption>
 </figure>
 
