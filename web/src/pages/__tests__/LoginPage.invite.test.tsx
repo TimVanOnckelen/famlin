@@ -88,5 +88,7 @@ it('preserves ordinary SSO deep-link behavior without an invitation', async () =
     `${window.location.origin}/`,
     undefined
   )
-  expect(screen.getByLabelText('Current path')).toHaveTextContent('/posts/shared-post')
+  // navigate() runs before setAuth, but the router may commit the new location
+  // in a later render, so wait for it rather than asserting synchronously.
+  await waitFor(() => expect(screen.getByLabelText('Current path')).toHaveTextContent('/posts/shared-post'))
 })
