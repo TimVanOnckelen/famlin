@@ -10,7 +10,8 @@ USER root
 # by scheduled backups). jq reads the add-on options. The build fails if the
 # server package is missing from the base image's Alpine release.
 RUN apk add --no-cache postgresql16 su-exec jq \
-    && postgres --version
+    && PGBIN=/usr/libexec/postgresql16 \
+    && "$PGBIN/postgres" --version && "$PGBIN/initdb" --version && "$PGBIN/pg_ctl" --version
 
 COPY rootfs/ /
 RUN chmod +x /run.sh

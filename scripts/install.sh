@@ -84,6 +84,10 @@ write_file() {
   $SUDO tee "$1" >/dev/null
 }
 
+# Everything below runs inside main(), called on the last line: when piped
+# (`curl | sh`) the shell reads the script from stdin as it goes, so a child
+# process (apt, docker) that read stdin could otherwise swallow the rest of it.
+main() {
 # --- arguments ---------------------------------------------------------------
 while [ $# -gt 0 ]; do
   case $1 in
@@ -105,6 +109,14 @@ done
 case $MODE in ""|caddy|tunnel|local) ;; *) die "--mode must be caddy, tunnel or local" ;; esac
 case $CHANNEL in latest|release) ;; *) die "--channel must be latest or release" ;; esac
 case $REL in ""|v[0-9]*) ;; *) die "--version must look like v1.2.3" ;; esac
+# These values end up in .env and the Caddyfile: refuse anything that could
+# break out of a plain value (whitespace, quotes, $, backslash).
+check_plain() {
+  case $2 in
+    *[[:space:]\"\'\$\\]*) die "$1 contains a space, quote, \$ or backslash, which is not allowed" ;;
+  esac
+}
+check_plain --domain "$DOMAIN"; check_plain --email "$EMAIL"; check_plain --tunnel-token "$TUNNEL_TOKEN"
 
 # --- 1. system checks --------------------------------------------------------
 [ "$(uname -s)" = Linux ] || die "this installer supports Debian/Ubuntu Linux only"
@@ -144,6 +156,7 @@ fi
 if [ "$DRY_RUN" = 0 ]; then
   # The Caddy/Tunnel overlays use `!reset`, which needs Compose >= 2.24.
   cv=$(docker compose version --short 2>/dev/null || $SUDO docker compose version --short)
+  [ -n "$cv" ] || die "cannot determine the Docker Compose version"
   cv=${cv#v}; major=${cv%%.*}; minor=${cv#*.}; minor=${minor%%.*}
   if [ "$major" -lt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -lt 24 ]; }; then
     die "Docker Compose $cv is too old (need 2.24+). Remove the distro's docker/compose packages and re-run to get Docker's own."
@@ -160,9 +173,13 @@ if [ "$DRY_RUN" = 0 ]; then
   trap 'rm -rf "$dl"' EXIT
   # These are the release's own assets: the compose file defaults to that
   # release's image, the overlays add HTTPS. Your settings live in .env, so
-  # these files are safe to overwrite on every run.
+  # these files are safe to overwrite on every run. Download everything first,
+  # install after, so a failure never leaves a half-updated mix of versions.
   for f in docker-compose.yml docker-compose.caddy.yml docker-compose.tunnel.yml Caddyfile; do
-    curl -fsSL "$BASE/$f" -o "$dl/$f" || die "could not download $BASE/$f (is '$REL' a real release?)"
+    curl -fsSL "$BASE/$f" -o "$dl/$f" 2>/dev/null || die "could not download $BASE/$f
+       If this release predates the installer (it does not carry the overlay files yet), try again after the next release, or pass --version vX.Y.Z of a newer release. Otherwise check '$REL' is a real release."
+  done
+  for f in docker-compose.yml docker-compose.caddy.yml docker-compose.tunnel.yml Caddyfile; do
     $SUDO install -m 644 "$dl/$f" "$DIR/$f"
   done
 else
@@ -175,14 +192,15 @@ fi
 if [ -z "$MODE" ]; then
   printf '\nHow should people reach Famlin?\n  caddy  - your own domain with automatic HTTPS (recommended)\n  tunnel - Cloudflare Tunnel (no open ports, domain on Cloudflare)\n  local  - plain http on port 3000 (home network / testing)\n\n' >&2
   ask "Access mode (caddy/tunnel/local)" "caddy"; MODE=$REPLY
-  case $MODE in caddy|tunnel|local) ;; *) die "unknown mode '$MODE'" ;; esac
 fi
+case $MODE in caddy|tunnel|local) ;; *) die "unknown mode '$MODE' (use caddy, tunnel or local)" ;; esac
 
 COMPOSE_FILE="docker-compose.yml"
 case $MODE in
   caddy)
     [ -n "$DOMAIN" ] || DOMAIN=$(env_get FAMLIN_DOMAIN)
     [ -n "$DOMAIN" ] || { ask "Domain name pointing at this server (e.g. famlin.example.com)" ""; DOMAIN=$REPLY; }
+    check_plain domain "$DOMAIN"; check_plain email "$EMAIL"
     [ -n "$DOMAIN" ] || die "a domain is required for caddy mode (--domain)"
     [ -n "$EMAIL" ] || EMAIL=$(env_get ACME_EMAIL)
     [ -n "$EMAIL" ] || { ask "Email for Let's Encrypt expiry notices (optional)" ""; EMAIL=$REPLY; }
@@ -193,7 +211,7 @@ case $MODE in
     elif [ -n "$server_ip" ] && [ "$domain_ip" != "$server_ip" ]; then
       warn "$DOMAIN resolves to $domain_ip but this server's public IP is $server_ip."
     fi
-    if [ -n "$domain_ip" ] && [ "$domain_ip" != "$server_ip" ]; then
+    if [ -n "$domain_ip" ] && [ -n "$server_ip" ] && [ "$domain_ip" != "$server_ip" ]; then
       ask "Continue anyway? (y/N)" "y"
       case $REPLY in y|Y|yes) ;; *) die "stopped; fix DNS and re-run" ;; esac
     fi
@@ -203,6 +221,7 @@ case $MODE in
   tunnel)
     [ -n "$TUNNEL_TOKEN" ] || TUNNEL_TOKEN=$(env_get CLOUDFLARE_TUNNEL_TOKEN)
     [ -n "$TUNNEL_TOKEN" ] || { ask "Cloudflare tunnel token" ""; TUNNEL_TOKEN=$REPLY; }
+    check_plain "tunnel token" "$TUNNEL_TOKEN"
     [ -n "$TUNNEL_TOKEN" ] || die "a tunnel token is required for tunnel mode (--tunnel-token)"
     COMPOSE_FILE="docker-compose.yml:docker-compose.tunnel.yml"
     env_set CLOUDFLARE_TUNNEL_TOKEN "$TUNNEL_TOKEN" ;;
@@ -276,3 +295,6 @@ printf '\nFamlin is running.\n\n  Open %s%s to create the first admin account.\n
 [ "$MODE" != tunnel ] || printf '  (Cloudflare: point the tunnel at http://famlin-backend:3000, then open /admin there.)\n'
 [ "$MODE" != caddy ] || printf '  The certificate can take a minute on first visit; ports 80 and 443 must be open.\n'
 printf '\n  Manage it:  cd %s && docker compose ps | logs -f | pull && docker compose up -d\n  Guide:      https://famlin.app/docs/install-vps\n' "$DIR"
+}
+
+main "$@"
