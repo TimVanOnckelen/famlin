@@ -43,7 +43,9 @@ export class S3StorageBackend implements StorageBackend {
   }
   async init(): Promise<void> {
     try {
-      await this.client.send(new HeadBucketCommand({ Bucket: this.options.bucket }))
+      await this.client.send(new HeadBucketCommand({ Bucket: this.options.bucket }), {
+        abortSignal: AbortSignal.timeout(5000),
+      })
     } catch (error) {
       throw safeError(error)
     }

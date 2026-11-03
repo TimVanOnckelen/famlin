@@ -122,6 +122,12 @@ export function FeedPage({
   // they all hang off this optional prop) and the feed's empty state explains
   // why instead of offering a composer that would have no family to post into.
   const hasGroups = groups.length > 0
+  const singleActiveGroup =
+    selectedGroupIds.length === 1
+      ? groups.find((group) => group.id === selectedGroupIds[0])
+      : groups.length === 1
+        ? groups[0]
+        : undefined
 
   // Preselect the composer's group when the filter narrows to exactly one.
   const composerDefaultGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null)
@@ -132,12 +138,7 @@ export function FeedPage({
   const storyGroups = selectedGroupIds.length > 0 ? groups.filter((g) => selectedGroupIds.includes(g.id)) : groups
   const storiesEnabled = storyGroups.some((g) => g.storiesEnabled)
 
-  // The side panel (On this day / family members) and card group-labels only
-  // have one clear target when the family filter narrows to exactly one —
-  // mirrors mobile FeedScreen's singleActiveGroup.
   const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : groups.map((g) => g.id)
-  const singleActiveGroup =
-    effectiveGroupIds.length === 1 ? groups.find((g) => g.id === effectiveGroupIds[0]) : undefined
   const showGroupOnCards = effectiveGroupIds.length > 1
 
   // Where "o"/Enter/a card click should go: trips and albums keep opening
@@ -206,15 +207,18 @@ export function FeedPage({
             </div>
           )}
           {groups.length > 1 && (
-            <div className="feed-filter" role="group" aria-label={t('feed.filterLabel')}>
+            <div className="feed-filter feed-family-filter" role="group" aria-label={t('feed.filterLabel')}>
               <button
+                type="button"
                 className={`filter-chip${selectedGroupIds.length === 0 ? ' filter-chip-active' : ''}`}
                 onClick={() => setSelectedGroupIds([])}
+                aria-pressed={selectedGroupIds.length === 0}
               >
                 {t('feed.allFamilies')}
               </button>
               {groups.map((group) => (
                 <button
+                  type="button"
                   key={group.id}
                   className={`filter-chip${selectedGroupIds.includes(group.id) ? ' filter-chip-active' : ''}`}
                   onClick={() => toggleGroup(group.id)}
@@ -313,8 +317,15 @@ export function FeedPage({
           )}
         </div>
 
-        {singleActiveGroup && (
-          <FeedSidePanel groupId={singleActiveGroup.id} onOpenPost={openPostModal} onOpenMembers={onOpenMembers} />
+        {groups.length > 0 && (
+          <FeedSidePanel
+            groups={groups}
+            selectedGroupIds={selectedGroupIds}
+            onOpenPost={openPostModal}
+            onOpenMembers={onOpenMembers}
+            onToggleGroup={toggleGroup}
+            onSelectAllGroups={() => setSelectedGroupIds([])}
+          />
         )}
       </div>
 

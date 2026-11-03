@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useLocation } from 'react-router'
 import { FeedPage } from '@/pages/FeedPage'
@@ -27,6 +27,12 @@ function LocationProbe() {
   )
 }
 
+const familyFilter = () => within(screen.getByRole('group', { name: 'Filter by family' }))
+async function findFamilyButton(name: string) {
+  const filter = await screen.findByRole('group', { name: 'Filter by family' })
+  return within(filter).getByRole('button', { name })
+}
+
 const groups = [
   { id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
   { id: 'group-2', name: 'Neefjes', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false },
@@ -34,9 +40,9 @@ const groups = [
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(fetchGroups).mockResolvedValue(groups)
   vi.mocked(fetchGroupMembers).mockResolvedValue([])
   vi.mocked(fetchOnThisDay).mockResolvedValue([])
+  vi.mocked(fetchGroups).mockResolvedValue(groups)
   // No circles by default — the circle filter row only appears for a viewer
   // who is actually in one.
   vi.mocked(fetchMyCircles).mockResolvedValue([])
@@ -54,12 +60,12 @@ describe('FeedPage', () => {
     const user = userEvent.setup()
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await user.click(await screen.findByRole('button', { name: 'Neefjes' }))
+    await user.click(await findFamilyButton('Neefjes'))
     await waitFor(() =>
       expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-2'], circleIds: [], cursor: undefined })
     )
 
-    await user.click(screen.getByRole('button', { name: 'All families' }))
+    await user.click(familyFilter().getByRole('button', { name: 'All families' }))
     await waitFor(() => expect(fetchPosts).toHaveBeenLastCalledWith({ groupIds: [], circleIds: [], cursor: undefined }))
   })
 
@@ -93,7 +99,7 @@ describe('FeedPage', () => {
 
   it('hides the circle filter row when the viewer is in no circles', async () => {
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
-    await screen.findByRole('button', { name: 'Familie de Vries' })
+    await findFamilyButton('Familie de Vries')
     expect(screen.queryByRole('group', { name: /circle/i })).not.toBeInTheDocument()
   })
 
@@ -101,8 +107,8 @@ describe('FeedPage', () => {
     const user = userEvent.setup()
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
 
-    await user.click(await screen.findByRole('button', { name: 'Familie de Vries' }))
-    await user.click(screen.getByRole('button', { name: 'Neefjes' }))
+    await user.click(await findFamilyButton('Familie de Vries'))
+    await user.click(familyFilter().getByRole('button', { name: 'Neefjes' }))
     await waitFor(() =>
       expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-1', 'group-2'], circleIds: [], cursor: undefined })
     )
@@ -149,8 +155,8 @@ describe('FeedPage', () => {
     queryClient.setQueryData(['groups'], groups)
     renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />, { queryClient })
 
-    expect(screen.getByRole('button', { name: 'Familie de Vries' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Neefjes' })).toBeInTheDocument()
+    expect(familyFilter().getByRole('button', { name: 'Familie de Vries' })).toBeInTheDocument()
+    expect(familyFilter().getByRole('button', { name: 'Neefjes' })).toBeInTheDocument()
   })
 
   it('offers Show more only when a next cursor exists', async () => {
@@ -245,7 +251,7 @@ it('opens search with the current single-family filter', async () => {
     <FeedPage user={makeUser()} onOpenProfile={() => {}} onOpenSearch={onOpenSearch} onLogout={() => {}} />
   )
   await screen.findByText('Lovely day in the garden.')
-  await userEvent.click(screen.getByRole('button', { name: 'Neefjes' }))
+  await userEvent.click(familyFilter().getByRole('button', { name: 'Neefjes' }))
   await userEvent.click(screen.getAllByRole('button', { name: 'Search' })[0])
   expect(onOpenSearch).toHaveBeenCalledWith('group-2')
 })
@@ -257,7 +263,25 @@ it('starts with the accepted invitation family selected', async () => {
   await waitFor(() =>
     expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-2'], circleIds: [], cursor: undefined })
   )
-  expect(await screen.findByRole('button', { name: 'Neefjes' })).toHaveAttribute('aria-pressed', 'true')
+  expect(await findFamilyButton('Neefjes')).toHaveAttribute('aria-pressed', 'true')
+})
+
+it('keeps the same side panel mounted when switching between one and multiple families', async () => {
+  renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
+  const panel = await screen.findByRole('complementary', { name: 'Family details' })
+  await userEvent.click(familyFilter().getByRole('button', { name: 'Neefjes' }))
+  expect(screen.getByRole('complementary', { name: 'Family details' })).toBe(panel)
+  await userEvent.click(familyFilter().getByRole('button', { name: 'All families' }))
+  expect(screen.getByRole('complementary', { name: 'Family details' })).toBe(panel)
+})
+
+it('shares the family selection between narrow-screen chips and the desktop sidebar', async () => {
+  renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
+  const panel = await screen.findByRole('complementary', { name: 'Family details' })
+  await userEvent.click(within(panel).getByRole('button', { name: 'Neefjes' }))
+  expect(familyFilter().getByRole('button', { name: 'Neefjes' })).toHaveAttribute('aria-pressed', 'true')
+  await userEvent.click(familyFilter().getByRole('button', { name: 'All families' }))
+  expect(within(panel).getByRole('button', { name: 'All families' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 it('opens all members from the feed header and scopes navigation when one family is selected', async () => {
@@ -268,10 +292,10 @@ it('opens all members from the feed header and scopes navigation when one family
   )
   await user.click(await screen.findByRole('button', { name: 'View members' }))
   expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
-  await user.click(screen.getByRole('button', { name: 'Neefjes' }))
+  await user.click(familyFilter().getByRole('button', { name: 'Neefjes' }))
   await user.click(screen.getByRole('button', { name: 'View members' }))
   expect(onOpenMembers).toHaveBeenLastCalledWith('group-2')
-  await user.click(screen.getByRole('button', { name: 'Familie de Vries' }))
+  await user.click(familyFilter().getByRole('button', { name: 'Familie de Vries' }))
   await user.click(screen.getByRole('button', { name: 'View members' }))
   expect(onOpenMembers).toHaveBeenLastCalledWith(undefined)
 })

@@ -46,6 +46,54 @@ beforeEach(() => {
 })
 
 describe('NewPostModal', () => {
+  it('uses the mobile semantic icon colors for Update and Milestone', async () => {
+    const { container } = renderWithQueryClient(
+      <NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />
+    )
+    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
+      color: 'var(--fam-accent)',
+      background: 'var(--fam-update-bg)',
+    })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('combobox'))
+    await user.click(screen.getByRole('option', { name: 'Milestone' }))
+    expect(container.querySelector('.custom-select-trigger .custom-select-icon')).toHaveStyle({
+      color: 'var(--fam-milestone-text)',
+      background: 'var(--fam-milestone-bg)',
+    })
+  })
+
+  it('closes the type picker on Escape before closing the composer', async () => {
+    const onClose = vi.fn()
+    renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={onClose} />)
+    const user = userEvent.setup()
+    const picker = screen.getByRole('combobox', { name: 'What do you want to share?' })
+    await user.click(picker)
+    await user.keyboard('{Escape}')
+    expect(picker).toHaveAttribute('aria-expanded', 'false')
+    expect(onClose).not.toHaveBeenCalled()
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('uses the shared switch for Secret Santa and submits its value', async () => {
+    renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+    await user.click(screen.getByRole('option', { name: 'Gift list' }))
+    const toggle = screen.getByRole('switch', { name: 'Secret Santa draw' })
+    expect(toggle).not.toBeChecked()
+    expect(toggle).toHaveClass('fam-switch')
+    await user.click(toggle)
+    expect(toggle).toBeChecked()
+    expect(screen.getByPlaceholderText('e.g. €25')).toBeInTheDocument()
+    await user.type(screen.getByPlaceholderText('Gift list title (e.g. Christmas 2026)'), 'Christmas')
+    await user.click(screen.getByRole('button', { name: 'Post' }))
+    expect(createPost).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'GIFT_LIST', typeData: expect.objectContaining({ drawEnabled: true }) })
+    )
+  })
+
   it('hides the album-picker option when the group has no linked albums', async () => {
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
     renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
@@ -138,7 +186,8 @@ describe('NewPostModal', () => {
       const user = userEvent.setup()
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
 
-      await user.click(screen.getByRole('button', { name: 'Poll' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Poll' }))
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?')
       const postButton = screen.getByRole('button', { name: 'Post' })
       expect(postButton).toBeDisabled()
@@ -152,7 +201,8 @@ describe('NewPostModal', () => {
       const user = userEvent.setup()
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
 
-      await user.click(screen.getByRole('button', { name: 'Poll' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Poll' }))
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?')
       await user.type(screen.getByPlaceholderText('Option 1'), 'Pizza')
       await user.type(screen.getByPlaceholderText('Option 2'), 'Sushi')
@@ -176,7 +226,8 @@ describe('NewPostModal', () => {
       const user = userEvent.setup()
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
 
-      await user.click(screen.getByRole('button', { name: 'Poll' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Poll' }))
       expect(screen.queryByLabelText('Remove option')).not.toBeInTheDocument()
 
       const addButton = screen.getByRole('button', { name: 'Add option' })
@@ -195,7 +246,8 @@ describe('NewPostModal', () => {
       const user = userEvent.setup()
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
 
-      await user.click(screen.getByRole('button', { name: 'Poll' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Poll' }))
       await user.type(await screen.findByPlaceholderText('Ask a question…'), 'Pizza or sushi?')
       await user.click(screen.getByRole('button', { name: 'Add option' }))
       await user.type(screen.getByPlaceholderText('Option 1'), 'Pizza')
@@ -218,7 +270,8 @@ describe('NewPostModal', () => {
       const user = userEvent.setup()
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
 
-      await user.click(screen.getByRole('button', { name: 'Album' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Album' }))
       const postButton = screen.getByRole('button', { name: 'Post' })
       expect(postButton).toBeDisabled()
 
@@ -240,15 +293,16 @@ describe('NewPostModal', () => {
   })
 
   describe('per-group allowed post types', () => {
-    it('shows all type chips for groups without allowedPostTypes (older servers)', () => {
+    it('shows all post types for groups without allowedPostTypes (older servers)', async () => {
       vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
       renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
-      expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Milestone' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Poll' })).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      expect(screen.getByRole('option', { name: 'Update' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Milestone' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Poll' })).toBeInTheDocument()
     })
 
-    it('hides type chips the group does not allow', () => {
+    it('hides post types the group does not allow', async () => {
       vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
       const restrictedGroups = [
         {
@@ -260,9 +314,10 @@ describe('NewPostModal', () => {
         },
       ]
       renderWithQueryClient(<NewPostModal groups={restrictedGroups} defaultGroupId="group-1" onClose={() => {}} />)
-      expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Poll' })).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Milestone' })).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      expect(screen.getByRole('option', { name: 'Update' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Poll' })).toBeInTheDocument()
+      expect(screen.queryByRole('option', { name: 'Milestone' })).not.toBeInTheDocument()
     })
 
     it('offers only the intersection when cross-posting and resets a type that falls out', async () => {
@@ -287,15 +342,16 @@ describe('NewPostModal', () => {
       renderWithQueryClient(<NewPostModal groups={mixedGroups} defaultGroupId="group-1" onClose={() => {}} />)
 
       // Only group-1 selected: Poll is offered — pick it.
-      await user.click(screen.getByRole('button', { name: 'Poll' }))
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Poll' }))
       expect(screen.getByPlaceholderText('Ask a question…')).toBeInTheDocument()
 
       // Add group-2: the intersection is just UPDATE, so the Poll (and
       // Milestone) chips disappear and the selected type resets to Update.
       await user.click(screen.getByRole('button', { name: 'Grandparents' }))
-      expect(screen.queryByRole('button', { name: 'Poll' })).not.toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Milestone' })).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()
+      expect(screen.queryByRole('option', { name: 'Poll' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('option', { name: 'Milestone' })).not.toBeInTheDocument()
+      expect(screen.getByRole('combobox', { name: 'What do you want to share?' })).toHaveTextContent('Update')
       expect(await screen.findByPlaceholderText(/Share an update/)).toBeInTheDocument()
 
       // The reset really applies to the submitted payload too.

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
@@ -9,8 +9,27 @@ import path from 'path'
 // vite.config.ts documents for its own (workspace) symlink.
 const repoRoot = path.resolve(import.meta.dirname, '../..')
 
+function redirectAdminRoot(server: Pick<ViteDevServer, 'middlewares'>) {
+  server.middlewares.use((request, response, next) => {
+    const url = request.url ?? ''
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.split('?')[0] === '/admin') {
+      response.writeHead(302, { Location: `/admin/${url.slice('/admin'.length)}` })
+      response.end()
+      return
+    }
+    next()
+  })
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'redirect-admin-root',
+      configureServer: redirectAdminRoot,
+      configurePreviewServer: redirectAdminRoot,
+    },
+  ],
   base: '/admin/',
   build: {
     outDir: path.resolve(import.meta.dirname, '../dist/admin'),

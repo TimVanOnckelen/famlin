@@ -140,6 +140,7 @@ export function StoragePage() {
   const conflicts = status?.progress.some((row) => row.status === 'conflict' && row.files > 0)
   const canClean =
     !!status?.fallback &&
+    !status.usingFallback &&
     !busy &&
     !running &&
     !conflicts &&
@@ -152,6 +153,11 @@ export function StoragePage() {
       {error && (
         <div role="alert" className="error">
           {error}
+        </div>
+      )}
+      {status?.usingFallback && (
+        <div role="alert" className="error">
+          {t('storage.usingFallback')}
         </div>
       )}
       {!status ? (
@@ -225,7 +231,10 @@ export function StoragePage() {
               </details>
             )}
             <div className="storage-actions">
-              <button disabled={busy || !status.fallback || running} onClick={() => void run(false)}>
+              <button
+                disabled={busy || !status.fallback || status.usingFallback || running}
+                onClick={() => void run(false)}
+              >
                 {t('storage.migrate')}
               </button>
             </div>

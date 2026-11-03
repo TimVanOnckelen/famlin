@@ -15,6 +15,12 @@ A **gift list** collects everyone's wishes for an occasion — Christmas, Sinter
 
 A gift list belongs to one family and can't be shared with several families at once.
 
+In the web composer, open **What do you want to share?** to choose a format. Each option shows
+an icon, a name and a short description; only formats allowed by the selected
+family are offered. Use the **Secret Santa draw** switch to enable or disable
+the draw. The type picker also supports arrow keys, Enter to select and Escape
+to close without leaving the composer.
+
 ## Who can see it
 
 Only the participants. Other family members don't see the gift list anywhere — not in the feed, search, photos, favorites or notifications — and photos attached to wishes are private to the participants too. Admins who aren't participants can't read it either; it is only included in the admin's full server backup.

@@ -573,6 +573,7 @@
     }
   },
   "storage": {
+    "usingFallback": "De primaire opslag is niet beschikbaar. De terugvalopslag wordt gebruikt voor lezen en schrijven. Media verwijderen, migratie en opschonen zijn uitgeschakeld. Herstel de toegang tot de primaire opslag en herstart de server voordat je terugvalgegevens migreert.",
     "title": "Opslag",
     "description": "Configureer opslag via omgevingsvariabelen en herstart. Nieuwe media gaan naar de primaire opslag; lezen gebruikt ook de terugvalbron.",
     "primary": "Primaire opslag",
