@@ -5,17 +5,26 @@ import { getT } from '../i18n/index.js'
 
 export default async function pushTokenRoutes(fastify: FastifyInstance) {
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const body = pushTokenBodySchema.parse(request.body)
+    const { token, installId } = pushTokenBodySchema.parse(request.body)
 
     try {
+      const device = installId
+        ? await prisma.device.findFirst({
+            where: { installId, userId: request.user!.id },
+            select: { id: true },
+          })
+        : null
+
       await prisma.pushToken.upsert({
-        where: { token: body.token },
+        where: { token },
         create: {
           userId: request.user!.id,
-          token: body.token,
+          token,
+          deviceId: device?.id ?? null,
         },
         update: {
           userId: request.user!.id,
+          deviceId: device?.id ?? null,
         },
       })
 

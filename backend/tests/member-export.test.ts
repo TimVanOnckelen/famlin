@@ -74,6 +74,42 @@ describe('GET /api/auth/me/export', () => {
     expect(res.rawPayload.subarray(0, 2).toString('latin1')).toBe('PK')
   })
 
+  it('includes only the caller’s latest device diagnostics', async () => {
+    const member = await createUser()
+    const other = await createUser()
+    const ownInstallId = crypto.randomUUID()
+    const otherInstallId = crypto.randomUUID()
+    await prisma.device.create({
+      data: {
+        userId: member.id,
+        installId: ownInstallId,
+        platform: 'ios',
+        osVersion: '18.1',
+        appVersion: 'member-export-device',
+        appBuild: '245',
+        pushPermission: 'denied',
+      },
+    })
+    await prisma.device.create({
+      data: {
+        userId: other.id,
+        installId: otherInstallId,
+        platform: 'android',
+        osVersion: '16',
+        appVersion: 'other-member-device-secret',
+        appBuild: '999',
+        pushPermission: 'granted',
+      },
+    })
+
+    const body = await exportBody(app, member)
+    expect(body).toContain('data/devices.json')
+    expect(body).toContain(ownInstallId)
+    expect(body).toContain('member-export-device')
+    expect(body).not.toContain(otherInstallId)
+    expect(body).not.toContain('other-member-device-secret')
+  })
+
   it("includes the caller's groups' content (other members' too) but never another group's", async () => {
     const me = await createUser({ name: 'Exporting Member' })
     const relative = await createUser({ name: 'Fellow Member' })

@@ -8,6 +8,8 @@ jest.mock('@/utils/storage', () => ({
   deleteServerUrl: jest.fn().mockResolvedValue(undefined),
   getPushToken: jest.fn().mockResolvedValue(null),
   deletePushToken: jest.fn().mockResolvedValue(undefined),
+  getDeviceInstallId: jest.fn().mockResolvedValue(null),
+  deleteDeviceReport: jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock('@/api/uploads', () => ({
@@ -18,6 +20,7 @@ jest.mock('@famlin/api-client', () => ({
   setApiBaseUrl: jest.fn(),
   setMediaToken: jest.fn(),
   unregisterPushToken: jest.fn().mockResolvedValue(undefined),
+  unregisterDevice: jest.fn().mockResolvedValue(undefined),
 }))
 
 const testUser: User = {
@@ -89,6 +92,18 @@ describe('authStore', () => {
 
     expect(client.unregisterPushToken).toHaveBeenCalledWith('push-token-xyz')
     expect(storage.deletePushToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('logout removes the reported device and clears its local comparison state', async () => {
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    storage.getDeviceInstallId.mockResolvedValue('install-uuid')
+    const { useAuthStore } = require('@/stores/authStore')
+
+    await useAuthStore.getState().logout()
+
+    expect(client.unregisterDevice).toHaveBeenCalledWith('install-uuid')
+    expect(storage.deleteDeviceReport).toHaveBeenCalledTimes(1)
   })
 
   it('clearSession deletes the token but PRESERVES the server URL', async () => {

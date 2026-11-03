@@ -1,1 +1,1 @@
-{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["token"],"properties":{"token":{"type":"string"}}}}}}}
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["token"],"properties":{"token":{"type":"string"},"installId":{"type":"string","format":"uuid","description":"Optional installation id used to associate this push token with a reported device."}}}}}}}

@@ -37,12 +37,38 @@
     "users": "Users",
     "groups": "Groups",
     "content": "Content",
+    "operations": "Operations",
     "pushLog": "Push notification log",
+    "devices": "Devices",
     "serverSettings": "Server settings",
     "logout": "Log out",
     "language": "Language",
     "version": "Version {{version}}",
     "systemStatus": "System status"
+  },
+  "devices": {
+    "title": "Mobile devices",
+    "description": "Latest mobile diagnostics reported by members. This page shows current state only; no timestamps or activity history are collected.",
+    "totalDevices": "Reported devices",
+    "pushDenied": "Push permission denied",
+    "appVersions": "App versions by platform",
+    "empty": "No devices have reported yet.",
+    "member": "Member",
+    "installId": "Install ID",
+    "platform": "Platform",
+    "osVersion": "OS version",
+    "appVersion": "App version",
+    "appBuild": "Build",
+    "pushPermission": "Push permission",
+    "remove": "Remove",
+    "removeConfirm": "Remove this reported device for {{name}}? Its push token remains registered.",
+    "removeError": "Could not remove device: {{error}}",
+    "versionPlatform": "{{version}} · {{platform}}",
+    "permissions": {
+      "granted": "Allowed",
+      "denied": "Denied",
+      "undetermined": "Not decided"
+    }
   },
   "login": {
     "title": "Famlin Admin",

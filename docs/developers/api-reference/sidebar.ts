@@ -590,6 +590,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/get-upload-processing-status",
+          label: "Get upload conversion status",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/get-media-token",
           label: "Get a media token",
           className: "api-method get",
@@ -722,8 +728,38 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Devices",
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-my-devices",
+          label: "List your reported mobile devices",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/report-device",
+          label: "Report changed diagnostics for a mobile installation",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-my-device",
+          label: "Remove a reported device on logout",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Schemas",
       items: [
+        {
+          type: "doc",
+          id: "api-reference/schemas/device",
+          label: "Device",
+          className: "schema",
+        },
         {
           type: "doc",
           id: "api-reference/schemas/branding",

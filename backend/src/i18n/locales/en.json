@@ -24,6 +24,8 @@
     "replyToMessageNotFound": "Message being replied to was not found",
     "notificationNotFound": "Notification not found",
     "failedToRegisterPushToken": "Failed to register push token",
+    "deviceLimitReached": "This account has reached the 20-device limit",
+    "deviceNotFound": "Device not found",
     "pushNotificationsDisabled": "Push notifications are disabled on this server",
     "cannotDeleteYourself": "Cannot delete yourself",
     "oidcNotConfigured": "OIDC login is not configured",
