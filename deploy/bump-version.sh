@@ -23,10 +23,6 @@ sed -i -E "s#(image: ${image}):[0-9][^@[:space:]]*(@sha256:[0-9a-f]+)?#\1:${vers
 # Umbrel app version.
 sed -i -E "s#^version: .*#version: \"${version}\"#" "$root/umbrel/famlin-famlin/umbrel-app.yml"
 
-# Home Assistant add-on version and base image.
-sed -i -E "s#^version: .*#version: \"${version}\"#" "$root/home-assistant/famlin/config.yaml"
-sed -i -E "s#^(ARG FAMLIN_VERSION=).*#\1${version}#" "$root/home-assistant/famlin/Dockerfile"
-
 echo "Updated deploy/ manifests to ${version}."
-echo "Remember: add a CHANGELOG entry in deploy/home-assistant/famlin/CHANGELOG.md,"
-echo "and re-add image digests (see the READMEs) before publishing to the stores."
+echo "Remember to re-add image digests (see the READMEs) before publishing to the stores."
+echo "The Home Assistant add-on lives in TimVanOnckelen/famlin-ha-addon: run its \"Bump version\" workflow."

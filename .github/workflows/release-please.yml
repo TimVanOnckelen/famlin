@@ -388,3 +388,30 @@ jobs:
             fi
           } >> notes.md
           gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file notes.md
+
+  # Tell the Home Assistant add-on repository about the new release so its
+  # "Bump version" workflow opens a PR. Optional: skipped when the
+  # HA_ADDON_DISPATCH_TOKEN secret (a PAT with write access to
+  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-docker so the
+  # image the add-on builds on exists by the time the PR is merged.
+  notify-ha-addon:
+    needs: [release-please, publish-docker]
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      HA_ADDON_DISPATCH_TOKEN: ${{ secrets.HA_ADDON_DISPATCH_TOKEN }}
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - name: Dispatch to the add-on repository
+        run: |
+          if [ -z "$HA_ADDON_DISPATCH_TOKEN" ]; then
+            echo "HA_ADDON_DISPATCH_TOKEN is not set; skipping."
+            exit 0
+          fi
+          version="${TAG_NAME#v}"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $HA_ADDON_DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/TimVanOnckelen/famlin-ha-addon/dispatches \
+            -d "{\"event_type\":\"famlin-release\",\"client_payload\":{\"version\":\"$version\"}}"
