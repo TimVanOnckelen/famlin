@@ -1,0 +1,31 @@
+# Cloudflare Tunnel: reach Famlin from the internet with no open ports and no
+# certificates to manage. An overlay on docker-compose.yml:
+#
+#   CLOUDFLARE_TUNNEL_TOKEN=... \
+#     docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d
+#
+# (or put the token in .env). Requires Docker Compose v2.24 or newer. In the
+# Cloudflare dashboard, point the tunnel's public hostname at
+# http://famlin-backend:3000. Full guide: docs/docs/cloudflare-tunnel.md.
+services:
+  famlin-backend:
+    # Nothing is published on the host; cloudflared reaches the backend over
+    # the compose network.
+    ports: !reset []
+    environment:
+      TRUST_PROXY: "true"
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.11.1
+    container_name: famlin-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - famlin-backend
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN to the token from your Cloudflare tunnel}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
