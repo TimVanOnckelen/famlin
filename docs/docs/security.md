@@ -24,7 +24,7 @@ We will acknowledge receipt as soon as possible and work with you to address the
 ## Security practices
 
 - There is no default or seeded admin account. A fresh install has no users at all; the admin UI shows a one-time setup screen to create the first account (which becomes the first admin) the moment you first open `/admin` — that endpoint (`POST /api/auth/setup`) refuses to run again once any account exists. Don't rely on `prisma/seed.ts` (a dev/test-only fixture script with a hardcoded password) for a real deployment.
-- Keep your `JWT_SECRET` and `POSTGRES_PASSWORD` long, random, and private.
+- Without a `.env`, Famlin generates a random `JWT_SECRET` (stored mode `0600` in the `famlin-data` volume) and database password (the `famlin-db-secret` volume) for you. If you set them yourself, keep `JWT_SECRET` and `POSTGRES_PASSWORD` long, random, and private.
 - Run Famlin behind a reverse proxy with HTTPS in production, and set `TRUST_PROXY=true` once you do (see [Server setup](./server-setup#4-put-a-reverse-proxy-in-front)).
 - Keep Docker images, dependencies, and the host OS up to date.
 - Restrict admin access (`isAdmin = true`) to trusted users only. Famlin refuses to let the last remaining admin be demoted or removed, so you can't accidentally lock yourself out — but a compromised admin account is still a compromised app, so treat it accordingly.
