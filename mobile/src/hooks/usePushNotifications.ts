@@ -63,15 +63,15 @@ export function usePushNotifications() {
 }
 
 async function registerPushTokenAsync(userId: string) {
-  let installId: string
-  try {
-    installId = await getOrCreateDeviceInstallId()
-    await syncDeviceDiagnostics(userId)
-  } catch (err) {
-    console.error('Failed to report device diagnostics', err)
-    // Diagnostics are best-effort and must never prevent sign-in or push
-    // registration from working.
-    installId = await getOrCreateDeviceInstallId()
+  // Diagnostics are best-effort and must never prevent sign-in or push
+  // registration from working — without an install id the token is still
+  // registered, just not linked to a Device row.
+  const installId = await getOrCreateDeviceInstallId().catch((err) => {
+    console.error('Failed to read device install id', err)
+    return undefined
+  })
+  if (installId) {
+    await syncDeviceDiagnostics(userId).catch((err) => console.error('Failed to report device diagnostics', err))
   }
 
   if (!Device.isDevice) {
