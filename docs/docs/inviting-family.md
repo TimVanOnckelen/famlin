@@ -27,7 +27,7 @@ invited you. You can open this page without being signed in.
 - **Existing account:** choose **Sign in** and enter your email and password,
   or use the configured single sign-on provider. The invitation accompanies
   sign-in, including the SSO redirect, so signing in also joins the family.
-- **Already signed in:** choose **Join <family>** to confirm. You are then taken
+- **Already signed in:** choose **Join &lt;family&gt;** to confirm. You are then taken
   to the feed filtered to that family. If the invite is for a different email,
   sign out on the invitation page and use the invited account.
 
