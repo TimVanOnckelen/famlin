@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, DiskUsage, IntegrationStatus, IntegrationsStatus, JobStatus, SystemStatus } from '../api/client'
 import i18n from '../i18n'
 
-const BACKUP_DOCS_URL = 'https://famlin.app/docs/docs/maintenance#keep-backups-off-the-machine'
+const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
 
 // While a backup runs, re-poll the status this often to pick up its outcome.
 const RUNNING_POLL_MS = 3000

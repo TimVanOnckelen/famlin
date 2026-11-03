@@ -8,7 +8,7 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
-const BACKUP_DOCS_URL = 'https://famlin.app/docs/docs/maintenance#keep-backups-off-the-machine'
+const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
 
 type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
 
