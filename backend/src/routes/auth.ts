@@ -16,7 +16,7 @@ import {
   invalidateSessionCache,
   requireAdmin,
 } from '../plugins/auth.js'
-import { getOidcSettings, getAllSettings } from '../services/settings.js'
+import { getOidcSettings, getAllSettings, updateSettings } from '../services/settings.js'
 import { getBranding } from '../services/branding/index.js'
 import { getValidInvite, consumeInvite } from '../services/invites.js'
 import { completeOidcLogin } from '../services/oidcLogin.js'
@@ -200,6 +200,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
     }
 
+    // Scheduled backups are on by default for new installs only: the global
+    // default stays off so existing instances are untouched.
+    await updateSettings({ backupEnabled: true })
+
     const token = createUserToken({
       id: user.id,
       email: user.email,
@@ -293,6 +297,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
             return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
           }
           return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') })
+        }
+
+        // New install (restored or not): backups on by default, unless the
+        // archive itself carried an explicit choice.
+        if (!(await prisma.setting.findUnique({ where: { key: 'backupEnabled' } }))) {
+          await updateSettings({ backupEnabled: true })
         }
 
         const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })

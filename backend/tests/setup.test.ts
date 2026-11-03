@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
+import { getAllSettings } from '../src/services/settings.js'
 import { buildTestApp, createUser } from './helpers.js'
 
 // A dedicated file (rather than folding these into auth.test.ts) so the
@@ -50,6 +51,29 @@ describe('first-run setup', () => {
 
     const created = await prisma.user.findUnique({ where: { email: 'first-admin@example.com' } })
     expect(created?.isAdmin).toBe(true)
+  })
+
+  it('enables scheduled backups on a new install', async () => {
+    await prisma.setting.deleteMany({ where: { key: 'backupEnabled' } })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/setup',
+      payload: { email: 'first-admin@example.com', name: 'First Admin', password: 'password1234' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect((await getAllSettings()).backupEnabled).toBe(true)
+  })
+
+  it('leaves backup settings alone when setup is refused', async () => {
+    await prisma.setting.deleteMany({ where: { key: 'backupEnabled' } })
+    await createUser({ isAdmin: true })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/setup',
+      payload: { email: 'late@example.com', name: 'Late', password: 'password1234' },
+    })
+    expect(res.statusCode).toBe(409)
+    expect(await prisma.setting.findUnique({ where: { key: 'backupEnabled' } })).toBeNull()
   })
 
   it('refuses to run setup twice', async () => {
