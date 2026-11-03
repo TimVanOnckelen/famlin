@@ -15,17 +15,35 @@ are cleared automatically when the admin UI loads.
 
 Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the database yet) it shows a **one-time setup screen** instead of the login form — fill in your name, email, and a password to create the first account, which is automatically made an admin. There is no default or seeded account; if the setup screen doesn't appear, an admin account already exists and you should log in with it instead (an existing admin can reset another admin's password from the Users page; if every admin's password and access is lost, the only recovery path is connecting to the `famlin-db` container directly and clearing the affected row).
 
-From `/admin` → Server settings you can then configure everything below. The page is organised into four sections — **General**, **Sign-in & access**, **Notifications**, and **Media** — each showing a status indicator (configured / not set up) so you can see at a glance what still needs attention; changes across all sections are saved together with the save bar that appears at the bottom.
+From `/admin` → Server settings you can then configure everything below. The page has six sections, listed on the left: **General**, **Branding**, **Sign-in & access**, **Notifications**, **Media** and **Backups**. Each shows a status (configured / not set up, enabled / disabled) so you can see at a glance what still needs attention. Changes are saved together with the save bar that appears at the bottom; Branding has its own save button.
 
-- **Default language** (General) — used for server-rendered pages that don't have a signed-in user yet, currently the invite link landing page (`/invite/:token`). Choose English, Nederlands or 简体中文 (Simplified Chinese); defaults to English.
-- **App Store / Google Play URLs** (General) — optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps — [App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin) — so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
-- **OIDC / SSO** (Sign-in & access) — see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
-- **Allowed email addresses** (Sign-in & access) — restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
-- **SMTP** (Notifications) — host, port, username, password, and sender address for email notifications.
-- **Push notifications** (Notifications) — enable/disable Expo push notifications globally.
-- **Media integrations** (Media: Immich, local folders) — see [Media integrations](#media-integrations) below. Optional.
+![Server settings, General section](./img/admin-settings-general.png)
 
-All of this is stored in the database, so it survives redeploys of the backend image without any env var changes.
+- **Default language** (General): used for server-rendered pages that don't have a signed-in user yet (the invite link landing page, `/invite/:token`) and for the text of push notifications and emails. Choose English, Nederlands or 简体中文 (Simplified Chinese). Defaults to English.
+- **App Store / Google Play URLs** (General): optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps ([App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)), so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
+- **Data export** (General): downloads a zip of all family content. **Include media in export** decides whether photos and videos go into the zip. See [Data export](./managing-users-and-content#data-export).
+- **Branding**: family name, color and logo. See [Branding](#branding) below.
+- **OIDC / SSO** (Sign-in & access): see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
+- **Allowed email addresses** (Sign-in & access): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
+- **Push notifications** (Notifications): turn push notifications on or off for the whole server. Members choose per event type in their own profile.
+- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content#system-status) to admins, even when member email notifications are off.
+- **Media integrations** (Media: Immich, local folders): see [Media integrations](#media-integrations) below. Optional.
+- **Backups**: scheduled database and media backups. See [Scheduled backups](./maintenance#scheduled-backups).
+
+Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or an S3 bucket) isn't a setting here. It's configured with environment variables, see [Storage](./storage), and shown on the **Storage** page in the admin menu.
+
+<details>
+<summary>Screenshots of the other sections</summary>
+
+![Sign-in & access](./img/admin-settings-signin.png)
+
+![Notifications](./img/admin-settings-notifications.png)
+
+![Backups](./img/admin-settings-backups.png)
+
+</details>
+
+All of this is stored in the database, so it survives redeploys of the backend image without any env var changes. (Storage is the exception: see [Storage](./storage).)
 
 ## OIDC / SSO login
 
@@ -76,7 +94,9 @@ Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Serv
 
 ## Media integrations
 
-Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. These sources are read-only: Famlin never writes to them, and they're not where Famlin keeps the photos members upload (that's [Storage](./storage)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+
+![Server settings, Media section](./img/admin-settings-media.png)
 
 ### Immich
 
@@ -133,6 +153,8 @@ To remove a mapping, click the × next to it under **Mapped people**.
 ## Branding
 
 You can give your Famlin server your family's own look: a **family name** ("The Janssens"), a **color**, and a **logo**. It's set once for the whole server, in `/admin` → Server settings → **Branding**, and applies in the mobile app and the web app. With nothing set, Famlin looks exactly as it always has.
+
+![Server settings, Branding section](./img/admin-settings-branding.png)
 
 - **Family name** (up to 40 characters) appears in the app header and on the login screen, and becomes the title of push notifications and the subject of notification emails ("New activity in The Janssens"). Leave it empty to keep "Famlin".
 - **Color** — pick one of the curated presets, or choose **Custom** and enter any hex color. The live preview shows the result:
