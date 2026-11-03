@@ -1,0 +1,19 @@
+# Caddy config for docker-compose.caddy.yml: automatic HTTPS (Let's Encrypt)
+# in front of Famlin. FAMLIN_DOMAIN is required; ACME_EMAIL is optional and
+# only used for certificate expiry notices.
+{
+	# Expands to `email you@example.com` when ACME_EMAIL is set, else to nothing.
+	{$ACME_EMAIL_DIRECTIVE:}
+}
+
+{$FAMLIN_DOMAIN} {
+	# Everything (web app, /api, /admin, /uploads) is served by the one
+	# backend process.
+	#
+	# Caddy sets no request body size limit and no read/write timeouts by
+	# default, so large photo/video uploads (Famlin allows 200 MB per file) and
+	# long video streams pass through untouched; Famlin enforces its own limit.
+	# Range requests (needed for video playback) are proxied as-is, and
+	# X-Forwarded-Proto/-Host are set for the backend (TRUST_PROXY=true).
+	reverse_proxy famlin-backend:3000
+}

@@ -1,0 +1,116 @@
+name: famlin
+services:
+  famlin:
+    # Pin by version; add @sha256:<digest> (multi-arch index) when publishing.
+    image: ghcr.io/timvanonckelen/famlin:0.8.7
+    container_name: famlin
+    restart: unless-stopped
+    depends_on:
+      - famlin-db
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      POSTGRES_HOST: famlin-db
+      POSTGRES_USER: famlin
+      POSTGRES_DB: famlin
+      # Fixed password: the database is only reachable on this app's private
+      # compose network and is not published to the host. Change it before the
+      # first start if you want your own (both services must match).
+      POSTGRES_PASSWORD: famlin-casaos-db
+      DATA_DIR: /app/data
+      TRUST_PROXY: "false"
+    volumes:
+      - /DATA/AppData/$AppID/uploads:/app/uploads
+      - /DATA/AppData/$AppID/backups:/app/backups
+      - /DATA/AppData/$AppID/data:/app/data
+    ports:
+      - target: 3000
+        published: "3000"
+        protocol: tcp
+    networks:
+      - default
+    x-casaos:
+      envs:
+        - container: TRUST_PROXY
+          description:
+            en_us: Set to true only when Famlin is reached through a reverse proxy (Nginx Proxy Manager, Caddy, Cloudflare Tunnel) that sets X-Forwarded headers. Leave false for direct LAN access.
+            nl_nl: Zet alleen op true als Famlin bereikt wordt via een reverse proxy (Nginx Proxy Manager, Caddy, Cloudflare Tunnel) die X-Forwarded-headers instelt. Laat op false voor directe toegang via je netwerk.
+            zh_cn: 仅当 Famlin 通过设置了 X-Forwarded 头的反向代理（Nginx Proxy Manager、Caddy、Cloudflare Tunnel）访问时才设为 true。局域网直接访问请保持 false。
+      ports:
+        - container: "3000"
+          description:
+            en_us: Web app, admin page (/admin) and API
+            nl_nl: Webapp, beheerpagina (/admin) en API
+            zh_cn: 网页应用、管理页面 (/admin) 和 API
+      volumes:
+        - container: /app/uploads
+          description:
+            en_us: Photos and videos
+            nl_nl: Foto's en video's
+            zh_cn: 照片和视频
+        - container: /app/backups
+          description:
+            en_us: Scheduled backups (database dumps and a copy of the uploads)
+            nl_nl: Geplande back-ups (database-dumps en een kopie van de uploads)
+            zh_cn: 定时备份（数据库转储和上传文件副本）
+        - container: /app/data
+          description:
+            en_us: Generated secrets (login signing key)
+            nl_nl: Gegenereerde geheimen (aanmeldsleutel)
+            zh_cn: 生成的密钥（登录签名密钥）
+
+  famlin-db:
+    image: postgres:16-alpine
+    container_name: famlin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: famlin
+      POSTGRES_DB: famlin
+      POSTGRES_PASSWORD: famlin-casaos-db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /DATA/AppData/$AppID/db:/var/lib/postgresql/data
+    networks:
+      - default
+    x-casaos:
+      volumes:
+        - container: /var/lib/postgresql/data
+          description:
+            en_us: Database files
+            nl_nl: Databasebestanden
+            zh_cn: 数据库文件
+
+networks:
+  default:
+    name: famlin-network
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: famlin
+  author: Tim Van Onckelen
+  developer: Famlin
+  category: Social
+  # Replace with a stable hosted icon/thumbnail/screenshots before submitting.
+  icon: https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/mobile/assets/icon.png
+  thumbnail: https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/website/assets/images/screenshots/web-feed.webp
+  screenshot_link:
+    - https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/website/assets/images/screenshots/web-feed.webp
+    - https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/website/assets/images/screenshots/feed.webp
+  title:
+    en_us: Famlin
+  tagline:
+    en_us: Private family updates, photos and milestones
+    nl_nl: Privé familie-updates, foto's en mijlpalen
+    zh_cn: 私密的家庭动态、照片和纪念时刻
+  description:
+    en_us: Famlin is a private, self-hosted app for sharing family updates. Post photos and videos, milestones, stories and trips, comment and react, all on your own server. Open the app and create the first (admin) account on the setup screen.
+    nl_nl: Famlin is een privé, zelf gehoste app om familienieuws te delen. Plaats foto's, video's, mijlpalen, verhalen en reizen, reageer en like, alles op je eigen server. Open de app en maak op het installatiescherm het eerste (beheerders)account aan.
+    zh_cn: Famlin 是一款私密、自托管的家庭动态分享应用。在您自己的服务器上发布照片、视频、纪念时刻、快拍和旅行，并进行评论和互动。打开应用后，在设置界面创建第一个（管理员）账户。
+  tips:
+    before_install:
+      en_us: After installing, open Famlin and create the first administrator account. Family members need to reach this server from outside your home to use the phone apps; see https://famlin.app/docs/cloudflare-tunnel.
+  index: /
+  port_map: "3000"
+  scheme: http

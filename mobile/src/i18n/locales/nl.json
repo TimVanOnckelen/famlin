@@ -25,6 +25,22 @@
     "daysAgo_one": "gisteren",
     "daysAgo_other": "{{count}} dagen geleden"
   },
+  "connect": {
+    "scanButton": "QR-code scannen",
+    "scanTitle": "QR-code scannen",
+    "scanHint": "Richt de camera op de QR-code op het dashboard of de webprofielpagina van je Famlin-server.",
+    "invalidCode": "Dit is geen QR-code van een Famlin-server. Probeer het opnieuw.",
+    "cameraRequesting": "Famlin heeft toegang tot de camera nodig om de QR-code te scannen.",
+    "cameraDenied": "Cameratoegang staat uit. Schakel het in via Instellingen om een QR-code te scannen, of typ het serveradres in.",
+    "openSettings": "Instellingen openen",
+    "allowCamera": "Camera toestaan",
+    "differentServerTitle": "Andere server",
+    "differentServerMessage": "Deze link is voor {{server}}, maar je bent aangemeld bij een andere server. Afmelden om ermee te verbinden?",
+    "signOutAndConnect": "Afmelden en verbinden",
+    "confirmTitle": "Verbinden met {{host}}?",
+    "confirmMessage": "Ga alleen verder als je {{host}} vertrouwt. Daarna word je om je Famlin-gegevens gevraagd.",
+    "confirmConnect": "Verbinden"
+  },
   "login": {
     "subtitle": "Jouw familie, dichterbij",
     "invitationOnly": "Enkel beschikbaar voor\nfamilieleden met een uitnodiging",

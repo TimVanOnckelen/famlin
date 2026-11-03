@@ -40,6 +40,9 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  // Daily GitHub release check behind the admin "update available" notice
+  // (services/updateCheck.ts). Nothing about the instance is sent.
+  updateCheckEnabled: boolean
   // Scheduled backups (services/backup/) — opt-in, off by default.
   backupIncludeMedia: boolean
   backupEnabled: boolean
@@ -79,6 +82,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'immichServerUrl',
   'immichApiKey',
   'localMediaPath',
+  'updateCheckEnabled',
   'backupIncludeMedia',
   'backupEnabled',
   'backupSchedule',
@@ -112,7 +116,7 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
     const n = parseInt(value, 10)
     return isNaN(n) ? 587 : n
   }
-  if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled') {
+  if (key === 'pushNotificationsEnabled' || key === 'emailNotificationsEnabled' || key === 'updateCheckEnabled') {
     return value !== 'false'
   }
   if (key === 'backupEnabled' || key === 'backupIncludeMedia') {
@@ -174,6 +178,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
+    updateCheckEnabled: parseValue('updateCheckEnabled', map.get('updateCheckEnabled') ?? 'true'),
     backupIncludeMedia: parseValue('backupIncludeMedia', map.get('backupIncludeMedia') ?? 'true'),
     backupEnabled: parseValue('backupEnabled', map.get('backupEnabled') || 'false'),
     backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),

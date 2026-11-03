@@ -98,11 +98,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "updateAvailable": {
-      "title": "A new version is available: {{version}}",
-      "currentVersion": "Your server is running version {{version}}.",
-      "viewReleaseNotes": "View release notes"
-    },
     "stats": {
       "users": "Users",
       "usersSub_one": "{{count}} admin",
@@ -133,6 +128,13 @@
     "quickLinks": "Quick links",
     "apiDocs": "API documentation",
     "uploads": "Uploads"
+  },
+  "connectApp": {
+    "title": "Connect the mobile app",
+    "description": "Scan this code with your phone's camera to open Famlin and connect it to this server.",
+    "qrAlt": "QR code to connect the Famlin app to this server",
+    "appStore": "App Store",
+    "playStore": "Google Play"
   },
   "users": {
     "grantAdminConfirm": "Grant administrator access to {{name}} ({{email}})? They will be able to manage users, groups and server settings.",
@@ -400,7 +402,9 @@
     "backups": "Backups",
     "backupsDesc": "Scheduled backups of the database and every uploaded photo and video, written to the backups volume on this server.",
     "backupEnabled": "Scheduled backups",
-    "backupEnabledHint": "Off until you turn it on. Each run makes a database dump and updates one incremental copy of the uploads.",
+    "backupEnabledHint": "Each run makes a database dump and updates one incremental copy of the uploads. Enabled by default on new installs.",
+    "backupOffsiteHint": "Backups on the same disk protect against mistakes and corruption, not against a failed disk. Copy the famlin-backups volume to another machine or a NAS too.",
+    "backupOffsiteLink": "How to copy backups off this machine",
     "backupSchedule": "Schedule",
     "backupScheduleDaily": "Daily",
     "backupScheduleWeekly": "Weekly (Sundays)",
@@ -411,7 +415,10 @@
     "backupIncludeMedia": "Include media in backups",
     "backupIncludeMediaHint": "When disabled, only the database and branding are backed up. The existing media mirror is retained.",
     "exportIncludeMedia": "Include media in export",
-    "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included."
+    "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included.",
+    "updateCheck": "Check for new versions",
+    "updateCheckHint": "Checks GitHub once a day for a new release; nothing about your instance is sent.",
+    "updates": "Updates"
   },
   "media": {
     "peopleMapping": {
@@ -597,7 +604,8 @@
         "newAssets": "New album photos",
         "expireStories": "Expire stories",
         "backup": "Backup",
-        "systemAlerts": "Alert check"
+        "systemAlerts": "Alert check",
+        "updateCheck": "Update check"
       }
     },
     "migrations": {
@@ -653,5 +661,69 @@
     "errors": "Errors ({{count}})",
     "cleanupLocked": "Complete migration verification before cleaning up the source.",
     "confirmPlaceholder": "Paste the source fingerprint"
+  },
+  "updateBanner": {
+    "title": "Famlin {{latest}} is available",
+    "current": "You're running {{current}}.",
+    "breaking": "Famlin {{latest}} contains breaking changes — read the release notes before updating.",
+    "releaseNotes": "Release notes",
+    "howToUpdate": "How to update",
+    "dismiss": "Dismiss"
+  },
+  "wizard": {
+    "title": "Getting started",
+    "skip": "Skip for now",
+    "next": "Next",
+    "back": "Back",
+    "failed": "Something went wrong. Please try again.",
+    "steps": {
+      "family": "Name your family",
+      "invite": "Invite your family",
+      "app": "Get the app",
+      "backups": "Backups",
+      "done": "Done"
+    },
+    "family": {
+      "brandingFailed": "The family was created, but the color could not be saved. You can change it later under Branding.",
+      "description": "Families are the private spaces where members share updates. Create yours now; you are added as its first member.",
+      "nameLabel": "Family name",
+      "namePlaceholder": "The Smiths",
+      "colorLabel": "Accent color",
+      "create": "Create family",
+      "exists": "Your family \"{{name}}\" is ready."
+    },
+    "invite": {
+      "needFamily": "Create your family first, then you can invite people to it.",
+      "description": "Create a link anyone can use to join \"{{name}}\". Send it to the people you want to invite.",
+      "create": "Create invite link",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "copyFailed": "Could not copy the link; select and copy it manually.",
+      "share": "Share",
+      "shareText": "Join our family on Famlin: {{name}}",
+      "expiryHint": "The link works once and expires after 14 days."
+    },
+    "backups": {
+      "on": "Daily backups are on.",
+      "off": "Scheduled backups are off.",
+      "settingsLink": "Change backup settings",
+      "offsite": "Backups live on the same machine as Famlin, so also copy them somewhere else.",
+      "learnMore": "How to keep backups off the machine"
+    },
+    "done": {
+      "description": "Your Famlin server is ready. Family members can now join with the invite link.",
+      "skippedHint": "You skipped a few steps. The dashboard keeps a checklist until you finish them.",
+      "openApp": "Open the family app",
+      "stayInAdmin": "Stay in admin"
+    }
+  },
+  "checklist": {
+    "title": "Getting started",
+    "groupExists": "Create your family",
+    "adminInGroup": "Add yourself to a family",
+    "invited": "Invite family members",
+    "backupsOn": "Turn on backups",
+    "continue": "Open setup guide",
+    "dismiss": "Dismiss"
   }
 }

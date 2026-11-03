@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+  # Umbrel's auth proxy sits in front of the app. APP_HOST is
+  # <app-id>_<service>_1 on Umbrel's network.
+  app_proxy:
+    environment:
+      APP_HOST: famlin-famlin_server_1
+      APP_PORT: 3000
+      # Famlin has its own accounts, and the mobile apps call /api directly
+      # with their own tokens, so Umbrel's single-password login must not
+      # gate them. Disabling the proxy auth is what makes the phone apps
+      # work when reached through Umbrel's remote access / a tunnel.
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    # Pin by version; replace with a digest once pushed, e.g.
+    # ghcr.io/timvanonckelen/famlin:<version>@sha256:<digest>   (multi-arch index digest)
+    image: ghcr.io/timvanonckelen/famlin:0.8.7
+    restart: on-failure
+    stop_grace_period: 30s
+    # The image's own user is "node" (uid 1000), the same uid Umbrel uses.
+    user: "1000:1000"
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # app_proxy sets X-Forwarded-*, so the server may trust it.
+      TRUST_PROXY: "true"
+      POSTGRES_HOST: db
+      POSTGRES_USER: famlin
+      POSTGRES_DB: famlin
+      # APP_SEED is a per-app secret Umbrel derives from the node's seed, so
+      # the database password is unique per install and stable across restarts.
+      POSTGRES_PASSWORD: ${APP_SEED}
+      # The JWT signing secret is generated on first start and kept here.
+      DATA_DIR: /app/data
+    volumes:
+      - ${APP_DATA_DIR}/data/uploads:/app/uploads
+      - ${APP_DATA_DIR}/data/backups:/app/backups
+      - ${APP_DATA_DIR}/data/secrets:/app/data
+
+  db:
+    image: postgres:16-alpine
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      POSTGRES_USER: famlin
+      POSTGRES_DB: famlin
+      POSTGRES_PASSWORD: ${APP_SEED}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ${APP_DATA_DIR}/data/db:/var/lib/postgresql/data

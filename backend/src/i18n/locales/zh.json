@@ -177,6 +177,13 @@
     "pageTitleBranded": "加入 {{group}} · {{name}}",
     "continueBrowser": "在浏览器中继续"
   },
+  "connectLanding": {
+    "pageTitle": "在手机上打开 Famlin",
+    "title": "在手机上打开 Famlin",
+    "subtitle": "点击按钮，将 Famlin 应用连接到这台家庭服务器。",
+    "openButton": "在 Famlin 应用中打开",
+    "manualHint": "想手动输入？请在应用中输入此服务器地址："
+  },
   "landing": {
     "pageTitle": "Famlin",
     "status": "服务器运行正常",

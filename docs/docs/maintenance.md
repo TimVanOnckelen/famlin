@@ -29,7 +29,7 @@ docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 
 ### Scheduled backups
 
-Famlin can back itself up on a schedule. It's **off by default**: turn it on under **Server settings → Backups** in `/admin`, and pick:
+Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 dumps; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off under **Server settings → Backups** in `/admin`:
 
 - **Schedule**: daily, or weekly on Sundays.
 - **Time**: the hour it runs, in the server's time zone. The suggested default is 03:00.
@@ -43,6 +43,10 @@ Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the
 Backups are deliberately not data-export zips: an export holds a full copy of every photo, so keeping seven of them would cost seven times your media library.
 
 **System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content#system-status).
+
+#### Keep backups off the machine
+
+Backups on the same disk protect you from mistakes (a deleted post, a bad upgrade) and database corruption, but not from the disk or machine failing. Copy `famlin-backups` somewhere else as well: `rsync` the volume's folder to another machine on a cron job (`rsync -a /var/lib/docker/volumes/famlin_famlin-backups/_data/ backup-host:/srv/famlin-backups/`), point your NAS backup job (Hyper Backup and similar) at it, or bind-mount a NAS folder as described below.
 
 :::tip Keep backups off the machine they protect
 `famlin-backups` is a separate volume, but by default it's on the same disk as everything else. For real protection, bind-mount a folder on another disk or a NAS share instead:
@@ -136,7 +140,9 @@ If you're [building from source](#building-from-source-instead) instead of runni
 
 ## Staying up to date
 
-The admin dashboard (`/admin`) checks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the running server's version and shows a banner — "A new version is available" with a link to that release's notes — whenever a newer version has shipped than the one you're running. No configuration needed; it's a one-shot, fail-soft check (no notice at all if GitHub is unreachable or rate-limited).
+Once a day (and shortly after the server starts), the server asks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the latest release. When it is newer than the version you're running, every admin page shows a dismissible banner: "Famlin X.Y.Z is available", with links to the release notes and to this page. A release whose notes contain breaking changes gets a more prominent banner telling you to read them before updating. Dismissing the banner hides it for that version only; a still newer release brings it back.
+
+Only a plain request for the latest release is made; nothing about your instance is sent. Turn it off with **Check for new versions** under **Server settings → General → Updates**. The check is fail-soft: if GitHub is unreachable you see no notice, and the failure is recorded under **Update check** in the [system status](./managing-users-and-content#system-status) job list.
 
 If you'd rather be notified outside the admin UI, "Watch" the repository's releases on GitHub (**Watch → Custom → Releases** on the [repo page](https://github.com/timvanonckelen/famlin)) to get an email/notification per release.
 
@@ -211,7 +217,7 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 ## Troubleshooting
 
-**Containers won't start / `JWT_SECRET is required`** — `docker-compose.yml` fails fast if `JWT_SECRET` isn't set. Confirm `.env` is in the same directory you run `docker compose` from.
+**Containers won't start / authentication failed for the database** — `JWT_SECRET` and the database password are generated automatically when no `.env` is present. If you previously started the stack with a different `POSTGRES_PASSWORD`, the database keeps its original password; set `POSTGRES_PASSWORD` back to that value (or remove the `famlin-db-data` and `famlin-db-secret` volumes on a throwaway install). Confirm `.env`, if you use one, is in the same directory you run `docker compose` from.
 
 **`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
 
@@ -224,7 +230,7 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 **Uploaded photos disappear after a redeploy** — this means the `famlin-uploads` volume isn't being reused, usually because the compose project name changed (e.g. running from a different directory) or `-v` / `down -v` was used, which removes volumes. Avoid `docker compose down -v` in production; use plain `down` (or just `up -d --build` for updates, no `down` needed at all).
 
-**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Put a reverse proxy in front](./server-setup#4-put-a-reverse-proxy-in-front). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
+**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Your own reverse proxy](./server-setup#option-c-your-own-reverse-proxy). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
 
 **Can't reach `/admin` through the reverse proxy but the container works on `localhost:3000`** — check that the proxy forwards the full path (not just `/`) and doesn't strip the `/admin` prefix.
 

@@ -4,6 +4,10 @@ sidebar_position: 2
 
 # Server setup
 
+:::tip New to self-hosting?
+This page is the manual Docker Compose route. If you're not sure which way to install Famlin, start with [Choose your installation](./choose-installation): it points you to the easiest option for what you have (Umbrel, Home Assistant, Synology, or a rented server).
+:::
+
 This guide covers running Famlin **in production, for your family** — on a Synology NAS, a VPS, or any host with Docker. If you're working on Famlin's code and want to run it locally to develop against, see [Quick start](/developers/quick-start) in the Developers tab instead.
 
 ## Requirements
@@ -11,7 +15,7 @@ This guide covers running Famlin **in production, for your family** — on a Syn
 - Docker and Docker Compose (v2 CLI plugin, i.e. `docker compose`, not the standalone `docker-compose`).
 - An `x86_64` (`amd64`) or `arm64` host. The published image is multi-arch, so the same `ghcr.io/timvanonckelen/famlin` tag runs natively on a regular server as well as on a Raspberry Pi 4/5 (64-bit OS), an ARM-based NAS, an Apple Silicon Mac, or an ARM cloud VM — Docker picks the right variant automatically.
 - A domain or subdomain pointed at the server (e.g. `famlin.yourdomain.com`), if you want to expose Famlin outside your local network.
-- A reverse proxy that can terminate TLS — Traefik, Nginx, Caddy, or your NAS's built-in reverse proxy all work.
+- A way to serve HTTPS — the bundled Caddy or Cloudflare Tunnel setups below need nothing extra; otherwise a reverse proxy that can terminate TLS (Traefik, Nginx, Caddy, or your NAS's built-in reverse proxy).
 
 Famlin ships as a single backend container (Fastify API + the family-facing web app at `/` + the admin UI at `/admin`, all served from the same process) plus a Postgres container. Family members can use the web app in a browser or the mobile app over HTTPS; there's nothing else to run server-side.
 
@@ -32,16 +36,46 @@ For reference — or to paste directly if your setup wants compose content rathe
 
 ```yaml title="docker-compose.yml"
 services:
+  # One-shot helper: stores the database password in a volume on first run
+  # (your POSTGRES_PASSWORD if set, otherwise a random one). Never overwrites.
+  famlin-init:
+    image: alpine:3.20
+    container_name: famlin-init
+    restart: "no"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - famlin-db-secret:/secrets
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        f=/secrets/db_password
+        if [ ! -s "$$f" ]; then
+          umask 077
+          if [ -n "$$POSTGRES_PASSWORD" ]; then
+            printf %s "$$POSTGRES_PASSWORD" > "$$f"
+          else
+            head -c 96 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40 > "$$f"
+          fi
+        fi
+        chmod 444 "$$f"
+
   famlin-db:
     image: postgres:16-alpine
     container_name: famlin-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: famlin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD_FILE: /run/famlin-secrets/db_password
       POSTGRES_DB: famlin
+    depends_on:
+      famlin-init:
+        condition: service_completed_successfully
     volumes:
       - famlin-db-data:/var/lib/postgresql/data
+      - famlin-db-secret:/run/famlin-secrets:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U famlin -d famlin"]
       interval: 5s
@@ -60,13 +94,16 @@ services:
     container_name: famlin-backend
     restart: unless-stopped
     depends_on:
+      famlin-init:
+        condition: service_completed_successfully
       famlin-db:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:-}
+      POSTGRES_PASSWORD_FILE: /run/famlin-secrets/db_password
+      JWT_SECRET: ${JWT_SECRET:-}
       TRUST_PROXY: ${TRUST_PROXY:-false}
       # Media backend and optional previous storage for online migration —
       # see the Storage page. Leave unset for the default local volume.
@@ -91,6 +128,8 @@ services:
       STORAGE_FALLBACK_S3_FORCE_PATH_STYLE: ${STORAGE_FALLBACK_S3_FORCE_PATH_STYLE:-false}
     volumes:
       - famlin-uploads:/app/uploads
+      - famlin-data:/app/data
+      - famlin-db-secret:/run/famlin-secrets:ro
       - famlin-backups:/app/backups
     ports:
       - "3000:3000"
@@ -109,6 +148,8 @@ services:
 
 volumes:
   famlin-db-data:
+  famlin-db-secret:
+  famlin-data:
   famlin-uploads:
   famlin-backups:
 ```
@@ -119,23 +160,29 @@ This always matches the canonical [`docker-compose.yml`](https://github.com/TimV
 
 Runtime configuration in Famlin is split in two:
 
-- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, the optional `UPLOADS_DIR` and `BACKUPS_DIR`, and the optional media storage settings (`STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*`, see [Storage](./storage)). `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` directly from `.env` to configure the database container and build `DATABASE_URL` for you.
+- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, the optional `UPLOADS_DIR`, `BACKUPS_DIR` and `DATA_DIR`, and the optional media storage settings (`STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*`, see [Storage](./storage)). `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` from `.env` when you set them.
 - **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications, media integrations, branding, backups): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration).
 
-Create a `.env` file next to `docker-compose.yml`:
+**You don't need a `.env` file to get started.** With none, `docker compose up -d` generates the two secrets for you on first start and keeps them in Docker volumes:
 
-```bash title=".env"
-JWT_SECRET=change-this-to-a-secure-random-string-with-at-least-32-characters
-POSTGRES_PASSWORD=change-this-to-a-secure-random-password
+- The **JWT secret** (signs login tokens) is generated once and stored at `/app/data/secrets/jwt_secret` in the `famlin-data` volume (file mode `0600`; the value is never logged). Back up `famlin-data` along with your database. If you lose it, Famlin simply generates a new one and everyone has to log in again; nothing else is affected.
+- The **database password** is generated by the one-shot `famlin-init` container and stored in the `famlin-db-secret` volume, which only the database and backend containers mount. Keep `famlin-db-secret` and the database volume together: if you delete the secret volume but keep the database volume (and have no `POSTGRES_PASSWORD` in `.env`), a new password is generated that the existing database won't accept. Either keep both volumes, or set `POSTGRES_PASSWORD` yourself.
+
+Everything below is an optional override. Create a `.env` file next to `docker-compose.yml` only for the settings you want to choose yourself:
+
+```bash title=".env (all optional)"
+# JWT_SECRET=...
+# POSTGRES_PASSWORD=...
 TRUST_PROXY=false
 ```
 
-- `JWT_SECRET` — generate a long random value, e.g. `openssl rand -base64 48`. Anyone with this value can forge login tokens, so keep it private and never commit it.
-- `POSTGRES_PASSWORD` — generate a random password (e.g. `openssl rand -base64 24`); Postgres is not exposed outside the Docker network, but don't leave it at a guessable default.
-- `TRUST_PROXY` — leave `false` unless Famlin sits behind a reverse proxy (see [step 4](#4-put-a-reverse-proxy-in-front)); see the note there before flipping it on.
-- `DATABASE_URL` is derived automatically by `docker-compose.yml` from `POSTGRES_PASSWORD` — you don't need to set it yourself unless you're pointing at an external Postgres instance (see [Using an external database](./maintenance#using-an-external-database)), in which case set it directly on the `famlin-backend` service instead of via `.env`.
+- `JWT_SECRET` — optional; when set it always wins over the generated file. Generate a long random value, e.g. `openssl rand -base64 48`. Anyone with this value can forge login tokens, so keep it private and never commit it.
+- `POSTGRES_PASSWORD` — optional; used by `famlin-init` as the database password the first time it runs. An existing installation that already has `POSTGRES_PASSWORD` in `.env` keeps working unchanged. Postgres only reads its password when the database is first created, so changing this later does not change the password of an existing database (the stored password file is never overwritten).
+- `TRUST_PROXY` — leave `false` unless Famlin sits behind a reverse proxy (see [step 4](#option-c-your-own-reverse-proxy)); see the note there before flipping it on.
+- `DATABASE_URL` is built automatically by the backend from `POSTGRES_HOST` (default `famlin-db`), `POSTGRES_PORT` (`5432`), `POSTGRES_USER` (`famlin`), `POSTGRES_DB` (`famlin`) and the stored password (`POSTGRES_PASSWORD` or the file named by `POSTGRES_PASSWORD_FILE`, URL-encoded) — you don't need to set it yourself unless you're pointing at an external Postgres instance (see [Using an external database](./maintenance#using-an-external-database)), in which case set it directly on the `famlin-backend` service instead of via `.env`.
 - Leave `PORT=3000` as-is unless you have a specific reason to change it; `NODE_ENV=production` is already set in `docker-compose.yml`.
 - `UPLOADS_DIR` — optional; where uploaded photos and videos are stored. Defaults to `uploads` next to the server, which is exactly where the `famlin-uploads` volume mounts, so leave it unset unless you deliberately store media elsewhere (and mount that path into the container). The backend test harness uses it to keep a test run off the real media volume.
+- `DATA_DIR` — optional; where generated secrets are stored (`secrets/jwt_secret`). Defaults to `data` next to the server, which is where the `famlin-data` volume mounts. This is always local disk, never S3, whatever your [storage](./storage) driver.
 - `BACKUPS_DIR` — optional; where [scheduled backups](./maintenance#scheduled-backups) write their database dumps and uploads mirror. Defaults to `backups` next to the server, which is where the `famlin-backups` volume mounts. To keep backups on another disk or NAS share, bind-mount that folder at `/app/backups` instead of changing this.
 - `STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*` — optional; where uploaded media is stored. Leave them unset to keep media on the `famlin-uploads` volume. To store media in an S3-compatible bucket instead, or to move an existing installation, see [Storage](./storage).
 
@@ -165,7 +212,7 @@ The API is now listening on port 3000 inside the Docker network (and on the host
 
 ## Example: Synology NAS with Container Manager (no SSH required)
 
-Everything above (steps 1–3) can also be done entirely through Synology's **Container Manager** app (DSM 7.2+), if you'd rather not use SSH or the `docker compose` CLI directly. This walks through the same setup via the GUI; once your project is running, skip to [step 4](#4-put-a-reverse-proxy-in-front) below.
+Everything above (steps 1–3) can also be done entirely through Synology's **Container Manager** app (DSM 7.2+), if you'd rather not use SSH or the `docker compose` CLI directly. This walks through the same setup via the GUI; once your project is running, skip to [step 4](#option-c-your-own-reverse-proxy) below.
 
 1. **Install Container Manager** from Package Center, if it isn't already installed.
 2. **Create a shared folder for the project.** In **File Station**, create a folder such as `docker/famlin`. This is where the compose file will live.
@@ -184,11 +231,53 @@ Everything above (steps 1–3) can also be done entirely through Synology's **Co
 
 To update later: re-download `docker-compose.yml` if it changed, then in Container Manager select the project and use **Action → Build** (this pulls the latest images), followed by **Action → Start** — the GUI equivalent of `docker compose pull && docker compose up -d`.
 
-Once the containers are running, continue to step 4 below for the reverse proxy — Synology's own **Control Panel → Login Portal → Reverse Proxy** is a natural fit since you're already in DSM (see the note at the end of that section).
+Once the containers are running, continue to step 4 below for HTTPS — Synology's own **Control Panel → Login Portal → Reverse Proxy** is a natural fit since you're already in DSM (see the note at the end of that section).
 
-## 4. Put a reverse proxy in front
+## 4. Set up HTTPS
 
-Famlin does not terminate TLS itself. Point your reverse proxy at the container's port 3000 and let it handle HTTPS. A few notes regardless of which proxy you use:
+Famlin does not terminate TLS itself, and the mobile apps need an `https://` address. Pick one of three ways to get one:
+
+| | Needs | Good when |
+| --- | --- | --- |
+| **A. Caddy** (bundled) | A domain, ports 80 and 443 reachable from the internet | You have a VPS, or can forward ports on your router |
+| **B. Cloudflare Tunnel** (bundled) | A domain on Cloudflare (free plan is fine) | Your ISP blocks ports or uses CGNAT, or you don't want to open ports |
+| **C. Your own reverse proxy** | Whatever you already run | You already have Traefik/Nginx/Caddy, or a NAS reverse proxy |
+
+### Option A: automatic HTTPS with Caddy
+
+The Caddy overlay adds a [Caddy](https://caddyserver.com) container that gets and renews a free Let's Encrypt certificate by itself, and stops publishing Famlin's port 3000 so everything goes through HTTPS. It sets `TRUST_PROXY=true` for you.
+
+1. **DNS:** create an `A` record (and an `AAAA` record if you have IPv6) for your domain, e.g. `famlin.yourdomain.com`, pointing at the server's public IP. No domain? A free [DuckDNS](https://www.duckdns.org) name such as `myfamily.duckdns.org` works the same way: create it there and point it at your public IP.
+2. **Ports:** make sure ports **80** and **443** (TCP; 443/UDP too, for HTTP/3) reach the server — open them in the host firewall and forward them on your router. Port 80 is needed for the certificate challenge.
+3. **Files:** next to `docker-compose.yml`, put `docker-compose.caddy.yml` and `Caddyfile` — both are attached to every [GitHub release](https://github.com/TimVanOnckelen/famlin/releases) next to the version-pinned `docker-compose.yml`, and live in the repository root.
+4. **Start:**
+
+   ```bash
+   echo 'FAMLIN_DOMAIN=famlin.yourdomain.com' >> .env
+   # optional: certificate expiry notices from Let's Encrypt
+   echo 'ACME_EMAIL=you@example.com' >> .env
+   docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+   ```
+
+   `FAMLIN_DOMAIN` is the only required setting; Compose refuses to start without it. Use the same `-f` flags for every later `docker compose` command (or set `COMPOSE_FILE=docker-compose.yml:docker-compose.caddy.yml` in `.env`). The overlay needs Docker Compose v2.24 or newer.
+
+Open `https://famlin.yourdomain.com/admin` and finish setup. The first start takes a few seconds longer while the certificate is issued. Certificates live in the `caddy-data` volume — keep it, or you can hit Let's Encrypt's rate limits after repeated re-creation.
+
+Caddy applies no request body limit or short timeouts, so photo and video uploads (up to Famlin's own 200 MB per file) and long video streams work, and it passes `Range` requests through, which video playback needs.
+
+**Troubleshooting**
+
+- *Certificate errors or the browser shows a warning:* check `docker compose -f docker-compose.yml -f docker-compose.caddy.yml logs caddy`. Usually the DNS record doesn't point at this server yet (check with `dig famlin.yourdomain.com`), or port 80/443 isn't reachable from outside. Fix it and Caddy retries on its own. Let's Encrypt limits repeated failures, so wait a few minutes between attempts.
+- *Port 80 is blocked by your ISP, or you are behind CGNAT* (your router's public IP differs from the one your ISP shows you): the certificate challenge can't work. Use [Option B](#option-b-cloudflare-tunnel) instead.
+- *Port 80 or 443 already in use:* another web server on the host (Synology's DSM uses them) must be stopped or moved, or use Option C.
+
+### Option B: Cloudflare Tunnel
+
+A [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) makes an outbound connection from your server to Cloudflare, so you open no ports and manage no certificates, and it works behind CGNAT. The trade-off is that Cloudflare terminates TLS and therefore sees your traffic, and large uploads are capped on the free plan. Follow the step-by-step [Cloudflare Tunnel guide](./cloudflare-tunnel).
+
+### Option C: your own reverse proxy
+
+Point your reverse proxy at the container's port 3000 (published by `docker-compose.yml`) and let it handle HTTPS. A few notes regardless of which proxy you use:
 
 - Forward the whole path space (`/`, `/api`, `/admin`, `/uploads`) to the backend — everything is served from the one Fastify process.
 - Uploaded photos require a valid session or media token to fetch (see [Security](./security)), not just a correct URL, so your proxy doesn't need to restrict access to `/uploads/` itself — just don't cache responses across different users/sessions.
@@ -295,7 +384,7 @@ The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famli
 
 ## Next steps
 
-Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
+Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — and the admin UI continues straight into a short **setup wizard** (also reachable later at `/admin/getting-started`). It walks you through naming your first family (you are added as its first member, with an optional accent color), creating an invite link you can copy or share, the QR code for connecting the mobile app, and a check that daily backups are on, with a reminder to copy them off the machine. Every step can be skipped, and your place is remembered if you leave. Anything you skip stays on a **Getting started** checklist on the dashboard (a family exists, you are in it, someone is invited, backups are on) until it is complete or you dismiss it. Then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
 
 ### Optional: where media is stored
 

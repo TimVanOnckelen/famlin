@@ -185,6 +185,7 @@ describe('admin status routes', () => {
       'expireStories',
       'backup',
       'systemAlerts',
+      'updateCheck',
     ])
     expect(body.migrations.pending).toEqual([])
     expect(body.migrations.latestApplied).toMatch(/^\d{14}_/)

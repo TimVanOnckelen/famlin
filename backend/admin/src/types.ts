@@ -71,6 +71,7 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  updateCheckEnabled: boolean
   backupIncludeMedia: boolean
   backupEnabled: boolean
   backupSchedule: BackupSchedule
@@ -88,7 +89,16 @@ export interface ActiveAlert {
   params: Record<string, string | number>
 }
 
-export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts'
+export interface UpdateNotice {
+  current: string
+  latest: string
+  url: string
+  breaking: boolean
+  checkedAt: string
+  updateAvailable: boolean
+}
+
+export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts' | 'updateCheck'
 
 export interface JobStatus {
   job: JobId
@@ -152,6 +162,7 @@ export interface SystemStatus {
   migrations: { latestApplied: string | null; appliedCount: number; pending: string[] | null; failed: string[] }
   push: { last24h: PushWindow; last7d: PushWindow; unhealthy: boolean }
   alerts: ActiveAlert[]
+  update: UpdateNotice | null
 }
 
 export type IntegrationError = 'unreachable' | 'unauthorized' | 'not_found' | 'not_a_directory' | 'invalid_response'
@@ -309,10 +320,12 @@ export interface DashboardStats {
 }
 
 // Public endpoint (GET /api/auth/server-info) — no auth required. Only
-// `version` is used today; `minAppVersion`/store URLs may be added by the
-// backend but aren't consumed here.
+// `version` and the store URLs (for the "Connect the mobile app" card) are
+// used; `minAppVersion` etc. aren't consumed here.
 export interface ServerInfo {
   version: string
+  appStoreUrl?: string | null
+  playStoreUrl?: string | null
 }
 
 // Per-family branding (issue #164). The palette is derived server-side; the

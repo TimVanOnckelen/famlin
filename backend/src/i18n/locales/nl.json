@@ -177,6 +177,13 @@
     "pageTitleBranded": "Word lid van {{group}} · {{name}}",
     "continueBrowser": "Doorgaan in de browser"
   },
+  "connectLanding": {
+    "pageTitle": "Open Famlin op je telefoon",
+    "title": "Open Famlin op je telefoon",
+    "subtitle": "Tik op de knop om de Famlin-app met deze familieserver te verbinden.",
+    "openButton": "Openen in de Famlin-app",
+    "manualHint": "Liever zelf invoeren? Vul dit serveradres in in de app:"
+  },
   "landing": {
     "pageTitle": "Famlin",
     "status": "Server draait",

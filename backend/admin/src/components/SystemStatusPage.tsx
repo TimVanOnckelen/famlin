@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, DiskUsage, IntegrationStatus, IntegrationsStatus, JobStatus, SystemStatus } from '../api/client'
 import i18n from '../i18n'
 
+const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
+
 // While a backup runs, re-poll the status this often to pick up its outcome.
 const RUNNING_POLL_MS = 3000
 
@@ -235,6 +237,12 @@ export function SystemStatusPage() {
             <span>{t('systemStatus.backups.location')}</span>
             <span className="muted">{backups.dir}</span>
           </div>
+          <p className="muted">
+            {t('serverSettings.backupOffsiteHint')}{' '}
+            <a href={BACKUP_DOCS_URL} target="_blank" rel="noreferrer">
+              {t('serverSettings.backupOffsiteLink')}
+            </a>
+          </p>
           {backups.dirIsMount === false && <p className="test-err">{t('systemStatus.backups.notMounted')}</p>}
           {backups.dumps.length > 0 && (
             <details className="status-details">

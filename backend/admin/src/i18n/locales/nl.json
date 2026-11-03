@@ -98,11 +98,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "updateAvailable": {
-      "title": "Nieuwe versie beschikbaar: {{version}}",
-      "currentVersion": "Je server draait versie {{version}}.",
-      "viewReleaseNotes": "Bekijk de release notes"
-    },
     "stats": {
       "users": "Gebruikers",
       "usersSub_one": "{{count}} admin",
@@ -133,6 +128,13 @@
     "quickLinks": "Snelle links",
     "apiDocs": "API documentatie",
     "uploads": "Uploads"
+  },
+  "connectApp": {
+    "title": "Verbind de mobiele app",
+    "description": "Scan deze code met de camera van je telefoon om Famlin te openen en met deze server te verbinden.",
+    "qrAlt": "QR-code om de Famlin-app met deze server te verbinden",
+    "appStore": "App Store",
+    "playStore": "Google Play"
   },
   "users": {
     "grantAdminConfirm": "{{name}} ({{email}}) beheerderstoegang geven? Deze gebruiker kan dan gebruikers, groepen en serverinstellingen beheren.",
@@ -400,7 +402,9 @@
     "backups": "Back-ups",
     "backupsDesc": "Geplande back-ups van de database en alle geüploade foto's en video's, weggeschreven naar het back-upvolume op deze server.",
     "backupEnabled": "Geplande back-ups",
-    "backupEnabledHint": "Staat uit tot je het aanzet. Elke run maakt een databasedump en werkt één incrementele kopie van de uploads bij.",
+    "backupEnabledHint": "Elke run maakt een databasedump en werkt één incrementele kopie van de uploads bij. Standaard ingeschakeld bij nieuwe installaties.",
+    "backupOffsiteHint": "Back-ups op dezelfde schijf beschermen tegen vergissingen en corruptie, niet tegen een defecte schijf. Kopieer het volume famlin-backups ook naar een andere machine of NAS.",
+    "backupOffsiteLink": "Hoe je back-ups van deze machine kopieert",
     "backupSchedule": "Planning",
     "backupScheduleDaily": "Dagelijks",
     "backupScheduleWeekly": "Wekelijks (zondag)",
@@ -411,7 +415,10 @@
     "backupIncludeMedia": "Media opnemen in back-ups",
     "backupIncludeMediaHint": "Indien uitgeschakeld worden alleen de database en huisstijl opgeslagen. De bestaande mediaspiegel blijft behouden.",
     "exportIncludeMedia": "Media opnemen in export",
-    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen."
+    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen.",
+    "updateCheck": "Controleren op nieuwe versies",
+    "updateCheckHint": "Controleert één keer per dag op GitHub of er een nieuwe release is; er wordt niets over je instantie verzonden.",
+    "updates": "Updates"
   },
   "media": {
     "peopleMapping": {
@@ -597,7 +604,8 @@
         "newAssets": "Nieuwe albumfoto's",
         "expireStories": "Verhalen laten verlopen",
         "backup": "Back-up",
-        "systemAlerts": "Waarschuwingscontrole"
+        "systemAlerts": "Waarschuwingscontrole",
+        "updateCheck": "Updatecontrole"
       }
     },
     "migrations": {
@@ -653,5 +661,69 @@
     "errors": "Fouten ({{count}})",
     "cleanupLocked": "Voltooi de migratiecontrole voordat je de bron opruimt.",
     "confirmPlaceholder": "Plak de bronvingerafdruk"
+  },
+  "updateBanner": {
+    "title": "Famlin {{latest}} is beschikbaar",
+    "current": "Je draait {{current}}.",
+    "breaking": "Famlin {{latest}} bevat ingrijpende wijzigingen — lees de release-opmerkingen voordat je bijwerkt.",
+    "releaseNotes": "Release-opmerkingen",
+    "howToUpdate": "Hoe bijwerken",
+    "dismiss": "Sluiten"
+  },
+  "wizard": {
+    "title": "Aan de slag",
+    "skip": "Nu overslaan",
+    "next": "Volgende",
+    "back": "Terug",
+    "failed": "Er ging iets mis. Probeer het opnieuw.",
+    "steps": {
+      "family": "Geef je familie een naam",
+      "invite": "Nodig je familie uit",
+      "app": "Download de app",
+      "backups": "Back-ups",
+      "done": "Klaar"
+    },
+    "family": {
+      "brandingFailed": "De familie is aangemaakt, maar de kleur kon niet worden opgeslagen. Je kunt die later wijzigen onder Huisstijl.",
+      "description": "Families zijn de privéruimtes waar leden updates delen. Maak de jouwe nu aan; je wordt als eerste lid toegevoegd.",
+      "nameLabel": "Familienaam",
+      "namePlaceholder": "Familie Jansen",
+      "colorLabel": "Accentkleur",
+      "create": "Familie aanmaken",
+      "exists": "Je familie \"{{name}}\" staat klaar."
+    },
+    "invite": {
+      "needFamily": "Maak eerst je familie aan, daarna kun je mensen uitnodigen.",
+      "description": "Maak een link waarmee iedereen lid kan worden van \"{{name}}\". Stuur hem naar de mensen die je wilt uitnodigen.",
+      "create": "Uitnodigingslink maken",
+      "copy": "Link kopiëren",
+      "copied": "Gekopieerd",
+      "copyFailed": "De link kon niet worden gekopieerd; selecteer en kopieer hem handmatig.",
+      "share": "Delen",
+      "shareText": "Kom bij onze familie op Famlin: {{name}}",
+      "expiryHint": "De link werkt één keer en verloopt na 14 dagen."
+    },
+    "backups": {
+      "on": "Dagelijkse back-ups staan aan.",
+      "off": "Geplande back-ups staan uit.",
+      "settingsLink": "Back-upinstellingen wijzigen",
+      "offsite": "Back-ups staan op dezelfde machine als Famlin, kopieer ze dus ook naar een andere plek.",
+      "learnMore": "Back-ups buiten de machine bewaren"
+    },
+    "done": {
+      "description": "Je Famlin-server is klaar. Familieleden kunnen nu meedoen met de uitnodigingslink.",
+      "skippedHint": "Je hebt enkele stappen overgeslagen. Het dashboard toont een checklist tot je ze afrondt.",
+      "openApp": "Open de familie-app",
+      "stayInAdmin": "Blijf in beheer"
+    }
+  },
+  "checklist": {
+    "title": "Aan de slag",
+    "groupExists": "Maak je familie aan",
+    "adminInGroup": "Voeg jezelf toe aan een familie",
+    "invited": "Nodig familieleden uit",
+    "backupsOn": "Zet back-ups aan",
+    "continue": "Open de installatiegids",
+    "dismiss": "Verbergen"
   }
 }

@@ -29,6 +29,9 @@ import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 import { setApiBaseUrl } from '@/api/client'
 import { LoginBackground } from '@/components/LoginBackground'
 import { getBranding } from '@/branding'
+import { QrScannerModal } from '@/components/QrScannerModal'
+import { serverHostLabel } from '@/utils/connectQr'
+import { usePendingConnectStore } from '@/stores/pendingConnectStore'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -59,6 +62,8 @@ export function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [isCheckingServer, setIsCheckingServer] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const pendingConnectServer = usePendingConnectStore((state) => state.server)
 
   const appleAvailable = useAppleSignInAvailable()
   const showApple = appleAvailable && !!ssoConfig?.appleSignInEnabled
@@ -82,8 +87,8 @@ export function LoginScreen() {
     }).start()
   }, [step])
 
-  async function handleContinue() {
-    const normalized = normalizeServerUrl(serverUrl)
+  async function connectToServer(address: string) {
+    const normalized = normalizeServerUrl(address)
     if (!normalized) {
       Alert.alert(t('login.alerts.serverAddressMissingTitle'), t('login.alerts.serverAddressMissingMessage'))
       return
@@ -103,6 +108,32 @@ export function LoginScreen() {
       setIsCheckingServer(false)
     }
   }
+
+  function handleContinue() {
+    return connectToServer(serverUrl)
+  }
+
+  // A server handed over by a `famlin://connect` link or the in-app QR
+  // scanner: prefill it and run the same server check as typing it in. We're
+  // signed out here, so there is no session that could be sent anywhere.
+  useEffect(() => {
+    if (!pendingConnectServer) return
+    usePendingConnectStore.getState().clear()
+    setScannerOpen(false)
+    // Links and scans are untrusted input: a crafted one could point at a
+    // phishing server. Prefill, then ask before the credentials step.
+    const server = pendingConnectServer
+    setServerUrlInput(server)
+    Alert.alert(
+      t('connect.confirmTitle', { host: serverHostLabel(server) }),
+      t('connect.confirmMessage', { host: serverHostLabel(server) }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('connect.confirmConnect'), onPress: () => connectToServer(server) },
+      ]
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingConnectServer])
 
   function handleChangeServer() {
     setStep('server')
@@ -206,6 +237,16 @@ export function LoginScreen() {
                 <Text style={styles.loginButtonText}>
                   {isCheckingServer ? t('common.loading') : t('login.continueButton')}
                 </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.scanButton}
+                onPress={() => setScannerOpen(true)}
+                disabled={isCheckingServer}
+                accessibilityRole="button"
+              >
+                <Icon name="camera" size={18} color={colors.primary} />
+                <Text style={styles.scanButtonText}>{t('connect.scanButton')}</Text>
               </TouchableOpacity>
             </Animated.View>
           ) : (
@@ -319,6 +360,11 @@ export function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <QrScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanned={(server) => usePendingConnectStore.getState().setServer(server)}
+      />
       <Text style={styles.appVersion}>
         {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
       </Text>
@@ -476,6 +522,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 3,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  scanButtonText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 15,
+    color: colors.primary,
   },
   loginButtonDisabled: {
     opacity: 0.6,

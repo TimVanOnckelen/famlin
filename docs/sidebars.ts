@@ -3,6 +3,7 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   docsSidebar: [
     'intro',
+    'choose-installation',
     {
       type: 'category',
       label: 'Using Famlin',
@@ -26,7 +27,10 @@ const sidebars: SidebarsConfig = {
       collapsible: true,
       collapsed: false,
       items: [
+        'install-vps',
         'server-setup',
+        'install-umbrel-casaos',
+        'install-home-assistant',
         'storage',
         'admin-configuration',
         'inviting-family',

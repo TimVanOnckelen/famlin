@@ -83,6 +83,9 @@ jobs:
       - name: Lint mobile app
         working-directory: mobile
         run: npm run lint
+      # ubuntu-latest ships shellcheck; covers the installer served at famlin.app/install.sh.
+      - name: Lint shell scripts (ShellCheck)
+        run: shellcheck scripts/*.sh
 
   backend:
     name: Backend

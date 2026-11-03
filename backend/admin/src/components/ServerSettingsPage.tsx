@@ -8,6 +8,8 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
+const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
+
 type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
 
 interface SettingsCardProps {
@@ -78,6 +80,7 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     localMediaPath: '',
+    updateCheckEnabled: true,
     backupIncludeMedia: true,
     backupEnabled: false,
     backupSchedule: 'daily',
@@ -350,6 +353,17 @@ export function ServerSettingsPage() {
                   </label>
                 </div>
                 <p className="hint">{t('serverSettings.storeUrlsHint')}</p>
+              </SettingsCard>
+            )}
+
+            {activeSection === 'general' && (
+              <SettingsCard icon="bell" title={t('serverSettings.updates')}>
+                <ToggleRow
+                  title={t('serverSettings.updateCheck')}
+                  hint={t('serverSettings.updateCheckHint')}
+                  checked={form.updateCheckEnabled}
+                  onChange={(checked) => updateField('updateCheckEnabled', checked)}
+                />
               </SettingsCard>
             )}
 
@@ -644,6 +658,12 @@ export function ServerSettingsPage() {
                   checked={form.backupEnabled}
                   onChange={(checked) => updateField('backupEnabled', checked)}
                 />
+                <p className="muted">
+                  {t('serverSettings.backupOffsiteHint')}{' '}
+                  <a href={BACKUP_DOCS_URL} target="_blank" rel="noreferrer">
+                    {t('serverSettings.backupOffsiteLink')}
+                  </a>
+                </p>
                 <ToggleRow
                   title={t('serverSettings.backupIncludeMedia')}
                   hint={t('serverSettings.backupIncludeMediaHint')}

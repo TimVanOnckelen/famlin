@@ -25,6 +25,22 @@
     "daysAgo_one": "昨天",
     "daysAgo_other": "{{count}} 天前"
   },
+  "connect": {
+    "scanButton": "扫描二维码",
+    "scanTitle": "扫描二维码",
+    "scanHint": "将相机对准 Famlin 服务器仪表盘或网页版个人资料页上显示的二维码。",
+    "invalidCode": "这不是 Famlin 服务器的二维码，请重试。",
+    "cameraRequesting": "Famlin 需要相机权限来扫描二维码。",
+    "cameraDenied": "相机权限已关闭。请在设置中开启以扫描二维码，或直接输入服务器地址。",
+    "openSettings": "打开设置",
+    "allowCamera": "允许使用相机",
+    "differentServerTitle": "另一台服务器",
+    "differentServerMessage": "此链接指向 {{server}}，但你当前登录的是另一台服务器。要退出登录并连接到它吗？",
+    "signOutAndConnect": "退出登录并连接",
+    "confirmTitle": "连接到 {{host}}？",
+    "confirmMessage": "仅在你信任 {{host}} 时继续。接下来将要求你输入 Famlin 凭据。",
+    "confirmConnect": "连接"
+  },
   "login": {
     "subtitle": "记录生活，让家人更亲近",
     "invitationOnly": "仅限收到邀请的\n家庭成员使用",

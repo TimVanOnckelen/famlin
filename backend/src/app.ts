@@ -44,6 +44,7 @@ import immichRoutes from './routes/immich.js'
 import mediaRoutes from './routes/media.js'
 import inviteRoutes from './routes/invites.js'
 import inviteLandingRoutes from './routes/invite-landing.js'
+import connectLandingRoutes from './routes/connect-landing.js'
 import landingRoutes from './routes/landing.js'
 
 // Builds and registers everything on a Fastify instance without starting the
@@ -167,6 +168,13 @@ export async function buildApp() {
         // and that provider is whatever issuer the admin configures at
         // runtime — it can't be pinned to a fixed origin here.
         connectSrc: ["'self'", 'https:'],
+        // Helmet's default upgrade-insecure-requests makes the browser fetch
+        // every asset over https://. Over plain HTTP (a LAN address like
+        // http://192.168.1.10:3000, the Home Assistant add-on, the installer's
+        // local mode) nothing answers TLS on that port, so the page loads
+        // blank. Behind an HTTPS proxy every URL is already https, so the
+        // directive adds nothing there.
+        upgradeInsecureRequests: null,
       },
     },
   })
@@ -374,6 +382,7 @@ export async function buildApp() {
   await fastify.register(mediaRoutes, { prefix: '/api/media' })
   await fastify.register(inviteRoutes, { prefix: '/api/invites' })
   await fastify.register(inviteLandingRoutes)
+  await fastify.register(connectLandingRoutes)
 
   // Serve admin web UI static build (if present)
   const adminDir = path.join(process.cwd(), 'dist', 'admin')

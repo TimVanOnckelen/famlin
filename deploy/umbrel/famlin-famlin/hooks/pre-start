@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# UNCERTAIN: relies on Umbrel exposing APP_DATA_DIR to hooks (documented for
+# exports.sh; verify for hooks/pre-start on your umbrelOS version). If it is
+# not set the hook does nothing and Docker creates the folders instead.
+#
+# Creates the bind-mount folders before the containers start; otherwise Docker
+# makes them root-owned and the server (uid 1000) cannot write to them.
+set -eu
+[ -n "${APP_DATA_DIR:-}" ] || exit 0
+for d in uploads backups secrets db; do
+  mkdir -p "${APP_DATA_DIR}/data/${d}"
+done
+chown 1000:1000 "${APP_DATA_DIR}/data/uploads" "${APP_DATA_DIR}/data/backups" "${APP_DATA_DIR}/data/secrets" 2>/dev/null || true

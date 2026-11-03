@@ -1,0 +1,45 @@
+.connect-qr {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.connect-qr-image {
+  flex-shrink: 0;
+  /* Always dark-on-white: scanners need the quiet zone and contrast. */
+  background: #fff;
+  border: 1px solid var(--fam-border);
+  border-radius: var(--r-md);
+  padding: 4px;
+}
+
+.connect-qr-text {
+  min-width: 0;
+}
+
+.connect-qr-url {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+  word-break: break-all;
+}
+
+.connect-qr-stores {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.connect-qr-stores a {
+  color: var(--fam-primary);
+}
+
+@media (max-width: 480px) {
+  .connect-qr {
+    flex-direction: column;
+    text-align: center;
+  }
+}

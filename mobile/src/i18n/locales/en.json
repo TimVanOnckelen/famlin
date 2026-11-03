@@ -25,6 +25,22 @@
     "daysAgo_one": "yesterday",
     "daysAgo_other": "{{count}} days ago"
   },
+  "connect": {
+    "scanButton": "Scan QR code",
+    "scanTitle": "Scan QR code",
+    "scanHint": "Point the camera at the QR code shown on your Famlin server's dashboard or web profile page.",
+    "invalidCode": "This isn't a Famlin server QR code. Try again.",
+    "cameraRequesting": "Famlin needs camera access to scan the QR code.",
+    "cameraDenied": "Camera access is turned off. Enable it in Settings to scan a QR code, or type the server address instead.",
+    "openSettings": "Open Settings",
+    "allowCamera": "Allow camera",
+    "differentServerTitle": "Different server",
+    "differentServerMessage": "This link is for {{server}}, but you're signed in to another server. Sign out to connect to it?",
+    "signOutAndConnect": "Sign out and connect",
+    "confirmTitle": "Connect to {{host}}?",
+    "confirmMessage": "Only continue if you trust {{host}}. You'll be asked for your Famlin credentials next.",
+    "confirmConnect": "Connect"
+  },
   "login": {
     "subtitle": "Your family, closer",
     "invitationOnly": "Only available for\nfamily members with an invitation",

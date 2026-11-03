@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'prisma/config'
 
 // Prisma 7 reads the connection string from here rather than from the
@@ -15,7 +16,24 @@ import { defineConfig } from 'prisma/config'
 // commands still get the URL from the environment at runtime — and, when it
 // genuinely is missing, now fail with Prisma's own "no datasource configured"
 // message instead of a config-file load error.
-const databaseUrl = process.env.DATABASE_URL
+//
+// Zero-config start (#338): when DATABASE_URL isn't set, derive it from
+// POSTGRES_* the same way src/bootstrapEnv.ts does (duplicated here because
+// the production image ships this file without src/). The prisma CLI runs in
+// its own process, so it cannot inherit the app's derivation otherwise.
+function deriveDatabaseUrl(): string | undefined {
+  const env = process.env
+  let password = env.POSTGRES_PASSWORD
+  if (!password && env.POSTGRES_PASSWORD_FILE) {
+    password = readFileSync(env.POSTGRES_PASSWORD_FILE, 'utf8').trim()
+  }
+  if (!password) return undefined
+  const user = encodeURIComponent(env.POSTGRES_USER || 'famlin')
+  const db = encodeURIComponent(env.POSTGRES_DB || 'famlin')
+  return `postgresql://${user}:${encodeURIComponent(password)}@${env.POSTGRES_HOST || 'famlin-db'}:${env.POSTGRES_PORT || '5432'}/${db}?schema=public`
+}
+
+const databaseUrl = process.env.DATABASE_URL || deriveDatabaseUrl()
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

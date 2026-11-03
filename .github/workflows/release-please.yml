@@ -304,8 +304,13 @@ jobs:
           grep -q "FAMLIN_VERSION:-$VERSION}" assets/docker-compose.yml
           # No leading dot: GitHub renames dotfile assets to default.<name>.
           cp .env.example assets/env.example
+          # HTTPS overlays (used together with the pinned docker-compose.yml
+          # above, which they extend, so they carry no version of their own)
+          # and the Caddyfile the Caddy overlay mounts from its own folder.
+          cp docker-compose.caddy.yml docker-compose.tunnel.yml Caddyfile assets/
           gh release upload "$TAG_NAME" -R "$GITHUB_REPOSITORY" --clobber \
-            assets/docker-compose.yml assets/env.example
+            assets/docker-compose.yml assets/env.example \
+            assets/docker-compose.caddy.yml assets/docker-compose.tunnel.yml assets/Caddyfile
 
       - name: Append downloads section to the release notes
         env:
@@ -359,7 +364,7 @@ jobs:
               echo "Digest: \`$DIGEST\`"
               echo
             fi
-            echo "Upgrading an existing install: set \`FAMLIN_VERSION=$VERSION\` in your \`.env\` (or stay on \`latest\`), then \`docker compose pull && docker compose up -d\`. New install: download the \`docker-compose.yml\` (pinned to $VERSION) and \`env.example\` (save it as \`.env\`) attached below, and follow the [server setup guide](https://famlin.app/docs/server-setup)."
+            echo "Upgrading an existing install: set \`FAMLIN_VERSION=$VERSION\` in your \`.env\` (or stay on \`latest\`), then \`docker compose pull && docker compose up -d\`. New install: download the \`docker-compose.yml\` (pinned to $VERSION) and \`env.example\` (save it as \`.env\`) attached below, and follow the [server setup guide](https://famlin.app/docs/server-setup). For automatic HTTPS, also download \`docker-compose.caddy.yml\` and \`Caddyfile\` (Caddy) or \`docker-compose.tunnel.yml\` (Cloudflare Tunnel) into the same folder — see the guide."
             echo
             echo "### Mobile apps"
             echo
@@ -383,3 +388,30 @@ jobs:
             fi
           } >> notes.md
           gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file notes.md
+
+  # Tell the Home Assistant add-on repository about the new release so its
+  # "Bump version" workflow opens a PR. Optional: skipped when the
+  # HA_ADDON_DISPATCH_TOKEN secret (a PAT with write access to
+  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-docker so the
+  # image the add-on builds on exists by the time the PR is merged.
+  notify-ha-addon:
+    needs: [release-please, publish-docker]
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      HA_ADDON_DISPATCH_TOKEN: ${{ secrets.HA_ADDON_DISPATCH_TOKEN }}
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - name: Dispatch to the add-on repository
+        run: |
+          if [ -z "$HA_ADDON_DISPATCH_TOKEN" ]; then
+            echo "HA_ADDON_DISPATCH_TOKEN is not set; skipping."
+            exit 0
+          fi
+          version="${TAG_NAME#v}"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $HA_ADDON_DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/TimVanOnckelen/famlin-ha-addon/dispatches \
+            -d "{\"event_type\":\"famlin-release\",\"client_payload\":{\"version\":\"$version\"}}"

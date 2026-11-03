@@ -61,6 +61,7 @@ import {
   getPushHealth,
   testLocalMediaPath,
 } from '../services/systemStatus.js'
+import { getUpdateNotice } from '../services/updateCheck.js'
 import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAlerts.js'
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
 
@@ -1045,15 +1046,16 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/status', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     const now = new Date()
-    const [backups, disk, jobs, migrations, push, alerts] = await Promise.all([
+    const [backups, disk, jobs, migrations, push, alerts, update] = await Promise.all([
       getBackupOverview(now),
       getDiskOverview(),
       getJobStatuses(),
       getMigrationStatus(),
       getPushHealth(now),
       computeActiveAlerts(now),
+      getUpdateNotice(),
     ])
-    return { backups, disk, jobs, migrations, push, alerts }
+    return { backups, disk, jobs, migrations, push, alerts, update }
   })
 
   fastify.get('/storage', async (request, reply) => {
@@ -1082,10 +1084,12 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return getIntegrationStatus()
   })
 
-  // Just the alert conditions, for the banner every admin page shows.
+  // Just the alert conditions (plus the update notice), for the banner every
+  // admin page shows.
   fastify.get('/status/alerts', async (request, reply) => {
     if (requireAdmin(request, reply)) return
-    return { alerts: await computeActiveAlerts() }
+    const [alerts, update] = await Promise.all([computeActiveAlerts(), getUpdateNotice()])
+    return { alerts, update }
   })
 
   // "Run backup now". A full run can take minutes (the first uploads mirror

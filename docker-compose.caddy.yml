@@ -1,0 +1,42 @@
+# Automatic HTTPS with Caddy. An overlay on docker-compose.yml:
+#
+#   FAMLIN_DOMAIN=famlin.example.com \
+#     docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+#
+# (or put FAMLIN_DOMAIN, and optionally ACME_EMAIL, in .env). Requires Docker
+# Compose v2.24 or newer (for `!reset`). Keep the Caddyfile next to this file.
+# See docs/docs/server-setup.md.
+services:
+  famlin-backend:
+    # Only Caddy is reachable from outside; the backend is no longer published.
+    ports: !reset []
+    environment:
+      TRUST_PROXY: "true"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: famlin-caddy
+    restart: unless-stopped
+    depends_on:
+      - famlin-backend
+    environment:
+      FAMLIN_DOMAIN: ${FAMLIN_DOMAIN:?Set FAMLIN_DOMAIN to your domain, e.g. famlin.example.com}
+      # Becomes `email <address>` in the Caddyfile's global block, or nothing.
+      ACME_EMAIL_DIRECTIVE: ${ACME_EMAIL:+email ${ACME_EMAIL}}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data # certificates: keep, or you hit Let's Encrypt rate limits
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy-data:
+  caddy-config:

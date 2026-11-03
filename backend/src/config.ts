@@ -1,8 +1,13 @@
 import { z } from 'zod'
 import dotenv from 'dotenv'
 import path from 'path'
+import { applyBootstrapEnv, resolveDataDir } from './bootstrapEnv.js'
 
 dotenv.config()
+
+// Zero-config start: derive DATABASE_URL from POSTGRES_* and generate/persist
+// JWT_SECRET when unset. Must run before the schema parses the environment.
+applyBootstrapEnv()
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -39,6 +44,9 @@ const envSchema = z.object({
   // the `backups` directory next to the server, where the famlin-backups
   // volume mounts; the test harness points it at a throwaway directory.
   BACKUPS_DIR: z.string().optional(),
+  // Where generated secrets live (secrets/jwt_secret). Optional; defaults to
+  // `data` next to the server, where the famlin-data volume mounts.
+  DATA_DIR: z.string().optional(),
 })
 
 export const config = envSchema.parse(process.env)
@@ -51,3 +59,6 @@ export const uploadsDir = path.resolve(config.UPLOADS_DIR ?? path.join(process.c
 
 // Same contract as uploadsDir: resolve once, import everywhere.
 export const backupsDir = path.resolve(config.BACKUPS_DIR ?? path.join(process.cwd(), 'backups'))
+
+// Same contract as uploadsDir. Local disk only, never S3: it holds secrets.
+export const dataDir = resolveDataDir(process.env)

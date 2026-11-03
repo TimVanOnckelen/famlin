@@ -1,14 +1,50 @@
 services:
+  # One-shot helper that makes `docker compose up` work with no .env at all.
+  # It stores the database password in the famlin-db-secret volume the first
+  # time it runs: POSTGRES_PASSWORD if you set one (existing installs keep
+  # their .env password), otherwise a random one. It never overwrites an
+  # existing file, because Postgres only reads its password when the database
+  # is first created. Both famlin-db and famlin-backend read that file.
+  famlin-init:
+    image: alpine:3.20
+    container_name: famlin-init
+    restart: "no"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - famlin-db-secret:/secrets
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        f=/secrets/db_password
+        if [ ! -s "$$f" ]; then
+          umask 077
+          if [ -n "$$POSTGRES_PASSWORD" ]; then
+            printf %s "$$POSTGRES_PASSWORD" > "$$f"
+          else
+            head -c 96 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40 > "$$f"
+          fi
+        fi
+        # Readable by the postgres and node users; the volume is mounted only
+        # into the database, backend and this container.
+        chmod 444 "$$f"
+
   famlin-db:
     image: postgres:16-alpine
     container_name: famlin-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: famlin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD_FILE: /run/famlin-secrets/db_password
       POSTGRES_DB: famlin
+    depends_on:
+      famlin-init:
+        condition: service_completed_successfully
     volumes:
       - famlin-db-data:/var/lib/postgresql/data
+      - famlin-db-secret:/run/famlin-secrets:ro
     # No `ports:` mapping — famlin-backend reaches Postgres over the compose
     # network by service name. Publishing 5432 to the host would expose the
     # database to the whole LAN (or further, if the host forwards ports).
@@ -34,13 +70,21 @@ services:
     container_name: famlin-backend
     restart: unless-stopped
     depends_on:
+      famlin-init:
+        condition: service_completed_successfully
       famlin-db:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://famlin:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@famlin-db:5432/famlin?schema=public
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      # No .env needed. With DATABASE_URL unset the backend builds it from
+      # POSTGRES_HOST/PORT/USER/DB plus the password file written by
+      # famlin-init. Set DATABASE_URL in .env only to use an external database.
+      DATABASE_URL: ${DATABASE_URL:-}
+      POSTGRES_PASSWORD_FILE: /run/famlin-secrets/db_password
+      # Optional override. When empty, a random secret is generated on first
+      # boot and kept in the famlin-data volume (/app/data/secrets/jwt_secret).
+      JWT_SECRET: ${JWT_SECRET:-}
       # Set to true only if this container sits behind a reverse proxy that
       # sets (and overwrites) X-Forwarded-*, e.g. nginx/Caddy/Traefik in front
       # of it — see backend/.env.example.
@@ -67,6 +111,10 @@ services:
       STORAGE_FALLBACK_S3_FORCE_PATH_STYLE: ${STORAGE_FALLBACK_S3_FORCE_PATH_STYLE:-false}
     volumes:
       - famlin-uploads:/app/uploads
+      # Generated secrets (the JWT signing secret). Back this up with the
+      # database; losing it only logs everyone out. Never stored on S3.
+      - famlin-data:/app/data
+      - famlin-db-secret:/run/famlin-secrets:ro
       # Scheduled backups (opt-in, admin Server settings → Backups): rotating
       # database dumps plus a mirror of the uploads. Kept on its own volume so
       # backups don't sit on the volume they protect — better still, bind-mount
@@ -96,5 +144,7 @@ services:
 
 volumes:
   famlin-db-data:
+  famlin-db-secret:
+  famlin-data:
   famlin-uploads:
   famlin-backups:

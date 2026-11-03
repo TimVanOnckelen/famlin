@@ -22,3 +22,13 @@ it('allows local image and video previews without allowing blob scripts', async 
     await app.close()
   }
 })
+
+it('does not upgrade asset requests to https, so plain-HTTP LAN access works', async () => {
+  const app = await buildTestApp()
+  try {
+    const response = await app.inject({ method: 'GET', url: '/api/auth/setup-status' })
+    expect(String(response.headers['content-security-policy'])).not.toContain('upgrade-insecure-requests')
+  } finally {
+    await app.close()
+  }
+})

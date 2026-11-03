@@ -1,25 +1,35 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { compareVersions } from '@famlin/api-client'
 import { api, DashboardStats } from '../api/client'
 import { Icon, IconName } from './Icon'
 import i18n from '../i18n'
 import { avatarColor, initials } from '../avatar'
-
-const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/timvanonckelen/famlin/releases/latest'
-
-interface UpdateInfo {
-  currentVersion: string
-  latestVersion: string
-  releaseUrl: string
-}
+import { Link } from 'react-router-dom'
+import { ConnectAppQr } from './ConnectAppQr'
+import {
+  SetupChecklist,
+  dismissChecklist,
+  isChecklistComplete,
+  isChecklistDismissed,
+  loadSetupChecklist,
+} from '../setupChecklist'
 
 export function DashboardPage() {
   const { t } = useTranslation()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<number | null>(null)
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [storeLinks, setStoreLinks] = useState<{ appStoreUrl?: string | null; playStoreUrl?: string | null }>({})
+
+  const [checklist, setChecklist] = useState<SetupChecklist | null>(null)
+  const [checklistDismissed, setChecklistDismissed] = useState(isChecklistDismissed)
+
+  useEffect(() => {
+    if (checklistDismissed) return
+    loadSetupChecklist()
+      .then(setChecklist)
+      .catch(() => {})
+  }, [checklistDismissed])
 
   useEffect(() => {
     api
@@ -28,33 +38,12 @@ export function DashboardPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Fail-soft, one-shot check — never blocks the dashboard, never retries,
-  // and renders nothing at all if anything goes wrong (network error, GitHub
-  // rate limiting, a malformed response, ...).
+  // Store links for the "Connect the mobile app" card; the card works without them.
   useEffect(() => {
-    let cancelled = false
-
-    ;(async () => {
-      try {
-        const [serverInfo, releaseRes] = await Promise.all([api.getServerInfo(), fetch(GITHUB_LATEST_RELEASE_URL)])
-
-        if (!releaseRes.ok) return
-        const release = await releaseRes.json()
-        const latestVersion = release?.tag_name
-        const releaseUrl = release?.html_url
-        if (typeof latestVersion !== 'string' || typeof releaseUrl !== 'string') return
-
-        if (!cancelled && compareVersions(latestVersion, serverInfo.version) > 0) {
-          setUpdateInfo({ currentVersion: serverInfo.version, latestVersion, releaseUrl })
-        }
-      } catch {
-        // Network error, CORS/rate-limit failure, etc. — no notice, no retry.
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
+    api
+      .getServerInfo()
+      .then((info) => setStoreLinks({ appStoreUrl: info.appStoreUrl, playStoreUrl: info.playStoreUrl }))
+      .catch(() => {})
   }, [])
 
   if (loading || !stats) return <div className="loading">{t('common.loading')}</div>
@@ -68,20 +57,38 @@ export function DashboardPage() {
         <h2>{t('dashboard.title')}</h2>
       </div>
 
-      {updateInfo && (
-        <div className="card update-banner">
-          <span className="update-banner-icon">
-            <Icon name="bell" size={18} />
-          </span>
-          <div className="update-banner-text">
-            <strong>{t('dashboard.updateAvailable.title', { version: updateInfo.latestVersion })}</strong>
-            <span className="hint" style={{ marginTop: 0 }}>
-              {t('dashboard.updateAvailable.currentVersion', { version: updateInfo.currentVersion })}
-            </span>
+      {checklist && !checklistDismissed && !isChecklistComplete(checklist) && (
+        <div className="card">
+          <h3>{t('checklist.title')}</h3>
+          <ul className="checklist">
+            {(
+              [
+                ['groupExists', checklist.groupExists],
+                ['adminInGroup', checklist.adminInGroup],
+                ['invited', checklist.invited],
+                ['backupsOn', checklist.backupsOn],
+              ] as const
+            ).map(([key, done]) => (
+              <li key={key} className={done ? 'done' : ''}>
+                {done ? '✓' : '○'} {t(`checklist.${key}`)}
+              </li>
+            ))}
+          </ul>
+          <div className="wizard-actions">
+            <Link className="button" to="/getting-started">
+              {t('checklist.continue')}
+            </Link>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                dismissChecklist()
+                setChecklistDismissed(true)
+              }}
+            >
+              {t('checklist.dismiss')}
+            </button>
           </div>
-          <a className="update-banner-link" href={updateInfo.releaseUrl} target="_blank" rel="noreferrer">
-            {t('dashboard.updateAvailable.viewReleaseNotes')}
-          </a>
         </div>
       )}
 
@@ -205,6 +212,11 @@ export function DashboardPage() {
                 ))}
               </ul>
             )}
+          </div>
+
+          <div className="card">
+            <h3>{t('connectApp.title')}</h3>
+            <ConnectAppQr appStoreUrl={storeLinks.appStoreUrl} playStoreUrl={storeLinks.playStoreUrl} />
           </div>
 
           <div className="card">

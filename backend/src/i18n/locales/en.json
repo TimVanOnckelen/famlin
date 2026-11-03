@@ -177,6 +177,13 @@
     "pageTitleBranded": "Join {{group}} · {{name}}",
     "continueBrowser": "Continue in the browser"
   },
+  "connectLanding": {
+    "pageTitle": "Open Famlin on your phone",
+    "title": "Open Famlin on your phone",
+    "subtitle": "Tap the button to connect the Famlin app to this family server.",
+    "openButton": "Open in the Famlin app",
+    "manualHint": "Prefer to type it in? Enter this server address in the app:"
+  },
   "landing": {
     "pageTitle": "Famlin",
     "status": "Server is running",
