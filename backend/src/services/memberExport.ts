@@ -18,6 +18,7 @@
 // passwordHash/tokenVersion, Invite (a live credential), PushToken/ApiToken,
 // Notification/PushDeliveryLog — plus a few that only matter once the
 // caller isn't the server owner:
+//  - Other members' Device rows: only the caller's own diagnostics are included.
 //  - Other members' email notification/push preferences and isAdmin: not
 //    shown anywhere in the member-facing app. Other users get only the
 //    fields the group member list already exposes (id, name, email, avatar).
@@ -60,7 +61,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   ])
   const groupIds = memberships.map((m) => m.groupId)
 
-  const [groups, posts, self] = await Promise.all([
+  const [groups, posts, self, devices] = await Promise.all([
     prisma.group.findMany({
       where: { id: { in: groupIds } },
       select: {
@@ -93,6 +94,18 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
         pushOnNewComment: true,
         pushOnNewLike: true,
         pushOnChitchat: true,
+      },
+    }),
+    prisma.device.findMany({
+      where: { userId },
+      orderBy: { installId: 'asc' },
+      select: {
+        installId: true,
+        platform: true,
+        osVersion: true,
+        appVersion: true,
+        appBuild: true,
+        pushPermission: true,
       },
     }),
   ])
@@ -130,6 +143,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
 
   const data = {
     users,
+    devices,
     groups,
     // A gift list's exclusions are the starter's configuration (and hint at
     // pairings), so they're stripped exactly as the app strips them.
@@ -179,6 +193,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
     exportedBy: { id: self.id, name: self.name, email: self.email },
     counts: {
       users: users.length,
+      devices: devices.length,
       groups: groups.length,
       posts: posts.length,
       comments: comments.length,
@@ -193,6 +208,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
 
   archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
   archive.append(serialized.users, { name: 'data/users.json' })
+  archive.append(serialized.devices, { name: 'data/devices.json' })
   archive.append(serialized.groups, { name: 'data/groups.json' })
   archive.append(serialized.posts, { name: 'data/posts.json' })
   archive.append(serialized.comments, { name: 'data/comments.json' })

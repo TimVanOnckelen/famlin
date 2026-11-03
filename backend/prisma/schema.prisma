@@ -25,6 +25,7 @@ model User {
   pushOnNewComment  Boolean           @default(true)
   pushOnNewLike     Boolean           @default(true)
   pushTokens        PushToken[]
+  devices           Device[]
   groupMemberships  GroupMember[]
   posts             Post[]
   comments          Comment[]
@@ -342,7 +343,28 @@ model PushToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
+  deviceId  String?
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
+
+  @@index([deviceId])
+}
+
+// Latest mobile diagnostics for one app installation. Intentionally has no
+// timestamps: request frequency must not reveal when someone opens the app.
+model Device {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  installId      String      @unique
+  platform       String
+  osVersion      String
+  appVersion     String
+  appBuild       String
+  pushPermission String
+  pushTokens     PushToken[]
+
+  @@index([userId])
 }
 
 model Notification {

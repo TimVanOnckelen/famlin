@@ -1,0 +1,31 @@
+---
+id: device
+title: "Device"
+description: "Latest mobile diagnostics for one install; contains no timestamps or activity history."
+sidebar_label: "Device"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"installId":"3fa85f64-5717-4562-b3fc-2c963f66afa6","platform":"ios","osVersion":"string","appVersion":"string","appBuild":"string","pushPermission":"granted"}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Device"}
+>
+</Heading>
+
+
+
+Latest mobile diagnostics for one install; contains no timestamps or activity history.
+
+<Schema
+  {...require("./device.Schema.json")}
+>
+
+</Schema>

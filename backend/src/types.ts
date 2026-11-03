@@ -257,6 +257,19 @@ export const updateCommentBodySchema = z.object({
 
 export const pushTokenBodySchema = z.object({
   token: z.string(),
+  installId: z.string().uuid().optional(),
+})
+
+export const devicePayloadSchema = z.object({
+  platform: z.enum(['ios', 'android']),
+  osVersion: z.string().min(1).max(100),
+  appVersion: z.string().min(1).max(100),
+  appBuild: z.string().min(1).max(100),
+  pushPermission: z.enum(['granted', 'denied', 'undetermined']),
+})
+
+export const devicePathParamsSchema = z.object({
+  installId: z.string().uuid(),
 })
 
 export const createApiTokenBodySchema = z.object({

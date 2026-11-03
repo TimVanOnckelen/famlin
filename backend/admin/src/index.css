@@ -1628,6 +1628,47 @@ h3 {
   margin-top: 1rem;
 }
 
+.devices-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.devices-summary .card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.devices-summary strong {
+  font-size: 1.5rem;
+}
+
+.devices-versions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+}
+
+.devices-version {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.device-install-id {
+  max-width: 150px;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.device-member-name,
+.device-member-email {
+  display: block;
+}
+
 /* --- Family Circles (CirclesSection) ------------------------------------ */
 
 /* Explains what a circle actually does, above the list — an admin creating

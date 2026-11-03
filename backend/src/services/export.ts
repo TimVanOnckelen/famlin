@@ -22,8 +22,9 @@
 //    state, never safe to export.
 //  - `Invite`: a live, unexpired invite token grants access to the server;
 //    exporting it would hand out a working credential.
-//  - `PushToken`/`ApiToken`: device push tokens and personal access token
-//    hashes are per-device/per-integration credentials, not family content.
+//  - `Device`/`PushToken`/`ApiToken`: device diagnostics and push tokens are
+//    operational state; personal access token hashes are credentials, not
+//    family content.
 //  - `Notification`/`PushDeliveryLog`: internal delivery/telemetry history,
 //    not something a family needs in a portable export.
 //  - Live (unpinned) stories, story views and private story replies: a live

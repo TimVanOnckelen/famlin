@@ -49,6 +49,17 @@ describe('GET /api/admin/export', () => {
 
   it('includes seeded family content in the archive', async () => {
     const admin = await createUser({ isAdmin: true, password: 'super-secret-pw' })
+    await prisma.device.create({
+      data: {
+        userId: admin.id,
+        installId: randomUUID(),
+        platform: 'ios',
+        osVersion: '18.1',
+        appVersion: 'admin-export-device-secret',
+        appBuild: '245',
+        pushPermission: 'granted',
+      },
+    })
     const group = await createGroupWithMember(admin)
     const post = await createPost({
       groupId: group.id,
@@ -74,6 +85,8 @@ describe('GET /api/admin/export', () => {
     expect(body).toContain('data/posts.json')
     expect(body).toContain(admin.email)
     expect(body).toContain('A very distinctive post body for the export test')
+    expect(body).not.toContain('admin-export-device-secret')
+    expect(body).not.toContain('data/devices.json')
   })
 
   it('omits media bytes but retains required keys, sizes and branding when includeMedia=false', async () => {

@@ -103,6 +103,23 @@ export interface JobStatus {
   running: boolean
 }
 
+export interface AdminDevice {
+  id: string
+  installId: string
+  platform: 'ios' | 'android'
+  osVersion: string
+  appVersion: string
+  appBuild: string
+  pushPermission: 'granted' | 'denied' | 'undetermined'
+  user: Pick<User, 'id' | 'name' | 'email'>
+}
+
+export interface DeviceSummary {
+  total: number
+  pushDenied: number
+  versions: { appVersion: string; platform: 'ios' | 'android'; count: number }[]
+}
+
 export interface DiskUsage {
   path: string
   freeBytes: number

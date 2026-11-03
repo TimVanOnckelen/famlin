@@ -27,6 +27,14 @@ Confirmations and messages throughout the admin panel use in-app modals. All mod
 
 Members can also delete their own account without asking you, from **Profile → Delete account** in the mobile or web app (they have to type `DELETE` to confirm). It's the same permanent removal as the admin action above, so their posts, photos, comments and chat messages go with it and can't be restored. The only account that can't do this is the last remaining admin — if that's you and you want out, make someone else an admin first.
 
+## Mobile devices
+
+The **Devices** page shows the latest mobile diagnostics each member has shared with this server: install ID, platform, OS version, app version/build and push permission. The summary counts devices by app version/platform and shows how many have denied push permission; the list is grouped by member details to help with support questions.
+
+![The admin devices page](./img/admin-devices.png)
+
+This is current state only. There are no timestamps, last-seen values or activity history, and the page receives no data from the web app. Removing a device clears its diagnostics row; its push token remains registered unless the member logs out or Expo reports the token as unregistered.
+
 ## Groups
 
 The **Groups** page is a two-pane view: pick a group on the left, manage it on the right.
@@ -111,7 +119,7 @@ The **Server settings** page's general section has a **Data export** card with a
 
 **Include media in export** (on by default) decides whether photos and videos go into the zip. Switch it off for a small export of just the content, for example when your media lives in S3 and is backed up there: such an export can only be restored onto a server that already has the same media in its storage. See [Backups and exports with S3](./storage#backups-and-exports-with-s3).
 
-It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
+It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, device diagnostics, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
 
 It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
@@ -119,4 +127,4 @@ The export itself is a manual, on-demand download, and can take a while to gener
 
 ### Members can export their own data
 
-Every member — not just admins — can download a copy of their family's content from their own profile, under **Your data → Download my data** (web and mobile app). That export is scoped to what the member can already see in the app: every post in their groups, **including other members' posts**, with the comments, reactions, chat, and photos/videos that go with them, plus their own favorites. It never includes another group's content, posts in circles they're not a member of, other members' favorites or notification settings, or any of the server secrets listed above. Each member can request up to 5 exports per hour.
+Every member — not just admins — can download a copy of their family's content from their own profile, under **Your data → Download my data** (web and mobile app). That export is scoped to what the member can already see in the app: every post in their groups, **including other members' posts**, with the comments, reactions, chat, and photos/videos that go with them, plus their own favorites and latest mobile device diagnostics. It never includes another group's content, posts in circles they're not a member of, other members' favorites or notification settings, or any of the server secrets listed above. Each member can request up to 5 exports per hour.

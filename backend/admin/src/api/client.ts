@@ -29,6 +29,8 @@ import {
   ActiveAlert,
   DiskUsage,
   JobStatus,
+  AdminDevice,
+  DeviceSummary,
 } from '../types'
 
 export type {
@@ -61,6 +63,8 @@ export type {
   ActiveAlert,
   DiskUsage,
   JobStatus,
+  AdminDevice,
+  DeviceSummary,
 }
 
 export class ApiError extends Error {
@@ -228,6 +232,15 @@ export const api = {
   getMe: () => request<User>('/api/auth/me'),
 
   getStats: () => request<DashboardStats>('/api/admin/stats'),
+
+  getDevices: (params: { cursor?: string } = {}) => {
+    const query = new URLSearchParams()
+    if (params.cursor) query.set('cursor', params.cursor)
+    const qs = query.toString()
+    return request<{ summary: DeviceSummary } & Page<AdminDevice>>(`/api/admin/devices${qs ? `?${qs}` : ''}`)
+  },
+
+  deleteDevice: (id: string) => request<void>(`/api/admin/devices/${id}`, { method: 'DELETE' }),
 
   // Public endpoint (no auth required) — used by the dashboard's
   // update-available notice.

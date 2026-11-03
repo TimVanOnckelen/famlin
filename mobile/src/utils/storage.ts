@@ -7,6 +7,8 @@ const TOKEN_KEY = 'famlin_token'
 const SERVER_URL_KEY = 'famlin_server_url'
 const LANGUAGE_KEY = 'famlin_language'
 const PUSH_TOKEN_KEY = 'famlin_push_token'
+const DEVICE_INSTALL_ID_KEY = 'famlin_device_install_id'
+const DEVICE_REPORT_KEY = 'famlin_device_report'
 
 export async function getItem(key: string): Promise<string | null> {
   if (Platform.OS === 'web') {
@@ -75,6 +77,26 @@ export async function setPushToken(value: string): Promise<void> {
 
 export async function deletePushToken(): Promise<void> {
   return deleteItem(PUSH_TOKEN_KEY)
+}
+
+export async function getDeviceInstallId(): Promise<string | null> {
+  return getItem(DEVICE_INSTALL_ID_KEY)
+}
+
+export async function setDeviceInstallId(value: string): Promise<void> {
+  return setItem(DEVICE_INSTALL_ID_KEY, value)
+}
+
+export async function getDeviceReport(): Promise<string | null> {
+  return getItem(DEVICE_REPORT_KEY)
+}
+
+export async function setDeviceReport(value: string): Promise<void> {
+  return setItem(DEVICE_REPORT_KEY, value)
+}
+
+export async function deleteDeviceReport(): Promise<void> {
+  return deleteItem(DEVICE_REPORT_KEY)
 }
 
 // Adapts these primitives to @famlin/api-client's StorageAdapter port, so the

@@ -367,12 +367,15 @@ paths:
         uploaded photos/videos all of that references (display copies,
         thumbnails and originals, under `uploads/`). JSON lives under
         `data/`; `manifest.json` records the export time, server version and
-        row counts.
+        row counts. Your own latest mobile device diagnostics (install id,
+        platform, OS version, app version/build and push permission) are also
+        included; no timestamps or activity history are recorded.
 
         Circle-private posts in circles you are not a member of, other
         groups' content, other members' favorites and notification
         preferences, credentials, invites, tokens and notification history
-        are never included.
+        are never included. Device diagnostics are excluded from the admin
+        backup export and restore.
 
         Rate-limited to 5 exports per user per hour.
       responses:
@@ -3265,6 +3268,10 @@ paths:
               required: [token]
               properties:
                 token: { type: string }
+                installId:
+                  type: string
+                  format: uuid
+                  description: Optional installation id used to associate this push token with a reported device.
       responses:
         '200':
           description: Registered
@@ -3293,6 +3300,95 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/devices/me:
+    get:
+      operationId: listMyDevices
+      tags: [Devices]
+      summary: List your reported mobile devices
+      description: >-
+        Returns only the authenticated member's latest mobile device
+        diagnostics. Devices have no timestamps and this endpoint does not
+        update them. Web clients do not report devices.
+      responses:
+        '200':
+          description: The member's devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/devices/{installId}:
+    parameters:
+      - name: installId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      operationId: reportDevice
+      tags: [Devices]
+      summary: Report changed diagnostics for a mobile installation
+      description: |
+        Upserts the latest device state for the authenticated member. A shared
+        installation is rebound to the current account after login. The
+        mobile app calls this at launch/foreground only when a reported field
+        changes or has not yet been reported to this server/account; identical
+        payloads are no-ops. No request/open timestamps or activity history
+        are stored. Device data is sent only to this server.
+
+        At most 20 devices are retained per member. Older clients can continue
+        using the server without reporting.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, osVersion, appVersion, appBuild, pushPermission]
+              properties:
+                platform: { type: string, enum: [ios, android] }
+                osVersion: { type: string, maxLength: 100 }
+                appVersion: { type: string, maxLength: 100 }
+                appBuild: { type: string, maxLength: 100 }
+                pushPermission: { type: string, enum: [granted, denied, undetermined] }
+      responses:
+        '200':
+          description: Report accepted (or unchanged)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, changed]
+                properties:
+                  success: { type: boolean, example: true }
+                  changed: { type: boolean }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: The member already has 20 reported devices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteMyDevice
+      tags: [Devices]
+      summary: Remove a reported device on logout
+      description: Deletes this member's device record. A linked push token is unlinked, not deleted, by this endpoint.
+      responses:
+        '200':
+          description: Removed (or already absent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/invites/{token}:
     get:
       operationId: previewInvite
@@ -3547,6 +3643,17 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    Device:
+      type: object
+      description: Latest mobile diagnostics for one install; contains no timestamps or activity history.
+      properties:
+        installId: { type: string, format: uuid }
+        platform: { type: string, enum: [ios, android] }
+        osVersion: { type: string }
+        appVersion: { type: string }
+        appBuild: { type: string }
+        pushPermission: { type: string, enum: [granted, denied, undetermined] }
+      required: [installId, platform, osVersion, appVersion, appBuild, pushPermission]
     Branding:
       type: object
       description: >-
