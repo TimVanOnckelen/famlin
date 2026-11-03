@@ -407,6 +407,28 @@ jobs:
           echo "::error::$SPEC has breaking API changes (see the job summary), but no commit or PR title carries a conventional-commit breaking marker. Mark it with a '!' after the type (e.g. 'feat!: ...') or add a 'BREAKING CHANGE: <what an admin must do when upgrading>' footer, so release-please surfaces it in the release's breaking-changes section."
           exit 1
 
+  dependency-review:
+    # Diffs every lockfile in the repo (root workspace, backend/,
+    # backend/admin/, mobile/, docs/) between the PR's base and head and
+    # fails when a dependency the PR adds or bumps has a known vulnerability
+    # of high severity or worse, or a license that isn't compatible with
+    # Famlin's MIT license. The allow list and the reviewed per-package
+    # exceptions live in .github/dependency-review-config.yml. Dependencies
+    # the PR doesn't touch are not re-checked. The job summary also lists
+    # each new package's OpenSSF Scorecard, and on failure the summary is
+    # commented on the PR (except on Dependabot PRs, whose token is read-only).
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v4
+        with:
+          config-file: ./.github/dependency-review-config.yml
+
   docker:
     # Both architectures docker-publish.yml ships, each on a native runner —
     # a green amd64-only build says nothing about arm64.
