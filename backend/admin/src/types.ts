@@ -71,6 +71,7 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string
   localMediaPath: string
+  updateCheckEnabled: boolean
   backupIncludeMedia: boolean
   backupEnabled: boolean
   backupSchedule: BackupSchedule
@@ -88,7 +89,16 @@ export interface ActiveAlert {
   params: Record<string, string | number>
 }
 
-export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts'
+export interface UpdateNotice {
+  current: string
+  latest: string
+  url: string
+  breaking: boolean
+  checkedAt: string
+  updateAvailable: boolean
+}
+
+export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts' | 'updateCheck'
 
 export interface JobStatus {
   job: JobId
@@ -135,6 +145,7 @@ export interface SystemStatus {
   migrations: { latestApplied: string | null; appliedCount: number; pending: string[] | null; failed: string[] }
   push: { last24h: PushWindow; last7d: PushWindow; unhealthy: boolean }
   alerts: ActiveAlert[]
+  update: UpdateNotice | null
 }
 
 export type IntegrationError = 'unreachable' | 'unauthorized' | 'not_found' | 'not_a_directory' | 'invalid_response'

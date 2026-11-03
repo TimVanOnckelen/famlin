@@ -4,7 +4,7 @@ import { config } from '../config.js'
 
 // Every background job the admin status panel reports on. The ids are
 // persisted as JobStatus primary keys — don't rename them.
-export const JOB_IDS = ['onThisDay', 'newAssets', 'expireStories', 'backup', 'systemAlerts'] as const
+export const JOB_IDS = ['onThisDay', 'newAssets', 'expireStories', 'backup', 'systemAlerts', 'updateCheck'] as const
 export type JobId = (typeof JOB_IDS)[number]
 
 const MAX_ERROR_LENGTH = 500

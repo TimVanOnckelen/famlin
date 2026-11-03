@@ -136,7 +136,9 @@ If you're [building from source](#building-from-source-instead) instead of runni
 
 ## Staying up to date
 
-The admin dashboard (`/admin`) checks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the running server's version and shows a banner — "A new version is available" with a link to that release's notes — whenever a newer version has shipped than the one you're running. No configuration needed; it's a one-shot, fail-soft check (no notice at all if GitHub is unreachable or rate-limited).
+Once a day (and shortly after the server starts), the server asks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the latest release. When it is newer than the version you're running, every admin page shows a dismissible banner: "Famlin X.Y.Z is available", with links to the release notes and to this page. A release whose notes contain breaking changes gets a more prominent banner telling you to read them before updating. Dismissing the banner hides it for that version only; a still newer release brings it back.
+
+Only a plain request for the latest release is made; nothing about your instance is sent. Turn it off with **Check for new versions** under **Server settings → General → Updates**. The check is fail-soft: if GitHub is unreachable you see no notice, and the failure is recorded under **Update check** in the [system status](./managing-users-and-content#system-status) job list.
 
 If you'd rather be notified outside the admin UI, "Watch" the repository's releases on GitHub (**Watch → Custom → Releases** on the [repo page](https://github.com/timvanonckelen/famlin)) to get an email/notification per release.
 
