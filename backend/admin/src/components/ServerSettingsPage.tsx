@@ -8,6 +8,8 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
+const BACKUP_DOCS_URL = 'https://famlin.app/docs/docs/maintenance#keep-backups-off-the-machine'
+
 type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
 
 interface SettingsCardProps {
@@ -644,6 +646,12 @@ export function ServerSettingsPage() {
                   checked={form.backupEnabled}
                   onChange={(checked) => updateField('backupEnabled', checked)}
                 />
+                <p className="muted">
+                  {t('serverSettings.backupOffsiteHint')}{' '}
+                  <a href={BACKUP_DOCS_URL} target="_blank" rel="noreferrer">
+                    {t('serverSettings.backupOffsiteLink')}
+                  </a>
+                </p>
                 <ToggleRow
                   title={t('serverSettings.backupIncludeMedia')}
                   hint={t('serverSettings.backupIncludeMediaHint')}

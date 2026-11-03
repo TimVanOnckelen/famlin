@@ -29,7 +29,7 @@ docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 
 ### Scheduled backups
 
-Famlin can back itself up on a schedule. It's **off by default**: turn it on under **Server settings → Backups** in `/admin`, and pick:
+Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 dumps; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off under **Server settings → Backups** in `/admin`:
 
 - **Schedule**: daily, or weekly on Sundays.
 - **Time**: the hour it runs, in the server's time zone. The suggested default is 03:00.
@@ -43,6 +43,10 @@ Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the
 Backups are deliberately not data-export zips: an export holds a full copy of every photo, so keeping seven of them would cost seven times your media library.
 
 **System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content#system-status).
+
+#### Keep backups off the machine
+
+Backups on the same disk protect you from mistakes (a deleted post, a bad upgrade) and database corruption, but not from the disk or machine failing. Copy `famlin-backups` somewhere else as well: `rsync` the volume's folder to another machine on a cron job (`rsync -a /var/lib/docker/volumes/famlin_famlin-backups/_data/ backup-host:/srv/famlin-backups/`), point your NAS backup job (Hyper Backup and similar) at it, or bind-mount a NAS folder as described below.
 
 :::tip Keep backups off the machine they protect
 `famlin-backups` is a separate volume, but by default it's on the same disk as everything else. For real protection, bind-mount a folder on another disk or a NAS share instead:

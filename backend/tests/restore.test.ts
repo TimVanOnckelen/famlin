@@ -463,6 +463,18 @@ describe('POST /api/auth/setup/restore', () => {
     expect(restored.passwordHash).toBeNull()
   })
 
+  it('enables scheduled backups on the restored new install', async () => {
+    const admin = await createUser({ isAdmin: true, email: 'someone@example.com' })
+    await createGroupWithMember(admin)
+    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) }))
+      .rawPayload
+    await truncateAll()
+
+    expect((await restore(adminFields, archive)).statusCode).toBe(200)
+    const row = await prisma.setting.findUnique({ where: { key: 'backupEnabled' } })
+    expect(row?.value).toBe('true')
+  })
+
   it('restores legacy uploads without processing fields using schema defaults', async () => {
     const assetKey = crypto.randomUUID()
     const archive = await zipOf({
