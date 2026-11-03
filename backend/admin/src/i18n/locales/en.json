@@ -108,6 +108,13 @@
     "apiDocs": "API documentation",
     "uploads": "Uploads"
   },
+  "connectApp": {
+    "title": "Connect the mobile app",
+    "description": "Scan this code with your phone's camera to open Famlin and connect it to this server.",
+    "qrAlt": "QR code to connect the Famlin app to this server",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "users": {
     "grantAdminConfirm": "Grant administrator access to {{name}} ({{email}})? They will be able to manage users, groups and server settings.",
     "revokeAdminConfirm": "Remove administrator access from {{name}} ({{email}})?",

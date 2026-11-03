@@ -1,4 +1,11 @@
 {
+  "connectApp": {
+    "title": "Verbind je telefoon",
+    "description": "Scan deze code met de camera van je telefoon om Famlin te openen en met deze server te verbinden.",
+    "qrAlt": "QR-code om de Famlin-app met deze server te verbinden",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Live Photo pauzeren", "playLivePhoto": "Live Photo afspelen", "playVideo": "Video afspelen", "processing": "Media wordt verwerkt…", "processingFailed": "Verwerken van media mislukt"},
   "common": {
     "appName": "Famlin",

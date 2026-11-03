@@ -23,7 +23,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { LoginScreen } from '@/screens/LoginScreen'
 import { InviteScreen } from '@/screens/InviteScreen'
 import { colors } from '@/constants/colors'
-import { ActivityIndicator, View, AppState } from 'react-native'
+import { ActivityIndicator, View, AppState, Alert } from 'react-native'
 import { initApiBaseUrl, setUnauthorizedHandler, setStorageAdapter, setLanguageResolver } from '@/api/client'
 import { fetchMe } from '@/api/auth'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
@@ -31,6 +31,9 @@ import { useReceiveShareIntents, useOpenComposerForShares } from '@/hooks/useInc
 import { getServerUrl, mobileStorageAdapter } from '@/utils/storage'
 import { ensureFreshMediaToken } from '@/api/uploads'
 import { areScreensLoaded, prepareBrandingForMainScreens } from '@/branding'
+import { parseConnectQr, isSameServer } from '@/utils/connectQr'
+import { usePendingConnectStore } from '@/stores/pendingConnectStore'
+import { useTranslation } from 'react-i18next'
 
 const Stack = createNativeStackNavigator()
 const queryClient = new QueryClient({
@@ -69,7 +72,9 @@ function parseInviteUrl(url: string): { token: string; server?: string } | null 
 }
 
 function AppContent() {
-  const { user, setAuth, clearSession, isLoading, loadToken } = useAuthStore()
+  const { t } = useTranslation()
+  const { user, setAuth, clearSession, isLoading, loadToken, logout, serverUrl: signedInServer } = useAuthStore()
+  const pendingConnectServer = usePendingConnectStore((state) => state.server)
   const [initializing, setInitializing] = useState(true)
   const [pendingInvite, setPendingInvite] = useState<{ token: string; server?: string } | null>(null)
   // Per-family branding (issue #164): the authenticated screens are only
@@ -133,7 +138,16 @@ function AppContent() {
   useEffect(() => {
     function handleUrl(url: string) {
       const invite = parseInviteUrl(url)
-      if (invite) setPendingInvite(invite)
+      if (invite) {
+        setPendingInvite(invite)
+        return
+      }
+      // `famlin://connect?server=...` from the server's /connect page (the
+      // "Connect the mobile app" QR code, issue #345).
+      if (/^famlin:\/\/connect/i.test(url)) {
+        const server = parseConnectQr(url)
+        if (server) usePendingConnectStore.getState().setServer(server)
+      }
     }
     Linking.getInitialURL().then((url) => {
       if (url) handleUrl(url)
@@ -168,6 +182,30 @@ function AppContent() {
     }
     bootstrap()
   }, [])
+
+  // A connect link while signed in. Signed out, LoginScreen picks it up and
+  // prefills the server. The same server is a no-op; a different one is never
+  // switched to silently — like an invite naming another server, the existing
+  // session is not handed over, and signing in there requires signing out here.
+  useEffect(() => {
+    if (!pendingConnectServer || initializing || !user) return
+    usePendingConnectStore.getState().clear()
+    if (isSameServer(pendingConnectServer, signedInServer)) return
+    Alert.alert(
+      t('connect.differentServerTitle'),
+      t('connect.differentServerMessage', { server: pendingConnectServer.replace(/^https?:\/\//i, '') }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('connect.signOutAndConnect'),
+          style: 'destructive',
+          onPress: () => {
+            logout().then(() => usePendingConnectStore.getState().setServer(pendingConnectServer))
+          },
+        },
+      ]
+    )
+  }, [pendingConnectServer, initializing, user, signedInServer])
 
   if (!fontsLoaded || initializing || isLoading || (user && !brandReady)) {
     return (

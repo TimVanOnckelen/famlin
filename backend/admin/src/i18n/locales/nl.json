@@ -108,6 +108,13 @@
     "apiDocs": "API documentatie",
     "uploads": "Uploads"
   },
+  "connectApp": {
+    "title": "Verbind de mobiele app",
+    "description": "Scan deze code met de camera van je telefoon om Famlin te openen en met deze server te verbinden.",
+    "qrAlt": "QR-code om de Famlin-app met deze server te verbinden",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "users": {
     "grantAdminConfirm": "{{name}} ({{email}}) beheerderstoegang geven? Deze gebruiker kan dan gebruikers, groepen en serverinstellingen beheren.",
     "revokeAdminConfirm": "Beheerderstoegang van {{name}} ({{email}}) intrekken?",

@@ -1,4 +1,11 @@
 {
+  "connectApp": {
+    "title": "连接你的手机",
+    "description": "用手机相机扫描此二维码，即可打开 Famlin 并连接到此服务器。",
+    "qrAlt": "用于将 Famlin 应用连接到此服务器的二维码",
+    "appStore": "App Store",
+    "playStore": "Google Play"
+  },
   "media": {"livePhoto": "实况照片", "video": "视频", "pauseLivePhoto": "暂停实况照片", "playLivePhoto": "播放实况照片", "playVideo": "播放视频", "processing": "媒体正在处理中…", "processingFailed": "媒体处理失败"},
   "common": {
     "appName": "Famlin",

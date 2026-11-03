@@ -43,6 +43,7 @@ import immichRoutes from './routes/immich.js'
 import mediaRoutes from './routes/media.js'
 import inviteRoutes from './routes/invites.js'
 import inviteLandingRoutes from './routes/invite-landing.js'
+import connectLandingRoutes from './routes/connect-landing.js'
 import landingRoutes from './routes/landing.js'
 
 // Builds and registers everything on a Fastify instance without starting the
@@ -372,6 +373,7 @@ export async function buildApp() {
   await fastify.register(mediaRoutes, { prefix: '/api/media' })
   await fastify.register(inviteRoutes, { prefix: '/api/invites' })
   await fastify.register(inviteLandingRoutes)
+  await fastify.register(connectLandingRoutes)
 
   // Serve admin web UI static build (if present)
   const adminDir = path.join(process.cwd(), 'dist', 'admin')

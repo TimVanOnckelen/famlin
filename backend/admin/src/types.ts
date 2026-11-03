@@ -292,10 +292,12 @@ export interface DashboardStats {
 }
 
 // Public endpoint (GET /api/auth/server-info) — no auth required. Only
-// `version` is used today; `minAppVersion`/store URLs may be added by the
-// backend but aren't consumed here.
+// `version` and the store URLs (for the "Connect the mobile app" card) are
+// used; `minAppVersion` etc. aren't consumed here.
 export interface ServerInfo {
   version: string
+  appStoreUrl?: string | null
+  playStoreUrl?: string | null
 }
 
 // Per-family branding (issue #164). The palette is derived server-side; the

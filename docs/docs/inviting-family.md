@@ -42,6 +42,17 @@ The app hand-off uses a `famlin://invite/<token>?server=...` deep link. If you
 do not have an account, the app walks you through creating one with SSO or
 email/password. If you are already signed in, you can join with that account.
 
+## Connecting the mobile app with a QR code
+
+Not every relative needs an invite link just to *find* your server. The admin
+dashboard (**Connect the mobile app** card) and every member's web profile
+(**Connect your phone**) show a QR code for `https://<your-server>/connect`. The code is generated in your browser and contains only the server address — no account, token or invite.
+
+- **With the phone's camera**: scanning it opens the server's `/connect` page, which has an **Open in the Famlin app** button (the `famlin://connect?server=...` deep link), the App Store / Google Play buttons, and the server address for typing it in by hand. If the app is already signed in to this server, nothing changes; if it is signed in to a *different* server, it asks before signing out — it never sends the existing session to another server.
+- **From inside the app**: on the login screen, tap **Scan QR code**. The app asks for camera access (used only for scanning; nothing is saved), reads the code and checks the server just as if you had typed the address.
+
+The QR code only tells the app *which server* to talk to. People still need an account — via an [invite link](#what-happens-when-they-open-it) or one an admin created — to sign in.
+
 ## Good to know
 
 - Each link is **single-use** — it's consumed as soon as it's successfully used to join. Restricting it to an email address also means only a sign-in with that exact email can consume it; leaving it blank lets anyone with the link claim it.
