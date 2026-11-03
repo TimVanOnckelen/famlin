@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react'
 import { AppState, Dimensions, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Image } from 'expo-image'
 import { useVideoPlayer, VideoView } from 'expo-video'
@@ -35,7 +35,7 @@ export function LivePhotoMedia({
   style?: StyleProp<ViewStyle>
 }) {
   const { t } = useTranslation()
-  const view = useRef<View>(null)
+  const view = useRef<ComponentRef<typeof View>>(null)
   const [visible, setVisible] = useState(false)
   const [paused, setPaused] = useState(!autoPlay)
   const interrupt = useCallback(() => setPaused(true), [])
