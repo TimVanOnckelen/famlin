@@ -13,6 +13,7 @@ import { ContentPage } from './components/ContentPage'
 import { PushLogPage } from './components/PushLogPage'
 import { ServerSettingsPage } from './components/ServerSettingsPage'
 import { SystemStatusPage } from './components/SystemStatusPage'
+import { DevicesPage } from './components/DevicesPage'
 import { api, User } from './api/client'
 
 function App() {
@@ -88,6 +89,7 @@ function App() {
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/content" element={<ContentPage />} />
         <Route path="/push-log" element={<PushLogPage />} />
+        <Route path="/devices" element={<DevicesPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
         <Route path="/storage" element={<StoragePage />} />
         <Route path="/status" element={<SystemStatusPage />} />

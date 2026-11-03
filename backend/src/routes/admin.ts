@@ -134,6 +134,58 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate)
 
+  // Device diagnostics are operational state, not activity data. The summary
+  // is computed from current rows only; the detailed list is cursor-paginated.
+  fastify.get('/devices', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
+    const [devices, total, pushDenied, versions] = await Promise.all([
+      prisma.device.findMany({
+        orderBy: { id: 'asc' },
+        ...paginationArgs({ cursor, take }),
+        select: {
+          id: true,
+          installId: true,
+          platform: true,
+          osVersion: true,
+          appVersion: true,
+          appBuild: true,
+          pushPermission: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+      }),
+      prisma.device.count(),
+      prisma.device.count({ where: { pushPermission: 'denied' } }),
+      prisma.device.groupBy({
+        by: ['appVersion', 'platform'],
+        _count: { _all: true },
+      }),
+    ])
+    const { items, nextCursor } = paginate(devices, take)
+
+    return {
+      summary: {
+        total,
+        pushDenied,
+        versions: versions
+          .map(({ appVersion, platform, _count }) => ({ appVersion, platform, count: _count._all }))
+          .sort((a, b) => a.appVersion.localeCompare(b.appVersion) || a.platform.localeCompare(b.platform)),
+      },
+      items,
+      nextCursor,
+    }
+  })
+
+  fastify.delete('/devices/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+
+    const { id } = request.params as { id: string }
+    const result = await prisma.device.deleteMany({ where: { id } })
+    if (result.count === 0) return reply.status(404).send({ error: getT(request)('errors.deviceNotFound') })
+    return { success: true }
+  })
+
   // Dashboard overview: totals, a 14-day activity trend, and recent activity.
   fastify.get('/stats', async (request, reply) => {
     if (requireAdmin(request, reply)) return

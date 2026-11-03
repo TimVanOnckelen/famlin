@@ -58,7 +58,7 @@ export function LoginScreen() {
   const [ssoConfig, setSsoConfig] = useState<OidcConfig | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const passwordInputRef = useRef<TextInput>(null)
+  const passwordInputRef = useRef<React.ComponentRef<typeof TextInput>>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [isCheckingServer, setIsCheckingServer] = useState(false)

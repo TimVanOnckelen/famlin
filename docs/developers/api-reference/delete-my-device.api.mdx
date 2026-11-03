@@ -1,0 +1,66 @@
+---
+id: delete-my-device
+title: "Remove a reported device on logout"
+description: "Deletes this member's device record. A linked push token is unlinked, not deleted, by this endpoint."
+sidebar_label: "Remove a reported device on logout"
+hide_title: true
+hide_table_of_contents: true
+api: eJy9VdFu2zYU/ZULvcwOXDkb9mQMBVzEwzq0WJGkKIo4qCiJttlQpEpSTlTDwD5iX7gv2bmknDj1tqdhT5KoS957zj33cJfZVjoRlDWv62yW1VLLIN/2F3KrKplNsiDWPpvdZGnBZ7cTxPjKqZb3YMdF3OEpbJSnRjaldN95qmM4OVlZV+c0J63Mnayp7fyGgr2ThhDembQ8IWMDpdz4KPt0mjR1a5UJOepw0rfWeFQw22U/nJ/z43khl7KxW6QYWUdCOynqnkTppQlj7K+sCXjlbaJttaoi5ulnz3t3ma82shH8FvpW4jRbfpZVwMbWMUNBpcy+q8CCPwosrdVSGETKB9G0GmvBdXK/B3cq8Gd2NWza73n1x/PvT4t/q7xXZj0hZbZCK5AgH1rlmA3AcXJrmb0KCwChhP7vEEnnrDsK88GhkOzbNv/SNcK8YFZFqeWEghPGa4F+0VYJ9EtSMQfMNrx4I8y6E2tZ0Abh0tGokKaYFkYX4zxjCpz80jE4FlbKf/vE1iIu7BNZrXCigSoci3CXGXwgRBkfhNZQ7ATvWGhF2GTH53ILJqccPIJbWdcIcJd1naqRDPmRZmOfZoCJ4lNn2VS0apoE7ae7x9x7RHjptofaOqcRvAmh9bPpdCUaaDsfNJFXtjmh9KPtHNl7Qz/HWOi/1bZvuKdcj5dV51To4+GlFE66eccF3dwe/75ijKmVx0GPkLmgbKAi6jUGnRQzJ2gC0hGaRFTrMKWjIiH5BDI+5XleTFiFse8omdt+L0uCAMcQ6tIIwoh6HEm/frimlbMNFe9+u7qmSKJAaVNt18oUOb2yYUOohXhE40ke3aV70c+WpmAU1qmvUdQzehWrpp9iUS+LfGmikJRZ2Yh10M7A5PzdawDkziRwYMoxrd+CXiCkP9CfeslzZ/3Bzy4XKB2nwalYyAWjKOjP3/94qpf/4mNp7GqlKowmNbZUWpIw9YEbOJ2XOX1QjJhu/pbp2xFrTGqeTc95xkvT244qYajslK6pP+gFlijXybQ9ibVgSaa/6JXSPfw3gQFNSzPXmgavYM/1FTLU7LFnZ2tnu3Ywbb9R7dnZjA45rdE98bwnIJAaMD6eYyju9TSKKeEl47izBACzBqJJ3AZi0GBkNZYbi3bbLi6LsDQAmqDndCUl3bxnB4zEgtNTOmjFxg5ZsAMms5vEira8ACpSynvr2CqHwfNRKRhl6wMMjLUyeEi6LtAOJ1vrWM/DnQXtQqK2O5HL7sly/69bb5jhIB/CtNVoNGOJRrMb3OkG5q9ipel+nmSzJ3eETWwAnKN2u1J4+d7p/Z6Xv3RQPlsJxkQ4xZ4efaZWnt9hgyuhvfwXBkaXg9mO6Z8KHRaF6Xkahe74C693sn9m4vtbBKe7IhaR/qfb5GjnyS33zLUvFm8W1wu4wl98RxdN
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Remove a reported device on logout"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/devices/{installId}"}
+  context={"endpoint"}
+>
+
+</MethodEndpoint>
+
+
+
+Deletes this member's device record. A linked push token is unlinked, not deleted, by this endpoint.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./delete-my-device.ParamsDetails.json")}
+>
+
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./delete-my-device.RequestSchema.json")}
+>
+
+</RequestSchema>
+
+<StatusCodes
+  {...require("./delete-my-device.StatusCodes.json")}
+>
+
+</StatusCodes>

@@ -2,7 +2,12 @@ import 'react-native-gesture-handler/jestSetup'
 import React from 'react'
 import { act, render } from '@testing-library/react-native'
 import { Pressable, Text } from 'react-native'
-import { State, type PanGesture, type GestureTouchEvent, type GestureStateManager } from 'react-native-gesture-handler'
+import {
+  State,
+  type GestureTouchEvent,
+  type LegacyGestureStateManager as GestureStateManager,
+  type LegacyPanGesture as PanGesture,
+} from 'react-native-gesture-handler'
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils'
 import { SwipeToDismiss } from '../SwipeToDismiss'
 import { withTiming } from 'react-native-reanimated'
@@ -11,6 +16,13 @@ import * as Reanimated from 'react-native-reanimated'
 // Jest factories load the official native-library mocks synchronously.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'))
+// Reanimated 4.7's native initializer registers a CSS event handler on load,
+// which its JS fallback module (the one Jest gets) throws on — so even its own
+// mock can't be imported. Stub that single call out.
+jest.mock('react-native-reanimated/src/css/native/proxy', () => ({
+  ...jest.requireActual('react-native-reanimated/src/css/native/proxy'),
+  setCSSEventHandler: () => {},
+}))
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'))
 
@@ -124,7 +136,7 @@ it.each([
     end: jest.fn(),
   }
   const event = { allTouches: [{ y }] } as GestureTouchEvent
-  await act(() => getByGestureTestId('swipe-dismiss').handlers.onTouchesDown?.(event, manager))
+  await act(() => (getByGestureTestId('swipe-dismiss') as PanGesture).handlers.onTouchesDown?.(event, manager))
   expect(manager.fail).toHaveBeenCalledTimes(excluded ? 1 : 0)
 })
 
@@ -136,7 +148,7 @@ it('returns within 180ms and accepts a new swipe before the return completes', a
   })
   try {
     const { onClose, onActiveChange } = await mount()
-    const pan = getByGestureTestId('swipe-dismiss')
+    const pan = getByGestureTestId('swipe-dismiss') as PanGesture
     await act(() =>
       fireGestureHandler<PanGesture>(pan, [
         { state: State.BEGAN },

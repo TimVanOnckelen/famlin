@@ -76,6 +76,7 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
       try {
         const tickets = await expo.sendPushNotificationsAsync(chunk)
         const staleTokens: string[] = []
+        const staleDeviceIds = new Set<string>()
 
         for (const [i, ticket] of tickets.entries()) {
           if (ticket.status === 'ok') {
@@ -84,7 +85,9 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
           }
           failureCount += 1
           if (ticket.details?.error === 'DeviceNotRegistered') {
-            staleTokens.push(validTokens[cursor + i].token)
+            const staleToken = validTokens[cursor + i]
+            staleTokens.push(staleToken.token)
+            if (staleToken.deviceId) staleDeviceIds.add(staleToken.deviceId)
           } else {
             console.error(
               `Push ticket error (${ticket.details?.error ?? 'unknown'}) for token ${validTokens[cursor + i].token}: ${ticket.message}`
@@ -93,7 +96,12 @@ export async function sendPush(args: ChannelSendArgs): Promise<PushSendResult> {
         }
 
         if (staleTokens.length > 0) {
-          await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } })
+          await prisma.$transaction([
+            prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } }),
+            ...(staleDeviceIds.size > 0
+              ? [prisma.device.deleteMany({ where: { id: { in: [...staleDeviceIds] } } })]
+              : []),
+          ])
         }
       } catch (err) {
         console.error('Failed to send push notifications', err)

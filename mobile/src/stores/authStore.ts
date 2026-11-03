@@ -8,8 +8,10 @@ import {
   deleteServerUrl,
   getPushToken,
   deletePushToken,
+  getDeviceInstallId,
+  deleteDeviceReport,
 } from '@/utils/storage'
-import { setApiBaseUrl, setMediaToken, unregisterPushToken } from '@famlin/api-client'
+import { setApiBaseUrl, setMediaToken, unregisterDevice, unregisterPushToken } from '@famlin/api-client'
 import { refreshMediaToken } from '@/api/uploads'
 import { usePendingShareStore } from '@/stores/pendingShareStore'
 
@@ -53,6 +55,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       await unregisterPushToken(pushToken).catch(() => {})
       await deletePushToken()
     }
+    const installId = await getDeviceInstallId()
+    if (installId) {
+      await unregisterDevice(installId).catch(() => {})
+    }
+    await deleteDeviceReport()
     await deleteToken()
     await deleteServerUrl()
     setMediaToken(null)

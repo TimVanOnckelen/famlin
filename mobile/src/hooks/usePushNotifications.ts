@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
+import { AndroidImportance } from 'expo-notifications'
 import * as Device from 'expo-device'
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client'
-import { setPushToken } from '@/utils/storage'
+import { getPushToken, setPushToken } from '@/utils/storage'
 import { useAuthStore } from '@/stores/authStore'
 import { navigate } from '@/navigation/navigationRef'
+import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -27,7 +29,13 @@ export function usePushNotifications() {
     if (Platform.OS === 'web' || !userId) {
       return
     }
-    registerPushTokenAsync()
+    void registerPushTokenAsync(userId)
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void refreshDeviceDiagnostics(userId)
+      }
+    })
+    return () => subscription.remove()
   }, [userId])
 
   useEffect(() => {
@@ -54,7 +62,18 @@ export function usePushNotifications() {
   }, [])
 }
 
-async function registerPushTokenAsync() {
+async function registerPushTokenAsync(userId: string) {
+  let installId: string
+  try {
+    installId = await getOrCreateDeviceInstallId()
+    await syncDeviceDiagnostics(userId)
+  } catch (err) {
+    console.error('Failed to report device diagnostics', err)
+    // Diagnostics are best-effort and must never prevent sign-in or push
+    // registration from working.
+    installId = await getOrCreateDeviceInstallId()
+  }
+
   if (!Device.isDevice) {
     console.log('Push notifications require a physical device')
     return
@@ -74,7 +93,7 @@ async function registerPushTokenAsync() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      importance: AndroidImportance.DEFAULT,
     })
   }
 
@@ -84,6 +103,7 @@ async function registerPushTokenAsync() {
   if (existingStatus !== 'granted') {
     const { status } = await Notifications.requestPermissionsAsync()
     finalStatus = status
+    await syncDeviceDiagnostics(userId).catch((err) => console.error('Failed to report device diagnostics', err))
   }
 
   if (finalStatus !== 'granted') {
@@ -95,9 +115,24 @@ async function registerPushTokenAsync() {
     const tokenData = await Notifications.getExpoPushTokenAsync()
     const token = tokenData.data
 
-    await registerPushToken(token)
+    await registerPushToken(token, installId)
     await setPushToken(token)
   } catch (err) {
     console.error('Failed to register push token', err)
+  }
+}
+
+async function refreshDeviceDiagnostics(userId: string) {
+  try {
+    const report = await syncDeviceDiagnostics(userId)
+    if (!report?.changed) return
+
+    // If the first diagnostics request failed but push registration succeeded,
+    // link the already-registered token once the changed report creates the
+    // Device row. This remains a field-change write, not a foreground heartbeat.
+    const token = await getPushToken()
+    if (token) await registerPushToken(token, report.installId)
+  } catch (err) {
+    console.error('Failed to report device diagnostics', err)
   }
 }

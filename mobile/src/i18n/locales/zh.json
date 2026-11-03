@@ -392,7 +392,25 @@
     },
     "notifyNewStory": "限时动态",
     "myGiftLists": "我的礼物清单",
-    "notifyGiftList": "礼物清单"
+    "notifyGiftList": "礼物清单",
+    "devices": {
+      "title": "此应用与您的服务器共享的信息",
+      "description": "仅以下信息会发送到此服务器。不会收集活动或最后在线时间。",
+      "empty": "此应用报告设备信息后将在这里显示。",
+      "fields": {
+        "installId": "安装 ID",
+        "platform": "平台",
+        "osVersion": "操作系统",
+        "appVersion": "应用版本",
+        "appBuild": "应用构建号",
+        "pushPermission": "推送权限"
+      },
+      "permissions": {
+        "granted": "已允许",
+        "denied": "已拒绝",
+        "undetermined": "未选择"
+      }
+    }
   },
   "tabs": {
     "feed": "动态",

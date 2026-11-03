@@ -37,12 +37,38 @@
     "users": "Gebruikers",
     "groups": "Groepen",
     "content": "Inhoud",
+    "operations": "Beheer",
     "pushLog": "Pushmeldingenlogboek",
+    "devices": "Apparaten",
     "serverSettings": "Serverinstellingen",
     "logout": "Uitloggen",
     "language": "Taal",
     "version": "Versie {{version}}",
     "systemStatus": "Systeemstatus"
+  },
+  "devices": {
+    "title": "Mobiele apparaten",
+    "description": "De meest recente mobiele diagnostiek die door leden is gemeld. Deze pagina toont alleen de huidige status; er worden geen tijdstempels of activiteitshistorie bijgehouden.",
+    "totalDevices": "Gemelde apparaten",
+    "pushDenied": "Pushmachtiging geweigerd",
+    "appVersions": "Appversies per platform",
+    "empty": "Er zijn nog geen apparaten gemeld.",
+    "member": "Lid",
+    "installId": "Installatie-ID",
+    "platform": "Platform",
+    "osVersion": "OS-versie",
+    "appVersion": "Appversie",
+    "appBuild": "Build",
+    "pushPermission": "Pushmachtiging",
+    "remove": "Verwijderen",
+    "removeConfirm": "Dit gemelde apparaat van {{name}} verwijderen? Het pushtoken blijft geregistreerd.",
+    "removeError": "Apparaat verwijderen mislukt: {{error}}",
+    "versionPlatform": "{{version}} · {{platform}}",
+    "permissions": {
+      "granted": "Toegestaan",
+      "denied": "Geweigerd",
+      "undetermined": "Nog niet gekozen"
+    }
   },
   "login": {
     "title": "Famlin Admin",

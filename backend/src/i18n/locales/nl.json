@@ -24,6 +24,8 @@
     "replyToMessageNotFound": "Bericht waarop wordt gereageerd werd niet gevonden",
     "notificationNotFound": "Melding niet gevonden",
     "failedToRegisterPushToken": "Push-token registreren mislukt",
+    "deviceLimitReached": "Dit account heeft de limiet van 20 apparaten bereikt",
+    "deviceNotFound": "Apparaat niet gevonden",
     "pushNotificationsDisabled": "Pushmeldingen zijn uitgeschakeld op deze server",
     "cannotDeleteYourself": "Je kunt jezelf niet verwijderen",
     "oidcNotConfigured": "OIDC-login is niet geconfigureerd",

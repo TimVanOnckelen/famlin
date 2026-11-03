@@ -246,7 +246,9 @@ export function FeedScreen() {
         data={hasGroups ? posts : []}
         keyExtractor={postKeyExtractor}
         contentContainerStyle={styles.feedList}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.primary} />
+        }
         renderItem={renderPost}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
@@ -276,11 +278,11 @@ export function FeedScreen() {
                 </View>
                 <Icon name="chevron-right" size={18} color={colors.textMuted} />
               </TouchableOpacity>
-            ) : null}
+            ) : undefined}
           </>
         }
         ListEmptyComponent={
-          !groupsLoaded || (isLoading && hasGroups) ? null : !hasGroups ? (
+          !groupsLoaded || (isLoading && hasGroups) ? undefined : !hasGroups ? (
             <EmptyState title={t('feed.noGroupsTitle')} subtitle={t('feed.noGroupsSubtitle')} />
           ) : (
             <EmptyState title={t('feed.emptyTitle')} subtitle={t('feed.emptySubtitle')} />

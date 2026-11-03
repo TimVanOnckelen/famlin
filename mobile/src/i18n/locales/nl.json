@@ -392,7 +392,25 @@
     },
     "notifyNewStory": "Verhalen",
     "myGiftLists": "Mijn cadeaulijsten",
-    "notifyGiftList": "Cadeaulijsten"
+    "notifyGiftList": "Cadeaulijsten",
+    "devices": {
+      "title": "Deze app deelt gegevens met je server",
+      "description": "Alleen de onderstaande gegevens worden naar deze server gestuurd. Er wordt geen activiteit of laatst-gezien-informatie bijgehouden.",
+      "empty": "Apparaatgegevens verschijnen hier zodra deze app ze heeft gemeld.",
+      "fields": {
+        "installId": "Installatie-ID",
+        "platform": "Platform",
+        "osVersion": "Besturingssysteem",
+        "appVersion": "Appversie",
+        "appBuild": "App-build",
+        "pushPermission": "Pushmachtiging"
+      },
+      "permissions": {
+        "granted": "Toegestaan",
+        "denied": "Geweigerd",
+        "undetermined": "Nog niet gekozen"
+      }
+    }
   },
   "tabs": {
     "feed": "Feed",

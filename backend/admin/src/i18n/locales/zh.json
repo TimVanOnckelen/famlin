@@ -37,12 +37,38 @@
     "users": "用户",
     "groups": "群组",
     "content": "内容",
+    "operations": "运维",
     "pushLog": "推送通知日志",
+    "devices": "设备",
     "serverSettings": "服务器设置",
     "logout": "退出登录",
     "language": "语言",
     "version": "版本 {{version}}",
     "systemStatus": "系统状态"
+  },
+  "devices": {
+    "title": "移动设备",
+    "description": "成员报告的最新移动设备诊断信息。本页仅显示当前状态；不会收集时间戳或活动历史。",
+    "totalDevices": "已报告设备",
+    "pushDenied": "推送权限被拒绝",
+    "appVersions": "按平台统计的应用版本",
+    "empty": "尚无设备报告信息。",
+    "member": "成员",
+    "installId": "安装 ID",
+    "platform": "平台",
+    "osVersion": "操作系统版本",
+    "appVersion": "应用版本",
+    "appBuild": "构建号",
+    "pushPermission": "推送权限",
+    "remove": "移除",
+    "removeConfirm": "移除 {{name}} 报告的此设备？其推送令牌仍会保留。",
+    "removeError": "无法移除设备：{{error}}",
+    "versionPlatform": "{{version}} · {{platform}}",
+    "permissions": {
+      "granted": "已允许",
+      "denied": "已拒绝",
+      "undetermined": "未选择"
+    }
   },
   "login": {
     "title": "Famlin 管理后台",

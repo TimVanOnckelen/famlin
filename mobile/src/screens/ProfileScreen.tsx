@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
-import { fetchMyGiftLists } from '@famlin/api-client'
+import { fetchMyGiftLists, fetchMyDevices } from '@famlin/api-client'
 import * as ImagePicker from 'expo-image-picker'
 import Constants from 'expo-constants'
 import { File, Paths } from 'expo-file-system'
@@ -47,6 +47,10 @@ export function ProfileScreen() {
   const navigation = useNavigation<any>()
   // "My gift lists" (issue #307): every gift list the user takes part in.
   const { data: giftLists = [] } = useQuery({ queryKey: ['gift-lists'], queryFn: fetchMyGiftLists })
+  const { data: devices = [], isLoading: devicesLoading } = useQuery({
+    queryKey: ['my-devices'],
+    queryFn: fetchMyDevices,
+  })
   const { user, logout, serverUrl, updateUser } = useAuthStore()
   const queryClient = useQueryClient()
   const [languageModalVisible, setLanguageModalVisible] = useState(false)
@@ -288,6 +292,38 @@ export function ProfileScreen() {
               ))}
           </View>
         )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.devices.title')}</Text>
+          <Text style={styles.settingDescription}>{t('profile.devices.description')}</Text>
+          {devicesLoading ? (
+            <ActivityIndicator color={colors.primary} style={styles.deviceLoading} />
+          ) : devices.length === 0 ? (
+            <Text style={[styles.settingDescription, styles.deviceEmpty]}>{t('profile.devices.empty')}</Text>
+          ) : (
+            devices.map((device) => (
+              <View key={device.installId} style={styles.deviceCard}>
+                {(
+                  [
+                    ['installId', device.installId],
+                    ['platform', device.platform],
+                    ['osVersion', device.osVersion],
+                    ['appVersion', device.appVersion],
+                    ['appBuild', device.appBuild],
+                    ['pushPermission', t(`profile.devices.permissions.${device.pushPermission}`)],
+                  ] as const
+                ).map(([field, value]) => (
+                  <View key={field} style={styles.deviceField}>
+                    <Text style={styles.deviceFieldLabel}>{t(`profile.devices.fields.${field}`)}</Text>
+                    <Text selectable style={styles.deviceFieldValue}>
+                      {value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))
+          )}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
@@ -759,6 +795,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     marginBottom: 14,
+  },
+  deviceLoading: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  deviceEmpty: {
+    marginTop: 12,
+  },
+  deviceCard: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  deviceField: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  deviceFieldLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  deviceFieldValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 13,
+    color: colors.textTitle,
   },
   settingItem: {
     flexDirection: 'row',

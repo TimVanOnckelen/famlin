@@ -33,7 +33,7 @@ export function GroupMembersScreen() {
         ListHeaderComponent={
           members && members.length > 0 ? (
             <Text style={styles.countLabel}>{t('groupMembers.count', { count: members.length })}</Text>
-          ) : null
+          ) : undefined
         }
         renderItem={({ item }) => (
           <View style={styles.memberRow}>
@@ -49,7 +49,7 @@ export function GroupMembersScreen() {
             </Text>
           </View>
         )}
-        ListEmptyComponent={!isLoading ? <EmptyState title={t('groupMembers.empty')} /> : null}
+        ListEmptyComponent={!isLoading ? <EmptyState title={t('groupMembers.empty')} /> : undefined}
       />
     </SafeAreaView>
   )

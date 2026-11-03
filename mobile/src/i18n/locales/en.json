@@ -392,7 +392,25 @@
     },
     "notifyNewStory": "Stories",
     "myGiftLists": "My gift lists",
-    "notifyGiftList": "Gift lists"
+    "notifyGiftList": "Gift lists",
+    "devices": {
+      "title": "This app shares with your server",
+      "description": "Only the details below are sent to this server. No activity or last-seen data is collected.",
+      "empty": "Device details will appear here after this app reports them.",
+      "fields": {
+        "installId": "Install ID",
+        "platform": "Platform",
+        "osVersion": "Operating system",
+        "appVersion": "App version",
+        "appBuild": "App build",
+        "pushPermission": "Push permission"
+      },
+      "permissions": {
+        "granted": "Allowed",
+        "denied": "Denied",
+        "undetermined": "Not decided"
+      }
+    }
   },
   "tabs": {
     "feed": "Feed",

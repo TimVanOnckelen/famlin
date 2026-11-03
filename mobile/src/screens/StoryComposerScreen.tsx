@@ -64,7 +64,7 @@ export function StoryComposerScreen() {
   const queryClient = useQueryClient()
   const defaultGroupIds: string[] = route.params?.defaultGroupIds ?? []
 
-  const canvasRef = useRef<View>(null)
+  const canvasRef = useRef<React.ComponentRef<typeof View>>(null)
   const [photoUri, setPhotoUri] = useState<string | null>(null)
   const [composer, setComposer] = useState<ComposerState>(EMPTY_COMPOSER)
   const [canvas, setCanvas] = useState({ width: 0, height: 0 })
