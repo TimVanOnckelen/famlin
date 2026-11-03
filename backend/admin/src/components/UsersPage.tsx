@@ -25,6 +25,9 @@ export function UsersPage() {
 
   const nextRequestVersion = useCallback(() => ++requestVersion.current, [])
 
+  // Background refreshes must keep open dialogs mounted, including the newly
+  // generated invitation link, so updates flow through setState (not a page
+  // reload).
   const load = useCallback(async () => {
     const version = nextRequestVersion()
     setRefreshing(true)

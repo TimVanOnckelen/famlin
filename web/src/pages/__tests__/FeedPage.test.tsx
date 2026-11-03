@@ -256,6 +256,16 @@ it('opens search with the current single-family filter', async () => {
   expect(onOpenSearch).toHaveBeenCalledWith('group-2')
 })
 
+it('starts with the accepted invitation family selected', async () => {
+  renderWithQueryClient(
+    <FeedPage user={makeUser()} initialGroupId="group-2" onOpenProfile={() => {}} onLogout={() => {}} />
+  )
+  await waitFor(() =>
+    expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-2'], circleIds: [], cursor: undefined })
+  )
+  expect(await findFamilyButton('Neefjes')).toHaveAttribute('aria-pressed', 'true')
+})
+
 it('keeps the same side panel mounted when switching between one and multiple families', async () => {
   renderWithQueryClient(<FeedPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
   const panel = await screen.findByRole('complementary', { name: 'Family details' })

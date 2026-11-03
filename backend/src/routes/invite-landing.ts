@@ -74,6 +74,7 @@ export default async function inviteLandingRoutes(fastify: FastifyInstance) {
       `<h1>${intro}</h1>
       <p>${t('inviteLanding.subtitle')}</p>
       <a class="button" href="${appLink}">${t('inviteLanding.openButton')}</a>
+      <div class="store-links"><a class="store-button" href="/join/${escapeHtml(encodeURIComponent(token))}">${t('inviteLanding.continueBrowser')}</a></div>
       ${storeLinks.length > 0 ? `<div class="store-links">${storeLinks.join('')}</div>` : ''}
       <p class="hint">${storeLinks.length > 0 ? t('inviteLanding.hintWithStores') : t('inviteLanding.hint')}</p>`
     )
