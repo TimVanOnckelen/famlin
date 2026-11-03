@@ -1,3 +1,5 @@
+import { execFile as execFileCallback } from 'node:child_process'
+import { promisify } from 'node:util'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import os from 'node:os'
@@ -12,8 +14,16 @@ import { LocalStorageBackend } from '../src/services/storage/local.js'
 import * as registry from '../src/services/storage/registry.js'
 import { restoreArchive } from '../src/services/import.js'
 import { mirrorUploads } from '../src/services/backup/mirror.js'
+import { uploadSourceKey } from '../src/services/uploadSources.js'
 import { deleteUploadFiles } from '../src/services/uploads.js'
-import { buildTestApp, createUser, authHeader, createGroupWithMember, createPost } from './helpers.js'
+import {
+  buildTestApp,
+  createUser,
+  authHeader,
+  createGroupWithMember,
+  createPost,
+  waitForUploadReady,
+} from './helpers.js'
 
 function multipart(filename: string, body: Buffer) {
   const boundary = 'famlin-s3-test-boundary'
@@ -96,7 +106,9 @@ describe.skipIf(!process.env.TEST_S3_ENDPOINT)('S3 application media workflows',
     const url = uploaded.json().urls[0] as string
     const key = url.slice('/uploads/'.length),
       uuid = key.slice(0, -4)
-    expect(await s3.stat(`originals/${key}`)).not.toBeNull()
+    const row = await prisma.upload.findUniqueOrThrow({ where: { assetKey: uuid } })
+    expect(await s3.stat(uploadSourceKey(row.sourceFilename!))).not.toBeNull()
+    await waitForUploadReady(app, url, owner)
     expect(await s3.stat(`${uuid}-thumbnail.jpg`)).not.toBeNull()
     expect((await app.inject({ method: 'GET', url, headers: authHeader(other) })).statusCode).toBe(404)
     const served = await app.inject({ method: 'GET', url, headers: authHeader(owner) })
@@ -155,6 +167,129 @@ describe.skipIf(!process.env.TEST_S3_ENDPOINT)('S3 application media workflows',
     expect(await s3.stat(`derived/${uuid}.jpg`)).not.toBeNull()
     expect(await s3.stat(`derived/${uuid}-thumbnail.jpg`)).not.toBeNull()
   })
+  it('preserves original names containing spaces and includes nested originals in member exports', async () => {
+    const owner = await createUser(),
+      group = await createGroupWithMember(owner)
+    const input = await sharp({ create: { width: 2300, height: 1600, channels: 3, background: 'green' } })
+      .jpeg()
+      .toBuffer()
+    const request = multipart('Trip photo.jpg', input)
+    const uploaded = await app.inject({
+      method: 'POST',
+      url: '/api/uploads',
+      ...request,
+      headers: { ...request.headers, ...authHeader(owner) },
+    })
+    expect(uploaded.statusCode).toBe(200)
+    const url = uploaded.json().urls[0] as string,
+      uuid = path.basename(url, '.jpg')
+    const row = await prisma.upload.findUniqueOrThrow({ where: { assetKey: uuid } })
+    expect(row.sourceFilename).toBe(`${uuid}/Trip photo.jpg`)
+    const key = uploadSourceKey(row.sourceFilename!)
+    expect(await s3.stat(key)).not.toBeNull()
+    await waitForUploadReady(app, url, owner)
+    await createPost({ authorId: owner.id, groupId: group.id, uploadedAssetUrls: [url] })
+    const archive = await app.inject({ method: 'GET', url: '/api/auth/me/export', headers: authHeader(owner) })
+    expect(archive.statusCode).toBe(200)
+    expect(archive.rawPayload.toString()).toContain(`uploads/${key}`)
+    await local.put(key, input)
+    await deleteUploadFiles(url)
+    expect(await s3.stat(key)).toBeNull()
+    expect(await local.stat(key)).toBeNull()
+  })
+
+  it('pairs Live Photos, processes motion in S3 and deletes both originals', async () => {
+    const owner = await createUser(),
+      session = randomUUID()
+    const motionPath = path.join(dir, 'motion.mov')
+    await promisify(execFileCallback)('ffmpeg', [
+      '-nostdin',
+      '-loglevel',
+      'error',
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=blue:s=160x120:d=0.5',
+      '-c:v',
+      'mpeg4',
+      motionPath,
+    ])
+    const photo = await sharp({ create: { width: 240, height: 180, channels: 3, background: 'red' } })
+      .jpeg()
+      .toBuffer()
+    const results: string[] = []
+    for (const [name, bytes] of [
+      ['IMG_storage.JPG', photo],
+      ['IMG_storage.MOV', await fs.readFile(motionPath)],
+    ] as const) {
+      const request = multipart(name, bytes)
+      const result = await app.inject({
+        method: 'POST',
+        url: '/api/uploads',
+        ...request,
+        headers: { ...request.headers, ...authHeader(owner), 'x-upload-session-id': session },
+      })
+      expect(result.statusCode).toBe(200)
+      results.push(result.json().urls[0])
+    }
+    for (const url of results) await waitForUploadReady(app, url, owner)
+    const photoRow = await prisma.upload.findUniqueOrThrow({
+      where: { assetKey: path.basename(results[0], '.jpg') },
+      include: { motionUpload: true },
+    })
+    expect(photoRow.mediaKind).toBe('livePhoto')
+    expect(photoRow.motionUpload).not.toBeNull()
+    const sourceKeys = [photoRow.sourceFilename!, photoRow.motionUpload!.sourceFilename!].map(uploadSourceKey)
+    for (const key of sourceKeys) expect(await s3.stat(key)).not.toBeNull()
+    const motion = await app.inject({
+      method: 'GET',
+      url: results[1],
+      headers: { ...authHeader(owner), range: 'bytes=0-15' },
+    })
+    expect(motion.statusCode).toBe(206)
+    expect(motion.headers['content-type']).toBe('video/mp4')
+    const group = await createGroupWithMember(owner)
+    await createPost({ authorId: owner.id, groupId: group.id, uploadedAssetUrls: [results[0]] })
+    const archive = await app.inject({ method: 'GET', url: '/api/auth/me/export', headers: authHeader(owner) })
+    expect(archive.statusCode).toBe(200)
+    expect(archive.rawPayload.toString()).toContain(`uploads/${path.basename(results[1])}`)
+    for (const key of sourceKeys) expect(archive.rawPayload.toString()).toContain(`uploads/${key}`)
+    await deleteUploadFiles(results[0])
+    for (const key of sourceKeys) expect(await s3.stat(key)).toBeNull()
+    for (const url of results) expect(await s3.stat(url.slice('/uploads/'.length))).toBeNull()
+  })
+
+  it('reads a failed conversion source from fallback with HEAD, MIME and Range', async () => {
+    const owner = await createUser(),
+      uuid = randomUUID()
+    const sourceFilename = `${uuid}/pending.MOV`,
+      key = uploadSourceKey(sourceFilename)
+    await local.put(key, Buffer.from('original-video-bytes'))
+    await prisma.upload.create({
+      data: {
+        assetKey: uuid,
+        uploaderId: owner.id,
+        mediaUrl: `/uploads/${uuid}.mp4`,
+        sourceFilename,
+        processingStatus: 'failed',
+      },
+    })
+    const response = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}.mp4`,
+      headers: { ...authHeader(owner), range: 'bytes=0-7', 'if-none-match': '*' },
+    })
+    expect(response.statusCode).toBe(206)
+    expect(response.body).toBe('original')
+    expect(response.headers['content-type']).toBe('video/quicktime')
+    expect(response.headers['cache-control']).toBe('no-store')
+    const head = await app.inject({ method: 'HEAD', url: `/uploads/${uuid}.mp4`, headers: authHeader(owner) })
+    expect(head.statusCode).toBe(200)
+    expect(head.headers['content-length']).toBe('20')
+    await deleteUploadFiles(`/uploads/${uuid}.mp4`)
+  })
+
   it('exports primary/fallback media for admins and members, mirrors once, and restores into S3', async () => {
     const admin = await createUser({ isAdmin: true }),
       group = await createGroupWithMember(admin)

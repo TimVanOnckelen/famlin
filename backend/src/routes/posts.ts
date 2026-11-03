@@ -1,3 +1,4 @@
+import { attachUploadProcessing } from '../services/uploadMetadata.js'
 import { FastifyInstance } from 'fastify'
 import { randomUUID } from 'crypto'
 import { Prisma } from '@prisma/client'
@@ -390,7 +391,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       // people: [] unenriched — a freshly created post can't wait on an
       // Immich person-tag crawl before the client sees its own post; the
       // next feed fetch will carry real tags for it.
-      return { ...shapePost(post, request.user!.id), people: [] }
+      return (await attachUploadProcessing([{ ...shapePost(post, request.user!.id), people: [] }]))[0]
     }
 
     // Cross-post: a linked-album asset is only readable through the
@@ -465,11 +466,15 @@ export default async function postRoutes(fastify: FastifyInstance) {
     // post), plus sharedWithGroups — this only ever appears for the author,
     // which the creator always is (see the privacy rule on shapePost).
     const first = createdPosts[0]
-    return {
-      ...shapePost(first, request.user!.id),
-      people: [],
-      sharedWithGroups: createdPosts.map((p) => ({ id: p.group.id, name: p.group.name })),
-    }
+    return (
+      await attachUploadProcessing([
+        {
+          ...shapePost(first, request.user!.id),
+          people: [],
+          sharedWithGroups: createdPosts.map((p) => ({ id: p.group.id, name: p.group.name })),
+        },
+      ])
+    )[0]
   })
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -556,7 +561,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       const [shaped] = await attachSharedWithGroups([shapePost(merged, request.user!.id)], [current!], request.user!.id)
       // Same reasoning as the non-cross-post branch below — don't make an
       // edit wait on Immich.
-      return { ...shaped, people: [] }
+      return (await attachUploadProcessing([{ ...shaped, people: [] }]))[0]
     }
 
     // A linked-album asset added by the edit has to be authorized against this
@@ -598,9 +603,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
 
     // Same reasoning as POST / above — don't make an edit wait on Immich.
     const [merged] = await mergeCrossPostActivity([updated], request.user!.id)
-    // An admin moderating someone else's gift list gets it un-enriched, so
-    // strip the starter-only exclusions here (services/giftLists.ts).
-    return { ...redactGiftListTypeData(shapePost(merged, request.user!.id), request.user!.id), people: [] }
+    // Preserve gift-list privacy while attaching asynchronous media status.
+    return (
+      await attachUploadProcessing([
+        { ...redactGiftListTypeData(shapePost(merged, request.user!.id), request.user!.id), people: [] },
+      ])
+    )[0]
   })
 
   fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {

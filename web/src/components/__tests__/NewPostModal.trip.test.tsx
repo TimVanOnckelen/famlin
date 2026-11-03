@@ -4,6 +4,7 @@ import { createPost, fetchGroupMembers, fetchMyCircles, getGroupMediaAlbums, upl
 import { NewPostModal } from '../NewPostModal'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
 import { useAuthStore } from '@/stores/authStore'
+import { clearAllPostDrafts } from '@/stores/postDraft'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -29,6 +30,8 @@ async function chooseTrip() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  clearAllPostDrafts()
+  window.localStorage.clear()
   useAuthStore.setState({ user: makeUser({ id: 'self' }) })
   vi.mocked(createPost).mockResolvedValue({ id: 'trip' } as never)
   vi.mocked(fetchGroupMembers).mockImplementation(async (id) =>

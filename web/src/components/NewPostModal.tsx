@@ -1,4 +1,9 @@
-import { TripComposerFields, validTripDate, type TripDraft } from './TripComposerFields'
+import { useStore } from 'zustand'
+import { randomUUID } from '@/utils/uuid'
+import { getPostDraft, postDraftStorageKey, type DraftAttachment, type PostDraftState } from '@/stores/postDraft'
+import { groupLivePhotoFiles } from '@/utils/livePhotos'
+import { ComposerUploadPreview } from './ComposerUploadPreview'
+import { TripComposerFields, validTripDate } from './TripComposerFields'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 import { CustomSelect } from './CustomSelect'
 import { Switch } from './Switch'
@@ -8,12 +13,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   addAlbumPhotos,
   uploadFiles,
+  uploadFilesInSession,
+  uploadKey,
+  UploadSessionMedia,
   createPost,
   fetchMyCircles,
   getGroupMediaAlbums,
   getUploadUrl,
   Group,
-  MediaAsset,
   PhotoItem,
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
@@ -21,13 +28,12 @@ import { MediaPickerModal } from '@/components/MediaPickerModal'
 import { GiftListParticipantPicker } from '@/components/GiftListParticipantPicker'
 import { useAuthStore } from '@/stores/authStore'
 import { ShimmerImage } from '@/components/ShimmerImage'
-import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
 const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
-type ComposerType = (typeof COMPOSER_TYPES)[number]
+type Attachment = DraftAttachment
 
 export function NewPostModal({
   groups,
@@ -42,54 +48,118 @@ export function NewPostModal({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const initialGroupId = defaultGroupId ?? groups[0]?.id ?? ''
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(initialGroupId ? [initialGroupId] : [])
-  // Audience: null = the whole family, otherwise one Circle within the single
-  // selected family. Circles and cross-posting are mutually exclusive (a
-  // Circle belongs to exactly one group), so this resets whenever the group
-  // selection changes.
-  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
-  const [type, setType] = useState<ComposerType>('UPDATE')
-  const [content, setContent] = useState('')
-  // Poll options: always at least 2 rows in the editor (spec: 2–10 options);
-  // blank rows are filtered out on submit and don't count toward the ≥2
-  // validation requirement.
-  const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
-  // ALBUM: the album's title lives in typeData, not content (content stays an
-  // optional description).
-  const [albumTitle, setAlbumTitle] = useState('')
-  const [trip, setTrip] = useState<TripDraft>({
-    title: '',
-    destination: '',
-    startDate: '',
-    endDate: '',
-    cover: null,
-    travelerIds: [],
-  })
-  // GIFT_LIST (issue #307): title and settings in typeData, content stays an
-  // optional description; participants come from the one selected family.
-  const selfId = useAuthStore((s) => s.user?.id ?? '')
-  const [giftTitle, setGiftTitle] = useState('')
-  const [giftDate, setGiftDate] = useState('')
-  const [giftParticipants, setGiftParticipants] = useState<string[]>([])
-  const [giftDrawEnabled, setGiftDrawEnabled] = useState(false)
-  const [giftBudget, setGiftBudget] = useState('')
-  const [files, setFiles] = useState<File[]>([])
-  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(
-    initialAsset && initialAsset.source === 'album'
-      ? [
-          {
-            assetId: initialAsset.assetId || initialAsset.id,
-            type: initialAsset.type,
-            width: initialAsset.width,
-            height: initialAsset.height,
-            thumbnailUrl: initialAsset.thumbnailUrl,
-            previewUrl: initialAsset.previewUrl,
-            originalUrl: initialAsset.originalUrl,
-          },
-        ]
-      : []
+  const userId = useAuthStore((state) => state.user?.id)
+  const initialGroupId = groups.find((group) => group.id === defaultGroupId)?.id ?? groups[0]?.id ?? ''
+  const [draftController] = useState(() =>
+    getPostDraft(postDraftStorageKey(userId), {
+      selectedGroupIds: initialGroupId ? [initialGroupId] : [],
+      selectedCircleId: null,
+      type: 'UPDATE',
+      content: '',
+      pollOptions: ['', ''],
+      albumTitle: '',
+      trip: { title: '', destination: '', startDate: '', endDate: '', cover: null, travelerIds: [] },
+      giftTitle: '',
+      giftDate: '',
+      giftParticipants: [],
+      giftDrawEnabled: false,
+      giftBudget: '',
+      files: [],
+      uploadSessionId: randomUUID(),
+      sessionMedia: [],
+      mediaAssets:
+        initialAsset?.source === 'album'
+          ? [
+              {
+                assetId: initialAsset.assetId || initialAsset.id,
+                type: initialAsset.type,
+                width: initialAsset.width,
+                height: initialAsset.height,
+                thumbnailUrl: initialAsset.thumbnailUrl,
+                previewUrl: initialAsset.previewUrl,
+                originalUrl: initialAsset.originalUrl,
+              },
+            ]
+          : [],
+      excludedKeys: new Set(),
+      removedAttachments: new Set(),
+      pendingRequests: 0,
+      uploadError: false,
+      publishing: false,
+    })
   )
+  const draft = useStore(draftController.store)
+  const {
+    selectedGroupIds,
+    selectedCircleId,
+    type,
+    content,
+    pollOptions,
+    albumTitle,
+    trip,
+    giftTitle,
+    giftDate,
+    giftParticipants,
+    giftDrawEnabled,
+    giftBudget,
+    files,
+    uploadSessionId,
+    sessionMedia,
+    pendingRequests,
+    uploadError,
+    mediaAssets,
+    publishing,
+  } = draft
+  const field =
+    <K extends keyof PostDraftState>(key: K) =>
+    (value: PostDraftState[K] | ((previous: PostDraftState[K]) => PostDraftState[K])) =>
+      draftController.setField(key, value)
+  const setSelectedGroupIds = field('selectedGroupIds')
+  const setSelectedCircleId = field('selectedCircleId')
+  const setType = field('type')
+  const setContent = field('content')
+  const setPollOptions = field('pollOptions')
+  const setAlbumTitle = field('albumTitle')
+  const setTrip = field('trip')
+  const setGiftTitle = field('giftTitle')
+  const setGiftDate = field('giftDate')
+  const setGiftParticipants = field('giftParticipants')
+  const setGiftDrawEnabled = field('giftDrawEnabled')
+  const setGiftBudget = field('giftBudget')
+  const selfId = userId ?? ''
+  const setFiles = field('files')
+  const setSessionMedia = field('sessionMedia')
+  const setPendingRequests = field('pendingRequests')
+  const setUploadError = field('uploadError')
+  const setMediaAssets = field('mediaAssets')
+  const removedAttachments = { current: draft.removedAttachments }
+  const excludedKeys = { current: draft.excludedKeys }
+  const uploading = pendingRequests > 0 || files.some((file) => !file.url)
+  const candidates = groupLivePhotoFiles(files.map((item) => item.file))
+  const displayFiles = files.flatMap((item): Attachment[] => {
+    const linked = sessionMedia.find((media) => media.kind === 'livePhoto' && media.url === item.url)
+    if (linked) {
+      const candidate = candidates.find((pair) => pair.file === item.file)
+      const motion =
+        files.find((file) => file.url === linked.videoUrl) ?? files.find((file) => file.file === candidate?.motionFile)
+      return [{ ...item, motionFile: motion?.file, motionId: motion?.id, pending: !!motion && !motion.url }]
+    }
+    if (
+      sessionMedia.some(
+        (media) =>
+          media.kind === 'livePhoto' && media.videoUrl === item.url && files.some((file) => file.url === media.url)
+      )
+    )
+      return []
+    const candidate = candidates.find((pair) => pair.file === item.file || pair.motionFile === item.file)
+    if (candidate?.motionFile) {
+      const photo = files.find((file) => file.file === candidate.file)!
+      const motion = files.find((file) => file.file === candidate.motionFile)!
+      if (!photo.url || !motion.url)
+        return item.id === photo.id ? [{ ...photo, motionFile: motion.file, motionId: motion.id, pending: true }] : []
+    }
+    return [item]
+  })
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -134,6 +204,13 @@ export function NewPostModal({
   })
   const circles = canChooseCircle ? (circlesQuery.data ?? []) : []
 
+  const unavailableAudience =
+    selectedGroupIds.some((id) => !groups.some((group) => group.id === id)) ||
+    (!!selectedCircleId &&
+      (selectedGroupIds.length !== 1 ||
+        (circlesQuery.isSuccess && !circles.some((circle) => circle.id === selectedCircleId)) ||
+        circlesQuery.isError))
+
   // "Choose from albums" only appears when the primary group actually has
   // linked albums (from any media source) — same behavior as the mobile
   // composer.
@@ -174,10 +251,10 @@ export function NewPostModal({
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const uploadSelection = type === 'TRIP' ? (trip.cover ? [trip.cover] : []) : files
-      const uploadedUrls = uploadSelection.length > 0 ? await uploadFiles(uploadSelection) : []
+      const uploadedUrls = displayFiles.flatMap((file) => (file.url ? [file.url] : []))
       if (type === 'TRIP') {
-        if (trip.cover && !uploadedUrls[0]) throw new Error('Trip cover upload failed')
+        const uploadedCover = trip.cover ? await uploadFiles([trip.cover]) : []
+        if (trip.cover && !uploadedCover[0]) throw new Error('Trip cover upload failed')
         return createPost({
           groupId: primaryGroupId,
           groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
@@ -188,7 +265,7 @@ export function NewPostModal({
             destination: trip.destination.trim() || undefined,
             startDate: trip.startDate,
             endDate: trip.endDate || undefined,
-            coverPhotoUrl: uploadedUrls[0],
+            coverPhotoUrl: uploadedCover[0],
             travelerUserIds: trip.travelerIds.length ? trip.travelerIds : undefined,
           },
           uploadedAssetUrls: [],
@@ -253,7 +330,10 @@ export function NewPostModal({
         uploadedAssetUrls: [...uploadedUrls, ...mediaUrls],
       })
     },
+    onMutate: () => draftController.setField('publishing', true),
+    onSettled: () => draftController.setField('publishing', false),
     onSuccess: () => {
+      draftController.clear()
       queryClient.invalidateQueries({ queryKey: ['posts'] })
       queryClient.invalidateQueries({ queryKey: ['gift-lists'] })
       onClose()
@@ -266,17 +346,92 @@ export function NewPostModal({
   }
 
   function toggleGroup(id: string) {
-    setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]))
-    // Gift list participants come from the selected family.
+    setSelectedGroupIds((prev) =>
+      unavailableAudience ? [id] : prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    )
     setGiftParticipants([])
     // A circle belongs to one family, so any previous choice stops being
     // valid the moment the family selection moves.
     setSelectedCircleId(null)
   }
 
-  function addFiles(list: FileList | null) {
-    if (!list) return
-    setFiles((prev) => [...prev, ...Array.from(list)])
+  function mergeSessionMedia(incoming: UploadSessionMedia[] = []) {
+    setSessionMedia((prev) => {
+      const merged = new Map(prev.map((item) => [item.url, item]))
+      for (const item of incoming) {
+        // A late older response must not downgrade an already confirmed pair.
+        if (merged.get(item.url)?.kind === 'livePhoto' && item.kind !== 'livePhoto') continue
+        merged.set(item.url, item)
+      }
+      return [...merged.values()].filter(
+        (item) =>
+          !excludedKeys.current.has(uploadKey(item.url) ?? '') &&
+          !excludedKeys.current.has(uploadKey(item.videoUrl ?? '') ?? '')
+      )
+    })
+  }
+
+  async function removeFromSession(urls: string[]) {
+    for (const url of urls) {
+      const key = uploadKey(url)
+      if (key) excludedKeys.current.add(key)
+    }
+    if (!excludedKeys.current.size) return
+    setPendingRequests((count) => count + 1)
+    try {
+      const response = await uploadFilesInSession([], uploadSessionId, [...excludedKeys.current])
+      mergeSessionMedia(response.sessionMedia)
+    } catch {
+      setUploadError(true)
+    } finally {
+      setPendingRequests((count) => count - 1)
+    }
+  }
+
+  async function addFiles(list: FileList | null) {
+    if (!list || publishing) return
+    const batch = Array.from(list).map((file) => {
+      const previewUrl = URL.createObjectURL(file)
+      return { id: draftController.allocateAttachmentId(), file, previewUrl }
+    })
+    if (!batch.length) return
+    setUploadError(false)
+    setFiles((prev) => [...prev, ...batch])
+    setPendingRequests((count) => count + batch.length)
+    await Promise.all(
+      batch.map(async (attachment) => {
+        try {
+          const response = await uploadFilesInSession([attachment.file], uploadSessionId, [...excludedKeys.current])
+          const url = response.urls[0]
+          if (!url) throw new Error('Incomplete upload response')
+          if (removedAttachments.current.has(attachment.id)) {
+            await removeFromSession([url])
+            return
+          }
+          mergeSessionMedia(response.sessionMedia)
+          setFiles((prev) =>
+            prev.map((item) =>
+              item.id === attachment.id
+                ? { ...item, url, file: { name: item.file.name, type: item.file.type }, previewUrl: '' }
+                : item
+            )
+          )
+        } catch {
+          setFiles((prev) => prev.filter((item) => item.id !== attachment.id))
+          setUploadError(true)
+        } finally {
+          setPendingRequests((count) => count - 1)
+        }
+      })
+    )
+  }
+
+  function removeFile(item: Attachment) {
+    const ids = new Set([item.id, ...(item.motionId !== undefined ? [item.motionId] : [])])
+    ids.forEach((id) => removedAttachments.current.add(id))
+    const removed = files.filter((file) => ids.has(file.id))
+    setFiles((prev) => prev.filter((file) => !ids.has(file.id)))
+    void removeFromSession(removed.flatMap((file) => (file.url ? [file.url] : [])))
   }
 
   function updatePollOption(index: number, value: string) {
@@ -293,10 +448,12 @@ export function NewPostModal({
 
   const canSubmit =
     selectedGroupIds.length > 0 &&
+    !unavailableAudience &&
+    (!selectedCircleId || circlesQuery.isSuccess) &&
     // The chosen type must be allowed by every selected group; an empty
     // intersection therefore blocks submitting entirely.
     offeredTypes.includes(type) &&
-    !submitMutation.isPending &&
+    !publishing &&
     (type === 'TRIP'
       ? trip.title.trim().length > 0 &&
         validTripDate(trip.startDate) &&
@@ -305,20 +462,21 @@ export function NewPostModal({
           (travelers.loaded &&
             !travelers.isError &&
             trip.travelerIds.every((id) => travelers.members.some((member) => member.id === id))))
-      : type === 'POLL'
-        ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
-        : type === 'ALBUM'
-          ? albumTitle.trim().length > 0
-          : type === 'GIFT_LIST'
-            ? giftTitle.trim().length > 0
-            : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
+      : !uploading &&
+        (type === 'POLL'
+          ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
+          : type === 'ALBUM'
+            ? albumTitle.trim().length > 0
+            : type === 'GIFT_LIST'
+              ? giftTitle.trim().length > 0
+              : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0))
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
       <form className="modal-card" ref={formRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h2 className="modal-title">{t('newPost.title')}</h2>
 
-        {groups.length > 1 && (
+        {(groups.length > 1 || selectedGroupIds.length !== 1 || unavailableAudience) && (
           <div className="field">
             <span className="field-label">{t('newPost.group')}</span>
             <div className="group-select-chips" role="group" aria-label={t('newPost.group')}>
@@ -334,6 +492,12 @@ export function NewPostModal({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {unavailableAudience && (
+          <div className="modal-error" role="alert">
+            {t('newPost.draftAudienceChanged')}
           </div>
         )}
 
@@ -551,34 +715,37 @@ export function NewPostModal({
 
         {type !== 'TRIP' && (files.length > 0 || mediaAssets.length > 0) && (
           <div className="photo-previews">
-            {files.map((file, i) => (
-              <div key={`${file.name}-${i}`} className="photo-preview">
-                {file.type.startsWith('video/') ? (
-                  <video src={URL.createObjectURL(file)} />
-                ) : isBrowserDecodableImage(file) ? (
-                  <img src={URL.createObjectURL(file)} alt={file.name} />
-                ) : (
-                  // No browser but Safari can decode a HEIC blob — show what
-                  // was picked rather than a broken image. It still uploads
-                  // fine; the backend serves it back as JPEG.
-                  <span className="photo-preview-placeholder" title={file.name}>
-                    <Icon name="image" size={20} />
-                    <span className="photo-preview-format">{fileFormatLabel(file)}</span>
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="photo-preview-remove"
-                  onClick={() => setFiles(files.filter((_, j) => j !== i))}
-                  aria-label={t('newPost.removePhoto')}
-                >
-                  <Icon name="x" size={14} strokeWidth={2.5} />
-                </button>
-              </div>
-            ))}
+            {displayFiles.map((attachment) => {
+              return (
+                <div key={attachment.id} className="photo-preview">
+                  <ComposerUploadPreview
+                    item={attachment}
+                    livePhoto={
+                      !!attachment.motionFile ||
+                      sessionMedia.some((media) => media.kind === 'livePhoto' && media.url === attachment.url)
+                    }
+                    pending={attachment.pending}
+                  />
+                  <button
+                    type="button"
+                    className="photo-preview-remove"
+                    onClick={() => removeFile(attachment)}
+                    disabled={publishing}
+                    aria-label={t('newPost.removePhoto')}
+                  >
+                    <Icon name="x" size={14} strokeWidth={2.5} />
+                  </button>
+                </div>
+              )
+            })}
             {mediaAssets.map((asset) => (
               <div key={asset.assetId} className="photo-preview">
                 <ShimmerImage src={getUploadUrl(asset.thumbnailUrl)} />
+                {asset.type === 'VIDEO' && (
+                  <span className="photo-preview-kind" aria-label={t('media.video')}>
+                    <Icon name="play" size={15} />
+                  </span>
+                )}
                 <button
                   type="button"
                   className="photo-preview-remove"
@@ -605,6 +772,7 @@ export function NewPostModal({
             <button
               type="button"
               className="btn btn-secondary"
+              disabled={publishing}
               onClick={() => {
                 // Clear before opening the picker, so the same file can be
                 // re-picked after removal. Clearing in the change handler
@@ -629,6 +797,12 @@ export function NewPostModal({
           </div>
         )}
 
+        {uploadError && (
+          <div className="modal-error" role="alert">
+            {t('newPost.uploadFailed')}
+          </div>
+        )}
+
         {submitMutation.isError && <div className="modal-error">{t('newPost.failed')}</div>}
 
         <div className="modal-actions">
@@ -636,7 +810,7 @@ export function NewPostModal({
             {t('common.cancel')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-            {submitMutation.isPending ? t('common.loading') : t('newPost.submit')}
+            {publishing ? t('common.loading') : t('newPost.submit')}
           </button>
         </div>
       </form>

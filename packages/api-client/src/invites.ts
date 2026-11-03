@@ -10,7 +10,7 @@ export interface InvitePreview {
 }
 
 export async function fetchInvitePreview(token: string): Promise<InvitePreview> {
-  const response = await api.get<InvitePreview>(`/invites/${token}`)
+  const response = await api.get<InvitePreview>(`/invites/${encodeURIComponent(token)}`)
   return response.data
 }
 
@@ -18,11 +18,11 @@ export async function registerViaInvite(
   token: string,
   data: { name: string; email?: string; password: string }
 ): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>(`/invites/${token}/register`, data)
+  const response = await api.post<LoginResponse>(`/invites/${encodeURIComponent(token)}/register`, data)
   return response.data
 }
 
 export async function acceptInvite(token: string): Promise<{ success: boolean; groupId: string }> {
-  const response = await api.post(`/invites/${token}/accept`)
+  const response = await api.post(`/invites/${encodeURIComponent(token)}/accept`)
   return response.data
 }

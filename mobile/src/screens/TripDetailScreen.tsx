@@ -1,3 +1,4 @@
+import { UploadProcessingContext } from '@/hooks/useUploadProcessing'
 import React, { useMemo, useState } from 'react'
 import {
   View,
@@ -174,7 +175,7 @@ export function TripDetailScreen() {
 
   const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0]
 
-  return (
+  const content = (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -309,6 +310,7 @@ export function TripDetailScreen() {
       />
     </SafeAreaView>
   )
+  return <UploadProcessingContext.Provider value={post?.uploadProcessing}>{content}</UploadProcessingContext.Provider>
 }
 
 function TripHeader({

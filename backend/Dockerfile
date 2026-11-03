@@ -9,7 +9,7 @@ WORKDIR /app
 # OpenSSL for Prisma; ffmpeg for video poster-frame extraction
 # (services/uploadVariants.ts) — needed here too because the dev overlay
 # (docker-compose.override.yml) runs this `base` stage.
-RUN apk add --no-cache openssl ffmpeg
+RUN apk add --no-cache openssl ffmpeg exiftool
 
 # pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
 # postgresqlNN-client Alpine ships rather than one pinned to the compose
@@ -117,7 +117,7 @@ ENV NODE_ENV=production
 
 # OpenSSL for Prisma; ffmpeg for video poster-frame extraction
 # (services/uploadVariants.ts).
-RUN apk add --no-cache openssl ffmpeg
+RUN apk add --no-cache openssl ffmpeg exiftool
 
 # pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
 # postgresqlNN-client Alpine ships rather than one pinned to the compose

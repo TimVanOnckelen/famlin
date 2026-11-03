@@ -1,4 +1,5 @@
 {
+  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Pause Live Photo", "playLivePhoto": "Play Live Photo", "playVideo": "Play video", "processing": "Media is processing…", "processingFailed": "Media processing failed"},
   "common": {
     "appName": "Famlin",
     "loading": "Loading...",
@@ -95,6 +96,8 @@
     "photoCount_other": "{{count}} photos"
   },
   "newPost": {
+    "draftAudienceChanged": "The saved audience is no longer available. Choose a family or circle again before posting.",
+    "uploadFailed": "Photo upload failed. Please select the photos again.",
     "title": "New post",
     "group": "Share with",
     "groupHint": "Choose one or more families to share this post with.",
@@ -465,6 +468,29 @@
     "noGroups": "Join a family to search its posts.",
     "loadFailed": "Could not load search results.",
     "loadMore": "Load more"
+  },
+  "join": {
+    "title": "Join your family",
+    "invitedBy": "Invited by {{name}}",
+    "signedInAs": "Signed in as {{email}}",
+    "emailMismatch": "This invitation is for {{email}}. Sign out to use that account.",
+    "joinButton": "Join {{family}}",
+    "switchAccount": "Sign out and use another account",
+    "accountOptions": "Account options",
+    "register": "Create an account",
+    "login": "Sign in",
+    "name": "Your name",
+    "createAndJoin": "Create account and join",
+    "loginAndJoin": "Sign in and join",
+    "continueToApp": "Continue to Famlin",
+    "loadFailed": "Could not load this invitation. Try again.",
+    "actionFailed": "Could not join the family. Please try again.",
+    "passwordHint": "Use at least 8 characters.",
+    "status": {
+      "expired": "This invitation has expired. Ask your family admin for a new link.",
+      "used": "This invitation has already been used. Sign in normally, or ask your family admin for a new link.",
+      "not_found": "This invitation could not be found. Ask your family admin for a new link."
+    }
   },
   "members": {
     "title": "Members",

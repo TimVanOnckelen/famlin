@@ -246,23 +246,6 @@
   display: block;
 }
 
-.photo-tile-play-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 32px;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(0, 0, 0, 0.4);
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
 .photo-tile-actions {
   position: absolute;
   top: 0;
