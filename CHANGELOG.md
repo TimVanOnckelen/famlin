@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.8.7](https://github.com/TimVanOnckelen/famlin/compare/v0.8.6...v0.8.7) (2026-11-03)
+
+
+### Features
+
+* add background media processing, live photos and web post drafts ([287f159](https://github.com/TimVanOnckelen/famlin/commit/287f159cd7be0acf80342491ff27a58eacf96318))
+* **admin:** unify modals and improve user and group management ([c975ba7](https://github.com/TimVanOnckelen/famlin/commit/c975ba7c68f6dc475ef61d2d0f26ee6a7ba2f10f))
+* **backend:** refuse to start an older image against a newer database ([ccfd9dd](https://github.com/TimVanOnckelen/famlin/commit/ccfd9dd5a9e09a66018396f97288da1a5c254b72))
+* **web:** accept family invitations in the browser ([ac42b63](https://github.com/TimVanOnckelen/famlin/commit/ac42b635fddb254adf9705f461e8269bdcc40041))
+* **web:** add a custom post type picker and reuse the shared switch ([aebfd49](https://github.com/TimVanOnckelen/famlin/commit/aebfd49535aab127b552b03816e46743a5e18488))
+* **web:** add a custom post type picker and reuse the shared switch ([d54bb1e](https://github.com/TimVanOnckelen/famlin/commit/d54bb1ea2d884abeea88263bb795c601f1642aa5))
+* **web:** add a custom post type picker and reuse the shared switch ([67989d7](https://github.com/TimVanOnckelen/famlin/commit/67989d73f25b9a7922949f0a244ae0b71218b060))
+* **web:** add a persistent family and member sidebar to the feed ([95111ba](https://github.com/TimVanOnckelen/famlin/commit/95111ba2f915a2ecef6fbcfa84e69076f1111f37))
+* **web:** support trip creation and check-ins ([0d9ad51](https://github.com/TimVanOnckelen/famlin/commit/0d9ad51a569b37ce0358af9972ed1ffbce781048))
+* **web:** support trip creation and check-ins ([b98c326](https://github.com/TimVanOnckelen/famlin/commit/b98c326df3c6c4178ddc94a27d490a810b178f7a))
+
+
+### Bug Fixes
+
+* **admin:** redirect /admin to /admin/ ([3a1ed32](https://github.com/TimVanOnckelen/famlin/commit/3a1ed3270e4659b0758e17700bbe63cd29450740))
+* **admin:** redirect /admin to /admin/ ([9b9cc09](https://github.com/TimVanOnckelen/famlin/commit/9b9cc0941c8024cacc59e45ea9a138055fa09927))
+* **admin:** reject non-admin sessions at login ([034a65d](https://github.com/TimVanOnckelen/famlin/commit/034a65d33d08bff38065cfc1d70276ad21e0446f))
+* **backend:** use fallback when primary storage is unavailable at sta… ([774de44](https://github.com/TimVanOnckelen/famlin/commit/774de44e6e26e386e24d4c1f717aa06c2a5146cc))
+* **backend:** use fallback when primary storage is unavailable at startup ([a99f78c](https://github.com/TimVanOnckelen/famlin/commit/a99f78cf328ce898593c699741ba17fa0d167be9))
+* exempt media reads from the shared rate limit ([7b856db](https://github.com/TimVanOnckelen/famlin/commit/7b856dbc080181297993055995ebc33b203b05d6))
+* exempt media reads from the shared rate limit ([1d7b6c9](https://github.com/TimVanOnckelen/famlin/commit/1d7b6c930d37b43bacf6e199ff4b47a74263ef24))
+* **mobile:** clarify camera permission purpose for story photos ([f7bbbc8](https://github.com/TimVanOnckelen/famlin/commit/f7bbbc82ffaa19e55d8f91274924a106696cf0ee))
+* **mobile:** enable camera permission for story photos ([81c4d35](https://github.com/TimVanOnckelen/famlin/commit/81c4d3583784b4d3cba1128207cc1e556d39330f))
+* **mobile:** unify swipe-to-dismiss for stories and media viewer ([73c7625](https://github.com/TimVanOnckelen/famlin/commit/73c76254354f67d17106e038866c67c827d4f81a))
+* **mobile:** use native date pickers for trip dates ([ba84fec](https://github.com/TimVanOnckelen/famlin/commit/ba84fec52b1c35d6100ed2b68583f624111474e2))
+* **web:** fall back to the default Famlin favicon ([7b5e1ff](https://github.com/TimVanOnckelen/famlin/commit/7b5e1ff41f2afcf9724bdb613730a24e95b51d82))
+* **web:** fall back to the default Famlin favicon ([c05fa0f](https://github.com/TimVanOnckelen/famlin/commit/c05fa0f8306d5802b28ab2602e5de49df2f6ac73))
+
 ## [0.8.6](https://github.com/TimVanOnckelen/famlin/compare/v0.8.5...v0.8.6) (2026-11-01)
 
 
