@@ -5,7 +5,7 @@ sidebar_position: 2
 # Server setup
 
 :::tip New to self-hosting?
-This page is the manual Docker Compose route. If you're not sure which way to install Famlin, start with [Choose your installation](./choose-installation): it points you to the easiest option for what you have (Umbrel, Home Assistant, Synology, or a rented server).
+This page is the manual Docker Compose route. If you're not sure which way to install Famlin, start with [Choose your installation](./choose-installation.md): it points you to the easiest option for what you have (Umbrel, Home Assistant, Synology, or a rented server).
 :::
 
 This guide covers running Famlin **in production, for your family** — on a Synology NAS, a VPS, or any host with Docker. If you're working on Famlin's code and want to run it locally to develop against, see [Quick start](/developers/quick-start) in the Developers tab instead.
@@ -30,7 +30,7 @@ curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-comp
 
 Every [GitHub release](https://github.com/TimVanOnckelen/famlin/releases) also carries a `docker-compose.yml` pinned to that exact version, plus `env.example`, as downloadable assets — handy if you'd rather install a specific version than track `latest`.
 
-(Or clone the repository if you'd rather have the whole history, or want to [build the image from source](./maintenance#building-from-source-instead) instead.)
+(Or clone the repository if you'd rather have the whole history, or want to [build the image from source](./maintenance.md#building-from-source-instead) instead.)
 
 For reference — or to paste directly if your setup wants compose content rather than a URL (e.g. Synology Container Manager's manual-entry mode, see below) — here's the file as of this writing. It pulls `famlin-backend` straight from `ghcr.io/timvanonckelen/famlin`, no build step involved:
 
@@ -160,8 +160,8 @@ This always matches the canonical [`docker-compose.yml`](https://github.com/TimV
 
 Runtime configuration in Famlin is split in two:
 
-- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, the optional `UPLOADS_DIR`, `BACKUPS_DIR` and `DATA_DIR`, and the optional media storage settings (`STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*`, see [Storage](./storage)). `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` from `.env` when you set them.
-- **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications, media integrations, branding, backups): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration).
+- **Startup env vars** (`.env`, read once when the container starts): `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET`, `TRUST_PROXY`, the optional `UPLOADS_DIR`, `BACKUPS_DIR` and `DATA_DIR`, and the optional media storage settings (`STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*`, see [Storage](./storage.md)). `docker-compose.yml` also reads `POSTGRES_PASSWORD` and `JWT_SECRET` from `.env` when you set them.
+- **Everything else** (OIDC/SSO, allowed emails, SMTP, push notifications, media integrations, branding, backups): stored in the database and managed later from `/admin` — see [Admin configuration](./admin-configuration.md).
 
 **You don't need a `.env` file to get started.** With none, `docker compose up -d` generates the two secrets for you on first start and keeps them in Docker volumes:
 
@@ -179,12 +179,12 @@ TRUST_PROXY=false
 - `JWT_SECRET` — optional; when set it always wins over the generated file. Generate a long random value, e.g. `openssl rand -base64 48`. Anyone with this value can forge login tokens, so keep it private and never commit it.
 - `POSTGRES_PASSWORD` — optional; used by `famlin-init` as the database password the first time it runs. An existing installation that already has `POSTGRES_PASSWORD` in `.env` keeps working unchanged. Postgres only reads its password when the database is first created, so changing this later does not change the password of an existing database (the stored password file is never overwritten).
 - `TRUST_PROXY` — leave `false` unless Famlin sits behind a reverse proxy (see [step 4](#option-c-your-own-reverse-proxy)); see the note there before flipping it on.
-- `DATABASE_URL` is built automatically by the backend from `POSTGRES_HOST` (default `famlin-db`), `POSTGRES_PORT` (`5432`), `POSTGRES_USER` (`famlin`), `POSTGRES_DB` (`famlin`) and the stored password (`POSTGRES_PASSWORD` or the file named by `POSTGRES_PASSWORD_FILE`, URL-encoded) — you don't need to set it yourself unless you're pointing at an external Postgres instance (see [Using an external database](./maintenance#using-an-external-database)), in which case set it directly on the `famlin-backend` service instead of via `.env`.
+- `DATABASE_URL` is built automatically by the backend from `POSTGRES_HOST` (default `famlin-db`), `POSTGRES_PORT` (`5432`), `POSTGRES_USER` (`famlin`), `POSTGRES_DB` (`famlin`) and the stored password (`POSTGRES_PASSWORD` or the file named by `POSTGRES_PASSWORD_FILE`, URL-encoded) — you don't need to set it yourself unless you're pointing at an external Postgres instance (see [Using an external database](./maintenance.md#using-an-external-database)), in which case set it directly on the `famlin-backend` service instead of via `.env`.
 - Leave `PORT=3000` as-is unless you have a specific reason to change it; `NODE_ENV=production` is already set in `docker-compose.yml`.
 - `UPLOADS_DIR` — optional; where uploaded photos and videos are stored. Defaults to `uploads` next to the server, which is exactly where the `famlin-uploads` volume mounts, so leave it unset unless you deliberately store media elsewhere (and mount that path into the container). The backend test harness uses it to keep a test run off the real media volume.
-- `DATA_DIR` — optional; where generated secrets are stored (`secrets/jwt_secret`). Defaults to `data` next to the server, which is where the `famlin-data` volume mounts. This is always local disk, never S3, whatever your [storage](./storage) driver.
-- `BACKUPS_DIR` — optional; where [scheduled backups](./maintenance#scheduled-backups) write their database dumps and uploads mirror. Defaults to `backups` next to the server, which is where the `famlin-backups` volume mounts. To keep backups on another disk or NAS share, bind-mount that folder at `/app/backups` instead of changing this.
-- `STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*` — optional; where uploaded media is stored. Leave them unset to keep media on the `famlin-uploads` volume. To store media in an S3-compatible bucket instead, or to move an existing installation, see [Storage](./storage).
+- `DATA_DIR` — optional; where generated secrets are stored (`secrets/jwt_secret`). Defaults to `data` next to the server, which is where the `famlin-data` volume mounts. This is always local disk, never S3, whatever your [storage](./storage.md) driver.
+- `BACKUPS_DIR` — optional; where [scheduled backups](./maintenance.md#scheduled-backups) write their database dumps and uploads mirror. Defaults to `backups` next to the server, which is where the `famlin-backups` volume mounts. To keep backups on another disk or NAS share, bind-mount that folder at `/app/backups` instead of changing this.
+- `STORAGE_DRIVER`, `S3_*`, `STORAGE_FALLBACK_*` — optional; where uploaded media is stored. Leave them unset to keep media on the `famlin-uploads` volume. To store media in an S3-compatible bucket instead, or to move an existing installation, see [Storage](./storage.md).
 
 ## 3. Start the stack
 
@@ -273,14 +273,14 @@ Caddy applies no request body limit or short timeouts, so photo and video upload
 
 ### Option B: Cloudflare Tunnel
 
-A [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) makes an outbound connection from your server to Cloudflare, so you open no ports and manage no certificates, and it works behind CGNAT. The trade-off is that Cloudflare terminates TLS and therefore sees your traffic, and large uploads are capped on the free plan. Follow the step-by-step [Cloudflare Tunnel guide](./cloudflare-tunnel).
+A [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) makes an outbound connection from your server to Cloudflare, so you open no ports and manage no certificates, and it works behind CGNAT. The trade-off is that Cloudflare terminates TLS and therefore sees your traffic, and large uploads are capped on the free plan. Follow the step-by-step [Cloudflare Tunnel guide](./cloudflare-tunnel.md).
 
 ### Option C: your own reverse proxy
 
 Point your reverse proxy at the container's port 3000 (published by `docker-compose.yml`) and let it handle HTTPS. A few notes regardless of which proxy you use:
 
 - Forward the whole path space (`/`, `/api`, `/admin`, `/uploads`) to the backend — everything is served from the one Fastify process.
-- Uploaded photos require a valid session or media token to fetch (see [Security](./security)), not just a correct URL, so your proxy doesn't need to restrict access to `/uploads/` itself — just don't cache responses across different users/sessions.
+- Uploaded photos require a valid session or media token to fetch (see [Security](./security.md)), not just a correct URL, so your proxy doesn't need to restrict access to `/uploads/` itself — just don't cache responses across different users/sessions.
 - The mobile app, the web app, and the admin UI all do OIDC's Authorization Code + PKCE flow directly against your identity provider, then hand the resulting token to the backend — no proxy-level auth or special CORS handling is needed beyond passing requests through as-is.
 - **Raise the proxy's request body limit and upload timeout.** Famlin itself accepts uploads up to 200 MB per file (photos and videos), but most proxies cap request bodies far lower by default — Nginx allows just 1 MB, which silently rejects almost every phone photo. When the proxy cuts the upload off, the app can't tell why and shows the user a bare "Network Error", and nothing appears in the Famlin container's logs because the request never reached it. Set the limit to at least the largest file you want to allow (`client_max_body_size` on Nginx, `maxRequestBodyBytes` on Traefik's buffering middleware; Caddy has no limit by default), and make sure any read/send timeout is generous enough for a slow mobile upload.
 - **Set `TRUST_PROXY=true`** in `.env` once Famlin is behind a reverse proxy, and make sure the proxy sets (not merely appends to) `X-Forwarded-Proto` and `X-Forwarded-Host` on every request it forwards — all the examples below do this. This is what lets Famlin build correct invite links and origin URLs; leaving it `false` behind a proxy, or `true` with no proxy in front, both produce wrong links.
@@ -384,8 +384,8 @@ The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famli
 
 ## Next steps
 
-Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — and the admin UI continues straight into a short **setup wizard** (also reachable later at `/admin/getting-started`). It walks you through naming your first family (you are added as its first member, with an optional accent color), creating an invite link you can copy or share, the QR code for connecting the mobile app, and a check that daily backups are on, with a reminder to copy them off the machine. Every step can be skipped, and your place is remembered if you leave. Anything you skip stays on a **Getting started** checklist on the dashboard (a family exists, you are in it, someone is invited, backups are on) until it is complete or you dismiss it. Then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
+Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — and the admin UI continues straight into a short **setup wizard** (also reachable later at `/admin/getting-started`). It walks you through naming your first family (you are added as its first member, with an optional accent color), creating an invite link you can copy or share, the QR code for connecting the mobile app, and a check that daily backups are on, with a reminder to copy them off the machine. Every step can be skipped, and your place is remembered if you leave. Anything you skip stays on a **Getting started** checklist on the dashboard (a family exists, you are in it, someone is invited, backups are on) until it is complete or you dismiss it. Then head to [Admin configuration](./admin-configuration.md) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
 
 ### Optional: where media is stored
 
-By default, uploaded photos and videos live on the `famlin-uploads` volume. To put them on another disk, on a NAS share or in an S3-compatible bucket (AWS S3, MinIO, Garage, …), see [Storage](./storage).
+By default, uploaded photos and videos live on the `famlin-uploads` volume. To put them on another disk, on a NAS share or in an S3-compatible bucket (AWS S3, MinIO, Garage, …), see [Storage](./storage.md).

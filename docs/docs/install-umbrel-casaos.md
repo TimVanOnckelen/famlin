@@ -27,7 +27,7 @@ Famlin is not in the official Umbrel and CasaOS app stores yet. Until it is, add
 
 ## After installing
 
-1. Create your family and invite members, see [Inviting family](./inviting-family).
+1. Create your family and invite members, see [Inviting family](./inviting-family.md).
 2. Photos and videos are kept in the app's data folder on your server. Turn on scheduled backups under *Server settings, Backups* in the admin page.
 
 ## Letting your family in from outside your home

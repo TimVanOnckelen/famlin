@@ -6,7 +6,7 @@ sidebar_position: 1.5
 
 The quickest way to run Famlin for your family: rent a small server, point a domain at it and run **one command**. The installer sets up Docker, automatic HTTPS and automatic updates for you. You never touch a config file.
 
-Prefer to set things up by hand, or run Famlin on a NAS or Raspberry Pi? See [Server setup](./server-setup).
+Prefer to set things up by hand, or run Famlin on a NAS or Raspberry Pi? See [Server setup](./server-setup.md).
 
 ## What you need
 
@@ -34,7 +34,7 @@ It asks how people will reach Famlin:
 | Mode | What it does |
 | --- | --- |
 | `caddy` (recommended) | Automatic HTTPS on your domain via Caddy and Let's Encrypt. Asks for the domain and an optional email. |
-| `tunnel` | [Cloudflare Tunnel](./cloudflare-tunnel): no open ports. Asks for the tunnel token. |
+| `tunnel` | [Cloudflare Tunnel](./cloudflare-tunnel.md): no open ports. Asks for the tunnel token. |
 | `local` | Plain `http://<ip>:3000`, no proxy. For a home network or testing. |
 
 When it finishes (a few minutes, mostly downloading images) it prints the address to open.
@@ -74,7 +74,7 @@ curl -fsSL https://famlin.app/install.sh | sh -s -- --yes \
 
 ## 4. Create your admin account
 
-Open `https://<your-domain>/admin`. A fresh server shows a one-time setup screen: create the first admin account, then follow [After the first start](./admin-configuration) to pick how people sign in, create your family and [invite everyone](./inviting-family).
+Open `https://<your-domain>/admin`. A fresh server shows a one-time setup screen: create the first admin account, then follow [After the first start](./admin-configuration.md) to pick how people sign in, create your family and [invite everyone](./inviting-family.md).
 
 ## What gets installed
 
@@ -86,7 +86,7 @@ docker compose ps
 docker compose logs -f famlin-backend
 ```
 
-The compose files are replaced on every run of the installer, so put your own settings in `.env` (see [Server setup](./server-setup#2-configure-environment-variables)); the installer only edits its own keys. Database password and login secret are generated automatically and stored in Docker volumes.
+The compose files are replaced on every run of the installer, so put your own settings in `.env` (see [Server setup](./server-setup.md#2-configure-environment-variables)); the installer only edits its own keys. Database password and login secret are generated automatically and stored in Docker volumes.
 
 ## Updates
 
@@ -97,7 +97,7 @@ Trade-off: automatic updates mean a release with a breaking change (it is always
 - Reviewed updates: re-run the installer with `--channel release` (or `--version vX.Y.Z`) and `--no-auto-update`, then update by re-running the installer with a newer `--version` when you have read the notes.
 - Update right now: `cd /opt/famlin && docker compose pull && docker compose up -d`.
 
-Back up before big upgrades: see [Maintenance](./maintenance).
+Back up before big upgrades: see [Maintenance](./maintenance.md).
 
 ## Re-running, repairing, uninstalling
 

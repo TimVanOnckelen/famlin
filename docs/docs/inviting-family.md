@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Inviting family members
 
-There's no public sign-up page — family members join through an invite link an admin generates per group. This is also how you add someone whose email isn't on the [**Allowed email addresses**](./admin-configuration#first-login) list: a valid invite bypasses that check.
+There's no public sign-up page — family members join through an invite link an admin generates per group. This is also how you add someone whose email isn't on the [**Allowed email addresses**](./admin-configuration.md#first-login) list: a valid invite bypasses that check.
 
 1. In `/admin`, click **Add member** — either from the **Users** page, or from a group's detail pane on the **Groups** page (which preselects that group; click **New group** first if it doesn't exist yet).
 2. In the **Invite** tab (the default mode), pick the group if it isn't already preselected, optionally enter the invitee's email — this restricts the link to that exact address — and pick an expiry (7 days, 30 days, or never expires). Click **Generate link**, then **Copy** it.
@@ -61,4 +61,4 @@ The QR code only tells the app *which server* to talk to. People still need an a
 
 - Each link is **single-use** — it's consumed as soon as it's successfully used to join. Restricting it to an email address also means only a sign-in with that exact email can consume it; leaving it blank lets anyone with the link claim it.
 - Unused invites can be revoked from the same Groups page under **Invites**.
-- Treat an invite link like a password — anyone who has it can join the group until it's used, expires, or is revoked. See the [Security policy](./security) page for more on this.
+- Treat an invite link like a password — anyone who has it can join the group until it's used, expires, or is revoked. See the [Security policy](./security.md) page for more on this.

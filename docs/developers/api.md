@@ -88,7 +88,7 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 
 Pass `nextCursor` back as `?cursor=` for the next page; `null` means you've reached the end.
 
-**Authorization model:** every piece of content belongs to exactly one group (family), and you can only see or touch content in groups you are a member of. There is no way to opt out of this per token — a request for a group you're not in is a `403`. Admin-only management endpoints live under `/api/admin` and require an admin account; they're not part of the documented API (see [Architecture](./architecture) for the full route map).
+**Authorization model:** every piece of content belongs to exactly one group (family), and you can only see or touch content in groups you are a member of. There is no way to opt out of this per token — a request for a group you're not in is a `403`. Admin-only management endpoints live under `/api/admin` and require an admin account; they're not part of the documented API (see [Architecture](./architecture.md) for the full route map).
 
 ## Recipe: post a photo update
 

@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Managing users, groups, and content
 
-Day-to-day admin tasks all live under `/admin`, alongside the initial setup covered in [Admin configuration](./admin-configuration) and [Inviting family members](./inviting-family).
+Day-to-day admin tasks all live under `/admin`, alongside the initial setup covered in [Admin configuration](./admin-configuration.md) and [Inviting family members](./inviting-family.md).
 
 ## Dashboard
 
@@ -47,11 +47,11 @@ The group form (**New group** or **Edit**) holds the name, description, allowed 
 
 
 - **Create / edit / delete a group** — **New group** at the top, or **Edit**/**Delete** on the selected group. A group just has a name and description; deleting one removes its posts and comments along with it (unlike posts/comments, a deleted group can't be restored).
-- **Choose which post types the group allows** — the group form's **Allowed post types** section has one checkbox per post type the server supports (plain updates, milestones, polls, trip journals, shared albums, [gift lists](./gift-lists), and any added later). Leave every box checked (the default) to allow all of them, including types added in a future update — you don't need to come back and re-check anything after an upgrade. Uncheck a type to hide it from that group's post composer; at least one type must stay checked. Existing posts of a type you later uncheck aren't affected — they stay visible, only creating new ones of that type is blocked.
+- **Choose which post types the group allows** — the group form's **Allowed post types** section has one checkbox per post type the server supports (plain updates, milestones, polls, trip journals, shared albums, [gift lists](./gift-lists.md), and any added later). Leave every box checked (the default) to allow all of them, including types added in a future update — you don't need to come back and re-check anything after an upgrade. Uncheck a type to hide it from that group's post composer; at least one type must stay checked. Existing posts of a type you later uncheck aren't affected — they stay visible, only creating new ones of that type is blocked.
 - **Enable or disable group chat** — the group form has a **Chat** toggle (off by default). When enabled, members can send messages in a shared group chat, pin photos/videos to messages, and see which members have read the latest messages. Chat is not end-to-end encrypted. When a milestone post is created in a group with chat on, a system message is automatically posted in the chat to announce it. Members control their own push-notification preference for chat messages from their profile settings.
 - **Enable or disable stories** — the group form has an **Enable stories** toggle, **on by default** (including for groups that existed before stories were added — an upgrade turns stories on everywhere, so switch it off for any group that shouldn't have them). Stories are photos members share for 24 hours, decorated with text, stickers and drawings in the mobile app; after 24 hours they're permanently deleted, photo included, unless the author kept the story as one of the group's **Highlights**. Viewers can react and send the author one private reply, and the author can see who viewed it. Turning the toggle off stops new stories and also hides the group's existing stories and Highlights (turning it back on shows the Highlights again). Stories are created in the mobile app only; the web app can view, react and reply. Members opt in to push notifications for new stories from their profile (off by default, at most one per person per group per day). In the mobile story viewer, drag the photo downward to dismiss it: the photo follows your finger and reveals the previous screen. A short drag returns quickly and can be interrupted by another swipe; a longer drag or quick downward flick closes the viewer. The photo lightbox uses the same gesture for photos and videos, including swipe-to-close for videos. Playback pauses during the gesture.
 - **Add an existing user to the group** — pick them from the dropdown next to **Add member** in the detail pane (the same action as "manage group membership" on the Users page).
-- **Add a new member to the group** — click **Add member** in the detail pane to open the same modal as on the Users page, preselected to this group; see [Inviting family members](./inviting-family) for the invite flow it defaults to.
+- **Add a new member to the group** — click **Add member** in the detail pane to open the same modal as on the Users page, preselected to this group; see [Inviting family members](./inviting-family.md) for the invite flow it defaults to.
 - **Add existing users** — click **Add an existing user** to open a modal listing every account not already in the group. Each row has an **Add** button. Added users leave the available list, and the modal stays open so you can add several people before closing it.
 - **Remove a member** — the ✕ icon on their row. Removing someone from a group does **not** delete their existing posts/comments in that group — those stay visible to the remaining members (a deliberate choice, not a bug). It **does** remove them from every circle in that group, immediately: a circle is a smaller audience *inside* the family, so it can't keep granting access to someone the family itself no longer includes. Circles in their other families are untouched.
 - **Family Circles** — a **Circles** section in the detail pane, just under the member list. A circle is a smaller audience *inside* the group ("Grandparents", "Cousins", "Adults only"), so a family doesn't have to split into separate groups to share with part of it.
@@ -61,8 +61,8 @@ The group form (**New group** or **Edit**) holds the name, description, allowed 
   - **Circles are private, including from you.** Members outside a circle can't see that it exists. And *you* can only read a circle's content if you're a member of it — circle posts don't appear on the Content page unless you're in the circle. This is deliberate: an admin flag shouldn't be a key to every private conversation in the family. The trade-off is that you can't moderate content in a circle you're not in; if you need to, add yourself to the circle — and note that **its members will see you there**, because anyone in a circle can open its member list from a post and see who joined and when. Circle access is something you can take, not something you have silently.
   - **Deleting a circle permanently deletes its posts**, along with their comments, photos and reactions. There is no restore, and no option to move the content back to the whole family — silently widening an audience is exactly what circles exist to prevent. The confirmation tells you how many posts will be destroyed; if you're not in the circle, that count is all you'll be able to see of them.
   - **Members can leave a circle themselves** from the app. Leaving a circle never removes them from the family group — they just stop seeing that circle's content. Only an admin can add them back.
-- **Linked albums**: at the bottom of the detail pane. Link albums from Immich or a local folder to the group, and choose per album whether new photos are announced. See [Media integrations](./admin-configuration#media-integrations).
-- **Invites** — further down the same page (status, copy link, revoke); see [Inviting family members](./inviting-family) for that flow.
+- **Linked albums**: at the bottom of the detail pane. Link albums from Immich or a local folder to the group, and choose per album whether new photos are announced. See [Media integrations](./admin-configuration.md#media-integrations).
+- **Invites** — further down the same page (status, copy link, revoke); see [Inviting family members](./inviting-family.md) for that flow.
 
 ## Content moderation
 
@@ -87,7 +87,7 @@ The **Push notification log** page lists every push-notification send attempt �
 
 The **Storage** page shows where uploaded photos and videos are stored: the driver (local folder or S3 bucket), the folder or bucket, prefix, endpoint and region, how many files and bytes it holds, and whether it's reachable right now.
 
-Storage itself is configured with environment variables, not on this page. While you're [moving media between local and S3](./storage#moving-an-existing-installation-between-local-and-s3) (or between two folders), the page also shows the old storage as **Fallback source**, the migration's progress, any conflicts and errors, and the **Clean up source** action.
+Storage itself is configured with environment variables, not on this page. While you're [moving media between local and S3](./storage.md#moving-an-existing-installation-between-local-and-s3) (or between two folders), the page also shows the old storage as **Fallback source**, the migration's progress, any conflicts and errors, and the **Clean up source** action.
 
 ![The Storage page](./img/admin-storage.png)
 
@@ -97,7 +97,7 @@ The **System status** page gives you one place to check that the server is healt
 
 ![The System status page](./img/admin-system-status.png)
 
-- **Backups**: whether [scheduled backups](./maintenance#scheduled-backups) are on, the last backup's time, result and size, the next scheduled run, the stored database dumps, and a **Run backup now** button. It warns you when the backups folder isn't a mounted volume, because backups there wouldn't survive the container being recreated.
+- **Backups**: whether [scheduled backups](./maintenance.md#scheduled-backups) are on, the last backup's time, result and size, the next scheduled run, the stored database dumps, and a **Run backup now** button. It warns you when the backups folder isn't a mounted volume, because backups there wouldn't survive the container being recreated.
 - **Disk space**: free space on the uploads volume and on the backups volume (shown once if they're the same disk). A volume counts as low below 1 GiB free or below 5% free.
 - **Integrations**: whether SMTP, OIDC sign-in, Immich and the local media folder are reachable right now. Each check is the same connection test Server settings uses; ones you haven't set up show "Not configured".
 - **Push notifications**: delivered and failed sends over the last 24 hours and 7 days. More than 20% failures over the last day is flagged; the [push notification log](#push-notification-log) has the details.
@@ -115,15 +115,15 @@ The **Server settings** page's general section has a **Data export** card with a
 - Story **Highlights** (stories their authors kept) and their reactions. Live stories, who viewed them and private story replies are **not** included — a live story is deleted within 24 hours anyway, and replies are private between two people.
 - The member list (names, emails, avatars, admin status), group membership, and circles.
 - Every uploaded photo and video, including the original, unresized files — except the photos of live (not kept) stories.
-- Your [branding](./admin-configuration#branding) — family name, color and logo.
+- Your [branding](./admin-configuration.md#branding) — family name, color and logo.
 
-**Include media in export** (on by default) decides whether photos and videos go into the zip. Switch it off for a small export of just the content, for example when your media lives in S3 and is backed up there: such an export can only be restored onto a server that already has the same media in its storage. See [Backups and exports with S3](./storage#backups-and-exports-with-s3).
+**Include media in export** (on by default) decides whether photos and videos go into the zip. Switch it off for a small export of just the content, for example when your media lives in S3 and is backed up there: such an export can only be restored onto a server that already has the same media in its storage. See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3).
 
 It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, device diagnostics, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
 
-It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
+It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance.md#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
 
-The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
+The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 
 ### Members can export their own data
 

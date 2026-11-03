@@ -9,7 +9,7 @@ sidebar_position: 6
 Two things need backing up:
 
 - **`famlin-db-data`** (Docker volume) — the Postgres database: users, groups, posts, comments, settings.
-- **`famlin-uploads`** (Docker volume) — uploaded photos and videos. If you store media in S3 instead, see [Backups and exports with S3](./storage#backups-and-exports-with-s3).
+- **`famlin-uploads`** (Docker volume) — uploaded photos and videos. If you store media in S3 instead, see [Backups and exports with S3](./storage.md#backups-and-exports-with-s3).
 
 Famlin can do this for you on a schedule (see [Scheduled backups](#scheduled-backups) below), or you can include the volumes in a backup routine you already have.
 
@@ -42,7 +42,7 @@ Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the
 
 Backups are deliberately not data-export zips: an export holds a full copy of every photo, so keeping seven of them would cost seven times your media library.
 
-**System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content#system-status).
+**System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content.md#system-status).
 
 #### Keep backups off the machine
 
@@ -104,7 +104,7 @@ Run these from the folder that holds your `docker-compose.yml`, with `famlin-db`
 
 The admin UI's **Data export** (Server settings → General) is a second, independent kind of backup: one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
 
-1. Start the new server as usual (see [Server setup](./server-setup)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
+1. Start the new server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
 2. Open `/admin`. A fresh server shows the first-run setup screen; choose **Restore a backup**.
 3. Pick the export zip and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
 4. Wait for the upload and restore to finish — for a large photo library this takes a while.
@@ -142,7 +142,7 @@ If you're [building from source](#building-from-source-instead) instead of runni
 
 Once a day (and shortly after the server starts), the server asks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the latest release. When it is newer than the version you're running, every admin page shows a dismissible banner: "Famlin X.Y.Z is available", with links to the release notes and to this page. A release whose notes contain breaking changes gets a more prominent banner telling you to read them before updating. Dismissing the banner hides it for that version only; a still newer release brings it back.
 
-Only a plain request for the latest release is made; nothing about your instance is sent. Turn it off with **Check for new versions** under **Server settings → General → Updates**. The check is fail-soft: if GitHub is unreachable you see no notice, and the failure is recorded under **Update check** in the [system status](./managing-users-and-content#system-status) job list.
+Only a plain request for the latest release is made; nothing about your instance is sent. Turn it off with **Check for new versions** under **Server settings → General → Updates**. The check is fail-soft: if GitHub is unreachable you see no notice, and the failure is recorded under **Update check** in the [system status](./managing-users-and-content.md#system-status) job list.
 
 If you'd rather be notified outside the admin UI, "Watch" the repository's releases on GitHub (**Watch → Custom → Releases** on the [repo page](https://github.com/timvanonckelen/famlin)) to get an email/notification per release.
 
@@ -219,7 +219,7 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 **Containers won't start / authentication failed for the database** — `JWT_SECRET` and the database password are generated automatically when no `.env` is present. If you previously started the stack with a different `POSTGRES_PASSWORD`, the database keeps its original password; set `POSTGRES_PASSWORD` back to that value (or remove the `famlin-db-data` and `famlin-db-secret` volumes on a throwaway install). Confirm `.env`, if you use one, is in the same directory you run `docker compose` from.
 
-**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
+**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage.md#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
 
 **Famlin refuses to start: database is newer than this version** — `famlin-backend` keeps restarting and its log says `Refusing to start: the database was upgraded by a newer Famlin version than this one`, naming one or more migrations. An older Famlin image was started against a database that a newer release already upgraded — usually because `FAMLIN_VERSION` was pinned to an older version, an updater pulled a stale tag, or volumes were restored from the wrong backup. Famlin checks this before touching the database, so nothing was changed. Fix it in one of two ways:
 
@@ -230,16 +230,16 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 **Uploaded photos disappear after a redeploy** — this means the `famlin-uploads` volume isn't being reused, usually because the compose project name changed (e.g. running from a different directory) or `-v` / `down -v` was used, which removes volumes. Avoid `docker compose down -v` in production; use plain `down` (or just `up -d --build` for updates, no `down` needed at all).
 
-**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Your own reverse proxy](./server-setup#option-c-your-own-reverse-proxy). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
+**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Your own reverse proxy](./server-setup.md#option-c-your-own-reverse-proxy). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
 
 **Can't reach `/admin` through the reverse proxy but the container works on `localhost:3000`** — check that the proxy forwards the full path (not just `/`) and doesn't strip the `/admin` prefix.
 
-See also the [Security policy](./security) page for hardening recommendations.
+See also the [Security policy](./security.md) page for hardening recommendations.
 
 ## Moving media between local and S3 storage
 
-Famlin can move all uploaded media between the local uploads volume and an S3-compatible bucket, or between two local folders, while it keeps running. The step-by-step guide, including the **Admin → Storage** page, lives on the [Storage](./storage#moving-an-existing-installation-between-local-and-s3) page.
+Famlin can move all uploaded media between the local uploads volume and an S3-compatible bucket, or between two local folders, while it keeps running. The step-by-step guide, including the **Admin → Storage** page, lives on the [Storage](./storage.md#moving-an-existing-installation-between-local-and-s3) page.
 
 ### Exports and backups with external media
 
-See [Backups and exports with S3](./storage#backups-and-exports-with-s3). In short: **Include media** (on both the data export and Server settings → Backups) decides whether photos and videos are copied into the export or backup, and S3 is not a backup on its own.
+See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3). In short: **Include media** (on both the data export and Server settings → Backups) decides whether photos and videos are copied into the export or backup, and S3 is not a backup on its own.
