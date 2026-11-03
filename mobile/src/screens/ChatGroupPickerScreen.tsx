@@ -52,7 +52,7 @@ export function ChatGroupPickerScreen() {
         ListEmptyComponent={
           !isLoading ? (
             <EmptyState title={t('chat.pickerEmptyTitle')} subtitle={t('chat.pickerEmptySubtitle')} centerSubtitle />
-          ) : null
+          ) : undefined
         }
       />
     </SafeAreaView>

@@ -64,7 +64,9 @@ export function NotificationsScreen() {
         data={notifications || []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={() => void refetch()} tintColor={colors.primary} />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.notificationItem, !item.readAt && styles.unreadItem]}

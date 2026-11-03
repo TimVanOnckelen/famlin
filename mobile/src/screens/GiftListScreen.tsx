@@ -56,7 +56,7 @@ export function GiftListScreen() {
 
   const { data: post, isLoading } = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
   // "You're buying for X" scrolls to X's wishlist: each list reports its y.
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null)
   const wishlistY = useRef<Record<string, number>>({})
   const { data: items = [] } = useQuery({
     queryKey: ['gift-list-items', postId],

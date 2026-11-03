@@ -157,6 +157,7 @@ export default ({ config }) => ({
     'expo-localization',
     'expo-secure-store',
     'expo-web-browser',
+    'expo-sharing',
     'expo-video',
     'expo-status-bar',
     'expo-image',

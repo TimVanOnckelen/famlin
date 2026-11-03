@@ -244,7 +244,7 @@ export function ChatScreen() {
               />
             )}
             ListFooterComponent={
-              isFetchingNextPage ? <ActivityIndicator style={styles.loadingMore} color={colors.primary} /> : null
+              isFetchingNextPage ? <ActivityIndicator style={styles.loadingMore} color={colors.primary} /> : undefined
             }
             ListEmptyComponent={
               <EmptyState title={t('chat.emptyTitle')} subtitle={t('chat.emptySubtitle')} centerSubtitle />
