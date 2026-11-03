@@ -13,6 +13,20 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Web trip composer
+
+The web post composer also creates `TRIP` posts via `createPost`: title,
+optional destination, calendar start/end dates, optional uploaded cover and up
+to 20 companions. Companions are drawn from the intersection of selected
+families, excluding the author; selection is reconciled only after all member
+queries load. Cross-posting and circle audiences use the existing post contract.
+Check-ins can be added from the web trip detail page by the author and companions
+while the trip is started and open. Closing and later companion edits still
+use the mobile app. `TripCheckinModal` uploads up to ten attachments, calls
+`checkInTrip`, patches post/feed/favorites caches and invalidates the comments
+query to refresh the timeline. Failed saves retain the draft and uploaded URLs
+for retry.
+
 ## Web feed member panel
 
 On screens at least 1200px wide, the right column shows the family filter above a permanent member card. Each family has its own row with its name and optional description. The family filter is omitted entirely for a single membership. Selecting families filters both the feed and the member list; there is no separate member filter or search. Multiple families produce one list deduplicated by user ID, with family names under each member. The member card fits its content and only scrolls when the right column reaches the available viewport height. Member queries reuse the per-family React Query cache for 60 seconds and report partial failures with a retry action. “On this day” remains tied to a single selected family and appears below the member card. On narrower screens, the entire sidebar stays hidden and the original horizontal family-filter chips remain above the feed. Both filter layouts share the same selection. The feed header and member card retain navigation to the full Members page: one effective family scopes the destination to that family; multiple families open the all-families view.
@@ -66,7 +80,7 @@ The Prisma schema defines `User`, `Setting`, `Group`, `GroupMember`, `Circle`, `
 - `JobStatus` holds one row per background job (`job` is the primary key: `onThisDay`/`newAssets`/`expireStories`/`backup`/`systemAlerts`, never renamed), only the latest run (`lastStartedAt`, `lastFinishedAt`, `lastOk` — `null` while running or after an interrupted run — `lastError`, `lastDurationMs`, `lastSuccessAt`, `lastFailureAt`, `lastDetails` JSON). It's deliberately not a history table; `expireStories` alone runs 144 times a day.
 - `SystemAlert` is alert-email throttle state only (`condition` primary key, `lastEmailedAt`); the banner never reads it. Both tables are operational state, not family content, so neither is in the data export.
 
-The schema's `datasource` block carries only the provider — under Prisma 7 the connection string lives in `backend/prisma.config.ts`, which the CLI reads for `generate`/`migrate`, and `src/db.ts` passes to `PrismaClient` through the `@prisma/adapter-pg` driver adapter. `DATABASE_URL` is still the only thing you set; it is just read by application code now rather than by `env()` inside the schema. Anything that runs a Prisma command needs `prisma.config.ts` present alongside `prisma/` — that is why `backend/Dockerfile` copies it into both the build stage and the runtime stage, where the container's start command runs `prisma migrate deploy`.
+The schema's `datasource` block carries only the provider — under Prisma 7 the connection string lives in `backend/prisma.config.ts`, which the CLI reads for `generate`/`migrate`, and `src/db.ts` passes to `PrismaClient` through the `@prisma/adapter-pg` driver adapter. `DATABASE_URL` is still the only thing you set; it is just read by application code now rather than by `env()` inside the schema. Anything that runs a Prisma command needs `prisma.config.ts` present alongside `prisma/` — that is why `backend/Dockerfile` copies it into both the build stage and the runtime stage, where the container's entrypoint (`src/boot.ts`) runs `prisma migrate deploy`. Before that, `boot.ts` runs a downgrade guard (`services/migrationGuard.ts`): any migration recorded as applied in `_prisma_migrations` (finished, not rolled back) that's missing from the image's own `prisma/migrations/` means the database was migrated by a newer release, so the process exits non-zero with an admin-facing message instead of migrating or starting — `migrate deploy` itself doesn't treat that as an error. A fresh database (no `_prisma_migrations` table) passes. The order is guard → `migrate deploy` → `import('./server.js')`, all in one node process, so node stays PID 1 for graceful shutdown. Never rename or delete a migration folder that has shipped: the guard would read it as a downgrade.
 
 Key choices:
 

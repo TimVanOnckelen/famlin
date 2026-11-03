@@ -27,7 +27,7 @@ export function Layout({ user, children }: LayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem('famlin_admin_token')
-    window.location.href = '/admin'
+    window.location.href = '/admin/'
   }
 
   return (

@@ -1,3 +1,4 @@
+import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, MediaPerson, MediaPersonLink, User } from '../api/client'
@@ -11,6 +12,7 @@ const UNMAPPED_PREVIEW_COUNT = 18
 
 export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [people, setPeople] = useState<MediaPerson[]>([])
   const [peopleLinks, setPeopleLinks] = useState<MediaPersonLink[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,21 +83,21 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
       setSelectedUserId('')
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('media.peopleMapping.saveError', { error: message }))
+      await dialogs.showMessage(t('media.peopleMapping.saveError', { error: message }))
     } finally {
       setSaving(false)
     }
   }
 
   const handleRemoveMapping = async (link: MediaPersonLink) => {
-    if (!confirm(t('media.peopleMapping.removeConfirm', { name: link.label }))) return
+    if (!(await dialogs.confirmAction(t('media.peopleMapping.removeConfirm', { name: link.label })))) return
 
     try {
       await api.deleteMediaPersonLink(link.id)
       await loadData()
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('media.peopleMapping.removeError', { error: message }))
+      await dialogs.showMessage(t('media.peopleMapping.removeError', { error: message }))
     }
   }
 

@@ -1,3 +1,5 @@
+import { TripComposerFields, validTripDate, type TripDraft } from './TripComposerFields'
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 import { CustomSelect } from './CustomSelect'
 import { Switch } from './Switch'
 import { FormEvent, useEffect, useRef, useState } from 'react'
@@ -24,7 +26,7 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM', 'GIFT_LIST'] as const
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
 type ComposerType = (typeof COMPOSER_TYPES)[number]
 
 export function NewPostModal({
@@ -56,6 +58,14 @@ export function NewPostModal({
   // ALBUM: the album's title lives in typeData, not content (content stays an
   // optional description).
   const [albumTitle, setAlbumTitle] = useState('')
+  const [trip, setTrip] = useState<TripDraft>({
+    title: '',
+    destination: '',
+    startDate: '',
+    endDate: '',
+    cover: null,
+    travelerIds: [],
+  })
   // GIFT_LIST (issue #307): title and settings in typeData, content stays an
   // optional description; participants come from the one selected family.
   const selfId = useAuthStore((s) => s.user?.id ?? '')
@@ -95,6 +105,22 @@ export function NewPostModal({
   // several, drive it off the first one picked — the server copies
   // linked-album photos so every group ends up able to see them.
   const primaryGroupId = selectedGroupIds[0] ?? ''
+  const travelers = useGroupMembersIntersection(selectedGroupIds, type === 'TRIP')
+  const memberIds = travelers.members
+    .map((member) => member.id)
+    .sort()
+    .join(',')
+  useEffect(() => {
+    if (type !== 'TRIP' || !travelers.loaded || travelers.isError) return
+    setTrip((previous) => {
+      const travelerIds = previous.travelerIds.filter(
+        (id) => id !== selfId && travelers.members.some((member) => member.id === id)
+      )
+      return travelerIds.length === previous.travelerIds.length ? previous : { ...previous, travelerIds }
+    })
+    // The membership key changes only when the intersection changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, travelers.loaded, travelers.isError, memberIds, selfId])
 
   // The audience picker offers only circles the author is in — which is all
   // the server will ever return, and all they're allowed to post to. Offered
@@ -148,7 +174,26 @@ export function NewPostModal({
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const uploadedUrls = files.length > 0 ? await uploadFiles(files) : []
+      const uploadSelection = type === 'TRIP' ? (trip.cover ? [trip.cover] : []) : files
+      const uploadedUrls = uploadSelection.length > 0 ? await uploadFiles(uploadSelection) : []
+      if (type === 'TRIP') {
+        if (trip.cover && !uploadedUrls[0]) throw new Error('Trip cover upload failed')
+        return createPost({
+          groupId: primaryGroupId,
+          groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
+          circleId: selectedCircleId ?? undefined,
+          type: 'TRIP',
+          typeData: {
+            title: trip.title.trim(),
+            destination: trip.destination.trim() || undefined,
+            startDate: trip.startDate,
+            endDate: trip.endDate || undefined,
+            coverPhotoUrl: uploadedUrls[0],
+            travelerUserIds: trip.travelerIds.length ? trip.travelerIds : undefined,
+          },
+          uploadedAssetUrls: [],
+        })
+      }
 
       // ALBUM: create an empty album (title in typeData, first uploaded photo
       // as the cover), then seed the uploaded photos as the author's first
@@ -252,13 +297,21 @@ export function NewPostModal({
     // intersection therefore blocks submitting entirely.
     offeredTypes.includes(type) &&
     !submitMutation.isPending &&
-    (type === 'POLL'
-      ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
-      : type === 'ALBUM'
-        ? albumTitle.trim().length > 0
-        : type === 'GIFT_LIST'
-          ? giftTitle.trim().length > 0
-          : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
+    (type === 'TRIP'
+      ? trip.title.trim().length > 0 &&
+        validTripDate(trip.startDate) &&
+        (!trip.endDate || (validTripDate(trip.endDate) && trip.endDate >= trip.startDate)) &&
+        (trip.travelerIds.length === 0 ||
+          (travelers.loaded &&
+            !travelers.isError &&
+            trip.travelerIds.every((id) => travelers.members.some((member) => member.id === id))))
+      : type === 'POLL'
+        ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
+        : type === 'ALBUM'
+          ? albumTitle.trim().length > 0
+          : type === 'GIFT_LIST'
+            ? giftTitle.trim().length > 0
+            : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -325,7 +378,7 @@ export function NewPostModal({
             options={offeredTypes.map((value) => ({
               value,
               label: t(
-                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
+                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', TRIP: 'Trip', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
               ),
               description: t(`newPost.typeDescriptions.${value}`),
               icon: (
@@ -336,6 +389,7 @@ export function NewPostModal({
                         UPDATE: 'edit-3',
                         MILESTONE: 'gift',
                         POLL: 'bar-chart-2',
+                        TRIP: 'briefcase',
                         ALBUM: 'image',
                         GIFT_LIST: 'gift',
                       } as const
@@ -350,18 +404,34 @@ export function NewPostModal({
                     ? 'var(--fam-accent)'
                     : value === 'MILESTONE'
                       ? 'var(--fam-milestone-text)'
-                      : 'var(--fam-primary)',
+                      : value === 'TRIP'
+                        ? 'var(--fam-trip-dark)'
+                        : 'var(--fam-primary)',
                 background:
                   value === 'UPDATE'
                     ? 'var(--fam-update-bg)'
                     : value === 'MILESTONE'
                       ? 'var(--fam-milestone-bg)'
-                      : 'var(--fam-primary-tint)',
+                      : value === 'TRIP'
+                        ? 'var(--fam-trip-tint)'
+                        : 'var(--fam-primary-tint)',
               },
             }))}
           />
         ) : (
           <div className="modal-error">{t('newPost.noAllowedTypes')}</div>
+        )}
+
+        {type === 'TRIP' && (
+          <TripComposerFields
+            trip={trip}
+            setTrip={setTrip}
+            members={travelers.members}
+            loaded={travelers.loaded}
+            isError={travelers.isError}
+            retry={travelers.retry}
+            selfId={selfId}
+          />
         )}
 
         {type === 'ALBUM' && offeredTypes.includes('ALBUM') && (
@@ -425,25 +495,27 @@ export function NewPostModal({
           </>
         )}
 
-        <textarea
-          className="modal-textarea"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={
-            type === 'MILESTONE'
-              ? t('newPost.milestonePlaceholder')
-              : type === 'POLL'
-                ? t('newPost.pollPlaceholder')
-                : type === 'ALBUM'
-                  ? t('newPost.albumDescriptionPlaceholder')
-                  : type === 'GIFT_LIST'
-                    ? t('newPost.giftListDescriptionPlaceholder')
-                    : t('newPost.placeholder')
-          }
-          rows={type === 'UPDATE' ? 5 : 2}
-          maxLength={5000}
-          autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
-        />
+        {type !== 'TRIP' && (
+          <textarea
+            className="modal-textarea"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={
+              type === 'MILESTONE'
+                ? t('newPost.milestonePlaceholder')
+                : type === 'POLL'
+                  ? t('newPost.pollPlaceholder')
+                  : type === 'ALBUM'
+                    ? t('newPost.albumDescriptionPlaceholder')
+                    : type === 'GIFT_LIST'
+                      ? t('newPost.giftListDescriptionPlaceholder')
+                      : t('newPost.placeholder')
+            }
+            rows={type === 'UPDATE' ? 5 : 2}
+            maxLength={5000}
+            autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
+          />
+        )}
 
         {type === 'POLL' && offeredTypes.includes('POLL') && (
           <div className="poll-options-editor" role="group" aria-label={t('newPost.typePoll')}>
@@ -477,7 +549,7 @@ export function NewPostModal({
           </div>
         )}
 
-        {(files.length > 0 || mediaAssets.length > 0) && (
+        {type !== 'TRIP' && (files.length > 0 || mediaAssets.length > 0) && (
           <div className="photo-previews">
             {files.map((file, i) => (
               <div key={`${file.name}-${i}`} className="photo-preview">
@@ -528,7 +600,7 @@ export function NewPostModal({
           hidden
           onChange={(e) => addFiles(e.target.files)}
         />
-        {type !== 'GIFT_LIST' && (
+        {type !== 'GIFT_LIST' && type !== 'TRIP' && (
           <div className="attach-actions">
             <button
               type="button"
