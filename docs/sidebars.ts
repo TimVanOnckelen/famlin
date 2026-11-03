@@ -27,6 +27,8 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'server-setup',
+        'install-umbrel-casaos',
+        'install-home-assistant',
         'storage',
         'admin-configuration',
         'inviting-family',

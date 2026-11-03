@@ -1,0 +1,4 @@
+# Umbrel community app store manifest.
+# `id` becomes the prefix of every app id in this store (famlin-<app>).
+id: famlin
+name: Famlin App Store
