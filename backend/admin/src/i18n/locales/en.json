@@ -37,6 +37,7 @@
     "users": "Users",
     "groups": "Groups",
     "content": "Content",
+    "operations": "Operations",
     "pushLog": "Push notification log",
     "devices": "Devices",
     "serverSettings": "Server settings",

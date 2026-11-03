@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Logo } from './Logo'
 import { User } from '../types'
 import { api } from '../api/client'
 import { LanguageSelector } from './LanguageSelector'
 import { AlertBanner } from './AlertBanner'
+import { Icon } from './Icon'
 
 interface LayoutProps {
   user: User
   children: React.ReactNode
 }
 
+const OPERATIONS_ROUTES = ['/push-log', '/devices', '/storage', '/status']
+
 export function Layout({ user, children }: LayoutProps) {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+  const operationsActive = OPERATIONS_ROUTES.includes(pathname)
+  const [operationsOpen, setOperationsOpen] = useState(operationsActive)
   const [version, setVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (OPERATIONS_ROUTES.includes(pathname)) setOperationsOpen(true)
+  }, [pathname])
 
   // Fail-soft, one-shot — a failed fetch just means no version line, same as
   // DashboardPage's update-check.
@@ -44,10 +55,24 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/users">{t('layout.users')}</NavLink>
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
-          <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
-          <NavLink to="/devices">{t('layout.devices')}</NavLink>
-          <NavLink to="/storage">{t('storage.title')}</NavLink>
-          <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
+          <button
+            type="button"
+            className={`sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
+            aria-expanded={operationsOpen}
+            aria-controls="sidebar-operations-links"
+            onClick={() => setOperationsOpen((open) => !open)}
+          >
+            {t('layout.operations')}
+            <span className={operationsOpen ? 'sidebar-nav-chevron expanded' : 'sidebar-nav-chevron'}>
+              <Icon name="chevron-down" size={16} />
+            </span>
+          </button>
+          <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
+            <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
+            <NavLink to="/devices">{t('layout.devices')}</NavLink>
+            <NavLink to="/storage">{t('storage.title')}</NavLink>
+            <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
+          </div>
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>
         <div className="user">
