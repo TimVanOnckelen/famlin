@@ -1,3 +1,8 @@
+import { AdminModal } from './AdminModal'
+import { AddMembersModal } from './AddMembersModal'
+import { MemberCards } from './MemberCards'
+import { CheckboxField } from './CheckboxField'
+import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -14,20 +19,18 @@ import {
   PostTypeInfo,
 } from '../api/client'
 import i18n from '../i18n'
-import { avatarColor, initials } from '../avatar'
 import { Icon } from './Icon'
 import { AddMemberModal } from './AddMemberModal'
 import { CirclesSection } from './CirclesSection'
 
 export function GroupsPage() {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [groups, setGroups] = useState<Group[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [members, setMembers] = useState<GroupMember[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
-  const [newMemberId, setNewMemberId] = useState('')
-  const [addingMember, setAddingMember] = useState(false)
   const [showAddExisting, setShowAddExisting] = useState(false)
   const [invites, setInvites] = useState<Invite[]>([])
   const [invitesLoading, setInvitesLoading] = useState(false)
@@ -114,7 +117,6 @@ export function GroupsPage() {
   }
 
   useEffect(() => {
-    setNewMemberId('')
     setShowAddExisting(false)
     setSelectedAlbumId('')
     if (selectedId) {
@@ -146,40 +148,43 @@ export function GroupsPage() {
   }
 
   const handleDelete = async (group: Group) => {
-    if (!confirm(t('groups.deleteConfirm', { name: group.name }))) return
-    await api.deleteGroup(group.id)
-    if (selectedId === group.id) setSelectedId(null)
-    await loadGroups()
+    if (!(await dialogs.confirmAction(t('groups.deleteConfirm', { name: group.name })))) return
+    try {
+      await api.deleteGroup(group.id)
+      if (selectedId === group.id) setSelectedId(null)
+      await loadGroups()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedGroup || !newMemberId) return
-    setAddingMember(true)
-    try {
-      await api.addGroupMember(selectedGroup.id, newMemberId)
-      setNewMemberId('')
-      setShowAddExisting(false)
-      loadMembers(selectedGroup.id)
-      loadGroups()
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.addMemberError', { error: message }))
-    } finally {
-      setAddingMember(false)
-    }
+  const handleAddMember = async (userId: string) => {
+    if (!selectedGroup) return
+    await api.addGroupMember(selectedGroup.id, userId)
+    const user = users.find((candidate) => candidate.id === userId)
+    if (user)
+      setMembers((current) =>
+        current.some((member) => member.id === userId)
+          ? current
+          : [...current, { ...user, joinedAt: new Date().toISOString() }]
+      )
+    setGroups((current) =>
+      current.map((group) =>
+        group.id === selectedGroup.id ? { ...group, memberCount: (group.memberCount ?? members.length) + 1 } : group
+      )
+    )
   }
 
   const handleRemoveMember = async (member: GroupMember) => {
     if (!selectedGroup) return
-    if (!confirm(t('groups.removeMemberConfirm', { name: member.name }))) return
+    if (!(await dialogs.confirmAction(t('groups.removeMemberConfirm', { name: member.name })))) return
     try {
       await api.removeGroupMember(selectedGroup.id, member.id)
       loadMembers(selectedGroup.id)
       loadGroups()
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.removeMemberError', { error: message }))
+      await dialogs.showMessage(t('groups.removeMemberError', { error: message }))
     }
   }
 
@@ -191,13 +196,13 @@ export function GroupsPage() {
 
   const handleRevokeInvite = async (invite: Invite) => {
     if (!selectedGroup) return
-    if (!confirm(t('groups.invites.revokeConfirm'))) return
+    if (!(await dialogs.confirmAction(t('groups.invites.revokeConfirm')))) return
     try {
       await api.revokeInvite(invite.id)
       loadInvites(selectedGroup.id)
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.invites.revokeError', { error: message }))
+      await dialogs.showMessage(t('groups.invites.revokeError', { error: message }))
     }
   }
 
@@ -218,7 +223,7 @@ export function GroupsPage() {
       loadMediaLinks(selectedGroup.id)
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.mediaAlbums.linkError', { error: message }))
+      await dialogs.showMessage(t('groups.mediaAlbums.linkError', { error: message }))
     } finally {
       setLinkingAlbum(false)
     }
@@ -226,13 +231,13 @@ export function GroupsPage() {
 
   const handleUnlinkAlbum = async (link: MediaAlbumLink) => {
     if (!selectedGroup) return
-    if (!confirm(t('groups.mediaAlbums.unlinkConfirm', { name: link.albumName }))) return
+    if (!(await dialogs.confirmAction(t('groups.mediaAlbums.unlinkConfirm', { name: link.albumName })))) return
     try {
       await api.unlinkMediaAlbum(link.id)
       loadMediaLinks(selectedGroup.id)
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.mediaAlbums.unlinkError', { error: message }))
+      await dialogs.showMessage(t('groups.mediaAlbums.unlinkError', { error: message }))
     }
   }
 
@@ -242,7 +247,7 @@ export function GroupsPage() {
       loadMediaLinks(selectedGroup!.id)
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('groups.mediaAlbums.updateModeError', { error: message }))
+      await dialogs.showMessage(t('groups.mediaAlbums.updateModeError', { error: message }))
     }
   }
 
@@ -373,76 +378,21 @@ export function GroupsPage() {
                 {/* Circles sit directly under the member list: they're a
                     narrowing of exactly those people, so managing them next
                     to membership is where an admin will look. */}
-                <CirclesSection groupId={selectedGroup.id} members={members} />
+                <CirclesSection key={selectedGroup.id} groupId={selectedGroup.id} members={members} />
 
                 <div className="md-section-header">
                   <h4>{t('groups.memberCount', { count: members.length })}</h4>
-                  {!showAddExisting && (
-                    <button type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
-                      {t('groups.addExistingUser')}
-                    </button>
-                  )}
+                  <button type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
+                    {t('groups.addExistingUser')}
+                  </button>
                 </div>
-
-                {showAddExisting && (
-                  <form className="md-add-member" onSubmit={handleAddMember}>
-                    <select
-                      value={newMemberId}
-                      onChange={(e) => setNewMemberId(e.target.value)}
-                      disabled={nonMembers.length === 0}
-                      autoFocus
-                    >
-                      <option value="">{t('groups.selectUser')}</option>
-                      {nonMembers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} ({u.email})
-                        </option>
-                      ))}
-                    </select>
-                    <button type="submit" disabled={!newMemberId || addingMember}>
-                      {t('groups.addMember')}
-                    </button>
-                    <button type="button" className="secondary" onClick={() => setShowAddExisting(false)}>
-                      {t('common.cancel')}
-                    </button>
-                  </form>
-                )}
 
                 {membersLoading ? (
                   <div className="loading">{t('common.loading')}</div>
                 ) : members.length === 0 ? (
                   <div className="empty">{t('groups.noMembers')}</div>
                 ) : (
-                  <ul className="member-cards">
-                    {members.map((member) => (
-                      <li key={member.id} className="member-card">
-                        <span className="avatar" style={{ background: avatarColor(member.name) }}>
-                          {initials(member.name)}
-                        </span>
-                        <span className="member-card-info">
-                          <span className="member-card-name">
-                            {member.name}
-                            {member.isAdmin && <span className="badge admin">{t('common.admin')}</span>}
-                            {!member.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
-                          </span>
-                          <span className="member-card-sub">
-                            {member.email} ·{' '}
-                            {t('groups.joinedOn', {
-                              date: new Date(member.joinedAt).toLocaleDateString(i18n.language),
-                            })}
-                          </span>
-                        </span>
-                        <button
-                          className="icon-button danger"
-                          title={t('common.remove')}
-                          aria-label={t('common.remove')}
-                          onClick={() => handleRemoveMember(member)}
-                        >
-                          <Icon name="x" size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <MemberCards members={members} onRemove={handleRemoveMember} />
                 )}
 
                 <div className="md-section-header">
@@ -536,6 +486,15 @@ export function GroupsPage() {
         </div>
       )}
 
+      {showAddExisting && selectedGroup && !membersLoading && (
+        <AddMembersModal
+          key={selectedGroup.id}
+          title={`${selectedGroup.name} · ${t('groups.addMember')}`}
+          candidates={nonMembers}
+          onAdd={handleAddMember}
+          onClose={() => setShowAddExisting(false)}
+        />
+      )}
       {formGroup && <GroupFormModal group={formGroup} onClose={() => setFormGroup(null)} onSubmit={handleSubmitForm} />}
 
       {showAddMember && selectedGroup && (
@@ -631,67 +590,65 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{isEdit ? t('groups.editGroup') : t('groups.newGroup')}</h3>
-        <form onSubmit={submit}>
-          <label>
-            {t('groups.form.name')}
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-          </label>
-          <label>
-            {t('groups.form.description')}
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
-          </label>
+    <AdminModal title={isEdit ? t('groups.editGroup') : t('groups.newGroup')} onClose={onClose} busy={saving}>
+      <form onSubmit={submit}>
+        <label>
+          {t('groups.form.name')}
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        </label>
+        <label>
+          {t('groups.form.description')}
+          <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
+        </label>
 
-          <div>
-            <span className="hint" style={{ marginTop: 0 }}>
-              {t('groups.form.allowedPostTypes')}
-            </span>
-            {loadingPostTypes ? (
-              <div className="loading">{t('common.loading')}</div>
-            ) : (
-              <ul className="membership-list">
-                {postTypes.map((pt) => (
-                  <li key={pt.id} className="membership-row">
-                    <span>{t(`postTypes.${pt.id}`, { defaultValue: pt.id })}</span>
-                    <input type="checkbox" checked={checkedTypes.has(pt.id)} onChange={() => toggleType(pt.id)} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="hint">{t('groups.form.allowedPostTypesHint')}</p>
-            {noTypesSelected && !loadingPostTypes && (
-              <div className="error">{t('groups.form.allowedPostTypesError')}</div>
-            )}
-          </div>
+        <div>
+          <span className="hint" style={{ marginTop: 0 }}>
+            {t('groups.form.allowedPostTypes')}
+          </span>
+          {loadingPostTypes ? (
+            <div className="loading">{t('common.loading')}</div>
+          ) : (
+            <ul className="membership-list">
+              {postTypes.map((pt) => (
+                <li key={pt.id} className="membership-row">
+                  <CheckboxField
+                    label={t(`postTypes.${pt.id}`, { defaultValue: pt.id })}
+                    checked={checkedTypes.has(pt.id)}
+                    onChange={() => toggleType(pt.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="hint">{t('groups.form.allowedPostTypesHint')}</p>
+          {noTypesSelected && !loadingPostTypes && (
+            <div className="error">{t('groups.form.allowedPostTypesError')}</div>
+          )}
+        </div>
 
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-              <input type="checkbox" checked={chitchatEnabled} onChange={(e) => setChitchatEnabled(e.target.checked)} />
-              <span>{t('groups.form.chitchatEnabled')}</span>
-            </label>
-            <p className="hint">{t('groups.form.chitchatEnabledHint')}</p>
-          </div>
+        <CheckboxField
+          label={t('groups.form.chitchatEnabled')}
+          hint={t('groups.form.chitchatEnabledHint')}
+          checked={chitchatEnabled}
+          onChange={setChitchatEnabled}
+        />
 
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-              <input type="checkbox" checked={storiesEnabled} onChange={(e) => setStoriesEnabled(e.target.checked)} />
-              <span>{t('groups.form.storiesEnabled')}</span>
-            </label>
-            <p className="hint">{t('groups.form.storiesEnabledHint')}</p>
-          </div>
+        <CheckboxField
+          label={t('groups.form.storiesEnabled')}
+          hint={t('groups.form.storiesEnabledHint')}
+          checked={storiesEnabled}
+          onChange={setStoriesEnabled}
+        />
 
-          <div className="modal-actions">
-            <button type="button" className="secondary" onClick={onClose}>
-              {t('common.cancel')}
-            </button>
-            <button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
-              {isEdit ? t('groups.save') : t('groups.add')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="modal-actions">
+          <button type="button" className="secondary" onClick={onClose} disabled={saving}>
+            {t('common.cancel')}
+          </button>
+          <button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
+            {isEdit ? t('groups.save') : t('groups.add')}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
   )
 }

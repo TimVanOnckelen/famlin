@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { AdminModal } from './AdminModal'
+import { useAdminDialogs } from './AdminDialogs'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, User, Group } from '../api/client'
 import { ApiError } from '../api/client'
@@ -8,45 +10,96 @@ import { AddMemberModal } from './AddMemberModal'
 
 export function UsersPage() {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [users, setUsers] = useState<User[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
+  const loadedPages = useRef(1)
+  const requestVersion = useRef(0)
   const [showAddMember, setShowAddMember] = useState(false)
   const [managingUser, setManagingUser] = useState<User | null>(null)
 
-  const load = () => {
-    setLoading(true)
-    Promise.all([api.getUsers(), api.getGroups()])
-      .then(([page, g]) => {
-        setUsers(page.items)
-        setNextCursor(page.nextCursor)
-        setGroups(g)
-        setManagingUser((current) => (current ? (page.items.find((x) => x.id === current.id) ?? null) : null))
-      })
-      .finally(() => setLoading(false))
-  }
+  const nextRequestVersion = useCallback(() => ++requestVersion.current, [])
+
+  const load = useCallback(async () => {
+    const version = nextRequestVersion()
+    setRefreshing(true)
+    setLoadingMore(false)
+    setError('')
+    try {
+      const [roster, groupList] = await Promise.all([
+        (async () => {
+          const items: User[] = []
+          let cursor: string | undefined
+          for (let pageIndex = 0; pageIndex < loadedPages.current; pageIndex++) {
+            const page = await api.getUsers(cursor ? { cursor } : {})
+            items.push(...page.items)
+            cursor = page.nextCursor ?? undefined
+            if (!cursor) break
+          }
+          return { items, nextCursor: cursor ?? null }
+        })(),
+        api.getGroups(),
+      ])
+      if (version !== requestVersion.current) return
+      setUsers(roster.items)
+      setNextCursor(roster.nextCursor)
+      setGroups(groupList)
+      setManagingUser((current) => (current ? (roster.items.find((user) => user.id === current.id) ?? null) : null))
+    } catch (err) {
+      if (version === requestVersion.current) setError(err instanceof Error ? err.message : t('common.error'))
+    } finally {
+      if (version === requestVersion.current) {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    }
+  }, [t, nextRequestVersion])
 
   const loadMore = async () => {
-    if (!nextCursor) return
+    if (!nextCursor || loadingMore || refreshing) return
+    const version = nextRequestVersion()
+    // A concurrent refresh must include this requested page as well.
+    loadedPages.current++
     setLoadingMore(true)
+    setError('')
     try {
       const page = await api.getUsers({ cursor: nextCursor })
-      setUsers((current) => [...current, ...page.items])
+      if (version !== requestVersion.current) return
+      setUsers((current) => [...new Map([...current, ...page.items].map((user) => [user.id, user])).values()])
       setNextCursor(page.nextCursor)
+    } catch (err) {
+      if (version === requestVersion.current) {
+        loadedPages.current--
+        setError(err instanceof Error ? err.message : t('common.error'))
+      }
     } finally {
-      setLoadingMore(false)
+      if (version === requestVersion.current) setLoadingMore(false)
     }
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    void load()
+    return () => {
+      nextRequestVersion()
+    }
+  }, [load, nextRequestVersion])
 
   const toggleAdmin = async (user: User) => {
-    await api.updateUser(user.id, { isAdmin: !user.isAdmin })
-    load()
+    const confirmed = await dialogs.confirmAction(
+      t(user.isAdmin ? 'users.revokeAdminConfirm' : 'users.grantAdminConfirm', { name: user.name, email: user.email })
+    )
+    if (!confirmed) return
+    try {
+      await api.updateUser(user.id, { isAdmin: !user.isAdmin })
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
   // The table shows a single push/email toggle per user as a quick bulk
@@ -76,22 +129,25 @@ export function UsersPage() {
   }
 
   const handleDelete = async (user: User) => {
-    if (!confirm(t('users.deleteConfirm', { name: user.name, email: user.email }))) {
+    if (!(await dialogs.confirmAction(t('users.deleteConfirm', { name: user.name, email: user.email })))) {
       return
     }
-    await api.deleteUser(user.id)
-    load()
+    try {
+      await api.deleteUser(user.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
   }
 
   const handleResetPassword = async (user: User) => {
-    const newPassword = prompt(t('users.resetPasswordPrompt', { name: user.name, email: user.email }))
-    if (!newPassword) return
-    if (newPassword.length < 8) {
-      alert(t('users.passwordTooShort'))
-      return
-    }
-    await api.resetPassword(user.id, newPassword)
-    alert(t('users.passwordChanged', { name: user.name }))
+    const saved = await dialogs.requestPassword(
+      t('users.resetPasswordPrompt', { name: user.name, email: user.email }),
+      {
+        onSubmit: (password) => api.resetPassword(user.id, password),
+      }
+    )
+    if (saved) await dialogs.showMessage(t('users.passwordChanged', { name: user.name }))
   }
 
   if (loading) return <div className="loading">{t('common.loading')}</div>
@@ -103,9 +159,17 @@ export function UsersPage() {
         <button onClick={() => setShowAddMember(true)}>{t('members.addMember')}</button>
       </div>
 
-      <div className="card">
+      {error && (
+        <div className="error" role="alert">
+          {error}{' '}
+          <button type="button" className="link-button" onClick={() => void load()}>
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
+      <div className="card" aria-busy={refreshing || loadingMore}>
         {users.length === 0 ? (
-          <div className="empty">{t('users.noUsers')}</div>
+          !error && <div className="empty">{t('users.noUsers')}</div>
         ) : (
           <table>
             <thead>
@@ -142,14 +206,16 @@ export function UsersPage() {
                     </div>
                   </td>
                   <td>
-                    <label
+                    <button
+                      type="button"
                       className={`mini-toggle${user.isAdmin ? ' active' : ''}`}
                       title={t('users.table.admin')}
-                      onClick={() => toggleAdmin(user)}
+                      aria-label={t('users.table.admin')}
+                      aria-pressed={user.isAdmin}
+                      onClick={() => void toggleAdmin(user)}
                     >
-                      <input type="checkbox" checked={user.isAdmin} onChange={() => {}} />
                       <Icon name="shield" size={14} />
-                    </label>
+                    </button>
                   </td>
                   <td>
                     <div className="toggle-group">
@@ -204,7 +270,7 @@ export function UsersPage() {
           </table>
         )}
         {nextCursor && (
-          <button className="secondary" disabled={loadingMore} onClick={loadMore}>
+          <button className="secondary" disabled={loadingMore || refreshing} onClick={loadMore}>
             {loadingMore ? t('common.loading') : t('common.loadMore')}
           </button>
         )}
@@ -223,11 +289,12 @@ interface ManageGroupsModalProps {
   user: User
   groups: Group[]
   onClose: () => void
-  onChanged: () => void
+  onChanged: () => Promise<void>
 }
 
 function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsModalProps) {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [busyGroupId, setBusyGroupId] = useState<string | null>(null)
   const memberGroupIds = new Set((user.groups ?? []).map((g) => g.id))
 
@@ -239,46 +306,43 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
       } else {
         await api.addGroupMember(group.id, user.id)
       }
-      onChanged()
+      await onChanged()
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
-      alert(t('users.membershipError', { error: message }))
+      await dialogs.showMessage(t('users.membershipError', { error: message }))
     } finally {
       setBusyGroupId(null)
     }
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{t('users.manageGroupsFor', { name: user.name })}</h3>
-        {groups.length === 0 ? (
-          <div className="empty">{t('groups.noGroups')}</div>
-        ) : (
-          <ul className="membership-list">
-            {groups.map((group) => {
-              const isMember = memberGroupIds.has(group.id)
-              return (
-                <li key={group.id} className="membership-row">
-                  <span>{group.name}</span>
-                  <button
-                    className={isMember ? 'danger' : ''}
-                    disabled={busyGroupId === group.id}
-                    onClick={() => toggleMembership(group, isMember)}
-                  >
-                    {isMember ? t('common.remove') : t('common.add')}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-        <div className="modal-actions">
-          <button className="secondary" onClick={onClose}>
-            {t('common.close')}
-          </button>
-        </div>
+    <AdminModal title={t('users.manageGroupsFor', { name: user.name })} onClose={onClose} busy={!!busyGroupId}>
+      {groups.length === 0 ? (
+        <div className="empty">{t('groups.noGroups')}</div>
+      ) : (
+        <ul className="membership-list">
+          {groups.map((group) => {
+            const isMember = memberGroupIds.has(group.id)
+            return (
+              <li key={group.id} className="membership-row">
+                <span>{group.name}</span>
+                <button
+                  className={isMember ? 'danger' : ''}
+                  disabled={!!busyGroupId}
+                  onClick={() => toggleMembership(group, isMember)}
+                >
+                  {isMember ? t('common.remove') : t('common.add')}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <div className="modal-actions">
+        <button className="secondary" onClick={onClose} disabled={!!busyGroupId}>
+          {t('common.close')}
+        </button>
       </div>
-    </div>
+    </AdminModal>
   )
 }
