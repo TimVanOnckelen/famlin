@@ -2,7 +2,14 @@
 
 ## Supported versions
 
-Only the latest commit on the `main` branch is actively supported with security updates. Because Famlin is currently pre-1.0, we do not maintain separate release branches.
+Famlin follows [semantic versioning](https://semver.org/) from 1.0 onward. Security updates are applied to the latest
+release and the `main` branch only — there are no long-lived release branches and no backports to older majors or minors.
+If you are self-hosting, stay on the most recent tagged release (or the rolling `latest` image) to receive fixes.
+
+| Version | Supported |
+| --- | --- |
+| 1.x (latest release) | ✅ |
+| < 1.0 | ❌ |
 
 ## Reporting a vulnerability
 
