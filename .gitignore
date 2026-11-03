@@ -66,6 +66,9 @@ prisma/migrations/*_init/
 # Docker volumes
 famlin-db-data/
 
+# Generated JWT secret (DATA_DIR default <cwd>/data) — never source.
+backend/data/
+
 # Runtime media written by the backend when UPLOADS_DIR is unset (local dev
 # and test runs) — real family photos, never source.
 backend/uploads/

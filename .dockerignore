@@ -28,4 +28,7 @@ temp
 # Runtime data a dev checkout accumulates — family photos, and DB dumps of the
 # whole instance. Never bake them into an image.
 backend/uploads
+
+# Generated JWT secret under the default DATA_DIR — never bake into an image.
+backend/data
 backend/backups

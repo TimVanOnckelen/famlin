@@ -1,4 +1,4 @@
-import { isSameServer, parseConnectQr } from '@/utils/connectQr'
+import { isSameServer, parseConnectQr, serverHostLabel } from '@/utils/connectQr'
 
 describe('parseConnectQr', () => {
   it('accepts a server /connect URL and returns its origin', () => {
@@ -39,5 +39,11 @@ describe('isSameServer', () => {
     expect(isSameServer('https://Famlin.example.com/', 'https://famlin.example.com')).toBe(true)
     expect(isSameServer('https://a.example.com', 'https://b.example.com')).toBe(false)
     expect(isSameServer(null, 'https://a.example.com')).toBe(false)
+  })
+})
+
+describe('serverHostLabel', () => {
+  it('shows the host without scheme or trailing slash', () => {
+    expect(serverHostLabel('https://famlin.example.com:8443/')).toBe('famlin.example.com:8443')
   })
 })

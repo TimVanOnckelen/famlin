@@ -35,17 +35,27 @@ export function resolveJwtSecret(
   const existing = readSecretFile(file)
   if (existing) return existing
 
-  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 })
   const secret = crypto.randomBytes(48).toString('base64url')
   try {
+    fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 })
     // 'wx': never overwrite — if another process won the race, use its secret.
     fs.writeFileSync(file, secret, { mode: 0o600, flag: 'wx' })
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
+      // The winner creates the file before writing it, so it may still be empty.
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const raced = readSecretFile(file)
+        if (raced) return raced
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50)
+      }
       const raced = readSecretFile(file)
       if (raced) return raced
     }
-    throw err
+    const reason = (err as NodeJS.ErrnoException).code ?? (err as Error).message
+    throw new Error(
+      `Cannot write the generated JWT secret to ${file} (${reason}): set JWT_SECRET or make DATA_DIR (${dataDir}) writable`,
+      { cause: err }
+    )
   }
   log(`JWT_SECRET is not set: generated a new secret and stored it at ${file}`)
   return secret
@@ -55,7 +65,8 @@ function readSecretFile(file: string): string | null {
   try {
     return fs.readFileSync(file, 'utf8').trim() || null
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null
+    const code = (err as NodeJS.ErrnoException).code
+    if (code === 'ENOENT' || code === 'ENOTDIR') return null
     throw err
   }
 }
