@@ -1,7 +1,7 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyBootstrapEnv, deriveDatabaseUrl, resolveJwtSecret } from '../src/bootstrapEnv.js'
 
 describe('zero-config bootstrap env', () => {
@@ -94,15 +94,17 @@ describe('resolveJwtSecret failure modes', () => {
     clearTimeout(timer)
     const realRead = fs.readFileSync
     let reads = 0
-    const spy = (p: any, ...rest: any[]) => {
+    const spy = vi.spyOn(fs, 'readFileSync').mockImplementation(((
+      p: Parameters<typeof fs.readFileSync>[0],
+      ...rest: unknown[]
+    ) => {
       if (String(p) === file && ++reads === 3) fs.writeFileSync(file, 'winner-secret')
-      return (realRead as any)(p, ...rest)
-    }
-    ;(fs as any).readFileSync = spy
+      return (realRead as (...args: unknown[]) => unknown)(p, ...rest)
+    }) as typeof fs.readFileSync)
     try {
       expect(resolveJwtSecret({}, base, () => {})).toBe('winner-secret')
     } finally {
-      ;(fs as any).readFileSync = realRead
+      spy.mockRestore()
       fs.rmSync(base, { recursive: true, force: true })
     }
   })
