@@ -72,11 +72,6 @@
   },
   "dashboard": {
     "title": "概览",
-    "updateAvailable": {
-      "title": "发现新版本：{{version}}",
-      "currentVersion": "服务器当前运行版本 {{version}}。",
-      "viewReleaseNotes": "查看版本说明"
-    },
     "stats": {
       "users": "用户",
       "usersSub_one": "{{count}} 位管理员",
@@ -387,7 +382,10 @@
     "backupIncludeMedia": "备份包含媒体",
     "backupIncludeMediaHint": "关闭后仅备份数据库和品牌文件，保留现有媒体镜像。",
     "exportIncludeMedia": "导出包含媒体",
-    "exportIncludeMediaHint": "关闭后，恢复时要求所有列出的媒体已存在于配置的存储中。品牌文件始终包含在内。"
+    "exportIncludeMediaHint": "关闭后，恢复时要求所有列出的媒体已存在于配置的存储中。品牌文件始终包含在内。",
+    "updateCheck": "检查新版本",
+    "updateCheckHint": "每天向 GitHub 检查一次是否有新版本；不会发送任何有关你的实例的信息。",
+    "updates": "更新"
   },
   "media": {
     "peopleMapping": {
@@ -573,7 +571,8 @@
         "newAssets": "相册新照片",
         "expireStories": "清理过期限时动态",
         "backup": "备份",
-        "systemAlerts": "告警检查"
+        "systemAlerts": "告警检查",
+        "updateCheck": "更新检查"
       }
     },
     "migrations": {
@@ -629,5 +628,13 @@
     "errors": "错误（{{count}}）",
     "cleanupLocked": "完成迁移校验后才能清理源存储。",
     "confirmPlaceholder": "粘贴源存储指纹"
+  },
+  "updateBanner": {
+    "title": "Famlin {{latest}} 现已发布",
+    "current": "你正在运行 {{current}}。",
+    "breaking": "Famlin {{latest}} 包含破坏性变更——更新前请先阅读发布说明。",
+    "releaseNotes": "发布说明",
+    "howToUpdate": "如何更新",
+    "dismiss": "关闭"
   }
 }

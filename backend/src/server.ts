@@ -9,6 +9,7 @@ import { runExpireStoriesJob } from './jobs/expireStories.js'
 import { recordJobRun } from './services/jobRuns.js'
 import { runScheduledBackupIfDue } from './services/backup/index.js'
 import { runSystemAlertsCheck } from './services/systemAlerts.js'
+import { runUpdateCheck } from './services/updateCheck.js'
 
 // Just under docker-compose.yml's stop_grace_period (30s).
 const SHUTDOWN_TIMEOUT_MS = 25_000
@@ -82,6 +83,19 @@ async function start() {
     ).catch((err) => fastify.log.error(err, 'system alerts job failed'))
   })
 
+  // Daily GitHub release check behind the admin "update available" notice
+  // (services/updateCheck.ts; opt-out via the updateCheckEnabled setting).
+  // Also run shortly after boot so a fresh deploy doesn't wait a day. A
+  // network failure is recorded on the job's status row and otherwise ignored.
+  const updateCheck = () =>
+    recordJobRun(
+      'updateCheck',
+      () => runUpdateCheck(),
+      (result) => ({ checked: result.checked, updateAvailable: result.updateAvailable })
+    ).catch((err) => fastify.log.warn({ err }, 'update check failed'))
+  const updateCheckTask = cron.schedule('20 6 * * *', updateCheck)
+  setTimeout(updateCheck, 30_000).unref()
+
   // `docker stop` sends SIGTERM, then SIGKILLs after the compose file's
   // stop_grace_period (30s). Drain in-flight requests (an upload mid-write)
   // instead of dying with them: fastify.close() stops accepting connections,
@@ -97,7 +111,8 @@ async function start() {
       fastify.log.error('graceful shutdown timed out, forcing exit')
       process.exit(1)
     }, SHUTDOWN_TIMEOUT_MS).unref()
-    for (const task of [onThisDayTask, newAssetsTask, expireStoriesTask, backupTask, systemAlertsTask]) task.stop()
+    for (const task of [onThisDayTask, newAssetsTask, expireStoriesTask, backupTask, systemAlertsTask, updateCheckTask])
+      task.stop()
     try {
       await fastify.close()
       await prisma.$disconnect()

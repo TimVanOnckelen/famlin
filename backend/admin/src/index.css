@@ -203,6 +203,15 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.update-banner-breaking {
+  background: #fff4e0;
+  border-color: #f0c987;
+}
+
+.update-banner-breaking .update-banner-icon {
+  color: #a8610a;
+}
+
 .update-banner-icon {
   display: flex;
   align-items: center;

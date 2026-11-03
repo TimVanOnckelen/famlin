@@ -80,6 +80,7 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     localMediaPath: '',
+    updateCheckEnabled: true,
     backupIncludeMedia: true,
     backupEnabled: false,
     backupSchedule: 'daily',
@@ -352,6 +353,17 @@ export function ServerSettingsPage() {
                   </label>
                 </div>
                 <p className="hint">{t('serverSettings.storeUrlsHint')}</p>
+              </SettingsCard>
+            )}
+
+            {activeSection === 'general' && (
+              <SettingsCard icon="bell" title={t('serverSettings.updates')}>
+                <ToggleRow
+                  title={t('serverSettings.updateCheck')}
+                  hint={t('serverSettings.updateCheckHint')}
+                  checked={form.updateCheckEnabled}
+                  onChange={(checked) => updateField('updateCheckEnabled', checked)}
+                />
               </SettingsCard>
             )}
 

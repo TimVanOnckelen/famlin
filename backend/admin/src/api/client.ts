@@ -27,6 +27,7 @@ import {
   IntegrationsStatus,
   IntegrationStatus,
   ActiveAlert,
+  UpdateNotice,
   DiskUsage,
   JobStatus,
 } from '../types'
@@ -389,7 +390,7 @@ export const api = {
 
   getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
 
-  getSystemAlerts: () => request<{ alerts: ActiveAlert[] }>('/api/admin/status/alerts'),
+  getSystemAlerts: () => request<{ alerts: ActiveAlert[]; update: UpdateNotice | null }>('/api/admin/status/alerts'),
 
   runBackup: () => request<{ started: true }>('/api/admin/backups/run', { method: 'POST' }),
 

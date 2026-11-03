@@ -8,7 +8,7 @@ Day-to-day admin tasks all live under `/admin`, alongside the initial setup cove
 
 ## Dashboard
 
-`/admin` opens on the **Dashboard**: totals for users, groups, posts, comments and likes, recent activity, the most active groups, and a trend over time. When a newer Famlin version is available, a banner links to its release notes. Quick links point to the API documentation.
+`/admin` opens on the **Dashboard**: totals for users, groups, posts, comments and likes, recent activity, the most active groups, and a trend over time. When a newer Famlin version is available, a banner (shown on every admin page) links to its release notes. Quick links point to the API documentation.
 
 ![The admin dashboard](./img/admin-dashboard.png)
 

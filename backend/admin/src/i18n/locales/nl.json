@@ -72,11 +72,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "updateAvailable": {
-      "title": "Nieuwe versie beschikbaar: {{version}}",
-      "currentVersion": "Je server draait versie {{version}}.",
-      "viewReleaseNotes": "Bekijk de release notes"
-    },
     "stats": {
       "users": "Gebruikers",
       "usersSub_one": "{{count}} admin",
@@ -387,7 +382,10 @@
     "backupIncludeMedia": "Media opnemen in back-ups",
     "backupIncludeMediaHint": "Indien uitgeschakeld worden alleen de database en huisstijl opgeslagen. De bestaande mediaspiegel blijft behouden.",
     "exportIncludeMedia": "Media opnemen in export",
-    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen."
+    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen.",
+    "updateCheck": "Controleren op nieuwe versies",
+    "updateCheckHint": "Controleert één keer per dag op GitHub of er een nieuwe release is; er wordt niets over je instantie verzonden.",
+    "updates": "Updates"
   },
   "media": {
     "peopleMapping": {
@@ -573,7 +571,8 @@
         "newAssets": "Nieuwe albumfoto's",
         "expireStories": "Verhalen laten verlopen",
         "backup": "Back-up",
-        "systemAlerts": "Waarschuwingscontrole"
+        "systemAlerts": "Waarschuwingscontrole",
+        "updateCheck": "Updatecontrole"
       }
     },
     "migrations": {
@@ -629,5 +628,13 @@
     "errors": "Fouten ({{count}})",
     "cleanupLocked": "Voltooi de migratiecontrole voordat je de bron opruimt.",
     "confirmPlaceholder": "Plak de bronvingerafdruk"
+  },
+  "updateBanner": {
+    "title": "Famlin {{latest}} is beschikbaar",
+    "current": "Je draait {{current}}.",
+    "breaking": "Famlin {{latest}} bevat ingrijpende wijzigingen — lees de release-opmerkingen voordat je bijwerkt.",
+    "releaseNotes": "Release-opmerkingen",
+    "howToUpdate": "Hoe bijwerken",
+    "dismiss": "Sluiten"
   }
 }

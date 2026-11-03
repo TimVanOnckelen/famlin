@@ -72,11 +72,6 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "updateAvailable": {
-      "title": "A new version is available: {{version}}",
-      "currentVersion": "Your server is running version {{version}}.",
-      "viewReleaseNotes": "View release notes"
-    },
     "stats": {
       "users": "Users",
       "usersSub_one": "{{count}} admin",
@@ -387,7 +382,10 @@
     "backupIncludeMedia": "Include media in backups",
     "backupIncludeMediaHint": "When disabled, only the database and branding are backed up. The existing media mirror is retained.",
     "exportIncludeMedia": "Include media in export",
-    "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included."
+    "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included.",
+    "updateCheck": "Check for new versions",
+    "updateCheckHint": "Checks GitHub once a day for a new release; nothing about your instance is sent.",
+    "updates": "Updates"
   },
   "media": {
     "peopleMapping": {
@@ -573,7 +571,8 @@
         "newAssets": "New album photos",
         "expireStories": "Expire stories",
         "backup": "Backup",
-        "systemAlerts": "Alert check"
+        "systemAlerts": "Alert check",
+        "updateCheck": "Update check"
       }
     },
     "migrations": {
@@ -629,5 +628,13 @@
     "errors": "Errors ({{count}})",
     "cleanupLocked": "Complete migration verification before cleaning up the source.",
     "confirmPlaceholder": "Paste the source fingerprint"
+  },
+  "updateBanner": {
+    "title": "Famlin {{latest}} is available",
+    "current": "You're running {{current}}.",
+    "breaking": "Famlin {{latest}} contains breaking changes — read the release notes before updating.",
+    "releaseNotes": "Release notes",
+    "howToUpdate": "How to update",
+    "dismiss": "Dismiss"
   }
 }
