@@ -70,6 +70,10 @@ famlin-db-data/
 # and test runs) — real family photos, never source.
 backend/uploads/
 
+# Scheduled backups (DB dumps + uploads mirror) written when BACKUPS_DIR is
+# unset — a full copy of the family's data, never source.
+backend/backups/
+
 # Local-media provider's generated thumbnail cache (regenerated on demand)
 media-cache/
 

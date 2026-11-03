@@ -1,19 +1,19 @@
-import React from 'react';
-import { StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { StyleSheet, FlatList, RefreshControl } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { PostCard } from '@/components/PostCard';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { EmptyState } from '@/components/EmptyState';
-import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { fetchFavorites } from '@famlin/api-client';
+import { colors } from '@/constants/colors'
+import { PostCard } from '@/components/PostCard'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { fetchFavorites } from '@famlin/api-client'
 
 export function FavoritesScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
 
   const {
     query,
@@ -22,14 +22,14 @@ export function FavoritesScreen() {
   } = useCursorPagination({
     queryKey: ['favorites'],
     queryFn: (cursor) => fetchFavorites(cursor),
-  });
-  const { isLoading, refetch } = query;
+  })
+  const { isLoading, refetch } = query
 
   useFocusEffect(
     React.useCallback(() => {
-      refetch();
+      refetch()
     }, [refetch])
-  );
+  )
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,7 +50,7 @@ export function FavoritesScreen() {
         }
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -63,4 +63,4 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 10,
   },
-});
+})

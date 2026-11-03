@@ -1,6 +1,7 @@
 // Admin-only full data export: everything a family would consider "their
 // content" — users (safe fields only), groups/membership, circles and their
-// members, posts (with poll votes and other per-type interactions),
+// members, posts (with poll votes and other per-type interactions), gift
+// list wishes and Secret Santa pairings,
 // comments, reactions, favorites, chat messages and read positions, linked
 // media albums and people mappings, the Upload access-index rows, and the
 // whole uploads directory (including originals) — bundled as a single zip
@@ -36,19 +37,21 @@
 // compression: most of the archive's bytes are already-compressed photos/
 // videos in uploads/, so compression buys little, and store mode keeps the
 // stream fast and the resulting file trivially predictable in tests.
-import { ZipArchive, type Archiver } from 'archiver';
-import fs from 'fs';
-import { prisma } from '../db.js';
-import { uploadsDir } from '../config.js';
-import { uploadAssetKey } from './uploads.js';
-import { BRANDING_SETTING_KEYS } from './branding/index.js';
-import pkg from '../../package.json' with { type: 'json' };
-import { RESTORE_WORKDIR_PREFIX } from './import.js';
+import { ZipArchive, type Archiver } from 'archiver'
+import fs from 'fs'
+import { prisma } from '../db.js'
+import { uploadsDir } from '../config.js'
+import { uploadAssetKey } from './uploads.js'
+import { BRANDING_SETTING_KEYS } from './branding/index.js'
+import pkg from '../../package.json' with { type: 'json' }
+import { getStorage } from './storage/registry.js'
+import { appendStoredObject } from './storage/archive.js'
+import path from 'node:path'
 
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
 // stream, so headers can be sent before/while archiver produces bytes.
-export async function buildExportArchive(): Promise<Archiver> {
+export async function buildExportArchive(includeMedia = true): Promise<Archiver> {
   const [
     users,
     groups,
@@ -65,6 +68,8 @@ export async function buildExportArchive(): Promise<Archiver> {
     uploads,
     highlights,
     liveStories,
+    giftListItems,
+    giftDrawAssignments,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -82,6 +87,7 @@ export async function buildExportArchive(): Promise<Archiver> {
         pushOnNewLike: true,
         pushOnChitchat: true,
         pushOnStory: true,
+        pushOnGiftList: true,
       },
     }),
     prisma.group.findMany({
@@ -120,18 +126,27 @@ export async function buildExportArchive(): Promise<Archiver> {
       },
     }),
     prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
-  ]);
+    prisma.giftListItem.findMany(),
+    // Secret Santa pairings: a backup must restore a gift list exactly, so
+    // they're in the archive — the one place the full set leaves the
+    // database (an admin-only download, never a member-facing response).
+    prisma.giftDrawAssignment.findMany(),
+  ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
   // uploads/branding/ below). Every other Setting row stays excluded.
   const branding = await prisma.setting.findMany({
     where: { key: { in: [...BRANDING_SETTING_KEYS] } },
     select: { key: true, value: true },
-  });
+  })
 
-  const archive: Archiver = new ZipArchive({ store: true });
+  const archive: Archiver = new ZipArchive({ store: true })
+
+  const requiredMedia: { key: string; size: number }[] = []
 
   const manifest = {
+    includeMedia,
+    requiredMedia,
     exportedAt: new Date().toISOString(),
     serverVersion: pkg.version,
     counts: {
@@ -149,35 +164,36 @@ export async function buildExportArchive(): Promise<Archiver> {
       mediaPersonLinks: mediaPersonLinks.length,
       uploads: uploads.length,
       highlights: highlights.length,
+      giftListItems: giftListItems.length,
+      giftDrawAssignments: giftDrawAssignments.length,
       branding: branding.length,
     },
-  };
+  }
 
-  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
-  archive.append(JSON.stringify(users, null, 2), { name: 'data/users.json' });
-  archive.append(JSON.stringify(groups, null, 2), { name: 'data/groups.json' });
-  archive.append(JSON.stringify(circles, null, 2), { name: 'data/circles.json' });
-  archive.append(JSON.stringify(posts, null, 2), { name: 'data/posts.json' });
-  archive.append(JSON.stringify(postInteractions, null, 2), { name: 'data/post-interactions.json' });
-  archive.append(JSON.stringify(comments, null, 2), { name: 'data/comments.json' });
-  archive.append(JSON.stringify(reactions, null, 2), { name: 'data/reactions.json' });
-  archive.append(JSON.stringify(favorites, null, 2), { name: 'data/favorites.json' });
-  archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' });
-  archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' });
-  archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' });
-  archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' });
-  archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' });
-  archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' });
+  archive.append(JSON.stringify(users, null, 2), { name: 'data/users.json' })
+  archive.append(JSON.stringify(groups, null, 2), { name: 'data/groups.json' })
+  archive.append(JSON.stringify(circles, null, 2), { name: 'data/circles.json' })
+  archive.append(JSON.stringify(posts, null, 2), { name: 'data/posts.json' })
+  archive.append(JSON.stringify(postInteractions, null, 2), { name: 'data/post-interactions.json' })
+  archive.append(JSON.stringify(comments, null, 2), { name: 'data/comments.json' })
+  archive.append(JSON.stringify(reactions, null, 2), { name: 'data/reactions.json' })
+  archive.append(JSON.stringify(favorites, null, 2), { name: 'data/favorites.json' })
+  archive.append(JSON.stringify(chatMessages, null, 2), { name: 'data/chat-messages.json' })
+  archive.append(JSON.stringify(chatReads, null, 2), { name: 'data/chat-reads.json' })
+  archive.append(JSON.stringify(mediaAlbumLinks, null, 2), { name: 'data/media-album-links.json' })
+  archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
+  archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
+  archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
+  archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
+  archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)
   // by asset key — and its Upload row, so a restore doesn't recreate an
   // authorization row for a file that isn't in the archive. A cross-post
   // sibling that is pinned keeps the file in.
-  const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)));
-  const liveOnlyKeys = new Set(
-    liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key))
-  );
+  const pinnedKeys = new Set(highlights.map((s) => uploadAssetKey(s.imageUrl)))
+  const liveOnlyKeys = new Set(liveStories.map((s) => uploadAssetKey(s.imageUrl)).filter((key) => !pinnedKeys.has(key)))
   archive.append(
     JSON.stringify(
       uploads.filter((u) => !liveOnlyKeys.has(u.assetKey)),
@@ -185,20 +201,16 @@ export async function buildExportArchive(): Promise<Archiver> {
       2
     ),
     { name: 'data/uploads.json' }
-  );
+  )
 
-  // Fresh installs may not have an uploads directory yet — skip silently
-  // rather than failing the whole export.
-  if (fs.existsSync(uploadsDir)) {
-    // Skips the scratch directory of a restore (services/import.ts) that is
-    // in progress or was interrupted — it's a half-extracted archive, not
-    // family media — and every rendition of a live story's photo.
-    archive.directory(uploadsDir, 'uploads', (entry) =>
-      entry.name.startsWith(`uploads/${RESTORE_WORKDIR_PREFIX}`) || liveOnlyKeys.has(uploadAssetKey(entry.name))
-        ? false
-        : entry
-    );
+  for await (const object of getStorage().list()) {
+    if (liveOnlyKeys.has(uploadAssetKey(object.key))) continue
+    requiredMedia.push({ key: object.key, size: object.size })
+    if (includeMedia) appendStoredObject(archive, object.key)
   }
+  const brandingDir = path.join(uploadsDir, 'branding')
+  if (fs.existsSync(brandingDir)) archive.directory(brandingDir, 'uploads/branding')
+  archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
 
-  return archive;
+  return archive
 }

@@ -6,10 +6,10 @@
 // running `npm test` inside the dev container would TRUNCATE production/dev
 // data instead of the dedicated test database.
 export function assertTestDatabase() {
-  const url = process.env.DATABASE_URL || '';
-  let dbName = '';
+  const url = process.env.DATABASE_URL || ''
+  let dbName = ''
   try {
-    dbName = new URL(url).pathname.replace(/^\//, '');
+    dbName = new URL(url).pathname.replace(/^\//, '')
   } catch {
     // fall through with an empty name — treated as not-a-test-db below
   }
@@ -19,6 +19,6 @@ export function assertTestDatabase() {
       `Refusing to run tests against database "${dbName || '(unparseable)'}" — ` +
         `DATABASE_URL must point at a database with "test" in its name (see backend/.env.test). ` +
         `Got: ${url}`
-    );
+    )
   }
 }

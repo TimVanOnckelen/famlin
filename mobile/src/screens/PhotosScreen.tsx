@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -10,24 +10,24 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   SectionList,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import i18n from '@/i18n';
+} from 'react-native'
+import { Image } from 'expo-image'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
 
-import { colors } from '@/constants/colors';
-import { BrandLogo } from '@/components/Logo';
-import { getBranding } from '@/branding';
-import { Icon } from '@/components/Icon';
-import { EmptyState } from '@/components/EmptyState';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { PhotoItem, Post } from '@/types';
-import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client';
-import { getUploadUrl } from '@/api/uploads';
+import { colors } from '@/constants/colors'
+import { BrandLogo } from '@/components/Logo'
+import { getBranding } from '@/branding'
+import { Icon } from '@/components/Icon'
+import { EmptyState } from '@/components/EmptyState'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { PhotoItem, Post } from '@/types'
+import { fetchAlbumPosts, fetchGroups, getGroupPhotoTimeline, getGroupMediaPeople } from '@famlin/api-client'
+import { getUploadUrl } from '@/api/uploads'
 
 const PhotoRow = React.memo(function PhotoRow({
   row,
@@ -35,10 +35,10 @@ const PhotoRow = React.memo(function PhotoRow({
   columns,
   onPress,
 }: {
-  row: PhotoItem[];
-  photoSize: number;
-  columns: number;
-  onPress: (photo: PhotoItem) => void;
+  row: PhotoItem[]
+  photoSize: number
+  columns: number
+  onPress: (photo: PhotoItem) => void
 }) {
   return (
     <View style={styles.gridRow}>
@@ -74,8 +74,8 @@ const PhotoRow = React.memo(function PhotoRow({
           <View key={`empty-${idx}`} style={[styles.photoWrapper, { width: photoSize, height: photoSize }]} />
         ))}
     </View>
-  );
-});
+  )
+})
 
 // One album in the Photos tab's albums strip — the same collage photos the
 // feed card shows, reduced to a single square tile. Deliberately lighter than
@@ -85,14 +85,14 @@ const AlbumStripTile = React.memo(function AlbumStripTile({
   post,
   onPress,
 }: {
-  post: Post;
-  onPress: (postId: string) => void;
+  post: Post
+  onPress: (postId: string) => void
 }) {
-  const { t } = useTranslation();
-  const album = post.album;
-  if (!album) return null;
+  const { t } = useTranslation()
+  const album = post.album
+  if (!album) return null
 
-  const coverUrl = album.collagePhotoUrls[0] ?? album.coverPhotoUrl ?? null;
+  const coverUrl = album.collagePhotoUrls[0] ?? album.coverPhotoUrl ?? null
 
   return (
     <TouchableOpacity style={styles.albumTile} onPress={() => onPress(post.id)} activeOpacity={0.8}>
@@ -120,41 +120,41 @@ const AlbumStripTile = React.memo(function AlbumStripTile({
           : t('feed.album.stats', { photos: album.photoCount, contributors: album.contributorCount })}
       </Text>
     </TouchableOpacity>
-  );
-});
+  )
+})
 
 export function PhotosScreen() {
-  const { t } = useTranslation();
-  const brandName = getBranding()?.name ?? null;
-  const navigation = useNavigation<any>();
-  const { width } = useWindowDimensions();
+  const { t } = useTranslation()
+  const brandName = getBranding()?.name ?? null
+  const navigation = useNavigation<any>()
+  const { width } = useWindowDimensions()
 
   // State for filters
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
 
   // Grid sizing
-  const columns = 3;
-  const photoSize = (width - 32 - (columns - 1) * 4) / columns;
+  const columns = 3
+  const photoSize = (width - 32 - (columns - 1) * 4) / columns
 
   // Load groups
   const { data: groups } = useQuery({
     queryKey: ['groups'],
     queryFn: fetchGroups,
-  });
+  })
 
-  const groupsLoaded = groups !== undefined;
-  const hasGroups = !!groups && groups.length > 0;
+  const groupsLoaded = groups !== undefined
+  const hasGroups = !!groups && groups.length > 0
 
   // Set default group on first load
-  const activeGroupId = selectedGroupId || (groups?.[0]?.id ?? null);
+  const activeGroupId = selectedGroupId || (groups?.[0]?.id ?? null)
 
   // Load people for the active group
   const { data: people, isLoading: peopleLoading } = useQuery({
     queryKey: ['group-media-people', activeGroupId],
     queryFn: () => getGroupMediaPeople(activeGroupId!),
     enabled: !!activeGroupId,
-  });
+  })
 
   // The group's shared (collaborative ALBUM) posts, shown as a strip above the
   // timeline — without it they're only reachable by scrolling the feed until
@@ -163,8 +163,8 @@ export function PhotosScreen() {
     queryKey: ['album-posts', activeGroupId],
     queryFn: () => fetchAlbumPosts({ groupIds: [activeGroupId!] }),
     enabled: !!activeGroupId,
-  });
-  const albums = albumsPage?.items ?? [];
+  })
+  const albums = albumsPage?.items ?? []
 
   // Load photo timeline for the active group
   const {
@@ -179,46 +179,46 @@ export function PhotosScreen() {
         personId: selectedPersonId || undefined,
       }),
     enabled: !!activeGroupId,
-  });
-  const { isLoading, isRefetching, refetch, isFetchingNextPage } = query;
+  })
+  const { isLoading, isRefetching, refetch, isFetchingNextPage } = query
 
   // Section photos by month
   const sections = useMemo(() => {
-    const grouped = new Map<string, PhotoItem[]>();
+    const grouped = new Map<string, PhotoItem[]>()
 
     allPhotos.forEach((photo) => {
-      const date = new Date(photo.takenAt);
+      const date = new Date(photo.takenAt)
       const monthKey = date.toLocaleDateString(i18n.language, {
         year: 'numeric',
         month: 'long',
-      });
+      })
 
       if (!grouped.has(monthKey)) {
-        grouped.set(monthKey, []);
+        grouped.set(monthKey, [])
       }
-      grouped.get(monthKey)!.push(photo);
-    });
+      grouped.get(monthKey)!.push(photo)
+    })
 
     // Convert to sections array, maintaining insertion order (newest first)
     return Array.from(grouped.entries()).map(([month, photos]) => ({
       title: month,
       data: photos,
-    }));
-  }, [allPhotos]);
+    }))
+  }, [allPhotos])
 
   // Chunk photos into rows for grid display
   const sectionListData = useMemo(() => {
     return sections.map((section) => {
-      const rows: PhotoItem[][] = [];
+      const rows: PhotoItem[][] = []
       for (let i = 0; i < section.data.length; i += columns) {
-        rows.push(section.data.slice(i, i + columns));
+        rows.push(section.data.slice(i, i + columns))
       }
       return {
         title: section.title,
         data: rows,
-      };
-    });
-  }, [sections]);
+      }
+    })
+  }, [sections])
 
   const handlePhotoTap = useCallback(
     (photo: PhotoItem) => {
@@ -229,7 +229,7 @@ export function PhotosScreen() {
       // native player); images get the preview jpg — the original can be a
       // huge/HEIC file <Image> may not render (same split MediaPickerModal
       // makes when attaching assets to a post).
-      const urls = allPhotos.map((p) => getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl));
+      const urls = allPhotos.map((p) => getUploadUrl(p.type === 'VIDEO' ? p.originalUrl : p.previewUrl))
       // Per-photo metadata: photos that belong to a post (direct uploads, or
       // album assets a post embeds — postAssetUrl) enable the viewer's
       // like/comment/favorite bar; downloadUrl points at the original
@@ -237,24 +237,24 @@ export function PhotosScreen() {
       const items = allPhotos.map((p) => ({
         ...(p.postId ? { postId: p.postId, assetUrl: p.postAssetUrl ?? p.originalUrl } : {}),
         downloadUrl: getUploadUrl(p.originalUrl),
-      }));
-      const initialIndex = allPhotos.findIndex((p) => p.id === photo.id);
+      }))
+      const initialIndex = allPhotos.findIndex((p) => p.id === photo.id)
 
       navigation.navigate('ImageViewer', {
         urls,
         items,
         initialIndex: initialIndex >= 0 ? initialIndex : 0,
-      });
+      })
     },
     [allPhotos, navigation]
-  );
+  )
 
   const renderRow = useCallback(
     ({ item: row }: { item: PhotoItem[] }) => (
       <PhotoRow row={row} photoSize={photoSize} columns={columns} onPress={handlePhotoTap} />
     ),
     [photoSize, columns, handlePhotoTap]
-  );
+  )
 
   const renderSectionHeader = useCallback(
     ({ section: { title } }: { section: { title: string } }) => (
@@ -263,14 +263,14 @@ export function PhotosScreen() {
       </View>
     ),
     []
-  );
+  )
 
-  const rowKeyExtractor = useCallback((item: PhotoItem[]) => item[0].id, []);
+  const rowKeyExtractor = useCallback((item: PhotoItem[]) => item[0].id, [])
 
-  const openAlbum = useCallback((postId: string) => navigation.navigate('AlbumDetail', { postId }), [navigation]);
+  const openAlbum = useCallback((postId: string) => navigation.navigate('AlbumDetail', { postId }), [navigation])
 
   const albumsHeader = useMemo(() => {
-    if (albums.length === 0) return null;
+    if (albums.length === 0) return null
     return (
       <View style={styles.albumsSection}>
         <Text style={styles.sectionHeaderText}>{t('photos.albumsTitle')}</Text>
@@ -284,8 +284,8 @@ export function PhotosScreen() {
         />
         <Text style={styles.sectionHeaderText}>{t('photos.allPhotosTitle')}</Text>
       </View>
-    );
-  }, [albums, openAlbum, t]);
+    )
+  }, [albums, openAlbum, t])
 
   return (
     <SafeAreaView style={styles.container}>
@@ -312,19 +312,19 @@ export function PhotosScreen() {
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => {
-              const isActive = activeGroupId === item.id;
+              const isActive = activeGroupId === item.id
               return (
                 <TouchableOpacity
                   style={[styles.groupChip, isActive && styles.groupChipActive]}
                   onPress={() => {
-                    setSelectedGroupId(item.id);
-                    setSelectedPersonId(null);
+                    setSelectedGroupId(item.id)
+                    setSelectedPersonId(null)
                   }}
                   accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
-              );
+              )
             }}
             contentContainerStyle={styles.groupList}
           />
@@ -340,8 +340,8 @@ export function PhotosScreen() {
             keyExtractor={(item) => item.id || 'all'}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => {
-              const isAll = item.id === null;
-              const isActive = isAll ? selectedPersonId === null : selectedPersonId === item.id;
+              const isAll = item.id === null
+              const isActive = isAll ? selectedPersonId === null : selectedPersonId === item.id
               return (
                 <TouchableOpacity
                   style={[styles.personChip, isActive && styles.personChipActive]}
@@ -352,7 +352,7 @@ export function PhotosScreen() {
                     {isAll ? item.label : item.label}
                   </Text>
                 </TouchableOpacity>
-              );
+              )
             }}
             contentContainerStyle={styles.personList}
           />
@@ -401,7 +401,7 @@ export function PhotosScreen() {
         <EmptyState title={t('feed.noGroupsTitle')} subtitle={t('feed.noGroupsSubtitle')} />
       )}
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -595,4 +595,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
   },
-});
+})

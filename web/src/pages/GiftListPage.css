@@ -1,0 +1,159 @@
+/* Gift list page (GiftListPage) — same single centered column as the trip
+   and album pages. */
+
+.gift-page-column {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gift-page-header,
+.gift-wishlist,
+.gift-manage {
+  background: var(--fam-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.gift-page-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--fam-text-title);
+}
+
+.gift-page-meta,
+.gift-page-hint {
+  font-size: 14px;
+  color: var(--fam-text-muted);
+}
+
+.gift-page-description {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.gift-page-recipient {
+  /* The pill itself is .gift-card-recipient (GiftListFeedCard.css); this
+     only makes it a full-width link. */
+  align-self: stretch;
+  padding: 12px 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.gift-page-recipient span {
+  flex: 1;
+}
+
+.gift-page-actions,
+.gift-item-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gift-wishlist-recipient {
+  outline: 2px solid var(--fam-primary);
+}
+
+.gift-wishlist-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gift-wishlist-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.gift-items,
+.gift-exclusions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gift-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--fam-border);
+}
+
+.gift-item-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.gift-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.gift-item-title {
+  font-weight: 700;
+}
+
+.gift-item-note {
+  font-size: 14px;
+  color: var(--fam-text-muted);
+}
+
+.gift-item-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--fam-primary);
+}
+
+.gift-item-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.gift-item-form {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gift-exclusions li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gift-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.gift-manage .field {
+  align-self: stretch;
+}

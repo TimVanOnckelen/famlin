@@ -74,7 +74,12 @@
     "onThisDayTitle": "Op deze dag",
     "onThisDayCount_one": "{{count}} herinnering van deze dag",
     "onThisDayCount_other": "{{count}} herinneringen van deze dag",
-    "membersTitle": "Gezinsleden"
+    "membersTitle": "Gezinsleden",
+    "membersLoadFailed": "Sommige leden konden niet worden geladen.",
+    "membersRetry": "Opnieuw proberen",
+    "membersEmpty": "Geen leden gevonden.",
+    "viewMembers": "Leden bekijken",
+    "viewAllMembers": "Alle leden bekijken"
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
@@ -91,12 +96,42 @@
   },
   "newPost": {
     "title": "Nieuw bericht",
-    "group": "Groep",
+    "group": "Delen met",
     "groupHint": "Kies één of meer families om dit bericht mee te delen.",
-    "typeLabel": "Berichttype",
+    "typeLabel": "Wat wil je delen?",
+    "typeDescriptions": {
+      "UPDATE": "Deel dagelijks nieuws, foto’s en video’s.",
+      "MILESTONE": "Vier een verjaardag, prestatie of bijzonder moment.",
+      "POLL": "Stel een vraag en laat je familie stemmen.",
+      "TRIP": "Plan een reis en deel onderweg updates.",
+      "ALBUM": "Verzamel samen foto’s in een gedeeld album.",
+      "GIFT_LIST": "Deel verlanglijstjes en trek eventueel lootjes."
+    },
     "typeUpdate": "Update",
     "typeMilestone": "Mijlpaal",
     "typePoll": "Peiling",
+    "typeTrip": "Reis",
+    "trip": {
+      "helper": "Voeg check-ins toe op de reispagina om je familie op de hoogte te houden.",
+      "titleLabel": "Titel",
+      "titlePlaceholder": "Bijv. Roadtrip Italië",
+      "destinationLabel": "Bestemming",
+      "destinationPlaceholder": "Bijv. Toscane & Emilia-Romagna, Italië",
+      "startDateLabel": "Startdatum",
+      "endDateLabel": "Einddatum",
+      "endDateOptional": "optioneel",
+      "datePlaceholder": "JJJJ-MM-DD",
+      "dateHint": "Notatie: JJJJ-MM-DD",
+      "coverPhotoTitle": "Coverfoto toevoegen",
+      "coverPhotoSubtitle": "Optioneel — je kunt deze ook later instellen",
+      "travelersLabel": "Reisgenoten",
+      "travelersSubtitle": "Optioneel — zij kunnen ook inchecken",
+      "travelersSelected_one": "{{count}} reisgenoot",
+      "travelersSelected_other": "{{count}} reisgenoten",
+      "membersFailed": "Reisgenoten konden niet worden geladen.",
+      "retry": "Opnieuw proberen",
+      "noCompanions": "Geen andere leden behoren tot elk geselecteerd gezin."
+    },
     "typeAlbum": "Album",
     "noAllowedTypes": "De geselecteerde families hebben geen enkel berichttype gemeen — wijzig de selectie om te kunnen plaatsen.",
     "placeholder": "Deel een update met je familie…",
@@ -114,7 +149,17 @@
     "failed": "Je bericht kon niet aangemaakt worden. Probeer opnieuw.",
     "audience": "Wie kan dit zien?",
     "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
-    "audienceEveryone": "Iedereen"
+    "audienceEveryone": "Iedereen",
+    "typeGiftList": "Cadeaulijst",
+    "giftListTitlePlaceholder": "Titel van de cadeaulijst (bv. Kerstmis 2026)",
+    "giftListParticipantsHint": "Kies wie meedoet. Jij doet altijd mee.",
+    "giftListDescriptionPlaceholder": "Voeg een berichtje toe voor de deelnemers… (optioneel)"
+  },
+  "editPost": {
+    "title": "Bericht bewerken",
+    "contentLabel": "Tekst van het bericht",
+    "save": "Opslaan",
+    "failed": "Je wijzigingen konden niet worden opgeslagen. Probeer het opnieuw."
   },
   "profile": {
     "title": "Profiel",
@@ -160,7 +205,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "Verhalen (alleen push)"
+    "notifyNewStory": "Verhalen (alleen push)",
+    "myGiftLists": "Mijn cadeaulijsten",
+    "notifyGiftList": "Cadeaulijsten"
   },
   "apiTokens": {
     "menuItem": "API-tokens",
@@ -247,13 +294,16 @@
     "photos": "Foto's",
     "profile": "Profiel",
     "chat": "Chat",
-    "favorites": "Favorieten"
+    "favorites": "Favorieten",
+    "notifications": "Meldingen",
+    "search": "Zoeken"
   },
   "demo": {
     "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
   },
   "trip": {
     "detail": {
+      "addCheckinButton": "Check-in",
       "headerTitle": "Reis",
       "activeBadge": "ACTIEF · DAG {{day}}",
       "closedBadge": "AFGESLOTEN",
@@ -277,6 +327,19 @@
       "closingLine": "Reis afgesloten door {{author}} · {{date}}",
       "emptyTitle": "De reis is begonnen…",
       "emptyDescription": "Nog geen check-ins. Zodra {{name}} onderweg is, verschijnen de eerste stops hier."
+    },
+    "checkin": {
+      "headerTitle": "Check-in",
+      "submitButton": "Inchecken",
+      "contextLine": "{{title}} · Dag {{day}}",
+      "placeLabel": "Waar ben je? *",
+      "placePlaceholder": "Bijv. Bologna",
+      "textPlaceholder": "Vertel iets over deze stop (optioneel)...",
+      "addPhotoLabel": "Foto / video",
+      "alerts": {
+        "failed": "Inchecken mislukt"
+      },
+      "mediaLimit": "Maximaal {{max}} foto’s of video’s."
     }
   },
   "album": {
@@ -357,7 +420,11 @@
     "notFound": "Dit bericht bestaat niet, of het is niet met jou gedeeld.",
     "loadFailed": "Dit bericht kon niet geladen worden.",
     "prevPhoto": "Vorige foto",
-    "nextPhoto": "Volgende foto"
+    "nextPhoto": "Volgende foto",
+    "editPost": "Bericht bewerken",
+    "deletePost": "Bericht verwijderen",
+    "deleteConfirm": "Dit bericht verwijderen? Dit kan niet ongedaan worden gemaakt — ook de reacties en emoji-reacties worden verwijderd.",
+    "deleteFailed": "Het bericht kon niet worden verwijderd. Probeer het opnieuw."
   },
   "a11y": {
     "skipToContent": "Ga naar de inhoud"
@@ -376,6 +443,94 @@
     "prevPost": "Vorig bericht",
     "openPost": "Bericht openen",
     "likePost": "Bericht liken",
-    "favoritePost": "Bericht favorieten"
+    "favoritePost": "Bericht favorieten",
+    "goNotifications": "Ga naar meldingen",
+    "goSearch": "Naar zoeken"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "markAllRead": "Alles als gelezen markeren",
+    "empty": "Geen meldingen",
+    "loadFailed": "Meldingen konden niet worden geladen.",
+    "markFailed": "Meldingen konden niet als gelezen worden gemarkeerd. Probeer het opnieuw.",
+    "unread": "Ongelezen",
+    "storyUnavailable": "Dit verhaal is niet meer beschikbaar."
+  },
+  "search": {
+    "title": "Zoeken",
+    "family": "Familie",
+    "placeholder": "Berichten zoeken…",
+    "prompt": "Voer een zoekterm in om berichten in deze familie te vinden.",
+    "empty": "Geen berichten gevonden. Probeer een andere zoekterm.",
+    "noGroups": "Word lid van een familie om berichten te zoeken.",
+    "loadFailed": "Zoekresultaten konden niet worden geladen.",
+    "loadMore": "Meer laden"
+  },
+  "members": {
+    "title": "Leden",
+    "description": "Je families en de kringen waar je bij hoort.",
+    "yourCircles": "Jouw kringen",
+    "noCircles": "Je zit niet in een kring binnen deze familie.",
+    "noFamilies": "Je bent nog geen lid van een familie. Vraag de beheerder van je familie om je toe te voegen.",
+    "noMembers": "Geen leden om te tonen.",
+    "familiesFailed": "Je families konden niet worden geladen.",
+    "familyMembersFailed": "De leden van deze familie konden niet worden geladen.",
+    "circlesFailed": "Je kringen binnen deze familie konden niet worden geladen.",
+    "circleMembersFailed": "De leden van deze kring konden niet worden geladen.",
+    "count_one": "{{count}} lid",
+    "count_other": "{{count}} leden"
+  },
+  "giftList": {
+    "badge": "CADEAULIJST",
+    "headerTitle": "Cadeaulijst",
+    "openCta": "Cadeaulijst openen",
+    "participantCount_one": "{{count}} deelnemer",
+    "participantCount_other": "{{count}} deelnemers",
+    "budgetValue": "Budget {{budget}}",
+    "buyingFor": "Jij koopt een cadeau voor {{name}}",
+    "drawPending": "Nog geen lootjes getrokken",
+    "notAvailable": "Deze cadeaulijst is niet beschikbaar.",
+    "actionFailed": "Dat is niet gelukt. Probeer opnieuw.",
+    "redrawConfirm": "Deze wijziging maakt de huidige trekking ongedaan. Alle lootjes opnieuw trekken?",
+    "drawCta": "Lootjes trekken",
+    "drawNeedsThree": "Lootjes trekken kan pas vanaf 3 deelnemers.",
+    "manageCta": "Beheren",
+    "deleteCta": "Cadeaulijst verwijderen",
+    "deleteConfirm": "Deze cadeaulijst en ieders wensen verwijderen?",
+    "leaveCta": "Cadeaulijst verlaten",
+    "leaveConfirm": "Deze cadeaulijst verlaten? Je wensen worden verwijderd.",
+    "myWishlist": "Mijn verlanglijst",
+    "wishlistOf": "Verlanglijst van {{name}}",
+    "recipientBadge": "Jij koopt voor hen",
+    "myWishlistEmpty": "Je verlanglijst is leeg. Voeg je eerste wens toe.",
+    "wishlistEmpty": "Nog geen wensen.",
+    "moveUp": "Omhoog",
+    "moveDown": "Omlaag",
+    "editItem": "Wens bewerken",
+    "deleteItem": "Wens verwijderen",
+    "deleteItemConfirm": "Deze wens verwijderen?",
+    "addItem": "Wens toevoegen",
+    "itemTitlePlaceholder": "Wat wil je graag?",
+    "itemNotePlaceholder": "Opmerking (maat, kleur…) — optioneel",
+    "itemUrlPlaceholder": "Link naar een webshop — optioneel",
+    "itemUrlInvalid": "Gebruik een link die begint met http:// of https://",
+    "addPhoto": "Foto toevoegen",
+    "changePhoto": "Foto wijzigen",
+    "removePhoto": "Foto verwijderen",
+    "participants": "Deelnemers",
+    "saveParticipants": "Deelnemers opslaan",
+    "settings": "Instellingen",
+    "titleLabel": "Titel",
+    "occasionDate": "Datum van de gelegenheid",
+    "budget": "Budget",
+    "budgetPlaceholder": "bv. €25",
+    "drawEnabled": "Lootjes trekken",
+    "exclusions": "Uitsluitingen",
+    "exclusionsHint": "Koppels die elkaar niet mogen trekken, zoals partners.",
+    "removeExclusion": "Uitsluiting verwijderen",
+    "exclusionPerson": "Persoon {{number}}",
+    "addExclusion": "Uitsluiting toevoegen",
+    "saveSettings": "Instellingen opslaan",
+    "photoUploadFailed": "De foto kon niet worden geüpload. Probeer een andere."
   }
 }

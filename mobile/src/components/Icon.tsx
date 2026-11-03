@@ -1,7 +1,7 @@
-import React from 'react';
-import { Feather } from '@expo/vector-icons';
-import Svg, { Path } from 'react-native-svg';
-import { colors } from '@/constants/colors';
+import React from 'react'
+import { Feather } from '@expo/vector-icons'
+import Svg, { Path } from 'react-native-svg'
+import { colors } from '@/constants/colors'
 
 // The one icon vocabulary for the app — Feather's flat, minimal, single-weight
 // line set, deliberately *not* the platform's native icons (SF Symbols /
@@ -18,7 +18,7 @@ import { colors } from '@/constants/colors';
 // constants/reactions.ts), which stay native platform emoji — a reaction is
 // the user's own expressive content, and readers expect it in the emoji font
 // they already know rather than as a line drawing.
-export type IconName = keyof typeof Feather.glyphMap;
+export type IconName = keyof typeof Feather.glyphMap
 
 // Feather is outline-only, so an "on" state drawn as just a tint change
 // (e.g. textMuted → primary, two close blue-greys) is near-invisible on a thin
@@ -27,21 +27,21 @@ export type IconName = keyof typeof Feather.glyphMap;
 // `filled` prop does, copied verbatim from feathericons.com.
 const FILLABLE_PATHS: Partial<Record<IconName, string>> = {
   bookmark: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z',
-};
+}
 
 interface IconProps {
-  name: IconName;
-  size?: number;
-  color?: string;
+  name: IconName
+  size?: number
+  color?: string
   /** Only for icons with a meaningful "on" state (a saved bookmark, a pinned story); ignored for others. */
-  filled?: boolean;
+  filled?: boolean
 }
 
 export function Icon({ name, size = 24, color = colors.textTitle, filled = false }: IconProps) {
   // A fillable icon draws both states as SVG, so toggling `filled` keeps the
   // exact same box — the Feather font glyph's line-height differs from `size`,
   // which would make the icon jump on toggle.
-  const fillablePath = FILLABLE_PATHS[name];
+  const fillablePath = FILLABLE_PATHS[name]
   if (fillablePath) {
     return (
       <Svg
@@ -57,7 +57,7 @@ export function Icon({ name, size = 24, color = colors.textTitle, filled = false
       >
         <Path d={fillablePath} />
       </Svg>
-    );
+    )
   }
-  return <Feather name={name} size={size} color={color} />;
+  return <Feather name={name} size={size} color={color} />
 }

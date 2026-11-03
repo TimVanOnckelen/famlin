@@ -130,11 +130,8 @@
   gap: 5px;
 }
 
-/* The right side panel (FeedSidePanel.tsx) only has room on very wide
-   screens — hidden below 1200px rather than reflowing under the feed, since
-   its content (On this day / family members) is a bonus, not core feed
-   content. Always rendered (so its data fetches regardless of viewport,
-   same as everything else on this page); CSS alone decides visibility. */
+/* Family selection sits above the member card in the wide-screen sidebar.
+   On narrower screens it is hidden; horizontal chips remain above the feed. */
 .feed-side-panel {
   display: none;
 }
@@ -148,5 +145,57 @@
     flex-shrink: 0;
     position: sticky;
     top: 24px;
+    max-height: calc(100dvh - 48px);
+  }
+}
+
+/* Narrow screens retain the original horizontal family chips. */
+@media (min-width: 1200px) {
+  .feed-family-filter {
+    display: none;
+  }
+}
+
+.feed-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.feed-heading h1 {
+  min-width: 0;
+  margin: 0;
+  color: var(--fam-text-title);
+  font-size: 24px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.feed-members-button {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.feed-members-button:hover {
+  filter: brightness(0.97);
+}
+@media (max-width: 720px) {
+  .feed-members-button {
+    padding: 10px;
+  }
+  .feed-members-button span {
+    display: none;
   }
 }

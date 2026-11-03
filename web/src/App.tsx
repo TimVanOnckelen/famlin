@@ -1,58 +1,62 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import axios from 'axios';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router';
-import { ensureFreshMediaToken, fetchGroups, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client';
-import { useAuthStore } from '@/stores/authStore';
-import { LoginPage } from '@/pages/LoginPage';
-import { FeedPage } from '@/pages/FeedPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { PhotosPage } from '@/pages/PhotosPage';
-import { ChatPage } from '@/pages/ChatPage';
-import { FavoritesPage } from '@/pages/FavoritesPage';
-import { TripDetailPage } from '@/pages/TripDetailPage';
-import { AlbumDetailPage } from '@/pages/AlbumDetailPage';
-import { PostDetailPage } from '@/pages/PostDetailPage';
-import { PostDetailModal } from '@/components/PostDetailModal';
-import { ReadOnlyBanner } from '@/components/ReadOnlyBanner';
-import { useTranslation } from 'react-i18next';
-import { useBranding } from '@/hooks/useBranding';
-import { applyBranding } from '@/utils/branding';
-import { paths, useAppNavigation } from '@/utils/routes';
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import axios from 'axios'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from 'react-router'
+import { ensureFreshMediaToken, fetchGroups, fetchMe, setUnauthorizedHandler, User } from '@famlin/api-client'
+import { useAuthStore } from '@/stores/authStore'
+import { LoginPage } from '@/pages/LoginPage'
+import { FeedPage } from '@/pages/FeedPage'
+import { ProfilePage } from '@/pages/ProfilePage'
+import { PhotosPage } from '@/pages/PhotosPage'
+import { ChatPage } from '@/pages/ChatPage'
+import { NotificationsPage } from '@/pages/NotificationsPage'
+import { SearchPage } from '@/pages/SearchPage'
+import { MembersPage } from '@/pages/MembersPage'
+import { FavoritesPage } from '@/pages/FavoritesPage'
+import { TripDetailPage } from '@/pages/TripDetailPage'
+import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
+import { GiftListPage } from '@/pages/GiftListPage'
+import { PostDetailPage } from '@/pages/PostDetailPage'
+import { PostDetailModal } from '@/components/PostDetailModal'
+import { ReadOnlyBanner } from '@/components/ReadOnlyBanner'
+import { useTranslation } from 'react-i18next'
+import { useBranding } from '@/hooks/useBranding'
+import { applyBranding } from '@/utils/branding'
+import { paths, useAppNavigation } from '@/utils/routes'
 
 export default function App() {
-  const { user, setAuth, clearSession, loadToken, isLoading } = useAuthStore();
-  const [initializing, setInitializing] = useState(true);
-  const { t } = useTranslation();
-  const branding = useBranding();
-  const navigate = useNavigate();
+  const { user, setAuth, clearSession, loadToken, isLoading } = useAuthStore()
+  const [initializing, setInitializing] = useState(true)
+  const { t } = useTranslation()
+  const branding = useBranding()
+  const navigate = useNavigate()
 
   // Per-family branding (issue #164). The server already injected it into
   // index.html; this keeps the page in sync with /server-info afterwards.
   useEffect(() => {
-    applyBranding(branding, t('common.appName'));
-  }, [branding, t]);
+    applyBranding(branding, t('common.appName'))
+  }, [branding, t])
 
   // A session *ending* (logout or 401) shouldn't land the next login back on
   // whatever page it ended on — e.g. the profile page. Only the transition
   // from signed-in to signed-out resets the URL: a cold load without a
   // session keeps its URL, so a shared /posts/:id link opened while logged
   // out still lands on that post after logging in.
-  const previousUserRef = useRef<User | null>(null);
-  const queryClient = useQueryClient();
+  const previousUserRef = useRef<User | null>(null)
+  const queryClient = useQueryClient()
   useEffect(() => {
     if (previousUserRef.current && !user) {
-      queryClient.clear();
-      navigate(paths.feed, { replace: true });
+      queryClient.clear()
+      navigate(paths.feed, { replace: true })
     }
-    previousUserRef.current = user;
-  }, [user, navigate, queryClient]);
+    previousUserRef.current = user
+  }, [user, navigate, queryClient])
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      clearSession();
-    });
-  }, [clearSession]);
+      clearSession()
+    })
+  }, [clearSession])
 
   // Web counterpart of mobile's AppState listener: the media token (7d TTL)
   // can go stale, or its initial fetch can simply have failed, and <img>/
@@ -60,43 +64,43 @@ export default function App() {
   // every photo silently 401s for the rest of the session. Re-check whenever
   // the tab is brought back to the foreground.
   useEffect(() => {
-    if (!user) return;
+    if (!user) return
     const onVisible = () => {
-      if (document.visibilityState === 'visible') ensureFreshMediaToken();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [user?.id]);
+      if (document.visibilityState === 'visible') ensureFreshMediaToken()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [user?.id])
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        const token = await loadToken();
+        const token = await loadToken()
         if (token) {
-          const [me, groups] = await Promise.all([fetchMe(), fetchGroups().catch(() => null)]);
-          if (groups) queryClient.setQueryData(['groups'], groups);
-          await setAuth(me, token);
+          const [me, groups] = await Promise.all([fetchMe(), fetchGroups().catch(() => null)])
+          if (groups) queryClient.setQueryData(['groups'], groups)
+          await setAuth(me, token)
         }
       } catch (err) {
         // Only an actual auth rejection should end the session — a network
         // error just means the server wasn't reachable on this load.
         if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
-          await clearSession();
+          await clearSession()
         }
       } finally {
-        setInitializing(false);
+        setInitializing(false)
       }
     }
-    bootstrap();
+    bootstrap()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   if (initializing || isLoading) {
-    return null;
+    return null
   }
 
   if (!user) {
-    return <LoginPage />;
+    return <LoginPage />
   }
 
   return (
@@ -105,7 +109,7 @@ export default function App() {
       <ReadOnlyBanner />
       <AppRoutes user={user} />
     </>
-  );
+  )
 }
 
 // Every page was previously a view switch in this file; each one now owns a
@@ -122,10 +126,12 @@ export default function App() {
 // such state, so it falls through to the first <Routes> instead and renders
 // the full PostDetailPage, unchanged from before this existed.
 function AppRoutes({ user }: { user: User }) {
-  const { logout } = useAuthStore();
-  const nav = useAppNavigation();
-  const location = useLocation();
-  const backgroundLocation = (location.state as { backgroundLocation?: typeof location } | null)?.backgroundLocation;
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
+  const location = useLocation()
+  const backgroundLocation = (location.state as { backgroundLocation?: typeof location } | null)?.backgroundLocation
+
+  const searchParams = new URLSearchParams((backgroundLocation ?? location).search)
 
   return (
     <>
@@ -139,8 +145,12 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
+              onOpenMembers={nav.toMembers}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
               onLogout={() => logout()}
             />
           }
@@ -155,6 +165,8 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenChat={nav.toChat}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenNotifications={nav.toNotifications}
+                onOpenSearch={nav.toSearch}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
               />
@@ -171,6 +183,8 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenPhotos={nav.toPhotos}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenNotifications={nav.toNotifications}
+                onOpenSearch={nav.toSearch}
                 onLogout={() => logout()}
               />
             </RequireGroups>
@@ -182,15 +196,19 @@ function AppRoutes({ user }: { user: User }) {
             <ProfilePage
               user={user}
               onBack={nav.toFeed}
+              onOpenGiftList={nav.toGiftList}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
               onLogout={() => logout()}
             />
           }
         />
         <Route path="/trips/:postId" element={<TripRoute user={user} />} />
         <Route path="/albums/:postId" element={<AlbumRoute user={user} />} />
+        <Route path="/gift-lists/:postId" element={<GiftListRoute user={user} />} />
         <Route path="/posts/:postId" element={<PostRoute user={user} />} />
         <Route
           path={paths.favorites}
@@ -198,11 +216,68 @@ function AppRoutes({ user }: { user: User }) {
             <FavoritesPage
               user={user}
               onBack={nav.toFeed}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.notifications}
+          element={
+            <NotificationsPage
+              user={user}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenProfile={nav.toProfile}
+              onOpenPost={nav.toPost}
+              onOpenSearch={nav.toSearch}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.members}
+          element={
+            <MembersPage
+              user={user}
+              groupId={searchParams.get('groupId') ?? undefined}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenSearch={nav.toSearch}
+              onOpenProfile={nav.toProfile}
+              onLogout={() => logout()}
+            />
+          }
+        />
+        <Route
+          path={paths.search}
+          element={
+            <SearchPage
+              user={user}
+              query={searchParams.get('q') ?? ''}
+              groupId={searchParams.get('groupId') ?? ''}
+              onSearchChange={nav.updateSearch}
+              onOpenFeed={nav.toFeed}
+              onOpenPhotos={nav.toPhotos}
+              onOpenChat={nav.toChat}
+              onOpenFavorites={nav.toFavorites}
+              onOpenNotifications={nav.toNotifications}
+              onOpenProfile={nav.toProfile}
+              onOpenTrip={nav.toTrip}
+              onOpenAlbum={nav.toAlbum}
+              onOpenGiftList={nav.toGiftList}
               onLogout={() => logout()}
             />
           }
@@ -216,7 +291,7 @@ function AppRoutes({ user }: { user: User }) {
         </Routes>
       )}
     </>
-  );
+  )
 }
 
 // /photos and /chat are family-scoped surfaces: a user in no families has
@@ -227,31 +302,32 @@ function AppRoutes({ user }: { user: User }) {
 // PhotosPage/ChatPage render at all, and a user who does have families is
 // never flash-redirected while a fetch is in flight.
 function RequireGroups({ children }: { children: ReactNode }) {
-  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
   if (groupsQuery.isSuccess && groupsQuery.data.length === 0) {
-    return <Navigate to={paths.feed} replace />;
+    return <Navigate to={paths.feed} replace />
   }
-  return <>{children}</>;
+  return <>{children}</>
 }
 
 function PostDetailModalRoute() {
-  const { postId } = useParams<{ postId: string }>();
-  const navigate = useNavigate();
-  const nav = useAppNavigation();
+  const { postId } = useParams<{ postId: string }>()
+  const navigate = useNavigate()
+  const nav = useAppNavigation()
   return (
     <PostDetailModal
       postId={postId!}
       onClose={() => navigate(-1)}
       onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
       onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+      onOpenGiftList={(id) => nav.toGiftList(id, { replace: true })}
     />
-  );
+  )
 }
 
 function TripRoute({ user }: { user: User }) {
-  const { postId } = useParams<{ postId: string }>();
-  const { logout } = useAuthStore();
-  const nav = useAppNavigation();
+  const { postId } = useParams<{ postId: string }>()
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
   return (
     <TripDetailPage
       key={postId}
@@ -263,15 +339,17 @@ function TripRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
-  );
+  )
 }
 
 function AlbumRoute({ user }: { user: User }) {
-  const { postId } = useParams<{ postId: string }>();
-  const { logout } = useAuthStore();
-  const nav = useAppNavigation();
+  const { postId } = useParams<{ postId: string }>()
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
   return (
     <AlbumDetailPage
       key={postId}
@@ -283,15 +361,39 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
-  );
+  )
+}
+
+function GiftListRoute({ user }: { user: User }) {
+  const { postId } = useParams<{ postId: string }>()
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
+  return (
+    <GiftListPage
+      key={postId}
+      user={user}
+      postId={postId!}
+      onBack={nav.back}
+      onOpenFeed={nav.toFeed}
+      onOpenPhotos={nav.toPhotos}
+      onOpenChat={nav.toChat}
+      onOpenProfile={nav.toProfile}
+      onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
+      onLogout={() => logout()}
+    />
+  )
 }
 
 function PostRoute({ user }: { user: User }) {
-  const { postId } = useParams<{ postId: string }>();
-  const { logout } = useAuthStore();
-  const nav = useAppNavigation();
+  const { postId } = useParams<{ postId: string }>()
+  const { logout } = useAuthStore()
+  const nav = useAppNavigation()
   return (
     <PostDetailPage
       key={postId}
@@ -301,23 +403,26 @@ function PostRoute({ user }: { user: User }) {
       onOpenFeed={nav.toFeed}
       onOpenTrip={(id) => nav.toTrip(id, { replace: true })}
       onOpenAlbum={(id) => nav.toAlbum(id, { replace: true })}
+      onOpenGiftList={(id) => nav.toGiftList(id, { replace: true })}
       onOpenPhotos={nav.toPhotos}
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenNotifications={nav.toNotifications}
+      onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
-  );
+  )
 }
 
 // BrowserRouter (unlike the data routers) has no <ScrollRestoration>; without
 // this, opening a trip from halfway down the feed lands halfway down the trip.
 // Back/forward (POP) is left alone so the browser can do its own thing.
 function ScrollToTopOnNavigate() {
-  const { pathname } = useLocation();
-  const navigationType = useNavigationType();
+  const { pathname } = useLocation()
+  const navigationType = useNavigationType()
   useEffect(() => {
-    if (navigationType !== 'POP') window.scrollTo(0, 0);
-  }, [pathname, navigationType]);
-  return null;
+    if (navigationType !== 'POP') window.scrollTo(0, 0)
+  }, [pathname, navigationType])
+  return null
 }

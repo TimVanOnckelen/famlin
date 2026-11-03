@@ -1,22 +1,22 @@
-import { getUploadUrl } from '@famlin/api-client';
+import { getUploadUrl } from '@famlin/api-client'
 
 // Initial-avatar palette from the styleguide's "Initial avatars" pattern —
 // each member keeps one consistent color, derived from their name.
-const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)'];
+const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)']
 
 function colorFor(name: string): string {
-  let hash = 0;
+  let hash = 0
   for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
+    hash = (hash * 31 + name.charCodeAt(i)) | 0
   }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
 function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : (parts[0]?.[1] ?? '');
-  return (first + last).toUpperCase();
+  const parts = name.trim().split(/\s+/)
+  const first = parts[0]?.[0] ?? ''
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : (parts[0]?.[1] ?? '')
+  return (first + last).toUpperCase()
 }
 
 export function Avatar({
@@ -25,10 +25,10 @@ export function Avatar({
   size = 44,
   ring = false,
 }: {
-  name: string;
-  avatarUrl?: string | null;
-  size?: number;
-  ring?: boolean;
+  name: string
+  avatarUrl?: string | null
+  size?: number
+  ring?: boolean
 }) {
   const style: React.CSSProperties = {
     width: size,
@@ -36,11 +36,11 @@ export function Avatar({
     borderRadius: size / 2,
     flexShrink: 0,
     ...(ring && { border: '2px solid var(--fam-surface)', boxSizing: 'border-box' }),
-  };
+  }
 
   if (avatarUrl) {
-    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl;
-    return <img src={src} alt={name} style={{ ...style, objectFit: 'cover' }} />;
+    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl
+    return <img src={src} alt={name} style={{ ...style, objectFit: 'cover' }} />
   }
 
   return (
@@ -60,5 +60,5 @@ export function Avatar({
     >
       {initials(name)}
     </div>
-  );
+  )
 }

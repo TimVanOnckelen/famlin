@@ -1,77 +1,77 @@
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, AdminBranding, DerivedBrand } from '../api/client';
-import { Icon } from './Icon';
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, AdminBranding, DerivedBrand } from '../api/client'
+import { Icon } from './Icon'
 
-const CUSTOM = 'custom';
-const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
-const NAME_MAX = 40;
+const CUSTOM = 'custom'
+const HEX_RE = /^#?[0-9a-fA-F]{6}$/
+const NAME_MAX = 40
 
-const withHash = (hex: string) => (hex.startsWith('#') ? hex : `#${hex}`).toLowerCase();
+const withHash = (hex: string) => (hex.startsWith('#') ? hex : `#${hex}`).toLowerCase()
 
 // Per-family branding (issue #164): preset or custom color, family name and
 // logo. Has its own save (PUT /api/admin/branding) rather than joining the
 // generic settings form, since the server validates and derives the palette.
 export function BrandingSection() {
-  const { t } = useTranslation();
-  const [branding, setBranding] = useState<AdminBranding | null>(null);
-  const [preset, setPreset] = useState('teal');
-  const [customColor, setCustomColor] = useState('#006e94');
-  const [name, setName] = useState('');
-  const [preview, setPreview] = useState<DerivedBrand | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation()
+  const [branding, setBranding] = useState<AdminBranding | null>(null)
+  const [preset, setPreset] = useState('teal')
+  const [customColor, setCustomColor] = useState('#006e94')
+  const [name, setName] = useState('')
+  const [preview, setPreview] = useState<DerivedBrand | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const load = (b: AdminBranding) => {
-    setBranding(b);
-    setPreset(b.preset);
-    if (b.color) setCustomColor(b.color);
-    setName(b.name);
-    setPreview(b.derived);
-  };
+    setBranding(b)
+    setPreset(b.preset)
+    if (b.color) setCustomColor(b.color)
+    setName(b.name)
+    setPreview(b.derived)
+  }
 
   useEffect(() => {
     api
       .getBranding()
       .then(load)
-      .catch((err) => setError(err.message));
-  }, []);
+      .catch((err) => setError(err.message))
+  }, [])
 
-  const colorValid = preset !== CUSTOM || HEX_RE.test(customColor);
+  const colorValid = preset !== CUSTOM || HEX_RE.test(customColor)
 
   // Live preview: the server derives the palette (one implementation for
   // every client), debounced so typing a hex doesn't fire a request per key.
   useEffect(() => {
-    if (!branding || !colorValid) return;
+    if (!branding || !colorValid) return
     const timer = setTimeout(() => {
       api
         .previewBranding({ preset, color: preset === CUSTOM ? withHash(customColor) : null })
         .then(setPreview)
-        .catch(() => {});
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [branding, preset, customColor, colorValid]);
+        .catch(() => {})
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [branding, preset, customColor, colorValid])
 
   useEffect(() => {
-    if (!saved) return;
-    const timer = setTimeout(() => setSaved(false), 4000);
-    return () => clearTimeout(timer);
-  }, [saved]);
+    if (!saved) return
+    const timer = setTimeout(() => setSaved(false), 4000)
+    return () => clearTimeout(timer)
+  }, [saved])
 
   if (!branding)
-    return error ? <div className="error">{error}</div> : <div className="loading">{t('common.loading')}</div>;
+    return error ? <div className="error">{error}</div> : <div className="loading">{t('common.loading')}</div>
 
   const dirty =
     preset !== branding.preset ||
     name.trim() !== branding.name ||
-    (preset === CUSTOM && withHash(customColor) !== branding.color);
+    (preset === CUSTOM && withHash(customColor) !== branding.color)
 
   const handleSave = async () => {
-    setSaving(true);
-    setError(null);
+    setSaving(true)
+    setError(null)
     try {
       load(
         await api.updateBranding({
@@ -79,45 +79,45 @@ export function BrandingSection() {
           color: preset === CUSTOM ? withHash(customColor) : null,
           name: name.trim(),
         })
-      );
-      setSaved(true);
+      )
+      setSaved(true)
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleLogo = async (file: File | undefined) => {
-    if (!file) return;
-    setUploading(true);
-    setError(null);
+    if (!file) return
+    setUploading(true)
+    setError(null)
     try {
-      const updated = await api.uploadBrandingLogo(file);
-      setBranding((prev) => (prev ? { ...prev, logoUrl: updated.logoUrl, faviconUrl: updated.faviconUrl } : updated));
+      const updated = await api.uploadBrandingLogo(file)
+      setBranding((prev) => (prev ? { ...prev, logoUrl: updated.logoUrl, faviconUrl: updated.faviconUrl } : updated))
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = '';
+      setUploading(false)
+      if (fileInput.current) fileInput.current.value = ''
     }
-  };
+  }
 
   const handleRemoveLogo = async () => {
-    setUploading(true);
-    setError(null);
+    setUploading(true)
+    setError(null)
     try {
-      const updated = await api.deleteBrandingLogo();
-      setBranding((prev) => (prev ? { ...prev, logoUrl: null, faviconUrl: null } : updated));
+      const updated = await api.deleteBrandingLogo()
+      setBranding((prev) => (prev ? { ...prev, logoUrl: null, faviconUrl: null } : updated))
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
-  const p = preview ?? branding.derived;
-  const displayName = name.trim() || 'Famlin';
+  const p = preview ?? branding.derived
+  const displayName = name.trim() || 'Famlin'
 
   return (
     <>
@@ -302,5 +302,5 @@ export function BrandingSection() {
         </div>
       </div>
     </>
-  );
+  )
 }

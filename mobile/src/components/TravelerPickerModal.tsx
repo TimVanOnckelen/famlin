@@ -1,31 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 
 // The server caps a trip at 20 co-travelers (author excluded).
-const MAX_TRAVELERS = 20;
+const MAX_TRAVELERS = 20
 
 interface TravelerPickerModalProps {
-  visible: boolean;
+  visible: boolean
   // Every group the trip targets — for a cross-posted trip only members of
   // ALL of them are valid co-travelers, so the list shown is the
   // intersection of their member lists (the server rejects anyone else with
   // errors.tripTravelerNotMember).
-  groupIds: string[];
+  groupIds: string[]
   // Never listed: the trip author is implicitly a traveler and must not be
   // sent in travelerUserIds (composer passes the logged-in user, trip detail
   // passes the post author — the same person in both flows today).
-  excludeUserId?: string;
-  initialSelectedIds: string[];
-  submitting?: boolean;
-  onCancel: () => void;
-  onConfirm: (userIds: string[]) => void;
+  excludeUserId?: string
+  initialSelectedIds: string[]
+  submitting?: boolean
+  onCancel: () => void
+  onConfirm: (userIds: string[]) => void
 }
 
 // Multi-select of the target groups' shared members, used for a trip's
@@ -42,25 +42,25 @@ export function TravelerPickerModal({
   onCancel,
   onConfirm,
 }: TravelerPickerModalProps) {
-  const { t } = useTranslation();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { t } = useTranslation()
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (visible) setSelected(new Set(initialSelectedIds));
+    if (visible) setSelected(new Set(initialSelectedIds))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible])
 
-  const { members, isLoading, isError } = useGroupMembersIntersection(groupIds, visible);
+  const { members, isLoading, isError } = useGroupMembersIntersection(groupIds, visible)
 
-  const candidates = members.filter((m) => m.id !== excludeUserId);
+  const candidates = members.filter((m) => m.id !== excludeUserId)
 
   function toggle(userId: string) {
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) next.delete(userId);
-      else if (next.size < MAX_TRAVELERS) next.add(userId);
-      return next;
-    });
+      const next = new Set(prev)
+      if (next.has(userId)) next.delete(userId)
+      else if (next.size < MAX_TRAVELERS) next.add(userId)
+      return next
+    })
   }
 
   return (
@@ -100,7 +100,7 @@ export function TravelerPickerModal({
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => {
-              const isSelected = selected.has(item.id);
+              const isSelected = selected.has(item.id)
               return (
                 <TouchableOpacity
                   style={styles.memberRow}
@@ -116,7 +116,7 @@ export function TravelerPickerModal({
                     {isSelected && <Icon name="check" size={14} color={colors.white} />}
                   </View>
                 </TouchableOpacity>
-              );
+              )
             }}
             ListEmptyComponent={
               <View style={styles.centered}>
@@ -127,7 +127,7 @@ export function TravelerPickerModal({
         )}
       </SafeAreaView>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -206,4 +206,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.trip,
     borderColor: colors.trip,
   },
-});
+})

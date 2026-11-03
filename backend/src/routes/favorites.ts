@@ -1,38 +1,38 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../db.js';
-import { requireGroupMember } from '../plugins/auth.js';
-import { paginationArgs, paginate } from '../services/pagination.js';
-import { paginationQuerySchema } from '../types.js';
-import { shapePostsWithPeople, dedupeByCrossPostId, postInclude } from '../services/posts.js';
-import { getT } from '../i18n/index.js';
-import { canViewPostCircle } from '../services/circles.js';
+import { FastifyInstance } from 'fastify'
+import { prisma } from '../db.js'
+import { requireGroupMember } from '../plugins/auth.js'
+import { paginationArgs, paginate } from '../services/pagination.js'
+import { paginationQuerySchema } from '../types.js'
+import { shapePostsWithPeople, dedupeByCrossPostId, postInclude } from '../services/posts.js'
+import { getT } from '../i18n/index.js'
+import { canViewPostCircle } from '../services/circles.js'
 
 export default async function favoriteRoutes(fastify: FastifyInstance) {
   fastify.post('/posts/:postId/favorite', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { postId } = request.params as { postId: string };
+    const t = getT(request)
+    const { postId } = request.params as { postId: string }
 
-    const post = await prisma.post.findUnique({ where: { id: postId } });
+    const post = await prisma.post.findUnique({ where: { id: postId } })
 
     if (!post) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, post.groupId)) return;
+    if (await requireGroupMember(request, reply, post.groupId)) return
 
     // A circle-private post is invisible to group members outside it — same
     // 404 the post itself returns, so its existence can't be probed here.
     if (!(await canViewPostCircle(post.circleId, request.user!.id))) {
-      return reply.status(404).send({ error: t('errors.postNotFound') });
+      return reply.status(404).send({ error: t('errors.postNotFound') })
     }
 
     const existing = await prisma.favorite.findUnique({
       where: { postId_userId: { postId, userId: request.user!.id } },
-    });
+    })
 
     if (existing) {
-      await prisma.favorite.delete({ where: { id: existing.id } });
-      return { favorited: false };
+      await prisma.favorite.delete({ where: { id: existing.id } })
+      return { favorited: false }
     }
 
     await prisma.favorite.create({
@@ -40,13 +40,13 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
         postId,
         userId: request.user!.id,
       },
-    });
+    })
 
-    return { favorited: true };
-  });
+    return { favorited: true }
+  })
 
   fastify.get('/favorites', { preHandler: [fastify.authenticate] }, async (request) => {
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
     const favorites = await prisma.favorite.findMany({
       where: {
@@ -69,18 +69,18 @@ export default async function favoriteRoutes(fastify: FastifyInstance) {
       },
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
-    });
+    })
 
-    const { items, nextCursor } = paginate(favorites, take);
+    const { items, nextCursor } = paginate(favorites, take)
 
     // Within-page only (no cursor lookup, unlike GET /api/posts) — the
     // Favorite cursor is on Favorite.id, not Post.id, so a cross-post
     // straddling a page boundary here is a rarer, lower-stakes edge case.
-    const deduped = dedupeByCrossPostId(items.map(({ post }) => post));
+    const deduped = dedupeByCrossPostId(items.map(({ post }) => post))
 
     return {
       items: await shapePostsWithPeople(deduped, request.user!.id),
       nextCursor,
-    };
-  });
+    }
+  })
 }

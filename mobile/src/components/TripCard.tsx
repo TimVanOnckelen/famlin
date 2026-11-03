@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { Post } from '@/types';
-import { getUploadUrl } from '@/api/uploads';
-import { formatTripDateRange, formatTime } from '@/i18n/utils';
-import { useReactToPost } from '@/hooks/usePostMutations';
-import { CircleTag } from './CircleTag';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { Post } from '@/types'
+import { getUploadUrl } from '@/api/uploads'
+import { formatTripDateRange, formatTime } from '@/i18n/utils'
+import { useReactToPost } from '@/hooks/usePostMutations'
+import { CircleTag } from './CircleTag'
 
 // The feed card for a TRIP post (design 6a active / 6b closed) — different
 // enough from the generic UPDATE/MILESTONE card (gradient frame, its own
@@ -20,19 +20,19 @@ import { CircleTag } from './CircleTag';
 // postTypeRenderers registry entry (that registry only appends a body under
 // the normal content, see components/postTypes/index.ts).
 export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const trip = post.trip;
-  const likeMutation = useReactToPost(post);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const trip = post.trip
+  const likeMutation = useReactToPost(post)
 
-  if (!trip) return null;
+  if (!trip) return null
 
   function openDetail() {
-    navigation.navigate('TripDetail', { postId: post.id });
+    navigation.navigate('TripDetail', { postId: post.id })
   }
 
   function toggleLike() {
-    likeMutation.mutate(post.myReaction ?? 'LOVE');
+    likeMutation.mutate(post.myReaction ?? 'LOVE')
   }
 
   // Both context tags travel together: which family the post is in (when the
@@ -49,7 +49,7 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
       )}
       <CircleTag post={post} />
     </>
-  );
+  )
 
   if (trip.closed) {
     return (
@@ -90,10 +90,10 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
           </View>
         </View>
       </TouchableOpacity>
-    );
+    )
   }
 
-  const heroUrl = trip.collagePhotoUrls[0] || trip.coverPhotoUrl;
+  const heroUrl = trip.collagePhotoUrls[0] || trip.coverPhotoUrl
 
   return (
     <TouchableOpacity activeOpacity={0.95} onPress={openDetail} style={styles.activeCard}>
@@ -146,7 +146,7 @@ export function TripCard({ post, showGroup = false }: { post: Post; showGroup?: 
         </View>
       </View>
     </TouchableOpacity>
-  );
+  )
 }
 
 function ClosedCollage({ photoUrls, photoCount }: { photoUrls: string[]; photoCount: number }) {
@@ -155,11 +155,11 @@ function ClosedCollage({ photoUrls, photoCount }: { photoUrls: string[]; photoCo
       <View style={[styles.collageRow, styles.heroPlaceholder]}>
         <Icon name="briefcase" size={40} color={colors.trip} />
       </View>
-    );
+    )
   }
 
-  const stackUrls = photoUrls.slice(1, 3);
-  const extraCount = Math.max(0, photoCount - photoUrls.length);
+  const stackUrls = photoUrls.slice(1, 3)
+  const extraCount = Math.max(0, photoCount - photoUrls.length)
 
   return (
     <View style={styles.collageRow}>
@@ -181,7 +181,7 @@ function ClosedCollage({ photoUrls, photoCount }: { photoUrls: string[]; photoCo
         </View>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -391,4 +391,4 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginLeft: 'auto',
   },
-});
+})

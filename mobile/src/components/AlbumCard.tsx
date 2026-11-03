@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal';
-import { Post } from '@/types';
-import { addAlbumPhotos } from '@famlin/api-client';
-import { getUploadUrl } from '@/api/uploads';
-import { patchPostInCaches } from '@/utils/postCache';
-import { useReactToPost } from '@/hooks/usePostMutations';
-import { CircleTag } from './CircleTag';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal'
+import { Post } from '@/types'
+import { addAlbumPhotos } from '@famlin/api-client'
+import { getUploadUrl } from '@/api/uploads'
+import { patchPostInCaches } from '@/utils/postCache'
+import { useReactToPost } from '@/hooks/usePostMutations'
+import { CircleTag } from './CircleTag'
 
 // The feed card for an ALBUM post — a collaborative photo album any group
 // member adds photos to. Like TripCard it's a wholesale-different card
@@ -22,34 +22,34 @@ import { CircleTag } from './CircleTag';
 // PostCard delegates to for post.type === 'ALBUM', rather than a
 // postTypeRenderers registry entry. Mirrors web's AlbumFeedCard.
 export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?: boolean }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const queryClient = useQueryClient();
-  const album = post.album;
-  const likeMutation = useReactToPost(post);
-  const [contributeOpen, setContributeOpen] = useState(false);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const queryClient = useQueryClient()
+  const album = post.album
+  const likeMutation = useReactToPost(post)
+  const [contributeOpen, setContributeOpen] = useState(false)
 
   const contributeMutation = useMutation({
     mutationFn: (data: { photoUrls: string[]; caption?: string }) => addAlbumPhotos(post.id, data),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, post.id, () => updatedPost);
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
-      setContributeOpen(false);
+      patchPostInCaches(queryClient, post.id, () => updatedPost)
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
+      setContributeOpen(false)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.addPhotos.alerts.failed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('album.addPhotos.alerts.failed'))
     },
-  });
+  })
 
-  if (!album) return null;
+  if (!album) return null
 
   function openDetail() {
-    navigation.navigate('AlbumDetail', { postId: post.id });
+    navigation.navigate('AlbumDetail', { postId: post.id })
   }
 
   function toggleLike() {
-    likeMutation.mutate(post.myReaction ?? 'LOVE');
+    likeMutation.mutate(post.myReaction ?? 'LOVE')
   }
 
   // Both context tags travel together: which family the post is in (when the
@@ -66,7 +66,7 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
       )}
       <CircleTag post={post} />
     </>
-  );
+  )
 
   return (
     <View style={styles.card}>
@@ -140,7 +140,7 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
         onSubmit={(data) => contributeMutation.mutate(data)}
       />
     </View>
-  );
+  )
 }
 
 function AlbumCollage({
@@ -148,22 +148,22 @@ function AlbumCollage({
   coverPhotoUrl,
   photoCount,
 }: {
-  collagePhotoUrls: string[];
-  coverPhotoUrl: string | null;
-  photoCount: number;
+  collagePhotoUrls: string[]
+  coverPhotoUrl: string | null
+  photoCount: number
 }) {
-  const urls = collagePhotoUrls.length > 0 ? collagePhotoUrls : coverPhotoUrl ? [coverPhotoUrl] : [];
+  const urls = collagePhotoUrls.length > 0 ? collagePhotoUrls : coverPhotoUrl ? [coverPhotoUrl] : []
 
   if (urls.length === 0) {
     return (
       <View style={[styles.collageRow, styles.heroPlaceholder]}>
         <Icon name="image" size={40} color={colors.primary} />
       </View>
-    );
+    )
   }
 
-  const stackUrls = urls.slice(1, 3);
-  const extraCount = Math.max(0, photoCount - urls.slice(0, 3).length);
+  const stackUrls = urls.slice(1, 3)
+  const extraCount = Math.max(0, photoCount - urls.slice(0, 3).length)
 
   return (
     <View style={styles.collageRow}>
@@ -185,7 +185,7 @@ function AlbumCollage({
         </View>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -367,4 +367,4 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
     marginLeft: 'auto',
   },
-});
+})

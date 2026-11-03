@@ -1,17 +1,17 @@
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { Avatar } from '@/components/Avatar';
-import { Badge } from '@/components/Badge';
-import { Icon } from '@/components/Icon';
-import { CircleBadge } from '@/components/CircleBadge';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { formatTime } from '@/utils/time';
-import { formatTripDateRange } from '@/utils/trip';
-import { isVideoUrl } from '@/utils/media';
-import '../PostCard.css';
-import './TripFeedCard.css';
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Post, ReactionType, REACTION_TYPES, reactToPost, patchPostInCaches, getUploadUrl } from '@famlin/api-client'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { Avatar } from '@/components/Avatar'
+import { Badge } from '@/components/Badge'
+import { Icon } from '@/components/Icon'
+import { CircleBadge } from '@/components/CircleBadge'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { formatTime } from '@/utils/time'
+import { formatTripDateRange } from '@/utils/trip'
+import { isVideoUrl } from '@/utils/media'
+import '../PostCard.css'
+import './TripFeedCard.css'
 
 // The feed card for a TRIP post (design t6, screens 6a/6b) — different
 // enough from the generic UPDATE/MILESTONE card (its own hero source, no
@@ -26,13 +26,13 @@ export function TripFeedCard({
   showGroup = false,
   onOpenTrip,
 }: {
-  post: Post;
-  showGroup?: boolean;
-  onOpenTrip?: (postId: string) => void;
+  post: Post
+  showGroup?: boolean
+  onOpenTrip?: (postId: string) => void
 }) {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const trip = post.trip;
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const trip = post.trip
 
   // Same reaction mutation as PostCard's — kept local rather than shared via
   // a hook since PostCard doesn't expose one, matching the rest of this
@@ -40,30 +40,30 @@ export function TripFeedCard({
   const reactMutation = useMutation({
     mutationFn: (type: ReactionType) => reactToPost(post.id, type),
     onMutate: async (type) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const nextReaction = post.myReaction === type ? null : type;
+      await queryClient.cancelQueries({ queryKey: ['posts'] })
+      const nextReaction = post.myReaction === type ? null : type
       patchPostInCaches(queryClient, post.id, (p) => {
-        const reactions = { ...p.reactions };
-        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1);
-        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1;
+        const reactions = { ...p.reactions }
+        if (p.myReaction) reactions[p.myReaction] = Math.max(0, (reactions[p.myReaction] || 0) - 1)
+        if (nextReaction) reactions[nextReaction] = (reactions[nextReaction] || 0) + 1
         return {
           ...p,
           myReaction: nextReaction,
           reactions,
           likeCount: Object.values(reactions).reduce((sum, n) => sum + (n || 0), 0),
           likedByMe: nextReaction !== null,
-        };
-      });
+        }
+      })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
-  });
+  })
 
   // Guard mirrors the mobile component: post.type === 'TRIP' without
   // post.trip shouldn't happen (the server always enriches it), but an
   // older/partial cache entry is possible.
-  if (!trip) return null;
+  if (!trip) return null
 
   // Both context chips travel together: which family the post is in (when the
   // feed spans several) and which Circle it was shared with (when it wasn't
@@ -73,8 +73,8 @@ export function TripFeedCard({
       {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
       <CircleBadge post={post} />
     </>
-  );
-  const openLabel = trip.closed ? t('feed.trip.viewDiaryCta') : t('feed.trip.followCta');
+  )
+  const openLabel = trip.closed ? t('feed.trip.viewDiaryCta') : t('feed.trip.followCta')
 
   const reactionRow = (
     <div className="trip-card-actions">
@@ -108,7 +108,7 @@ export function TripFeedCard({
         {openLabel}
       </button>
     </div>
-  );
+  )
 
   if (trip.closed) {
     return (
@@ -150,10 +150,10 @@ export function TripFeedCard({
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-  const heroUrl = trip.collagePhotoUrls[0] || trip.coverPhotoUrl;
+  const heroUrl = trip.collagePhotoUrls[0] || trip.coverPhotoUrl
 
   return (
     <div className="post-card">
@@ -212,7 +212,7 @@ export function TripFeedCard({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Closed-trip collage (design 6b, adapted for web's wider card): a fixed 2×2
@@ -227,10 +227,10 @@ function TripClosedCollage({
   label,
   onOpen,
 }: {
-  collagePhotoUrls: string[];
-  photoCount: number;
-  label: string;
-  onOpen: () => void;
+  collagePhotoUrls: string[]
+  photoCount: number
+  label: string
+  onOpen: () => void
 }) {
   if (collagePhotoUrls.length === 0) {
     return (
@@ -239,11 +239,11 @@ function TripClosedCollage({
           <Icon name="briefcase" size={40} strokeWidth={1.5} />
         </div>
       </button>
-    );
+    )
   }
 
-  const overflow = Math.max(0, photoCount - collagePhotoUrls.length);
-  const cells = [0, 1, 2, 3].map((i) => collagePhotoUrls[i] ?? collagePhotoUrls[collagePhotoUrls.length - 1]);
+  const overflow = Math.max(0, photoCount - collagePhotoUrls.length)
+  const cells = [0, 1, 2, 3].map((i) => collagePhotoUrls[i] ?? collagePhotoUrls[collagePhotoUrls.length - 1])
 
   return (
     <button type="button" className="trip-card-collage" onClick={onOpen} aria-label={label}>
@@ -258,5 +258,5 @@ function TripClosedCollage({
         </span>
       ))}
     </button>
-  );
+  )
 }

@@ -1,6 +1,7 @@
-import { ReactNode, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { TripCheckinModal } from '@/components/TripCheckinModal'
+import { ReactNode, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Comment,
   User,
@@ -10,30 +11,23 @@ import {
   reactToComment,
   getUploadUrl,
   patchPostInCaches,
-} from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { AvatarStack } from '@/components/AvatarStack';
-import { Badge } from '@/components/Badge';
-import { AppShell } from '@/components/AppShell';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { CommentsSection } from '@/components/CommentsSection';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { isVideoUrl } from '@/utils/media';
-import { formatDayMonth, formatTime } from '@/utils/time';
-import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip';
-import './TripDetailPage.css';
+} from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { AvatarStack } from '@/components/AvatarStack'
+import { Badge } from '@/components/Badge'
+import { AppShell } from '@/components/AppShell'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { CommentsSection } from '@/components/CommentsSection'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { isVideoUrl } from '@/utils/media'
+import { formatDayMonth, formatTime } from '@/utils/time'
+import { splitTripComments, sortCheckins, TripCheckinEntry } from '@/utils/trip'
+import './TripDetailPage.css'
 
-// Web's counterpart of mobile's TripDetailScreen — VIEWING ONLY (see
-// design/trip-tracker-brief.md), routed at /trips/:postId (see App.tsx).
-// AppShell always keeps the Feed tab highlighted here — a trip is only ever
-// opened from the feed. Composing check-ins, closing the trip, and editing
-// travelers are deliberately not here — those stay mobile/backend-only for
-// now; this page only reads post.trip + the post's comments (splitting
-// check-ins from trip-level comments client-side, see utils/trip.ts) and
-// lets members react to / reply on individual check-ins and comment on the
-// trip overall.
+// Trip journal, reactions and replies. Authors and companions can add
+// check-ins while the trip is active; closing and traveler edits use mobile.
 export function TripDetailPage({
   user,
   postId,
@@ -43,31 +37,36 @@ export function TripDetailPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenNotifications,
+  onOpenSearch,
   onLogout,
 }: {
-  user: User;
-  postId: string;
-  onBack: () => void;
+  user: User
+  postId: string
+  onBack: () => void
   // The bottom nav's Feed tab; "back" may lead elsewhere (e.g. the Photos tab).
-  onOpenFeed?: () => void;
-  onOpenPhotos?: () => void;
-  onOpenChat?: () => void;
-  onOpenProfile?: () => void;
-  onOpenFavorites?: () => void;
-  onLogout: () => void;
+  onOpenFeed?: () => void
+  onOpenPhotos?: () => void
+  onOpenChat?: () => void
+  onOpenProfile?: () => void
+  onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
+  onLogout: () => void
 }) {
-  const { t, i18n } = useTranslation();
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
+  const { t, i18n } = useTranslation()
+  const [checkinOpen, setCheckinOpen] = useState(false)
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null)
 
-  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) });
+  const postQuery = useQuery({ queryKey: ['post', postId], queryFn: () => fetchPost(postId) })
   // Same ['comments', postId] key CommentsSection itself queries — sharing it
   // means the "Reacties op de reis" section below reuses this fetch from the
   // cache instead of firing a second request.
-  const commentsQuery = useQuery({ queryKey: ['comments', postId], queryFn: () => fetchComments(postId) });
+  const commentsQuery = useQuery({ queryKey: ['comments', postId], queryFn: () => fetchComments(postId) })
 
-  const post = postQuery.data;
-  const trip = post?.trip;
-  const comments = commentsQuery.data ?? [];
+  const post = postQuery.data
+  const trip = post?.trip
+  const comments = commentsQuery.data ?? []
 
   const { checkins, tripComments } = useMemo(
     () =>
@@ -75,8 +74,8 @@ export function TripDetailPage({
         ? splitTripComments(comments, trip.startDate)
         : { checkins: [], tripComments: [], repliesByParent: new Map() },
     [comments, trip]
-  );
-  const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed]);
+  )
+  const sortedCheckins = useMemo(() => sortCheckins(checkins, !trip?.closed), [checkins, trip?.closed])
 
   function shell(children: ReactNode) {
     return (
@@ -86,6 +85,8 @@ export function TripDetailPage({
         onFeed={onOpenFeed ?? onBack}
         onPhotos={onOpenPhotos}
         onFavorites={onOpenFavorites}
+        onNotifications={onOpenNotifications}
+        onSearch={onOpenSearch}
         onChat={onOpenChat}
         onProfile={onOpenProfile ?? (() => {})}
         onLogout={onLogout}
@@ -95,19 +96,23 @@ export function TripDetailPage({
           {children}
         </div>
       </AppShell>
-    );
+    )
   }
 
   if (postQuery.isLoading || commentsQuery.isLoading) {
-    return shell(<div className="trip-detail-hint">{t('common.loading')}</div>);
+    return shell(<div className="trip-detail-hint">{t('common.loading')}</div>)
   }
 
   if (!post || !trip) {
-    return shell(<div className="trip-detail-hint">{t('feed.loadFailed')}</div>);
+    return shell(<div className="trip-detail-hint">{t('feed.loadFailed')}</div>)
   }
 
-  const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0] || null;
-  const travelers = trip.travelers ?? [];
+  const coverUrl = trip.coverPhotoUrl || trip.collagePhotoUrls[0] || null
+  const travelers = trip.travelers ?? []
+  const canCheckIn =
+    !trip.closed &&
+    trip.dayNumber != null &&
+    (post.authorId === user.id || travelers.some((traveler) => traveler.id === user.id))
 
   return shell(
     <>
@@ -166,6 +171,15 @@ export function TripDetailPage({
         )}
       </section>
 
+      {canCheckIn && sortedCheckins.length > 0 && (
+        <div className="trip-detail-checkin-action">
+          <button type="button" className="btn btn-primary" onClick={() => setCheckinOpen(true)}>
+            <Icon name="plus" size={18} />
+            {t('trip.detail.addCheckinButton')}
+          </button>
+        </div>
+      )}
+
       <section className="trip-detail-comments-section">
         <h2 className="trip-detail-section-title">
           <Icon name="message-square" size={16} />
@@ -189,6 +203,14 @@ export function TripDetailPage({
           <div className="trip-detail-empty-description">
             {t('trip.detail.emptyDescription', { name: post.author.name })}
           </div>
+          {canCheckIn && (
+            <div className="trip-detail-checkin-action">
+              <button type="button" className="btn btn-primary" onClick={() => setCheckinOpen(true)}>
+                <Icon name="plus" size={18} />
+                {t('trip.detail.addCheckinButton')}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <ol className="trip-detail-timeline">
@@ -214,11 +236,21 @@ export function TripDetailPage({
         </div>
       )}
 
+      {checkinOpen && canCheckIn && (
+        <TripCheckinModal
+          key={postId}
+          postId={postId}
+          tripTitle={trip.title}
+          dayNumber={trip.dayNumber!}
+          onClose={() => setCheckinOpen(false)}
+        />
+      )}
+
       {lightbox && (
         <Lightbox assetUrls={lightbox.urls} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />
       )}
     </>
-  );
+  )
 }
 
 // A single check-in on the timeline: day/time label, place, text, photo
@@ -233,48 +265,48 @@ function CheckinTimelineItem({
   isLast,
   onOpenPhotos,
 }: {
-  entry: TripCheckinEntry;
-  tripAuthorId: string;
-  closed: boolean;
-  isLast: boolean;
-  onOpenPhotos: (urls: string[], index: number) => void;
+  entry: TripCheckinEntry
+  tripAuthorId: string
+  closed: boolean
+  isLast: boolean
+  onOpenPhotos: (urls: string[], index: number) => void
 }) {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const [repliesOpen, setRepliesOpen] = useState(false);
-  const [replyOpen, setReplyOpen] = useState(false);
-  const [replyDraft, setReplyDraft] = useState('');
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const [repliesOpen, setRepliesOpen] = useState(false)
+  const [replyOpen, setReplyOpen] = useState(false)
+  const [replyDraft, setReplyDraft] = useState('')
 
-  const { comment, dayNumber, replies } = entry;
+  const { comment, dayNumber, replies } = entry
   // Entries here are always trip check-ins (splitTripComments filters on
   // metadata.kind === 'trip_checkin'); narrow the widened Comment.metadata
   // union back to the check-in shape so `place` is accessible.
-  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null;
-  const photoUrls = metadata?.photoUrls ?? [];
+  const metadata = comment.metadata?.kind === 'trip_checkin' ? comment.metadata : null
+  const photoUrls = metadata?.photoUrls ?? []
   // A co-traveler's check-in gets attributed explicitly; the trip author's
   // own check-ins don't repeat their name on every entry (the header
   // already names them).
-  const isCoTravelerCheckin = comment.authorId !== tripAuthorId;
+  const isCoTravelerCheckin = comment.authorId !== tripAuthorId
 
   const likeMutation = useMutation({
     mutationFn: () => reactToComment(comment.id, 'LIKE'),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', comment.postId] }),
-  });
+  })
 
   const replyMutation = useMutation({
     mutationFn: (content: string) => createComment(comment.postId, { content, parentId: comment.id }),
     onSuccess: () => {
-      setReplyDraft('');
-      setReplyOpen(false);
-      setRepliesOpen(true);
-      queryClient.invalidateQueries({ queryKey: ['comments', comment.postId] });
-      patchPostInCaches(queryClient, comment.postId, (p) => ({ ...p, commentCount: p.commentCount + 1 }));
+      setReplyDraft('')
+      setReplyOpen(false)
+      setRepliesOpen(true)
+      queryClient.invalidateQueries({ queryKey: ['comments', comment.postId] })
+      patchPostInCaches(queryClient, comment.postId, (p) => ({ ...p, commentCount: p.commentCount + 1 }))
     },
-  });
+  })
 
   function submitReply() {
-    const trimmed = replyDraft.trim();
-    if (trimmed && !replyMutation.isPending) replyMutation.mutate(trimmed);
+    const trimmed = replyDraft.trim()
+    if (trimmed && !replyMutation.isPending) replyMutation.mutate(trimmed)
   }
 
   return (
@@ -356,8 +388,8 @@ function CheckinTimelineItem({
           <form
             className="trip-timeline-reply-form"
             onSubmit={(e) => {
-              e.preventDefault();
-              submitReply();
+              e.preventDefault()
+              submitReply()
             }}
           >
             <input
@@ -379,5 +411,5 @@ function CheckinTimelineItem({
         )}
       </div>
     </li>
-  );
+  )
 }

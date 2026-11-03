@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Post } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { CircleMembersModal } from '@/components/CircleMembersModal';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Post } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { CircleMembersModal } from '@/components/CircleMembersModal'
 
 // "Shared in Grandparents" — the marker that tells a reader this post went to
 // a Circle rather than the whole family.
@@ -18,12 +18,12 @@ import { CircleMembersModal } from '@/components/CircleMembersModal';
 // get is "nobody reads this silently" — which only means something if the
 // membership is somewhere they can look.
 export function CircleBadge({ post }: { post: Post }) {
-  const { t } = useTranslation();
-  const [membersOpen, setMembersOpen] = useState(false);
+  const { t } = useTranslation()
+  const [membersOpen, setMembersOpen] = useState(false)
 
-  if (!post.circle) return null;
+  if (!post.circle) return null
 
-  const circle = post.circle;
+  const circle = post.circle
 
   return (
     <>
@@ -42,5 +42,5 @@ export function CircleBadge({ post }: { post: Post }) {
         <CircleMembersModal circleId={circle.id} circleName={circle.name} onClose={() => setMembersOpen(false)} />
       )}
     </>
-  );
+  )
 }

@@ -586,17 +586,6 @@ h3 {
   font-size: 0.85rem;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 34, 42, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  z-index: 100;
-}
-
 .modal {
   background: var(--surface);
   border-radius: var(--radius);
@@ -862,13 +851,15 @@ h3 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.1rem 1.25rem;
+  padding: 0.85rem 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .stat-tile-icon {
+  flex-shrink: 0;
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -877,6 +868,14 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.stat-tile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .stat-tile-value {
@@ -1656,8 +1655,7 @@ h3 {
 }
 
 .md-circle-members {
-  border-top: 1px solid var(--border, #e2e8f0);
-  padding-top: 10px;
+  padding-top: 0;
 }
 
 /* Stories moderation tab — a small 9:16 thumbnail next to its status. */
@@ -1843,4 +1841,322 @@ h3 {
   color: #fff;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+/* System status page + alert banner (SystemStatusPage.tsx, AlertBanner.tsx) */
+.badge.err {
+  background: #fde7e4;
+  color: #a8342a;
+}
+
+.alert-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  background: #fde7e4;
+  border-color: #f6c6c0;
+  margin-bottom: 1.5rem;
+}
+
+.alert-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.alert-banner-text {
+  flex: 1 1 200px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.status-grid .card {
+  margin: 0;
+  min-width: 0;
+}
+
+.status-grid .hint {
+  margin-top: 0.75rem;
+}
+
+.status-job-error {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.status-grid h3 {
+  margin-top: 0;
+}
+
+.status-wide {
+  grid-column: 1 / -1;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.status-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-row:last-of-type {
+  border-bottom: none;
+}
+
+.status-row code,
+.status-details code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.status-disk + .status-disk {
+  margin-top: 0.75rem;
+}
+
+.disk-bar {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--fam-primary-tint);
+  overflow: hidden;
+}
+
+.disk-bar span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+
+.disk-bar.low span {
+  background: var(--danger);
+}
+
+.status-details {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.status-details ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+@media (max-width: 720px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Custom dialogs share the existing modal surface, above nested edit forms. */
+.admin-dialog {
+  border: 0;
+  color: var(--text);
+  margin: auto;
+  max-height: calc(100dvh - 3rem);
+}
+.admin-dialog::backdrop {
+  background: rgba(15, 34, 42, 0.45);
+}
+.admin-dialog-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+.admin-dialog input:not([type='checkbox']):not([type='radio']) {
+  width: 100%;
+}
+.checkbox-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+.checkbox-row input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.checkbox-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.checkbox-help {
+  margin: 0 0 0 1.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.membership-row > .checkbox-field {
+  width: 100%;
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.admin-modal-header h3 {
+  margin: 0;
+}
+.admin-member-picker {
+  max-height: 55dvh;
+  overflow-y: auto;
+}
+
+button.mini-toggle {
+  padding: 0;
+  border: 0;
+}
+
+/* Storage follows the server settings card and field styles. */
+.storage-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+.storage-grid .settings-card-heading h3 {
+  margin: 0;
+}
+.storage-grid .settings-card-header {
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.storage-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.storage-metrics span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+}
+.storage-metrics strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.storage-details {
+  margin: 0.75rem 0 0;
+}
+.storage-details dt {
+  color: var(--text-secondary);
+}
+.storage-details dd {
+  margin: 0;
+  text-align: right;
+  max-width: 75%;
+}
+.storage-fingerprint {
+  margin-top: 1rem;
+}
+.storage-fingerprint code {
+  display: block;
+  margin-top: 0.75rem;
+}
+.storage-empty {
+  padding: 1rem 0;
+}
+.storage-direction {
+  margin-bottom: 1rem;
+}
+.storage-direction span {
+  padding: 0 0.25rem;
+  color: var(--primary);
+}
+.storage-progress-table {
+  margin: 1rem 0;
+}
+.storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.storage-actions button {
+  max-width: 100%;
+}
+.storage-cleanup-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  max-width: 760px;
+  margin-top: 1.25rem;
+}
+.storage-cleanup-form label {
+  flex: 1;
+  min-width: 0;
+}
+.storage-cleanup-form input {
+  min-width: 0;
+}
+.storage-cleanup-form button {
+  flex-shrink: 0;
+}
+.storage-grid .storage-cleanup-note {
+  margin-top: 1.25rem;
+}
+.storage-config-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+}
+.storage-config-note svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.storage-loading {
+  min-height: 220px;
+  color: var(--text-secondary);
+}
+@media (max-width: 1100px) {
+  .storage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .storage-cleanup-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }

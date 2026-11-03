@@ -1,51 +1,51 @@
-import i18n from './index';
+import i18n from './index'
 
 export function formatRelativeDate(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffHours / 24)
 
   if (diffMinutes < 1) {
-    return i18n.t('relativeTime.justNow');
+    return i18n.t('relativeTime.justNow')
   }
 
   if (diffHours < 1) {
-    return i18n.t('relativeTime.minutesAgo', { count: diffMinutes });
+    return i18n.t('relativeTime.minutesAgo', { count: diffMinutes })
   }
 
   if (diffDays < 1) {
-    return i18n.t('relativeTime.hoursAgo', { count: diffHours });
+    return i18n.t('relativeTime.hoursAgo', { count: diffHours })
   }
 
   if (diffDays === 1) {
-    return i18n.t('relativeTime.daysAgo', { count: 1 });
+    return i18n.t('relativeTime.daysAgo', { count: 1 })
   }
 
   if (diffDays < 7) {
-    return i18n.t('relativeTime.daysAgo', { count: diffDays });
+    return i18n.t('relativeTime.daysAgo', { count: diffDays })
   }
 
   return date.toLocaleDateString(i18n.language, {
     day: 'numeric',
     month: 'short',
-  });
+  })
 }
 
 export function formatDateTime(dateString: string): string {
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return date.toLocaleDateString(i18n.language, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  })
 }
 
 export function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+  return new Date(dateString).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })
 }
 
 // "3 juli" / "3 July" — used by the trip timeline's closed (oldest-first)
@@ -58,27 +58,27 @@ export function formatTime(dateString: string): string {
 // datetime (e.g. closedAt) already carries a time and parses/formats in
 // local time correctly as-is.
 export function formatDayMonth(dateString: string): string {
-  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
-  const date = new Date(isDateOnly ? `${dateString}T00:00:00` : dateString);
-  return date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' });
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+  const date = new Date(isDateOnly ? `${dateString}T00:00:00` : dateString)
+  return date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' })
 }
 
 // "3 t/m 14 juli" when start/end fall in the same month, else "3 Jul to 14 Aug".
 // startDate/endDate are trip typeData's plain 'YYYY-MM-DD' strings.
 export function formatTripDateRange(startDate: string, endDate: string): string {
-  const start = new Date(`${startDate}T00:00:00`);
-  const end = new Date(`${endDate}T00:00:00`);
+  const start = new Date(`${startDate}T00:00:00`)
+  const end = new Date(`${endDate}T00:00:00`)
 
   if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
     return i18n.t('feed.trip.dateRangeSameMonth', {
       startDay: start.getDate(),
       endDay: end.getDate(),
       month: end.toLocaleDateString(i18n.language, { month: 'long' }),
-    });
+    })
   }
 
   return i18n.t('feed.trip.dateRangeDifferentMonth', {
     start: start.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
     end: end.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
-  });
+  })
 }

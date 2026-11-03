@@ -1,73 +1,73 @@
-import React, { useState } from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { View, TouchableOpacity, StyleSheet } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { FeedScreen } from '@/screens/FeedScreen';
-import { PhotosScreen } from '@/screens/PhotosScreen';
-import { ProfileScreen } from '@/screens/ProfileScreen';
-import { Icon } from '@/components/Icon';
-import { colors } from '@/constants/colors';
-import { Group } from '@/types';
-import { fetchGroups, fetchChatUnreadCounts } from '@famlin/api-client';
+import { FeedScreen } from '@/screens/FeedScreen'
+import { PhotosScreen } from '@/screens/PhotosScreen'
+import { ProfileScreen } from '@/screens/ProfileScreen'
+import { Icon } from '@/components/Icon'
+import { colors } from '@/constants/colors'
+import { Group } from '@/types'
+import { fetchGroups, fetchChatUnreadCounts } from '@famlin/api-client'
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator()
 
 function HomeIcon({ color }: { color: string }) {
-  return <Icon name="home" size={22} color={color} />;
+  return <Icon name="home" size={22} color={color} />
 }
 
 function PhotosIcon({ color }: { color: string }) {
-  return <Icon name="grid" size={22} color={color} />;
+  return <Icon name="grid" size={22} color={color} />
 }
 
 function ChatIcon({ color }: { color: string }) {
-  return <Icon name="message-square" size={22} color={color} />;
+  return <Icon name="message-square" size={22} color={color} />
 }
 
 function ProfileIcon({ color }: { color: string }) {
-  return <Icon name="user" size={22} color={color} />;
+  return <Icon name="user" size={22} color={color} />
 }
 
 // The Chat tab never actually navigates here — its tabPress listener always
 // preventDefault()s and redirects to the Chat/ChatGroupPicker stack screens
 // (see openChat() below) — but Tab.Screen requires a component prop.
 function NoopScreen() {
-  return null;
+  return null
 }
 
 // The new-post FAB is shown while one of these tabs is focused — creating a
 // post makes sense from the feed and the photo timeline, not from the profile.
-const FAB_TABS = ['Feed', 'Photos'];
+const FAB_TABS = ['Feed', 'Photos']
 
 export function MainTabs() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const [activeTab, setActiveTab] = useState('Feed');
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const [activeTab, setActiveTab] = useState('Feed')
 
   // Shares the ['groups']/['chat-unread'] cache FeedScreen already populates.
-  const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
+  const { data: groups } = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
   const { data: chatUnreadCounts } = useQuery({
     queryKey: ['chat-unread'],
     queryFn: fetchChatUnreadCounts,
     refetchInterval: 30000,
-  });
-  const chatGroups = (groups ?? []).filter((g: Group) => g.chitchatEnabled);
-  const chatUnreadTotal = Object.values(chatUnreadCounts ?? {}).reduce((sum, count) => sum + count, 0);
+  })
+  const chatGroups = (groups ?? []).filter((g: Group) => g.chitchatEnabled)
+  const chatUnreadTotal = Object.values(chatUnreadCounts ?? {}).reduce((sum, count) => sum + count, 0)
 
   // The chat tab has no screen of its own inside this navigator — Chat/
   // ChatGroupPicker are sibling stack screens (see App.tsx), same precedent
   // as FeedScreen's own openChat(): a single chat-enabled group jumps
   // straight in, more than one goes through the picker.
   function openChat() {
-    if (chatGroups.length === 0) return;
+    if (chatGroups.length === 0) return
     if (chatGroups.length === 1) {
-      navigation.navigate('Chat', { groupId: chatGroups[0].id, groupName: chatGroups[0].name });
-      return;
+      navigation.navigate('Chat', { groupId: chatGroups[0].id, groupName: chatGroups[0].name })
+      return
     }
-    navigation.navigate('ChatGroupPicker');
+    navigation.navigate('ChatGroupPicker')
   }
 
   return (
@@ -83,9 +83,9 @@ export function MainTabs() {
         }}
         screenListeners={{
           state: (e) => {
-            const state = (e.data as any)?.state;
-            const routeName = state?.routes?.[state.index]?.name;
-            if (routeName) setActiveTab(routeName);
+            const state = (e.data as any)?.state
+            const routeName = state?.routes?.[state.index]?.name
+            if (routeName) setActiveTab(routeName)
           },
         }}
       >
@@ -116,8 +116,8 @@ export function MainTabs() {
             }}
             listeners={{
               tabPress: (e) => {
-                e.preventDefault();
-                openChat();
+                e.preventDefault()
+                openChat()
               },
             }}
           />
@@ -144,7 +144,7 @@ export function MainTabs() {
         </TouchableOpacity>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -181,4 +181,4 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 6,
   },
-});
+})

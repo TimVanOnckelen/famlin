@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   Modal,
   SafeAreaView,
@@ -8,12 +8,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-} from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { fetchCircleMembers } from '@famlin/api-client';
-import { Avatar } from './Avatar';
-import { colors } from '../constants/colors';
+} from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { fetchCircleMembers } from '@famlin/api-client'
+import { Avatar } from './Avatar'
+import { colors } from '../constants/colors'
 
 // Who is in this circle — opened by tapping the "shared in <Circle>" tag on a
 // post, which is where a reader wonders "so who actually saw this?".
@@ -33,20 +33,20 @@ export function CircleMembersModal({
   circleName,
   onClose,
 }: {
-  visible: boolean;
-  circleId: string;
-  circleName: string;
-  onClose: () => void;
+  visible: boolean
+  circleId: string
+  circleName: string
+  onClose: () => void
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['circle-members', circleId],
     queryFn: () => fetchCircleMembers(circleId),
     enabled: visible,
-  });
+  })
 
-  const members = data ?? [];
+  const members = data ?? []
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -86,7 +86,7 @@ export function CircleMembersModal({
         </ScrollView>
       </SafeAreaView>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -128,4 +128,4 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1 },
   rowName: { fontFamily: 'Nunito_700Bold', fontSize: 15, color: colors.textTitle },
   rowJoined: { fontFamily: 'Nunito_400Regular', fontSize: 12, color: colors.textMuted },
-});
+})

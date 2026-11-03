@@ -1,5 +1,92 @@
 # Changelog
 
+## [0.8.6](https://github.com/TimVanOnckelen/famlin/compare/v0.8.5...v0.8.6) (2026-11-01)
+
+
+### Bug Fixes
+
+* **backend:** serve admin index.html without reply.sendFile ([4720bf3](https://github.com/TimVanOnckelen/famlin/commit/4720bf356a1d933bcf45157f59f63598fb45b5cd))
+* **backend:** serve admin index.html without reply.sendFile ([b9310af](https://github.com/TimVanOnckelen/famlin/commit/b9310af4cd344e2f6a8162383e9467f79eb23d6b))
+
+## [0.8.5](https://github.com/TimVanOnckelen/famlin/compare/v0.8.4...v0.8.5) (2026-11-01)
+
+
+### Features
+
+* **backend:** add S3-compatible media storage and bidirectional migration ([bc81251](https://github.com/TimVanOnckelen/famlin/commit/bc81251c8656e61a9ed7509d4d1438d4c01e10f2))
+* gift lists with optional Secret Santa draw ([6986e9d](https://github.com/TimVanOnckelen/famlin/commit/6986e9d9fe8ca0cdd1620c84f79c3702aea5f04e))
+* gift lists with optional Secret Santa draw ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([c14a8ef](https://github.com/TimVanOnckelen/famlin/commit/c14a8efef2564ca84d55d1e86bafb913dff843eb))
+* **web:** add family members and circles overview ([d02a725](https://github.com/TimVanOnckelen/famlin/commit/d02a725e52731a1d8da90bb57ad60554a5bd5e60))
+
+
+### Bug Fixes
+
+* address gift list client review and lean check ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([c053603](https://github.com/TimVanOnckelen/famlin/commit/c053603fcdc82ad15d37969360bc8f30ef761a2e))
+* **gift-lists:** serialize wish adds, clean up wish photos, reuse delete hook ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([5f4bb8c](https://github.com/TimVanOnckelen/famlin/commit/5f4bb8cfd250a112885ef005f65abd5ccf2846b3))
+* **mobile:** resolve two new gift list lint warnings ([#307](https://github.com/TimVanOnckelen/famlin/issues/307)) ([e4cf4c7](https://github.com/TimVanOnckelen/famlin/commit/e4cf4c72c3683bc6402ce2c8198f13130a0b5514))
+
+## [0.8.4](https://github.com/TimVanOnckelen/famlin/compare/v0.8.3...v0.8.4) (2026-10-28)
+
+
+### Features
+
+* edit and delete posts from web, and let admins edit any post ([51891d8](https://github.com/TimVanOnckelen/famlin/commit/51891d87337c0d00959f51a989dfee24bc8a632e)), closes [#246](https://github.com/TimVanOnckelen/famlin/issues/246)
+* **mobile:** share photos and videos to Famlin from the OS share sheet ([16908b9](https://github.com/TimVanOnckelen/famlin/commit/16908b9a02bb67e667bb1d89305020a192cdb2ba))
+* scheduled backups and admin system status panel with email alerts ([c99c160](https://github.com/TimVanOnckelen/famlin/commit/c99c160c1d188c494673fda94d8ff33bd5bc6fbb))
+
+
+### Bug Fixes
+
+* **posts:** show cross-posted comments merged across visible copies ([fdf76f1](https://github.com/TimVanOnckelen/famlin/commit/fdf76f1d8764ea5c41d2544391d9423278b5865c))
+* **posts:** show cross-posted reactions and comments merged across visible copies ([bbc4a34](https://github.com/TimVanOnckelen/famlin/commit/bbc4a34aa73a1696683c40e3b22ccd890b39e74b))
+* **posts:** show cross-posted reactions merged across visible copies ([8394c06](https://github.com/TimVanOnckelen/famlin/commit/8394c067bcce23dca06974f9a7b573a7e7756479))
+
+## [0.8.3](https://github.com/TimVanOnckelen/famlin/compare/v0.8.2...v0.8.3) (2026-10-17)
+
+
+### Features
+
+* **backend:** add StorageBackend abstraction with a local driver ([ca5622a](https://github.com/TimVanOnckelen/famlin/commit/ca5622a18e45626abad51f812c64715edfe1f67a))
+* **backend:** add StorageBackend abstraction with a local driver ([9352ac7](https://github.com/TimVanOnckelen/famlin/commit/9352ac77d622b7f3df04fb472afe51c6df4ed989))
+* **web:** add notifications page ([9ec5b7c](https://github.com/TimVanOnckelen/famlin/commit/9ec5b7c13d4991207a3b8899468dd92c38a894aa))
+* **web:** add notifications page ([f3245fa](https://github.com/TimVanOnckelen/famlin/commit/f3245fa29216d63a7aff5392e97f67f4c7c4fce4))
+* **web:** add shareable family-scoped search ([fbce4c9](https://github.com/TimVanOnckelen/famlin/commit/fbce4c906de773bdbc4dabc62e7e0b6e395f6259))
+
+
+### Bug Fixes
+
+* **mobile:** keep input fields visible above the keyboard ([4cadccb](https://github.com/TimVanOnckelen/famlin/commit/4cadccb57a71cfe4a8ac3c9655d498f8cb6040ef))
+* **mobile:** keep input fields visible above the keyboard ([b0577cc](https://github.com/TimVanOnckelen/famlin/commit/b0577ccb2d2dde81d4ff5172d07669c25c930a89))
+* **mobile:** keep input fields visible above the keyboard ([53529f1](https://github.com/TimVanOnckelen/famlin/commit/53529f168acffb3526e56a360d88a5dd3cc2ca6a))
+
+## [0.8.2](https://github.com/TimVanOnckelen/famlin/compare/v0.8.1...v0.8.2) (2026-10-11)
+
+
+### Features
+
+* **backend:** graceful shutdown, DB-aware healthcheck and log rotation ([d062e84](https://github.com/TimVanOnckelen/famlin/commit/d062e844fbc2b9f46332c1d386f0f00288d7ddad)), closes [#225](https://github.com/TimVanOnckelen/famlin/issues/225)
+* **web:** add a favorites page with shell entry points ([633db8f](https://github.com/TimVanOnckelen/famlin/commit/633db8fb52bb7ebf9cca6b09030f7c1426888d75))
+* **web:** handle the no-family state across shell, feed, and routes ([cbd4ce1](https://github.com/TimVanOnckelen/famlin/commit/cbd4ce181592ab8edd002e781fc8db04d59af77a))
+* **web:** handle the no-family state across shell, feed, and routes ([6d0f763](https://github.com/TimVanOnckelen/famlin/commit/6d0f763594236c3985bd5a93107b70cd5c4bc0eb))
+* **web:** mobile-style redesign for wide screens with keyboard navigation ([f3a0d26](https://github.com/TimVanOnckelen/famlin/commit/f3a0d26e9763c2e830834ade3cdc9add4a8de9a0))
+
+
+### Bug Fixes
+
+* **dev:** simplify dependency setup and load seed environment ([0e7b050](https://github.com/TimVanOnckelen/famlin/commit/0e7b05095f572bf870a0e3069e22cbf51355505d))
+* **mobile:** draw a filled bookmark for favorited posts ([a539586](https://github.com/TimVanOnckelen/famlin/commit/a53958634daccca5e407e90019ef980d072bd331)), closes [#220](https://github.com/TimVanOnckelen/famlin/issues/220)
+* **mobile:** improve lightbox dismissal and swipe momentum ([7e94653](https://github.com/TimVanOnckelen/famlin/commit/7e946536010adf245bc1022ef0dcbf95ed482de3))
+* **mobile:** improve lightbox dismissal and swipe momentum ([5e62949](https://github.com/TimVanOnckelen/famlin/commit/5e629499446742aa15af9630b17b93ab30c572c8))
+* **mobile:** keep bookmark box stable on toggle and fill pinned stories ([c787b49](https://github.com/TimVanOnckelen/famlin/commit/c787b49c968b7cc13a3570c4921977e14bad8899))
+* smooth story progress and center web reaction buttons ([3b46765](https://github.com/TimVanOnckelen/famlin/commit/3b46765b8f79659422061df8c78c224c10efbf1c))
+* **web:** clear file input before opening the picker, not in the chan… ([d9cc830](https://github.com/TimVanOnckelen/famlin/commit/d9cc83062af7ed68c53e199c7e2a0e738facec00))
+* **web:** clear file input before opening the picker, not in the change handler ([e94b565](https://github.com/TimVanOnckelen/famlin/commit/e94b5658f92bd606508031cfc16dabc5bddfb7fd))
+* **web:** don't read or write refs during render (lint) ([8543052](https://github.com/TimVanOnckelen/famlin/commit/854305279608a54ba4822ac63517c721bf9c110c))
+* **web:** fetch groups during bootstrap so family-scoped tabs never flash on cold load ([c0da898](https://github.com/TimVanOnckelen/famlin/commit/c0da898072302f0ed51374cb92cd2323d732c35e))
+* **web:** hide favorites navigation for users without groups ([9c45171](https://github.com/TimVanOnckelen/famlin/commit/9c451719e2d30e3a0d616f2d232fb1f6279eae19))
+* **web:** visual and layout fixes across feed, chat, albums and trips ([43b102e](https://github.com/TimVanOnckelen/famlin/commit/43b102e8cb91f691426676bbdc64c9cf47e7ce1c))
+* **web:** visual and layout fixes across feed, chat, albums and trips ([1c8cbea](https://github.com/TimVanOnckelen/famlin/commit/1c8cbeaf3b0b09c98492be15543c3139a6180b20))
+
 ## [0.8.1](https://github.com/TimVanOnckelen/famlin/compare/v0.8.0...v0.8.1) (2026-10-06)
 
 

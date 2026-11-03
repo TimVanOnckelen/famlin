@@ -1,28 +1,31 @@
-import { useState, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import { Post, PostPerson, REACTION_TYPES, getUploadUrl } from '@famlin/api-client';
-import { REACTION_EMOJI } from '@/constants/reactions';
-import { Avatar } from '@/components/Avatar';
-import { Badge } from '@/components/Badge';
-import { Icon } from '@/components/Icon';
-import { CircleBadge } from '@/components/CircleBadge';
-import { CommentsSection } from '@/components/CommentsSection';
-import { Lightbox } from '@/components/Lightbox';
-import { ShimmerImage } from '@/components/ShimmerImage';
-import { postTypeRenderers } from '@/components/postTypes';
-import { TripFeedCard } from '@/components/postTypes/TripFeedCard';
-import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard';
-import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations';
-import { formatRelativeDate } from '@/utils/time';
-import { isVideoUrl } from '@/utils/media';
-import { paths } from '@/utils/routes';
-import './PostCard.css';
+import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
+import { Post, PostPerson, REACTION_TYPES, getUploadUrl } from '@famlin/api-client'
+import { REACTION_EMOJI } from '@/constants/reactions'
+import { Avatar } from '@/components/Avatar'
+import { Badge } from '@/components/Badge'
+import { Icon } from '@/components/Icon'
+import { CircleBadge } from '@/components/CircleBadge'
+import { CommentsSection } from '@/components/CommentsSection'
+import { Lightbox } from '@/components/Lightbox'
+import { ShimmerImage } from '@/components/ShimmerImage'
+import { postTypeRenderers } from '@/components/postTypes'
+import { TripFeedCard } from '@/components/postTypes/TripFeedCard'
+import { GiftListFeedCard } from '@/components/postTypes/GiftListFeedCard'
+import { AlbumFeedCard } from '@/components/postTypes/AlbumFeedCard'
+import { EditPostModal } from '@/components/EditPostModal'
+import { useDeletePost, useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
+import { useAuthStore } from '@/stores/authStore'
+import { formatRelativeDate } from '@/utils/time'
+import { isVideoUrl } from '@/utils/media'
+import { paths } from '@/utils/routes'
+import './PostCard.css'
 
 // Past this many photos the collage becomes a horizontally scrolling gallery
 // instead — every photo stays reachable on the card itself rather than hiding
 // behind a "+N" tile. Matches the comment cards' threshold.
-const COLLAGE_MAX_PHOTOS = 4;
+const COLLAGE_MAX_PHOTOS = 4
 
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
@@ -37,18 +40,18 @@ function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: 
       )}
       {overlay}
     </button>
-  );
+  )
 
   if (assetUrls.length === 2) {
-    return <div className="post-collage post-collage-2">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>;
+    return <div className="post-collage post-collage-2">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>
   }
 
   if (assetUrls.length > COLLAGE_MAX_PHOTOS) {
-    return <div className="post-collage post-collage-gallery">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>;
+    return <div className="post-collage post-collage-gallery">{assetUrls.map((assetUrl, i) => tile(assetUrl, i))}</div>
   }
 
-  const stackUrls = assetUrls.slice(1, 3);
-  const extraCount = assetUrls.length - 3;
+  const stackUrls = assetUrls.slice(1, 3)
+  const extraCount = assetUrls.length - 3
 
   return (
     <div className="post-collage post-collage-3plus">
@@ -63,32 +66,32 @@ function PhotoCollage({ assetUrls, onSelect }: { assetUrls: string[]; onSelect: 
         )
       )}
     </div>
-  );
+  )
 }
 
 function PersonChip({ person }: { person: PostPerson }) {
   // Use the user's avatar/name if mapped to an account, otherwise use label
-  const displayName = person.userName || person.label;
-  const avatarUrl = person.userAvatarUrl;
+  const displayName = person.userName || person.label
+  const avatarUrl = person.userAvatarUrl
 
   if (avatarUrl) {
-    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl;
+    const src = avatarUrl.startsWith('/') ? getUploadUrl(avatarUrl) : avatarUrl
     return (
       <div className="post-person-chip" title={displayName}>
         <img src={src} alt={displayName} className="post-person-avatar" />
         <span>{person.label}</span>
       </div>
-    );
+    )
   }
 
   // Fallback avatar with first letter of the label when no image
-  const firstLetter = person.label.charAt(0).toUpperCase();
-  const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)'];
-  let hash = 0;
+  const firstLetter = person.label.charAt(0).toUpperCase()
+  const AVATAR_COLORS = ['var(--fam-primary)', 'var(--fam-accent)', '#4b8b5a', 'var(--fam-primary-dark)']
+  let hash = 0
   for (let i = 0; i < person.label.length; i++) {
-    hash = (hash * 31 + person.label.charCodeAt(i)) | 0;
+    hash = (hash * 31 + person.label.charCodeAt(i)) | 0
   }
-  const bgColor = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  const bgColor = AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 
   return (
     <div className="post-person-chip" title={displayName}>
@@ -108,7 +111,7 @@ function PersonChip({ person }: { person: PostPerson }) {
       </div>
       <span>{person.label}</span>
     </div>
-  );
+  )
 }
 
 export function PostCard({
@@ -116,16 +119,22 @@ export function PostCard({
   showGroup = false,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   showComments = false,
+  onDeleted,
 }: {
-  post: Post;
-  showGroup?: boolean;
-  onOpenTrip?: (postId: string) => void;
-  onOpenAlbum?: (postId: string) => void;
+  post: Post
+  showGroup?: boolean
+  onOpenTrip?: (postId: string) => void
+  onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
   // The single-post page/modal shows the full thread unconditionally; the
   // feed shows only the comment-count line (clicking it opens that page) —
   // there is no inline expand/collapse any more (issue: web redesign phase 2).
-  showComments?: boolean;
+  showComments?: boolean
+  // Called once the post was deleted from the detail view (where the
+  // edit/delete actions live), so the page/modal can navigate away.
+  onDeleted?: () => void
 }) {
   // TRIP posts get a wholesale-different card (different hero source, no
   // inline comments, a "follow/view diary" CTA instead of a comment button)
@@ -134,50 +143,72 @@ export function PostCard({
   // surface in a generic inline comment list, which this branch guarantees
   // simply by never mounting CommentsSection for a TRIP post.
   if (post.type === 'TRIP') {
-    return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />;
+    return <TripFeedCard post={post} showGroup={showGroup} onOpenTrip={onOpenTrip} />
   }
 
   // ALBUM posts likewise get their own card (collage hero, contributor stack,
   // an "Add photos"/"Open album" CTA) — its photo contributions live as
   // metadata comments and must never surface in a generic inline comment list.
   if (post.type === 'ALBUM') {
-    return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />;
+    return <AlbumFeedCard post={post} showGroup={showGroup} onOpenAlbum={onOpenAlbum} />
   }
 
-  return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} />;
+  // GIFT_LIST posts open their own page (wishlists, the draw) — the card is a
+  // summary with a "You're buying for X" line once the names are drawn.
+  if (post.type === 'GIFT_LIST') {
+    return <GiftListFeedCard post={post} showGroup={showGroup} onOpenGiftList={onOpenGiftList} />
+  }
+
+  return <DefaultPostCard post={post} showGroup={showGroup} showComments={showComments} onDeleted={onDeleted} />
 }
 
 function DefaultPostCard({
   post,
   showGroup = false,
   showComments = false,
+  onDeleted,
 }: {
-  post: Post;
-  showGroup?: boolean;
-  showComments?: boolean;
+  post: Post
+  showGroup?: boolean
+  showComments?: boolean
+  onDeleted?: () => void
 }) {
-  const { t, i18n } = useTranslation();
-  const isMilestone = post.type === 'MILESTONE';
-  const hasPhotos = post.uploadedAssetUrls.length > 0;
+  const { t, i18n } = useTranslation()
+  const isMilestone = post.type === 'MILESTONE'
+  const hasPhotos = post.uploadedAssetUrls.length > 0
   // Unknown/absent types fall back to the plain rendering below (required
   // forward-compat behavior); milestone stays its own hardcoded branch and is
   // never looked up here.
-  const TypeCardBody = postTypeRenderers[post.type]?.CardBody;
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const TypeCardBody = postTypeRenderers[post.type]?.CardBody
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
-  const reactMutation = useReactToPost(post);
-  const favoriteMutation = useToggleFavorite(post);
+  const reactMutation = useReactToPost(post)
+  const favoriteMutation = useToggleFavorite(post)
+  const deleteMutation = useDeletePost(post)
+  const [editing, setEditing] = useState(false)
+
+  // Authors manage their own posts; admins may edit or delete anyone's (the
+  // server enforces both, plus the circle boundary). Offered only in the
+  // detail view, so the feed's cards stay uncluttered — same placement as
+  // mobile, whose post menu lives on PostDetailScreen.
+  const currentUser = useAuthStore((s) => s.user)
+  const canManage = showComments && !!currentUser && (currentUser.id === post.authorId || currentUser.isAdmin)
+
+  function confirmDelete() {
+    if (!window.confirm(t('postDetail.deleteConfirm'))) return
+    deleteMutation.mutate(undefined, { onSuccess: () => onDeleted?.() })
+  }
 
   const timeLine = `${formatRelativeDate(post.createdAt, i18n.language)}${
     post.editedAt ? ` · ${t('common.edited')}` : ''
-  }`;
+  }`
   // The timestamp is the post's permalink (/posts/:id) — the link people copy
   // to share a post, the same convention as most social feeds.
   const timeLink = (
     <Link className="post-time" to={paths.post(post.id)} title={new Date(post.createdAt).toLocaleString(i18n.language)}>
       {timeLine}
     </Link>
-  );
+  )
   // When the feed spans several families, label each post with its group.
   // Both context chips travel together: which family the post is in (when the
   // feed spans several) and which Circle it was shared with (when it wasn't
@@ -187,7 +218,7 @@ function DefaultPostCard({
       {showGroup && post.group && <span className="post-group-chip">{post.group.name}</span>}
       <CircleBadge post={post} />
     </>
-  );
+  )
 
   // Only present (and only ever sent to the author) when the post was
   // cross-posted to more than one family — never derive this for posts
@@ -195,12 +226,12 @@ function DefaultPostCard({
   const sharedWithNames =
     post.sharedWithGroups && post.sharedWithGroups.length > 1
       ? post.sharedWithGroups.map((g) => g.name).join(', ')
-      : null;
+      : null
 
   // The styleguide's photo-first rule: with a photo, the photo leads —
   // edge-to-edge hero with the author chip (and milestone title) on top of it.
-  const heroUrl = hasPhotos ? getUploadUrl(post.uploadedAssetUrls[0]) : null;
-  const isCollage = post.uploadedAssetUrls.length > 1;
+  const heroUrl = hasPhotos ? getUploadUrl(post.uploadedAssetUrls[0]) : null
+  const isCollage = post.uploadedAssetUrls.length > 1
 
   const favoriteButton = (
     <button
@@ -212,7 +243,7 @@ function DefaultPostCard({
     >
       <Icon name="bookmark" size={18} filled={post.favoritedByMe} />
     </button>
-  );
+  )
 
   return (
     // A plain div, not <article>: when rendered from the feed, FeedPage wraps
@@ -350,7 +381,37 @@ function DefaultPostCard({
               <Icon name="message-square" size={18} />
               {t('feed.comments', { count: post.commentCount })}
             </button>
+
+            {canManage && (
+              <div className="post-manage-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setEditing(true)}
+                  aria-label={t('postDetail.editPost')}
+                  title={t('postDetail.editPost')}
+                >
+                  <Icon name="edit-3" size={18} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn post-delete-btn"
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  aria-label={t('postDetail.deletePost')}
+                  title={t('postDetail.deletePost')}
+                >
+                  <Icon name="trash" size={18} />
+                </button>
+              </div>
+            )}
           </div>
+
+          {deleteMutation.isError && (
+            <div className="post-manage-error" role="alert">
+              {t('postDetail.deleteFailed')}
+            </div>
+          )}
 
           {showComments && <CommentsSection post={post} />}
         </div>
@@ -363,6 +424,8 @@ function DefaultPostCard({
           onClose={() => setLightboxIndex(null)}
         />
       )}
+
+      {editing && <EditPostModal post={post} onClose={() => setEditing(false)} />}
     </div>
-  );
+  )
 }

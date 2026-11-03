@@ -1,5 +1,10 @@
 {
   "common": {
+    "retry": "重试",
+    "confirm": "确认",
+    "confirmTitle": "确认操作",
+    "messageTitle": "提示",
+    "changePassword": "修改密码",
     "loading": "加载中…",
     "loadMore": "加载更多",
     "cancel": "取消",
@@ -36,7 +41,8 @@
     "serverSettings": "服务器设置",
     "logout": "退出登录",
     "language": "语言",
-    "version": "版本 {{version}}"
+    "version": "版本 {{version}}",
+    "systemStatus": "系统状态"
   },
   "login": {
     "title": "Famlin 管理后台",
@@ -103,6 +109,8 @@
     "uploads": "上传文件"
   },
   "users": {
+    "grantAdminConfirm": "授予 {{name}}（{{email}}）管理员权限？该用户将能够管理用户、群组和服务器设置。",
+    "revokeAdminConfirm": "撤销 {{name}}（{{email}}）的管理员权限？",
     "title": "用户",
     "newUser": "新建用户",
     "createUser": "创建用户",
@@ -265,7 +273,9 @@
     "storyCircle": "圈子",
     "viewsTooltip": "浏览",
     "reactionsTooltip": "回应",
-    "storyPhoto": "限时动态照片"
+    "storyPhoto": "限时动态照片",
+    "editPostTitle": "编辑 {{name}} 的帖子",
+    "editPostHint": "仅修改此帖子的文字，帖子会被标记为已编辑。照片可以在 Famlin 应用中修改。"
   },
   "pushLog": {
     "title": "推送通知日志",
@@ -360,7 +370,22 @@
     "localMediaTesting": "正在检查…",
     "localMediaTestOk": "路径存在且可读取。",
     "localMediaTestNotFound": "路径不存在，或服务器无权读取。",
-    "localMediaTestNotADirectory": "路径存在，但不是文件夹。"
+    "localMediaTestNotADirectory": "路径存在，但不是文件夹。",
+    "backups": "备份",
+    "backupsDesc": "定期备份数据库以及所有上传的照片和视频，写入此服务器上的备份卷。",
+    "backupEnabled": "定时备份",
+    "backupEnabledHint": "默认关闭，需要手动开启。每次运行会生成一份数据库转储，并更新一份上传文件的增量副本。",
+    "backupSchedule": "计划",
+    "backupScheduleDaily": "每天",
+    "backupScheduleWeekly": "每周（周日）",
+    "backupHour": "时间（服务器时间）",
+    "backupRetention": "保留的数据库转储数量",
+    "backupHint": "上传文件以增量方式镜像，而不是每次完整复制。从 Famlin 删除的文件会在镜像中保留 30 天后再移除。如果备份失败，或超过两个计划周期没有成功的备份，管理员会收到邮件（需要配置 SMTP）。",
+    "backupStatusLink": "查看备份状态并立即运行备份",
+    "backupIncludeMedia": "备份包含媒体",
+    "backupIncludeMediaHint": "关闭后仅备份数据库和品牌文件，保留现有媒体镜像。",
+    "exportIncludeMedia": "导出包含媒体",
+    "exportIncludeMediaHint": "关闭后，恢复时要求所有列出的媒体已存在于配置的存储中。品牌文件始终包含在内。"
   },
   "media": {
     "peopleMapping": {
@@ -387,6 +412,9 @@
     }
   },
   "members": {
+    "noneAvailable": "所有可用用户均已添加。",
+    "addNamed": "添加 {{name}}",
+    "removeNamed": "移除 {{name}}",
     "addMember": "添加成员",
     "modeInvite": "邀请",
     "modeCreate": "使用密码创建",
@@ -401,9 +429,12 @@
     "MILESTONE": "成长时刻",
     "POLL": "投票",
     "TRIP": "旅程",
-    "ALBUM": "相册"
+    "ALBUM": "相册",
+    "GIFT_LIST": "礼物清单"
   },
   "circles": {
+    "edit": "编辑圈子",
+    "removeMemberConfirm": "将 {{name}} 从圈子“{{circle}}”中移除？",
     "heading_one": "{{count}} 个圈子",
     "heading_other": "{{count}} 个圈子",
     "hint": "圈子供部分家人私密分享，圈外成员无法查看其中的动态、照片或评论，也不会获知圈子的存在。",
@@ -461,5 +492,140 @@
       "forest": "森林",
       "slate": "石板"
     }
+  },
+  "systemStatus": {
+    "title": "系统状态",
+    "refresh": "刷新",
+    "ok": "正常",
+    "failed": "失败",
+    "running": "运行中",
+    "never": "从未运行",
+    "alerts": {
+      "backup_failed": "上一次备份失败。",
+      "backup_stale": "已有 {{days}} 天没有成功的备份。",
+      "disk_low_uploads": "上传卷空间即将用尽（剩余 {{free}} GiB）。",
+      "disk_low_backups": "备份卷空间即将用尽（剩余 {{free}} GiB）。",
+      "viewStatus": "查看系统状态"
+    },
+    "backups": {
+      "title": "备份",
+      "schedule": "计划",
+      "scheduleValue": {
+        "daily_one": "每天 {{time}}，保留 {{count}} 份转储",
+        "daily_other": "每天 {{time}}，保留 {{count}} 份转储",
+        "weekly_one": "每周日 {{time}}，保留 {{count}} 份转储",
+        "weekly_other": "每周日 {{time}}，保留 {{count}} 份转储"
+      },
+      "enableInSettings": "在服务器设置中启用",
+      "lastBackup": "上次备份",
+      "size": "大小",
+      "sizeValue": "转储 {{dump}} · 上传镜像 {{mirror}}",
+      "nextRun": "下次计划备份",
+      "location": "位置",
+      "notMounted": "备份目录不是挂载的卷，重新创建容器时备份会丢失。请在 docker-compose.yml 中添加 famlin-backups 卷。",
+      "dumps_one": "{{count}} 份数据库转储",
+      "dumps_other": "{{count}} 份数据库转储",
+      "runNow": "立即备份"
+    },
+    "disk": {
+      "title": "磁盘空间",
+      "uploads": "上传",
+      "backups": "备份",
+      "free": "共 {{total}}，剩余 {{free}}",
+      "low": "不足",
+      "unavailable": "不可用",
+      "sameVolume": "备份与上传文件位于同一个卷。使用单独的磁盘或 NAS 共享可以避免两者同时丢失。",
+      "s3Capacity": "媒体存储在 S3 中。S3 API 不提供存储桶的总容量和可用容量。"
+    },
+    "integrations": {
+      "title": "集成",
+      "smtp": "邮件（SMTP）",
+      "oidc": "单点登录（OIDC）",
+      "immich": "Immich",
+      "localMedia": "本地媒体文件夹",
+      "notConfigured": "未配置",
+      "errors": {
+        "unreachable": "无法连接",
+        "unauthorized": "凭据被拒绝",
+        "not_found": "找不到文件夹",
+        "not_a_directory": "不是文件夹",
+        "invalid_response": "响应无效"
+      }
+    },
+    "push": {
+      "title": "推送通知",
+      "last24h": "最近 24 小时",
+      "last7d": "最近 7 天",
+      "summary": "已送达 {{delivered}} · 失败 {{failed}}（{{rate}}）",
+      "unhealthy": "最近 24 小时内超过 20% 的推送通知发送失败。",
+      "viewLog": "查看推送通知日志"
+    },
+    "jobs": {
+      "title": "后台任务",
+      "job": "任务",
+      "lastRun": "上次运行",
+      "result": "结果",
+      "lastSuccess": "上次成功",
+      "names": {
+        "onThisDay": "“那年今日”通知",
+        "newAssets": "相册新照片",
+        "expireStories": "清理过期限时动态",
+        "backup": "备份",
+        "systemAlerts": "告警检查"
+      }
+    },
+    "migrations": {
+      "title": "数据库迁移",
+      "latest": "最近应用",
+      "applied": "已应用",
+      "pending": "待应用",
+      "upToDate": "已是最新",
+      "unknown": "未知",
+      "failed": "以下迁移失败，需要处理：{{names}}"
+    }
+  },
+  "storage": {
+    "usingFallback": "主存储不可用，正在使用备用存储进行读写。媒体删除、迁移和清理已禁用。请恢复主存储访问并重启服务器，然后迁移备用数据。",
+    "title": "存储",
+    "description": "通过环境变量配置存储并重启。新媒体写入主存储，读取也会使用备用存储。",
+    "primary": "主存储",
+    "fallback": "备用来源",
+    "progress": "进度",
+    "idle": "尚未开始",
+    "state": "状态",
+    "files": "文件",
+    "bytes": "字节",
+    "migrate": "开始或重试迁移",
+    "cleanup": "清理来源",
+    "cleanupHint": "清理会删除已验证的来源副本。请输入上方显示的来源指纹以确认。",
+    "confirmSource": "来源指纹",
+    "removeFallback": "清理成功后，删除备用存储环境变量并重启。",
+    "notConfigured": "未配置",
+    "driver": "驱动",
+    "directory": "目录",
+    "bucket": "存储桶",
+    "prefix": "前缀",
+    "endpoint": "端点",
+    "region": "区域",
+    "availability": "可用性",
+    "available": "可用",
+    "unavailable": "不可用",
+    "states": {
+      "running": "复制中",
+      "cleaning": "清理来源中",
+      "verified": "已验证",
+      "failed": "失败",
+      "cleaned": "来源已清理",
+      "cleanup_failed": "清理失败",
+      "error": "错误",
+      "conflict": "冲突",
+      "deleted": "已删除",
+      "source_removed": "来源已移除"
+    },
+    "size": "大小",
+    "migrationTitle": "迁移",
+    "errors": "错误（{{count}}）",
+    "cleanupLocked": "完成迁移校验后才能清理源存储。",
+    "confirmPlaceholder": "粘贴源存储指纹"
   }
 }

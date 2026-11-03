@@ -52,6 +52,9 @@
     "onThisDayCount_one": "往年今日的 {{count}} 个回忆",
     "onThisDayCount_other": "往年今日的 {{count}} 个回忆",
     "membersTitle": "家庭成员",
+    "membersLoadFailed": "部分成员无法加载。",
+    "membersRetry": "重试",
+    "membersEmpty": "未找到成员。",
     "trip": {
       "activeBadge": "第 {{day}} 天 · 旅途中",
       "lastStopLabel": "上一站：",
@@ -74,7 +77,9 @@
       "contributedBy_other": "由 {{name}} 等 {{others}} 人添加",
       "addPhotosCta": "添加照片",
       "openCta": "打开相册 →"
-    }
+    },
+    "viewMembers": "查看成员",
+    "viewAllMembers": "查看所有成员"
   },
   "comments": {
     "placeholder": "写下评论…",
@@ -91,12 +96,42 @@
   },
   "newPost": {
     "title": "发布动态",
-    "group": "家庭群组",
+    "group": "分享给",
     "groupHint": "选择要分享的一个或多个家庭。",
-    "typeLabel": "动态类型",
+    "typeLabel": "你想分享什么？",
+    "typeDescriptions": {
+      "UPDATE": "分享日常近况、照片和视频。",
+      "MILESTONE": "庆祝生日、成就或特别时刻。",
+      "POLL": "提出问题，让家人投票。",
+      "TRIP": "规划旅行并分享沿途动态。",
+      "ALBUM": "一起在共享相册中收集照片。",
+      "GIFT_LIST": "分享愿望清单，并可选择抽取神秘圣诞老人名单。"
+    },
     "typeUpdate": "日常动态",
     "typeMilestone": "成长时刻",
     "typePoll": "投票",
+    "typeTrip": "旅行",
+    "trip": {
+      "helper": "在旅行详情页添加旅途打卡，让家人了解最新动态。",
+      "titleLabel": "标题",
+      "titlePlaceholder": "例如：意大利自驾游",
+      "destinationLabel": "目的地",
+      "destinationPlaceholder": "例如：意大利托斯卡纳和艾米利亚-罗马涅",
+      "startDateLabel": "开始日期",
+      "endDateLabel": "结束日期",
+      "endDateOptional": "选填",
+      "datePlaceholder": "YYYY-MM-DD",
+      "dateHint": "格式：YYYY-MM-DD",
+      "coverPhotoTitle": "添加封面照片",
+      "coverPhotoSubtitle": "选填，也可以稍后设置",
+      "travelersLabel": "旅伴",
+      "travelersSubtitle": "选填，同伴也可以打卡",
+      "travelersSelected_one": "{{count}} 位同行者",
+      "travelersSelected_other": "{{count}} 位同行者",
+      "membersFailed": "无法加载同行者。",
+      "retry": "重试",
+      "noCompanions": "没有其他成员同时属于所有选中的家庭。"
+    },
     "typeAlbum": "相册",
     "noAllowedTypes": "所选家庭没有共同支持的动态类型，请调整选择。",
     "placeholder": "和家人分享新鲜事…",
@@ -114,7 +149,17 @@
     "failed": "发布失败，请重试。",
     "audience": "谁可以看到？",
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
-    "audienceEveryone": "所有成员"
+    "audienceEveryone": "所有成员",
+    "typeGiftList": "礼物清单",
+    "giftListTitlePlaceholder": "礼物清单标题（例如：2026 圣诞节）",
+    "giftListParticipantsHint": "选择参与者。你始终是参与者之一。",
+    "giftListDescriptionPlaceholder": "给参与者留个言…（可选）"
+  },
+  "editPost": {
+    "title": "编辑帖子",
+    "contentLabel": "帖子内容",
+    "save": "保存",
+    "failed": "无法保存你的更改，请重试。"
   },
   "profile": {
     "title": "我的",
@@ -160,7 +205,9 @@
       "nl": "Nederlands",
       "zh": "简体中文"
     },
-    "notifyNewStory": "限时动态（仅推送）"
+    "notifyNewStory": "限时动态（仅推送）",
+    "myGiftLists": "我的礼物清单",
+    "notifyGiftList": "礼物清单"
   },
   "apiTokens": {
     "menuItem": "API 令牌",
@@ -247,13 +294,16 @@
     "photos": "照片",
     "profile": "我的",
     "chat": "聊天",
-    "favorites": "收藏"
+    "favorites": "收藏",
+    "notifications": "通知",
+    "search": "搜索"
   },
   "demo": {
     "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
   },
   "trip": {
     "detail": {
+      "addCheckinButton": "打卡",
       "headerTitle": "旅行",
       "activeBadge": "旅途中 · 第 {{day}} 天",
       "closedBadge": "已结束",
@@ -277,6 +327,19 @@
       "closingLine": "{{author}} 于 {{date}} 结束旅程",
       "emptyTitle": "旅程开始了…",
       "emptyDescription": "暂无打卡，{{name}} 出发后将在这里分享沿途足迹。"
+    },
+    "checkin": {
+      "headerTitle": "打卡",
+      "submitButton": "打卡",
+      "contextLine": "{{title}} · 第 {{day}} 天",
+      "placeLabel": "你在哪里？*",
+      "placePlaceholder": "例如：博洛尼亚",
+      "textPlaceholder": "聊聊这一站…（选填）",
+      "addPhotoLabel": "照片 / 视频",
+      "alerts": {
+        "failed": "打卡失败"
+      },
+      "mediaLimit": "最多添加 {{max}} 张照片或段视频。"
     }
   },
   "album": {
@@ -357,7 +420,11 @@
     "notFound": "此帖子不存在，或未与你分享。",
     "loadFailed": "无法加载此帖子。",
     "prevPhoto": "上一张照片",
-    "nextPhoto": "下一张照片"
+    "nextPhoto": "下一张照片",
+    "editPost": "编辑帖子",
+    "deletePost": "删除帖子",
+    "deleteConfirm": "要删除这条帖子吗？此操作无法撤销，帖子的评论和回应也会一并删除。",
+    "deleteFailed": "无法删除帖子，请重试。"
   },
   "a11y": {
     "skipToContent": "跳转到主要内容"
@@ -376,6 +443,94 @@
     "prevPost": "上一条动态",
     "openPost": "打开动态",
     "likePost": "点赞动态",
-    "favoritePost": "收藏动态"
+    "favoritePost": "收藏动态",
+    "goNotifications": "前往通知",
+    "goSearch": "前往搜索"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "empty": "暂无通知",
+    "loadFailed": "无法加载通知。",
+    "markFailed": "无法将通知标为已读。请重试。",
+    "unread": "未读",
+    "storyUnavailable": "此限时动态已不可用。"
+  },
+  "search": {
+    "title": "搜索",
+    "family": "家庭",
+    "placeholder": "搜索动态…",
+    "prompt": "输入关键词，搜索此家庭的动态。",
+    "empty": "未找到动态，请尝试其他关键词。",
+    "noGroups": "加入家庭后即可搜索动态。",
+    "loadFailed": "无法加载搜索结果。",
+    "loadMore": "加载更多"
+  },
+  "members": {
+    "title": "成员",
+    "description": "你加入的所有家庭及私密圈子。",
+    "yourCircles": "你的圈子",
+    "noCircles": "你尚未加入此家庭中的任何圈子。",
+    "noFamilies": "你尚未加入任何家庭。请联系家庭管理员添加你。",
+    "noMembers": "暂无成员。",
+    "familiesFailed": "无法加载你的家庭。",
+    "familyMembersFailed": "无法加载此家庭的成员。",
+    "circlesFailed": "无法加载你在此家庭中的圈子。",
+    "circleMembersFailed": "无法加载此圈子的成员。",
+    "count_one": "{{count}} 位成员",
+    "count_other": "{{count}} 位成员"
+  },
+  "giftList": {
+    "badge": "礼物清单",
+    "headerTitle": "礼物清单",
+    "openCta": "打开礼物清单",
+    "participantCount_one": "{{count}} 位参与者",
+    "participantCount_other": "{{count}} 位参与者",
+    "budgetValue": "预算 {{budget}}",
+    "buyingFor": "你要为 {{name}} 准备礼物",
+    "drawPending": "尚未抽签",
+    "notAvailable": "这个礼物清单不可用。",
+    "actionFailed": "操作失败，请重试。",
+    "redrawConfirm": "这个更改会作废当前的神秘圣诞老人抽签结果。要重新抽签吗？",
+    "drawCta": "抽签",
+    "drawNeedsThree": "抽签至少需要 3 位参与者。",
+    "manageCta": "管理",
+    "deleteCta": "删除礼物清单",
+    "deleteConfirm": "删除这个礼物清单以及所有人的愿望吗？",
+    "leaveCta": "退出礼物清单",
+    "leaveConfirm": "退出这个礼物清单吗？你的愿望将被删除。",
+    "myWishlist": "我的愿望清单",
+    "wishlistOf": "{{name}} 的愿望清单",
+    "recipientBadge": "你为他们准备礼物",
+    "myWishlistEmpty": "你的愿望清单是空的。添加第一个愿望吧。",
+    "wishlistEmpty": "还没有愿望。",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "editItem": "编辑愿望",
+    "deleteItem": "删除愿望",
+    "deleteItemConfirm": "删除这个愿望吗？",
+    "addItem": "添加愿望",
+    "itemTitlePlaceholder": "你想要什么？",
+    "itemNotePlaceholder": "备注（尺码、颜色…）— 可选",
+    "itemUrlPlaceholder": "商店链接 — 可选",
+    "itemUrlInvalid": "请使用以 http:// 或 https:// 开头的链接",
+    "addPhoto": "添加照片",
+    "changePhoto": "更换照片",
+    "removePhoto": "移除照片",
+    "participants": "参与者",
+    "saveParticipants": "保存参与者",
+    "settings": "设置",
+    "titleLabel": "标题",
+    "occasionDate": "日期",
+    "budget": "预算",
+    "budgetPlaceholder": "例如 €25",
+    "drawEnabled": "神秘圣诞老人抽签",
+    "exclusions": "排除规则",
+    "exclusionsHint": "互相不能抽到对方的组合，例如伴侣。",
+    "removeExclusion": "删除排除规则",
+    "exclusionPerson": "第 {{number}} 人",
+    "addExclusion": "添加排除规则",
+    "saveSettings": "保存设置",
+    "photoUploadFailed": "照片无法上传，请换一张试试。"
   }
 }

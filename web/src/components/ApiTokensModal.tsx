@@ -1,59 +1,59 @@
-import { FormEvent, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createApiToken, fetchApiTokens, revokeApiToken, CreatedApiToken } from '@famlin/api-client';
-import { useModalFocus } from '@/hooks/useModalFocus';
-import './ApiTokensModal.css';
+import { FormEvent, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createApiToken, fetchApiTokens, revokeApiToken, CreatedApiToken } from '@famlin/api-client'
+import { useModalFocus } from '@/hooks/useModalFocus'
+import './ApiTokensModal.css'
 
 // Developer personal access tokens — deliberately a web-only surface (the
 // mobile app has no equivalent screen): creating credentials is a
 // sit-down-at-a-desk task, and the API reference this pairs with lives on
 // the docs site.
 export function ApiTokensModal({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState('');
-  const [expiresInDays, setExpiresInDays] = useState<number | undefined>(undefined);
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [name, setName] = useState('')
+  const [expiresInDays, setExpiresInDays] = useState<number | undefined>(undefined)
   // The secret of the token created in this modal session — the only time
   // it's ever visible, so it stays on screen until the modal closes.
-  const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null);
-  const [copied, setCopied] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  useModalFocus(cardRef, onClose);
+  const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null)
+  const [copied, setCopied] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  useModalFocus(cardRef, onClose)
 
-  const tokensQuery = useQuery({ queryKey: ['api-tokens'], queryFn: fetchApiTokens });
+  const tokensQuery = useQuery({ queryKey: ['api-tokens'], queryFn: fetchApiTokens })
 
   const createMutation = useMutation({
     mutationFn: () => createApiToken({ name: name.trim(), expiresInDays }),
     onSuccess: (token) => {
-      setCreatedToken(token);
-      setCopied(false);
-      setName('');
-      queryClient.invalidateQueries({ queryKey: ['api-tokens'] });
+      setCreatedToken(token)
+      setCopied(false)
+      setName('')
+      queryClient.invalidateQueries({ queryKey: ['api-tokens'] })
     },
-  });
+  })
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => revokeApiToken(id),
     onSuccess: (_data, id) => {
-      if (createdToken?.id === id) setCreatedToken(null);
-      queryClient.invalidateQueries({ queryKey: ['api-tokens'] });
+      if (createdToken?.id === id) setCreatedToken(null)
+      queryClient.invalidateQueries({ queryKey: ['api-tokens'] })
     },
-  });
+  })
 
   function submit(e: FormEvent) {
-    e.preventDefault();
-    if (name.trim() && !createMutation.isPending) createMutation.mutate();
+    e.preventDefault()
+    if (name.trim() && !createMutation.isPending) createMutation.mutate()
   }
 
   async function copyToken() {
-    if (!createdToken) return;
-    await navigator.clipboard.writeText(createdToken.token);
-    setCopied(true);
+    if (!createdToken) return
+    await navigator.clipboard.writeText(createdToken.token)
+    setCopied(true)
   }
 
-  const tokens = tokensQuery.data ?? [];
-  const formatDate = (value: string) => new Date(value).toLocaleDateString();
+  const tokens = tokensQuery.data ?? []
+  const formatDate = (value: string) => new Date(value).toLocaleDateString()
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -137,7 +137,7 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
                   className="btn btn-secondary api-token-revoke"
                   onClick={() => {
                     if (window.confirm(t('apiTokens.revokeConfirm', { name: token.name }))) {
-                      revokeMutation.mutate(token.id);
+                      revokeMutation.mutate(token.id)
                     }
                   }}
                   disabled={revokeMutation.isPending}
@@ -157,5 +157,5 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
-import { QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react'
+import { QueryKey, useInfiniteQuery } from '@tanstack/react-query'
 
 // The shape every cursor-paginated backend list endpoint returns
 // (services/pagination.ts server-side).
 interface CursorPage<TItem> {
-  items: TItem[];
-  nextCursor: string | null;
+  items: TItem[]
+  nextCursor: string | null
 }
 
 /**
@@ -21,9 +21,9 @@ export function useCursorPagination<TItem>({
   queryFn,
   enabled = true,
 }: {
-  queryKey: QueryKey;
-  queryFn: (cursor: string | undefined) => Promise<CursorPage<TItem>>;
-  enabled?: boolean;
+  queryKey: QueryKey
+  queryFn: (cursor: string | undefined) => Promise<CursorPage<TItem>>
+  enabled?: boolean
 }) {
   const query = useInfiniteQuery({
     queryKey,
@@ -31,13 +31,13 @@ export function useCursorPagination<TItem>({
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled,
-  });
+  })
 
-  const items = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data]);
+  const items = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data])
 
   function onEndReached() {
-    if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
+    if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage()
   }
 
-  return { query, items, onEndReached };
+  return { query, items, onEndReached }
 }

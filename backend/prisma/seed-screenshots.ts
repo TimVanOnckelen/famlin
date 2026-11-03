@@ -3,10 +3,10 @@
 // container start) — invoke manually with `npx tsx prisma/seed-screenshots.ts`.
 // Assumes the /uploads files referenced below already exist (copied in
 // separately; this script only writes DB rows that point at them).
-import { PrismaClient, ReactionType } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { PrismaClient, ReactionType } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 const img = {
   anniversary0: '/uploads/17878d8b-44ae-4fa8-b380-9fa6ed8037d3.jpg',
@@ -36,14 +36,14 @@ const img = {
   snow1: '/uploads/e87d358c-adf5-4ee0-8e36-b3240284271f.jpg',
   travel0: '/uploads/f7be58f2-b063-4617-974a-dec61f1c12a3.jpg',
   travel1: '/uploads/1b2d99fc-b695-4dea-92e0-a429ba818f7b.jpg',
-};
+}
 
 function at(date: string, time: string) {
-  return new Date(`${date}T${time}:00`);
+  return new Date(`${date}T${time}:00`)
 }
 
 async function main() {
-  const testPasswordHash = await bcrypt.hash('test123456', 12);
+  const testPasswordHash = await bcrypt.hash('test123456', 12)
 
   const admin = await prisma.user.create({
     data: {
@@ -53,22 +53,22 @@ async function main() {
       passwordHash: testPasswordHash,
       avatarUrl: img.avatarAlex,
     },
-  });
+  })
   const grandpa = await prisma.user.create({
     data: { email: 'grandpa@example.com', name: 'Grandpa Joe', avatarUrl: img.avatarGrandpa },
-  });
+  })
   const grandma = await prisma.user.create({
     data: { email: 'grandma@example.com', name: 'Grandma Rose', avatarUrl: img.avatarGrandma },
-  });
+  })
   const dad = await prisma.user.create({
     data: { email: 'dad@example.com', name: 'Dad Mike', avatarUrl: img.avatarDad },
-  });
+  })
   const mom = await prisma.user.create({
     data: { email: 'mom@example.com', name: 'Mom Emily', avatarUrl: img.avatarMom },
-  });
+  })
   const sophie = await prisma.user.create({
     data: { email: 'sophie@example.com', name: 'Sophie', avatarUrl: img.avatarSophie },
-  });
+  })
   const testUser = await prisma.user.create({
     data: {
       email: 'test@example.com',
@@ -76,18 +76,18 @@ async function main() {
       passwordHash: testPasswordHash,
       avatarUrl: img.avatarTestUser,
     },
-  });
+  })
 
   const group = await prisma.group.create({
     data: { name: 'The Miller Family', description: 'Our family group' },
-  });
+  })
 
   for (const userId of [admin.id, grandpa.id, grandma.id, dad.id, mom.id, sophie.id, testUser.id]) {
-    await prisma.groupMember.create({ data: { groupId: group.id, userId } });
+    await prisma.groupMember.create({ data: { groupId: group.id, userId } })
   }
 
   async function react(target: { postId?: string; commentId?: string }, userId: string, type: ReactionType) {
-    await prisma.like.create({ data: { ...target, userId, type } });
+    await prisma.like.create({ data: { ...target, userId, type } })
   }
 
   // --- Posts, oldest to newest ---
@@ -104,7 +104,7 @@ async function main() {
       locationName: 'Algarve, Portugal',
       createdAt: at('2025-07-03', '14:00'),
     },
-  });
+  })
 
   const teenBirthdayPost = await prisma.post.create({
     data: {
@@ -116,7 +116,7 @@ async function main() {
       uploadedAssetUrls: [img.birthdayTeen0, img.birthdayTeen1],
       createdAt: at('2025-09-01', '20:00'),
     },
-  });
+  })
 
   const firstDaySchoolPost = await prisma.post.create({
     data: {
@@ -128,7 +128,7 @@ async function main() {
       uploadedAssetUrls: [img.school0],
       createdAt: at('2025-11-15', '09:00'),
     },
-  });
+  })
 
   const snowPost = await prisma.post.create({
     data: {
@@ -139,7 +139,7 @@ async function main() {
       uploadedAssetUrls: [img.snow0, img.snow1],
       createdAt: at('2026-01-05', '16:00'),
     },
-  });
+  })
 
   const anniversaryPost = await prisma.post.create({
     data: {
@@ -151,7 +151,7 @@ async function main() {
       uploadedAssetUrls: [img.anniversary0],
       createdAt: at('2026-02-14', '12:00'),
     },
-  });
+  })
 
   const dinnerPost = await prisma.post.create({
     data: {
@@ -162,7 +162,7 @@ async function main() {
       uploadedAssetUrls: [img.dinner0],
       createdAt: at('2026-03-28', '18:30'),
     },
-  });
+  })
 
   const gardenPost = await prisma.post.create({
     data: {
@@ -173,7 +173,7 @@ async function main() {
       uploadedAssetUrls: [img.garden0],
       createdAt: at('2026-04-14', '10:00'),
     },
-  });
+  })
 
   const reportCardPost = await prisma.post.create({
     data: {
@@ -183,7 +183,7 @@ async function main() {
       type: 'UPDATE',
       createdAt: at('2026-05-10', '13:00'),
     },
-  });
+  })
 
   const examPost = await prisma.post.create({
     data: {
@@ -195,7 +195,7 @@ async function main() {
       uploadedAssetUrls: [img.keys0],
       createdAt: at('2026-05-20', '19:00'),
     },
-  });
+  })
 
   const beachPost = await prisma.post.create({
     data: {
@@ -209,7 +209,7 @@ async function main() {
       locationName: 'Seaside Bay',
       createdAt: at('2026-06-02', '11:00'),
     },
-  });
+  })
 
   const hikePost = await prisma.post.create({
     data: {
@@ -223,7 +223,7 @@ async function main() {
       locationName: 'High Fens',
       createdAt: at('2026-06-10', '15:30'),
     },
-  });
+  })
 
   const puppyPost = await prisma.post.create({
     data: {
@@ -235,7 +235,7 @@ async function main() {
       uploadedAssetUrls: [img.puppy0],
       createdAt: at('2026-06-18', '20:05'),
     },
-  });
+  })
 
   const playgroundPost = await prisma.post.create({
     data: {
@@ -246,7 +246,7 @@ async function main() {
       uploadedAssetUrls: [img.playground0],
       createdAt: at('2026-06-25', '17:20'),
     },
-  });
+  })
 
   const bbqPost = await prisma.post.create({
     data: {
@@ -257,7 +257,7 @@ async function main() {
       uploadedAssetUrls: [img.bbq0, img.bbq1],
       createdAt: at('2026-06-29', '12:00'),
     },
-  });
+  })
 
   const kidBirthdayPost = await prisma.post.create({
     data: {
@@ -269,7 +269,7 @@ async function main() {
       uploadedAssetUrls: [img.birthdayKid0],
       createdAt: at('2026-07-02', '18:40'),
     },
-  });
+  })
 
   const todayPost = await prisma.post.create({
     data: {
@@ -279,7 +279,7 @@ async function main() {
       type: 'UPDATE',
       createdAt: at('2026-07-03', '09:15'),
     },
-  });
+  })
 
   // --- Comments ---
 
@@ -290,8 +290,8 @@ async function main() {
       content: 'What a wonderful trip that was! Can we go back soon? 🥹',
       createdAt: at('2025-07-03', '19:00'),
     },
-  });
-  await react({ commentId: travelComment.id }, dad.id, ReactionType.LOVE);
+  })
+  await react({ commentId: travelComment.id }, dad.id, ReactionType.LOVE)
 
   const examComment1 = await prisma.comment.create({
     data: {
@@ -300,7 +300,7 @@ async function main() {
       content: 'Well done, Sophie! So proud of you. 👏',
       createdAt: at('2026-05-20', '19:20'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: examPost.id,
@@ -309,7 +309,7 @@ async function main() {
       content: 'Thank you, Grandma! 🥰',
       createdAt: at('2026-05-20', '19:45'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: examPost.id,
@@ -317,7 +317,7 @@ async function main() {
       content: 'Already practicing for the first drive with Grandpa in the car? 😄',
       createdAt: at('2026-05-20', '20:10'),
     },
-  });
+  })
 
   const beachComment1 = await prisma.comment.create({
     data: {
@@ -326,8 +326,8 @@ async function main() {
       content: 'What a lovely day, enjoy it!',
       createdAt: at('2026-06-02', '13:00'),
     },
-  });
-  await react({ commentId: beachComment1.id }, mom.id, ReactionType.LIKE);
+  })
+  await react({ commentId: beachComment1.id }, mom.id, ReactionType.LIKE)
   await prisma.comment.create({
     data: {
       postId: beachPost.id,
@@ -336,7 +336,7 @@ async function main() {
       content: 'What a great sandcastle you built!',
       createdAt: at('2026-06-02', '14:15'),
     },
-  });
+  })
 
   await prisma.comment.create({
     data: {
@@ -345,7 +345,7 @@ async function main() {
       content: 'What a view! We should join next time.',
       createdAt: at('2026-06-10', '18:00'),
     },
-  });
+  })
 
   const puppyComment1 = await prisma.comment.create({
     data: {
@@ -354,7 +354,7 @@ async function main() {
       content: "He's adorable! What's his name?",
       createdAt: at('2026-06-18', '20:30'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: puppyPost.id,
@@ -363,7 +363,7 @@ async function main() {
       content: 'His name is Max! 🐾',
       createdAt: at('2026-06-18', '20:35'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: puppyPost.id,
@@ -371,7 +371,7 @@ async function main() {
       content: "Finally!! Can't wait to give him a cuddle 😍",
       createdAt: at('2026-06-18', '21:00'),
     },
-  });
+  })
 
   await prisma.comment.create({
     data: {
@@ -380,7 +380,7 @@ async function main() {
       content: 'Thanks for cooking, Grandpa, everything was delicious!',
       createdAt: at('2026-06-29', '14:00'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: bbqPost.id,
@@ -388,7 +388,7 @@ async function main() {
       content: "Next time I'll help with the marinade 😋",
       createdAt: at('2026-06-29', '14:20'),
     },
-  });
+  })
 
   const kidBirthdayComment1 = await prisma.comment.create({
     data: {
@@ -397,7 +397,7 @@ async function main() {
       content: 'What a cake! Happy birthday, Emma! 🎂',
       createdAt: at('2026-07-02', '19:00'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: kidBirthdayPost.id,
@@ -406,7 +406,7 @@ async function main() {
       content: "Couldn't agree more, what a lovely party this was!",
       createdAt: at('2026-07-02', '19:10'),
     },
-  });
+  })
   const kidBirthdayMention = await prisma.comment.create({
     data: {
       postId: kidBirthdayPost.id,
@@ -414,7 +414,7 @@ async function main() {
       content: '@Tim could you also send the photos to Grandpa and Grandma?',
       createdAt: at('2026-07-02', '19:30'),
     },
-  });
+  })
   await prisma.comment.create({
     data: {
       postId: kidBirthdayPost.id,
@@ -423,7 +423,7 @@ async function main() {
       content: 'Look at those balloons! So well organized.',
       createdAt: at('2026-07-02', '19:45'),
     },
-  });
+  })
 
   const todayComment = await prisma.comment.create({
     data: {
@@ -432,73 +432,73 @@ async function main() {
       content: 'You too, have a great week! 😊',
       createdAt: at('2026-07-03', '09:45'),
     },
-  });
+  })
 
   // --- Reactions on posts ---
-  await react({ postId: travelPost.id }, admin.id, ReactionType.LOVE);
-  await react({ postId: travelPost.id }, grandma.id, ReactionType.LOVE);
+  await react({ postId: travelPost.id }, admin.id, ReactionType.LOVE)
+  await react({ postId: travelPost.id }, grandma.id, ReactionType.LOVE)
 
-  await react({ postId: teenBirthdayPost.id }, grandpa.id, ReactionType.LOVE);
-  await react({ postId: teenBirthdayPost.id }, grandma.id, ReactionType.LOVE);
-  await react({ postId: teenBirthdayPost.id }, admin.id, ReactionType.LIKE);
+  await react({ postId: teenBirthdayPost.id }, grandpa.id, ReactionType.LOVE)
+  await react({ postId: teenBirthdayPost.id }, grandma.id, ReactionType.LOVE)
+  await react({ postId: teenBirthdayPost.id }, admin.id, ReactionType.LIKE)
 
-  await react({ postId: firstDaySchoolPost.id }, grandma.id, ReactionType.LOVE);
-  await react({ postId: firstDaySchoolPost.id }, grandpa.id, ReactionType.CARE);
+  await react({ postId: firstDaySchoolPost.id }, grandma.id, ReactionType.LOVE)
+  await react({ postId: firstDaySchoolPost.id }, grandpa.id, ReactionType.CARE)
 
-  await react({ postId: snowPost.id }, dad.id, ReactionType.HAHA);
-  await react({ postId: snowPost.id }, mom.id, ReactionType.LOVE);
+  await react({ postId: snowPost.id }, dad.id, ReactionType.HAHA)
+  await react({ postId: snowPost.id }, mom.id, ReactionType.LOVE)
 
-  await react({ postId: anniversaryPost.id }, sophie.id, ReactionType.LOVE);
-  await react({ postId: anniversaryPost.id }, mom.id, ReactionType.LOVE);
-  await react({ postId: anniversaryPost.id }, dad.id, ReactionType.LOVE);
-  await react({ postId: anniversaryPost.id }, grandma.id, ReactionType.CARE);
+  await react({ postId: anniversaryPost.id }, sophie.id, ReactionType.LOVE)
+  await react({ postId: anniversaryPost.id }, mom.id, ReactionType.LOVE)
+  await react({ postId: anniversaryPost.id }, dad.id, ReactionType.LOVE)
+  await react({ postId: anniversaryPost.id }, grandma.id, ReactionType.CARE)
 
-  await react({ postId: dinnerPost.id }, admin.id, ReactionType.LIKE);
-  await react({ postId: dinnerPost.id }, grandpa.id, ReactionType.LOVE);
+  await react({ postId: dinnerPost.id }, admin.id, ReactionType.LIKE)
+  await react({ postId: dinnerPost.id }, grandpa.id, ReactionType.LOVE)
 
-  await react({ postId: gardenPost.id }, grandma.id, ReactionType.WOW);
-  await react({ postId: gardenPost.id }, admin.id, ReactionType.LIKE);
+  await react({ postId: gardenPost.id }, grandma.id, ReactionType.WOW)
+  await react({ postId: gardenPost.id }, admin.id, ReactionType.LIKE)
 
-  await react({ postId: reportCardPost.id }, dad.id, ReactionType.WOW);
-  await react({ postId: reportCardPost.id }, grandma.id, ReactionType.LOVE);
+  await react({ postId: reportCardPost.id }, dad.id, ReactionType.WOW)
+  await react({ postId: reportCardPost.id }, grandma.id, ReactionType.LOVE)
 
-  await react({ postId: examPost.id }, admin.id, ReactionType.LOVE);
-  await react({ postId: examPost.id }, mom.id, ReactionType.LOVE);
-  await react({ postId: examPost.id }, grandma.id, ReactionType.WOW);
+  await react({ postId: examPost.id }, admin.id, ReactionType.LOVE)
+  await react({ postId: examPost.id }, mom.id, ReactionType.LOVE)
+  await react({ postId: examPost.id }, grandma.id, ReactionType.WOW)
 
-  await react({ postId: beachPost.id }, dad.id, ReactionType.WOW);
-  await react({ postId: beachPost.id }, sophie.id, ReactionType.LOVE);
-  await react({ postId: beachPost.id }, admin.id, ReactionType.LIKE);
+  await react({ postId: beachPost.id }, dad.id, ReactionType.WOW)
+  await react({ postId: beachPost.id }, sophie.id, ReactionType.LOVE)
+  await react({ postId: beachPost.id }, admin.id, ReactionType.LIKE)
 
-  await react({ postId: hikePost.id }, mom.id, ReactionType.WOW);
-  await react({ postId: hikePost.id }, grandma.id, ReactionType.LIKE);
+  await react({ postId: hikePost.id }, mom.id, ReactionType.WOW)
+  await react({ postId: hikePost.id }, grandma.id, ReactionType.LIKE)
 
-  await react({ postId: puppyPost.id }, grandma.id, ReactionType.LOVE);
-  await react({ postId: puppyPost.id }, grandpa.id, ReactionType.LOVE);
-  await react({ postId: puppyPost.id }, mom.id, ReactionType.LOVE);
-  await react({ postId: puppyPost.id }, sophie.id, ReactionType.LOVE);
-  await react({ postId: puppyPost.id }, admin.id, ReactionType.HAHA);
+  await react({ postId: puppyPost.id }, grandma.id, ReactionType.LOVE)
+  await react({ postId: puppyPost.id }, grandpa.id, ReactionType.LOVE)
+  await react({ postId: puppyPost.id }, mom.id, ReactionType.LOVE)
+  await react({ postId: puppyPost.id }, sophie.id, ReactionType.LOVE)
+  await react({ postId: puppyPost.id }, admin.id, ReactionType.HAHA)
 
-  await react({ postId: playgroundPost.id }, grandma.id, ReactionType.CARE);
-  await react({ postId: playgroundPost.id }, grandpa.id, ReactionType.LOVE);
+  await react({ postId: playgroundPost.id }, grandma.id, ReactionType.CARE)
+  await react({ postId: playgroundPost.id }, grandpa.id, ReactionType.LOVE)
 
-  await react({ postId: bbqPost.id }, admin.id, ReactionType.LIKE);
-  await react({ postId: bbqPost.id }, sophie.id, ReactionType.LOVE);
-  await react({ postId: bbqPost.id }, mom.id, ReactionType.LOVE);
+  await react({ postId: bbqPost.id }, admin.id, ReactionType.LIKE)
+  await react({ postId: bbqPost.id }, sophie.id, ReactionType.LOVE)
+  await react({ postId: bbqPost.id }, mom.id, ReactionType.LOVE)
 
-  await react({ postId: kidBirthdayPost.id }, grandpa.id, ReactionType.LOVE);
-  await react({ postId: kidBirthdayPost.id }, grandma.id, ReactionType.LOVE);
-  await react({ postId: kidBirthdayPost.id }, dad.id, ReactionType.LOVE);
-  await react({ postId: kidBirthdayPost.id }, mom.id, ReactionType.CARE);
-  await react({ postId: kidBirthdayPost.id }, admin.id, ReactionType.LOVE);
+  await react({ postId: kidBirthdayPost.id }, grandpa.id, ReactionType.LOVE)
+  await react({ postId: kidBirthdayPost.id }, grandma.id, ReactionType.LOVE)
+  await react({ postId: kidBirthdayPost.id }, dad.id, ReactionType.LOVE)
+  await react({ postId: kidBirthdayPost.id }, mom.id, ReactionType.CARE)
+  await react({ postId: kidBirthdayPost.id }, admin.id, ReactionType.LOVE)
 
-  await react({ postId: todayPost.id }, mom.id, ReactionType.LOVE);
-  await react({ postId: todayPost.id }, sophie.id, ReactionType.LIKE);
+  await react({ postId: todayPost.id }, mom.id, ReactionType.LOVE)
+  await react({ postId: todayPost.id }, sophie.id, ReactionType.LIKE)
 
   // --- Favorites (Admin's saved posts, for the Favorites screen) ---
-  await prisma.favorite.create({ data: { postId: puppyPost.id, userId: admin.id } });
-  await prisma.favorite.create({ data: { postId: kidBirthdayPost.id, userId: admin.id } });
-  await prisma.favorite.create({ data: { postId: anniversaryPost.id, userId: admin.id } });
+  await prisma.favorite.create({ data: { postId: puppyPost.id, userId: admin.id } })
+  await prisma.favorite.create({ data: { postId: kidBirthdayPost.id, userId: admin.id } })
+  await prisma.favorite.create({ data: { postId: anniversaryPost.id, userId: admin.id } })
 
   // --- Notifications for Admin, newest first ---
   await prisma.notification.create({
@@ -510,7 +510,7 @@ async function main() {
         'A memory from The Miller Family — Dad Mike\'s post from 1 year ago: "Our first day in the Algarve! The kids jumped straight into the water..."',
       createdAt: at('2026-07-03', '08:00'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -520,7 +520,7 @@ async function main() {
         'Mom Emily reacted ❤️ to your post in The Miller Family: "Wishing everyone a great start to the week! ☀️"',
       createdAt: at('2026-07-03', '10:00'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -530,7 +530,7 @@ async function main() {
       createdAt: at('2026-07-03', '09:45'),
       readAt: at('2026-07-03', '09:50'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -539,7 +539,7 @@ async function main() {
       message: `Dad Mike mentioned you in a comment in The Miller Family: "${kidBirthdayMention.content}"`,
       createdAt: at('2026-07-02', '19:30'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -550,7 +550,7 @@ async function main() {
       createdAt: at('2026-07-02', '18:40'),
       readAt: at('2026-07-02', '20:00'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -561,7 +561,7 @@ async function main() {
       createdAt: at('2026-06-18', '20:10'),
       readAt: at('2026-06-18', '21:00'),
     },
-  });
+  })
   await prisma.notification.create({
     data: {
       userId: admin.id,
@@ -572,19 +572,19 @@ async function main() {
       createdAt: at('2026-03-28', '19:00'),
       readAt: at('2026-03-29', '08:00'),
     },
-  });
+  })
 
-  console.log('Screenshot fixtures created');
-  console.log(`  Group: ${group.name} (${group.id})`);
-  console.log('  Login: tim@xeweb.be / test123456 (admin)');
-  console.log('         test@example.com / test123456');
+  console.log('Screenshot fixtures created')
+  console.log(`  Group: ${group.name} (${group.id})`)
+  console.log('  Login: tim@xeweb.be / test123456 (admin)')
+  console.log('         test@example.com / test123456')
 }
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

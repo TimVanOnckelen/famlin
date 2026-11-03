@@ -12,14 +12,14 @@
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
-);
+)
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue(null),
   setItemAsync: jest.fn().mockResolvedValue(undefined),
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
   isAvailableAsync: jest.fn().mockResolvedValue(true),
-}));
+}))
 
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
@@ -30,11 +30,11 @@ jest.mock('expo-notifications', () => ({
   getLastNotificationResponseAsync: jest.fn().mockResolvedValue(null),
   addNotificationResponseReceivedListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
   AndroidImportance: { DEFAULT: 3 },
-}));
+}))
 
 jest.mock('expo-device', () => ({
   isDevice: true,
-}));
+}))
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
@@ -42,4 +42,4 @@ jest.mock('expo-constants', () => ({
     expoConfig: {},
     manifest: {},
   },
-}));
+}))

@@ -1,19 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import React from 'react'
+import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native'
 
-import { colors } from '@/constants/colors';
+import { colors } from '@/constants/colors'
 
 interface EmptyStateProps {
-  title: string;
-  subtitle?: string;
+  title: string
+  subtitle?: string
   /** Centers the subtitle text (FavoritesScreen, SearchScreen); left-aligned
    * (the default) otherwise (FeedScreen, PhotosScreen). */
-  centerSubtitle?: boolean;
+  centerSubtitle?: boolean
   /** Style overrides for the one call site whose empty state deviates from
    * the common look (NotificationsScreen's smaller, single-line, muted
    * variant) — everyone else can leave these unset. */
-  containerStyle?: StyleProp<ViewStyle>;
-  titleStyle?: StyleProp<TextStyle>;
+  containerStyle?: StyleProp<ViewStyle>
+  titleStyle?: StyleProp<TextStyle>
 }
 
 export function EmptyState({ title, subtitle, centerSubtitle, containerStyle, titleStyle }: EmptyStateProps) {
@@ -24,7 +24,7 @@ export function EmptyState({ title, subtitle, centerSubtitle, containerStyle, ti
         <Text style={[styles.emptyStateSubtext, centerSubtitle && styles.emptyStateSubtextCentered]}>{subtitle}</Text>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
   emptyStateSubtextCentered: {
     textAlign: 'center',
   },
-});
+})

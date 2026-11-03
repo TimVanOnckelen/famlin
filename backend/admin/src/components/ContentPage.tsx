@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, ApiError, Group, ModerationComment, ModerationPost, ModerationStory, User } from '../api/client';
-import i18n from '../i18n';
-import { avatarColor, initials } from '../avatar';
-import { Icon } from './Icon';
+import { AdminModal } from './AdminModal'
+import { useAdminDialogs } from './AdminDialogs'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, ApiError, Group, ModerationComment, ModerationPost, ModerationStory, User } from '../api/client'
+import i18n from '../i18n'
+import { avatarColor, initials } from '../avatar'
+import { Icon } from './Icon'
 
-type Tab = 'posts' | 'comments' | 'stories';
+type Tab = 'posts' | 'comments' | 'stories'
 
 function truncate(text: string | null, length = 90) {
-  if (!text) return '';
-  return text.length > length ? `${text.slice(0, length)}…` : text;
+  if (!text) return ''
+  return text.length > length ? `${text.slice(0, length)}…` : text
 }
 
 function AuthorCell({ name }: { name: string }) {
@@ -20,188 +22,254 @@ function AuthorCell({ name }: { name: string }) {
       </span>
       <span className="cell-name">{name}</span>
     </span>
-  );
+  )
 }
 
 // Story photos live under /uploads/, which needs the bearer token — so the
 // thumbnail is fetched with it and shown from an object URL.
 function StoryThumb({ imageUrl }: { imageUrl: string }) {
-  const { t } = useTranslation();
-  const [src, setSrc] = useState<string | null>(null);
+  const { t } = useTranslation()
+  const [src, setSrc] = useState<string | null>(null)
 
   useEffect(() => {
-    let objectUrl: string | null = null;
-    let cancelled = false;
+    let objectUrl: string | null = null
+    let cancelled = false
     api
       .fetchUploadObjectUrl(imageUrl.replace(/\.[a-z]+$/, '-thumbnail.jpg'))
       .then((url) => {
-        objectUrl = url;
-        if (!cancelled) setSrc(url);
+        objectUrl = url
+        if (!cancelled) setSrc(url)
       })
-      .catch(() => {});
+      .catch(() => {})
     return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [imageUrl]);
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [imageUrl])
 
   return src ? (
     <img src={src} alt={t('content.storyPhoto')} className="story-thumb" />
   ) : (
     <span className="story-thumb story-thumb-empty" aria-label={t('content.storyPhoto')} />
-  );
+  )
+}
+
+// Text-only moderation edit (fixing a typo, removing something hurtful) —
+// photos are edited from the member-facing apps. Edits only this one post,
+// never a cross-posted copy in another family (moderation is per-group).
+function EditPostDialog({
+  post,
+  onClose,
+  onSaved,
+}: {
+  post: ModerationPost
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useTranslation()
+  const [content, setContent] = useState(post.content ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await api.updatePostContent(post.id, content.trim())
+      onSaved()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('common.error'))
+      setSaving(false)
+    }
+  }
+
+  return (
+    <AdminModal title={t('content.editPostTitle', { name: post.author.name })} onClose={onClose} busy={saving}>
+      <form onSubmit={submit}>
+        <label>
+          {t('content.table.content')}
+          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} maxLength={5000} autoFocus />
+        </label>
+        <p className="hint">{t('content.editPostHint')}</p>
+        {error && <div className="error">{error}</div>}
+        <div className="modal-actions">
+          <button type="button" className="secondary" onClick={onClose} disabled={saving}>
+            {t('common.cancel')}
+          </button>
+          <button type="submit" disabled={saving || !content.trim()}>
+            {t('common.save')}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
+  )
 }
 
 function DateCell({ iso }: { iso: string }) {
-  const date = new Date(iso);
+  const date = new Date(iso)
   return (
     <span className="muted" title={date.toLocaleString(i18n.language)}>
       {date.toLocaleDateString(i18n.language)}
     </span>
-  );
+  )
 }
 
 export function ContentPage() {
-  const { t } = useTranslation();
-  const [tab, setTab] = useState<Tab>('posts');
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [groupId, setGroupId] = useState('');
-  const [authorId, setAuthorId] = useState('');
-  const [search, setSearch] = useState('');
-  const [q, setQ] = useState('');
-  const [posts, setPosts] = useState<ModerationPost[]>([]);
-  const [comments, setComments] = useState<ModerationComment[]>([]);
-  const [stories, setStories] = useState<ModerationStory[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [fetching, setFetching] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
+  const [tab, setTab] = useState<Tab>('posts')
+  const [groups, setGroups] = useState<Group[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [groupId, setGroupId] = useState('')
+  const [authorId, setAuthorId] = useState('')
+  const [search, setSearch] = useState('')
+  const [q, setQ] = useState('')
+  const [posts, setPosts] = useState<ModerationPost[]>([])
+  const [comments, setComments] = useState<ModerationComment[]>([])
+  const [stories, setStories] = useState<ModerationStory[]>([])
+  const [editingPost, setEditingPost] = useState<ModerationPost | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   // Filters can change while a fetch is in flight; only the newest request
   // may write its result, otherwise a slow stale response overwrites it.
-  const requestIdRef = useRef(0);
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
-    api.getGroups().then(setGroups);
-    api.getAllUsers().then(setUsers);
-  }, []);
+    api.getGroups().then(setGroups)
+    api.getAllUsers().then(setUsers)
+  }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setQ(search.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+    const timer = setTimeout(() => setQ(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const filterParams = {
     groupId: groupId || undefined,
     authorId: authorId || undefined,
     q: q || undefined,
-  };
+  }
 
   const load = async () => {
-    const requestId = ++requestIdRef.current;
-    setFetching(true);
+    const requestId = ++requestIdRef.current
+    setFetching(true)
     try {
       if (tab === 'posts') {
-        const page = await api.getContentPosts(filterParams);
-        if (requestId !== requestIdRef.current) return;
-        setPosts(page.items);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentPosts(filterParams)
+        if (requestId !== requestIdRef.current) return
+        setPosts(page.items)
+        setNextCursor(page.nextCursor)
       } else if (tab === 'comments') {
-        const page = await api.getContentComments(filterParams);
-        if (requestId !== requestIdRef.current) return;
-        setComments(page.items);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentComments(filterParams)
+        if (requestId !== requestIdRef.current) return
+        setComments(page.items)
+        setNextCursor(page.nextCursor)
       } else {
-        const page = await api.getContentStories(filterParams);
-        if (requestId !== requestIdRef.current) return;
-        setStories(page.items);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentStories(filterParams)
+        if (requestId !== requestIdRef.current) return
+        setStories(page.items)
+        setNextCursor(page.nextCursor)
       }
     } finally {
       if (requestId === requestIdRef.current) {
-        setFetching(false);
-        setLoading(false);
+        setFetching(false)
+        setLoading(false)
       }
     }
-  };
+  }
 
   useEffect(() => {
-    load();
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, groupId, authorId, q]);
+  }, [tab, groupId, authorId, q])
 
   const loadMore = async () => {
-    if (!nextCursor) return;
-    const requestId = requestIdRef.current;
-    setLoadingMore(true);
+    if (!nextCursor) return
+    const requestId = requestIdRef.current
+    setLoadingMore(true)
     try {
-      const params = { ...filterParams, cursor: nextCursor };
+      const params = { ...filterParams, cursor: nextCursor }
       if (tab === 'posts') {
-        const page = await api.getContentPosts(params);
-        if (requestId !== requestIdRef.current) return;
-        setPosts((current) => [...current, ...page.items]);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentPosts(params)
+        if (requestId !== requestIdRef.current) return
+        setPosts((current) => [...current, ...page.items])
+        setNextCursor(page.nextCursor)
       } else if (tab === 'comments') {
-        const page = await api.getContentComments(params);
-        if (requestId !== requestIdRef.current) return;
-        setComments((current) => [...current, ...page.items]);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentComments(params)
+        if (requestId !== requestIdRef.current) return
+        setComments((current) => [...current, ...page.items])
+        setNextCursor(page.nextCursor)
       } else {
-        const page = await api.getContentStories(params);
-        if (requestId !== requestIdRef.current) return;
-        setStories((current) => [...current, ...page.items]);
-        setNextCursor(page.nextCursor);
+        const page = await api.getContentStories(params)
+        if (requestId !== requestIdRef.current) return
+        setStories((current) => [...current, ...page.items])
+        setNextCursor(page.nextCursor)
       }
     } finally {
-      setLoadingMore(false);
+      setLoadingMore(false)
     }
-  };
+  }
 
-  const hasFilters = Boolean(search || groupId || authorId);
+  const hasFilters = Boolean(search || groupId || authorId)
 
   const clearFilters = () => {
-    setSearch('');
-    setQ('');
-    setGroupId('');
-    setAuthorId('');
-  };
+    setSearch('')
+    setQ('')
+    setGroupId('')
+    setAuthorId('')
+  }
 
   const handleDeletePost = async (post: ModerationPost) => {
-    if (!confirm(t('content.deleteConfirm'))) return;
-    await api.deletePost(post.id);
-    load();
-  };
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deletePost(post.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
+  }
 
   const handleRetriggerPush = async (post: ModerationPost) => {
     try {
-      const result = await api.retriggerPostPush(post.id);
-      alert(t('content.retriggerPushResult', { ...result }));
+      const result = await api.retriggerPostPush(post.id)
+      await dialogs.showMessage(t('content.retriggerPushResult', { ...result }))
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error');
-      alert(t('content.retriggerPushError', { error: message }));
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      await dialogs.showMessage(t('content.retriggerPushError', { error: message }))
     }
-  };
+  }
 
   const handleDeleteComment = async (comment: ModerationComment) => {
-    if (!confirm(t('content.deleteConfirm'))) return;
-    await api.deleteComment(comment.id);
-    load();
-  };
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deleteComment(comment.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
+  }
 
   const handleDeleteStory = async (story: ModerationStory) => {
-    if (!confirm(t('content.deleteConfirm'))) return;
-    await api.deleteStory(story.id);
-    load();
-  };
+    if (!(await dialogs.confirmAction(t('content.deleteConfirm')))) return
+    try {
+      await api.deleteStory(story.id)
+      load()
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
+  }
 
-  const items = tab === 'posts' ? posts : tab === 'comments' ? comments : stories;
+  const items = tab === 'posts' ? posts : tab === 'comments' ? comments : stories
   const emptyMessage = hasFilters
     ? t('content.noResults')
     : tab === 'posts'
       ? t('content.noPosts')
       : tab === 'comments'
         ? t('content.noComments')
-        : t('content.noStories');
+        : t('content.noStories')
 
   return (
     <>
@@ -318,6 +386,14 @@ export function ContentPage() {
                           onClick={() => handleRetriggerPush(post)}
                         >
                           <Icon name="bell" size={15} />
+                        </button>
+                        <button
+                          className="icon-button"
+                          title={t('common.edit')}
+                          aria-label={t('common.edit')}
+                          onClick={() => setEditingPost(post)}
+                        >
+                          <Icon name="edit" size={15} />
                         </button>
                         <button
                           className="icon-button danger"
@@ -458,6 +534,16 @@ export function ContentPage() {
           </div>
         )}
       </div>
+      {editingPost && (
+        <EditPostDialog
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onSaved={() => {
+            setEditingPost(null)
+            load()
+          }}
+        />
+      )}
     </>
-  );
+  )
 }

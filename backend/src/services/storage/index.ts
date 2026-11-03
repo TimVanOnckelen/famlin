@@ -1,0 +1,6 @@
+export { getStorage } from './registry.js'
+export { sendObject, sendStoredObject, parseRangeHeader } from './http.js'
+export { LocalStorageBackend } from './local.js'
+export { StorageError, assertValidStorageKey } from './types.js'
+export type { StorageBackend, StorageBody, ByteRange, StoredObject, StoredObjectInfo } from './types.js'
+export { S3StorageBackend } from './s3.js'

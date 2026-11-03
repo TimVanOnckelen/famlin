@@ -1,26 +1,26 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, FlatList } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Avatar } from '@/components/Avatar';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { EmptyState } from '@/components/EmptyState';
-import { fetchGroupMembers } from '@famlin/api-client';
+import { colors } from '@/constants/colors'
+import { Avatar } from '@/components/Avatar'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { fetchGroupMembers } from '@famlin/api-client'
 
 export function GroupMembersScreen() {
-  const { t, i18n } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { groupId, groupName } = route.params as { groupId: string; groupName: string };
+  const { t, i18n } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { groupId, groupName } = route.params as { groupId: string; groupName: string }
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['groupMembers', groupId],
     queryFn: () => fetchGroupMembers(groupId),
-  });
+  })
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,7 +52,7 @@ export function GroupMembersScreen() {
         ListEmptyComponent={!isLoading ? <EmptyState title={t('groupMembers.empty')} /> : null}
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -101,4 +101,4 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     maxWidth: 90,
   },
-});
+})

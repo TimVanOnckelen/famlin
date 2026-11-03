@@ -1,21 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ActivityIndicator } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ActivityIndicator } from 'react-native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
+import { colors } from '@/constants/colors'
 
 interface CloseTripSheetProps {
-  visible: boolean;
-  tripTitle: string;
-  submitting: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
+  visible: boolean
+  tripTitle: string
+  submitting: boolean
+  onCancel: () => void
+  onConfirm: () => void
 }
 
 // The "Reis afsluiten?" confirmation bottom sheet (design 6h) — irreversible,
 // so this is a deliberate extra tap rather than a plain Alert.
 export function CloseTripSheet({ visible, tripTitle, submitting, onCancel, onConfirm }: CloseTripSheetProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={onCancel}>
@@ -44,7 +44,7 @@ export function CloseTripSheet({ visible, tripTitle, submitting, onCancel, onCon
         </Pressable>
       </Pressable>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -123,4 +123,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 14,
   },
-});
+})

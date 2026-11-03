@@ -1,7 +1,7 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../db.js';
-import { updateNotificationBodySchema } from '../types.js';
-import { getT } from '../i18n/index.js';
+import { FastifyInstance } from 'fastify'
+import { prisma } from '../db.js'
+import { updateNotificationBodySchema } from '../types.js'
+import { getT } from '../i18n/index.js'
 
 export default async function notificationRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request) => {
@@ -23,43 +23,43 @@ export default async function notificationRoutes(fastify: FastifyInstance) {
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
-    });
+    })
 
-    return notifications;
-  });
+    return notifications
+  })
 
   fastify.get('/unread-count', { preHandler: [fastify.authenticate] }, async (request) => {
     const count = await prisma.notification.count({
       where: { userId: request.user!.id, readAt: null },
-    });
+    })
 
-    return { count };
-  });
+    return { count }
+  })
 
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const body = updateNotificationBodySchema.parse(request.body);
+    const { id } = request.params as { id: string }
+    const body = updateNotificationBodySchema.parse(request.body)
 
-    const notification = await prisma.notification.findUnique({ where: { id } });
+    const notification = await prisma.notification.findUnique({ where: { id } })
 
     if (!notification || notification.userId !== request.user!.id) {
-      return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') });
+      return reply.status(404).send({ error: getT(request)('errors.notificationNotFound') })
     }
 
     const updated = await prisma.notification.update({
       where: { id },
       data: { readAt: body.read ? new Date() : null },
-    });
+    })
 
-    return updated;
-  });
+    return updated
+  })
 
   fastify.post('/mark-all-read', { preHandler: [fastify.authenticate] }, async (request) => {
     await prisma.notification.updateMany({
       where: { userId: request.user!.id, readAt: null },
       data: { readAt: new Date() },
-    });
+    })
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 }

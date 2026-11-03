@@ -1,60 +1,60 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useCallback } from 'react'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, StatusBar } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { BrandLogo } from '@/components/Logo';
-import { getBranding } from '@/branding';
-import { Icon } from '@/components/Icon';
-import { PostCard } from '@/components/PostCard';
-import { EmptyState } from '@/components/EmptyState';
-import { StoryTray } from '@/components/StoryTray';
-import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { Group, Post } from '@/types';
+import { colors } from '@/constants/colors'
+import { BrandLogo } from '@/components/Logo'
+import { getBranding } from '@/branding'
+import { Icon } from '@/components/Icon'
+import { PostCard } from '@/components/PostCard'
+import { EmptyState } from '@/components/EmptyState'
+import { StoryTray } from '@/components/StoryTray'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { Group, Post } from '@/types'
 import {
   fetchGroups,
   fetchUnreadNotificationCount,
   fetchOnThisDay,
   fetchMyCircles,
   fetchPosts,
-} from '@famlin/api-client';
+} from '@famlin/api-client'
 
-const postKeyExtractor = (item: Post) => item.id;
+const postKeyExtractor = (item: Post) => item.id
 
 export function FeedScreen() {
-  const { t } = useTranslation();
-  const brandName = getBranding()?.name ?? null;
-  const navigation = useNavigation<any>();
+  const { t } = useTranslation()
+  const brandName = getBranding()?.name ?? null
+  const navigation = useNavigation<any>()
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
   // Circles narrow the feed further, to just those circles' posts. Separate
   // state from selectedGroupIds because the two mean opposite things: groups
   // widen the pool, circles narrow it.
-  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
+  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([])
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
     queryFn: fetchGroups,
-  });
+  })
 
   const { data: unreadCount } = useQuery({
     queryKey: ['unread-count'],
     queryFn: fetchUnreadNotificationCount,
     refetchInterval: 30000,
-  });
+  })
 
-  const groupsLoaded = groups !== undefined;
-  const hasGroups = !!groups && groups.length > 0;
+  const groupsLoaded = groups !== undefined
+  const hasGroups = !!groups && groups.length > 0
 
   // Group-scoped affordances (members, on-this-day, search context) only
   // have one clear target when the filter narrows to exactly one family.
-  const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : (groups ?? []).map((g: Group) => g.id);
+  const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : (groups ?? []).map((g: Group) => g.id)
   const singleActiveGroup =
-    effectiveGroupIds.length === 1 ? groups?.find((g: Group) => g.id === effectiveGroupIds[0]) : undefined;
+    effectiveGroupIds.length === 1 ? groups?.find((g: Group) => g.id === effectiveGroupIds[0]) : undefined
 
   // Only circles the viewer belongs to ever come back — a group member
   // outside a circle never learns it exists — so there's nothing to filter
@@ -64,26 +64,26 @@ export function FeedScreen() {
     queryKey: ['circles', singleActiveGroup?.id],
     queryFn: () => fetchMyCircles(singleActiveGroup!.id),
     enabled: !!singleActiveGroup,
-  });
+  })
 
   function toggleGroup(groupId: string) {
-    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]));
+    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]))
     // A circle belongs to one family, so a selection made under a different
     // family filter is no longer valid — and the server would 403 it.
-    setSelectedCircleIds([]);
+    setSelectedCircleIds([])
   }
 
   function toggleCircle(circleId: string) {
     setSelectedCircleIds((prev) =>
       prev.includes(circleId) ? prev.filter((id) => id !== circleId) : [...prev, circleId]
-    );
+    )
   }
 
   const { data: onThisDay } = useQuery({
     queryKey: ['onThisDay', singleActiveGroup?.id],
     queryFn: () => fetchOnThisDay(singleActiveGroup!.id),
     enabled: !!singleActiveGroup,
-  });
+  })
 
   const {
     query,
@@ -97,35 +97,35 @@ export function FeedScreen() {
     ],
     queryFn: (cursor) => fetchPosts({ groupIds: selectedGroupIds, circleIds: selectedCircleIds, cursor }),
     enabled: hasGroups,
-  });
-  const { isLoading, isRefetching, refetch } = query;
+  })
+  const { isLoading, isRefetching, refetch } = query
 
   // Stories follow the same family filter, and only show when at least one
   // selected family has them turned on (an older server with no stories
   // reports no storiesEnabled at all, which reads as off).
   const storiesEnabled = (groups ?? []).some(
     (g: Group) => g.storiesEnabled && (selectedGroupIds.length === 0 || selectedGroupIds.includes(g.id))
-  );
+  )
 
   // Search is still a per-group feature (the backend search endpoint requires
   // one group) — use the narrowed family, or fall back to the first one, the
   // same default the single-select feed had.
-  const searchGroup = singleActiveGroup ?? groups?.[0];
+  const searchGroup = singleActiveGroup ?? groups?.[0]
 
   // Stable renderItem so PostCard's React.memo isn't defeated by a new
   // closure identity on every FeedScreen render.
-  const showGroupTag = effectiveGroupIds.length > 1;
+  const showGroupTag = effectiveGroupIds.length > 1
   const renderPost = useCallback(
     ({ item }: { item: Post }) => <PostCard post={item} showGroup={showGroupTag} />,
     [showGroupTag]
-  );
+  )
 
   function openMembers() {
-    if (!singleActiveGroup) return;
+    if (!singleActiveGroup) return
     navigation.navigate('GroupMembers', {
       groupId: singleActiveGroup.id,
       groupName: singleActiveGroup.name,
-    });
+    })
   }
 
   return (
@@ -201,8 +201,8 @@ export function FeedScreen() {
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => {
-              const isAll = item.id === 'all';
-              const isActive = isAll ? selectedGroupIds.length === 0 : selectedGroupIds.includes(item.id);
+              const isAll = item.id === 'all'
+              const isActive = isAll ? selectedGroupIds.length === 0 : selectedGroupIds.includes(item.id)
               return (
                 <TouchableOpacity
                   style={[styles.groupChip, isActive && styles.groupChipActive]}
@@ -211,7 +211,7 @@ export function FeedScreen() {
                 >
                   <Text style={[styles.groupChipText, isActive && styles.groupChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
-              );
+              )
             }}
             contentContainerStyle={styles.groupList}
           />
@@ -226,7 +226,7 @@ export function FeedScreen() {
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => {
-              const isActive = selectedCircleIds.includes(item.id);
+              const isActive = selectedCircleIds.includes(item.id)
               return (
                 <TouchableOpacity
                   style={[styles.circleChip, isActive && styles.circleChipActive]}
@@ -235,7 +235,7 @@ export function FeedScreen() {
                 >
                   <Text style={[styles.circleChipText, isActive && styles.circleChipTextActive]}>{item.name}</Text>
                 </TouchableOpacity>
-              );
+              )
             }}
             contentContainerStyle={styles.groupList}
           />
@@ -288,7 +288,7 @@ export function FeedScreen() {
         }
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -447,4 +447,4 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-});
+})

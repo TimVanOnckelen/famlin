@@ -11,6 +11,17 @@ WORKDIR /app
 # (docker-compose.override.yml) runs this `base` stage.
 RUN apk add --no-cache openssl ffmpeg
 
+# pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
+# postgresqlNN-client Alpine ships rather than one pinned to the compose
+# file's postgres:16 — a newer pg_dump can dump older servers, which also
+# covers self-hosters on an external Postgres 17+. `apk search` output differs
+# between apk-tools 2 and 3 (name vs name-version), so only the name prefix is
+# kept. The build fails here if no client got installed.
+RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+-client' | sort -uV | tail -n1) \
+    && test -n "$PG_CLIENT" \
+    && apk add --no-cache "$PG_CLIENT" \
+    && pg_dump --version
+
 # Install dependencies
 COPY backend/package.json backend/package-lock.json* ./
 RUN npm ci
@@ -108,6 +119,17 @@ ENV NODE_ENV=production
 # (services/uploadVariants.ts).
 RUN apk add --no-cache openssl ffmpeg
 
+# pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
+# postgresqlNN-client Alpine ships rather than one pinned to the compose
+# file's postgres:16 — a newer pg_dump can dump older servers, which also
+# covers self-hosters on an external Postgres 17+. `apk search` output differs
+# between apk-tools 2 and 3 (name vs name-version), so only the name prefix is
+# kept. The build fails here if no client got installed.
+RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+-client' | sort -uV | tail -n1) \
+    && test -n "$PG_CLIENT" \
+    && apk add --no-cache "$PG_CLIENT" \
+    && pg_dump --version
+
 COPY backend/package.json backend/package-lock.json* ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
 # camera format) — sharp's own prebuilt binaries deliberately ship without it
@@ -149,9 +171,11 @@ COPY --from=base /app/prisma.config.ts ./
 COPY --from=base /app/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
 
-# Create uploads directory with proper permissions and run as the
-# unprivileged `node` user rather than root.
-RUN mkdir -p /app/uploads && chown -R node:node /app
+# Create the uploads and backups directories with proper permissions and run
+# as the unprivileged `node` user rather than root. Both are volume mount
+# points (docker-compose.yml); a named volume copies this ownership on first
+# use.
+RUN mkdir -p /app/uploads /app/backups && chown -R node:node /app
 
 USER node
 

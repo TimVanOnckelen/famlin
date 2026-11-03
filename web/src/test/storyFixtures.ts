@@ -1,4 +1,4 @@
-import { Story } from '@famlin/api-client';
+import { Story } from '@famlin/api-client'
 
 export function makeStory(overrides: Partial<Story> = {}): Story {
   return {
@@ -19,5 +19,5 @@ export function makeStory(overrides: Partial<Story> = {}): Story {
     myReply: null,
     stats: null,
     ...overrides,
-  };
+  }
 }

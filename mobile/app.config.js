@@ -1,15 +1,15 @@
-import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 function getExpoMajorVersion() {
   try {
-    const pkg = JSON.parse(readFileSync(join(__dirname, 'node_modules/expo/package.json'), 'utf8'));
-    return parseInt(pkg.version.split('.')[0], 10);
+    const pkg = JSON.parse(readFileSync(join(__dirname, 'node_modules/expo/package.json'), 'utf8'))
+    return parseInt(pkg.version.split('.')[0], 10)
   } catch {
-    return 0;
+    return 0
   }
 }
 
@@ -20,8 +20,8 @@ function getExpoMajorVersion() {
  * without having to maintain it by hand in app.json.
  */
 function versionCodeFromVersion(version) {
-  const [major, minor, patch] = version.split('.').map((n) => parseInt(n, 10));
-  return getExpoMajorVersion() * 10000000 + major * 10000 + minor * 100 + patch;
+  const [major, minor, patch] = version.split('.').map((n) => parseInt(n, 10))
+  return getExpoMajorVersion() * 10000000 + major * 10000 + minor * 100 + patch
 }
 
 export default ({ config }) => ({
@@ -74,6 +74,7 @@ export default ({ config }) => ({
     },
   },
   plugins: [
+    '@react-native-community/datetimepicker',
     [
       'expo-build-properties',
       {
@@ -107,12 +108,9 @@ export default ({ config }) => ({
       {
         photosPermission:
           "Famlin needs access to your photo library so you can pick the photos and videos you want to share with your family — for example, choosing a picture from your child's birthday to add to a new post, a comment, or a trip check-in. Photos you pick are uploaded only to the family server you are signed in to, and nothing else in your library is read.",
-        // Famlin only ever opens the library picker, never the camera or the
-        // microphone. `false` deletes those purpose strings (and blocks the
-        // Android permissions) instead of shipping the plugin's vague
-        // defaults for capabilities the app doesn't use — an unused, generic
-        // purpose string is exactly what guideline 5.1.1(ii) rejects.
-        cameraPermission: false,
+        cameraPermission:
+          "Famlin uses your camera so you can take a photo to share as a story with your family. Photos are uploaded only to the family server you're signed in to.",
+        // Story capture takes still photos and does not need microphone access.
         microphonePermission: false,
       },
     ],
@@ -131,6 +129,29 @@ export default ({ config }) => ({
         isAccessMediaLocationEnabled: false,
       },
     ],
+    [
+      // "Share → Famlin" from the OS share sheet (issue #199): photos and
+      // videos only, several at once, handed to the new-post composer. On iOS
+      // this adds a share extension target (be.xeweb.famlin.share-extension)
+      // sharing the App Group group.be.xeweb.famlin with the app — both need
+      // provisioning on EAS, see docs/developers/ios-app-review.md.
+      // The extension only hands the files to the app; it never sees the
+      // auth token. iOS caps the count above the composer's 10 on purpose:
+      // more are accepted and the composer reports the skipped ones.
+      'expo-share-intent',
+      {
+        iosActivationRules: {
+          NSExtensionActivationSupportsImageWithMaxCount: 50,
+          NSExtensionActivationSupportsMovieWithMaxCount: 50,
+        },
+        // Shown under the icon in the iOS share sheet, and (stripped of
+        // spaces) the Xcode target name — plain "Famlin" would collide with
+        // the app's own target.
+        iosShareExtensionName: 'Famlin Share',
+        androidIntentFilters: ['image/*', 'video/*'],
+        androidMultiIntentFilters: ['image/*', 'video/*'],
+      },
+    ],
     'expo-apple-authentication',
     'expo-font',
     'expo-localization',
@@ -140,4 +161,4 @@ export default ({ config }) => ({
     'expo-status-bar',
     'expo-image',
   ],
-});
+})

@@ -1,18 +1,18 @@
-import { type MouseEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { fetchFavorites, Post, User } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { AppShell } from '@/components/AppShell';
-import { PostCard } from '@/components/PostCard';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { useOpenPostModal } from '@/utils/routes';
-import './FavoritesPage.css';
+import { type MouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { fetchFavorites, Post, User } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { AppShell } from '@/components/AppShell'
+import { PostCard } from '@/components/PostCard'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { useOpenPostModal } from '@/utils/routes'
+import './FavoritesPage.css'
 
 // Same delegated-click rule as the feed (see FeedPage.tsx): everything
 // interactive inside PostCard handles itself; a click on the plain card body
 // — or deliberately on the comment-count button — opens the post detail.
-const CARD_INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, video, [role="menu"], .shimmer-frame';
+const CARD_INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, video, [role="menu"], .shimmer-frame'
 
 // Web counterpart of mobile's FavoritesScreen (issue #207): the caller's
 // favorited posts across all their families, so cards always carry the group
@@ -27,40 +27,47 @@ export function FavoritesPage({
   onOpenChat,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onLogout,
+  onOpenNotifications,
+  onOpenSearch,
 }: {
-  user: User;
-  onBack: () => void;
-  onOpenProfile: () => void;
-  onOpenPhotos?: () => void;
-  onOpenChat?: () => void;
-  onOpenTrip?: (postId: string) => void;
-  onOpenAlbum?: (postId: string) => void;
-  onLogout: () => void;
+  user: User
+  onBack: () => void
+  onOpenProfile: () => void
+  onOpenPhotos?: () => void
+  onOpenChat?: () => void
+  onOpenTrip?: (postId: string) => void
+  onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
+  onLogout: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
 }) {
-  const { t } = useTranslation();
-  const openPostModal = useOpenPostModal();
+  const { t } = useTranslation()
+  const openPostModal = useOpenPostModal()
 
   const favoritesQuery = useInfiniteQuery({
     queryKey: ['favorites'],
     queryFn: ({ pageParam }) => fetchFavorites(pageParam ?? undefined),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-  });
-  const posts = favoritesQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  })
+  const posts = favoritesQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   // Where a card click should go: trips and albums keep opening their own
   // pages, everything else opens the detail modal over this page.
   function openPost(post: Post) {
-    if (post.type === 'TRIP') onOpenTrip?.(post.id);
-    else if (post.type === 'ALBUM') onOpenAlbum?.(post.id);
-    else openPostModal(post.id);
+    if (post.type === 'TRIP') onOpenTrip?.(post.id)
+    else if (post.type === 'ALBUM') onOpenAlbum?.(post.id)
+    else if (post.type === 'GIFT_LIST') onOpenGiftList?.(post.id)
+    else openPostModal(post.id)
   }
 
   function onCardClick(e: MouseEvent<HTMLDivElement>, post: Post) {
-    const interactive = (e.target as HTMLElement).closest(CARD_INTERACTIVE_SELECTOR);
-    if (interactive && !interactive.classList.contains('post-comments-btn')) return;
-    openPost(post);
+    const interactive = (e.target as HTMLElement).closest(CARD_INTERACTIVE_SELECTOR)
+    if (interactive && !interactive.classList.contains('post-comments-btn')) return
+    openPost(post)
   }
 
   return (
@@ -71,6 +78,8 @@ export function FavoritesPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={() => {}}
+      onNotifications={onOpenNotifications}
+      onSearch={onOpenSearch}
       onProfile={onOpenProfile}
       onLogout={onLogout}
     >
@@ -102,7 +111,13 @@ export function FavoritesPage({
           <div className="favorites-list">
             {posts.map((post) => (
               <div key={post.id} className="favorites-card" role="article" onClick={(e) => onCardClick(e, post)}>
-                <PostCard post={post} showGroup onOpenTrip={onOpenTrip} onOpenAlbum={onOpenAlbum} />
+                <PostCard
+                  post={post}
+                  showGroup
+                  onOpenTrip={onOpenTrip}
+                  onOpenAlbum={onOpenAlbum}
+                  onOpenGiftList={onOpenGiftList}
+                />
               </div>
             ))}
           </div>
@@ -119,5 +134,5 @@ export function FavoritesPage({
         )}
       </div>
     </AppShell>
-  );
+  )
 }

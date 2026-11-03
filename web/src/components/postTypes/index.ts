@@ -1,13 +1,13 @@
-import { ComponentType } from 'react';
-import { Post } from '@famlin/api-client';
-import { PollCardBody } from './PollCardBody';
+import { ComponentType } from 'react'
+import { Post } from '@famlin/api-client'
+import { PollCardBody } from './PollCardBody'
 
 export interface PostTypeCardBodyProps {
-  post: Post;
+  post: Post
 }
 
 export interface PostTypeRenderer {
-  CardBody: ComponentType<PostTypeCardBodyProps>;
+  CardBody: ComponentType<PostTypeCardBodyProps>
 }
 
 // Registry mirroring the backend's PostTypeHandler registry
@@ -20,4 +20,4 @@ export interface PostTypeRenderer {
 // forward-compat story for custom types older clients don't know about.
 export const postTypeRenderers: Record<string, PostTypeRenderer> = {
   POLL: { CardBody: PollCardBody },
-};
+}

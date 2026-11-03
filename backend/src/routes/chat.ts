@@ -1,12 +1,12 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../db.js';
-import { createChatMessageBodySchema, paginationQuerySchema } from '../types.js';
-import { emitDomainEvent } from '../events.js';
-import { requireGroupMember } from '../plugins/auth.js';
-import { paginationArgs, paginate } from '../services/pagination.js';
-import { shapeChatMessagesWithReadBy } from '../services/chat.js';
-import { getT } from '../i18n/index.js';
-import { bindAssetsToScope } from '../services/uploads.js';
+import { FastifyInstance } from 'fastify'
+import { prisma } from '../db.js'
+import { createChatMessageBodySchema, paginationQuerySchema } from '../types.js'
+import { emitDomainEvent } from '../events.js'
+import { requireGroupMember } from '../plugins/auth.js'
+import { paginationArgs, paginate } from '../services/pagination.js'
+import { shapeChatMessagesWithReadBy } from '../services/chat.js'
+import { getT } from '../i18n/index.js'
+import { bindAssetsToScope } from '../services/uploads.js'
 
 const chatMessageInclude = {
   author: { select: { id: true, name: true, avatarUrl: true } },
@@ -20,24 +20,24 @@ const chatMessageInclude = {
       attachmentUrl: true,
     },
   },
-};
+}
 
 export default async function chatRoutes(fastify: FastifyInstance) {
   fastify.get('/groups/:groupId/messages', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { groupId } = request.params as { groupId: string };
-    const { cursor, take } = paginationQuerySchema.parse(request.query);
+    const t = getT(request)
+    const { groupId } = request.params as { groupId: string }
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
 
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({ where: { id: groupId } })
 
     if (!group) {
-      return reply.status(404).send({ error: t('errors.groupNotFound') });
+      return reply.status(404).send({ error: t('errors.groupNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
     if (!group.chitchatEnabled) {
-      return reply.status(403).send({ error: t('errors.chitchatDisabled') });
+      return reply.status(403).send({ error: t('errors.chitchatDisabled') })
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -45,37 +45,37 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       include: chatMessageInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
-    });
+    })
 
-    const { items, nextCursor } = paginate(messages, take);
+    const { items, nextCursor } = paginate(messages, take)
 
     return {
       items: await shapeChatMessagesWithReadBy(items, groupId),
       nextCursor,
-    };
-  });
+    }
+  })
 
   fastify.post('/groups/:groupId/messages', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { groupId } = request.params as { groupId: string };
-    const body = createChatMessageBodySchema.parse(request.body);
+    const t = getT(request)
+    const { groupId } = request.params as { groupId: string }
+    const body = createChatMessageBodySchema.parse(request.body)
 
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({ where: { id: groupId } })
 
     if (!group) {
-      return reply.status(404).send({ error: t('errors.groupNotFound') });
+      return reply.status(404).send({ error: t('errors.groupNotFound') })
     }
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
     if (!group.chitchatEnabled) {
-      return reply.status(403).send({ error: t('errors.chitchatDisabled') });
+      return reply.status(403).send({ error: t('errors.chitchatDisabled') })
     }
 
     if (body.replyToMessageId) {
-      const replyToMessage = await prisma.chatMessage.findUnique({ where: { id: body.replyToMessageId } });
+      const replyToMessage = await prisma.chatMessage.findUnique({ where: { id: body.replyToMessageId } })
       if (!replyToMessage || replyToMessage.groupId !== groupId) {
-        return reply.status(404).send({ error: t('errors.replyToMessageNotFound') });
+        return reply.status(404).send({ error: t('errors.replyToMessageNotFound') })
       }
     }
 
@@ -89,13 +89,13 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         replyToMessageId: body.replyToMessageId,
       },
       include: chatMessageInclude,
-    });
+    })
 
     // Group chat is group-wide by definition — there is no per-circle chat in
     // this version (see the "later" list on the Circles issue) — so a chat
     // attachment binds to the whole group.
     if (body.attachmentUrl) {
-      await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id);
+      await bindAssetsToScope([body.attachmentUrl], { groupIds: [groupId] }, request.user!.id)
     }
 
     // Fire-and-forget, same pattern as comment.created (routes/comments.ts) —
@@ -110,74 +110,74 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       hasAttachment: !!message.attachmentUrl,
       kind: message.kind,
       refPostId: message.refPostId,
-    });
+    })
 
-    const [shaped] = await shapeChatMessagesWithReadBy([message], groupId);
-    return shaped;
-  });
+    const [shaped] = await shapeChatMessagesWithReadBy([message], groupId)
+    return shaped
+  })
 
   fastify.delete('/messages/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const t = getT(request);
-    const { id } = request.params as { id: string };
+    const t = getT(request)
+    const { id } = request.params as { id: string }
 
-    const message = await prisma.chatMessage.findUnique({ where: { id } });
+    const message = await prisma.chatMessage.findUnique({ where: { id } })
 
     if (!message) {
-      return reply.status(404).send({ error: t('errors.chatMessageNotFound') });
+      return reply.status(404).send({ error: t('errors.chatMessageNotFound') })
     }
 
     if (message.authorId !== request.user!.id && !request.user!.isAdmin) {
-      return reply.status(403).send({ error: t('errors.notAuthorized') });
+      return reply.status(403).send({ error: t('errors.notAuthorized') })
     }
 
-    await prisma.chatMessage.delete({ where: { id } });
+    await prisma.chatMessage.delete({ where: { id } })
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   fastify.post('/groups/:groupId/read', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const { groupId } = request.params as { groupId: string };
+    const { groupId } = request.params as { groupId: string }
 
-    if (await requireGroupMember(request, reply, groupId)) return;
+    if (await requireGroupMember(request, reply, groupId)) return
 
     await prisma.chatRead.upsert({
       where: { groupId_userId: { groupId, userId: request.user!.id } },
       update: { lastReadAt: new Date() },
       create: { groupId, userId: request.user!.id, lastReadAt: new Date() },
-    });
+    })
 
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   fastify.get('/unread-counts', { preHandler: [fastify.authenticate] }, async (request) => {
-    const userId = request.user!.id;
+    const userId = request.user!.id
 
     const memberships = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    });
-    const groupIds = memberships.map((m) => m.groupId);
+    })
+    const groupIds = memberships.map((m) => m.groupId)
 
-    if (groupIds.length === 0) return {};
+    if (groupIds.length === 0) return {}
 
     const reads = await prisma.chatRead.findMany({
       where: { groupId: { in: groupIds }, userId },
-    });
-    const lastReadByGroupId = new Map(reads.map((r) => [r.groupId, r.lastReadAt]));
+    })
+    const lastReadByGroupId = new Map(reads.map((r) => [r.groupId, r.lastReadAt]))
 
     // Epoch fallback for a group with no ChatRead row yet, so a user who has
     // never opened chat in that group sees every existing message as unread.
-    const epoch = new Date(0);
+    const epoch = new Date(0)
 
     const counts = await Promise.all(
       groupIds.map(async (groupId) => {
         const count = await prisma.chatMessage.count({
           where: { groupId, createdAt: { gt: lastReadByGroupId.get(groupId) ?? epoch } },
-        });
-        return [groupId, count] as const;
+        })
+        return [groupId, count] as const
       })
-    );
+    )
 
-    return Object.fromEntries(counts);
-  });
+    return Object.fromEntries(counts)
+  })
 }

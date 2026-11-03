@@ -1,15 +1,15 @@
-import { screen } from '@testing-library/react';
-import { AxiosError, AxiosHeaders } from 'axios';
-import { PostDetailPage } from '@/pages/PostDetailPage';
-import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures';
-import { fetchComments, fetchPost } from '@famlin/api-client';
+import { screen } from '@testing-library/react'
+import { AxiosError, AxiosHeaders } from 'axios'
+import { PostDetailPage } from '@/pages/PostDetailPage'
+import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures'
+import { fetchComments, fetchPost } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchPost: vi.fn(),
   fetchComments: vi.fn(),
   getUploadUrl: vi.fn((url: string) => `http://localhost:3000${url}`),
-}));
+}))
 
 function httpError(status: number) {
   return new AxiosError('fail', undefined, undefined, undefined, {
@@ -18,53 +18,53 @@ function httpError(status: number) {
     data: {},
     headers: {},
     config: { headers: new AxiosHeaders() },
-  });
+  })
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
-});
+  vi.clearAllMocks()
+})
 
 describe('PostDetailPage', () => {
   it('shows the post with its comment thread already open', async () => {
-    vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'post-7', commentCount: 1 }));
-    vi.mocked(fetchComments).mockResolvedValue([makeComment({ postId: 'post-7', content: 'Gorgeous!' })]);
+    vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'post-7', commentCount: 1 }))
+    vi.mocked(fetchComments).mockResolvedValue([makeComment({ postId: 'post-7', content: 'Gorgeous!' })])
 
-    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-7" onBack={() => {}} onLogout={() => {}} />);
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-7" onBack={() => {}} onLogout={() => {}} />)
 
-    expect(await screen.findByText('Lovely day in the garden.')).toBeInTheDocument();
-    expect(await screen.findByText('Gorgeous!')).toBeInTheDocument();
-    expect(fetchPost).toHaveBeenCalledWith('post-7');
-  });
+    expect(await screen.findByText('Lovely day in the garden.')).toBeInTheDocument()
+    expect(await screen.findByText('Gorgeous!')).toBeInTheDocument()
+    expect(fetchPost).toHaveBeenCalledWith('post-7')
+  })
 
   it.each([404, 403])('says the post is not available on a %s', async (status) => {
-    vi.mocked(fetchPost).mockRejectedValue(httpError(status));
-    const onOpenFeed = vi.fn();
+    vi.mocked(fetchPost).mockRejectedValue(httpError(status))
+    const onOpenFeed = vi.fn()
 
     renderWithQueryClient(
       <PostDetailPage user={makeUser()} postId="gone" onBack={() => {}} onOpenFeed={onOpenFeed} onLogout={() => {}} />
-    );
+    )
 
-    expect(await screen.findByText("This post doesn't exist, or it isn't shared with you.")).toBeInTheDocument();
-    screen.getByRole('button', { name: 'Back to the feed' }).click();
-    expect(onOpenFeed).toHaveBeenCalled();
-  });
+    expect(await screen.findByText("This post doesn't exist, or it isn't shared with you.")).toBeInTheDocument()
+    screen.getByRole('button', { name: 'Back to the feed' }).click()
+    expect(onOpenFeed).toHaveBeenCalled()
+  })
 
   it('offers a retry when the post fails to load for another reason', async () => {
-    vi.mocked(fetchPost).mockRejectedValue(httpError(500));
-    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-1" onBack={() => {}} onLogout={() => {}} />);
-    expect(await screen.findByText(/This post couldn't be loaded/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
-  });
+    vi.mocked(fetchPost).mockRejectedValue(httpError(500))
+    renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-1" onBack={() => {}} onLogout={() => {}} />)
+    expect(await screen.findByText(/This post couldn't be loaded/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  })
 
   it('hands a trip permalink over to the trip page', async () => {
-    vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'trip-1', type: 'TRIP', trip: makeTrip() }));
-    const onOpenTrip = vi.fn();
+    vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'trip-1', type: 'TRIP', trip: makeTrip() }))
+    const onOpenTrip = vi.fn()
 
     renderWithQueryClient(
       <PostDetailPage user={makeUser()} postId="trip-1" onBack={() => {}} onOpenTrip={onOpenTrip} onLogout={() => {}} />
-    );
+    )
 
-    await vi.waitFor(() => expect(onOpenTrip).toHaveBeenCalledWith('trip-1'));
-  });
-});
+    await vi.waitFor(() => expect(onOpenTrip).toHaveBeenCalledWith('trip-1'))
+  })
+})

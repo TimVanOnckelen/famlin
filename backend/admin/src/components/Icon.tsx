@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from 'react'
 
 const paths: Record<string, ReactNode> = {
   users: (
@@ -30,6 +30,12 @@ const paths: Record<string, ReactNode> = {
     <>
       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
       <polyline points="22 6 12 13 2 6" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
     </>
   ),
   shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
@@ -66,6 +72,15 @@ const paths: Record<string, ReactNode> = {
     <>
       <polyline points="1 4 1 10 7 10" />
       <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </>
+  ),
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  'user-plus': (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="20" y1="8" x2="20" y2="14" />
+      <line x1="17" y1="11" x2="23" y2="11" />
     </>
   ),
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
@@ -111,13 +126,13 @@ const paths: Record<string, ReactNode> = {
       <line x1="12" y1="15" x2="12" y2="3" />
     </>
   ),
-};
+}
 
-export type IconName = keyof typeof paths;
+export type IconName = keyof typeof paths
 
 interface IconProps {
-  name: IconName;
-  size?: number;
+  name: IconName
+  size?: number
 }
 
 // Minimal hand-rolled Feather-style icon set (no icon-font/library
@@ -137,5 +152,5 @@ export function Icon({ name, size = 16 }: IconProps) {
     >
       {paths[name]}
     </svg>
-  );
+  )
 }

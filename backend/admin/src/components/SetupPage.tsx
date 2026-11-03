@@ -1,55 +1,58 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AppIcon } from './Logo';
-import { LanguageSelector } from './LanguageSelector';
-import { api, User } from '../api/client';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AppIcon } from './Logo'
+import { LanguageSelector } from './LanguageSelector'
+import { api, User, ApiError } from '../api/client'
 
 interface SetupPageProps {
-  onSetupComplete: (user: User) => void;
+  onSetupComplete: (user: User) => void
 }
 
 export function SetupPage({ onSetupComplete }: SetupPageProps) {
-  const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   // 'restore' swaps account creation for restoring a data export
   // (POST /api/auth/setup/restore) — the same account fields double as the
   // restoring admin's login.
-  const [mode, setMode] = useState<'create' | 'restore'>('create');
-  const [archive, setArchive] = useState<File | null>(null);
+  const [mode, setMode] = useState<'create' | 'restore'>('create')
+  const [archive, setArchive] = useState<File | null>(null)
+  const [missingMedia, setMissingMedia] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
+    setMissingMedia([])
 
     if (password !== confirmPassword) {
-      setError(t('setup.passwordMismatch'));
-      return;
+      setError(t('setup.passwordMismatch'))
+      return
     }
 
     if (mode === 'restore' && !archive) {
-      setError(t('setup.restoreFailed'));
-      return;
+      setError(t('setup.restoreFailed'))
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const result =
         mode === 'restore' && archive
           ? await api.restoreBackup(archive, { email, name, password })
-          : await api.setup({ email, name, password });
-      localStorage.setItem('famlin_admin_token', result.token);
-      onSetupComplete(result.user);
-    } catch (err: any) {
-      setError(err.message || t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'));
+          : await api.setup({ email, name, password })
+      localStorage.setItem('famlin_admin_token', result.token)
+      onSetupComplete(result.user)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'))
+      if (err instanceof ApiError) setMissingMedia(err.missingMedia ?? [])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="login-page">
@@ -116,17 +119,36 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
           className="link-button"
           disabled={isLoading}
           onClick={() => {
-            setMode(mode === 'restore' ? 'create' : 'restore');
-            setError(null);
+            setMode(mode === 'restore' ? 'create' : 'restore')
+            setError(null)
+            setMissingMedia([])
           }}
         >
           {t(mode === 'restore' ? 'setup.modeCreate' : 'setup.modeRestore')}
         </button>
 
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        {missingMedia.length > 0 && (
+          <div>
+            <p>
+              {t('storage.files')}: {missingMedia.length.toLocaleString()}
+            </p>
+            <ul>
+              {missingMedia.slice(0, 100).map((key) => (
+                <li key={key}>
+                  <code>{key}</code>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <LanguageSelector className="login-language" />
       </div>
     </div>
-  );
+  )
 }

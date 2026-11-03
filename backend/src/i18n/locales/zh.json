@@ -99,7 +99,23 @@
     "cannotReplyToOwnStory": "不能回复自己的限时动态",
     "unknownBrandPreset": "未知的颜色预设",
     "invalidLogo": "徽标必须是 PNG、JPEG 或 WebP 图片",
-    "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）"
+    "logoTooLarge": "徽标太大（最大 5 MB，4096×4096 像素）",
+    "backupInProgress": "已有备份正在运行。",
+    "restoreMediaMissing": "配置的存储中缺少所需媒体，或文件大小不匹配。",
+    "giftListNoCrossPost": "礼物清单只属于一个家庭，不能同时分享到多个家庭。",
+    "giftListParticipantNotMember": "每位参与者都必须是这个家庭的成员。",
+    "giftListInvalidExclusion": "排除规则只能配对两位不同的参与者。",
+    "giftListNotFound": "找不到礼物清单。",
+    "giftListNotManager": "只有发起这个礼物清单的人才能这样做。",
+    "giftListManagerCannotLeave": "这个礼物清单是你发起的，所以你不能退出。你可以删除它。",
+    "giftListItemNotFound": "找不到这个愿望。",
+    "giftListTooManyItems": "愿望清单最多可以有 100 个愿望。",
+    "giftListInvalidOrder": "新的顺序必须恰好包含你的每个愿望一次。",
+    "giftDrawDisabled": "这个礼物清单没有开启神秘圣诞老人抽签。",
+    "giftDrawTooFewParticipants": "神秘圣诞老人抽签至少需要 3 位参与者。",
+    "giftDrawImpossible": "在这些排除规则下无法抽签。请删除一些排除规则后再试。",
+    "giftAlreadyDrawn": "已经抽过签了。",
+    "giftDrawWillReset": "这个更改会作废当前的抽签结果。请确认以重新抽签。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",
@@ -126,7 +142,11 @@
     "newStory": "{{author}} 在 {{group}} 分享了限时动态",
     "storyReply": "{{author}} 回复了你的限时动态：“{{excerpt}}”",
     "storyReaction": "{{author}} 用 {{emoji}} 回应了你在 {{group}} 的限时动态",
-    "emailSubjectBranded": "{{name}} 有新动态"
+    "emailSubjectBranded": "{{name}} 有新动态",
+    "giftListInvite": "{{author}} 将你加入了礼物清单\"{{title}}\"",
+    "giftDraw": "你在\"{{title}}\"中的神秘圣诞老人对象已抽好。",
+    "giftListUpdated_one": "{{author}} 在\"{{title}}\"中的愿望清单里添加了一个愿望",
+    "giftListUpdated_other": "{{author}} 今天在\"{{title}}\"中的愿望清单里添加了 {{count}} 个愿望"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} 分享了成长时刻：{{milestoneTag}}",
@@ -159,5 +179,13 @@
     "status": "服务器运行正常",
     "title": "欢迎使用 Famlin",
     "body": "这是你们家的私密 Famlin 服务器。请在手机上打开 Famlin 应用登录，或访问 /admin 管理服务器。"
+  },
+  "systemAlerts": {
+    "emailSubject": "Famlin 需要你的关注",
+    "emailBody": "你的 Famlin 服务器报告了一个问题：\n\n{{alerts}}\n\n请在管理面板的“系统状态”页面查看详情。问题持续期间，每个问题每天最多发送一封邮件。",
+    "backup_failed": "上一次计划备份失败。",
+    "backup_stale": "已有 {{days}} 天没有成功的备份。",
+    "disk_low_uploads": "上传卷空间即将用尽（剩余 {{free}} GiB）。",
+    "disk_low_backups": "备份卷空间即将用尽（剩余 {{free}} GiB）。"
   }
 }

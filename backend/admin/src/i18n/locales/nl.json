@@ -1,5 +1,10 @@
 {
   "common": {
+    "retry": "Opnieuw proberen",
+    "confirm": "Bevestigen",
+    "confirmTitle": "Actie bevestigen",
+    "messageTitle": "Melding",
+    "changePassword": "Wachtwoord wijzigen",
     "loading": "Laden...",
     "loadMore": "Meer laden",
     "cancel": "Annuleer",
@@ -36,7 +41,8 @@
     "serverSettings": "Serverinstellingen",
     "logout": "Uitloggen",
     "language": "Taal",
-    "version": "Versie {{version}}"
+    "version": "Versie {{version}}",
+    "systemStatus": "Systeemstatus"
   },
   "login": {
     "title": "Famlin Admin",
@@ -103,6 +109,8 @@
     "uploads": "Uploads"
   },
   "users": {
+    "grantAdminConfirm": "{{name}} ({{email}}) beheerderstoegang geven? Deze gebruiker kan dan gebruikers, groepen en serverinstellingen beheren.",
+    "revokeAdminConfirm": "Beheerderstoegang van {{name}} ({{email}}) intrekken?",
     "title": "Gebruikers",
     "newUser": "Nieuwe gebruiker",
     "createUser": "Gebruiker aanmaken",
@@ -265,7 +273,9 @@
     "storyCircle": "Kring",
     "viewsTooltip": "Weergaven",
     "reactionsTooltip": "Reacties",
-    "storyPhoto": "Foto van het verhaal"
+    "storyPhoto": "Foto van het verhaal",
+    "editPostTitle": "Bericht van {{name}} bewerken",
+    "editPostHint": "Wijzigt alleen de tekst van dit bericht — het bericht wordt als bewerkt gemarkeerd. Foto's kun je in de Famlin-app aanpassen."
   },
   "pushLog": {
     "title": "Pushmeldingenlogboek",
@@ -360,7 +370,22 @@
     "localMediaTesting": "Controleren...",
     "localMediaTestOk": "Pad bestaat en is leesbaar.",
     "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
-    "localMediaTestNotADirectory": "Pad bestaat maar is geen map."
+    "localMediaTestNotADirectory": "Pad bestaat maar is geen map.",
+    "backups": "Back-ups",
+    "backupsDesc": "Geplande back-ups van de database en alle geüploade foto's en video's, weggeschreven naar het back-upvolume op deze server.",
+    "backupEnabled": "Geplande back-ups",
+    "backupEnabledHint": "Staat uit tot je het aanzet. Elke run maakt een databasedump en werkt één incrementele kopie van de uploads bij.",
+    "backupSchedule": "Planning",
+    "backupScheduleDaily": "Dagelijks",
+    "backupScheduleWeekly": "Wekelijks (zondag)",
+    "backupHour": "Tijdstip (servertijd)",
+    "backupRetention": "Te bewaren databasedumps",
+    "backupHint": "Uploads worden incrementeel gespiegeld in plaats van telkens volledig gekopieerd. Bestanden die uit Famlin verwijderd worden, blijven nog 30 dagen in de spiegel staan. Beheerders krijgen een e-mail als een back-up mislukt of als er al twee planningsintervallen geen back-up gelukt is (vereist SMTP).",
+    "backupStatusLink": "Bekijk de back-upstatus en start nu een back-up",
+    "backupIncludeMedia": "Media opnemen in back-ups",
+    "backupIncludeMediaHint": "Indien uitgeschakeld worden alleen de database en huisstijl opgeslagen. De bestaande mediaspiegel blijft behouden.",
+    "exportIncludeMedia": "Media opnemen in export",
+    "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen."
   },
   "media": {
     "peopleMapping": {
@@ -387,6 +412,9 @@
     }
   },
   "members": {
+    "noneAvailable": "Alle beschikbare gebruikers zijn al toegevoegd.",
+    "addNamed": "{{name}} toevoegen",
+    "removeNamed": "{{name}} verwijderen",
     "addMember": "Lid toevoegen",
     "modeInvite": "Uitnodigen",
     "modeCreate": "Aanmaken met wachtwoord",
@@ -401,9 +429,12 @@
     "MILESTONE": "Mijlpaal",
     "POLL": "Poll",
     "TRIP": "Reis",
-    "ALBUM": "Album"
+    "ALBUM": "Album",
+    "GIFT_LIST": "Cadeaulijst"
   },
   "circles": {
+    "edit": "Kring bewerken",
+    "removeMemberConfirm": "{{name}} uit de kring \"{{circle}}\" verwijderen?",
     "heading_one": "{{count}} kring",
     "heading_other": "{{count}} kringen",
     "hint": "Met kringen deelt een deel van de familie privé. Leden buiten een kring zien de berichten, foto's en reacties nooit — en weten niet eens dat de kring bestaat.",
@@ -461,5 +492,140 @@
       "forest": "Bos",
       "slate": "Leisteen"
     }
+  },
+  "systemStatus": {
+    "title": "Systeemstatus",
+    "refresh": "Vernieuwen",
+    "ok": "OK",
+    "failed": "Mislukt",
+    "running": "Bezig",
+    "never": "Nog nooit uitgevoerd",
+    "alerts": {
+      "backup_failed": "De laatste back-up is mislukt.",
+      "backup_stale": "Al {{days}} dagen geen geslaagde back-up.",
+      "disk_low_uploads": "Het uploadvolume is bijna vol ({{free}} GiB vrij).",
+      "disk_low_backups": "Het back-upvolume is bijna vol ({{free}} GiB vrij).",
+      "viewStatus": "Bekijk systeemstatus"
+    },
+    "backups": {
+      "title": "Back-ups",
+      "schedule": "Planning",
+      "scheduleValue": {
+        "daily_one": "Dagelijks om {{time}}, {{count}} dump bewaren",
+        "daily_other": "Dagelijks om {{time}}, {{count}} dumps bewaren",
+        "weekly_one": "Zondag om {{time}}, {{count}} dump bewaren",
+        "weekly_other": "Zondag om {{time}}, {{count}} dumps bewaren"
+      },
+      "enableInSettings": "Inschakelen in Serverinstellingen",
+      "lastBackup": "Laatste back-up",
+      "size": "Grootte",
+      "sizeValue": "Dump {{dump}} · uploadspiegel {{mirror}}",
+      "nextRun": "Volgende geplande back-up",
+      "location": "Locatie",
+      "notMounted": "De back-upmap is geen gekoppeld volume, dus back-ups gaan verloren als de container opnieuw wordt aangemaakt. Voeg het famlin-backups-volume toe aan je docker-compose.yml.",
+      "dumps_one": "{{count}} databasedump",
+      "dumps_other": "{{count}} databasedumps",
+      "runNow": "Nu back-up maken"
+    },
+    "disk": {
+      "title": "Schijfruimte",
+      "uploads": "Uploads",
+      "backups": "Back-ups",
+      "free": "{{free}} vrij van {{total}}",
+      "low": "Laag",
+      "unavailable": "Niet beschikbaar",
+      "sameVolume": "Back-ups staan op hetzelfde volume als de uploads. Een aparte schijf of NAS-share beschermt ertegen dat je beide tegelijk verliest.",
+      "s3Capacity": "Media wordt opgeslagen in S3. De S3-API geeft geen totale of vrije bucketcapaciteit door."
+    },
+    "integrations": {
+      "title": "Integraties",
+      "smtp": "E-mail (SMTP)",
+      "oidc": "Single sign-on (OIDC)",
+      "immich": "Immich",
+      "localMedia": "Lokale mediamap",
+      "notConfigured": "Niet ingesteld",
+      "errors": {
+        "unreachable": "Onbereikbaar",
+        "unauthorized": "Inloggegevens geweigerd",
+        "not_found": "Map niet gevonden",
+        "not_a_directory": "Geen map",
+        "invalid_response": "Ongeldig antwoord"
+      }
+    },
+    "push": {
+      "title": "Pushmeldingen",
+      "last24h": "Afgelopen 24 uur",
+      "last7d": "Afgelopen 7 dagen",
+      "summary": "{{delivered}} afgeleverd · {{failed}} mislukt ({{rate}})",
+      "unhealthy": "Meer dan 20% van de pushmeldingen is de afgelopen 24 uur mislukt.",
+      "viewLog": "Bekijk het pushmeldingenlogboek"
+    },
+    "jobs": {
+      "title": "Achtergrondtaken",
+      "job": "Taak",
+      "lastRun": "Laatst uitgevoerd",
+      "result": "Resultaat",
+      "lastSuccess": "Laatst geslaagd",
+      "names": {
+        "onThisDay": "Meldingen \"Op deze dag\"",
+        "newAssets": "Nieuwe albumfoto's",
+        "expireStories": "Verhalen laten verlopen",
+        "backup": "Back-up",
+        "systemAlerts": "Waarschuwingscontrole"
+      }
+    },
+    "migrations": {
+      "title": "Databasemigraties",
+      "latest": "Laatst toegepast",
+      "applied": "Toegepast",
+      "pending": "In afwachting",
+      "upToDate": "Up-to-date",
+      "unknown": "Onbekend",
+      "failed": "Mislukte migraties vragen aandacht: {{names}}"
+    }
+  },
+  "storage": {
+    "usingFallback": "De primaire opslag is niet beschikbaar. De terugvalopslag wordt gebruikt voor lezen en schrijven. Media verwijderen, migratie en opschonen zijn uitgeschakeld. Herstel de toegang tot de primaire opslag en herstart de server voordat je terugvalgegevens migreert.",
+    "title": "Opslag",
+    "description": "Configureer opslag via omgevingsvariabelen en herstart. Nieuwe media gaan naar de primaire opslag; lezen gebruikt ook de terugvalbron.",
+    "primary": "Primaire opslag",
+    "fallback": "Terugvalbron",
+    "progress": "Voortgang",
+    "idle": "Niet gestart",
+    "state": "Status",
+    "files": "Bestanden",
+    "bytes": "Bytes",
+    "migrate": "Migratie starten / opnieuw proberen",
+    "cleanup": "Bron opruimen",
+    "cleanupHint": "Opruimen verwijdert geverifieerde bronkopieën. Voer de bovenstaande bronvingerafdruk in ter bevestiging.",
+    "confirmSource": "Bronvingerafdruk",
+    "removeFallback": "Verwijder na het opruimen de terugvalvariabelen en herstart.",
+    "notConfigured": "Niet geconfigureerd",
+    "driver": "Stuurprogramma",
+    "directory": "Map",
+    "bucket": "Bucket",
+    "prefix": "Voorvoegsel",
+    "endpoint": "Eindpunt",
+    "region": "Regio",
+    "availability": "Beschikbaarheid",
+    "available": "Beschikbaar",
+    "unavailable": "Niet beschikbaar",
+    "states": {
+      "running": "Kopiëren",
+      "cleaning": "Bron opruimen",
+      "verified": "Geverifieerd",
+      "failed": "Mislukt",
+      "cleaned": "Bron opgeruimd",
+      "cleanup_failed": "Opruimen mislukt",
+      "error": "Fout",
+      "conflict": "Conflict",
+      "deleted": "Verwijderd",
+      "source_removed": "Bron verwijderd"
+    },
+    "size": "Grootte",
+    "migrationTitle": "Migratie",
+    "errors": "Fouten ({{count}})",
+    "cleanupLocked": "Voltooi de migratiecontrole voordat je de bron opruimt.",
+    "confirmPlaceholder": "Plak de bronvingerafdruk"
   }
 }

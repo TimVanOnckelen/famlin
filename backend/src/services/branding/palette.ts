@@ -1,4 +1,4 @@
-import { contrastRatio, hexToOklch, hueDistance, normalizeHex, oklchToHex, type Oklch } from './color.js';
+import { contrastRatio, hexToOklch, hueDistance, normalizeHex, oklchToHex, type Oklch } from './color.js'
 
 // Per-family branding palette derivation (issue #164). This is the ONE
 // implementation both clients consume — mobile and web never derive colors
@@ -24,7 +24,7 @@ export const DEFAULT_PALETTE = {
   bg: '#edf7fb',
   loginBgFrom: '#edf7fb',
   loginBgTo: '#edf7fb',
-};
+}
 
 export const DEFAULT_SEMANTIC = {
   accent: '#ed835e',
@@ -41,13 +41,13 @@ export const DEFAULT_SEMANTIC = {
   tripBg: '#eef7fb',
   tripTint: '#dcf0f7',
   tripBorder: '#bfe1ec',
-};
+}
 
-export type BrandPalette = typeof DEFAULT_PALETTE;
-export type SemanticPalette = typeof DEFAULT_SEMANTIC;
-export type SemanticFamily = 'circle' | 'milestone' | 'trip';
+export type BrandPalette = typeof DEFAULT_PALETTE
+export type SemanticPalette = typeof DEFAULT_SEMANTIC
+export type SemanticFamily = 'circle' | 'milestone' | 'trip'
 
-export const DEFAULT_PRESET = 'teal';
+export const DEFAULT_PRESET = 'teal'
 
 // Curated seeds. A preset is nothing more than a seed hex run through the
 // same derivation a custom color gets (except teal, see DEFAULT_PALETTE).
@@ -62,7 +62,7 @@ export const BRAND_PRESETS: Record<string, string> = {
   amber: '#9a6412',
   forest: '#2f7a4b',
   slate: '#4a5d70',
-};
+}
 
 // Each semantic family is a set of tokens that move together, and the hue it
 // moves to when the brand collides with it. The alternate keeps every
@@ -88,56 +88,56 @@ const SEMANTIC_FAMILIES: Record<SemanticFamily, { hue: number; altHue: number; t
     altHue: 295,
     tokens: ['trip', 'tripDark', 'tripBg', 'tripTint', 'tripBorder'],
   },
-};
+}
 
 // A brand hue within this many degrees (OKLCH) of a family's hue collides.
 // Coral and gold are only ~35° apart, so a brand between them shifts both.
-export const COLLISION_HUE_DISTANCE = 25;
+export const COLLISION_HUE_DISTANCE = 25
 // Below this chroma a brand reads as gray and has no hue to collide with.
-export const COLLISION_MIN_CHROMA = 0.04;
+export const COLLISION_MIN_CHROMA = 0.04
 // WCAG AA for normal text: white button labels on `primary`.
-export const MIN_CONTRAST = 4.5;
+export const MIN_CONTRAST = 4.5
 
 export interface DerivedBrand {
-  seed: string;
-  palette: BrandPalette;
-  semantic: SemanticPalette;
+  seed: string
+  palette: BrandPalette
+  semantic: SemanticPalette
   // True when `primary` had to be darkened from the seed to reach AA.
-  adjusted: boolean;
-  shifted: SemanticFamily[];
+  adjusted: boolean
+  shifted: SemanticFamily[]
 }
 
 // Darkens (lowers OKLCH lightness) until white text on it passes AA.
 function ensureContrast(seed: Oklch): Oklch {
-  let color = { ...seed };
+  let color = { ...seed }
   while (contrastRatio('#ffffff', oklchToHex(color)) < MIN_CONTRAST && color.l > 0) {
-    color = { ...color, l: Math.max(0, color.l - 0.005) };
+    color = { ...color, l: Math.max(0, color.l - 0.005) }
   }
-  return color;
+  return color
 }
 
 export function collidingFamilies(seedHex: string): SemanticFamily[] {
-  const { c, h } = hexToOklch(seedHex);
-  if (c < COLLISION_MIN_CHROMA) return [];
+  const { c, h } = hexToOklch(seedHex)
+  if (c < COLLISION_MIN_CHROMA) return []
   return (Object.keys(SEMANTIC_FAMILIES) as SemanticFamily[]).filter(
     (family) => hueDistance(h, SEMANTIC_FAMILIES[family].hue) < COLLISION_HUE_DISTANCE
-  );
+  )
 }
 
 function shiftSemantic(families: SemanticFamily[]): SemanticPalette {
-  const semantic = { ...DEFAULT_SEMANTIC };
+  const semantic = { ...DEFAULT_SEMANTIC }
   for (const family of families) {
-    const { altHue, tokens } = SEMANTIC_FAMILIES[family];
+    const { altHue, tokens } = SEMANTIC_FAMILIES[family]
     for (const token of tokens) {
-      const original = hexToOklch(DEFAULT_SEMANTIC[token]);
-      semantic[token] = oklchToHex({ l: original.l, c: original.c, h: altHue });
+      const original = hexToOklch(DEFAULT_SEMANTIC[token])
+      semantic[token] = oklchToHex({ l: original.l, c: original.c, h: altHue })
     }
   }
-  return semantic;
+  return semantic
 }
 
 export function derivePalette(seedHex: string): DerivedBrand {
-  const seed = normalizeHex(seedHex);
+  const seed = normalizeHex(seedHex)
   if (seed === BRAND_PRESETS[DEFAULT_PRESET]) {
     return {
       seed,
@@ -145,16 +145,16 @@ export function derivePalette(seedHex: string): DerivedBrand {
       semantic: { ...DEFAULT_SEMANTIC },
       adjusted: false,
       shifted: [],
-    };
+    }
   }
 
-  const p = ensureContrast(hexToOklch(seed));
-  const primary = oklchToHex(p);
+  const p = ensureContrast(hexToOklch(seed))
+  const primary = oklchToHex(p)
   // Offsets measured from the teal defaults (DEFAULT_PALETTE) in OKLCH, so a
   // derived palette has the same relationships the hand-picked one does.
-  const primaryTint = oklchToHex({ l: 0.949, c: Math.min(0.03, p.c * 0.3), h: p.h });
-  const bg = oklchToHex({ l: 0.97, c: Math.min(0.012, p.c * 0.12), h: p.h });
-  const shifted = collidingFamilies(primary);
+  const primaryTint = oklchToHex({ l: 0.949, c: Math.min(0.03, p.c * 0.3), h: p.h })
+  const bg = oklchToHex({ l: 0.97, c: Math.min(0.012, p.c * 0.12), h: p.h })
+  const shifted = collidingFamilies(primary)
 
   return {
     seed,
@@ -172,5 +172,5 @@ export function derivePalette(seedHex: string): DerivedBrand {
     semantic: shiftSemantic(shifted),
     adjusted: primary !== seed,
     shifted,
-  };
+  }
 }

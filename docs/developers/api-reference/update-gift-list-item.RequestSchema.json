@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string","minLength":1,"maxLength":200},"note":{"type":"string","nullable":true,"maxLength":1000},"url":{"type":"string","nullable":true},"photoUrl":{"type":"string","nullable":true}}}}}}}

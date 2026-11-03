@@ -4,27 +4,27 @@
 // "primary" group the composer/media picker are scoped to), groupIds is only
 // sent when more than one group is selected (a genuine cross-post).
 export function buildGroupSelectionPayload(selectedGroupIds: string[]): {
-  groupId: string;
-  groupIds?: string[];
+  groupId: string
+  groupIds?: string[]
 } {
   if (selectedGroupIds.length === 0) {
-    throw new Error('At least one group must be selected');
+    throw new Error('At least one group must be selected')
   }
 
   return {
     groupId: selectedGroupIds[0],
     groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
-  };
+  }
 }
 
 // Toggles a group in/out of the current multi-select, refusing to drop the
 // last remaining selection — the composer always requires at least one group.
 export function toggleGroupSelection(current: string[], groupId: string): string[] {
   if (current.includes(groupId)) {
-    if (current.length === 1) return current;
-    return current.filter((id) => id !== groupId);
+    if (current.length === 1) return current
+    return current.filter((id) => id !== groupId)
   }
-  return [...current, groupId];
+  return [...current, groupId]
 }
 
 // Which post types the composer may offer for the current group selection:
@@ -43,9 +43,9 @@ export function resolveOfferedPostTypes(
 ): string[] {
   const constraints = selectedGroupIds
     .map((groupId) => groups?.find((group) => group.id === groupId)?.allowedPostTypes)
-    .filter((allowed): allowed is string[] => Array.isArray(allowed));
+    .filter((allowed): allowed is string[] => Array.isArray(allowed))
 
-  return knownTypes.filter((type) => constraints.every((allowed) => allowed.includes(type)));
+  return knownTypes.filter((type) => constraints.every((allowed) => allowed.includes(type)))
 }
 
 // Keeps the composer's selected type valid after the offered set changes
@@ -54,6 +54,6 @@ export function resolveOfferedPostTypes(
 // type, or null when the intersection is empty (composer must disable submit
 // and show a notice in that state).
 export function reconcilePostTypeSelection(current: string, offered: readonly string[]): string | null {
-  if (offered.includes(current)) return current;
-  return offered[0] ?? null;
+  if (offered.includes(current)) return current
+  return offered[0] ?? null
 }

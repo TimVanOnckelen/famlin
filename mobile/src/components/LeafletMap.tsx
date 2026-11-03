@@ -1,14 +1,14 @@
-import React, { useMemo, useRef } from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import React, { useMemo, useRef } from 'react'
+import { StyleProp, ViewStyle } from 'react-native'
+import { WebView, WebViewMessageEvent } from 'react-native-webview'
 
 interface LeafletMapProps {
-  latitude: number;
-  longitude: number;
-  zoom?: number;
-  interactive?: boolean;
-  style?: StyleProp<ViewStyle>;
-  onPick?: (coords: { latitude: number; longitude: number }) => void;
+  latitude: number
+  longitude: number
+  zoom?: number
+  interactive?: boolean
+  style?: StyleProp<ViewStyle>
+  onPick?: (coords: { latitude: number; longitude: number }) => void
 }
 
 // Renders OpenStreetMap tiles via Leaflet inside a WebView — no native map SDK
@@ -71,24 +71,24 @@ function buildHtml({
     };
   </script>
 </body>
-</html>`;
+</html>`
 }
 
 export function LeafletMap({ latitude, longitude, zoom = 15, interactive = false, style, onPick }: LeafletMapProps) {
-  const webviewRef = useRef<WebView>(null);
+  const webviewRef = useRef<WebView>(null)
   const html = useMemo(
     () => buildHtml({ latitude, longitude, zoom, interactive }),
     // Intentionally built once — subsequent marker moves happen imperatively via
     // window.setMarker so the WebView (and Leaflet map instance) isn't torn down.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
-  );
+  )
 
   function handleMessage(event: WebViewMessageEvent) {
-    if (!onPick) return;
+    if (!onPick) return
     try {
-      const data = JSON.parse(event.nativeEvent.data);
-      onPick({ latitude: data.latitude, longitude: data.longitude });
+      const data = JSON.parse(event.nativeEvent.data)
+      onPick({ latitude: data.latitude, longitude: data.longitude })
     } catch {
       // ignore malformed messages
     }
@@ -103,5 +103,5 @@ export function LeafletMap({ latitude, longitude, zoom = 15, interactive = false
       scrollEnabled={false}
       originWhitelist={['*']}
     />
-  );
+  )
 }

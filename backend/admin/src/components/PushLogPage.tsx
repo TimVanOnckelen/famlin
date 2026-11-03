@@ -1,59 +1,59 @@
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { api, PushDeliveryLog } from '../api/client';
-import i18n from '../i18n';
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { api, PushDeliveryLog } from '../api/client'
+import i18n from '../i18n'
 
 function truncate(text: string | null, length = 60) {
-  if (!text) return '';
-  return text.length > length ? `${text.slice(0, length)}…` : text;
+  if (!text) return ''
+  return text.length > length ? `${text.slice(0, length)}…` : text
 }
 
 function DateCell({ iso }: { iso: string }) {
-  const date = new Date(iso);
+  const date = new Date(iso)
   return (
     <span className="muted" title={date.toLocaleString(i18n.language)}>
       {date.toLocaleString(i18n.language)}
     </span>
-  );
+  )
 }
 
 export function PushLogPage() {
-  const { t } = useTranslation();
-  const [logs, setLogs] = useState<PushDeliveryLog[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const requestIdRef = useRef(0);
+  const { t } = useTranslation()
+  const [logs, setLogs] = useState<PushDeliveryLog[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const requestIdRef = useRef(0)
 
   const load = async () => {
-    const requestId = ++requestIdRef.current;
+    const requestId = ++requestIdRef.current
     try {
-      const page = await api.getPushLog();
-      if (requestId !== requestIdRef.current) return;
-      setLogs(page.items);
-      setNextCursor(page.nextCursor);
+      const page = await api.getPushLog()
+      if (requestId !== requestIdRef.current) return
+      setLogs(page.items)
+      setNextCursor(page.nextCursor)
     } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    load();
-  }, []);
+    load()
+  }, [])
 
   const loadMore = async () => {
-    if (!nextCursor) return;
-    const requestId = requestIdRef.current;
-    setLoadingMore(true);
+    if (!nextCursor) return
+    const requestId = requestIdRef.current
+    setLoadingMore(true)
     try {
-      const page = await api.getPushLog({ cursor: nextCursor });
-      if (requestId !== requestIdRef.current) return;
-      setLogs((current) => [...current, ...page.items]);
-      setNextCursor(page.nextCursor);
+      const page = await api.getPushLog({ cursor: nextCursor })
+      if (requestId !== requestIdRef.current) return
+      setLogs((current) => [...current, ...page.items])
+      setNextCursor(page.nextCursor)
     } finally {
-      setLoadingMore(false);
+      setLoadingMore(false)
     }
-  };
+  }
 
   return (
     <>
@@ -126,5 +126,5 @@ export function PushLogPage() {
         )}
       </div>
     </>
-  );
+  )
 }

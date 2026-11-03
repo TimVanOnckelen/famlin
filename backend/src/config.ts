@@ -1,8 +1,8 @@
-import { z } from 'zod';
-import dotenv from 'dotenv';
-import path from 'path';
+import { z } from 'zod'
+import dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config();
+dotenv.config()
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -34,12 +34,20 @@ const envSchema = z.object({
   // it. Without an override, a dev instance with a few hundred MB of photos
   // makes the export tests time out and leaves test files behind.
   UPLOADS_DIR: z.string().optional(),
-});
+  // Where scheduled backups (services/backup/) write their DB dumps and the
+  // uploads mirror. Optional, same reasoning as UPLOADS_DIR: the default is
+  // the `backups` directory next to the server, where the famlin-backups
+  // volume mounts; the test harness points it at a throwaway directory.
+  BACKUPS_DIR: z.string().optional(),
+})
 
-export const config = envSchema.parse(process.env);
+export const config = envSchema.parse(process.env)
 
 // Resolved once, at import time — every module that touches the uploads
 // directory must use this rather than recomputing it from process.cwd(), so
 // an override applies everywhere (the upload route, the static file hook,
 // cross-post asset copies, and the admin export) or nowhere.
-export const uploadsDir = path.resolve(config.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads'));
+export const uploadsDir = path.resolve(config.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads'))
+
+// Same contract as uploadsDir: resolve once, import everywhere.
+export const backupsDir = path.resolve(config.BACKUPS_DIR ?? path.join(process.cwd(), 'backups'))

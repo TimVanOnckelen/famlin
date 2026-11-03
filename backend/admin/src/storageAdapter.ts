@@ -1,4 +1,4 @@
-import type { StorageAdapter } from '@famlin/api-client';
+import type { StorageAdapter } from '@famlin/api-client'
 
 // The shared package's browser OIDC helpers (oidcBrowser.ts) go through its
 // own axios client (client.ts), which reads/writes tokens via a
@@ -10,9 +10,9 @@ import type { StorageAdapter } from '@famlin/api-client';
 export const adminLocalStorageAdapter: StorageAdapter = {
   getItem: async (key) => window.localStorage.getItem(key),
   setItem: async (key, value) => {
-    window.localStorage.setItem(key, value);
+    window.localStorage.setItem(key, value)
   },
   removeItem: async (key) => {
-    window.localStorage.removeItem(key);
+    window.localStorage.removeItem(key)
   },
-};
+}

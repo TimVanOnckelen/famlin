@@ -106,6 +106,23 @@ jobs:
             --non-interactive \
             --auto-submit
 
+      # --auto-submit only uploads the iOS binary to App Store Connect; it
+      # never creates the App Store version or submits it for review. This
+      # waits for Apple to finish processing the upload, attaches it to the
+      # version, fills an empty "What's New" text and submits it for review.
+      - name: Submit iOS build for App Store review
+        if: github.event_name != 'workflow_dispatch'
+        working-directory: mobile
+        env:
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_PATH: secrets/AuthKey.p8
+        run: |
+          export APP_VERSION=$(node -p "require('./app.json').expo.version")
+          export APP_BUILD_NUMBER=$(node -p "require('./app.json').expo.ios.buildNumber || require('./app.json').expo.version")
+          node ../scripts/asc-submit-for-review.mjs
+
       - name: Clean up store credentials
         if: always() && github.event_name != 'workflow_dispatch'
         working-directory: mobile

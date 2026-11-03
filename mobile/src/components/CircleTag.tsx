@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Post } from '@famlin/api-client';
-import { colors } from '../constants/colors';
-import { CircleMembersModal } from './CircleMembersModal';
+import React, { useState } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Post } from '@famlin/api-client'
+import { colors } from '../constants/colors'
+import { CircleMembersModal } from './CircleMembersModal'
 
 // "Shared in Grandparents" — marks a post that went to a Circle rather than
 // the whole family.
@@ -14,11 +14,11 @@ import { CircleMembersModal } from './CircleMembersModal';
 // guarantee members get is "nobody reads this silently", and that needs
 // somewhere to look. Mirrors web's CircleBadge.
 export function CircleTag({ post }: { post: Post }) {
-  const [membersOpen, setMembersOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false)
 
-  if (!post.circle) return null;
+  if (!post.circle) return null
 
-  const circle = post.circle;
+  const circle = post.circle
 
   return (
     <View style={styles.wrapper}>
@@ -35,7 +35,7 @@ export function CircleTag({ post }: { post: Post }) {
         onClose={() => setMembersOpen(false)}
       />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -54,4 +54,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.circleDark,
   },
-});
+})

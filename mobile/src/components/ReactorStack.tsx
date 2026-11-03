@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react'
+import { View, StyleSheet, TouchableOpacity } from 'react-native'
 
-import { Avatar } from '@/components/Avatar';
-import { colors } from '@/constants/colors';
+import { Avatar } from '@/components/Avatar'
+import { colors } from '@/constants/colors'
 
 interface Reactor {
-  id: string;
-  name: string;
-  avatarUrl?: string | null;
+  id: string
+  name: string
+  avatarUrl?: string | null
 }
 
 // "Show who reacted, not just a count" — small avatars overlapping with a
@@ -15,7 +15,7 @@ interface Reactor {
 // Tapping opens the full "who reacted with what" list (see ReactionsModal)
 // when a handler is provided.
 export function ReactorStack({ reactors, onPress }: { reactors: Reactor[]; onPress?: () => void }) {
-  if (reactors.length === 0) return null;
+  if (reactors.length === 0) return null
 
   const stack = (
     <View style={styles.row}>
@@ -25,15 +25,15 @@ export function ReactorStack({ reactors, onPress }: { reactors: Reactor[]; onPre
         </View>
       ))}
     </View>
-  );
+  )
 
-  if (!onPress) return stack;
+  if (!onPress) return stack
 
   return (
     <TouchableOpacity onPress={onPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
       {stack}
     </TouchableOpacity>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -49,4 +49,4 @@ const styles = StyleSheet.create({
   faceOverlap: {
     marginLeft: -8,
   },
-});
+})

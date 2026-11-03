@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -10,21 +10,21 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import * as ImagePicker from 'expo-image-picker'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { MediaThumbnail } from '@/components/MediaThumbnail';
-import { ReactorStack } from '@/components/ReactorStack';
-import { EmptyState } from '@/components/EmptyState';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { MediaThumbnail } from '@/components/MediaThumbnail'
+import { ReactorStack } from '@/components/ReactorStack'
+import { EmptyState } from '@/components/EmptyState'
 import {
   ChatMessage,
   fetchChatMessages,
@@ -32,37 +32,37 @@ import {
   markChatRead,
   fetchGroups,
   fetchGroupMembers,
-} from '@famlin/api-client';
-import { getUploadUrl } from '@/api/uploads';
-import { formatRelativeDate } from '@/i18n/utils';
-import { isVideoUrl } from '@/utils/media';
-import { useAuthStore } from '@/stores/authStore';
-import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
-import { UploadProgressOverlay } from '@/components/UploadProgressOverlay';
+} from '@famlin/api-client'
+import { getUploadUrl } from '@/api/uploads'
+import { formatRelativeDate } from '@/i18n/utils'
+import { isVideoUrl } from '@/utils/media'
+import { useAuthStore } from '@/stores/authStore'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
+import { UploadProgressOverlay } from '@/components/UploadProgressOverlay'
 
 // V1 is polling, not a socket — chat should still feel snappier than the
 // 30s notification poll, so refetch more often, but only while this screen
 // is actually focused (see the useFocusEffect below).
-const CHAT_POLL_INTERVAL_MS = 6000;
+const CHAT_POLL_INTERVAL_MS = 6000
 
 // WhatsApp-style swipe-to-reply tuning: cap how far the bubble can be dragged
 // and how far past that cap counts as a deliberate "reply" gesture rather
 // than an accidental nudge.
-const MAX_SWIPE_TRANSLATION = 60;
-const SWIPE_REPLY_THRESHOLD_RATIO = 0.35;
+const MAX_SWIPE_TRANSLATION = 60
+const SWIPE_REPLY_THRESHOLD_RATIO = 0.35
 
 export function ChatScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string };
-  const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
-  const [text, setText] = useState('');
-  const [attachment, setAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null);
-  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
-  const flatListRef = useRef<FlatList<ChatMessage>>(null);
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { groupId, groupName: routeGroupName } = route.params as { groupId: string; groupName?: string }
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const [text, setText] = useState('')
+  const [attachment, setAttachment] = useState<{ uri: string; isVideo: boolean; uploadedUrl?: string } | null>(null)
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null)
+  const flatListRef = useRef<FlatList<ChatMessage>>(null)
 
   // Group name/member count reuse whatever the app already fetches for group
   // info rather than rebuilding it: the groups list (same ['groups'] cache
@@ -73,13 +73,13 @@ export function ChatScreen() {
     queryKey: ['groups'],
     queryFn: fetchGroups,
     enabled: !routeGroupName,
-  });
-  const groupName = routeGroupName ?? groups?.find((g) => g.id === groupId)?.name ?? '';
+  })
+  const groupName = routeGroupName ?? groups?.find((g) => g.id === groupId)?.name ?? ''
 
   const { data: members } = useQuery({
     queryKey: ['groupMembers', groupId],
     queryFn: () => fetchGroupMembers(groupId),
-  });
+  })
 
   const {
     query,
@@ -88,40 +88,40 @@ export function ChatScreen() {
   } = useCursorPagination<ChatMessage>({
     queryKey: ['chatMessages', groupId],
     queryFn: (cursor) => fetchChatMessages(groupId, cursor),
-  });
-  const { isLoading, isFetchingNextPage, refetch } = query;
+  })
+  const { isLoading, isFetchingNextPage, refetch } = query
 
   useFocusEffect(
     React.useCallback(() => {
       const interval = setInterval(() => {
-        refetch();
-      }, CHAT_POLL_INTERVAL_MS);
-      return () => clearInterval(interval);
+        refetch()
+      }, CHAT_POLL_INTERVAL_MS)
+      return () => clearInterval(interval)
     }, [refetch])
-  );
+  )
 
   // Clears the unread badge whenever the chat is opened.
   useFocusEffect(
     React.useCallback(() => {
       markChatRead(groupId)
         .then(() => queryClient.invalidateQueries({ queryKey: ['chat-unread'] }))
-        .catch(() => {});
+        .catch(() => {})
     }, [groupId, queryClient])
-  );
+  )
 
   const sendMutation = useMutation({
     mutationFn: (body: { content?: string; attachmentUrl?: string; replyToMessageId?: string }) =>
       sendChatMessage(groupId, body),
     onSuccess: () => {
-      setText('');
-      setAttachment(null);
-      setReplyTarget(null);
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', groupId] });
+      setText('')
+      setAttachment(null)
+      setReplyTarget(null)
+      queryClient.invalidateQueries({ queryKey: ['chatMessages', groupId] })
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('chat.sendFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('chat.sendFailed'))
     },
-  });
+  })
 
   // Same pick-then-upload flow as PostDetailScreen's comment attachment.
   const {
@@ -136,37 +136,37 @@ export function ChatScreen() {
     },
     onPicked: ([asset]) => setAttachment({ uri: asset.uri, isVideo: asset.isVideo }),
     onError: () => setAttachment(null),
-  });
+  })
 
   async function pickAttachment() {
-    const result = await pickAttachmentMedia();
-    if (!result) return;
-    const [asset] = result.assets;
-    const [uploadedUrl] = result.urls;
-    setAttachment({ uri: asset.uri, isVideo: asset.isVideo, uploadedUrl });
+    const result = await pickAttachmentMedia()
+    if (!result) return
+    const [asset] = result.assets
+    const [uploadedUrl] = result.urls
+    setAttachment({ uri: asset.uri, isVideo: asset.isVideo, uploadedUrl })
   }
 
   function handleSend() {
-    const trimmed = text.trim();
-    if (!trimmed && !attachment?.uploadedUrl) return;
+    const trimmed = text.trim()
+    if (!trimmed && !attachment?.uploadedUrl) return
     sendMutation.mutate({
       content: trimmed || undefined,
       attachmentUrl: attachment?.uploadedUrl,
       replyToMessageId: replyTarget?.id,
-    });
+    })
   }
 
   function handleSwipeToReply(message: ChatMessage) {
-    setReplyTarget(message);
+    setReplyTarget(message)
   }
 
   // Best-effort "jump to the original message" — only ever looks at what's
   // already loaded (no fetch-more-pages-until-found; out of scope for v1).
   function handleJumpToOriginal(messageId: string) {
-    const index = messages.findIndex((m) => m.id === messageId);
-    if (index === -1) return;
+    const index = messages.findIndex((m) => m.id === messageId)
+    if (index === -1) return
     try {
-      flatListRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
+      flatListRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true })
     } catch {
       // scrollToIndex can throw synchronously when the target row hasn't been
       // measured yet — the async failure path is handled by
@@ -178,15 +178,15 @@ export function ChatScreen() {
   // resolve a target's offset up front. Best-effort fallback to the
   // approximate offset instead of letting it throw.
   function handleScrollToIndexFailed(info: { index: number; averageItemLength: number }) {
-    flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+    flatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true })
   }
 
   // The read receipt only ever decorates the current user's single most
   // recent message — messages are newest-first, so the first own-authored
   // item in the list is it. Keep this simple, no per-message tracking.
-  const latestOwnMessageId = useMemo(() => messages.find((m) => m.authorId === user?.id)?.id, [messages, user?.id]);
+  const latestOwnMessageId = useMemo(() => messages.find((m) => m.authorId === user?.id)?.id, [messages, user?.id])
 
-  const canSend = (!!text.trim() || !!attachment?.uploadedUrl) && !attachmentUploading;
+  const canSend = (!!text.trim() || !!attachment?.uploadedUrl) && !attachmentUploading
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -237,7 +237,7 @@ export function ChatScreen() {
                   navigation.navigate('ImageViewer', { urls: [getUploadUrl(item.attachmentUrl!)], initialIndex: 0 })
                 }
                 onPressMilestone={() => {
-                  if (item.refPostId) navigation.navigate('PostDetail', { postId: item.refPostId });
+                  if (item.refPostId) navigation.navigate('PostDetail', { postId: item.refPostId })
                 }}
                 onSwipeToReply={handleSwipeToReply}
                 onPressReplyQuote={handleJumpToOriginal}
@@ -321,7 +321,7 @@ export function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 function ChatMessageRow({
@@ -333,28 +333,28 @@ function ChatMessageRow({
   onSwipeToReply,
   onPressReplyQuote,
 }: {
-  message: ChatMessage;
-  isOwn: boolean;
-  showReadReceipt: boolean;
-  onPressAttachment: () => void;
-  onPressMilestone: () => void;
-  onSwipeToReply: (message: ChatMessage) => void;
-  onPressReplyQuote: (messageId: string) => void;
+  message: ChatMessage
+  isOwn: boolean
+  showReadReceipt: boolean
+  onPressAttachment: () => void
+  onPressMilestone: () => void
+  onSwipeToReply: (message: ChatMessage) => void
+  onPressReplyQuote: (messageId: string) => void
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   // Hooks must run unconditionally on every render — the SYSTEM_MILESTONE
   // early return below happens before any of this is used, but `kind` is
   // invariant for a given message id, so the branch a row instance takes
   // never actually changes across its lifetime.
-  const translateX = useSharedValue(0);
+  const translateX = useSharedValue(0)
 
   const bubbleAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
-  }));
+  }))
   const replyIconAnimatedStyle = useAnimatedStyle(() => ({
     opacity: Math.min(Math.abs(translateX.value) / (MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO), 1),
-  }));
+  }))
 
   if (message.kind === 'SYSTEM_MILESTONE') {
     return (
@@ -369,7 +369,7 @@ function ChatMessageRow({
           <Text style={styles.milestonePillText}>{message.content}</Text>
         </TouchableOpacity>
       </View>
-    );
+    )
   }
 
   // Own messages sit at the right edge, so they swipe left to reveal the
@@ -381,17 +381,17 @@ function ChatMessageRow({
     .onUpdate((event) => {
       translateX.value = isOwn
         ? Math.max(-MAX_SWIPE_TRANSLATION, Math.min(0, event.translationX))
-        : Math.max(0, Math.min(MAX_SWIPE_TRANSLATION, event.translationX));
+        : Math.max(0, Math.min(MAX_SWIPE_TRANSLATION, event.translationX))
     })
     .onEnd(() => {
       if (Math.abs(translateX.value) > MAX_SWIPE_TRANSLATION * SWIPE_REPLY_THRESHOLD_RATIO) {
-        runOnJS(onSwipeToReply)(message);
+        runOnJS(onSwipeToReply)(message)
       }
-      translateX.value = withSpring(0);
-    });
+      translateX.value = withSpring(0)
+    })
 
   const replyToAttachmentLabel = (attachmentUrl: string) =>
-    isVideoUrl(attachmentUrl) ? t('chat.attachmentVideo') : t('chat.attachmentPhoto');
+    isVideoUrl(attachmentUrl) ? t('chat.attachmentVideo') : t('chat.attachmentPhoto')
 
   return (
     <View style={[styles.messageRow, isOwn ? styles.messageRowOwn : styles.messageRowOther]}>
@@ -470,7 +470,7 @@ function ChatMessageRow({
         </Animated.View>
       </GestureDetector>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -801,4 +801,4 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: colors.border,
   },
-});
+})

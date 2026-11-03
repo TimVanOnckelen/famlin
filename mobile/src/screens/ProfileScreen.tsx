@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -10,20 +10,24 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
-import Constants from 'expo-constants';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+  KeyboardAvoidingView,
+} from 'react-native'
+import { KeyboardAwareScrollView } from '@/components/KeyboardAware'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { useNavigation } from '@react-navigation/native'
+import { fetchMyGiftLists } from '@famlin/api-client'
+import * as ImagePicker from 'expo-image-picker'
+import Constants from 'expo-constants'
+import { File, Paths } from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 
-import { colors } from '@/constants/colors';
-import { Logo } from '@/components/Logo';
-import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { useAuthStore } from '@/stores/authStore';
+import { colors } from '@/constants/colors'
+import { Logo } from '@/components/Logo'
+import { Icon } from '@/components/Icon'
+import { Avatar } from '@/components/Avatar'
+import { useAuthStore } from '@/stores/authStore'
 import {
   updateMe,
   changePassword,
@@ -32,81 +36,85 @@ import {
   fetchNotificationConfig,
   fetchServerInfo,
   NotificationPrefs,
-} from '@/api/auth';
-import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia';
-import { setLanguage } from '@/utils/storage';
-import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n';
+} from '@/api/auth'
+import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
+import { setLanguage } from '@/utils/storage'
+import { formatDayMonth } from '@/i18n/utils'
+import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 
 export function ProfileScreen() {
-  const { t, i18n: i18nInstance } = useTranslation();
-  const { user, logout, serverUrl, updateUser } = useAuthStore();
-  const queryClient = useQueryClient();
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { t, i18n: i18nInstance } = useTranslation()
+  const navigation = useNavigation<any>()
+  // "My gift lists" (issue #307): every gift list the user takes part in.
+  const { data: giftLists = [] } = useQuery({ queryKey: ['gift-lists'], queryFn: fetchMyGiftLists })
+  const { user, logout, serverUrl, updateUser } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [languageModalVisible, setLanguageModalVisible] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const { data: notificationConfig } = useQuery({
     queryKey: ['notification-config'],
     queryFn: fetchNotificationConfig,
-  });
-  const showPush = notificationConfig?.pushEnabled ?? true;
-  const showEmail = notificationConfig?.emailEnabled ?? true;
+  })
+  const showPush = notificationConfig?.pushEnabled ?? true
+  const showEmail = notificationConfig?.emailEnabled ?? true
 
   const { data: serverInfo } = useQuery({
     queryKey: ['server-info'],
     queryFn: fetchServerInfo,
-  });
+  })
 
   const updatePrefs = useMutation({
     mutationFn: async (prefs: NotificationPrefs) => {
-      const response = await updateMe(prefs);
-      return response;
+      const response = await updateMe(prefs)
+      return response
     },
     onSuccess: (updatedUser) => {
-      updateUser(updatedUser);
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+      updateUser(updatedUser)
+      queryClient.invalidateQueries({ queryKey: ['me'] })
     },
-  });
+  })
 
   const updateAvatar = useMutation({
     mutationFn: async (avatarUrl: string) => updateMe({ avatarUrl }),
     onSuccess: (updatedUser) => {
-      updateUser(updatedUser);
+      updateUser(updatedUser)
     },
     onError: (err: any) => {
-      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.uploadFailed'));
+      Alert.alert(t('common.error'), err.response?.data?.error || err.message || t('newPost.alerts.uploadFailed'))
     },
-  });
+  })
 
   const updatePassword = useMutation({
     mutationFn: () => changePassword(currentPassword, newPassword),
     onSuccess: () => {
-      setPasswordError(null);
-      setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setPasswordError(null)
+      setPasswordSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
     },
     onError: (err: any) => {
-      setPasswordSuccess(false);
-      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'));
+      setPasswordSuccess(false)
+      setPasswordError(err.response?.data?.error || t('profile.passwordChangeFailed'))
     },
-  });
+  })
 
   function handlePasswordSubmit() {
-    setPasswordSuccess(false);
+    setPasswordSuccess(false)
     if (newPassword !== confirmPassword) {
-      setPasswordError(t('profile.passwordMismatch'));
-      return;
+      setPasswordError(t('profile.passwordMismatch'))
+      return
     }
-    setPasswordError(null);
-    updatePassword.mutate();
+    setPasswordError(null)
+    updatePassword.mutate()
   }
 
   const { pick: pickAvatarMedia, uploading: avatarUploading } = usePickAndUploadMedia({
@@ -117,12 +125,12 @@ export function ProfileScreen() {
       quality: 0.8,
     },
     fileNamePrefix: 'avatar',
-  });
+  })
 
   async function pickAvatar() {
-    const result = await pickAvatarMedia();
-    if (!result) return;
-    updateAvatar.mutate(result.urls[0]);
+    const result = await pickAvatarMedia()
+    if (!result) return
+    updateAvatar.mutate(result.urls[0])
   }
 
   // Permanent, cascading account deletion (DELETE /api/auth/me) — the in-app
@@ -131,13 +139,13 @@ export function ProfileScreen() {
   const removeAccount = useMutation({
     mutationFn: deleteAccount,
     onSuccess: async () => {
-      setDeleteModalVisible(false);
-      await logout();
+      setDeleteModalVisible(false)
+      await logout()
     },
     onError: (err: any) => {
-      setDeleteError(err.response?.data?.error || err.message || t('common.tryAgain'));
+      setDeleteError(err.response?.data?.error || err.message || t('common.tryAgain'))
     },
-  });
+  })
 
   // Self-service data export (GET /api/auth/me/export). Streamed straight to
   // a cache file by the native downloader rather than through axios — a whole
@@ -145,47 +153,48 @@ export function ProfileScreen() {
   // share sheet so the member can save it to Files/Drive or send it on.
   const exportData = useMutation({
     mutationFn: async () => {
-      const { url, headers } = await getMyExportRequest();
-      const destination = new File(Paths.cache, `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`);
-      if (destination.exists) destination.delete();
-      const file = await File.downloadFileAsync(url, destination, { headers, idempotent: true });
+      const { url, headers } = await getMyExportRequest()
+      const destination = new File(Paths.cache, `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`)
+      if (destination.exists) destination.delete()
+      const file = await File.downloadFileAsync(url, destination, { headers, idempotent: true })
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.uri, { mimeType: 'application/zip', UTI: 'public.zip-archive' });
+        await Sharing.shareAsync(file.uri, { mimeType: 'application/zip', UTI: 'public.zip-archive' })
       }
     },
     onError: (err: any) => {
-      const rateLimited = String(err?.message ?? '').includes('429');
-      Alert.alert(t('common.error'), rateLimited ? t('profile.exportRateLimited') : t('profile.exportFailed'));
+      const rateLimited = String(err?.message ?? '').includes('429')
+      Alert.alert(t('common.error'), rateLimited ? t('profile.exportRateLimited') : t('profile.exportFailed'))
     },
-  });
+  })
 
   function openDeleteModal() {
-    setDeleteConfirmation('');
-    setDeleteError(null);
-    setDeleteModalVisible(true);
+    setDeleteConfirmation('')
+    setDeleteError(null)
+    setDeleteModalVisible(true)
   }
 
   // emailKey is omitted for push-only types (stories never email).
   const notificationTypes: {
-    labelKey: string;
-    pushKey: keyof NotificationPrefs;
-    emailKey?: keyof NotificationPrefs;
+    labelKey: string
+    pushKey: keyof NotificationPrefs
+    emailKey?: keyof NotificationPrefs
   }[] = [
     { labelKey: 'profile.notifyNewPost', pushKey: 'pushOnNewPost', emailKey: 'emailOnNewPost' },
     { labelKey: 'profile.notifyNewComment', pushKey: 'pushOnNewComment', emailKey: 'emailOnNewComment' },
     { labelKey: 'profile.notifyNewLike', pushKey: 'pushOnNewLike', emailKey: 'emailOnNewLike' },
     { labelKey: 'profile.notifyNewStory', pushKey: 'pushOnStory' },
-  ];
+    { labelKey: 'profile.notifyGiftList', pushKey: 'pushOnGiftList' },
+  ]
 
   async function handleLanguageChange(lang: SupportedLanguage) {
-    await i18nInstance.changeLanguage(lang);
-    await setLanguage(lang);
-    setLanguageModalVisible(false);
+    await i18nInstance.changeLanguage(lang)
+    await setLanguage(lang)
+    setLanguageModalVisible(false)
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('profile.title')}</Text>
         </View>
@@ -214,6 +223,34 @@ export function ProfileScreen() {
             </View>
           )}
         </View>
+
+        {giftLists.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.myGiftLists')}</Text>
+            {giftLists.map((post) => (
+              <TouchableOpacity
+                key={post.id}
+                style={styles.giftListRow}
+                onPress={() => navigation.navigate('GiftList', { postId: post.id })}
+              >
+                <Icon name="gift" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>{post.giftList?.title}</Text>
+                  <Text style={styles.settingDescription}>
+                    {[
+                      post.giftList?.occasionDate && formatDayMonth(post.giftList.occasionDate),
+                      post.group?.name,
+                      post.giftList?.myRecipient && t('giftList.buyingFor', { name: post.giftList.myRecipient.name }),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {(showPush || showEmail) && (
           <View style={styles.section}>
@@ -395,8 +432,8 @@ export function ProfileScreen() {
           deleting={removeAccount.isPending}
           onCancel={() => setDeleteModalVisible(false)}
           onConfirm={() => {
-            setDeleteError(null);
-            removeAccount.mutate();
+            setDeleteError(null)
+            removeAccount.mutate()
           }}
         />
 
@@ -406,20 +443,20 @@ export function ProfileScreen() {
           selectedLanguage={(i18nInstance.language as SupportedLanguage) || 'en'}
           onSelect={handleLanguageChange}
         />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 interface LanguagePickerModalProps {
-  visible: boolean;
-  onClose: () => void;
-  selectedLanguage: SupportedLanguage;
-  onSelect: (lang: SupportedLanguage) => void;
+  visible: boolean
+  onClose: () => void
+  selectedLanguage: SupportedLanguage
+  onSelect: (lang: SupportedLanguage) => void
 }
 
 function LanguagePickerModal({ visible, onClose, selectedLanguage, onSelect }: LanguagePickerModalProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -445,17 +482,17 @@ function LanguagePickerModal({ visible, onClose, selectedLanguage, onSelect }: L
         </View>
       </View>
     </Modal>
-  );
+  )
 }
 
 interface DeleteAccountModalProps {
-  visible: boolean;
-  confirmation: string;
-  onChangeConfirmation: (value: string) => void;
-  error: string | null;
-  deleting: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
+  visible: boolean
+  confirmation: string
+  onChangeConfirmation: (value: string) => void
+  error: string | null
+  deleting: boolean
+  onCancel: () => void
+  onConfirm: () => void
 }
 
 // Type-to-confirm rather than a plain yes/no: deletion is immediate and
@@ -472,14 +509,18 @@ function DeleteAccountModal({
   onCancel,
   onConfirm,
 }: DeleteAccountModalProps) {
-  const { t } = useTranslation();
-  const requiredWord = t('profile.deleteAccountConfirmWord');
-  const canConfirm = confirmation.trim().toUpperCase() === requiredWord.toUpperCase() && !deleting;
+  const { t } = useTranslation()
+  const requiredWord = t('profile.deleteAccountConfirmWord')
+  const canConfirm = confirmation.trim().toUpperCase() === requiredWord.toUpperCase() && !deleting
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.sheet}>
+      <KeyboardAvoidingView style={modalStyles.overlay} behavior="padding">
+        <ScrollView
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={modalStyles.sheet}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={modalStyles.handle} />
           <Text style={modalStyles.title}>{t('profile.deleteAccount')}</Text>
           <Text style={modalStyles.body}>{t('profile.deleteAccountWarning')}</Text>
@@ -512,10 +553,10 @@ function DeleteAccountModal({
           <TouchableOpacity style={modalStyles.closeButton} onPress={onCancel} disabled={deleting}>
             <Text style={modalStyles.closeButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
-  );
+  )
 }
 
 const modalStyles = StyleSheet.create({
@@ -623,7 +664,7 @@ const modalStyles = StyleSheet.create({
     fontSize: 16,
     color: colors.textMuted,
   },
-});
+})
 
 const styles = StyleSheet.create({
   container: {
@@ -704,6 +745,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
+  },
+  giftListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
   },
   sectionTitle: {
     fontFamily: 'Nunito_800ExtraBold',
@@ -932,4 +979,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.white,
   },
-});
+})

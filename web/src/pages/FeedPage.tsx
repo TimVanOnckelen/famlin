@@ -1,18 +1,18 @@
-import { useState, type MouseEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { fetchGroups, fetchMyCircles, fetchPosts, Post, User } from '@famlin/api-client';
-import { Icon } from '@/components/Icon';
-import { AppShell } from '@/components/AppShell';
-import { PostCard } from '@/components/PostCard';
-import { NewPostModal } from '@/components/NewPostModal';
-import { StoryTray } from '@/components/StoryTray';
-import { FeedSidePanel } from '@/components/FeedSidePanel';
-import { useFeedKeyboardNav } from '@/hooks/useFeedKeyboardNav';
-import { useQuickPostActions } from '@/hooks/usePostMutations';
-import { useOpenPostModal } from '@/utils/routes';
-import { formatRelativeDate } from '@/utils/time';
-import './FeedPage.css';
+import { useState, type MouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { fetchGroups, fetchMyCircles, fetchPosts, Post, User } from '@famlin/api-client'
+import { Icon } from '@/components/Icon'
+import { AppShell } from '@/components/AppShell'
+import { PostCard } from '@/components/PostCard'
+import { NewPostModal } from '@/components/NewPostModal'
+import { StoryTray } from '@/components/StoryTray'
+import { FeedSidePanel } from '@/components/FeedSidePanel'
+import { useFeedKeyboardNav } from '@/hooks/useFeedKeyboardNav'
+import { useQuickPostActions } from '@/hooks/usePostMutations'
+import { useOpenPostModal } from '@/utils/routes'
+import { formatRelativeDate } from '@/utils/time'
+import './FeedPage.css'
 
 // A click anywhere on a feed card opens the post detail, *except* on another
 // interactive child — reactions, photos/the lightbox, the permalink/circle
@@ -25,7 +25,7 @@ import './FeedPage.css';
 // (`.post-comments-btn`): it's a <button> too, but clicking it should open
 // the detail just like the rest of the card body, so it's excluded from the
 // skip list by class name.
-const CARD_INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, video, [role="menu"], .shimmer-frame';
+const CARD_INTERACTIVE_SELECTOR = 'button, a, input, textarea, select, video, [role="menu"], .shimmer-frame'
 
 export function FeedPage({
   user,
@@ -33,59 +33,67 @@ export function FeedPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenNotifications,
+  onOpenSearch,
+  onOpenMembers,
   onOpenTrip,
   onOpenAlbum,
+  onOpenGiftList,
   onLogout,
 }: {
-  user: User;
-  onOpenProfile: () => void;
-  onOpenPhotos?: () => void;
-  onOpenChat?: () => void;
-  onOpenFavorites?: () => void;
-  onOpenTrip?: (postId: string) => void;
-  onOpenAlbum?: (postId: string) => void;
-  onLogout: () => void;
+  user: User
+  onOpenProfile: () => void
+  onOpenPhotos?: () => void
+  onOpenChat?: () => void
+  onOpenFavorites?: () => void
+  onOpenNotifications?: () => void
+  onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: (groupId?: string) => void
+  onOpenTrip?: (postId: string) => void
+  onOpenAlbum?: (postId: string) => void
+  onOpenGiftList?: (postId: string) => void
+  onLogout: () => void
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation()
   // The feed is a filter over the user's families: empty selection = all of
   // them (the backend scopes to memberships), one or more = just those.
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
   // Circles narrow the feed further, to just those circles' posts. Kept in
   // its own state (rather than mixed into selectedGroupIds) because the two
   // filters mean different things: groups widen the pool, circles narrow it.
-  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
-  const [composerOpen, setComposerOpen] = useState(false);
+  const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([])
+  const [composerOpen, setComposerOpen] = useState(false)
 
-  const openPostModal = useOpenPostModal();
-  const { likeToggle, favoriteToggle } = useQuickPostActions();
+  const openPostModal = useOpenPostModal()
+  const { likeToggle, favoriteToggle } = useQuickPostActions()
 
-  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
-  const groups = groupsQuery.data ?? [];
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
+  const groups = groupsQuery.data ?? []
 
   // Only the circles the viewer actually belongs to ever come back — a group
   // member outside a circle never learns it exists, so there is nothing to
   // filter out here. Scoped to the single selected family when the group
   // filter narrows to one, otherwise the first family.
-  const circlesGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
+  const circlesGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null)
   const circlesQuery = useQuery({
     queryKey: ['circles', circlesGroupId],
     queryFn: () => fetchMyCircles(circlesGroupId!),
     enabled: !!circlesGroupId,
-  });
-  const circles = circlesQuery.data ?? [];
+  })
+  const circles = circlesQuery.data ?? []
 
   function toggleGroup(groupId: string) {
-    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]));
+    setSelectedGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]))
     // The circle list is per-family, so a circle selected under one family
     // filter is meaningless under another — clear rather than send ids the
     // server would 403.
-    setSelectedCircleIds([]);
+    setSelectedCircleIds([])
   }
 
   function toggleCircle(circleId: string) {
     setSelectedCircleIds((prev) =>
       prev.includes(circleId) ? prev.filter((id) => id !== circleId) : [...prev, circleId]
-    );
+    )
   }
 
   const postsQuery = useInfiniteQuery({
@@ -103,62 +111,64 @@ export function FeedPage({
       }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-  });
+  })
 
-  const posts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  const posts = postsQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   // A member of no families can neither see nor create posts: the shell
   // drops every "New post" affordance (sidebar button, FAB, `n` shortcut —
   // they all hang off this optional prop) and the feed's empty state explains
   // why instead of offering a composer that would have no family to post into.
-  const hasGroups = groups.length > 0;
+  const hasGroups = groups.length > 0
+  const singleActiveGroup =
+    selectedGroupIds.length === 1
+      ? groups.find((group) => group.id === selectedGroupIds[0])
+      : groups.length === 1
+        ? groups[0]
+        : undefined
 
   // Preselect the composer's group when the filter narrows to exactly one.
-  const composerDefaultGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null);
+  const composerDefaultGroupId = selectedGroupIds.length === 1 ? selectedGroupIds[0] : (groups[0]?.id ?? null)
 
   // Stories follow the same family filter. Only fetched when at least one
   // selected family has them turned on (an older server without stories
   // reports no storiesEnabled at all, which reads as off).
-  const storyGroups = selectedGroupIds.length > 0 ? groups.filter((g) => selectedGroupIds.includes(g.id)) : groups;
-  const storiesEnabled = storyGroups.some((g) => g.storiesEnabled);
+  const storyGroups = selectedGroupIds.length > 0 ? groups.filter((g) => selectedGroupIds.includes(g.id)) : groups
+  const storiesEnabled = storyGroups.some((g) => g.storiesEnabled)
 
-  // The side panel (On this day / family members) and card group-labels only
-  // have one clear target when the family filter narrows to exactly one —
-  // mirrors mobile FeedScreen's singleActiveGroup.
-  const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : groups.map((g) => g.id);
-  const singleActiveGroup =
-    effectiveGroupIds.length === 1 ? groups.find((g) => g.id === effectiveGroupIds[0]) : undefined;
-  const showGroupOnCards = effectiveGroupIds.length > 1;
+  const effectiveGroupIds = selectedGroupIds.length > 0 ? selectedGroupIds : groups.map((g) => g.id)
+  const showGroupOnCards = effectiveGroupIds.length > 1
 
   // Where "o"/Enter/a card click should go: trips and albums keep opening
   // their own richer pages, everything else opens the detail modal over the
   // feed.
   function openPost(post: Post) {
-    if (post.type === 'TRIP') onOpenTrip?.(post.id);
-    else if (post.type === 'ALBUM') onOpenAlbum?.(post.id);
-    else openPostModal(post.id);
+    if (post.type === 'TRIP') onOpenTrip?.(post.id)
+    else if (post.type === 'ALBUM') onOpenAlbum?.(post.id)
+    else if (post.type === 'GIFT_LIST') onOpenGiftList?.(post.id)
+    else openPostModal(post.id)
   }
 
   const { registerCard } = useFeedKeyboardNav({
     postIds: posts.map((p) => p.id),
     onOpen: (id) => {
-      const post = posts.find((p) => p.id === id);
-      if (post) openPost(post);
+      const post = posts.find((p) => p.id === id)
+      if (post) openPost(post)
     },
     onLike: (id) => {
-      const post = posts.find((p) => p.id === id);
-      if (post) likeToggle(post);
+      const post = posts.find((p) => p.id === id)
+      if (post) likeToggle(post)
     },
     onFavorite: (id) => {
-      const post = posts.find((p) => p.id === id);
-      if (post) favoriteToggle(post);
+      const post = posts.find((p) => p.id === id)
+      if (post) favoriteToggle(post)
     },
-  });
+  })
 
   function onCardClick(e: MouseEvent<HTMLDivElement>, post: Post) {
-    const interactive = (e.target as HTMLElement).closest(CARD_INTERACTIVE_SELECTOR);
-    if (interactive && !interactive.classList.contains('post-comments-btn')) return;
-    openPost(post);
+    const interactive = (e.target as HTMLElement).closest(CARD_INTERACTIVE_SELECTOR)
+    if (interactive && !interactive.classList.contains('post-comments-btn')) return
+    openPost(post)
   }
 
   return (
@@ -169,22 +179,44 @@ export function FeedPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onNotifications={onOpenNotifications}
+      onSearch={
+        onOpenSearch ? () => onOpenSearch(selectedGroupIds.length === 1 ? selectedGroupIds[0] : undefined) : undefined
+      }
       onProfile={onOpenProfile}
       onNewPost={hasGroups ? () => setComposerOpen(true) : undefined}
       onLogout={onLogout}
     >
       <div className="feed-layout">
         <div className="feed-column">
-          {groups.length > 1 && (
-            <div className="feed-filter" role="group" aria-label={t('feed.filterLabel')}>
+          {hasGroups && onOpenMembers && (
+            <div className="feed-heading">
+              <h1>{singleActiveGroup?.name ?? t('feed.allFamilies')}</h1>
               <button
+                type="button"
+                className="feed-members-button"
+                onClick={() => onOpenMembers(singleActiveGroup?.id)}
+                aria-label={t('feed.viewMembers')}
+                title={t('feed.viewMembers')}
+              >
+                <Icon name="users" size={18} />
+                <span>{t('members.title')}</span>
+              </button>
+            </div>
+          )}
+          {groups.length > 1 && (
+            <div className="feed-filter feed-family-filter" role="group" aria-label={t('feed.filterLabel')}>
+              <button
+                type="button"
                 className={`filter-chip${selectedGroupIds.length === 0 ? ' filter-chip-active' : ''}`}
                 onClick={() => setSelectedGroupIds([])}
+                aria-pressed={selectedGroupIds.length === 0}
               >
                 {t('feed.allFamilies')}
               </button>
               {groups.map((group) => (
                 <button
+                  type="button"
                   key={group.id}
                   className={`filter-chip${selectedGroupIds.includes(group.id) ? ' filter-chip-active' : ''}`}
                   onClick={() => toggleGroup(group.id)}
@@ -265,6 +297,7 @@ export function FeedPage({
                     showGroup={showGroupOnCards}
                     onOpenTrip={onOpenTrip}
                     onOpenAlbum={onOpenAlbum}
+                    onOpenGiftList={onOpenGiftList}
                   />
                 </div>
               ))}
@@ -282,12 +315,21 @@ export function FeedPage({
           )}
         </div>
 
-        {singleActiveGroup && <FeedSidePanel groupId={singleActiveGroup.id} onOpenPost={openPostModal} />}
+        {groups.length > 0 && (
+          <FeedSidePanel
+            groups={groups}
+            selectedGroupIds={selectedGroupIds}
+            onOpenPost={openPostModal}
+            onOpenMembers={onOpenMembers}
+            onToggleGroup={toggleGroup}
+            onSelectAllGroups={() => setSelectedGroupIds([])}
+          />
+        )}
       </div>
 
       {composerOpen && (
         <NewPostModal groups={groups} defaultGroupId={composerDefaultGroupId} onClose={() => setComposerOpen(false)} />
       )}
     </AppShell>
-  );
+  )
 }

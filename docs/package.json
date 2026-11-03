@@ -1,6 +1,6 @@
 {
   "name": "famlin-docs",
-  "version": "0.8.1",
+  "version": "0.8.6",
   "private": true,
   "description": "Documentation website for Famlin",
   "license": "MIT",
@@ -27,8 +27,8 @@
     "docusaurus-plugin-openapi-docs": "^5.2.0",
     "docusaurus-theme-openapi-docs": "^5.2.0",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.10.2",

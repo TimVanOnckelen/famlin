@@ -1,4 +1,4 @@
-import { ReactionType } from '@famlin/api-client';
+import { ReactionType } from '@famlin/api-client'
 
 export const REACTION_EMOJI: Record<ReactionType, string> = {
   LIKE: '👍',
@@ -7,4 +7,4 @@ export const REACTION_EMOJI: Record<ReactionType, string> = {
   WOW: '😮',
   SAD: '😢',
   CARE: '🥰',
-};
+}

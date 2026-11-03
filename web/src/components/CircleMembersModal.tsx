@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { fetchCircleMembers } from '@famlin/api-client';
-import { Avatar } from '@/components/Avatar';
-import './CircleMembersModal.css';
+import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { fetchCircleMembers } from '@famlin/api-client'
+import { Avatar } from '@/components/Avatar'
+import './CircleMembersModal.css'
 
 // Who is in this circle — reachable from the "shared in <Circle>" badge on a
 // post, which is exactly where a reader wonders "so who actually saw this?".
@@ -22,18 +22,18 @@ export function CircleMembersModal({
   circleName,
   onClose,
 }: {
-  circleId: string;
-  circleName: string;
-  onClose: () => void;
+  circleId: string
+  circleName: string
+  onClose: () => void
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation()
 
   const membersQuery = useQuery({
     queryKey: ['circle-members', circleId],
     queryFn: () => fetchCircleMembers(circleId),
-  });
+  })
 
-  const members = membersQuery.data ?? [];
+  const members = membersQuery.data ?? []
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -70,5 +70,5 @@ export function CircleMembersModal({
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import type { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 
 // Thrown for expected, user-facing post-type validation/interaction failures
 // so routes can map them to a translated message instead of leaking
@@ -10,8 +11,8 @@ export class PostTypeError extends Error {
     public code: string,
     message?: string
   ) {
-    super(message ?? code);
-    this.name = 'PostTypeError';
+    super(message ?? code)
+    this.name = 'PostTypeError'
   }
 }
 
@@ -30,9 +31,9 @@ export class PostTypeError extends Error {
 //   accept either).
 export interface PostTypeHandler {
   /** Stable persisted id — 'UPDATE' | 'MILESTONE' | 'POLL' | ... Never rename once deployed. */
-  id: string;
+  id: string
   /** Zod schema for the CLIENT-SENT typeData at create time. Absent = typeData must be null/undefined. */
-  typeDataSchema?: z.ZodTypeAny;
+  typeDataSchema?: z.ZodTypeAny
   /**
    * Semantic validation beyond zod (e.g. poll requires non-empty content).
    * Throw PostTypeError. `targetGroupIds` are the groups this create call is
@@ -43,18 +44,18 @@ export interface PostTypeHandler {
    * creating user.
    */
   validateCreate?(args: {
-    content: string | null | undefined;
-    typeData: unknown;
-    authorId: string;
-    targetGroupIds: string[];
-  }): void | Promise<void>;
+    content: string | null | undefined
+    typeData: unknown
+    authorId: string
+    targetGroupIds: string[]
+  }): void | Promise<void>
   /**
    * Transform client typeData into the persisted form (e.g. assign option
    * ids). Returns what gets stored. `ctx.authorId` is the creating user —
    * trip.ts strips the author from travelerUserIds (the author is implicitly
    * a traveler); handlers that don't need it just ignore the second arg.
    */
-  transformCreate?(typeData: unknown, ctx: { authorId: string }): unknown;
+  transformCreate?(typeData: unknown, ctx: { authorId: string }): unknown
   /**
    * Handle POST /api/posts/:postId/interactions for a post of this type.
    * Throw PostTypeError for bad key/value/state. `post` carries authorId/
@@ -74,18 +75,18 @@ export interface PostTypeHandler {
     // in services/uploads.ts — or the photo stays readable family-wide while
     // the post carrying it is circle-private.
     post: {
-      id: string;
-      typeData: unknown;
-      authorId: string;
-      groupId: string;
-      groupName: string;
-      crossPostId: string | null;
-      circleId: string | null;
-    };
-    userId: string;
-    key: string;
-    value: unknown;
-  }): Promise<void>;
+      id: string
+      typeData: unknown
+      authorId: string
+      groupId: string
+      groupName: string
+      crossPostId: string | null
+      circleId: string | null
+    }
+    userId: string
+    key: string
+    value: unknown
+  }): Promise<void>
   /**
    * Every /uploads/ path this type's persisted typeData references (a trip's
    * or album's coverPhotoUrl today). routes/posts.ts calls it so those assets
@@ -99,10 +100,24 @@ export interface PostTypeHandler {
    * handler at the point it writes them — this hook only covers create-time
    * typeData.
    */
-  collectAssets?(typeData: unknown): string[];
+  collectAssets?(typeData: unknown): string[]
+  /**
+   * A type whose audience is its own hidden, system-managed Circle (GIFT_LIST
+   * today, see services/giftLists.ts) creates that circle here, inside the
+   * same transaction as the post, and returns its id — routes/posts.ts then
+   * stores the post with that circleId. Such a type can't be combined with a
+   * client-sent circleId or cross-posting. `typeData` is the validated
+   * CLIENT-SENT typeData (before transformCreate).
+   */
+  createAudience?(args: {
+    tx: Prisma.TransactionClient
+    groupId: string
+    authorId: string
+    typeData: unknown
+  }): Promise<string>
   /** Batch-attach computed fields to already-shaped posts of this type (mutate in place). ONE query per page, no N+1. */
   enrichPosts?(
     posts: Array<Record<string, unknown> & { id: string; typeData?: unknown }>,
     viewerId: string
-  ): Promise<void>;
+  ): Promise<void>
 }

@@ -1,10 +1,10 @@
-const { getDefaultConfig } = require('expo/metro-config');
-const path = require('path');
+const { getDefaultConfig } = require('expo/metro-config')
+const path = require('path')
 
-const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, '..');
+const projectRoot = __dirname
+const workspaceRoot = path.resolve(projectRoot, '..')
 
-const config = getDefaultConfig(projectRoot);
+const config = getDefaultConfig(projectRoot)
 
 // mobile/package.json pulls in @famlin/api-client via `file:../packages/api-client`,
 // which npm installs as a symlink. Metro resolves symlinks to their real path and
@@ -13,11 +13,11 @@ const config = getDefaultConfig(projectRoot);
 // install` there, need to be reachable by walking up from packages/api-client, not
 // from mobile/node_modules. watchFolders is separately needed so Metro's dev-server
 // file watcher notices edits under packages/api-client/src.
-config.watchFolders = [workspaceRoot];
+config.watchFolders = [workspaceRoot]
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
-];
+]
 
 // Defer module evaluation until first require instead of executing every
 // imported module during bundle startup — a large cold-start win on
@@ -28,6 +28,6 @@ config.transformer.getTransformOptions = async () => ({
     experimentalImportSupport: true,
     inlineRequires: true,
   },
-});
+})
 
-module.exports = config;
+module.exports = config

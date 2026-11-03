@@ -99,7 +99,23 @@
     "cannotReplyToOwnStory": "You can't reply to your own story",
     "unknownBrandPreset": "Unknown color preset",
     "invalidLogo": "The logo must be a PNG, JPEG or WebP image",
-    "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)"
+    "logoTooLarge": "The logo is too large (max 5 MB, 4096×4096 px)",
+    "backupInProgress": "A backup is already running.",
+    "restoreMediaMissing": "Required media is missing or has a different size in the configured storage.",
+    "giftListNoCrossPost": "A gift list belongs to one family and can't be shared with several at once.",
+    "giftListParticipantNotMember": "Every participant must be a member of this family.",
+    "giftListInvalidExclusion": "Exclusions can only pair two different participants.",
+    "giftListNotFound": "Gift list not found.",
+    "giftListNotManager": "Only the person who started this gift list can do that.",
+    "giftListManagerCannotLeave": "You started this gift list, so you can't leave it. Delete it instead.",
+    "giftListItemNotFound": "Wish not found.",
+    "giftListTooManyItems": "A wishlist can hold at most 100 wishes.",
+    "giftListInvalidOrder": "The new order must list each of your wishes exactly once.",
+    "giftDrawDisabled": "The Secret Santa draw isn't turned on for this gift list.",
+    "giftDrawTooFewParticipants": "A Secret Santa draw needs at least 3 participants.",
+    "giftDrawImpossible": "No draw is possible with these exclusions. Remove some exclusions and try again.",
+    "giftAlreadyDrawn": "The names have already been drawn.",
+    "giftDrawWillReset": "This change discards the current draw. Confirm to redraw the names."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -126,7 +142,11 @@
     "newStory": "{{author}} shared a story in {{group}}",
     "storyReply": "{{author}} replied to your story: \"{{excerpt}}\"",
     "storyReaction": "{{author}} reacted {{emoji}} to your story in {{group}}",
-    "emailSubjectBranded": "New activity in {{name}}"
+    "emailSubjectBranded": "New activity in {{name}}",
+    "giftListInvite": "{{author}} added you to the gift list \"{{title}}\"",
+    "giftDraw": "Your Secret Santa name for \"{{title}}\" is ready.",
+    "giftListUpdated_one": "{{author}} added a wish to their list in \"{{title}}\"",
+    "giftListUpdated_other": "{{author}} added {{count}} wishes to their list in \"{{title}}\" today"
   },
   "chat": {
     "systemMilestoneMessage": "🎂 {{author}} shared a milestone: {{milestoneTag}}",
@@ -159,5 +179,13 @@
     "status": "Server is running",
     "title": "Welcome to Famlin",
     "body": "This is your family's private Famlin server. Open the Famlin app on your phone to sign in, or head to /admin to manage the server."
+  },
+  "systemAlerts": {
+    "emailSubject": "Famlin needs your attention",
+    "emailBody": "Your Famlin server reported a problem:\n\n{{alerts}}\n\nOpen the admin panel's System status page for details. You'll get at most one email a day per problem while it lasts.",
+    "backup_failed": "The last scheduled backup failed.",
+    "backup_stale": "No successful backup in {{days}} days.",
+    "disk_low_uploads": "The uploads volume is almost full ({{free}} GiB free).",
+    "disk_low_backups": "The backups volume is almost full ({{free}} GiB free)."
   }
 }

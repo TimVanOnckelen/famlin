@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { FastifyInstance } from 'fastify';
-import { buildApp } from '../app.js';
-import { prisma } from '../db.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { FastifyInstance } from 'fastify'
+import { buildApp } from '../app.js'
+import { prisma } from '../db.js'
 
 // Regression tests for the famlin:// redirects issued by
 // GET /api/auth/oidc/mobile-callback. The mobile app validates that the
@@ -11,31 +11,31 @@ import { prisma } from '../db.js';
 // alike — must echo Google's `state` back. Dropping it broke Google sign-in
 // on mobile even though the server-side exchange succeeded.
 
-let app: FastifyInstance;
+let app: FastifyInstance
 
 beforeAll(async () => {
-  app = await buildApp();
-});
+  app = await buildApp()
+})
 
 afterAll(async () => {
-  await app.close();
-  await prisma.$disconnect();
-});
+  await app.close()
+  await prisma.$disconnect()
+})
 
 describe('GET /api/auth/oidc/mobile-callback', () => {
-  const state = JSON.stringify({ nonce: 'abc123' });
+  const state = JSON.stringify({ nonce: 'abc123' })
 
   it('echoes state on the provider-error redirect', async () => {
     const res = await app.inject({
       method: 'GET',
       url: `/api/auth/oidc/mobile-callback?error=access_denied&state=${encodeURIComponent(state)}`,
-    });
+    })
 
-    expect(res.statusCode).toBe(302);
-    const location = res.headers.location as string;
-    expect(location).toContain('famlin://oidc-callback?error=access_denied');
-    expect(location).toContain(`&state=${encodeURIComponent(state)}`);
-  });
+    expect(res.statusCode).toBe(302)
+    const location = res.headers.location as string
+    expect(location).toContain('famlin://oidc-callback?error=access_denied')
+    expect(location).toContain(`&state=${encodeURIComponent(state)}`)
+  })
 
   it('echoes state on the OIDC error redirect with a specific code', async () => {
     // OIDC isn't configured in the test database, so the code exchange
@@ -44,21 +44,21 @@ describe('GET /api/auth/oidc/mobile-callback', () => {
     const res = await app.inject({
       method: 'GET',
       url: `/api/auth/oidc/mobile-callback?code=fake-code&state=${encodeURIComponent(state)}`,
-    });
+    })
 
-    expect(res.statusCode).toBe(302);
-    const location = res.headers.location as string;
-    expect(location).toContain('famlin://oidc-callback?error=oidc_not_configured');
-    expect(location).toContain(`&state=${encodeURIComponent(state)}`);
-  });
+    expect(res.statusCode).toBe(302)
+    const location = res.headers.location as string
+    expect(location).toContain('famlin://oidc-callback?error=oidc_not_configured')
+    expect(location).toContain(`&state=${encodeURIComponent(state)}`)
+  })
 
   it('still redirects without a state param (legacy/hand-typed requests)', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/auth/oidc/mobile-callback?error=access_denied',
-    });
+    })
 
-    expect(res.statusCode).toBe(302);
-    expect(res.headers.location).toBe('famlin://oidc-callback?error=access_denied');
-  });
-});
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe('famlin://oidc-callback?error=access_denied')
+  })
+})

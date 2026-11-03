@@ -1,11 +1,11 @@
-import { Avatar } from '@/components/Avatar';
-import './AvatarStack.css';
+import { Avatar } from '@/components/Avatar'
+import './AvatarStack.css'
 
 export type AvatarStackPerson = {
-  id: string;
-  name: string;
-  avatarUrl?: string | null;
-};
+  id: string
+  name: string
+  avatarUrl?: string | null
+}
 
 export function AvatarStack({
   people,
@@ -14,14 +14,14 @@ export function AvatarStack({
   overlap = 8,
   className,
 }: {
-  people: AvatarStackPerson[];
-  size?: number;
-  max?: number;
+  people: AvatarStackPerson[]
+  size?: number
+  max?: number
   /** How many px each avatar overlaps the previous one. */
-  overlap?: number;
-  className?: string;
+  overlap?: number
+  className?: string
 }) {
-  if (people.length === 0) return null;
+  if (people.length === 0) return null
   return (
     <span
       className={className ? `avatar-stack ${className}` : 'avatar-stack'}
@@ -31,5 +31,5 @@ export function AvatarStack({
         <Avatar key={person.id} name={person.name} avatarUrl={person.avatarUrl} size={size} ring />
       ))}
     </span>
-  );
+  )
 }

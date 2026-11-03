@@ -1,14 +1,14 @@
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Post, votePoll, patchPostInCaches } from '@famlin/api-client';
-import { AvatarStack } from '@/components/AvatarStack';
-import { Icon } from '@/components/Icon';
-import '../PostCard.css';
+import { useTranslation } from 'react-i18next'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Post, votePoll, patchPostInCaches } from '@famlin/api-client'
+import { AvatarStack } from '@/components/AvatarStack'
+import { Icon } from '@/components/Icon'
+import '../PostCard.css'
 
 export function PollCardBody({ post }: { post: Post }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const poll = post.poll;
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const poll = post.poll
 
   // votePoll returns the full shaped + enriched post in one round trip, so
   // there's nothing to compute optimistically — just write the server's
@@ -17,20 +17,20 @@ export function PollCardBody({ post }: { post: Post }) {
   const voteMutation = useMutation({
     mutationFn: (optionId: string) => votePoll(post.id, optionId),
     onSuccess: (updatedPost) => {
-      patchPostInCaches(queryClient, post.id, () => updatedPost);
+      patchPostInCaches(queryClient, post.id, () => updatedPost)
     },
-  });
+  })
 
-  if (!poll) return null;
+  if (!poll) return null
 
-  const disabled = poll.closed || voteMutation.isPending;
+  const disabled = poll.closed || voteMutation.isPending
 
   return (
     <div className="poll-body">
       <div className="poll-options">
         {poll.options.map((option) => {
-          const pct = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0;
-          const isMine = poll.myVoteOptionId === option.id;
+          const pct = poll.totalVotes > 0 ? Math.round((option.voteCount / poll.totalVotes) * 100) : 0
+          const isMine = poll.myVoteOptionId === option.id
           return (
             <button
               key={option.id}
@@ -63,7 +63,7 @@ export function PollCardBody({ post }: { post: Post }) {
                 {option.voters.length > 0 && <AvatarStack people={option.voters} size={20} />}
               </span>
             </button>
-          );
+          )
         })}
       </div>
       <div className="poll-footer">
@@ -71,5 +71,5 @@ export function PollCardBody({ post }: { post: Post }) {
         {poll.closed && <span className="poll-closed-label">{t('poll.closed')}</span>}
       </div>
     </div>
-  );
+  )
 }

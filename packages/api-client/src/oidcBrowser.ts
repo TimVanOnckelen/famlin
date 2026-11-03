@@ -1,4 +1,4 @@
-import { OidcConfig, LoginResponse, exchangeOidcCode, loginWithOidc } from './auth';
+import { OidcConfig, LoginResponse, exchangeOidcCode, loginWithOidc } from './auth'
 
 // Browser-only OIDC Authorization Code + PKCE flow, shared by the SPA
 // surfaces (web/'s LoginPage; backend/admin can adopt it too) so the
@@ -8,25 +8,25 @@ import { OidcConfig, LoginResponse, exchangeOidcCode, loginWithOidc } from './au
 // (never at module-eval time), so native consumers can keep importing the
 // package barrel safely as long as they don't call these.
 
-const VERIFIER_KEY = 'famlin_oidc_verifier';
-const STATE_KEY = 'famlin_oidc_state';
-const CONFIG_KEY = 'famlin_oidc_config';
+const VERIFIER_KEY = 'famlin_oidc_verifier'
+const STATE_KEY = 'famlin_oidc_state'
+const CONFIG_KEY = 'famlin_oidc_config'
 
 function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
 export function generateRandomString(length = 64): string {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  return base64UrlEncode(bytes);
+  const bytes = new Uint8Array(length)
+  crypto.getRandomValues(bytes)
+  return base64UrlEncode(bytes)
 }
 
 export async function generateCodeChallenge(verifier: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  return base64UrlEncode(new Uint8Array(digest));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
+  return base64UrlEncode(new Uint8Array(digest))
 }
 
 // Aborts an in-flight login round trip — completeBrowserOidcLogin() calls
@@ -34,9 +34,9 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 // at the provider) never reaches the exchange, so the caller must clear the
 // stored state explicitly on that path.
 export function clearBrowserOidcLogin(): void {
-  sessionStorage.removeItem(VERIFIER_KEY);
-  sessionStorage.removeItem(STATE_KEY);
-  sessionStorage.removeItem(CONFIG_KEY);
+  sessionStorage.removeItem(VERIFIER_KEY)
+  sessionStorage.removeItem(STATE_KEY)
+  sessionStorage.removeItem(CONFIG_KEY)
 }
 
 // Stores the verifier/state/config for the round trip and returns the
@@ -44,15 +44,15 @@ export function clearBrowserOidcLogin(): void {
 // persisted alongside the verifier so the callback leg doesn't depend on a
 // fresh (and possibly different) /oidc-config response.
 export async function startBrowserOidcLogin(config: OidcConfig, redirectUri: string): Promise<string> {
-  const verifier = generateRandomString();
-  const challenge = await generateCodeChallenge(verifier);
-  const state = generateRandomString(32);
+  const verifier = generateRandomString()
+  const challenge = await generateCodeChallenge(verifier)
+  const state = generateRandomString(32)
 
-  sessionStorage.setItem(VERIFIER_KEY, verifier);
-  sessionStorage.setItem(STATE_KEY, state);
-  sessionStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  sessionStorage.setItem(VERIFIER_KEY, verifier)
+  sessionStorage.setItem(STATE_KEY, state)
+  sessionStorage.setItem(CONFIG_KEY, JSON.stringify(config))
 
-  const url = new URL(config.authorizationEndpoint);
+  const url = new URL(config.authorizationEndpoint)
   url.search = new URLSearchParams({
     response_type: 'code',
     client_id: config.clientId,
@@ -61,8 +61,8 @@ export async function startBrowserOidcLogin(config: OidcConfig, redirectUri: str
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,
-  }).toString();
-  return url.toString();
+  }).toString()
+  return url.toString()
 }
 
 // Finishes the round trip after the provider redirected back with
@@ -77,19 +77,19 @@ export async function completeBrowserOidcLogin(
   redirectUri: string
 ): Promise<LoginResponse> {
   try {
-    const storedState = sessionStorage.getItem(STATE_KEY);
-    const verifier = sessionStorage.getItem(VERIFIER_KEY);
-    const configJson = sessionStorage.getItem(CONFIG_KEY);
+    const storedState = sessionStorage.getItem(STATE_KEY)
+    const verifier = sessionStorage.getItem(VERIFIER_KEY)
+    const configJson = sessionStorage.getItem(CONFIG_KEY)
     if (!storedState || !verifier || !configJson || state !== storedState) {
-      throw new Error('oidc_state_mismatch');
+      throw new Error('oidc_state_mismatch')
     }
-    const config = JSON.parse(configJson) as OidcConfig;
+    const config = JSON.parse(configJson) as OidcConfig
 
     if (config.usesClientSecret) {
       // Providers that require a client secret reject a secretless PKCE
       // exchange from the browser — hand the code to the backend instead,
       // which holds the secret and does the exchange.
-      return await exchangeOidcCode(code, redirectUri, verifier);
+      return await exchangeOidcCode(code, redirectUri, verifier)
     }
 
     const tokenRes = await fetch(config.tokenEndpoint, {
@@ -102,16 +102,16 @@ export async function completeBrowserOidcLogin(
         client_id: config.clientId,
         code_verifier: verifier,
       }),
-    });
+    })
     if (!tokenRes.ok) {
-      throw new Error('oidc_token_exchange_failed');
+      throw new Error('oidc_token_exchange_failed')
     }
-    const tokenData = await tokenRes.json();
+    const tokenData = await tokenRes.json()
     if (!tokenData.id_token) {
-      throw new Error('oidc_token_exchange_failed');
+      throw new Error('oidc_token_exchange_failed')
     }
-    return await loginWithOidc(tokenData.id_token);
+    return await loginWithOidc(tokenData.id_token)
   } finally {
-    clearBrowserOidcLogin();
+    clearBrowserOidcLogin()
   }
 }

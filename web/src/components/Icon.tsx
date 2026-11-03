@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties } from 'react'
 
 // The one icon vocabulary for the web app — flat, minimal, single-weight
 // line icons drawn on Feather's 24×24 grid (2px stroke, round caps/joins),
@@ -16,6 +16,18 @@ import type { CSSProperties } from 'react';
 // Adding an icon: copy the shapes verbatim from feathericons.com rather than
 // eyeballing a path, so the stroke rhythm stays consistent across the set.
 const ICON_PATHS = {
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10.27 21a2 2 0 0 0 3.46 0" />
+    </>
+  ),
   home: (
     <>
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -60,6 +72,15 @@ const ICON_PATHS = {
   check: <polyline points="20 6 9 17 4 12" />,
   'chevron-left': <polyline points="15 18 9 12 15 6" />,
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
+  'chevron-up': <polyline points="18 15 12 9 6 15" />,
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  'external-link': (
+    <>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </>
+  ),
   bookmark: <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />,
   heart: (
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -166,9 +187,9 @@ const ICON_PATHS = {
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </>
   ),
-} as const;
+} as const
 
-export type IconName = keyof typeof ICON_PATHS;
+export type IconName = keyof typeof ICON_PATHS
 
 export function Icon({
   name,
@@ -181,13 +202,13 @@ export function Icon({
   className,
   style,
 }: {
-  name: IconName;
-  size?: number;
-  color?: string;
-  strokeWidth?: number;
-  filled?: boolean;
-  className?: string;
-  style?: CSSProperties;
+  name: IconName
+  size?: number
+  color?: string
+  strokeWidth?: number
+  filled?: boolean
+  className?: string
+  style?: CSSProperties
 }) {
   return (
     <svg
@@ -205,5 +226,5 @@ export function Icon({
     >
       {ICON_PATHS[name]}
     </svg>
-  );
+  )
 }

@@ -1,1 +1,1 @@
-export * from '@famlin/api-client';
+export * from '@famlin/api-client'

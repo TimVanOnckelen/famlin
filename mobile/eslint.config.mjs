@@ -6,9 +6,9 @@
 // lightweight Expo-ecosystem-standard base (typescript-eslint + React +
 // react-hooks + platform globals), used here instead of hand-rolling the
 // same thing a second time.
-import { defineConfig } from 'eslint/config';
-import expoConfig from 'eslint-config-expo/flat.js';
-import globals from 'globals';
+import { defineConfig } from 'eslint/config'
+import expoConfig from 'eslint-config-expo/flat.js'
+import globals from 'globals'
 
 export default defineConfig([
   {
@@ -64,4 +64,4 @@ export default defineConfig([
       'react-hooks/immutability': 'warn',
     },
   },
-]);
+])

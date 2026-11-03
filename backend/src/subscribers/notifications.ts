@@ -1,51 +1,67 @@
-import { onDomainEvent } from '../events.js';
-import { prisma } from '../db.js';
-import { notifyGroup, notifyUser, notifyUsers, excerptText, reactionEmoji } from '../services/notifications.js';
-import { getAllSettings } from '../services/settings.js';
-import i18n from '../i18n/index.js';
-import { isTripCheckinMetadata } from '../services/postTypes/trip.js';
-import { isAlbumPhotoMetadata } from '../services/postTypes/album.js';
+import { onDomainEvent } from '../events.js'
+import { prisma } from '../db.js'
+import {
+  notifyGroup,
+  notifyUser,
+  notifyUsers,
+  excerptText,
+  reactionEmoji,
+  SYSTEM_SENDER_ID,
+} from '../services/notifications.js'
+import { getAllSettings } from '../services/settings.js'
+import i18n from '../i18n/index.js'
+import { isTripCheckinMetadata } from '../services/postTypes/trip.js'
+import { isAlbumPhotoMetadata } from '../services/postTypes/album.js'
+import { GIFT_LIST_POST_TYPE, getParticipantIds, isGiftListTypeData } from '../services/giftLists.js'
 
 // Translates domain facts into notification decisions — which event type
 // notifies whom. Routes only emit what happened (see src/events.ts); every
 // "who should be told" rule lives here, so adding another consumer of the
 // same events (activity log, webhook, ...) never touches a route.
 
-let registered = false;
+let registered = false
 
 export function registerNotificationSubscriber(): void {
   // buildApp() runs once per process in production but many times across a
   // test file — the event handler registry is module-global, so guard against
   // registering (and therefore notifying) twice.
-  if (registered) return;
-  registered = true;
+  if (registered) return
+  registered = true
 
   onDomainEvent('post.created', async (event) => {
+    // A gift list notifies its participants they were added — never the
+    // generic new_post (the hidden circle would narrow that to participants
+    // anyway, but "X added you to Y" is the useful message).
+    if (event.type === GIFT_LIST_POST_TYPE) {
+      await notifyGiftListInvite(event.posts[0].postId, event.authorId, event.authorName)
+      return
+    }
+
     // Cross-posting fans one write out into several sibling Posts (one per
     // target group) — a member of more than one target group must still get
     // exactly one notification, not one per group they're in. Every member
     // of every target group is a candidate; each is assigned to the FIRST
     // event-post (in emission order) whose group they belong to, then
     // notified once via that post's id/group name.
-    const groupIds = event.posts.map((p) => p.groupId);
+    const groupIds = event.posts.map((p) => p.groupId)
     const memberships = await prisma.groupMember.findMany({
       where: { groupId: { in: groupIds }, userId: { not: event.authorId } },
       select: { groupId: true, userId: true },
-    });
-    const groupIdsByUserId = new Map<string, Set<string>>();
+    })
+    const groupIdsByUserId = new Map<string, Set<string>>()
     for (const m of memberships) {
-      const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
-      set.add(m.groupId);
-      groupIdsByUserId.set(m.userId, set);
+      const set = groupIdsByUserId.get(m.userId) ?? new Set<string>()
+      set.add(m.groupId)
+      groupIdsByUserId.set(m.userId, set)
     }
 
-    const assigned = new Set<string>();
+    const assigned = new Set<string>()
     for (const post of event.posts) {
       const recipientIds = [...groupIdsByUserId.entries()]
         .filter(([userId, groups]) => !assigned.has(userId) && groups.has(post.groupId))
-        .map(([userId]) => userId);
-      if (recipientIds.length === 0) continue;
-      recipientIds.forEach((id) => assigned.add(id));
+        .map(([userId]) => userId)
+      if (recipientIds.length === 0) continue
+      recipientIds.forEach((id) => assigned.add(id))
 
       await notifyUsers({
         type: 'new_post',
@@ -53,7 +69,7 @@ export function registerNotificationSubscriber(): void {
         senderId: event.authorId,
         postId: post.postId,
         params: { author: event.authorName, group: post.groupName, excerpt: excerptText(event.content) },
-      });
+      })
     }
 
     // A milestone post in a chitchat-enabled group also drops a system
@@ -70,15 +86,15 @@ export function registerNotificationSubscriber(): void {
       const chitchatGroups = await prisma.group.findMany({
         where: { id: { in: groupIds }, chitchatEnabled: true },
         select: { id: true },
-      });
+      })
       if (chitchatGroups.length > 0) {
-        const chitchatGroupIds = new Set(chitchatGroups.map((g) => g.id));
-        const settings = await getAllSettings();
-        const t = i18n.getFixedT(settings.defaultLanguage);
-        const label = event.milestoneTag || excerptText(event.content);
+        const chitchatGroupIds = new Set(chitchatGroups.map((g) => g.id))
+        const settings = await getAllSettings()
+        const t = i18n.getFixedT(settings.defaultLanguage)
+        const label = event.milestoneTag || excerptText(event.content)
         const content = label
           ? t('chat.systemMilestoneMessage', { author: event.authorName, milestoneTag: label })
-          : t('chat.systemMilestoneMessageGeneric', { author: event.authorName });
+          : t('chat.systemMilestoneMessageGeneric', { author: event.authorName })
 
         await prisma.chatMessage.createMany({
           data: event.posts
@@ -90,10 +106,10 @@ export function registerNotificationSubscriber(): void {
               content,
               refPostId: post.postId,
             })),
-        });
+        })
       }
     }
-  });
+  })
 
   onDomainEvent('comment.created', async (event) => {
     // A TRIP check-in (services/postTypes/trip.ts's `checkin` interaction)
@@ -103,9 +119,9 @@ export function registerNotificationSubscriber(): void {
     // never also fire the generic new_comment notification below. Push-only
     // (no email), same precedent as new_chat_message.
     if (isTripCheckinMetadata(event.metadata)) {
-      const place = event.metadata.place;
-      const startOfTodayUtc = new Date();
-      startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+      const place = event.metadata.place
+      const startOfTodayUtc = new Date()
+      startOfTodayUtc.setUTCHours(0, 0, 0, 0)
 
       // A cross-posted trip's check-in carries one target per sibling
       // Comment copy — a member of several sibling groups must be notified
@@ -114,25 +130,25 @@ export function registerNotificationSubscriber(): void {
       // handler above.
       const targets = event.checkinTargets ?? [
         { commentId: event.commentId, postId: event.postId, groupId: event.groupId, groupName: event.groupName },
-      ];
+      ]
       const memberships = await prisma.groupMember.findMany({
         where: { groupId: { in: targets.map((t) => t.groupId) }, userId: { not: event.authorId } },
         select: { groupId: true, userId: true },
-      });
-      const groupIdsByUserId = new Map<string, Set<string>>();
+      })
+      const groupIdsByUserId = new Map<string, Set<string>>()
       for (const m of memberships) {
-        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
-        set.add(m.groupId);
-        groupIdsByUserId.set(m.userId, set);
+        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>()
+        set.add(m.groupId)
+        groupIdsByUserId.set(m.userId, set)
       }
 
-      const assigned = new Set<string>();
+      const assigned = new Set<string>()
       for (const target of targets) {
         const recipientIds = [...groupIdsByUserId.entries()]
           .filter(([userId, groups]) => !assigned.has(userId) && groups.has(target.groupId))
-          .map(([userId]) => userId);
-        if (recipientIds.length === 0) continue;
-        recipientIds.forEach((id) => assigned.add(id));
+          .map(([userId]) => userId)
+        if (recipientIds.length === 0) continue
+        recipientIds.forEach((id) => assigned.add(id))
 
         // Per check-in AUTHOR and per TARGET post (not per trip) — a
         // co-traveler's bundling count is independent of the trip author's,
@@ -147,7 +163,7 @@ export function registerNotificationSubscriber(): void {
             metadata: { path: ['kind'], equals: 'trip_checkin' },
             createdAt: { gte: startOfTodayUtc },
           },
-        });
+        })
 
         await notifyUsers({
           type: 'trip_checkin',
@@ -166,9 +182,9 @@ export function registerNotificationSubscriber(): void {
           // creating a new row/push when one already exists for this
           // (recipient, postId, type) since startOfTodayUtc.
           bundleSince: startOfTodayUtc,
-        });
+        })
       }
-      return;
+      return
     }
 
     // An ALBUM photo contribution (services/postTypes/album.ts's `addPhotos`
@@ -179,30 +195,30 @@ export function registerNotificationSubscriber(): void {
     // block mirrors the trip_checkin one above (cross-post target dedup +
     // same-day bundling) minus the per-check-in `place`.
     if (isAlbumPhotoMetadata(event.metadata)) {
-      const startOfTodayUtc = new Date();
-      startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+      const startOfTodayUtc = new Date()
+      startOfTodayUtc.setUTCHours(0, 0, 0, 0)
 
       const targets = event.checkinTargets ?? [
         { commentId: event.commentId, postId: event.postId, groupId: event.groupId, groupName: event.groupName },
-      ];
+      ]
       const memberships = await prisma.groupMember.findMany({
         where: { groupId: { in: targets.map((t) => t.groupId) }, userId: { not: event.authorId } },
         select: { groupId: true, userId: true },
-      });
-      const groupIdsByUserId = new Map<string, Set<string>>();
+      })
+      const groupIdsByUserId = new Map<string, Set<string>>()
       for (const m of memberships) {
-        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>();
-        set.add(m.groupId);
-        groupIdsByUserId.set(m.userId, set);
+        const set = groupIdsByUserId.get(m.userId) ?? new Set<string>()
+        set.add(m.groupId)
+        groupIdsByUserId.set(m.userId, set)
       }
 
-      const assigned = new Set<string>();
+      const assigned = new Set<string>()
       for (const target of targets) {
         const recipientIds = [...groupIdsByUserId.entries()]
           .filter(([userId, groups]) => !assigned.has(userId) && groups.has(target.groupId))
-          .map(([userId]) => userId);
-        if (recipientIds.length === 0) continue;
-        recipientIds.forEach((id) => assigned.add(id));
+          .map(([userId]) => userId)
+        if (recipientIds.length === 0) continue
+        recipientIds.forEach((id) => assigned.add(id))
 
         // Per contribution AUTHOR and per TARGET post (mirrors trip_checkin) —
         // counts this author's contributions to this album copy today, so the
@@ -215,7 +231,7 @@ export function registerNotificationSubscriber(): void {
             metadata: { path: ['kind'], equals: 'album_photo' },
             createdAt: { gte: startOfTodayUtc },
           },
-        });
+        })
 
         await notifyUsers({
           type: 'album_photo',
@@ -225,9 +241,9 @@ export function registerNotificationSubscriber(): void {
           // count drives i18next pluralization (albumPhoto_one/_other).
           params: { author: event.authorName, group: target.groupName, count: countForTarget },
           bundleSince: startOfTodayUtc,
-        });
+        })
       }
-      return;
+      return
     }
 
     // Only the post's author and people already participating in this
@@ -236,37 +252,37 @@ export function registerNotificationSubscriber(): void {
       where: { postId: event.postId, id: { not: event.commentId } },
       select: { authorId: true },
       distinct: ['authorId'],
-    });
-    const candidateIds = [...new Set([event.postAuthorId, ...priorParticipants.map((c) => c.authorId)])];
+    })
+    const candidateIds = [...new Set([event.postAuthorId, ...priorParticipants.map((c) => c.authorId)])]
     // Narrow to people who are still members of the group — a removed member
     // (even the original author) shouldn't keep getting its activity.
     const members = await prisma.groupMember.findMany({
       where: { groupId: event.groupId, userId: { in: candidateIds } },
       select: { userId: true },
-    });
-    const recipientIds = members.map((m) => m.userId);
+    })
+    const recipientIds = members.map((m) => m.userId)
 
     // The client resolves "@name" against the group member list and sends
     // back user ids — re-validate each one is a *current* member of this
     // post's group rather than trusting the client outright (same pattern as
     // the thread-participant lookup above).
-    let mentionedIds: string[] = [];
+    let mentionedIds: string[] = []
     if (event.mentionedUserIds.length > 0) {
       const mentionMembers = await prisma.groupMember.findMany({
         where: { groupId: event.groupId, userId: { in: event.mentionedUserIds } },
         select: { userId: true },
-      });
-      mentionedIds = mentionMembers.map((m) => m.userId).filter((id) => id !== event.authorId);
+      })
+      mentionedIds = mentionMembers.map((m) => m.userId).filter((id) => id !== event.authorId)
     }
     // A mentioned thread participant gets the "mention" notification instead
     // of the generic "new_comment" one, so they aren't notified twice.
-    const threadRecipientIds = recipientIds.filter((id) => !mentionedIds.includes(id));
+    const threadRecipientIds = recipientIds.filter((id) => !mentionedIds.includes(id))
 
     const params = {
       author: event.authorName,
       group: event.groupName,
       excerpt: excerptText(event.content, event.hasAttachment ? '📷' : ''),
-    };
+    }
 
     await notifyUsers({
       type: 'new_comment',
@@ -274,7 +290,7 @@ export function registerNotificationSubscriber(): void {
       senderId: event.authorId,
       postId: event.postId,
       params,
-    });
+    })
 
     if (mentionedIds.length > 0) {
       await notifyUsers({
@@ -283,14 +299,14 @@ export function registerNotificationSubscriber(): void {
         senderId: event.authorId,
         postId: event.postId,
         params,
-      });
+      })
     }
-  });
+  })
 
   onDomainEvent('reaction.added', async (event) => {
     // Reacting to your own post/comment is a valid fact but not worth a
     // notification (notify() would drop the sender anyway — skip the work).
-    if (event.targetAuthorId === event.reactorId) return;
+    if (event.targetAuthorId === event.reactorId) return
 
     await notifyUser({
       type: event.targetKind === 'post' ? 'new_like_post' : 'new_like_comment',
@@ -303,17 +319,17 @@ export function registerNotificationSubscriber(): void {
         excerpt: excerptText(event.targetContent),
         emoji: reactionEmoji(event.reactionType),
       },
-    });
-  });
+    })
+  })
 
   onDomainEvent('story.created', async (event) => {
     // Stories are opt-in noise: only members who turned pushOnStory on hear
     // about them at all (not even an in-app row for everyone else), and at
     // most once per author per group per UTC day — a family member posting
     // twenty stories from a birthday party is one notification, not twenty.
-    const startOfTodayUtc = new Date(event.createdAt);
-    startOfTodayUtc.setUTCHours(0, 0, 0, 0);
-    const eventStoryIds = event.stories.map((s) => s.storyId);
+    const startOfTodayUtc = new Date(event.createdAt)
+    startOfTodayUtc.setUTCHours(0, 0, 0, 0)
+    const eventStoryIds = event.stories.map((s) => s.storyId)
 
     const earlierToday = await prisma.story.findMany({
       where: {
@@ -323,10 +339,10 @@ export function registerNotificationSubscriber(): void {
         id: { notIn: eventStoryIds },
       },
       select: { groupId: true },
-    });
-    const alreadyAnnounced = new Set(earlierToday.map((s) => s.groupId));
-    const targets = event.stories.filter((s) => !alreadyAnnounced.has(s.groupId));
-    if (targets.length === 0) return;
+    })
+    const alreadyAnnounced = new Set(earlierToday.map((s) => s.groupId))
+    const targets = event.stories.filter((s) => !alreadyAnnounced.has(s.groupId))
+    if (targets.length === 0) return
 
     const memberships = await prisma.groupMember.findMany({
       where: {
@@ -335,18 +351,18 @@ export function registerNotificationSubscriber(): void {
         user: { pushOnStory: true },
       },
       select: { groupId: true, userId: true },
-    });
+    })
 
     // Cross-post dedupe, same as post.created: a member of several target
     // groups is told once, via the first target they belong to. Circle
     // narrowing happens inside notify() off the storyId.
-    const assigned = new Set<string>();
+    const assigned = new Set<string>()
     for (const target of targets) {
       const recipientIds = memberships
         .filter((m) => m.groupId === target.groupId && !assigned.has(m.userId))
-        .map((m) => m.userId);
-      if (recipientIds.length === 0) continue;
-      recipientIds.forEach((id) => assigned.add(id));
+        .map((m) => m.userId)
+      if (recipientIds.length === 0) continue
+      recipientIds.forEach((id) => assigned.add(id))
 
       await notifyUsers({
         type: 'new_story',
@@ -354,20 +370,20 @@ export function registerNotificationSubscriber(): void {
         senderId: event.authorId,
         storyId: target.storyId,
         params: { author: event.authorName, group: target.groupName },
-      });
+      })
     }
-  });
+  })
 
   onDomainEvent('story.reaction.added', async (event) => {
-    if (event.storyAuthorId === event.reactorId) return;
+    if (event.storyAuthorId === event.reactorId) return
     await notifyUser({
       type: 'story_reaction',
       userId: event.storyAuthorId,
       senderId: event.reactorId,
       storyId: event.storyId,
       params: { author: event.reactorName, group: event.groupName, emoji: reactionEmoji(event.reactionType) },
-    });
-  });
+    })
+  })
 
   onDomainEvent('story.reply.created', async (event) => {
     // Goes only to the story's author — the reply is private between the
@@ -378,8 +394,56 @@ export function registerNotificationSubscriber(): void {
       senderId: event.fromUserId,
       storyId: event.storyId,
       params: { author: event.fromUserName, group: event.groupName, excerpt: excerptText(event.content) },
-    });
-  });
+    })
+  })
+
+  onDomainEvent('giftList.participantsAdded', async (event) => {
+    await notifyGiftListInvite(event.postId, event.actorId, event.actorName, event.userIds)
+  })
+
+  onDomainEvent('giftList.drawn', async (event) => {
+    const list = await loadGiftList(event.postId)
+    if (!list) return
+    // No recipient name anywhere in this text: it renders on lock screens.
+    // Sent by the system, so the person whose action triggered a (re)draw —
+    // a participating admin, the starter — learns their new name too.
+    await notifyUsers({
+      type: 'gift_draw',
+      userIds: list.participantIds,
+      senderId: SYSTEM_SENDER_ID,
+      postId: event.postId,
+      params: { title: list.title },
+    })
+  })
+
+  onDomainEvent('giftList.itemAdded', async (event) => {
+    // Only the GIVER of the wisher hears about it, and only while a draw is
+    // active — without a draw nobody is "responsible" for this person, so
+    // it stays silent (no spam to the whole list).
+    const list = await loadGiftList(event.postId)
+    if (!list?.drawn) return
+    const assignment = await prisma.giftDrawAssignment.findUnique({
+      where: { postId_recipientId: { postId: event.postId, recipientId: event.ownerId } },
+      select: { giverId: true },
+    })
+    if (!assignment) return
+
+    const startOfTodayUtc = new Date()
+    startOfTodayUtc.setUTCHours(0, 0, 0, 0)
+    // Wishes added before today's draw aren't news to this giver.
+    const since = new Date(Math.max(startOfTodayUtc.getTime(), list.drawnAt!.getTime()))
+    const count = await prisma.giftListItem.count({
+      where: { postId: event.postId, ownerId: event.ownerId, createdAt: { gte: since } },
+    })
+    await notifyUsers({
+      type: 'gift_list_updated',
+      userIds: [assignment.giverId],
+      senderId: event.ownerId,
+      postId: event.postId,
+      params: { author: event.ownerName, title: list.title, count },
+      bundleSince: startOfTodayUtc,
+    })
+  })
 
   onDomainEvent('chat.created', async (event) => {
     // The one central group chat notifies every OTHER member of the group
@@ -389,7 +453,7 @@ export function registerNotificationSubscriber(): void {
     // handler above and never emit chat.created, so this only ever sees USER
     // messages — but the guard stays here too as a second line of defense
     // against ever double-notifying a milestone post.
-    if (event.kind !== 'USER') return;
+    if (event.kind !== 'USER') return
 
     await notifyGroup({
       type: 'new_chat_message',
@@ -400,6 +464,40 @@ export function registerNotificationSubscriber(): void {
         group: event.groupName,
         excerpt: excerptText(event.content, event.hasAttachment ? '📷' : ''),
       },
-    });
-  });
+    })
+  })
+}
+
+async function loadGiftList(postId: string) {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { typeData: true, circleId: true, groupId: true },
+  })
+  if (!post?.circleId || !isGiftListTypeData(post.typeData)) return null
+  return {
+    title: post.typeData.title,
+    drawn: !!post.typeData.drawnAt,
+    drawnAt: post.typeData.drawnAt ? new Date(post.typeData.drawnAt) : null,
+    participantIds: await getParticipantIds({ circleId: post.circleId, groupId: post.groupId }),
+  }
+}
+
+async function notifyGiftListInvite(
+  postId: string,
+  actorId: string,
+  actorName: string,
+  // Omitted at creation: everyone on the list (bar the starter) is new.
+  userIds?: string[]
+): Promise<void> {
+  const list = await loadGiftList(postId)
+  if (!list) return
+  await notifyUsers({
+    type: 'gift_list_invite',
+    // Narrowed to the CURRENT participants, which (unlike notify()'s circle
+    // filter) also requires them to still be in the family.
+    userIds: userIds ? userIds.filter((id) => list.participantIds.includes(id)) : list.participantIds,
+    senderId: actorId,
+    postId,
+    params: { author: actorName, title: list.title },
+  })
 }

@@ -1,14 +1,14 @@
-import { ComponentType } from 'react';
+import { ComponentType } from 'react'
 
-import { Post } from '@/types';
-import { PollBody } from '@/components/PollBody';
+import { Post } from '@/types'
+import { PollBody } from '@/components/PollBody'
 
 export interface PostTypeCardBodyProps {
-  post: Post;
+  post: Post
 }
 
 export interface PostTypeRenderer {
-  CardBody: ComponentType<PostTypeCardBodyProps>;
+  CardBody: ComponentType<PostTypeCardBodyProps>
 }
 
 // Light renderer registry mirroring the backend's PostTypeHandler registry
@@ -22,4 +22,4 @@ export interface PostTypeRenderer {
 // registry.
 export const postTypeRenderers: Record<string, PostTypeRenderer> = {
   POLL: { CardBody: PollBody },
-};
+}

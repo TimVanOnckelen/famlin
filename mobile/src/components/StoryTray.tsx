@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
-import { useNavigation } from '@react-navigation/native';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import { fetchStoryHighlights, fetchStoryTray } from '@famlin/api-client';
+import React from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { Image } from 'expo-image'
+import { useNavigation } from '@react-navigation/native'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { fetchStoryHighlights, fetchStoryTray } from '@famlin/api-client'
 
-import { colors } from '@/constants/colors';
-import { Avatar } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import { getUploadUrl } from '@/api/uploads';
-import { useAuthStore } from '@/stores/authStore';
-import { firstUnseenIndex, traySequences } from '@/utils/stories';
+import { colors } from '@/constants/colors'
+import { Avatar } from '@/components/Avatar'
+import { Icon } from '@/components/Icon'
+import { getUploadUrl } from '@/api/uploads'
+import { useAuthStore } from '@/stores/authStore'
+import { firstUnseenIndex, traySequences } from '@/utils/stories'
 
 // The feed's story strip: a "your story" bubble to post one, every author
 // with a live story (coloured ring while they have something you haven't
@@ -19,43 +19,43 @@ import { firstUnseenIndex, traySequences } from '@/utils/stories';
 // newest first. Follows the feed's family filter, and hides entirely when
 // none of the selected families has stories turned on.
 export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: boolean }) {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const me = useAuthStore((state) => state.user);
-  const groupKey = [...groupIds].sort().join(',') || 'all';
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const me = useAuthStore((state) => state.user)
+  const groupKey = [...groupIds].sort().join(',') || 'all'
 
   const trayQuery = useQuery({
     queryKey: ['stories', 'tray', groupKey],
     queryFn: () => fetchStoryTray(groupIds),
     enabled,
     refetchInterval: 60_000,
-  });
+  })
   const highlightsQuery = useInfiniteQuery({
     queryKey: ['stories', 'highlights', groupKey],
     queryFn: ({ pageParam }) => fetchStoryHighlights(groupIds, pageParam ?? undefined),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
     enabled,
-  });
+  })
 
-  if (!enabled) return null;
+  if (!enabled) return null
 
-  const authors = trayQuery.data?.authors ?? [];
-  const highlights = highlightsQuery.data?.pages.flatMap((p) => p.items) ?? [];
-  const myIndex = authors.findIndex((a) => a.author.id === me?.id);
-  const others = authors.map((entry, index) => ({ entry, index })).filter(({ index }) => index !== myIndex);
+  const authors = trayQuery.data?.authors ?? []
+  const highlights = highlightsQuery.data?.pages.flatMap((p) => p.items) ?? []
+  const myIndex = authors.findIndex((a) => a.author.id === me?.id)
+  const others = authors.map((entry, index) => ({ entry, index })).filter(({ index }) => index !== myIndex)
 
   function openAuthor(index: number) {
-    const sequences = traySequences(authors);
+    const sequences = traySequences(authors)
     navigation.navigate('StoryViewer', {
       sequences,
       startSequence: index,
       startIndex: firstUnseenIndex(sequences[index]),
-    });
+    })
   }
 
   function compose() {
-    navigation.navigate('StoryComposer', { defaultGroupIds: groupIds });
+    navigation.navigate('StoryComposer', { defaultGroupIds: groupIds })
   }
 
   return (
@@ -128,7 +128,7 @@ export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: 
         </View>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -212,4 +212,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.primary,
   },
-});
+})

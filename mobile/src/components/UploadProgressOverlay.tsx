@@ -1,15 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
+import React from 'react'
+import { View, Text, StyleSheet, ActivityIndicator, StyleProp, ViewStyle } from 'react-native'
 
-import { colors } from '@/constants/colors';
+import { colors } from '@/constants/colors'
 
 interface UploadProgressOverlayProps {
   // Fraction (0-1) of the batch upload sent so far. Shown as a percentage
   // next to the spinner once it's a real number; while it's null (upload not
   // yet started, or in the CPU-bound resize step before the request opens)
   // the overlay falls back to a plain spinner, same as before this existed.
-  progress?: number | null;
-  style?: StyleProp<ViewStyle>;
+  progress?: number | null
+  style?: StyleProp<ViewStyle>
 }
 
 // Shared "this attachment is still uploading" overlay for pending photo/video
@@ -26,7 +26,7 @@ export function UploadProgressOverlay({ progress, style }: UploadProgressOverlay
         <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -42,4 +42,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.white,
   },
-});
+})

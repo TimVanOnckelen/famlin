@@ -1,22 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { LeafletMap } from '@/components/LeafletMap';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { LeafletMap } from '@/components/LeafletMap'
 
 interface PostLocationPreviewProps {
-  latitude: number;
-  longitude: number;
-  locationName?: string | null;
-  mapHeight?: number;
+  latitude: number
+  longitude: number
+  locationName?: string | null
+  mapHeight?: number
 }
 
 export function PostLocationPreview({ latitude, longitude, locationName, mapHeight = 140 }: PostLocationPreviewProps) {
   function openInBrowser() {
-    Linking.openURL(
-      `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`
-    );
+    Linking.openURL(`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`)
   }
 
   return (
@@ -31,7 +29,7 @@ export function PostLocationPreview({ latitude, longitude, locationName, mapHeig
         </Text>
       </View>
     </TouchableOpacity>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -59,4 +57,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textTitle,
   },
-});
+})

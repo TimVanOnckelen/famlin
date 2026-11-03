@@ -1,6 +1,6 @@
-import { useQueries } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query'
 
-import { fetchGroupMembers, GroupMember } from '@famlin/api-client';
+import { fetchGroupMembers, GroupMember } from '@famlin/api-client'
 
 // Members belonging to EVERY one of the given groups — the set of valid trip
 // co-travelers for a (possibly cross-posted) trip, since the server requires
@@ -15,22 +15,22 @@ export function useGroupMembersIntersection(groupIds: string[], enabled: boolean
       queryFn: () => fetchGroupMembers(groupId),
       enabled: enabled && !!groupId,
     })),
-  });
+  })
 
-  const isError = results.some((result) => result.isError);
+  const isError = results.some((result) => result.isError)
   // "Loaded" = every group's list is available; callers must not reconcile
   // selections against a half-loaded intersection (it would wrongly drop
   // everyone while a list is still in flight).
-  const loaded = groupIds.length > 0 && results.every((result) => !!result.data);
-  const isLoading = enabled && !loaded && !isError;
+  const loaded = groupIds.length > 0 && results.every((result) => !!result.data)
+  const isLoading = enabled && !loaded && !isError
 
-  let members: GroupMember[] = [];
+  let members: GroupMember[] = []
   if (loaded) {
-    const [first, ...rest] = results;
+    const [first, ...rest] = results
     members = (first.data as GroupMember[]).filter((member) =>
       rest.every((result) => (result.data as GroupMember[]).some((other) => other.id === member.id))
-    );
+    )
   }
 
-  return { members, loaded, isLoading, isError };
+  return { members, loaded, isLoading, isError }
 }

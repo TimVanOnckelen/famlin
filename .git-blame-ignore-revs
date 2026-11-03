@@ -3,3 +3,6 @@
 
 # style: format the codebase with Prettier
 8e4c07fa429a23bd9b9e4347c7d653ea1912c272
+
+# style: reformat the codebase for semi: false and trailingComma: es5
+66d218d079eb975127d23bfff1d4a492874685f1

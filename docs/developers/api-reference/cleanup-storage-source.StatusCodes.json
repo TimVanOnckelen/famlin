@@ -1,0 +1,1 @@
+{"responses":{"202":{"description":"Cleanup accepted; each copy is reverified before source deletion"},"401":{"description":"Authentication required"},"403":{"description":"Administrator required"},"409":{"description":"Confirmation mismatch","incomplete migration or operation already running":null}}}

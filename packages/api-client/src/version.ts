@@ -16,25 +16,25 @@
  * comparators and `String.prototype.localeCompare`.
  */
 export function compareVersions(a: string, b: string): number {
-  const partsA = parseVersion(a);
-  const partsB = parseVersion(b);
-  const length = Math.max(partsA.length, partsB.length);
+  const partsA = parseVersion(a)
+  const partsB = parseVersion(b)
+  const length = Math.max(partsA.length, partsB.length)
 
   for (let i = 0; i < length; i++) {
-    const segmentA = partsA[i] ?? 0;
-    const segmentB = partsB[i] ?? 0;
+    const segmentA = partsA[i] ?? 0
+    const segmentB = partsB[i] ?? 0
     if (segmentA !== segmentB) {
-      return segmentA - segmentB;
+      return segmentA - segmentB
     }
   }
 
-  return 0;
+  return 0
 }
 
 function parseVersion(version: string): number[] {
-  const withoutPrefix = version.trim().replace(/^v/i, '');
+  const withoutPrefix = version.trim().replace(/^v/i, '')
   return withoutPrefix.split('.').map((segment) => {
-    const parsed = parseInt(segment, 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-  });
+    const parsed = parseInt(segment, 10)
+    return Number.isFinite(parsed) ? parsed : 0
+  })
 }

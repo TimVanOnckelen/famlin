@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   fetchOidcConfig,
   loginWithPassword,
@@ -7,17 +7,17 @@ import {
   startBrowserOidcLogin,
   completeBrowserOidcLogin,
   clearBrowserOidcLogin,
-} from '@famlin/api-client';
-import { BrandIcon } from '@/components/Logo';
-import { useBranding } from '@/hooks/useBranding';
-import { useNavigate } from 'react-router';
-import { useAuthStore } from '@/stores/authStore';
-import { rememberReturnPath, takeReturnPath } from '@/utils/routes';
-import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n';
-import './LoginPage.css';
+} from '@famlin/api-client'
+import { BrandIcon } from '@/components/Logo'
+import { useBranding } from '@/hooks/useBranding'
+import { useNavigate } from 'react-router'
+import { useAuthStore } from '@/stores/authStore'
+import { rememberReturnPath, takeReturnPath } from '@/utils/routes'
+import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n'
+import './LoginPage.css'
 
 function getOidcRedirectUri(): string {
-  return new URL('/', window.location.origin).toString();
+  return new URL('/', window.location.origin).toString()
 }
 
 // The login/splash "photo-collage arrival" pattern from the styleguide:
@@ -37,96 +37,96 @@ function PhotoCollage() {
         <div className="login-polaroid-photo" />
       </div>
     </div>
-  );
+  )
 }
 
 export function LoginPage() {
-  const { t, i18n } = useTranslation();
-  const branding = useBranding();
-  const { setAuth } = useAuthStore();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSsoLoading, setIsSsoLoading] = useState(false);
-  const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null);
+  const { t, i18n } = useTranslation()
+  const branding = useBranding()
+  const { setAuth } = useAuthStore()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSsoLoading, setIsSsoLoading] = useState(false)
+  const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
 
   useEffect(() => {
     fetchOidcConfig()
       .then(setOidcConfig)
-      .catch(() => setOidcConfig(null));
-  }, []);
+      .catch(() => setOidcConfig(null))
+  }, [])
 
   // Finish an SSO round-trip: the provider redirected back to us with
   // ?code=&state= — exchange it for a session (same flow as the admin UI).
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    const providerError = params.get('error');
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const state = params.get('state')
+    const providerError = params.get('error')
 
     // The provider redirected back without a code (user denied consent, or
     // the authorization failed upstream) — abort the stored round trip and
     // tell the user, instead of silently landing back on the form.
     if (providerError) {
-      clearBrowserOidcLogin();
-      takeReturnPath();
-      navigate(window.location.pathname, { replace: true });
-      setError(t('login.ssoLoginFailed'));
-      return;
+      clearBrowserOidcLogin()
+      takeReturnPath()
+      navigate(window.location.pathname, { replace: true })
+      setError(t('login.ssoLoginFailed'))
+      return
     }
-    if (!code) return;
+    if (!code) return
 
     async function finishSsoLogin() {
-      setIsSsoLoading(true);
+      setIsSsoLoading(true)
       try {
-        const result = await completeBrowserOidcLogin(code!, state, getOidcRedirectUri());
+        const result = await completeBrowserOidcLogin(code!, state, getOidcRedirectUri())
         // Drop ?code=&state= from the URL and restore the deep link the user
         // started from (see rememberReturnPath) before the app takes over —
         // setAuth unmounts this page.
-        navigate(takeReturnPath() ?? window.location.pathname, { replace: true });
-        await setAuth(result.user, result.token);
+        navigate(takeReturnPath() ?? window.location.pathname, { replace: true })
+        await setAuth(result.user, result.token)
       } catch (err: any) {
         // err.message is an untranslated slug from the shared helper — show
         // the backend's translated error when there is one, else the generic.
-        setError(err.response?.data?.error || t('login.ssoLoginFailed'));
-        navigate(window.location.pathname, { replace: true });
+        setError(err.response?.data?.error || t('login.ssoLoginFailed'))
+        navigate(window.location.pathname, { replace: true })
       } finally {
-        setIsSsoLoading(false);
+        setIsSsoLoading(false)
       }
     }
 
-    finishSsoLogin();
+    finishSsoLogin()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   async function handleSsoLogin() {
-    if (!oidcConfig?.enabled) return;
+    if (!oidcConfig?.enabled) return
 
-    setIsSsoLoading(true);
-    setError(null);
+    setIsSsoLoading(true)
+    setError(null)
     try {
-      const url = await startBrowserOidcLogin(oidcConfig, getOidcRedirectUri());
-      rememberReturnPath(window.location.pathname + window.location.search + window.location.hash);
-      window.location.assign(url);
+      const url = await startBrowserOidcLogin(oidcConfig, getOidcRedirectUri())
+      rememberReturnPath(window.location.pathname + window.location.search + window.location.hash)
+      window.location.assign(url)
     } catch {
-      setError(t('login.ssoLoginFailed'));
-      setIsSsoLoading(false);
+      setError(t('login.ssoLoginFailed'))
+      setIsSsoLoading(false)
     }
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    e.preventDefault()
+    setError(null)
+    setIsLoading(true)
     try {
-      const result = await loginWithPassword(email.trim(), password);
-      await setAuth(result.user, result.token);
+      const result = await loginWithPassword(email.trim(), password)
+      await setAuth(result.user, result.token)
     } catch (err: any) {
-      setError(err.response?.data?.error || t('login.loginFailed'));
+      setError(err.response?.data?.error || t('login.loginFailed'))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -204,9 +204,9 @@ export function LoginPage() {
           className="login-language"
           value={i18n.resolvedLanguage ?? i18n.language}
           onChange={(e) => {
-            const lang = e.target.value as SupportedLanguage;
-            storeLanguage(lang);
-            void i18n.changeLanguage(lang);
+            const lang = e.target.value as SupportedLanguage
+            storeLanguage(lang)
+            void i18n.changeLanguage(lang)
           }}
           aria-label={t('profile.language')}
         >
@@ -218,5 +218,5 @@ export function LoginPage() {
         </select>
       </div>
     </div>
-  );
+  )
 }

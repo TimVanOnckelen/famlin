@@ -1,17 +1,17 @@
-import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from './client';
+import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from './client'
 
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
 // never get one. Uploads made before that feature shipped also won't have
 // one even if their extension is in this set; callers should fall back to
 // the plain (non-variant) URL on a load error for that case.
-const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']);
+const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'])
 
 function toThumbnailPath(path: string): string {
-  const dotIndex = path.lastIndexOf('.');
-  const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : '';
-  if (!THUMBNAIL_ELIGIBLE_EXTENSIONS.has(ext)) return path;
-  return `${path.slice(0, dotIndex)}-thumbnail.jpg`;
+  const dotIndex = path.lastIndexOf('.')
+  const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : ''
+  if (!THUMBNAIL_ELIGIBLE_EXTENSIONS.has(ext)) return path
+  return `${path.slice(0, dotIndex)}-thumbnail.jpg`
 }
 
 // Uploaded photos/videos require a media token (see backend app.ts's
@@ -21,21 +21,21 @@ function toThumbnailPath(path: string): string {
 // leave it unset everywhere else — the plain path already serves a
 // backend-compressed display copy for new uploads (see uploadVariants.ts).
 export function getUploadUrl(path: string, variant?: 'thumbnail'): string {
-  const resolvedPath = variant === 'thumbnail' ? toThumbnailPath(path) : path;
-  const serverUrl = getCurrentServerUrl();
+  const resolvedPath = variant === 'thumbnail' ? toThumbnailPath(path) : path
+  const serverUrl = getCurrentServerUrl()
   // No server URL yet (pre-init) — return the raw path rather than a
   // "nullundefined"-style string; the caller has nothing usable to load yet.
-  if (!serverUrl) return resolvedPath;
-  const token = getCurrentMediaToken();
-  const query = token ? `?token=${encodeURIComponent(token)}` : '';
-  return `${serverUrl}${resolvedPath}${query}`;
+  if (!serverUrl) return resolvedPath
+  const token = getCurrentMediaToken()
+  const query = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${serverUrl}${resolvedPath}${query}`
 }
 
 // Uploading is the one request that routinely outlives the client's default
 // 15s timeout (see client.ts) — a phone photo, let alone a video, can take
 // minutes on mobile data, and an aborted upload surfaces to the user as an
 // opaque "Network Error". Every upload call site must pass this.
-export const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+export const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000
 
 // Browser file upload — the single place web posts to /api/uploads, so the
 // two things that silently break it live in one spot:
@@ -47,21 +47,21 @@ export const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 //     itself (mobile's uploadMedia clears it for the same reason).
 //   - The default timeout is far too short for real photos/videos.
 export async function uploadFiles(files: File[]): Promise<string[]> {
-  const formData = new FormData();
+  const formData = new FormData()
   // The upload route walks every file part in the request, so one round trip
   // covers the whole batch (same as mobile's uploadMedia).
   for (const file of files) {
-    formData.append('file', file);
+    formData.append('file', file)
   }
   const response = await api.post<{ urls: string[] }>('/uploads', formData, {
     headers: { 'Content-Type': undefined },
     timeout: UPLOAD_TIMEOUT_MS,
-  });
-  return response.data.urls;
+  })
+  return response.data.urls
 }
 
-let mediaTokenFetchedAt: number | null = null;
-const MEDIA_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+let mediaTokenFetchedAt: number | null = null
+const MEDIA_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000 // 24h
 
 export async function refreshMediaToken(): Promise<void> {
   // The media token TTL (7d) is shorter than the session token TTL (30d), and
@@ -70,10 +70,10 @@ export async function refreshMediaToken(): Promise<void> {
   // giving up.
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const response = await api.get<{ token: string }>('/uploads/media-token');
-      setMediaToken(response.data.token);
-      mediaTokenFetchedAt = Date.now();
-      return;
+      const response = await api.get<{ token: string }>('/uploads/media-token')
+      setMediaToken(response.data.token)
+      mediaTokenFetchedAt = Date.now()
+      return
     } catch {
       if (attempt === 1) {
         // Deliberately keep whatever token is already cached: it's valid for
@@ -82,7 +82,7 @@ export async function refreshMediaToken(): Promise<void> {
         // <Image>/<Video> GET into a 401 with no retry path. Only the
         // freshness stamp is cleared, so ensureFreshMediaToken() retries on
         // the next foreground.
-        mediaTokenFetchedAt = null;
+        mediaTokenFetchedAt = null
       }
     }
   }
@@ -92,8 +92,8 @@ export async function refreshMediaToken(): Promise<void> {
 // re-fetches the media token if it's missing (e.g. a previous refresh failed)
 // or has gone stale, since nothing else proactively refreshes it.
 export async function ensureFreshMediaToken(): Promise<void> {
-  const isStale = mediaTokenFetchedAt === null || Date.now() - mediaTokenFetchedAt > MEDIA_TOKEN_MAX_AGE_MS;
+  const isStale = mediaTokenFetchedAt === null || Date.now() - mediaTokenFetchedAt > MEDIA_TOKEN_MAX_AGE_MS
   if (!getCurrentMediaToken() || isStale) {
-    await refreshMediaToken();
+    await refreshMediaToken()
   }
 }

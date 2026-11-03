@@ -1,30 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useState } from 'react'
+import { View, StyleSheet, FlatList, TextInput } from 'react-native'
+import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { useTranslation } from 'react-i18next'
 
-import { colors } from '@/constants/colors';
-import { Icon } from '@/components/Icon';
-import { PostCard } from '@/components/PostCard';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { EmptyState } from '@/components/EmptyState';
-import { useCursorPagination } from '@/hooks/useCursorPagination';
-import { searchPosts } from '@famlin/api-client';
+import { colors } from '@/constants/colors'
+import { Icon } from '@/components/Icon'
+import { PostCard } from '@/components/PostCard'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { searchPosts } from '@famlin/api-client'
 
 export function SearchScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { groupId, groupName } = route.params as { groupId: string; groupName: string };
+  const { t } = useTranslation()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const { groupId, groupName } = route.params as { groupId: string; groupName: string }
 
-  const [queryInput, setQueryInput] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [queryInput, setQueryInput] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(queryInput.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [queryInput]);
+    const timer = setTimeout(() => setDebouncedQuery(queryInput.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [queryInput])
 
   const {
     query,
@@ -34,11 +34,11 @@ export function SearchScreen() {
     queryKey: ['postSearch', groupId, debouncedQuery],
     queryFn: (cursor) => searchPosts({ groupId, q: debouncedQuery, cursor }),
     enabled: debouncedQuery.length > 0,
-  });
-  const { isLoading } = query;
+  })
+  const { isLoading } = query
 
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingSafeAreaView style={styles.container}>
       <ScreenHeader title={t('search.title', { group: groupName })} onBack={() => navigation.goBack()} centered />
 
       <View style={styles.searchBarContainer}>
@@ -67,8 +67,8 @@ export function SearchScreen() {
           )
         }
       />
-    </SafeAreaView>
-  );
+    </KeyboardAvoidingSafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -103,4 +103,4 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 10,
   },
-});
+})

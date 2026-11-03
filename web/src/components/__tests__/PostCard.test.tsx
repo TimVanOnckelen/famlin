@@ -1,100 +1,98 @@
-import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { PostCard } from '@/components/PostCard';
-import { makePost, makePoll, makeTrip, makeAlbum, renderWithQueryClient } from '@/test/fixtures';
-import { Post, reactToPost, toggleFavoritePost, votePoll } from '@famlin/api-client';
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { PostCard } from '@/components/PostCard'
+import { makePost, makePoll, makeTrip, makeAlbum, renderWithQueryClient } from '@/test/fixtures'
+import { Post, reactToPost, toggleFavoritePost, votePoll } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   reactToPost: vi.fn().mockResolvedValue({ myReaction: 'LIKE', counts: { LIKE: 1 } }),
   toggleFavoritePost: vi.fn().mockResolvedValue({ favorited: true }),
   votePoll: vi.fn(),
-}));
+}))
 
 beforeEach(() => {
-  vi.clearAllMocks();
-});
+  vi.clearAllMocks()
+})
 
 describe('PostCard', () => {
   it('renders a standard post with author, content, and counts', () => {
-    renderWithQueryClient(<PostCard post={makePost({ likeCount: 3, commentCount: 2 })} />);
-    expect(screen.getByText('Grandpa John')).toBeInTheDocument();
-    expect(screen.getByText('Lovely day in the garden.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^3$/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /2 comments/ })).toBeInTheDocument();
-    expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost({ likeCount: 3, commentCount: 2 })} />)
+    expect(screen.getByText('Grandpa John')).toBeInTheDocument()
+    expect(screen.getByText('Lovely day in the garden.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^3$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /2 comments/ })).toBeInTheDocument()
+    expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument()
+  })
 
   it('links the timestamp to the post permalink', () => {
-    renderWithQueryClient(<PostCard post={makePost({ id: 'post-42' })} />);
-    expect(screen.getByRole('link', { name: /ago|\d/ })).toHaveAttribute('href', '/posts/post-42');
-  });
+    renderWithQueryClient(<PostCard post={makePost({ id: 'post-42' })} />)
+    expect(screen.getByRole('link', { name: /ago|\d/ })).toHaveAttribute('href', '/posts/post-42')
+  })
 
   it('labels the post with its family when showGroup is set', () => {
-    renderWithQueryClient(<PostCard post={makePost()} showGroup />);
-    expect(screen.getByText('Familie de Vries')).toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost()} showGroup />)
+    expect(screen.getByText('Familie de Vries')).toBeInTheDocument()
+  })
 
   it('omits the family label by default', () => {
-    renderWithQueryClient(<PostCard post={makePost()} />);
-    expect(screen.queryByText('Familie de Vries')).not.toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost()} />)
+    expect(screen.queryByText('Familie de Vries')).not.toBeInTheDocument()
+  })
 
   it('renders the milestone badge and title for milestone posts', () => {
-    renderWithQueryClient(<PostCard post={makePost({ type: 'MILESTONE', content: 'Emma turns 5! 🎉' })} />);
-    expect(screen.getByText(/MILESTONE/)).toBeInTheDocument();
-    expect(screen.getByText('Emma turns 5! 🎉')).toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost({ type: 'MILESTONE', content: 'Emma turns 5! 🎉' })} />)
+    expect(screen.getByText(/MILESTONE/)).toBeInTheDocument()
+    expect(screen.getByText('Emma turns 5! 🎉')).toBeInTheDocument()
+  })
 
   it('does not render the comment thread by default (feed usage)', () => {
-    renderWithQueryClient(<PostCard post={makePost()} />);
-    expect(screen.queryByPlaceholderText('Write a comment…')).not.toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost()} />)
+    expect(screen.queryByPlaceholderText('Write a comment…')).not.toBeInTheDocument()
+  })
 
   it('renders the full comment thread when showComments is set (detail page/modal usage)', async () => {
-    renderWithQueryClient(<PostCard post={makePost()} showComments />);
-    expect(await screen.findByPlaceholderText('Write a comment…')).toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost()} showComments />)
+    expect(await screen.findByPlaceholderText('Write a comment…')).toBeInTheDocument()
+  })
 
   it('renders no scrapbook decoration (no washi tape or milestone pin)', () => {
     const { container } = renderWithQueryClient(
       <PostCard
         post={makePost({ type: 'MILESTONE', content: 'Emma turns 5!', uploadedAssetUrls: ['/uploads/a.jpg'] })}
       />
-    );
-    expect(container.querySelector('.post-tape')).not.toBeInTheDocument();
-    expect(container.querySelector('.post-pin')).not.toBeInTheDocument();
-  });
+    )
+    expect(container.querySelector('.post-tape')).not.toBeInTheDocument()
+    expect(container.querySelector('.post-pin')).not.toBeInTheDocument()
+  })
 
   it('shows the photo hero with the floating author chip for photo posts', () => {
-    const { container } = renderWithQueryClient(
-      <PostCard post={makePost({ uploadedAssetUrls: ['/uploads/a.jpg'] })} />
-    );
-    expect(container.querySelector('.post-hero img')).toBeInTheDocument();
-    expect(container.querySelector('.post-hero-chip')).toHaveTextContent('Grandpa John');
-  });
+    const { container } = renderWithQueryClient(<PostCard post={makePost({ uploadedAssetUrls: ['/uploads/a.jpg'] })} />)
+    expect(container.querySelector('.post-hero img')).toBeInTheDocument()
+    expect(container.querySelector('.post-hero-chip')).toHaveTextContent('Grandpa John')
+  })
 
   it('sends a LOVE (matching the heart icon) when the reaction button is clicked without a prior reaction', async () => {
-    const user = userEvent.setup();
-    renderWithQueryClient(<PostCard post={makePost({ likeCount: 0 })} />);
-    await user.click(screen.getByRole('button', { name: /^0$/ }));
-    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LOVE');
-  });
+    const user = userEvent.setup()
+    renderWithQueryClient(<PostCard post={makePost({ likeCount: 0 })} />)
+    await user.click(screen.getByRole('button', { name: /^0$/ }))
+    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LOVE')
+  })
 
   it('sends the chosen emoji reaction from the picker', async () => {
-    const user = userEvent.setup();
-    renderWithQueryClient(<PostCard post={makePost()} />);
-    await user.click(screen.getByRole('menu').querySelector('[aria-label="LOVE"]') as HTMLElement);
-    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LOVE');
-  });
+    const user = userEvent.setup()
+    renderWithQueryClient(<PostCard post={makePost()} />)
+    await user.click(screen.getByRole('menu').querySelector('[aria-label="LOVE"]') as HTMLElement)
+    expect(reactToPost).toHaveBeenCalledWith('post-1', 'LOVE')
+  })
 
   it('toggles the favorite bookmark', async () => {
-    const user = userEvent.setup();
-    renderWithQueryClient(<PostCard post={makePost()} />);
-    await user.click(screen.getByRole('button', { name: 'Save as favorite' }));
-    expect(toggleFavoritePost).toHaveBeenCalledWith('post-1');
-  });
+    const user = userEvent.setup()
+    renderWithQueryClient(<PostCard post={makePost()} />)
+    await user.click(screen.getByRole('button', { name: 'Save as favorite' }))
+    expect(toggleFavoritePost).toHaveBeenCalledWith('post-1')
+  })
 
   it('renders person chips when post has people', () => {
     renderWithQueryClient(
@@ -120,15 +118,15 @@ describe('PostCard', () => {
           ],
         })}
       />
-    );
-    expect(screen.getByText('Emma')).toBeInTheDocument();
-    expect(screen.getByText('Sophie')).toBeInTheDocument();
-  });
+    )
+    expect(screen.getByText('Emma')).toBeInTheDocument()
+    expect(screen.getByText('Sophie')).toBeInTheDocument()
+  })
 
   it('does not render people section when post has no people', () => {
-    const { container } = renderWithQueryClient(<PostCard post={makePost({ people: [] })} />);
-    expect(container.querySelector('.post-people')).not.toBeInTheDocument();
-  });
+    const { container } = renderWithQueryClient(<PostCard post={makePost({ people: [] })} />)
+    expect(container.querySelector('.post-people')).not.toBeInTheDocument()
+  })
 
   it('shows the shared-with indicator when the post was cross-posted', () => {
     renderWithQueryClient(
@@ -140,14 +138,14 @@ describe('PostCard', () => {
           ],
         })}
       />
-    );
-    expect(screen.getByText('Shared with Familie de Vries, Grandparents')).toBeInTheDocument();
-  });
+    )
+    expect(screen.getByText('Shared with Familie de Vries, Grandparents')).toBeInTheDocument()
+  })
 
   it('does not show the shared-with indicator when sharedWithGroups is absent', () => {
-    const { container } = renderWithQueryClient(<PostCard post={makePost()} />);
-    expect(container.querySelector('.post-shared-indicator')).not.toBeInTheDocument();
-  });
+    const { container } = renderWithQueryClient(<PostCard post={makePost()} />)
+    expect(container.querySelector('.post-shared-indicator')).not.toBeInTheDocument()
+  })
 
   // Mirrors how FeedPage actually feeds PostCard: a live ['posts', ...]
   // infinite query, so patchPostInCaches's cache write (from the poll vote
@@ -160,25 +158,25 @@ describe('PostCard', () => {
       initialData: { pages: [{ items: [initialPost], nextCursor: null }], pageParams: [null] },
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-    });
-    const post = data!.pages[0].items[0];
-    return <PostCard post={post} />;
+    })
+    const post = data!.pages[0].items[0]
+    return <PostCard post={post} />
   }
 
   describe('poll posts', () => {
     it('renders the question, options, vote counts, and percentages', () => {
       renderWithQueryClient(
         <PostCard post={makePost({ type: 'POLL', content: 'Pizza or sushi?', poll: makePoll() })} />
-      );
-      expect(screen.getByText('Pizza or sushi?')).toBeInTheDocument();
-      expect(screen.getByText('Pizza')).toBeInTheDocument();
-      expect(screen.getByText('Sushi')).toBeInTheDocument();
-      expect(screen.getByText('67%')).toBeInTheDocument();
-      expect(screen.getByText('33%')).toBeInTheDocument();
-      expect(screen.getByText('2 votes')).toBeInTheDocument();
-      expect(screen.getByText('1 vote')).toBeInTheDocument();
-      expect(screen.getByText('3 votes total')).toBeInTheDocument();
-    });
+      )
+      expect(screen.getByText('Pizza or sushi?')).toBeInTheDocument()
+      expect(screen.getByText('Pizza')).toBeInTheDocument()
+      expect(screen.getByText('Sushi')).toBeInTheDocument()
+      expect(screen.getByText('67%')).toBeInTheDocument()
+      expect(screen.getByText('33%')).toBeInTheDocument()
+      expect(screen.getByText('2 votes')).toBeInTheDocument()
+      expect(screen.getByText('1 vote')).toBeInTheDocument()
+      expect(screen.getByText('3 votes total')).toBeInTheDocument()
+    })
 
     it('votes for an option and re-renders from the returned post', async () => {
       const updatedPost = makePost({
@@ -192,17 +190,17 @@ describe('PostCard', () => {
           ],
           totalVotes: 4,
         }),
-      });
-      vi.mocked(votePoll).mockResolvedValue(updatedPost);
+      })
+      vi.mocked(votePoll).mockResolvedValue(updatedPost)
 
-      const user = userEvent.setup();
+      const user = userEvent.setup()
       renderWithQueryClient(
         <PollFeedHarness initialPost={makePost({ type: 'POLL', content: 'Pizza or sushi?', poll: makePoll() })} />
-      );
-      await user.click(screen.getByText('Pizza'));
-      expect(votePoll).toHaveBeenCalledWith('post-1', 'opt-1');
-      expect(await screen.findByText('4 votes total')).toBeInTheDocument();
-    });
+      )
+      await user.click(screen.getByText('Pizza'))
+      expect(votePoll).toHaveBeenCalledWith('post-1', 'opt-1')
+      expect(await screen.findByText('4 votes total')).toBeInTheDocument()
+    })
 
     it('disables options and shows a closed label when the poll is closed', () => {
       renderWithQueryClient(
@@ -213,40 +211,40 @@ describe('PostCard', () => {
             poll: makePoll({ closed: true, closesAt: '2026-01-01T00:00:00Z' }),
           })}
         />
-      );
-      expect(screen.getByText('Poll closed')).toBeInTheDocument();
-      expect(screen.getByText('Pizza').closest('button')).toBeDisabled();
-      expect(screen.getByText('Sushi').closest('button')).toBeDisabled();
-    });
-  });
+      )
+      expect(screen.getByText('Poll closed')).toBeInTheDocument()
+      expect(screen.getByText('Pizza').closest('button')).toBeDisabled()
+      expect(screen.getByText('Sushi').closest('button')).toBeDisabled()
+    })
+  })
 
   it('falls back to plain text content for an unknown custom post type', () => {
-    renderWithQueryClient(<PostCard post={makePost({ type: 'RSVP', content: 'Are you coming to the picnic?' })} />);
-    expect(screen.getByText('Are you coming to the picnic?')).toBeInTheDocument();
-  });
+    renderWithQueryClient(<PostCard post={makePost({ type: 'RSVP', content: 'Are you coming to the picnic?' })} />)
+    expect(screen.getByText('Are you coming to the picnic?')).toBeInTheDocument()
+  })
 
   describe('trip posts', () => {
     it('renders the active trip card: badge, destination, last stop, stops-so-far, and follow CTA', () => {
-      renderWithQueryClient(<PostCard post={makePost({ type: 'TRIP', content: null, trip: makeTrip() })} />);
-      expect(screen.getByText(/Day 4/)).toBeInTheDocument();
-      expect(screen.getByText('→ Tuscany & Emilia-Romagna, Italy')).toBeInTheDocument();
-      expect(screen.getByText('Bologna', { exact: false })).toBeInTheDocument();
-      expect(screen.getByText(/2 stops so far · Grandpa John/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Follow the trip →' })).toBeInTheDocument();
-    });
+      renderWithQueryClient(<PostCard post={makePost({ type: 'TRIP', content: null, trip: makeTrip() })} />)
+      expect(screen.getByText(/Day 4/)).toBeInTheDocument()
+      expect(screen.getByText('→ Tuscany & Emilia-Romagna, Italy')).toBeInTheDocument()
+      expect(screen.getByText('Bologna', { exact: false })).toBeInTheDocument()
+      expect(screen.getByText(/2 stops so far · Grandpa John/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Follow the trip →' })).toBeInTheDocument()
+    })
 
     it('opens the trip detail view from the CTA', async () => {
-      const user = userEvent.setup();
-      const onOpenTrip = vi.fn();
+      const user = userEvent.setup()
+      const onOpenTrip = vi.fn()
       renderWithQueryClient(
         <PostCard
           post={makePost({ id: 'trip-post', type: 'TRIP', content: null, trip: makeTrip() })}
           onOpenTrip={onOpenTrip}
         />
-      );
-      await user.click(screen.getByRole('button', { name: 'Follow the trip →' }));
-      expect(onOpenTrip).toHaveBeenCalledWith('trip-post');
-    });
+      )
+      await user.click(screen.getByRole('button', { name: 'Follow the trip →' }))
+      expect(onOpenTrip).toHaveBeenCalledWith('trip-post')
+    })
 
     it('renders the closed trip card: badge, stats, author/date range, and diary CTA', () => {
       renderWithQueryClient(
@@ -265,14 +263,14 @@ describe('PostCard', () => {
             }),
           })}
         />
-      );
-      expect(screen.getByText('TRIP · CLOSED')).toBeInTheDocument();
-      expect(screen.getByText('12 days · 8 stops · 30 photos')).toBeInTheDocument();
-      expect(screen.getByText(/Grandpa John/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'View the diary →' })).toBeInTheDocument();
+      )
+      expect(screen.getByText('TRIP · CLOSED')).toBeInTheDocument()
+      expect(screen.getByText('12 days · 8 stops · 30 photos')).toBeInTheDocument()
+      expect(screen.getByText(/Grandpa John/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'View the diary →' })).toBeInTheDocument()
       // 3 collage photos + 1 overflow tile showing the remainder.
-      expect(screen.getByText('+27')).toBeInTheDocument();
-    });
+      expect(screen.getByText('+27')).toBeInTheDocument()
+    })
 
     // The trip card never surfaces a "comments" toggle at all (see PostCard's
     // TRIP branch and TripFeedCard) — check-in comments only ever appear in
@@ -280,53 +278,53 @@ describe('PostCard', () => {
     it('never renders a generic inline-comments affordance for trip posts', () => {
       renderWithQueryClient(
         <PostCard post={makePost({ type: 'TRIP', content: null, commentCount: 5, trip: makeTrip() })} />
-      );
-      expect(screen.queryByText(/comments/i)).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument();
-    });
-  });
+      )
+      expect(screen.queryByText(/comments/i)).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument()
+    })
+  })
 
   describe('album posts', () => {
     it('renders the album card: badge, title, stats, contributors, and open CTA', () => {
-      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />);
-      expect(screen.getByText('SHARED ALBUM')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Summer at the lake' })).toBeInTheDocument();
-      expect(screen.getByText('5 photos · 2 contributors')).toBeInTheDocument();
-      expect(screen.getByText(/Added by Sophie/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Open album →' })).toBeInTheDocument();
-    });
+      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />)
+      expect(screen.getByText('SHARED ALBUM')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Summer at the lake' })).toBeInTheDocument()
+      expect(screen.getByText('5 photos · 2 contributors')).toBeInTheDocument()
+      expect(screen.getByText(/Added by Sophie/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Open album →' })).toBeInTheDocument()
+    })
 
     it('opens the album detail view from the CTA', async () => {
-      const user = userEvent.setup();
-      const onOpenAlbum = vi.fn();
+      const user = userEvent.setup()
+      const onOpenAlbum = vi.fn()
       renderWithQueryClient(
         <PostCard
           post={makePost({ id: 'album-post', type: 'ALBUM', content: null, album: makeAlbum() })}
           onOpenAlbum={onOpenAlbum}
         />
-      );
-      await user.click(screen.getByRole('button', { name: 'Open album →' }));
-      expect(onOpenAlbum).toHaveBeenCalledWith('album-post');
-    });
+      )
+      await user.click(screen.getByRole('button', { name: 'Open album →' }))
+      expect(onOpenAlbum).toHaveBeenCalledWith('album-post')
+    })
 
     it('shows an "Add photos" CTA on an open album', () => {
-      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />);
-      expect(screen.getByRole('button', { name: 'Add photos' })).toBeInTheDocument();
-    });
+      renderWithQueryClient(<PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum() })} />)
+      expect(screen.getByRole('button', { name: 'Add photos' })).toBeInTheDocument()
+    })
 
     it('hides the "Add photos" CTA and shows the closed badge on a closed album', () => {
       renderWithQueryClient(
         <PostCard post={makePost({ type: 'ALBUM', content: null, album: makeAlbum({ closed: true }) })} />
-      );
-      expect(screen.queryByRole('button', { name: 'Add photos' })).not.toBeInTheDocument();
-      expect(screen.getByText('ALBUM · CLOSED')).toBeInTheDocument();
-    });
+      )
+      expect(screen.queryByRole('button', { name: 'Add photos' })).not.toBeInTheDocument()
+      expect(screen.getByText('ALBUM · CLOSED')).toBeInTheDocument()
+    })
 
     it('never renders a generic inline-comments affordance for album posts', () => {
       renderWithQueryClient(
         <PostCard post={makePost({ type: 'ALBUM', content: null, commentCount: 5, album: makeAlbum() })} />
-      );
-      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument();
-    });
-  });
-});
+      )
+      expect(screen.queryByRole('button', { name: /comment/i })).not.toBeInTheDocument()
+    })
+  })
+})
