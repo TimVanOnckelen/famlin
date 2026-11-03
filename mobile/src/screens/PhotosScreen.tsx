@@ -270,7 +270,7 @@ export function PhotosScreen() {
   const openAlbum = useCallback((postId: string) => navigation.navigate('AlbumDetail', { postId }), [navigation])
 
   const albumsHeader = useMemo(() => {
-    if (albums.length === 0) return null
+    if (albums.length === 0) return undefined
     return (
       <View style={styles.albumsSection}>
         <Text style={styles.sectionHeaderText}>{t('photos.albumsTitle')}</Text>
@@ -377,7 +377,9 @@ export function PhotosScreen() {
           windowSize={7}
           updateCellsBatchingPeriod={50}
           contentContainerStyle={styles.gridContainer}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.primary} />
+          }
           onEndReached={onEndReached}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
@@ -394,7 +396,7 @@ export function PhotosScreen() {
               <View style={styles.loadingFooter}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
-            ) : null
+            ) : undefined
           }
         />
       ) : (

@@ -228,7 +228,7 @@ function ImagePage({
   // (see onStartShouldSetPanResponder above), and touch events fire either
   // way. A paging swipe ends in a native touch-cancel, so it can't register
   // as a tap.
-  function handleTouchStart(e: { nativeEvent: { touches: { pageX: number; pageY: number }[] } }) {
+  function handleTouchStart(e: { nativeEvent: { touches: readonly { pageX: number; pageY: number }[] } }) {
     const touches = e.nativeEvent.touches
     if (touches.length === 1) {
       z.touchStart = { x: touches[0].pageX, y: touches[0].pageY, at: Date.now() }
@@ -238,7 +238,7 @@ function ImagePage({
     }
   }
 
-  function handleTouchEnd(e: { nativeEvent: { pageX: number; pageY: number; touches: unknown[] } }) {
+  function handleTouchEnd(e: { nativeEvent: { pageX: number; pageY: number; touches: readonly unknown[] } }) {
     if (e.nativeEvent.touches.length > 0) return
     const start = z.touchStart
     z.touchStart = null
@@ -448,7 +448,7 @@ export function ImageViewerScreen() {
   const { width } = useWindowDimensions()
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [commentsVisible, setCommentsVisible] = useState(false)
-  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null)
 
   // Post-context callers (PostCard, PostDetail) pass one postId + parallel
   // assetUrls; the photos tab passes per-index `items` instead, since its
@@ -652,7 +652,7 @@ function PhotoCommentsSheet({
             style={sheetStyles.list}
             contentContainerStyle={sheetStyles.listContent}
             ListEmptyComponent={
-              isLoading ? null : <Text style={sheetStyles.emptyText}>{t('imageViewer.noComments')}</Text>
+              isLoading ? undefined : <Text style={sheetStyles.emptyText}>{t('imageViewer.noComments')}</Text>
             }
             renderItem={({ item }) => (
               <View style={sheetStyles.commentItem}>

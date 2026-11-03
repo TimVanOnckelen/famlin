@@ -229,7 +229,7 @@ export function TripDetailScreen() {
                   date: formatDayMonth(trip.closedAt || trip.endDate || trip.startDate),
                 })}
               </Text>
-            ) : null
+            ) : undefined
           }
           contentContainerStyle={styles.listContent}
         />

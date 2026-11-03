@@ -1,6 +1,12 @@
 import React, { useMemo, useRef } from 'react'
 import { StyleProp, ViewStyle } from 'react-native'
-import { WebView, WebViewMessageEvent } from 'react-native-webview'
+import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview'
+
+// react-native-webview 14.0.1's index.d.ts defaults WebView's props generic to
+// `undefined` (13.x had `{}`), which collapses its props to `never`. Pin the
+// generic back to `{}`; runtime is unchanged.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+const WebView = RNWebView as typeof RNWebView<{}>
 
 interface LeafletMapProps {
   latitude: number
@@ -75,7 +81,7 @@ function buildHtml({
 }
 
 export function LeafletMap({ latitude, longitude, zoom = 15, interactive = false, style, onPick }: LeafletMapProps) {
-  const webviewRef = useRef<WebView>(null)
+  const webviewRef = useRef<InstanceType<typeof WebView>>(null)
   const html = useMemo(
     () => buildHtml({ latitude, longitude, zoom, interactive }),
     // Intentionally built once — subsequent marker moves happen imperatively via

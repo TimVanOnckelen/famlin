@@ -62,7 +62,7 @@ export function SearchScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
-          debouncedQuery.length === 0 ? null : isLoading ? null : (
+          debouncedQuery.length === 0 ? undefined : isLoading ? undefined : (
             <EmptyState title={t('search.emptyTitle')} subtitle={t('search.emptySubtitle')} centerSubtitle />
           )
         }
