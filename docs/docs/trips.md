@@ -7,6 +7,11 @@ sidebar_position: 2
 A **Trip** is a travel journal your family can follow through check-ins, photos
 and updates. You can start a trip in either the mobile app or the web app.
 
+<figure>
+  <img src="/img/user-guide/trips.webp" alt="A Famlin trip showing its destination, travelers, and a photo check-in timeline" width="320" />
+  <figcaption>A trip keeps travel check-ins and photos together in one shared timeline.</figcaption>
+</figure>
+
 ## Start a trip on the web
 
 1. Create a post, choose the families to share it with, and select **Trip**.

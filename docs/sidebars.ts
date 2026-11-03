@@ -8,7 +8,17 @@ const sidebars: SidebarsConfig = {
       label: 'Using Famlin',
       collapsible: true,
       collapsed: false,
-      items: ['trips', 'gift-lists'],
+      items: [
+        'features',
+        'sharing-updates',
+        'stories',
+        'photos-and-albums',
+        'chat',
+        'search-and-favorites',
+        'notifications-and-profile',
+        'trips',
+        'gift-lists',
+      ],
     },
     {
       type: 'category',
