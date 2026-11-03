@@ -167,6 +167,13 @@ export async function buildApp() {
         // and that provider is whatever issuer the admin configures at
         // runtime — it can't be pinned to a fixed origin here.
         connectSrc: ["'self'", 'https:'],
+        // Helmet's default upgrade-insecure-requests makes the browser fetch
+        // every asset over https://. Over plain HTTP (a LAN address like
+        // http://192.168.1.10:3000, the Home Assistant add-on, the installer's
+        // local mode) nothing answers TLS on that port, so the page loads
+        // blank. Behind an HTTPS proxy every URL is already https, so the
+        // directive adds nothing there.
+        upgradeInsecureRequests: null,
       },
     },
   })
