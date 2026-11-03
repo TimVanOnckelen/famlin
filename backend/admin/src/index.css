@@ -2200,3 +2200,63 @@ button.mini-toggle {
   margin-top: 0.6rem;
   font-size: 0.9rem;
 }
+
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.wizard-steps li.active button {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wizard-steps li.done button {
+  color: var(--text-secondary);
+}
+
+.wizard-card {
+  max-width: 640px;
+}
+
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+a.button {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.button.secondary {
+  background: var(--fam-primary-tint);
+  color: var(--fam-text-title);
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+}
+
+.checklist li {
+  padding: 0.25rem 0;
+}
+
+.checklist li.done {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}

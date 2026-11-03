@@ -1,10 +1,11 @@
 import { StoragePage } from './components/StoragePage'
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Layout } from './components/Layout'
 import { LoginPage } from './components/LoginPage'
 import { SetupPage } from './components/SetupPage'
+import { GettingStartedPage } from './components/GettingStartedPage'
 import { DashboardPage } from './components/DashboardPage'
 import { UsersPage } from './components/UsersPage'
 import { GroupsPage } from './components/GroupsPage'
@@ -16,6 +17,7 @@ import { api, User } from './api/client'
 
 function App() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [needsSetup, setNeedsSetup] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -55,9 +57,19 @@ function App() {
   if (needsSetup) {
     return (
       <SetupPage
-        onSetupComplete={(newUser) => {
+        onSetupComplete={(newUser, restored) => {
           setNeedsSetup(false)
           setUser(newUser)
+          // A fresh install continues into the guided wizard; a restore
+          // already has its families and content.
+          if (!restored) {
+            try {
+              localStorage.removeItem('famlin_admin_wizard_step')
+            } catch {
+              // ignore
+            }
+            navigate('/getting-started', { replace: true })
+          }
         }}
       />
     )
@@ -71,6 +83,7 @@ function App() {
     <Layout user={user}>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/getting-started" element={<GettingStartedPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/content" element={<ContentPage />} />

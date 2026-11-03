@@ -4,7 +4,15 @@ import { api, DashboardStats } from '../api/client'
 import { Icon, IconName } from './Icon'
 import i18n from '../i18n'
 import { avatarColor, initials } from '../avatar'
+import { Link } from 'react-router-dom'
 import { ConnectAppQr } from './ConnectAppQr'
+import {
+  SetupChecklist,
+  dismissChecklist,
+  isChecklistComplete,
+  isChecklistDismissed,
+  loadSetupChecklist,
+} from '../setupChecklist'
 
 export function DashboardPage() {
   const { t } = useTranslation()
@@ -12,6 +20,16 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [hoveredDay, setHoveredDay] = useState<number | null>(null)
   const [storeLinks, setStoreLinks] = useState<{ appStoreUrl?: string | null; playStoreUrl?: string | null }>({})
+
+  const [checklist, setChecklist] = useState<SetupChecklist | null>(null)
+  const [checklistDismissed, setChecklistDismissed] = useState(isChecklistDismissed)
+
+  useEffect(() => {
+    if (checklistDismissed) return
+    loadSetupChecklist()
+      .then(setChecklist)
+      .catch(() => {})
+  }, [checklistDismissed])
 
   useEffect(() => {
     api
@@ -38,6 +56,41 @@ export function DashboardPage() {
       <div className="page-header">
         <h2>{t('dashboard.title')}</h2>
       </div>
+
+      {checklist && !checklistDismissed && !isChecklistComplete(checklist) && (
+        <div className="card">
+          <h3>{t('checklist.title')}</h3>
+          <ul className="checklist">
+            {(
+              [
+                ['groupExists', checklist.groupExists],
+                ['adminInGroup', checklist.adminInGroup],
+                ['invited', checklist.invited],
+                ['backupsOn', checklist.backupsOn],
+              ] as const
+            ).map(([key, done]) => (
+              <li key={key} className={done ? 'done' : ''}>
+                {done ? '✓' : '○'} {t(`checklist.${key}`)}
+              </li>
+            ))}
+          </ul>
+          <div className="wizard-actions">
+            <Link className="button" to="/getting-started">
+              {t('checklist.continue')}
+            </Link>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                dismissChecklist()
+                setChecklistDismissed(true)
+              }}
+            >
+              {t('checklist.dismiss')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="stat-grid">
         <StatTile
