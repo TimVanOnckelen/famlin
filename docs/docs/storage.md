@@ -6,7 +6,7 @@ sidebar_position: 2
 
 This page explains where Famlin keeps its data and how to choose and set up where photos and videos are stored. You can use the default Docker volume, a folder on another disk or NAS, or an S3-compatible bucket. It also covers moving an existing installation from one to another.
 
-If you're installing Famlin for the first time, the defaults from [Server setup](./server-setup) work as they are. Come back here when you want media on a different disk, on a NAS, or in object storage.
+If you're installing Famlin for the first time, the defaults from [Server setup](./server-setup.md) work as they are. Come back here when you want media on a different disk, on a NAS, or in object storage.
 
 ## What Famlin stores, and where
 
@@ -15,7 +15,7 @@ If you're installing Famlin for the first time, the defaults from [Server setup]
 | **Database**: users, groups, posts, comments, reactions, settings | `famlin-db-data` volume (Postgres container) | `docker-compose.yml` | Small. Holds everything except media files. |
 | **Media**: photos, videos and avatars members upload | `famlin-uploads` volume at `/app/uploads` | `STORAGE_DRIVER` (default `local`), `UPLOADS_DIR` | Usually the largest by far. Can live in S3 instead, see [below](#option-c-s3-or-an-s3-compatible-service). |
 | **Branding logo** | `/app/uploads/branding/` | (always local) | Always stays on the local uploads volume, even with S3. |
-| **Scheduled backups** | `famlin-backups` volume at `/app/backups` | `BACKUPS_DIR` | Database dumps plus a mirror of the media. See [Maintenance](./maintenance#scheduled-backups). |
+| **Scheduled backups** | `famlin-backups` volume at `/app/backups` | `BACKUPS_DIR` | Database dumps plus a mirror of the media. See [Maintenance](./maintenance.md#scheduled-backups). |
 | **Temporary files** while processing an upload | container's temp dir (`/tmp`) | (none) | Up to 200 MB per uploaded file, removed right after processing. |
 
 For every uploaded photo, Famlin keeps three copies inside its media storage:
@@ -27,7 +27,7 @@ For every uploaded photo, Famlin keeps three copies inside its media storage:
 Videos are stored as uploaded, plus a poster image. Old HEIC photos get a browser-friendly copy under `derived/` the first time someone opens them. Plan for **media storage of about 1.5× the size of what your family uploads**.
 
 :::info Not the same as "Media integrations"
-**Immich** and **Local folders** under Server settings → Media are *sources* that members can pick photos from. Famlin only reads from them and never stores its own uploads there. See [Media integrations](./admin-configuration#media-integrations). This page is about where Famlin keeps the files that members upload *to Famlin*.
+**Immich** and **Local folders** under Server settings → Media are *sources* that members can pick photos from. Famlin only reads from them and never stores its own uploads there. See [Media integrations](./admin-configuration.md#media-integrations). This page is about where Famlin keeps the files that members upload *to Famlin*.
 :::
 
 ## Choosing where media lives
@@ -90,7 +90,7 @@ Leave `UPLOADS_DIR` unset: changing the mount is enough. `UPLOADS_DIR` only matt
 A share mounted on the host works the same way. Make sure uid 1000 can write to it (on SMB, mount it with `uid=1000,gid=1000`). Also make sure the share is mounted *before* Docker starts, or the container writes to the empty mount point underneath. Expect photos to load a bit slower than from a local disk.
 :::
 
-The same approach works for backups: see [Keep backups off the machine they protect](./maintenance#scheduled-backups).
+The same approach works for backups: see [Keep backups off the machine they protect](./maintenance.md#scheduled-backups).
 
 ## Option C: S3 or an S3-compatible service
 
@@ -198,7 +198,7 @@ and in `docker-compose.yml`:
       - /mnt/storagebox/famlin/uploads:/app/uploads
 ```
 
-A Storage Box also makes a good off-site target for **backups** (mount it at `/app/backups` instead, see [Scheduled backups](./maintenance#scheduled-backups)).
+A Storage Box also makes a good off-site target for **backups** (mount it at `/app/backups` instead, see [Scheduled backups](./maintenance.md#scheduled-backups)).
 
 </details>
 
@@ -280,7 +280,7 @@ Famlin can move all media from one storage to the other **while it keeps running
 
 ### Step by step: local → S3
 
-1. **Make a backup first.** Run a backup from **Admin → System status → Run backup now**, or see [Backups](./maintenance#backups).
+1. **Make a backup first.** Run a backup from **Admin → System status → Run backup now**, or see [Backups](./maintenance.md#backups).
 2. **Create the bucket and key** as described in [Option C](#1-create-a-bucket-and-an-access-key).
 3. **Add the new primary *and* the old storage as fallback** to `.env`:
 
@@ -347,8 +347,8 @@ An interrupted migration resumes after a restart only when both locations' finge
 ## Backups and exports with S3
 
 - **S3 is not a backup.** A bucket protects against a failing disk, not against deleting something by accident or a provider problem. Keep an independent copy.
-- **Scheduled backups** ([Maintenance](./maintenance#scheduled-backups)) copy media from wherever it lives, primary and fallback, into `/app/backups/uploads/`. With a large library in S3 that means a full local copy. Under **Server settings → Backups**, you can switch off **Include media in backups** if you back up the bucket in another way (for example with bucket versioning or replication). The database dump and the branding logo are always backed up.
-- **Data export** (Server settings → General) has the same **Include media** switch. An export without media is small, but it can only be restored onto a server that can already reach the same media, for example the same bucket. When restoring, Famlin checks that every file the export refers to is present and the right size before it writes anything. See [Restoring from a data export](./maintenance#restoring-from-a-data-export).
+- **Scheduled backups** ([Maintenance](./maintenance.md#scheduled-backups)) copy media from wherever it lives, primary and fallback, into `/app/backups/uploads/`. With a large library in S3 that means a full local copy. Under **Server settings → Backups**, you can switch off **Include media in backups** if you back up the bucket in another way (for example with bucket versioning or replication). The database dump and the branding logo are always backed up.
+- **Data export** (Server settings → General) has the same **Include media** switch. An export without media is small, but it can only be restored onto a server that can already reach the same media, for example the same bucket. When restoring, Famlin checks that every file the export refers to is present and the right size before it writes anything. See [Restoring from a data export](./maintenance.md#restoring-from-a-data-export).
 
 ## Disk space
 
@@ -375,6 +375,6 @@ An interrupted migration resumes after a restart only when both locations' finge
 
 **Permission denied on a bind-mounted folder.** Run `chown -R 1000:1000` on the host folder, or on SMB mount it with `uid=1000,gid=1000`.
 
-**Photos disappeared after a redeploy.** The `famlin-uploads` volume isn't being reused, usually because the stack was started from a differently named folder, which gives a different Compose project name. See [Troubleshooting in Maintenance](./maintenance#troubleshooting).
+**Photos disappeared after a redeploy.** The `famlin-uploads` volume isn't being reused, usually because the stack was started from a differently named folder, which gives a different Compose project name. See [Troubleshooting in Maintenance](./maintenance.md#troubleshooting).
 
 **Photos disappeared after switching to S3.** The existing photos are still on the local volume. Add the old storage as fallback and migrate, as described in [Moving an existing installation](#moving-an-existing-installation-between-local-and-s3).

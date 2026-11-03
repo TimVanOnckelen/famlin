@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Admin configuration
 
-Once the containers from [Server setup](./server-setup) are up and reachable, finish setup from the admin UI at `/admin`.
+Once the containers from [Server setup](./server-setup.md) are up and reachable, finish setup from the admin UI at `/admin`.
 
 ## First login
 
@@ -21,17 +21,17 @@ From `/admin` → Server settings you can then configure everything below. The p
 
 - **Default language** (General): used for server-rendered pages that don't have a signed-in user yet (the invite link landing page, `/invite/:token`) and for the text of push notifications and emails. Choose English, Nederlands or 简体中文 (Simplified Chinese). Defaults to English.
 - **App Store / Google Play URLs** (General): optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps ([App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)), so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
-- **Check for new versions** (General → Updates): on by default. Once a day the server checks GitHub for a new Famlin release and shows an "update available" banner in the admin UI; nothing about your instance is sent. Turn it off to stop the check and hide the banner. See [Staying up to date](./maintenance#staying-up-to-date).
-- **Data export** (General): downloads a zip of all family content. **Include media in export** decides whether photos and videos go into the zip. See [Data export](./managing-users-and-content#data-export).
+- **Check for new versions** (General → Updates): on by default. Once a day the server checks GitHub for a new Famlin release and shows an "update available" banner in the admin UI; nothing about your instance is sent. Turn it off to stop the check and hide the banner. See [Staying up to date](./maintenance.md#staying-up-to-date).
+- **Data export** (General): downloads a zip of all family content. **Include media in export** decides whether photos and videos go into the zip. See [Data export](./managing-users-and-content.md#data-export).
 - **Branding**: family name, color and logo. See [Branding](#branding) below.
 - **OIDC / SSO** (Sign-in & access): see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
 - **Allowed email addresses** (Sign-in & access): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
 - **Push notifications** (Notifications): turn push notifications on or off for the whole server. Members choose per event type in their own profile.
-- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content#system-status) to admins, even when member email notifications are off.
+- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content.md#system-status) to admins, even when member email notifications are off.
 - **Media integrations** (Media: Immich, local folders): see [Media integrations](#media-integrations) below. Optional.
-- **Backups**: scheduled database and media backups. See [Scheduled backups](./maintenance#scheduled-backups).
+- **Backups**: scheduled database and media backups. See [Scheduled backups](./maintenance.md#scheduled-backups).
 
-Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or an S3 bucket) isn't a setting here. It's configured with environment variables, see [Storage](./storage), and shown on the **Storage** page in the admin menu.
+Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or an S3 bucket) isn't a setting here. It's configured with environment variables, see [Storage](./storage.md), and shown on the **Storage** page in the admin menu.
 
 <details>
 <summary>Screenshots of the other sections</summary>
@@ -44,7 +44,7 @@ Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or 
 
 </details>
 
-All of this is stored in the database, so it survives redeploys of the backend image without any env var changes. (Storage is the exception: see [Storage](./storage).)
+All of this is stored in the database, so it survives redeploys of the backend image without any env var changes. (Storage is the exception: see [Storage](./storage.md).)
 
 ## OIDC / SSO login
 
@@ -95,7 +95,7 @@ Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Serv
 
 ## Media integrations
 
-Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. These sources are read-only: Famlin never writes to them, and they're not where Famlin keeps the photos members upload (that's [Storage](./storage)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. These sources are read-only: Famlin never writes to them, and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
 
 ![Server settings, Media section](./img/admin-settings-media.png)
 
@@ -171,8 +171,8 @@ The logo and family name are visible to anyone who opens your server's address �
 
 **When it shows up:** the web app picks up a change on the next page load. The mobile app applies the brand right after someone connects to your server, and picks up a later change the next time the app is started from scratch — it never changes colors while someone is using it. The app icon and store name can't change; they belong to the shared Famlin app. Mobile branding needs an app version with branding support; older installed apps keep the default look, but the push-notification title uses the family name on every version.
 
-The invite page that invite links open also shows the family name, logo and colors. Branding is included in the [data export](./managing-users-and-content) and comes back with a restore.
+The invite page that invite links open also shows the family name, logo and colors. Branding is included in the [data export](./managing-users-and-content.md) and comes back with a restore.
 
 ## Next steps
 
-Once your admin account and login method are set up, [invite family members](./inviting-family) to start using Famlin.
+Once your admin account and login method are set up, [invite family members](./inviting-family.md) to start using Famlin.
