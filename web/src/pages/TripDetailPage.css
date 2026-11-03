@@ -326,6 +326,10 @@
   max-width: 340px;
 }
 
+.trip-detail-empty .trip-detail-checkin-action {
+  margin-top: 12px;
+}
+
 /* ── Closing line ───────────────────────────────────────────────────────── */
 
 .trip-detail-closing-line {

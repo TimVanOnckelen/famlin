@@ -9,7 +9,7 @@ sidebar_position: 6
 Two things need backing up:
 
 - **`famlin-db-data`** (Docker volume) — the Postgres database: users, groups, posts, comments, settings.
-- **`famlin-uploads`** (Docker volume) — uploaded photos.
+- **`famlin-uploads`** (Docker volume) — uploaded photos and videos. If you store media in S3 instead, see [Backups and exports with S3](./storage#backups-and-exports-with-s3).
 
 Famlin can do this for you on a schedule (see [Scheduled backups](#scheduled-backups) below), or you can include the volumes in a backup routine you already have.
 
@@ -124,7 +124,7 @@ docker compose -f docker-compose.yml pull
 docker compose -f docker-compose.yml up -d
 ```
 
-The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember.
+The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember. Before migrating, it checks that the database wasn't already upgraded by a *newer* Famlin version, and refuses to start if it was (see [Troubleshooting](#troubleshooting)).
 
 When stopped or updated, the backend finishes requests already in progress (an upload mid-write, say) for up to 30 seconds (`stop_grace_period` in `docker-compose.yml`) before it exits.
 
@@ -165,6 +165,8 @@ FAMLIN_VERSION=1.2.0
 
 Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
 
+**Pinning can't be used to roll back.** Once a newer version has started, it has migrated the database schema, and older versions don't know how to run against it. If you set `FAMLIN_VERSION` to an older version than the one that last ran, Famlin refuses to start rather than risk corrupting your data (see [Troubleshooting](#troubleshooting)). To genuinely go back, restore a database backup taken before the upgrade, along with the older version.
+
 To try the current development build from `main`, set `FAMLIN_VERSION=dev`
 in `.env`, then run the same `pull` and `up -d` commands above. The rolling
 `dev` image is published after pushes or PR merges into `main` that change
@@ -175,10 +177,11 @@ as are release PR merges (the release workflow builds those commits).
 :::warning Use dev on a test instance only
 
 The container runs `prisma migrate deploy` on startup. A `dev` image may apply
-database migrations that are not included in any release yet. Switching back
-to an older release can leave that release running against an incompatible
-schema. Stay on `dev` until a release containing those migrations ships and
-then pin to it, or restore a backup taken before switching to `dev`.
+database migrations that are not included in any release yet. An older
+release then refuses to start against that database (see
+[Troubleshooting](#troubleshooting)). Stay on `dev` until a release containing
+those migrations ships and then pin to it, or restore a backup taken before
+switching to `dev`.
 
 :::
 
@@ -210,7 +213,12 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 **Containers won't start / `JWT_SECRET is required`** — `docker-compose.yml` fails fast if `JWT_SECRET` isn't set. Confirm `.env` is in the same directory you run `docker compose` from.
 
-**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or the uploads volume isn't writable. The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
+**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
+
+**Famlin refuses to start: database is newer than this version** — `famlin-backend` keeps restarting and its log says `Refusing to start: the database was upgraded by a newer Famlin version than this one`, naming one or more migrations. An older Famlin image was started against a database that a newer release already upgraded — usually because `FAMLIN_VERSION` was pinned to an older version, an updater pulled a stale tag, or volumes were restored from the wrong backup. Famlin checks this before touching the database, so nothing was changed. Fix it in one of two ways:
+
+- Set `FAMLIN_VERSION` in `.env` back to the version that upgraded the database (or any newer one), then `docker compose pull && docker compose up -d`.
+- Or, if you really need the older version, restore a database backup taken *before* that upgrade (see [Backups](#backups)), then start the older version.
 
 **Migrations fail on startup** — check `docker compose logs famlin-backend`. This usually means the `famlin-db` container isn't reachable yet or `DATABASE_URL` doesn't match its credentials.
 
@@ -224,89 +232,8 @@ See also the [Security policy](./security) page for hardening recommendations.
 
 ## Moving media between local and S3 storage
 
-Local storage remains the default. Media URLs and Upload authorization records
-stay unchanged when changing drivers. Azure and linked local albums
-(`localMediaPath`) are independent of this feature. Branding always remains on
-the local uploads volume.
-
-Configure the backend environment, then restart **all backend instances with the
-same primary and fallback configuration**. During migration, new uploads go to
-the primary; reads try the primary, then the fallback only when an object is
-missing. An access or connection error is reported, rather than treated as a
-missing object.
-
-At startup, the S3 availability check has a five-second timeout. If primary
-initialization fails and the configured fallback initializes successfully,
-the server logs an error and continues with fallback reads and writes. The
-admin Storage page reports the unavailable primary and active fallback.
-This mode lasts until restart; media deletion, migration and cleanup are
-disabled to avoid leaving copies that could reappear after recovery. Restore
-primary access, restart, then migrate the files written to fallback. If no
-usable fallback exists, startup fails.
-
-For local → S3:
-
-```dotenv
-STORAGE_DRIVER=s3
-S3_BUCKET=famlin
-S3_ENDPOINT=https://s3.example.com
-S3_REGION=us-east-1
-S3_PREFIX=media
-S3_FORCE_PATH_STYLE=true
-STORAGE_FALLBACK_DRIVER=local
-STORAGE_FALLBACK_UPLOADS_DIR=/app/uploads
-```
-
-Supply `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` together, optionally with
-`S3_SESSION_TOKEN`. Omit all three to use the standard AWS credential chain.
-`S3_ENDPOINT` is optional for AWS S3. `S3_FORCE_PATH_STYLE` defaults to `false`.
-For S3 → local set `STORAGE_DRIVER=local`, `STORAGE_FALLBACK_DRIVER=s3`, and
-configure the source with `STORAGE_FALLBACK_S3_BUCKET`,
-`STORAGE_FALLBACK_S3_ENDPOINT`, `STORAGE_FALLBACK_S3_REGION`,
-`STORAGE_FALLBACK_S3_ACCESS_KEY_ID`, `STORAGE_FALLBACK_S3_SECRET_ACCESS_KEY`,
-`STORAGE_FALLBACK_S3_SESSION_TOKEN`, `STORAGE_FALLBACK_S3_PREFIX`, and
-`STORAGE_FALLBACK_S3_FORCE_PATH_STYLE`. Source and destination must not overlap.
-
-Open **Admin → Storage**, inspect the locations and start migration. The worker
-lists the source, including legacy objects without Upload rows, and excludes
-branding, temporary and internal objects. It streams each copy and reads the
-destination again to verify SHA-256. S3 ETags are not used as hashes. Existing
-identical objects are verified; different objects are recorded as conflicts and
-never overwritten. Resolve conflicts deliberately, then retry. PostgreSQL locks
-coordinate workers and application writes/deletes. Do not modify the source
-externally during migration or cleanup.
-
-Interrupted running jobs resume after restart only when both location
-fingerprints still match. Credentials are not part of the fingerprint, allowing
-credential rotation. Errors and conflicts are retained in the operational journal;
-it is not part of portable family exports.
-
-Cleanup is a separate action. It is available after a complete verification and
-requires entering the fallback's fingerprint. Each source object and its copy
-are checked again before the source is removed. Changed, conflicting, or
-unverified objects remain. After successful cleanup, remove the fallback env
-variables yourself and restart all instances. Famlin never rewrites environment
-configuration. Keep backups while moving storage.
-
-The backend needs list, read, write, multipart-upload and delete permissions for
-its configured S3 prefix, plus access to check the bucket. `/health` tests primary
-storage with a small temporary write/delete; the admin Storage page reports
-fallback availability. S3 capacity is not represented by local disk statistics.
-MinIO tests establish behavior against MinIO only, not compatibility with every
-S3-compatible provider.
+Famlin can move all uploaded media between the local uploads volume and an S3-compatible bucket, or between two local folders, while it keeps running. The step-by-step guide, including the **Admin → Storage** page, lives on the [Storage](./storage#moving-an-existing-installation-between-local-and-s3) page.
 
 ### Exports and backups with external media
 
-Admin export accepts `GET /api/admin/export?includeMedia=false` (default `true`).
-Branding is always included. A media-free export records `includeMedia: false`
-and the required storage keys and sizes in its manifest. Restore validates that
-those objects are already present in the configured primary or fallback before
-writing database rows, and reports missing or size-mismatched objects. Old
-archives remain supported. Full and member exports stream media through storage.
-
-**Server settings → Backups → Include media in backups** defaults to enabled.
-When disabled, scheduled/manual backups keep the database dump and local
-branding, without downloading media or deleting an existing media mirror. When
-enabled, the mirror reads primary and fallback without duplicates, retaining the
-existing policy of keeping deleted files for 30 days. S3 does not replace a
-backup: keep independent copies and test recovery.
+See [Backups and exports with S3](./storage#backups-and-exports-with-s3). In short: **Include media** (on both the data export and Server settings → Backups) decides whether photos and videos are copied into the export or backup, and S3 is not a backup on its own.

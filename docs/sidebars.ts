@@ -8,7 +8,7 @@ const sidebars: SidebarsConfig = {
       label: 'Using Famlin',
       collapsible: true,
       collapsed: false,
-      items: ['gift-lists'],
+      items: ['trips', 'gift-lists'],
     },
     {
       type: 'category',
@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'server-setup',
+        'storage',
         'admin-configuration',
         'inviting-family',
         'managing-users-and-content',

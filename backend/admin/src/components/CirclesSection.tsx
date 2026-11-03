@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, Circle, GroupMember } from '../api/client'
+import { api, type Circle, type GroupMember } from '../api/client'
+import { useAdminDialogs } from './AdminDialogs'
+import { AdminModal } from './AdminModal'
+import { AddMembersModal } from './AddMembersModal'
+import { MemberCards } from './MemberCards'
 import { Icon } from './Icon'
 import { avatarColor, initials } from '../avatar'
 
@@ -22,134 +26,162 @@ import { avatarColor, initials } from '../avatar'
  */
 export function CirclesSection({ groupId, members }: { groupId: string; members: GroupMember[] }) {
   const { t } = useTranslation()
+  const dialogs = useAdminDialogs()
   const [circles, setCircles] = useState<Circle[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [formError, setFormError] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [addUserId, setAddUserId] = useState('')
+  const [addingToId, setAddingToId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const formSubmitting = useRef(false)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       setCircles(await api.getGroupCircles(groupId))
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [groupId, t])
 
+  // Removing a group member also removes their circle memberships on the server.
   useEffect(() => {
     void load()
-    setExpandedId(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId])
+  }, [load, members])
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newName.trim()) return
+  async function handleSave(event: React.FormEvent) {
+    event.preventDefault()
+    if (!newName.trim() || formSubmitting.current) return
+    formSubmitting.current = true
     setBusy(true)
+    setFormError('')
     try {
-      await api.createCircle(groupId, { name: newName.trim(), description: newDescription.trim() || null })
-      setNewName('')
-      setNewDescription('')
+      const values = { name: newName.trim(), description: newDescription.trim() || null }
+      if (editingId) {
+        const updated = await api.updateCircle(editingId, values)
+        // Update responses contain counts, but not the expanded member list.
+        setCircles((current) =>
+          current
+            .map((circle) => (circle.id === editingId ? { ...circle, ...updated, members: circle.members } : circle))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        )
+      } else {
+        const circle = await api.createCircle(groupId, values)
+        setCircles((current) => [...current, { ...circle, members: [] }].sort((a, b) => a.name.localeCompare(b.name)))
+      }
       setCreating(false)
-      await load()
+      setEditingId(null)
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : t('common.error'))
     } finally {
+      formSubmitting.current = false
       setBusy(false)
     }
   }
 
   async function handleDelete(circle: Circle) {
-    // The post count is the whole point of this confirmation: deleting a
-    // circle permanently deletes its posts, and an admin outside the circle
-    // has no way to look at what they're about to destroy.
     const message =
       circle.postCount > 0
         ? t('circles.confirmDeleteWithPosts', { name: circle.name, count: circle.postCount })
         : t('circles.confirmDelete', { name: circle.name })
-    if (!confirm(message)) return
-
+    if (!(await dialogs.confirmAction(message))) return
     setBusy(true)
     try {
       await api.deleteCircle(circle.id, circle.postCount > 0)
-      await load()
+      setCircles((current) => current.filter((item) => item.id !== circle.id))
+    } catch (err) {
+      await dialogs.showMessage(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setBusy(false)
     }
   }
 
-  async function handleAddMember(circleId: string) {
-    if (!addUserId) return
+  async function handleAddMember(circle: Circle, userId: string) {
+    const member = members.find((item) => item.id === userId)
+    if (!member) throw new Error(t('members.noneAvailable'))
+    await api.addCircleMember(circle.id, userId)
+    setCircles((current) =>
+      current.map((item) =>
+        item.id === circle.id
+          ? {
+              ...item,
+              memberCount: item.memberCount + 1,
+              members: [...(item.members ?? []), { ...member, joinedAt: new Date().toISOString() }],
+            }
+          : item
+      )
+    )
+  }
+
+  async function handleRemoveMember(circle: Circle, member: GroupMember) {
+    if (!(await dialogs.confirmAction(t('circles.removeMemberConfirm', { name: member.name, circle: circle.name }))))
+      return
     setBusy(true)
     try {
-      await api.addCircleMember(circleId, addUserId)
-      setAddUserId('')
-      await load()
+      await api.removeCircleMember(circle.id, member.id)
+      setCircles((current) =>
+        current.map((item) =>
+          item.id === circle.id
+            ? {
+                ...item,
+                memberCount: Math.max(0, item.memberCount - 1),
+                members: (item.members ?? []).filter((item) => item.id !== member.id),
+              }
+            : item
+        )
+      )
+    } catch (err) {
+      await dialogs.showMessage(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setBusy(false)
     }
   }
 
-  async function handleRemoveMember(circleId: string, userId: string) {
-    setBusy(true)
-    try {
-      await api.removeCircleMember(circleId, userId)
-      await load()
-    } finally {
-      setBusy(false)
-    }
-  }
-
+  const addingTo = circles.find((circle) => circle.id === addingToId)
   return (
     <>
       <div className="md-section-header">
         <h4>{t('circles.heading', { count: circles.length })}</h4>
-        {!creating && (
-          <button type="button" className="link-button" onClick={() => setCreating(true)}>
-            {t('circles.create')}
-          </button>
-        )}
+        <button
+          type="button"
+          className="link-button"
+          disabled={busy}
+          onClick={() => {
+            setEditingId(null)
+            setNewName('')
+            setNewDescription('')
+            setFormError('')
+            setCreating(true)
+          }}
+        >
+          {t('circles.create')}
+        </button>
       </div>
-
       <p className="md-hint">{t('circles.hint')}</p>
-
-      {creating && (
-        <form className="md-add-member" onSubmit={handleCreate}>
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder={t('circles.namePlaceholder')}
-            maxLength={100}
-            autoFocus
-          />
-          <input
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-            placeholder={t('circles.descriptionPlaceholder')}
-            maxLength={500}
-          />
-          <button type="submit" disabled={!newName.trim() || busy}>
-            {t('common.save')}
+      {loadError && (
+        <div className="error" role="alert">
+          {loadError}
+          <button type="button" className="link-button" onClick={() => void load()}>
+            {t('common.retry')}
           </button>
-          <button type="button" className="secondary" onClick={() => setCreating(false)}>
-            {t('common.cancel')}
-          </button>
-        </form>
+        </div>
       )}
-
       {loading ? (
         <div className="loading">{t('common.loading')}</div>
-      ) : circles.length === 0 ? (
+      ) : !loadError && circles.length === 0 ? (
         <div className="empty">{t('circles.none')}</div>
       ) : (
         <ul className="member-cards">
           {circles.map((circle) => {
-            const circleMemberIds = new Set((circle.members ?? []).map((m) => m.id))
-            const candidates = members.filter((m) => !circleMemberIds.has(m.id))
             const expanded = expandedId === circle.id
-
             return (
               <li key={circle.id} className="member-card md-circle-card">
                 <div className="md-circle-row">
@@ -165,75 +197,137 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                     </span>
                   </span>
                   <button
+                    type="button"
                     className="icon-button"
                     title={t('circles.manageMembers')}
                     aria-label={t('circles.manageMembers')}
                     aria-expanded={expanded}
+                    aria-controls={`circle-members-${circle.id}`}
                     onClick={() => setExpandedId(expanded ? null : circle.id)}
                   >
-                    <Icon name="users" size={14} />
+                    <Icon name={expanded ? 'chevron-down' : 'chevron-right'} size={14} />
                   </button>
                   <button
+                    type="button"
+                    className="icon-button"
+                    title={t('circles.addMember')}
+                    aria-label={t('circles.addMember')}
+                    disabled={busy}
+                    onClick={() => setAddingToId(circle.id)}
+                  >
+                    <Icon name="user-plus" size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    title={t('circles.edit')}
+                    aria-label={t('circles.edit')}
+                    disabled={busy}
+                    onClick={() => {
+                      setCreating(false)
+                      setEditingId(circle.id)
+                      setNewName(circle.name)
+                      setNewDescription(circle.description ?? '')
+                      setFormError('')
+                    }}
+                  >
+                    <Icon name="edit" size={14} />
+                  </button>
+                  <button
+                    type="button"
                     className="icon-button danger"
                     title={t('common.delete')}
                     aria-label={t('common.delete')}
-                    onClick={() => handleDelete(circle)}
                     disabled={busy}
+                    onClick={() => void handleDelete(circle)}
                   >
                     <Icon name="trash" size={14} />
                   </button>
                 </div>
-
                 {expanded && (
-                  <div className="md-circle-members">
-                    {(circle.members ?? []).length === 0 ? (
+                  <div id={`circle-members-${circle.id}`} className="md-circle-members">
+                    {!(circle.members ?? []).length ? (
                       <div className="empty">{t('circles.noMembers')}</div>
                     ) : (
-                      <ul className="membership-list">
-                        {(circle.members ?? []).map((member) => (
-                          <li key={member.id} className="membership-row">
-                            <span>{member.name}</span>
-                            <button
-                              className="icon-button danger"
-                              title={t('common.remove')}
-                              aria-label={t('common.remove')}
-                              onClick={() => handleRemoveMember(circle.id, member.id)}
-                              disabled={busy}
-                            >
-                              <Icon name="x" size={14} />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+                      <MemberCards
+                        members={circle.members ?? []}
+                        onRemove={(member) => void handleRemoveMember(circle, member)}
+                        disabled={busy}
+                      />
                     )}
-
-                    <div className="md-add-member">
-                      <select
-                        value={addUserId}
-                        onChange={(e) => setAddUserId(e.target.value)}
-                        disabled={candidates.length === 0}
-                      >
-                        {/* Only current group members can be offered: a circle
-                            narrows the group, so it can never grant access to
-                            someone the group itself excludes (the server
-                            rejects it too). */}
-                        <option value="">{t('circles.selectMember')}</option>
-                        {candidates.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} ({m.email})
-                          </option>
-                        ))}
-                      </select>
-                      <button type="button" onClick={() => handleAddMember(circle.id)} disabled={!addUserId || busy}>
-                        {t('circles.addMember')}
-                      </button>
-                    </div>
                   </div>
                 )}
               </li>
             )
           })}
         </ul>
+      )}
+      {(creating || editingId) && (
+        <AdminModal
+          title={t(editingId ? 'circles.edit' : 'circles.create')}
+          onClose={() => {
+            setCreating(false)
+            setEditingId(null)
+          }}
+          busy={busy}
+        >
+          <form onSubmit={handleSave}>
+            <label>
+              {t('common.name')}
+              <input
+                type="text"
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder={t('circles.namePlaceholder')}
+                maxLength={100}
+                required
+                disabled={busy}
+              />
+            </label>
+            <label>
+              {t('common.description')}
+              <textarea
+                value={newDescription}
+                onChange={(event) => setNewDescription(event.target.value)}
+                placeholder={t('circles.descriptionPlaceholder')}
+                maxLength={500}
+                disabled={busy}
+              />
+            </label>
+            {formError && (
+              <div className="error" role="alert">
+                {formError}
+              </div>
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setCreating(false)
+                  setEditingId(null)
+                }}
+                disabled={busy}
+              >
+                {t('common.cancel')}
+              </button>
+              <button type="submit" disabled={busy || !newName.trim()}>
+                {t(busy ? 'common.loading' : 'common.save')}
+              </button>
+            </div>
+          </form>
+        </AdminModal>
+      )}
+      {addingTo && (
+        <AddMembersModal
+          key={addingTo.id}
+          title={`${addingTo.name} · ${t('circles.addMember')}`}
+          candidates={members.filter(
+            (member) => !(addingTo.members ?? []).some((existing) => existing.id === member.id)
+          )}
+          onAdd={(id) => handleAddMember(addingTo, id)}
+          onClose={() => setAddingToId(null)}
+        />
       )}
     </>
   )

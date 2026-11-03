@@ -3,11 +3,16 @@ import { randomUUID } from '@/utils/uuid'
 import { getPostDraft, postDraftStorageKey, type DraftAttachment, type PostDraftState } from '@/stores/postDraft'
 import { groupLivePhotoFiles } from '@/utils/livePhotos'
 import { ComposerUploadPreview } from './ComposerUploadPreview'
+import { TripComposerFields, validTripDate } from './TripComposerFields'
+import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
+import { CustomSelect } from './CustomSelect'
+import { Switch } from './Switch'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   addAlbumPhotos,
+  uploadFiles,
   uploadFilesInSession,
   uploadKey,
   UploadSessionMedia,
@@ -27,7 +32,7 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM', 'GIFT_LIST'] as const
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
 type Attachment = DraftAttachment
 
 export function NewPostModal({
@@ -53,6 +58,7 @@ export function NewPostModal({
       content: '',
       pollOptions: ['', ''],
       albumTitle: '',
+      trip: { title: '', destination: '', startDate: '', endDate: '', cover: null, travelerIds: [] },
       giftTitle: '',
       giftDate: '',
       giftParticipants: [],
@@ -90,6 +96,7 @@ export function NewPostModal({
     content,
     pollOptions,
     albumTitle,
+    trip,
     giftTitle,
     giftDate,
     giftParticipants,
@@ -113,6 +120,7 @@ export function NewPostModal({
   const setContent = field('content')
   const setPollOptions = field('pollOptions')
   const setAlbumTitle = field('albumTitle')
+  const setTrip = field('trip')
   const setGiftTitle = field('giftTitle')
   const setGiftDate = field('giftDate')
   const setGiftParticipants = field('giftParticipants')
@@ -167,6 +175,22 @@ export function NewPostModal({
   // several, drive it off the first one picked — the server copies
   // linked-album photos so every group ends up able to see them.
   const primaryGroupId = selectedGroupIds[0] ?? ''
+  const travelers = useGroupMembersIntersection(selectedGroupIds, type === 'TRIP')
+  const memberIds = travelers.members
+    .map((member) => member.id)
+    .sort()
+    .join(',')
+  useEffect(() => {
+    if (type !== 'TRIP' || !travelers.loaded || travelers.isError) return
+    setTrip((previous) => {
+      const travelerIds = previous.travelerIds.filter(
+        (id) => id !== selfId && travelers.members.some((member) => member.id === id)
+      )
+      return travelerIds.length === previous.travelerIds.length ? previous : { ...previous, travelerIds }
+    })
+    // The membership key changes only when the intersection changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, travelers.loaded, travelers.isError, memberIds, selfId])
 
   // The audience picker offers only circles the author is in — which is all
   // the server will ever return, and all they're allowed to post to. Offered
@@ -228,6 +252,25 @@ export function NewPostModal({
   const submitMutation = useMutation({
     mutationFn: async () => {
       const uploadedUrls = displayFiles.flatMap((file) => (file.url ? [file.url] : []))
+      if (type === 'TRIP') {
+        const uploadedCover = trip.cover ? await uploadFiles([trip.cover]) : []
+        if (trip.cover && !uploadedCover[0]) throw new Error('Trip cover upload failed')
+        return createPost({
+          groupId: primaryGroupId,
+          groupIds: selectedGroupIds.length > 1 ? selectedGroupIds : undefined,
+          circleId: selectedCircleId ?? undefined,
+          type: 'TRIP',
+          typeData: {
+            title: trip.title.trim(),
+            destination: trip.destination.trim() || undefined,
+            startDate: trip.startDate,
+            endDate: trip.endDate || undefined,
+            coverPhotoUrl: uploadedCover[0],
+            travelerUserIds: trip.travelerIds.length ? trip.travelerIds : undefined,
+          },
+          uploadedAssetUrls: [],
+        })
+      }
 
       // ALBUM: create an empty album (title in typeData, first uploaded photo
       // as the cover), then seed the uploaded photos as the author's first
@@ -411,14 +454,22 @@ export function NewPostModal({
     // intersection therefore blocks submitting entirely.
     offeredTypes.includes(type) &&
     !publishing &&
-    !uploading &&
-    (type === 'POLL'
-      ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
-      : type === 'ALBUM'
-        ? albumTitle.trim().length > 0
-        : type === 'GIFT_LIST'
-          ? giftTitle.trim().length > 0
-          : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0)
+    (type === 'TRIP'
+      ? trip.title.trim().length > 0 &&
+        validTripDate(trip.startDate) &&
+        (!trip.endDate || (validTripDate(trip.endDate) && trip.endDate >= trip.startDate)) &&
+        (trip.travelerIds.length === 0 ||
+          (travelers.loaded &&
+            !travelers.isError &&
+            trip.travelerIds.every((id) => travelers.members.some((member) => member.id === id))))
+      : !uploading &&
+        (type === 'POLL'
+          ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
+          : type === 'ALBUM'
+            ? albumTitle.trim().length > 0
+            : type === 'GIFT_LIST'
+              ? giftTitle.trim().length > 0
+              : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0))
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -428,7 +479,6 @@ export function NewPostModal({
         {(groups.length > 1 || selectedGroupIds.length !== 1 || unavailableAudience) && (
           <div className="field">
             <span className="field-label">{t('newPost.group')}</span>
-            <span className="field-hint">{t('newPost.groupHint')}</span>
             <div className="group-select-chips" role="group" aria-label={t('newPost.group')}>
               {groups.map((group) => (
                 <button
@@ -485,60 +535,67 @@ export function NewPostModal({
         )}
 
         {offeredTypes.length > 0 ? (
-          <div className="type-chips" role="radiogroup" aria-label={t('newPost.typeLabel')}>
-            {offeredTypes.includes('UPDATE') && (
-              <button
-                type="button"
-                className={`type-chip${type === 'UPDATE' ? ' type-chip-active' : ''}`}
-                onClick={() => setType('UPDATE')}
-              >
-                <Icon name="edit-3" size={15} />
-                {t('newPost.typeUpdate')}
-              </button>
-            )}
-            {offeredTypes.includes('MILESTONE') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-milestone${type === 'MILESTONE' ? ' type-chip-milestone-active' : ''}`}
-                onClick={() => setType('MILESTONE')}
-              >
-                <Icon name="gift" size={15} />
-                {t('newPost.typeMilestone')}
-              </button>
-            )}
-            {offeredTypes.includes('POLL') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-poll${type === 'POLL' ? ' type-chip-poll-active' : ''}`}
-                onClick={() => setType('POLL')}
-              >
-                <Icon name="bar-chart-2" size={15} />
-                {t('newPost.typePoll')}
-              </button>
-            )}
-            {offeredTypes.includes('ALBUM') && (
-              <button
-                type="button"
-                className={`type-chip type-chip-album${type === 'ALBUM' ? ' type-chip-album-active' : ''}`}
-                onClick={() => setType('ALBUM')}
-              >
-                <Icon name="image" size={15} />
-                {t('newPost.typeAlbum')}
-              </button>
-            )}
-            {offeredTypes.includes('GIFT_LIST') && (
-              <button
-                type="button"
-                className={`type-chip${type === 'GIFT_LIST' ? ' type-chip-active' : ''}`}
-                onClick={() => setType('GIFT_LIST')}
-              >
-                <Icon name="gift" size={15} />
-                {t('newPost.typeGiftList')}
-              </button>
-            )}
-          </div>
+          <CustomSelect
+            label={t('newPost.typeLabel')}
+            value={type}
+            onChange={setType}
+            options={offeredTypes.map((value) => ({
+              value,
+              label: t(
+                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', TRIP: 'Trip', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
+              ),
+              description: t(`newPost.typeDescriptions.${value}`),
+              icon: (
+                <Icon
+                  name={
+                    (
+                      {
+                        UPDATE: 'edit-3',
+                        MILESTONE: 'gift',
+                        POLL: 'bar-chart-2',
+                        TRIP: 'briefcase',
+                        ALBUM: 'image',
+                        GIFT_LIST: 'gift',
+                      } as const
+                    )[value]
+                  }
+                  size={20}
+                />
+              ),
+              iconStyle: {
+                color:
+                  value === 'UPDATE'
+                    ? 'var(--fam-accent)'
+                    : value === 'MILESTONE'
+                      ? 'var(--fam-milestone-text)'
+                      : value === 'TRIP'
+                        ? 'var(--fam-trip-dark)'
+                        : 'var(--fam-primary)',
+                background:
+                  value === 'UPDATE'
+                    ? 'var(--fam-update-bg)'
+                    : value === 'MILESTONE'
+                      ? 'var(--fam-milestone-bg)'
+                      : value === 'TRIP'
+                        ? 'var(--fam-trip-tint)'
+                        : 'var(--fam-primary-tint)',
+              },
+            }))}
+          />
         ) : (
           <div className="modal-error">{t('newPost.noAllowedTypes')}</div>
+        )}
+
+        {type === 'TRIP' && (
+          <TripComposerFields
+            trip={trip}
+            setTrip={setTrip}
+            members={travelers.members}
+            loaded={travelers.loaded}
+            isError={travelers.isError}
+            retry={travelers.retry}
+            selfId={selfId}
+          />
         )}
 
         {type === 'ALBUM' && offeredTypes.includes('ALBUM') && (
@@ -583,15 +640,9 @@ export function NewPostModal({
                 onChange={setGiftParticipants}
               />
             </div>
-            <label className="field">
-              <span>
-                <input
-                  type="checkbox"
-                  checked={giftDrawEnabled}
-                  onChange={(e) => setGiftDrawEnabled(e.target.checked)}
-                />{' '}
-                {t('giftList.drawEnabled')}
-              </span>
+            <label className="gift-draw-toggle">
+              <span className="field-label">{t('giftList.drawEnabled')}</span>
+              <Switch checked={giftDrawEnabled} onCheckedChange={setGiftDrawEnabled} />
             </label>
             {giftDrawEnabled && (
               <label className="field">
@@ -608,25 +659,27 @@ export function NewPostModal({
           </>
         )}
 
-        <textarea
-          className="modal-textarea"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={
-            type === 'MILESTONE'
-              ? t('newPost.milestonePlaceholder')
-              : type === 'POLL'
-                ? t('newPost.pollPlaceholder')
-                : type === 'ALBUM'
-                  ? t('newPost.albumDescriptionPlaceholder')
-                  : type === 'GIFT_LIST'
-                    ? t('newPost.giftListDescriptionPlaceholder')
-                    : t('newPost.placeholder')
-          }
-          rows={type === 'UPDATE' ? 5 : 2}
-          maxLength={5000}
-          autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
-        />
+        {type !== 'TRIP' && (
+          <textarea
+            className="modal-textarea"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={
+              type === 'MILESTONE'
+                ? t('newPost.milestonePlaceholder')
+                : type === 'POLL'
+                  ? t('newPost.pollPlaceholder')
+                  : type === 'ALBUM'
+                    ? t('newPost.albumDescriptionPlaceholder')
+                    : type === 'GIFT_LIST'
+                      ? t('newPost.giftListDescriptionPlaceholder')
+                      : t('newPost.placeholder')
+            }
+            rows={type === 'UPDATE' ? 5 : 2}
+            maxLength={5000}
+            autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
+          />
+        )}
 
         {type === 'POLL' && offeredTypes.includes('POLL') && (
           <div className="poll-options-editor" role="group" aria-label={t('newPost.typePoll')}>
@@ -660,7 +713,7 @@ export function NewPostModal({
           </div>
         )}
 
-        {(files.length > 0 || mediaAssets.length > 0) && (
+        {type !== 'TRIP' && (files.length > 0 || mediaAssets.length > 0) && (
           <div className="photo-previews">
             {displayFiles.map((attachment) => {
               return (
@@ -714,7 +767,7 @@ export function NewPostModal({
           hidden
           onChange={(e) => addFiles(e.target.files)}
         />
-        {type !== 'GIFT_LIST' && (
+        {type !== 'GIFT_LIST' && type !== 'TRIP' && (
           <div className="attach-actions">
             <button
               type="button"

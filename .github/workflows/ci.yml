@@ -327,6 +327,45 @@ jobs:
   # into the "⚠ BREAKING CHANGES" changelog section and version bump, and
   # what the release-notes rewrite uses to warn self-hosting admins — an
   # unmarked breaking change ships silently as a minor entry.
+  docs-required:
+    # Every new feature ships with documentation (see "Documentation" in
+    # CLAUDE.md and docs/developers/contributing.md). A PR whose title or any
+    # commit is a conventional-commit `feat` must touch docs/ or website/,
+    # unless a commit carries a `Docs-not-needed: <reason>` trailer, or the PR
+    # description does.
+    name: Documentation required for features
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Require a docs change for feat PRs
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          BASE_SHA=$(git merge-base "origin/$BASE_REF" HEAD)
+          FEAT='^feat(\([^)]*\))?!?:'
+          if ! printf '%s\n' "$PR_TITLE" | grep -qE "$FEAT" \
+             && ! git log --format='%s' "$BASE_SHA"..HEAD | grep -qE "$FEAT"; then
+            echo "No feat commit or PR title — documentation not required."
+            exit 0
+          fi
+          if git diff --name-only "$BASE_SHA" HEAD | grep -qE '^(docs|website)/'; then
+            echo "Feature PR updates docs/ or website/ — OK."
+            exit 0
+          fi
+          OPT_OUT='^Docs-not-needed: *[^ ]'
+          if git log --format='%b' "$BASE_SHA"..HEAD | grep -qiE "$OPT_OUT" \
+             || printf '%s\n' "$PR_BODY" | grep -qiE "$OPT_OUT"; then
+            echo "Documentation explicitly marked as not needed — OK."
+            exit 0
+          fi
+          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in CLAUDE.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
+          exit 1
+
   api-breaking-changes:
     name: API breaking-change check
     if: github.event_name == 'pull_request'
@@ -381,6 +420,28 @@ jobs:
           fi
           echo "::error::$SPEC has breaking API changes (see the job summary), but no commit or PR title carries a conventional-commit breaking marker. Mark it with a '!' after the type (e.g. 'feat!: ...') or add a 'BREAKING CHANGE: <what an admin must do when upgrading>' footer, so release-please surfaces it in the release's breaking-changes section."
           exit 1
+
+  dependency-review:
+    # Diffs every lockfile in the repo (root workspace, backend/,
+    # backend/admin/, mobile/, docs/) between the PR's base and head and
+    # fails when a dependency the PR adds or bumps has a known vulnerability
+    # of high severity or worse, or a license that isn't compatible with
+    # Famlin's MIT license. The allow list and the reviewed per-package
+    # exceptions live in .github/dependency-review-config.yml. Dependencies
+    # the PR doesn't touch are not re-checked. The job summary also lists
+    # each new package's OpenSSF Scorecard, and on failure the summary is
+    # commented on the PR (except on Dependabot PRs, whose token is read-only).
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v4
+        with:
+          config-file: ./.github/dependency-review-config.yml
 
   docker:
     # Both architectures docker-publish.yml ships, each on a native runner —

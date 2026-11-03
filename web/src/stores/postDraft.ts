@@ -2,7 +2,15 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { randomUUID } from '@/utils/uuid'
 import type { MediaAsset, UploadSessionMedia } from '@famlin/api-client'
 
-export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'ALBUM' | 'GIFT_LIST'
+export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST'
+export interface DraftTrip {
+  title: string
+  destination: string
+  startDate: string
+  endDate: string
+  cover: File | null
+  travelerIds: string[]
+}
 export interface DraftAttachment {
   id: number
   file: Pick<File, 'name' | 'type'>
@@ -19,6 +27,7 @@ export interface PostDraftState {
   content: string
   pollOptions: string[]
   albumTitle: string
+  trip: DraftTrip
   giftTitle: string
   giftDate: string
   giftParticipants: string[]
@@ -44,7 +53,13 @@ export interface PostDraftController {
   clear: () => void
 }
 const drafts = new Map<string, PostDraftController>()
-const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'ALBUM', 'GIFT_LIST']
+
+// Test-only escape hatch: draft controllers live for the whole session, so
+// tests must evict them between cases to see a fresh composer.
+export function clearAllPostDrafts() {
+  drafts.clear()
+}
+const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST']
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const uploadUrl = (value: unknown): value is string => typeof value === 'string' && /^\/uploads\/[^/?#]+$/.test(value)
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -111,6 +126,15 @@ function restore(key: string | null, initial: PostDraftState): PostDraftState {
       type: draftTypes.includes(String(saved.type)) ? (saved.type as PostDraftType) : initial.type,
       content: typeof saved.content === 'string' ? saved.content.slice(0, 5000) : '',
       albumTitle: typeof saved.albumTitle === 'string' ? saved.albumTitle.slice(0, 120) : '',
+      trip: {
+        ...initial.trip,
+        title: typeof saved.tripTitle === 'string' ? saved.tripTitle.slice(0, 120) : initial.trip.title,
+        destination:
+          typeof saved.tripDestination === 'string' ? saved.tripDestination.slice(0, 160) : initial.trip.destination,
+        startDate: typeof saved.tripStartDate === 'string' ? saved.tripStartDate.slice(0, 10) : '',
+        endDate: typeof saved.tripEndDate === 'string' ? saved.tripEndDate.slice(0, 10) : '',
+        travelerIds: strings(saved.tripTravelerIds) ? saved.tripTravelerIds : [],
+      },
       giftTitle: typeof saved.giftTitle === 'string' ? saved.giftTitle.slice(0, 120) : '',
       giftDate: typeof saved.giftDate === 'string' ? saved.giftDate.slice(0, 10) : '',
       giftParticipants: strings(saved.giftParticipants) ? saved.giftParticipants : [],
@@ -167,6 +191,11 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
           content: draft.content,
           pollOptions: draft.pollOptions,
           albumTitle: draft.albumTitle,
+          tripTitle: draft.trip.title,
+          tripDestination: draft.trip.destination,
+          tripStartDate: draft.trip.startDate,
+          tripEndDate: draft.trip.endDate,
+          tripTravelerIds: draft.trip.travelerIds,
           giftTitle: draft.giftTitle,
           giftDate: draft.giftDate,
           giftParticipants: draft.giftParticipants,

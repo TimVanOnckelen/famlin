@@ -38,8 +38,18 @@ describe('SPA serving (admin + web builds present)', () => {
     await fsp.rm(root, { recursive: true, force: true })
   })
 
-  it('serves the admin index at /admin', async () => {
-    const res = await app.inject({ method: 'GET', url: '/admin' })
+  it('redirects /admin to /admin/ and preserves query parameters', async () => {
+    for (const method of ['GET', 'HEAD'] as const) {
+      for (const query of ['', '?code=test&state=test%2Bstate']) {
+        const res = await app.inject({ method, url: `/admin${query}` })
+        expect(res.statusCode).toBe(302)
+        expect(res.headers.location).toBe(`/admin/${query}`)
+      }
+    }
+  })
+
+  it('serves the admin index at /admin/', async () => {
+    const res = await app.inject({ method: 'GET', url: '/admin/' })
     expect(res.statusCode).toBe(200)
     expect(res.headers['content-type']).toContain('text/html')
     expect(res.body).toContain('admin-spa')

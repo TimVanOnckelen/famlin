@@ -1,0 +1,64 @@
+# Config for the `Dependency review` job in ci.yml
+# (actions/dependency-review-action). Read on every PR; only dependencies the
+# PR adds or bumps are checked.
+
+fail-on-severity: high
+show-openssf-scorecard: true
+comment-summary-in-pr: on-failure
+
+# Famlin is MIT-licensed, so only permissive licenses that are compatible
+# with distributing an MIT project are allowed. Anything else, copyleft
+# included, fails the check. An SPDX "A OR B" expression passes if either
+# side is allowed; "A AND B" needs both sides allowed.
+allow-licenses:
+  - MIT
+  - MIT-0
+  - ISC
+  - 0BSD
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - Apache-2.0
+  - BlueOak-1.0.0
+  - Unlicense
+  - CC0-1.0
+  - CC-BY-4.0 # data only (caniuse-lite)
+  - Python-2.0 # argparse
+  - Zlib
+
+# Reviewed exceptions: packages allowed even though their license is not in
+# the list above. Add one here only after confirming its license doesn't
+# impose terms on Famlin's own code (e.g. it's dynamically linked, or only a
+# build tool), and say why.
+allow-dependencies-licenses:
+  # sharp's prebuilt libvips: LGPL-3.0, dynamically linked native library,
+  # used unmodified.
+  - pkg:npm/%40img/sharp-libvips-darwin-arm64
+  - pkg:npm/%40img/sharp-libvips-darwin-x64
+  - pkg:npm/%40img/sharp-libvips-linux-arm
+  - pkg:npm/%40img/sharp-libvips-linux-arm64
+  - pkg:npm/%40img/sharp-libvips-linux-ppc64
+  - pkg:npm/%40img/sharp-libvips-linux-riscv64
+  - pkg:npm/%40img/sharp-libvips-linux-s390x
+  - pkg:npm/%40img/sharp-libvips-linux-x64
+  - pkg:npm/%40img/sharp-libvips-linuxmusl-arm64
+  - pkg:npm/%40img/sharp-libvips-linuxmusl-x64
+  - pkg:npm/%40img/sharp-wasm32
+  - pkg:npm/%40img/sharp-win32-arm64
+  - pkg:npm/%40img/sharp-win32-ia32
+  - pkg:npm/%40img/sharp-win32-x64
+  # lightningcss: MPL-2.0 (file-level copyleft), build-time CSS tool used
+  # unmodified by Vite and Expo.
+  - pkg:npm/lightningcss
+  - pkg:npm/lightningcss-android-arm64
+  - pkg:npm/lightningcss-darwin-arm64
+  - pkg:npm/lightningcss-darwin-x64
+  - pkg:npm/lightningcss-freebsd-x64
+  - pkg:npm/lightningcss-linux-arm-gnueabihf
+  - pkg:npm/lightningcss-linux-arm64-gnu
+  - pkg:npm/lightningcss-linux-arm64-musl
+  - pkg:npm/lightningcss-linux-x64-gnu
+  - pkg:npm/lightningcss-linux-x64-musl
+  - pkg:npm/lightningcss-win32-arm64-msvc
+  - pkg:npm/lightningcss-win32-x64-msvc
+  # elkjs: EPL-2.0, Mermaid's diagram layout engine in the docs site only.
+  - pkg:npm/elkjs

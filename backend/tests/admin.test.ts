@@ -62,6 +62,40 @@ describe('admin routes', () => {
     __unregisterMediaProviderForTests('fake-admin-people-provider')
   })
 
+  it('keeps users in ID order across pages and after updates', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const ids = ['aaa-user', 'mmm-user', 'zzz-user']
+    await prisma.user.createMany({
+      data: ids.map((id) => ({ id, name: id, email: `${id}@example.com`, createdAt: new Date('2020-01-01') })),
+    })
+    const expected = [...ids, admin.id].sort()
+    async function listIds() {
+      const all: string[] = []
+      let cursor: string | null = null
+      do {
+        const response = await app.inject({
+          method: 'GET',
+          url: `/api/admin/users?take=2${cursor ? `&cursor=${cursor}` : ''}`,
+          headers: authHeader(admin),
+        })
+        expect(response.statusCode).toBe(200)
+        const page = response.json()
+        all.push(...page.items.map((user: { id: string }) => user.id))
+        cursor = page.nextCursor
+      } while (cursor)
+      return all
+    }
+    expect(await listIds()).toEqual(expected)
+    const updated = await app.inject({
+      method: 'PATCH',
+      url: '/api/admin/users/mmm-user',
+      headers: authHeader(admin),
+      payload: { name: 'Changed name' },
+    })
+    expect(updated.statusCode).toBe(200)
+    expect(await listIds()).toEqual(expected)
+  })
+
   // requireAdmin() sends the 403 itself and returns true; every handler must
   // `return` on that signal or it keeps running the mutation after denying
   // the response. These regression tests check the actual database state,
