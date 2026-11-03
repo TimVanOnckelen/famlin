@@ -53,7 +53,7 @@ describe('branding', () => {
     expect(vars['--fam-accent-ink']).toBe('#a8482c')
   })
 
-  it('applies the tokens, title and favicon, and removes them again', () => {
+  it('applies branding and restores the default favicon when branding is removed', () => {
     applyBranding(plum, 'Famlin')
     const root = document.documentElement
     expect(root.style.getPropertyValue('--fam-primary')).toBe('#7b3f8c')
@@ -63,6 +63,13 @@ describe('branding', () => {
     applyBranding(null, 'Famlin')
     expect(root.style.getPropertyValue('--fam-primary')).toBe('')
     expect(document.title).toBe('Famlin')
-    expect(document.querySelector('link[rel="icon"]')).toBeNull()
+    expect(document.querySelector('link[rel="icon"]')).toHaveAttribute('href', '/favicon.ico')
+    expect(document.querySelector('link[rel="icon"]')).toHaveAttribute('type', 'image/x-icon')
+  })
+
+  it('uses the default favicon when a family has no logo', () => {
+    applyBranding({ ...plum, faviconUrl: null }, 'Famlin')
+    expect(document.querySelector('link[rel="icon"]')).toHaveAttribute('href', '/favicon.ico')
+    expect(document.querySelectorAll('link[rel="icon"]')).toHaveLength(1)
   })
 })

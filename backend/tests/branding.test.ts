@@ -157,11 +157,16 @@ describe('branding resolution', () => {
     const branding = buildPublicBranding(
       resolveBrandSettings({ brandPreset: 'plum', brandName: '<script>x</script>', brandLogo: 'abcdef0123456789' })
     )!
-    const html = injectBrandingIntoHtml('<html><head><title>Famlin</title></head><body></body></html>', branding)
+    const baseHtml =
+      '<html><head><title>Famlin</title><link rel="icon" type="image/x-icon" href="/favicon.ico" /></head><body></body></html>'
+    const html = injectBrandingIntoHtml(baseHtml, branding)
     expect(html).toContain('<title>&lt;script&gt;x&lt;/script&gt;</title>')
     expect(html).not.toContain('<script>x')
     expect(html).toContain(`--fam-primary:${branding.palette.primary}`)
     expect(html).toContain('href="/branding/favicon-abcdef0123456789.png"')
+    expect(html).not.toContain('/favicon.ico')
+    expect(html.match(/rel="icon"/g)).toHaveLength(1)
+    expect(injectBrandingIntoHtml(baseHtml, null)).toBe(baseHtml)
     expect(injectBrandingIntoHtml('<head></head>', null)).toBe('<head></head>')
   })
 
