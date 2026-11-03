@@ -60,6 +60,8 @@ Family members who'd rather not install anything can open your server's address 
 
 ## Self-hosting
 
+Not sure how to run it? [Choose your installation](https://famlin.app/docs/choose-installation) helps you pick the easiest route (Umbrel, Home Assistant, Synology, a rented server or Docker).
+
 You need a machine with Docker. Famlin ships as a pre-built multi-arch image (`linux/amd64` + `linux/arm64`) at [`ghcr.io/timvanonckelen/famlin`](https://github.com/TimVanOnckelen/famlin/pkgs/container/famlin), so no source checkout is needed.
 
 ```bash

@@ -4,6 +4,10 @@ sidebar_position: 2
 
 # Server setup
 
+:::tip New to self-hosting?
+This page is the manual Docker Compose route. If you're not sure which way to install Famlin, start with [Choose your installation](./choose-installation): it points you to the easiest option for what you have (Umbrel, Home Assistant, Synology, or a rented server).
+:::
+
 This guide covers running Famlin **in production, for your family** — on a Synology NAS, a VPS, or any host with Docker. If you're working on Famlin's code and want to run it locally to develop against, see [Quick start](/developers/quick-start) in the Developers tab instead.
 
 ## Requirements
