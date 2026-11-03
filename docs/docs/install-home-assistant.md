@@ -12,8 +12,8 @@ Famlin is not in Home Assistant's default add-on store. Add Famlin's add-on repo
 
 ## Install
 
-1. In Home Assistant go to **Settings, Add-ons, Add-on store**.
-2. Click the three dots in the top right, choose **Repositories** and add `https://github.com/TimVanOnckelen/famlin-ha-addon`.
+1. Click [![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FTimVanOnckelen%2Ffamlin-ha-addon) to add the repository. Or do it by hand: go to **Settings, Add-ons, Add-on store**, click the three dots in the top right, choose **Repositories** and add `https://github.com/TimVanOnckelen/famlin-ha-addon`.
+2. Open the **Add-on store** and refresh the page.
 3. Find **Famlin** in the list, click it and choose **Install**. The first install builds the add-on and can take several minutes.
 4. Click **Start**. Watch the **Log** tab until you see Famlin listening.
 5. Click **Open Web UI** and create the first (administrator) account.
