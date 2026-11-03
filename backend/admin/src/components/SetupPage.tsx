@@ -5,7 +5,7 @@ import { LanguageSelector } from './LanguageSelector'
 import { api, User, ApiError } from '../api/client'
 
 interface SetupPageProps {
-  onSetupComplete: (user: User) => void
+  onSetupComplete: (user: User, restored: boolean) => void
 }
 
 export function SetupPage({ onSetupComplete }: SetupPageProps) {
@@ -45,7 +45,7 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
           ? await api.restoreBackup(archive, { email, name, password })
           : await api.setup({ email, name, password })
       localStorage.setItem('famlin_admin_token', result.token)
-      onSetupComplete(result.user)
+      onSetupComplete(result.user, mode === 'restore')
     } catch (err) {
       setError(err instanceof Error ? err.message : t(mode === 'restore' ? 'setup.restoreFailed' : 'setup.setupFailed'))
       if (err instanceof ApiError) setMissingMedia(err.missingMedia ?? [])

@@ -643,5 +643,60 @@
     "releaseNotes": "Release-opmerkingen",
     "howToUpdate": "Hoe bijwerken",
     "dismiss": "Sluiten"
+  },
+  "wizard": {
+    "title": "Aan de slag",
+    "skip": "Nu overslaan",
+    "next": "Volgende",
+    "back": "Terug",
+    "failed": "Er ging iets mis. Probeer het opnieuw.",
+    "steps": {
+      "family": "Geef je familie een naam",
+      "invite": "Nodig je familie uit",
+      "app": "Download de app",
+      "backups": "Back-ups",
+      "done": "Klaar"
+    },
+    "family": {
+      "description": "Families zijn de privéruimtes waar leden updates delen. Maak de jouwe nu aan; je wordt als eerste lid toegevoegd.",
+      "nameLabel": "Familienaam",
+      "namePlaceholder": "Familie Jansen",
+      "colorLabel": "Accentkleur",
+      "create": "Familie aanmaken",
+      "exists": "Je familie \"{{name}}\" staat klaar."
+    },
+    "invite": {
+      "needFamily": "Maak eerst je familie aan, daarna kun je mensen uitnodigen.",
+      "description": "Maak een link waarmee iedereen lid kan worden van \"{{name}}\". Stuur hem naar de mensen die je wilt uitnodigen.",
+      "create": "Uitnodigingslink maken",
+      "copy": "Link kopiëren",
+      "copied": "Gekopieerd",
+      "copyFailed": "De link kon niet worden gekopieerd; selecteer en kopieer hem handmatig.",
+      "share": "Delen",
+      "shareText": "Kom bij onze familie op Famlin: {{name}}",
+      "expiryHint": "De link werkt één keer en verloopt na 14 dagen."
+    },
+    "backups": {
+      "on": "Dagelijkse back-ups staan aan.",
+      "off": "Geplande back-ups staan uit.",
+      "settingsLink": "Back-upinstellingen wijzigen",
+      "offsite": "Back-ups staan op dezelfde machine als Famlin, kopieer ze dus ook naar een andere plek.",
+      "learnMore": "Back-ups buiten de machine bewaren"
+    },
+    "done": {
+      "description": "Je Famlin-server is klaar. Familieleden kunnen nu meedoen met de uitnodigingslink.",
+      "skippedHint": "Je hebt enkele stappen overgeslagen. Het dashboard toont een checklist tot je ze afrondt.",
+      "openApp": "Open de familie-app",
+      "stayInAdmin": "Blijf in beheer"
+    }
+  },
+  "checklist": {
+    "title": "Aan de slag",
+    "groupExists": "Maak je familie aan",
+    "adminInGroup": "Voeg jezelf toe aan een familie",
+    "invited": "Nodig familieleden uit",
+    "backupsOn": "Zet back-ups aan",
+    "continue": "Open de installatiegids",
+    "dismiss": "Verbergen"
   }
 }

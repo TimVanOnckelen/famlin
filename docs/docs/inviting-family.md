@@ -42,6 +42,10 @@ The app hand-off uses a `famlin://invite/<token>?server=...` deep link. If you
 do not have an account, the app walks you through creating one with SSO or
 email/password. If you are already signed in, you can join with that account.
 
+## Your first invite from the setup wizard
+
+Right after you create the first admin account, the setup wizard (also at `/admin/getting-started`) can create your first family and an invite link in one go. The link can be copied, or shared through your device's share sheet on browsers that support it. It is a normal single-use invite that expires after 14 days; you can manage and revoke it under **Groups** like any other. Until someone has been invited, the dashboard's **Getting started** checklist keeps reminding you.
+
 ## Connecting the mobile app with a QR code
 
 Not every relative needs an invite link just to *find* your server. The admin

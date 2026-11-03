@@ -338,7 +338,7 @@ The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famli
 
 ## Next steps
 
-Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
+Once the stack is up and reachable over HTTPS, open `/admin` — a fresh database has no users yet, so you'll land on a one-time setup screen to create your admin account — and the admin UI continues straight into a short **setup wizard** (also reachable later at `/admin/getting-started`). It walks you through naming your first family (you are added as its first member, with an optional accent color), creating an invite link you can copy or share, the QR code for connecting the mobile app, and a check that daily backups are on, with a reminder to copy them off the machine. Every step can be skipped, and your place is remembered if you leave. Anything you skip stays on a **Getting started** checklist on the dashboard (a family exists, you are in it, someone is invited, backups are on) until it is complete or you dismiss it. Then head to [Admin configuration](./admin-configuration) to set a login method and lock down who can sign up. After that, family members can sign in at the root URL (`https://famlin.yourdomain.com`) with the web app, or use the mobile app.
 
 ### Optional: where media is stored
 

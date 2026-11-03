@@ -643,5 +643,60 @@
     "releaseNotes": "发布说明",
     "howToUpdate": "如何更新",
     "dismiss": "关闭"
+  },
+  "wizard": {
+    "title": "开始使用",
+    "skip": "暂时跳过",
+    "next": "下一步",
+    "back": "返回",
+    "failed": "出错了,请重试。",
+    "steps": {
+      "family": "为家庭命名",
+      "invite": "邀请家人",
+      "app": "获取应用",
+      "backups": "备份",
+      "done": "完成"
+    },
+    "family": {
+      "description": "家庭是成员分享动态的私密空间。现在创建你的家庭,你会自动成为第一位成员。",
+      "nameLabel": "家庭名称",
+      "namePlaceholder": "张家",
+      "colorLabel": "主题色",
+      "create": "创建家庭",
+      "exists": "你的家庭“{{name}}”已就绪。"
+    },
+    "invite": {
+      "needFamily": "请先创建家庭,然后再邀请成员。",
+      "description": "创建一个任何人都可用来加入“{{name}}”的链接,并发送给你想邀请的人。",
+      "create": "创建邀请链接",
+      "copy": "复制链接",
+      "copied": "已复制",
+      "copyFailed": "无法复制链接,请手动选择并复制。",
+      "share": "分享",
+      "shareText": "加入我们在 Famlin 上的家庭:{{name}}",
+      "expiryHint": "该链接只能使用一次,14 天后失效。"
+    },
+    "backups": {
+      "on": "每日备份已开启。",
+      "off": "定时备份已关闭。",
+      "settingsLink": "更改备份设置",
+      "offsite": "备份与 Famlin 存放在同一台机器上,请同时复制到其他地方。",
+      "learnMore": "如何将备份保存在机器之外"
+    },
+    "done": {
+      "description": "你的 Famlin 服务器已就绪。家人现在可以通过邀请链接加入。",
+      "skippedHint": "你跳过了一些步骤。完成之前,仪表盘会一直显示清单。",
+      "openApp": "打开家庭应用",
+      "stayInAdmin": "留在管理后台"
+    }
+  },
+  "checklist": {
+    "title": "开始使用",
+    "groupExists": "创建你的家庭",
+    "adminInGroup": "将自己加入家庭",
+    "invited": "邀请家庭成员",
+    "backupsOn": "开启备份",
+    "continue": "打开设置向导",
+    "dismiss": "关闭"
   }
 }
