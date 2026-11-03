@@ -16,6 +16,11 @@ jest.mock('@/utils/storage', () => ({
   setPushToken: jest.fn().mockResolvedValue(undefined),
 }))
 
+jest.mock('@/utils/deviceDiagnostics', () => ({
+  getOrCreateDeviceInstallId: jest.fn(),
+  syncDeviceDiagnostics: jest.fn(),
+}))
+
 jest.mock('@/navigation/navigationRef', () => ({
   navigate: jest.fn(),
 }))
@@ -25,11 +30,14 @@ import { useAuthStore } from '@/stores/authStore'
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client'
 import { setPushToken } from '@/utils/storage'
 import { navigate } from '@/navigation/navigationRef'
+import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
 import * as Notifications from 'expo-notifications'
 
 describe('usePushNotifications', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(getOrCreateDeviceInstallId as jest.Mock).mockResolvedValue('install-1')
+    ;(syncDeviceDiagnostics as jest.Mock).mockResolvedValue({ installId: 'install-1', changed: false })
   })
 
   it('does not attempt registration when there is no signed-in user', async () => {
@@ -54,8 +62,21 @@ describe('usePushNotifications', () => {
     await waitFor(() => expect(registerPushToken).toHaveBeenCalledTimes(1))
 
     expect(fetchNotificationConfig).toHaveBeenCalledTimes(1)
-    expect(registerPushToken).toHaveBeenCalledWith('test-expo-push-token')
+    expect(registerPushToken).toHaveBeenCalledWith('test-expo-push-token', 'install-1')
     expect(setPushToken).toHaveBeenCalledWith('test-expo-push-token')
+  })
+
+  it('still registers the push token when device diagnostics fail', async () => {
+    ;(useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: { id: 'u1' } }))
+    ;(fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: true })
+    ;(registerPushToken as jest.Mock).mockResolvedValue(undefined)
+    ;(getOrCreateDeviceInstallId as jest.Mock).mockRejectedValue(new Error('storage unavailable'))
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    renderHook(() => usePushNotifications())
+
+    await waitFor(() => expect(registerPushToken).toHaveBeenCalledTimes(1))
+    expect(registerPushToken).toHaveBeenCalledWith('test-expo-push-token', undefined)
   })
 
   it('does not register when the server reports push notifications disabled', async () => {
