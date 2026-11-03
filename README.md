@@ -65,14 +65,13 @@ You need a machine with Docker. Famlin ships as a pre-built multi-arch image (`l
 ```bash
 mkdir famlin && cd famlin
 curl -LO https://github.com/TimVanOnckelen/famlin/releases/latest/download/docker-compose.yml
-curl -L -o .env https://github.com/TimVanOnckelen/famlin/releases/latest/download/env.example
-# edit .env: set JWT_SECRET (32+ random characters) and POSTGRES_PASSWORD
+# No .env needed: secrets are generated on first start. Optionally download env.example as .env to override settings.
 docker compose up -d
 ```
 
 Then open `http://your-server:3000/admin`. A fresh install has no users, so you'll see a one-time setup screen to create your admin account. From there you create your family, invite people, and optionally set up SSO, email and media integrations.
 
-For production, put Famlin behind a reverse proxy with HTTPS (and set `TRUST_PROXY=true` in `.env` when you do), and make sure the `famlin-db-data` and `famlin-uploads` volumes are part of your backups.
+For production, put Famlin behind a reverse proxy with HTTPS (and set `TRUST_PROXY=true` in `.env` when you do), and make sure the `famlin-db-data`, `famlin-uploads` and `famlin-data` volumes are part of your backups.
 
 Read more in the docs:
 
@@ -86,7 +85,6 @@ Read more in the docs:
 You need Docker and Node.js (`^20.19.0` or `>=22.12.0`). The full guide is the [developer quick start](https://famlin.app/docs/developers/quick-start).
 
 ```bash
-cp .env.example .env    # set JWT_SECRET and POSTGRES_PASSWORD
 docker compose up --build    # backend on http://localhost:3000, hot reload via docker-compose.override.yml
 ```
 

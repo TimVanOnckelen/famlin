@@ -211,7 +211,7 @@ Make sure the database and user already exist — Famlin does not create the dat
 
 ## Troubleshooting
 
-**Containers won't start / `JWT_SECRET is required`** — `docker-compose.yml` fails fast if `JWT_SECRET` isn't set. Confirm `.env` is in the same directory you run `docker compose` from.
+**Containers won't start / authentication failed for the database** — `JWT_SECRET` and the database password are generated automatically when no `.env` is present. If you previously started the stack with a different `POSTGRES_PASSWORD`, the database keeps its original password; set `POSTGRES_PASSWORD` back to that value (or remove the `famlin-db-data` and `famlin-db-secret` volumes on a throwaway install). Confirm `.env`, if you use one, is in the same directory you run `docker compose` from.
 
 **`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
 

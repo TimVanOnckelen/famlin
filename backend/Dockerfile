@@ -171,11 +171,11 @@ COPY --from=base /app/prisma.config.ts ./
 COPY --from=base /app/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
 
-# Create the uploads and backups directories with proper permissions and run
-# as the unprivileged `node` user rather than root. Both are volume mount
+# Create the uploads, backups and data directories with proper permissions and
+# run as the unprivileged `node` user rather than root. All are volume mount
 # points (docker-compose.yml); a named volume copies this ownership on first
-# use.
-RUN mkdir -p /app/uploads /app/backups && chown -R node:node /app
+# use. /app/data holds the generated JWT secret.
+RUN mkdir -p /app/uploads /app/backups /app/data && chown -R node:node /app
 
 USER node
 
