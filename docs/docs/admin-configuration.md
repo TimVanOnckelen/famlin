@@ -8,6 +8,11 @@ Once the containers from [Server setup](./server-setup) are up and reachable, fi
 
 ## First login
 
+Only administrators can sign in to `/admin`, using either a password or SSO.
+Signing in with a regular account shows an error on the login form so you can
+try again with an administrator account. Previously saved non-admin sessions
+are cleared automatically when the admin UI loads.
+
 Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the database yet) it shows a **one-time setup screen** instead of the login form — fill in your name, email, and a password to create the first account, which is automatically made an admin. There is no default or seeded account; if the setup screen doesn't appear, an admin account already exists and you should log in with it instead (an existing admin can reset another admin's password from the Users page; if every admin's password and access is lost, the only recovery path is connecting to the `famlin-db` container directly and clearing the affected row).
 
 From `/admin` → Server settings you can then configure everything below. The page has six sections, listed on the left: **General**, **Branding**, **Sign-in & access**, **Notifications**, **Media** and **Backups**. Each shows a status (configured / not set up, enabled / disabled) so you can see at a glance what still needs attention. Changes are saved together with the save bar that appears at the bottom; Branding has its own save button.

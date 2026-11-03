@@ -1,4 +1,4 @@
-import { getStorage } from './services/storage/registry.js'
+import { getStorage, getStorageRuntimeStatus } from './services/storage/registry.js'
 import { sendStoredObject } from './services/storage/http.js'
 import { StorageError } from './services/storage/types.js'
 import Fastify, { type FastifyError } from 'fastify'
@@ -122,7 +122,18 @@ export async function buildApp() {
     return reply.status(500).send({ error: t('errors.serverError') })
   })
 
-  await getStorage().init()
+  fastify.log.info('Checking configured storage availability')
+  try {
+    await getStorage().init()
+  } catch (err) {
+    fastify.log.error({ err }, 'Storage initialization failed; no usable fallback available')
+    throw err
+  }
+  if (getStorageRuntimeStatus().usingFallback) {
+    fastify.log.error(
+      'Primary storage unavailable; using fallback for reads and writes. Restore primary storage and restart before migration or cleanup. Media deletion is disabled until recovery.'
+    )
+  }
   await fs.mkdir(uploadsDir, { recursive: true })
   // Holds the true, uncompressed original of a converted upload (see
   // routes/uploads.ts + services/uploadVariants.ts) — never served, see the
@@ -338,7 +349,7 @@ export async function buildApp() {
       decorateReply: false,
     })
 
-    fastify.get('/admin', async (_request, reply) => sendAdminIndex(reply))
+    fastify.get('/admin', async (request, reply) => reply.redirect(`/admin/${request.url.slice('/admin'.length)}`, 302))
 
     fastify.log.info('Admin UI served at /admin')
   } catch {

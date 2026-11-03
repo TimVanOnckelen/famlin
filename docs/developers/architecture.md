@@ -13,6 +13,10 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Web feed member panel
+
+On screens at least 1200px wide, the right column shows the family filter above a permanent member card. Each family has its own row with its name and optional description. The family filter is omitted entirely for a single membership. Selecting families filters both the feed and the member list; there is no separate member filter or search. Multiple families produce one list deduplicated by user ID, with family names under each member. The member card fits its content and only scrolls when the right column reaches the available viewport height. Member queries reuse the per-family React Query cache for 60 seconds and report partial failures with a retry action. “On this day” remains tied to a single selected family and appears below the member card. On narrower screens, the entire sidebar stays hidden and the original horizontal family-filter chips remain above the feed. Both filter layouts share the same selection. The feed header and member card retain navigation to the full Members page: one effective family scopes the destination to that family; multiple families open the all-families view.
+
 ## Backend routes
 
 | File | Prefix | Notes |
@@ -224,6 +228,12 @@ and lists their union. Keys are URL-relative; access checks still run before
 `sendStoredObject` handles Range, HEAD and conditional responses. Originals and
 `derived/` belong to media storage; `branding/` remains local. Sharp/ffmpeg use
 request-scoped temporary directories removed on success and failure.
+
+On startup failure of primary initialization (S3 probe timeout: five seconds),
+an initialized fallback becomes the read/write backend for the process lifetime.
+The admin storage endpoint exposes `usingFallback` and marks primary unavailable
+without listing the failed backend. Deletes, migration and cleanup are blocked
+in this mode; restore access and restart before migrating fallback writes.
 
 Migration uses the operational `StorageMigration` / `StorageMigrationItem`
 tables, a PostgreSQL advisory job lock, and shared per-key transaction locks

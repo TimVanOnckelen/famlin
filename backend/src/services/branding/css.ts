@@ -67,6 +67,8 @@ export function injectBrandingIntoHtml(html: string, branding: PublicBranding | 
   ].join('')
 
   let out = html
+  // Replace the default icon rather than leaving two competing icon links.
+  if (branding.faviconUrl) out = out.replace(/<link\b[^>]*\brel=["']icon["'][^>]*>/gi, '')
   if (branding.name) {
     out = out.replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(branding.name)}</title>`)
   }
