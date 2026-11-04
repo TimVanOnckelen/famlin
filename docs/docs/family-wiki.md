@@ -6,10 +6,6 @@ sidebar_position: 3
 
 The **Family Wiki** is where your family writes down the things it keeps explaining: Grandma's lasagna recipe, the holiday house's Wi-Fi password and how the boiler works, the family's traditions, who to call when. The feed is for moments that scroll away; the wiki is for knowledge that should stay findable.
 
-:::note Web only for now
-The wiki is available in the **web app**. The mobile app doesn't have it yet; it is planned as a follow-up. Pages you write on the web are stored on your server like everything else and will show up in the mobile app once it supports them.
-:::
-
 ## How it is organized
 
 Every family (group) has its own wiki. Switch between your families with the family chips at the top of the **Wiki** page. A page has:
@@ -19,7 +15,7 @@ Every family (group) has its own wiki. Switch between your families with the fam
 - an optional **category**, such as "Recipes" or "Holiday house",
 - the **content**, written in simple Markdown (see the cheat sheet below).
 
-Open the wiki from **Wiki** in the sidebar, or press <kbd>g</kbd> then <kbd>w</kbd>.
+Open the wiki from **Wiki** in the web app's sidebar (or press <kbd>g</kbd> then <kbd>w</kbd>), or from the book icon at the top of the feed in the mobile app. Both apps can read, create and edit pages; on mobile, the save button sits at the top of the editor and deleting asks for confirmation in a dialog.
 
 ## Creating, editing and searching
 
