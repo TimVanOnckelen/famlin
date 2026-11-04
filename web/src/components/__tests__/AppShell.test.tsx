@@ -218,6 +218,22 @@ describe('AppShell navigation', () => {
   })
 })
 
+describe('AppShell wiki item', () => {
+  it('shows the Wiki item when onWiki is passed and calls it', async () => {
+    const user = userEvent.setup()
+    const onWiki = vi.fn()
+    renderShell({ onWiki })
+    const wikiButtons = await screen.findAllByRole('button', { name: 'Wiki' })
+    await user.click(wikiButtons[0])
+    expect(onWiki).toHaveBeenCalledTimes(1)
+  })
+
+  it('hides the Wiki item without onWiki', () => {
+    renderShell()
+    expect(screen.queryByRole('button', { name: 'Wiki' })).not.toBeInTheDocument()
+  })
+})
+
 it('shows notification links in sidebar and compact header and hides them without groups', () => {
   const { unmount } = renderShell()
   expect(screen.getAllByRole('button', { name: 'Notifications' })).toHaveLength(2)
