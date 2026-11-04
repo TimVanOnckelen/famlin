@@ -4,8 +4,12 @@ import { SUPPORTED_LANGUAGES } from './i18n/index.js'
 // Matches exactly what routes/uploads.ts writes: /uploads/<uuid>.<allowed-ext>.
 // Rejects arbitrary external URLs so a post/comment can't point at a
 // tracking pixel or another group's asset path.
-const UPLOAD_PATH_REGEX =
-  /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)$/
+const UPLOAD_PATH_SOURCE =
+  '/uploads/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)'
+const UPLOAD_PATH_REGEX = new RegExp(`^${UPLOAD_PATH_SOURCE}$`)
+// The same shape, unanchored, for finding upload paths embedded in free text
+// (a wiki page's Markdown, services/wiki.ts). Global — use with match().
+export const EMBEDDED_UPLOAD_PATH_REGEX = new RegExp(UPLOAD_PATH_SOURCE, 'g')
 // Exported so postTypes handlers (e.g. trip.ts's coverPhotoUrl/photoUrls) can
 // reuse the exact same "must be a /uploads/ path" check without re-deriving
 // the regex.

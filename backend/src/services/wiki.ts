@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../db.js'
-import { getUserCircleIds } from './circles.js'
+import { getUserCircleIds, isCircleMember } from './circles.js'
+import { isGroupMember } from './groups.js'
+import { EMBEDDED_UPLOAD_PATH_REGEX } from '../types.js'
 
 // Family Wiki (issue #118). A WikiPage follows the Post audience model:
 // group membership is the outer boundary, an optional circleId narrows it.
@@ -27,16 +29,8 @@ export async function visibleWikiPagesWhereFor(groupIds: string[], userId: strin
 export async function findVisibleWikiPage(pageId: string, userId: string) {
   const page = await prisma.wikiPage.findUnique({ where: { id: pageId }, include: wikiPageInclude })
   if (!page) return null
-  const membership = await prisma.groupMember.findUnique({
-    where: { groupId_userId: { groupId: page.groupId, userId } },
-  })
-  if (!membership) return null
-  if (page.circleId) {
-    const circleMember = await prisma.circleMember.findUnique({
-      where: { circleId_userId: { circleId: page.circleId, userId } },
-    })
-    if (!circleMember) return null
-  }
+  if (!(await isGroupMember(page.groupId, userId))) return null
+  if (page.circleId && !(await isCircleMember(page.circleId, userId))) return null
   return page
 }
 
@@ -50,14 +44,10 @@ export const wikiPageInclude = {
 
 type WikiPageRow = Prisma.WikiPageGetPayload<{ include: typeof wikiPageInclude }>
 
-// Every /uploads/ path embedded in a page's Markdown — the same strict shape
-// UPLOAD_PATH_REGEX (types.ts) accepts — so saving a page can bind the
-// photos it shows to the page's audience (bindAssetsToScope).
-const EMBEDDED_UPLOAD_REGEX =
-  /\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)/g
-
+// Every /uploads/ path embedded in a page's Markdown, so saving a page can
+// bind the photos it shows to the page's audience (bindAssetsToScope).
 export function extractUploadPaths(content: string): string[] {
-  return [...new Set(content.match(EMBEDDED_UPLOAD_REGEX) ?? [])]
+  return [...new Set(content.match(EMBEDDED_UPLOAD_PATH_REGEX) ?? [])]
 }
 
 // A plain-text preview for list rows, so the overview never ships whole pages.
