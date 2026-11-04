@@ -53,7 +53,9 @@ Anything else (raw HTML, scripts, other link types) is shown as plain text, neve
 
 ### Linking to posts and other pages
 
-To link to something inside Famlin, use its in-app path as the link target. A post's permalink is `/posts/<id>`, for example `[our Italy trip](/posts/abc123)`; a wiki page's is `/wiki/<id>`. Clicking an in-app link opens it inside the app. The page you link to keeps its own audience: someone who can't see that post still can't see it.
+Use **Link a post** in the editor's toolbar to link to something your family already shared: it lists the family's recent posts, with a search box, and inserts a link at the cursor. If you select some text first, that text becomes the link; otherwise the link is labelled with the post's title or its first words. Trips, albums and gift lists link to their own pages.
+
+You can also type a link yourself, using an in-app path as the target: a post's permalink is `/posts/<id>`, for example `[our Italy trip](/posts/abc123)`; a wiki page's is `/wiki/<id>`. Clicking an in-app link opens it inside the app. The page you link to keeps its own audience: someone who can't see that post still can't open it.
 
 ### Photos
 
