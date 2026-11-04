@@ -47,6 +47,7 @@ export function GiftListPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onLogout,
@@ -59,6 +60,7 @@ export function GiftListPage({
   onOpenChat?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onLogout: () => void
@@ -107,6 +109,7 @@ export function GiftListPage({
         onFeed={onOpenFeed ?? onBack}
         onPhotos={onOpenPhotos}
         onFavorites={onOpenFavorites}
+        onWiki={onOpenWiki}
         onNotifications={onOpenNotifications}
         onSearch={onOpenSearch}
         onChat={onOpenChat}

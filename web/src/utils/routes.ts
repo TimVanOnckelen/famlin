@@ -12,6 +12,10 @@ export const paths = {
   favorites: '/favorites',
   notifications: '/notifications',
   search: '/search',
+  wiki: '/wiki',
+  wikiNew: '/wiki/new',
+  wikiPage: (pageId: string) => `/wiki/${encodeURIComponent(pageId)}`,
+  wikiEdit: (pageId: string) => `/wiki/${encodeURIComponent(pageId)}/edit`,
   join: (token: string) => `/join/${encodeURIComponent(token)}`,
   members: '/members',
   trip: (postId: string) => `/trips/${encodeURIComponent(postId)}`,
@@ -19,6 +23,21 @@ export const paths = {
   giftList: (postId: string) => `/gift-lists/${encodeURIComponent(postId)}`,
   post: (postId: string) => `/posts/${encodeURIComponent(postId)}`,
 } as const
+
+export interface WikiFilters {
+  groupId: string
+  q?: string
+  // '' = uncategorized; undefined = every category.
+  category?: string
+}
+
+function wikiSearch({ groupId, q, category }: WikiFilters): string {
+  const params = new URLSearchParams()
+  if (groupId) params.set('groupId', groupId)
+  if (q) params.set('q', q)
+  if (category !== undefined) params.set('category', category)
+  return params.toString()
+}
 
 // True when the previous history entry belongs to this app session, so
 // navigate(-1) stays inside the app. react-router's BrowserRouter keeps an
@@ -56,6 +75,22 @@ export function useAppNavigation() {
         navigate({ pathname: paths.search, search: groupId ? new URLSearchParams({ groupId }).toString() : '' }),
       updateSearch: (q: string, groupId: string) =>
         navigate({ pathname: paths.search, search: new URLSearchParams({ q, groupId }).toString() }, { replace: true }),
+      toWiki: (groupId?: string) =>
+        navigate({ pathname: paths.wiki, search: groupId ? new URLSearchParams({ groupId }).toString() : '' }),
+      // The overview's family/search/category live in the URL, replaced
+      // rather than pushed so typing doesn't flood the history.
+      updateWiki: (filters: WikiFilters) =>
+        navigate({ pathname: paths.wiki, search: wikiSearch(filters) }, { replace: true }),
+      toWikiPage: (pageId: string, opts?: { replace?: boolean }) => navigate(paths.wikiPage(pageId), opts),
+      toNewWikiPage: (groupId: string, category?: string | null) =>
+        navigate({ pathname: paths.wikiNew, search: wikiSearch({ groupId, category: category ?? undefined }) }),
+      toEditWikiPage: (pageId: string) => navigate(paths.wikiEdit(pageId)),
+      // After saving an edit: back to the page it was opened from, rather
+      // than stacking a second copy of the page on top of the editor.
+      leaveWikiEditor: (pageId: string) => {
+        if (canGoBackInApp()) navigate(-1)
+        else navigate(paths.wikiPage(pageId), { replace: true })
+      },
       toPost: (id: string) => navigate(paths.post(id)),
       toTrip: (postId: string, opts?: { replace?: boolean }) => navigate(paths.trip(postId), opts),
       toAlbum: (postId: string, opts?: { replace?: boolean }) => navigate(paths.album(postId), opts),

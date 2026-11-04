@@ -117,7 +117,12 @@
     "giftDrawTooFewParticipants": "神秘圣诞老人抽签至少需要 3 位参与者。",
     "giftDrawImpossible": "在这些排除规则下无法抽签。请删除一些排除规则后再试。",
     "giftAlreadyDrawn": "已经抽过签了。",
-    "giftDrawWillReset": "这个更改会作废当前的抽签结果。请确认以重新抽签。"
+    "giftDrawWillReset": "这个更改会作废当前的抽签结果。请确认以重新抽签。",
+    "wikiPageNotFound": "未找到百科页面",
+    "wikiPageLocked": "此页面已锁定，只有创建者或管理员可以编辑。",
+    "wikiPageLockForbidden": "只有页面创建者或管理员可以锁定或解锁此页面。",
+    "wikiPageDeleteForbidden": "只有页面创建者或管理员可以删除此页面。",
+    "wikiPageConflict": "其他人刚刚保存了此页面。请查看他们的更改后重试。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

@@ -34,6 +34,7 @@ export function FeedPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenMembers,
@@ -48,6 +49,7 @@ export function FeedPage({
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenMembers?: (groupId?: string) => void
@@ -181,6 +183,7 @@ export function FeedPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onSearch={
         onOpenSearch ? () => onOpenSearch(selectedGroupIds.length === 1 ? selectedGroupIds[0] : undefined) : undefined

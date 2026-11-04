@@ -30,6 +30,7 @@ export function FavoritesPage({
   onOpenGiftList,
   onLogout,
   onOpenNotifications,
+  onOpenWiki,
   onOpenSearch,
 }: {
   user: User
@@ -42,6 +43,7 @@ export function FavoritesPage({
   onOpenGiftList?: (postId: string) => void
   onLogout: () => void
   onOpenNotifications?: () => void
+  onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
 }) {
   const { t } = useTranslation()
@@ -78,6 +80,7 @@ export function FavoritesPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={() => {}}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}

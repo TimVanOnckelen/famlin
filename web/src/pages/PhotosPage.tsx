@@ -23,6 +23,7 @@ export function PhotosPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenAlbum,
@@ -33,6 +34,7 @@ export function PhotosPage({
   onOpenChat?: () => void
   onOpenProfile: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenAlbum?: (postId: string) => void
@@ -149,6 +151,7 @@ export function PhotosPage({
       onFeed={onOpenFeed ?? (() => {})}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}

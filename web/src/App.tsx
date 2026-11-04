@@ -35,6 +35,9 @@ import { TripDetailPage } from '@/pages/TripDetailPage'
 import { AlbumDetailPage } from '@/pages/AlbumDetailPage'
 import { GiftListPage } from '@/pages/GiftListPage'
 import { PostDetailPage } from '@/pages/PostDetailPage'
+import { WikiHomePage, type WikiShellProps } from '@/pages/WikiHomePage'
+import { WikiArticlePage } from '@/pages/WikiArticlePage'
+import { WikiEditorPage } from '@/pages/WikiEditorPage'
 import { PostDetailModal } from '@/components/PostDetailModal'
 import { ReadOnlyBanner } from '@/components/ReadOnlyBanner'
 import { useTranslation } from 'react-i18next'
@@ -157,6 +160,18 @@ export default function App() {
 function AppRoutes({ user }: { user: User }) {
   const { logout } = useAuthStore()
   const nav = useAppNavigation()
+  const wikiShell: WikiShellProps = {
+    user,
+    onOpenFeed: nav.toFeed,
+    onOpenProfile: nav.toProfile,
+    onOpenPhotos: nav.toPhotos,
+    onOpenChat: nav.toChat,
+    onOpenFavorites: nav.toFavorites,
+    onOpenWiki: nav.toWiki,
+    onOpenNotifications: nav.toNotifications,
+    onOpenSearch: nav.toSearch,
+    onLogout: () => logout(),
+  }
   const location = useLocation()
   const backgroundLocation = (location.state as { backgroundLocation?: typeof location } | null)?.backgroundLocation
 
@@ -176,6 +191,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
               onOpenSearch={nav.toSearch}
               onOpenMembers={nav.toMembers}
@@ -196,6 +212,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenChat={nav.toChat}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenWiki={nav.toWiki}
                 onOpenNotifications={nav.toNotifications}
                 onOpenSearch={nav.toSearch}
                 onOpenAlbum={nav.toAlbum}
@@ -214,6 +231,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenPhotos={nav.toPhotos}
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
+                onOpenWiki={nav.toWiki}
                 onOpenNotifications={nav.toNotifications}
                 onOpenSearch={nav.toSearch}
                 onLogout={() => logout()}
@@ -231,6 +249,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
               onOpenSearch={nav.toSearch}
               onLogout={() => logout()}
@@ -248,6 +267,7 @@ function AppRoutes({ user }: { user: User }) {
               user={user}
               onBack={nav.toFeed}
               onOpenNotifications={nav.toNotifications}
+              onOpenWiki={nav.toWiki}
               onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
@@ -268,6 +288,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenWiki={nav.toWiki}
               onOpenProfile={nav.toProfile}
               onOpenPost={nav.toPost}
               onOpenSearch={nav.toSearch}
@@ -285,6 +306,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
               onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
@@ -304,6 +326,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenPhotos={nav.toPhotos}
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
+              onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
               onOpenProfile={nav.toProfile}
               onOpenTrip={nav.toTrip}
@@ -313,6 +336,38 @@ function AppRoutes({ user }: { user: User }) {
             />
           }
         />
+        <Route
+          path={paths.wiki}
+          element={
+            <RequireGroups>
+              <WikiHomePage
+                {...wikiShell}
+                groupId={searchParams.get('groupId') ?? ''}
+                query={searchParams.get('q') ?? ''}
+                category={searchParams.get('category') ?? undefined}
+                onFiltersChange={nav.updateWiki}
+                onOpenPage={nav.toWikiPage}
+                onNewPage={nav.toNewWikiPage}
+              />
+            </RequireGroups>
+          }
+        />
+        <Route
+          path={paths.wikiNew}
+          element={
+            <RequireGroups>
+              <WikiEditorPage
+                {...wikiShell}
+                groupId={searchParams.get('groupId') ?? undefined}
+                initialCategory={searchParams.get('category') ?? undefined}
+                onCancel={nav.back}
+                onSaved={(id) => nav.toWikiPage(id, { replace: true })}
+              />
+            </RequireGroups>
+          }
+        />
+        <Route path="/wiki/:pageId" element={<WikiArticleRoute shell={wikiShell} />} />
+        <Route path="/wiki/:pageId/edit" element={<WikiEditRoute shell={wikiShell} />} />
         <Route path="*" element={<Navigate to={paths.feed} replace />} />
       </Routes>
 
@@ -400,6 +455,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
@@ -422,6 +478,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
@@ -444,6 +501,7 @@ function GiftListRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
@@ -469,6 +527,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenChat={nav.toChat}
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
+      onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
@@ -486,4 +545,25 @@ function ScrollToTopOnNavigate() {
     if (navigationType !== 'POP') window.scrollTo(0, 0)
   }, [pathname, navigationType])
   return null
+}
+
+function WikiArticleRoute({ shell }: { shell: WikiShellProps }) {
+  const { pageId } = useParams<{ pageId: string }>()
+  const nav = useAppNavigation()
+  return (
+    <WikiArticlePage
+      key={pageId}
+      {...shell}
+      pageId={pageId!}
+      onBack={nav.back}
+      onEdit={nav.toEditWikiPage}
+      onDeleted={(groupId) => nav.toWiki(groupId)}
+    />
+  )
+}
+
+function WikiEditRoute({ shell }: { shell: WikiShellProps }) {
+  const { pageId } = useParams<{ pageId: string }>()
+  const nav = useAppNavigation()
+  return <WikiEditorPage key={pageId} {...shell} pageId={pageId!} onCancel={nav.back} onSaved={nav.leaveWikiEditor} />
 }

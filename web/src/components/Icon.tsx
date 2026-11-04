@@ -181,6 +181,18 @@ const ICON_PATHS = {
       <line x1="12" y1="15" x2="12" y2="3" />
     </>
   ),
+  'book-open': (
+    <>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  ),
   trash: (
     <>
       <polyline points="3 6 5 6 21 6" />

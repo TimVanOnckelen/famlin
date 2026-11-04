@@ -20,6 +20,7 @@ export function NotificationsPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenWiki,
   onOpenSearch,
   onOpenProfile,
   onOpenPost,
@@ -30,6 +31,7 @@ export function NotificationsPage({
   onOpenPhotos: () => void
   onOpenChat: () => void
   onOpenFavorites: () => void
+  onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenProfile: () => void
   onOpenPost: (id: string) => void
@@ -70,6 +72,7 @@ export function NotificationsPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onSearch={onOpenSearch}
       onNotifications={() => {}}
       onProfile={onOpenProfile}

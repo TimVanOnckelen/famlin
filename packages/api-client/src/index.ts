@@ -159,6 +159,27 @@ export {
   isGiftDrawResetConflict,
 } from './giftLists'
 
+export type {
+  WikiPerson,
+  WikiPageSummary,
+  WikiPage,
+  WikiCategory,
+  WikiPageListParams,
+  CreateWikiPageBody,
+  UpdateWikiPageBody,
+} from './wiki'
+export {
+  fetchWikiPages,
+  fetchWikiCategories,
+  fetchWikiPage,
+  createWikiPage,
+  updateWikiPage,
+  deleteWikiPage,
+  wikiConflictPage,
+} from './wiki'
+export type { WikiInline, WikiListItem, WikiBlock } from './wikiMarkdown'
+export { parseWikiMarkdown, parseWikiInline, wikiLinkTarget, isWikiImageSrc } from './wikiMarkdown'
+
 export type { CreateCommentBody, UpdateCommentBody } from './comments'
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments'
 

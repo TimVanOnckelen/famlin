@@ -542,3 +542,52 @@ export const adminDeleteCircleQuerySchema = z.object({
     .optional()
     .transform((v) => v === 'true'),
 })
+
+// Family Wiki (issue #118), routes/wiki.ts.
+const wikiTitleSchema = z.string().trim().min(1).max(120)
+// One short emoji (a grapheme can be several code units — flags, ZWJ
+// sequences — hence the generous max), or null/'' to clear it.
+const wikiEmojiSchema = z
+  .string()
+  .trim()
+  .max(16)
+  .nullable()
+  .transform((v) => (v ? v : null))
+const wikiCategorySchema = z
+  .string()
+  .trim()
+  .max(60)
+  .nullable()
+  .transform((v) => (v ? v : null))
+const wikiContentSchema = z.string().max(50_000)
+
+export const wikiListQuerySchema = paginationQuerySchema.extend({
+  groupId: z.string().min(1),
+  q: z.string().trim().max(200).optional(),
+  // '' selects uncategorized pages.
+  category: z.string().trim().max(60).optional(),
+})
+
+export const wikiCategoriesQuerySchema = z.object({ groupId: z.string().min(1) })
+
+export const createWikiPageSchema = z.object({
+  groupId: z.string().min(1),
+  circleId: z.string().min(1).nullable().optional(),
+  title: wikiTitleSchema,
+  emoji: wikiEmojiSchema.optional(),
+  category: wikiCategorySchema.optional(),
+  content: wikiContentSchema.default(''),
+  locked: z.boolean().optional(),
+})
+
+export const updateWikiPageSchema = z.object({
+  title: wikiTitleSchema.optional(),
+  emoji: wikiEmojiSchema.optional(),
+  category: wikiCategorySchema.optional(),
+  content: wikiContentSchema.optional(),
+  locked: z.boolean().optional(),
+  // Optimistic concurrency: the updatedAt the editor started from. When it no
+  // longer matches, someone else saved in between and the PATCH 409s
+  // (errors.wikiPageConflict) instead of silently overwriting their edit.
+  baseUpdatedAt: z.string().datetime().optional(),
+})
