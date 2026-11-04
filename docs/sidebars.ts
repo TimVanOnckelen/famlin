@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
         'notifications-and-profile',
         'trips',
         'gift-lists',
+        'family-wiki',
       ],
     },
     {
