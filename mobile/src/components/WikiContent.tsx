@@ -13,7 +13,12 @@ export function wikiInternalRoute(href: string): { name: string; params: Record<
   const path = href.split(/[?#]/)[0].replace(/\/+$/, '')
   const match = /^\/(posts|trips|albums|gift-lists|wiki)\/([^/]+)$/.exec(path)
   if (!match) return null
-  const id = decodeURIComponent(match[2])
+  let id: string
+  try {
+    id = decodeURIComponent(match[2])
+  } catch {
+    return null // a malformed %-escape must not throw inside a press handler
+  }
   switch (match[1]) {
     case 'posts':
       return { name: 'PostDetail', params: { postId: id } }
@@ -56,7 +61,9 @@ export function WikiContent({ content }: { content: string }) {
   function openLink(href: string, internal: boolean) {
     if (internal) {
       const route = wikiInternalRoute(href)
-      if (route) navigation.navigate(route.name, route.params)
+      // push, not navigate: a wiki page linking to another wiki page must
+      // stack on top, or navigate would just swap the current screen's params.
+      if (route) navigation.push(route.name, route.params)
       return
     }
     if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) void Linking.openURL(href).catch(() => {})

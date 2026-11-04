@@ -38,7 +38,9 @@ export function surroundSelection(
 
 // Prefixes every line touched by the selection ("## ", "- ", "- [ ] ").
 export function prefixLines(text: string, selection: TextSelection, prefix: string): EditResult {
-  const { start, end } = normalize(text, selection)
+  const { start, end: rawEnd } = normalize(text, selection)
+  // A whole-line selection ends at the next line's start; don't prefix it too.
+  const end = rawEnd > start && text[rawEnd - 1] === '\n' ? rawEnd - 1 : rawEnd
   const lineStart = text.lastIndexOf('\n', start - 1) + 1
   const block = text.slice(lineStart, end)
   const prefixed = block

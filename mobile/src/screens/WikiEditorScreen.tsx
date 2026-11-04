@@ -88,7 +88,6 @@ export function WikiEditorScreen() {
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<WikiPage | null>(null)
   const [linkingPost, setLinkingPost] = useState(false)
-  // Focus moves into the picker, so remember where to insert.
   // The selection when the picker opened — focus moves into the picker.
   const [linkRange, setLinkRange] = useState<TextSelection | null>(null)
 
@@ -122,9 +121,15 @@ export function WikiEditorScreen() {
     onError: () => setError(t('wiki.uploadFailed')),
   })
 
+  // The caret is only forced onto the TextInput right after a programmatic
+  // edit: a permanently controlled `selection` lags a render behind typing
+  // and makes the caret jump back (mostly on Android).
+  const [forcedSelection, setForcedSelection] = useState<TextSelection | undefined>(undefined)
+
   function apply(result: EditResult) {
     setContent(result.text)
     setSelection(result.selection)
+    setForcedSelection(result.selection)
   }
 
   // Replaces the remembered selection with a link to the picked post;
@@ -140,10 +145,19 @@ export function WikiEditorScreen() {
   }
 
   async function addPhotos() {
+    // Photos go where the cursor was when Photo was tapped.
+    const anchor = selection.end
     setError(null)
     const result = await pickPhotos()
     if (result?.urls.length) {
-      apply(insertBlockAtCursor(content, selection, result.urls.map((url) => `![](${url})`).join('\n')))
+      const images = result.urls.map((url) => `![](${url})`).join('\n')
+      // The upload can take a while and typing continues meanwhile, so insert
+      // into the latest text rather than the text from when Photo was tapped.
+      // (clamped in case the text got shorter meanwhile).
+      setContent((latest) => {
+        const at = Math.min(anchor, latest.length)
+        return insertBlockAtCursor(latest, { start: at, end: at }, images).text
+      })
     }
   }
 
@@ -406,8 +420,11 @@ export function WikiEditorScreen() {
                   style={[styles.input, styles.contentInput]}
                   value={content}
                   onChangeText={setContent}
-                  selection={selection}
-                  onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+                  selection={forcedSelection}
+                  onSelectionChange={(e) => {
+                    setSelection(e.nativeEvent.selection)
+                    setForcedSelection(undefined)
+                  }}
                   multiline
                   textAlignVertical="top"
                   maxLength={50_000}

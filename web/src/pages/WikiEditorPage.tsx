@@ -131,15 +131,15 @@ export function WikiEditorPage({
     })
   }
 
+  // Inserts on its own line at the cursor. Built on the latest text, since a
+  // photo upload awaits before calling this and typing continues meanwhile.
   function insertAtCursor(text: string) {
     const el = textareaRef.current
-    const pos = el ? el.selectionEnd : content.length
-    const needsBreak = pos > 0 && content[pos - 1] !== '\n'
-    const insert = `${needsBreak ? '\n' : ''}${text}\n`
-    setContent(content.slice(0, pos) + insert + content.slice(pos))
-    requestAnimationFrame(() => {
-      el?.focus()
-      el?.setSelectionRange(pos + insert.length, pos + insert.length)
+    setContent((latest) => {
+      const pos = Math.min(el ? el.selectionEnd : latest.length, latest.length)
+      const needsBreak = pos > 0 && latest[pos - 1] !== '\n'
+      const insert = `${needsBreak ? '\n' : ''}${text}\n`
+      return latest.slice(0, pos) + insert + latest.slice(pos)
     })
   }
 

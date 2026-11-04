@@ -26,4 +26,10 @@ describe('wikiEditor', () => {
     )
     expect(insertBlockAtCursor('', { start: 0, end: 0 }, 'x').text).toBe('x\n')
   })
+
+  it('does not prefix the line after a whole-line selection', () => {
+    const text = 'one\ntwo\nthree'
+    // "two\n" selected, as a triple-tap does.
+    expect(prefixLines(text, { start: 4, end: 8 }, '- ').text).toBe('one\n- two\nthree')
+  })
 })

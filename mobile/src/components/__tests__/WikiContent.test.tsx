@@ -3,8 +3,9 @@ import { Linking } from 'react-native'
 import { render, fireEvent } from '@testing-library/react-native'
 
 const mockNavigate = jest.fn()
+const mockPush = jest.fn()
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockNavigate }),
+  useNavigation: () => ({ navigate: mockNavigate, push: mockPush }),
 }))
 
 jest.mock('@/components/MediaThumbnail', () => {
@@ -60,7 +61,14 @@ describe('WikiContent', () => {
   it('opens an internal /posts link in the app', async () => {
     const { getByText } = await render(<WikiContent content="See [our trip](/posts/abc-1)." />)
     await fireEvent.press(getByText('our trip'))
-    expect(mockNavigate).toHaveBeenCalledWith('PostDetail', { postId: 'abc-1' })
+    expect(mockPush).toHaveBeenCalledWith('PostDetail', { postId: 'abc-1' })
+  })
+
+  it('stacks a linked wiki page on top of the current one', async () => {
+    const { getByText } = await render(<WikiContent content="[other page](/wiki/p2)" />)
+    await fireEvent.press(getByText('other page'))
+    expect(mockPush).toHaveBeenCalledWith('WikiPage', { pageId: 'p2' })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('opens an external link with Linking', async () => {
@@ -68,7 +76,7 @@ describe('WikiContent', () => {
     const { getByText } = await render(<WikiContent content="[site](https://example.com)" />)
     await fireEvent.press(getByText('site'))
     expect(open).toHaveBeenCalledWith('https://example.com')
-    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 
   it('renders a javascript: link as plain, inert text', async () => {
@@ -76,7 +84,7 @@ describe('WikiContent', () => {
     const { getByText } = await render(<WikiContent content="[click](javascript:alert(1))" />)
     await fireEvent.press(getByText(/click/))
     expect(open).not.toHaveBeenCalled()
-    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 
   it('renders an /uploads image and opens it in the viewer', async () => {
@@ -109,5 +117,9 @@ describe('wikiInternalRoute', () => {
   it('ignores unknown internal paths', () => {
     expect(wikiInternalRoute('/admin')).toBeNull()
     expect(wikiInternalRoute('/posts')).toBeNull()
+  })
+
+  it('returns null for a malformed escape instead of throwing', () => {
+    expect(wikiInternalRoute('/posts/%E0%A4%A')).toBeNull()
   })
 })

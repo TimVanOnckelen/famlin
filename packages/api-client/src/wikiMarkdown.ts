@@ -291,6 +291,8 @@ export function wikiPostLabel(
 // The Markdown inserted by the editors' "Link a post" picker. Brackets are
 // stripped from the label so they can't break out of the link syntax.
 export function wikiPostLinkMarkdown(post: { id: string; type: string }, label: string): string {
-  const safe = label.replace(/[[\]]/g, '').trim() || '…'
+  // One line, too: the inline parser works per line, so a newline in the
+  // label (a multi-line selection) would leave the link unparsed.
+  const safe = label.replace(/[[\]]/g, '').replace(/\s+/g, ' ').trim() || '…'
   return `[${safe}](${wikiPostPath(post)})`
 }

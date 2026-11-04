@@ -120,6 +120,7 @@ describe('post links', () => {
   it('uses type-specific paths and safe labels', () => {
     expect(wikiPostLinkMarkdown({ id: 'a', type: 'UPDATE' }, 'Our [big] day')).toBe('[Our big day](/posts/a)')
     expect(wikiPostLinkMarkdown({ id: 't', type: 'TRIP' }, 'Italy')).toBe('[Italy](/trips/t)')
+    expect(wikiPostLinkMarkdown({ id: 'm', type: 'UPDATE' }, 'two\n  lines')).toBe('[two lines](/posts/m)')
     expect(wikiPostLinkMarkdown({ id: 'g', type: 'GIFT_LIST' }, 'Xmas')).toBe('[Xmas](/gift-lists/g)')
     // The link round-trips through the parser as an in-app link.
     expect(parseWikiInline(wikiPostLinkMarkdown({ id: 'b', type: 'ALBUM' }, 'Summer'))[0]).toMatchObject({
