@@ -296,6 +296,31 @@ describe('Family Wiki', () => {
     expect(await prisma.wikiPage.findUnique({ where: { id: secret.id } })).toBeNull()
   })
 
+  it('merges categories that differ only in case', async () => {
+    const family = await createGroup()
+    await addMember(family.id, author.id)
+    for (const category of ['Recipes', 'Recipes', 'recipes']) {
+      await app.inject({
+        method: 'POST',
+        url: '/api/wiki/pages',
+        headers: authHeader(author),
+        payload: { groupId: family.id, title: 'x', category },
+      })
+    }
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/wiki/categories?groupId=${family.id}`,
+      headers: authHeader(author),
+    })
+    expect(res.json().items).toEqual([{ name: 'Recipes', pageCount: 3 }])
+  })
+
+  it('builds excerpts from huge adversarial content quickly', () => {
+    const start = performance.now()
+    wikiExcerpt('!['.repeat(25000))
+    expect(performance.now() - start).toBeLessThan(500)
+  })
+
   it('validates input', async () => {
     expect((await createPage(author, { title: '' })).statusCode).toBe(400)
     expect((await createPage(author, { title: 'x'.repeat(121) })).statusCode).toBe(400)

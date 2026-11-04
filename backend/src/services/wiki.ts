@@ -52,7 +52,11 @@ export function extractUploadPaths(content: string): string[] {
 
 // A plain-text preview for list rows, so the overview never ships whole pages.
 export function wikiExcerpt(content: string, max = 160): string {
+  // Only the head of the page can end up in a 160-character preview — and
+  // the regexes below are quadratic on adversarial input (a run of unclosed
+  // `[`), so they must never see a whole 50 KB page on every list request.
   const text = content
+    .slice(0, 2000)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their text
     .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+(\[[ xX]\]\s+)?/gm, '') // block markers

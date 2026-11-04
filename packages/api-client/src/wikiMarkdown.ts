@@ -145,6 +145,12 @@ function startsBlock(line: string): boolean {
   )
 }
 
+function hrefStop(text: string, from: number): number {
+  let i = from
+  while (i < text.length && text[i] !== ')' && !/\s/.test(text[i])) i++
+  return i
+}
+
 const IMAGE = /^!\[([^\]]*)\]\(([^)\s]+)\)/
 const LINK = /^\[([^\]]+)\]\(([^)\s]+)\)/
 const BARE_URL = /^https?:\/\/[^\s<]*[^\s<.,:;!?"')\]]/
@@ -157,6 +163,9 @@ export function parseWikiInline(text: string): WikiInline[] {
     buffer = ''
   }
 
+  let closeAt = -1 // the next `]` at or after the current `[`
+  let failedClose = -1 // a `]` whose `](...)` tail is known not to parse
+  let stopAt = -1 // where the href after `closeAt` ends
   let i = 0
   while (i < text.length) {
     const rest = text.slice(i)
@@ -173,27 +182,37 @@ export function parseWikiInline(text: string): WikiInline[] {
       }
     }
 
-    if (ch === '!') {
-      const image = IMAGE.exec(rest)
-      if (image) {
-        flush()
-        if (isWikiImageSrc(image[2])) out.push({ type: 'image', src: image[2].trim(), alt: image[1] })
-        else if (image[1]) out.push({ type: 'text', text: image[1] })
-        i += image[0].length
-        continue
-      }
-    }
-
-    if (ch === '[') {
-      const link = LINK.exec(rest)
-      if (link) {
-        flush()
-        const target = wikiLinkTarget(link[2])
-        const children = parseWikiInline(link[1]).filter((node) => node.type !== 'link')
-        if (target) out.push({ type: 'link', ...target, children })
-        else out.push(...children)
-        i += link[0].length
-        continue
+    // [text](href) and ![alt](src). The bracketed part can't contain `]`, so
+    // every `[` before the same `]` shares one `](...)` tail: once that tail
+    // fails to parse, the rest of those `[` are skipped without a rescan.
+    // Without that, a run of unclosed `[` is quadratic — seconds of frozen
+    // tab for one 50 KB page.
+    if (ch === '[' || (ch === '!' && text[i + 1] === '[')) {
+      const open = ch === '!' ? i + 1 : i
+      if (closeAt < open) closeAt = text.indexOf(']', open)
+      // The href ends at the first `)` or whitespace; anything else there
+      // can't parse. Scanned once and reused while the `]` stays the same.
+      if (closeAt !== -1 && stopAt < closeAt + 2) stopAt = hrefStop(text, closeAt + 2)
+      if (closeAt !== -1 && closeAt !== failedClose && text[closeAt + 1] === '(' && text[stopAt] === ')') {
+        const match = (ch === '!' ? IMAGE : LINK).exec(rest)
+        if (match) {
+          flush()
+          if (ch === '!') {
+            if (isWikiImageSrc(match[2])) out.push({ type: 'image', src: match[2].trim(), alt: match[1] })
+            else if (match[1]) out.push({ type: 'text', text: match[1] })
+          } else {
+            const target = wikiLinkTarget(match[2])
+            // A link can't nest: an autolinked URL in the text keeps its text.
+            const children = parseWikiInline(match[1]).flatMap((node) =>
+              node.type === 'link' ? node.children : [node]
+            )
+            if (target) out.push({ type: 'link', ...target, children })
+            else out.push(...children)
+          }
+          i += match[0].length
+          continue
+        }
+        failedClose = closeAt
       }
     }
 

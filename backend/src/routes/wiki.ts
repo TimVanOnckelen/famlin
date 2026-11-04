@@ -68,8 +68,22 @@ export default async function wikiRoutes(fastify: FastifyInstance) {
       where: await visibleWikiPagesWhereFor([groupId], request.user!.id),
       _count: { _all: true },
     })
-    const items = groups
-      .map((g) => ({ name: g.category, pageCount: g._count._all }))
+    // The list filter matches a category case-insensitively, so counts are
+    // merged the same way ("Recipes" + "recipes" = one chip), under the
+    // spelling most pages use.
+    const merged = new Map<string, { name: string | null; pageCount: number; best: number }>()
+    for (const g of groups) {
+      const key = g.category === null ? '\u0000' : g.category.toLowerCase()
+      const entry = merged.get(key)
+      const count = g._count._all
+      if (!entry) merged.set(key, { name: g.category, pageCount: count, best: count })
+      else {
+        entry.pageCount += count
+        if (count > entry.best) Object.assign(entry, { name: g.category, best: count })
+      }
+    }
+    const items = [...merged.values()]
+      .map(({ name, pageCount }) => ({ name, pageCount }))
       .sort((a, b) => {
         if (a.name === null) return 1
         if (b.name === null) return -1

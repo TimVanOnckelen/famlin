@@ -85,4 +85,27 @@ describe('parseWikiInline', () => {
     expect(parseWikiInline(`![the house](${PHOTO})`)).toEqual([{ type: 'image', src: PHOTO, alt: 'the house' }])
     expect(parseWikiInline('![tracker](https://evil.example/pixel.png)')).toEqual([{ type: 'text', text: 'tracker' }])
   })
+
+  it('keeps a URL used as link text visible', () => {
+    expect(parseWikiInline('[https://example.com](https://example.com)')).toEqual([
+      {
+        type: 'link',
+        href: 'https://example.com',
+        internal: false,
+        children: [{ type: 'text', text: 'https://example.com' }],
+      },
+    ])
+  })
+
+  it('stays linear on unclosed brackets and hrefs', () => {
+    for (const input of ['['.repeat(50000), '!['.repeat(25000), '[]('.repeat(16000), '[a](b'.repeat(10000)]) {
+      const start = performance.now()
+      parseWikiMarkdown(input)
+      expect(performance.now() - start).toBeLessThan(500)
+    }
+    expect(parseWikiInline('[a](b [c](/d)')).toEqual([
+      { type: 'text', text: '[a](b ' },
+      { type: 'link', href: '/d', internal: true, children: [{ type: 'text', text: 'c' }] },
+    ])
+  })
 })
