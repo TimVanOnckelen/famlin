@@ -6,7 +6,15 @@
     "appStore": "App Store",
     "playStore": "Google Play"
   },
-  "media": {"livePhoto": "实况照片", "video": "视频", "pauseLivePhoto": "暂停实况照片", "playLivePhoto": "播放实况照片", "playVideo": "播放视频", "processing": "媒体正在处理中…", "processingFailed": "媒体处理失败"},
+  "media": {
+    "livePhoto": "实况照片",
+    "video": "视频",
+    "pauseLivePhoto": "暂停实况照片",
+    "playLivePhoto": "播放实况照片",
+    "playVideo": "播放视频",
+    "processing": "媒体正在处理中…",
+    "processingFailed": "媒体处理失败"
+  },
   "common": {
     "appName": "Famlin",
     "loading": "加载中…",

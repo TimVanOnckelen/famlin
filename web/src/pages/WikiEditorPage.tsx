@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -16,7 +16,7 @@ import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { WikiContent } from '@/components/WikiContent'
 import { isBrowserDecodableImage } from '@/utils/media'
-import { WikiShell, type WikiShellProps } from './WikiHomePage'
+import { WikiShell, type WikiShellProps } from '@/components/WikiShell'
 import './WikiPages.css'
 
 // Creating (no pageId) or editing a Family Wiki page (issue #118). The
@@ -46,8 +46,6 @@ export function WikiEditorPage({
     queryKey: ['wiki', 'page', pageId],
     queryFn: () => fetchWikiPage(pageId!),
     enabled: !isNew,
-    // Never seed the editor from a stale cache entry.
-    staleTime: 0,
   })
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups, enabled: isNew })
   const familyId = isNew ? (groupId ?? groupsQuery.data?.[0]?.id) : pageQuery.data?.groupId
@@ -79,17 +77,20 @@ export function WikiEditorPage({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Seed the form once, from the version being edited.
-  const loaded = pageQuery.data
-  useEffect(() => {
-    if (!loaded || base) return
+  // Seed the form once, from a version fetched for this editor — never the
+  // article page's cached copy, which may be outdated and would only lead to
+  // a spurious conflict on save.
+  const loaded = pageQuery.isFetchedAfterMount ? pageQuery.data : undefined
+  // Adjusting state during render (not in an effect) — React's pattern for
+  // state derived from a prop/query that arrives later.
+  if (loaded && !base) {
     setBase(loaded)
     setTitle(loaded.title)
     setEmoji(loaded.emoji ?? '')
     setCategory(loaded.category ?? '')
     setContent(loaded.content)
     setLocked(loaded.locked)
-  }, [loaded, base])
+  }
 
   const canManage = isNew || !!base?.canManage
   const notEditable = !isNew && loaded && !loaded.canEdit
@@ -212,7 +213,7 @@ export function WikiEditorPage({
       <div className="wiki-column">
         <ScreenHeader title={headerTitle} onBack={onCancel} />
 
-        {!isNew && pageQuery.isLoading && (
+        {!isNew && !loaded && !pageQuery.isError && (
           <p role="status" className="wiki-hint">
             {t('common.loading')}
           </p>

@@ -1,48 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { fetchGroups, fetchWikiCategories, fetchWikiPages, type User, type WikiPageSummary } from '@famlin/api-client'
-import { AppShell } from '@/components/AppShell'
+import { fetchGroups, fetchWikiCategories, fetchWikiPages, type WikiPageSummary } from '@famlin/api-client'
+import { WikiMeta, WikiShell, type WikiShellProps } from '@/components/WikiShell'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
-import { formatRelativeDate } from '@/utils/time'
 import type { WikiFilters } from '@/utils/routes'
 import './FeedPage.css'
 import './WikiPages.css'
-
-// Every wiki page shares the AppShell's nav callbacks.
-export interface WikiShellProps {
-  user: User
-  onOpenFeed: () => void
-  onOpenProfile: () => void
-  onOpenPhotos?: () => void
-  onOpenChat?: () => void
-  onOpenFavorites?: () => void
-  onOpenWiki?: () => void
-  onOpenNotifications?: () => void
-  onOpenSearch?: () => void
-  onLogout: () => void
-}
-
-export function WikiShell({ shell, children }: { shell: WikiShellProps; children: React.ReactNode }) {
-  return (
-    <AppShell
-      user={shell.user}
-      active="wiki"
-      onFeed={shell.onOpenFeed}
-      onPhotos={shell.onOpenPhotos}
-      onChat={shell.onOpenChat}
-      onFavorites={shell.onOpenFavorites}
-      onWiki={shell.onOpenWiki ?? (() => {})}
-      onNotifications={shell.onOpenNotifications}
-      onSearch={shell.onOpenSearch}
-      onProfile={shell.onOpenProfile}
-      onLogout={shell.onLogout}
-    >
-      {children}
-    </AppShell>
-  )
-}
 
 // The Family Wiki overview (issue #118): one family's wiki at a time, its
 // categories as filter chips, a search box, and the pages — most recently
@@ -63,7 +28,7 @@ export function WikiHomePage({
   onOpenPage: (pageId: string) => void
   onNewPage: (groupId: string, category?: string | null) => void
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
   const groups = groupsQuery.data ?? []
   const family = groups.find((group) => group.id === groupId) ?? groups[0]
@@ -204,7 +169,7 @@ export function WikiHomePage({
           <ul className="wiki-list">
             {pages.map((page) => (
               <li key={page.id}>
-                <WikiPageRow page={page} locale={i18n.language} onOpen={() => onOpenPage(page.id)} />
+                <WikiPageRow page={page} onOpen={() => onOpenPage(page.id)} />
               </li>
             ))}
           </ul>
@@ -223,8 +188,7 @@ export function WikiHomePage({
   )
 }
 
-function WikiPageRow({ page, locale, onOpen }: { page: WikiPageSummary; locale: string; onOpen: () => void }) {
-  const { t } = useTranslation()
+function WikiPageRow({ page, onOpen }: { page: WikiPageSummary; onOpen: () => void }) {
   return (
     <button type="button" className="wiki-row" onClick={onOpen}>
       <span className="wiki-row-emoji" aria-hidden>
@@ -233,24 +197,7 @@ function WikiPageRow({ page, locale, onOpen }: { page: WikiPageSummary; locale: 
       <span className="wiki-row-body">
         <span className="wiki-row-title">{page.title}</span>
         {page.excerpt && <span className="wiki-row-excerpt">{page.excerpt}</span>}
-        <span className="wiki-row-meta">
-          {page.category && <span className="wiki-badge">{page.category}</span>}
-          {page.circle && (
-            <span className="wiki-badge wiki-badge-circle">
-              <Icon name="users" size={12} /> {page.circle.name}
-            </span>
-          )}
-          {page.locked && (
-            <span className="wiki-badge" title={t('wiki.lockedHint')}>
-              <Icon name="lock" size={12} /> {t('wiki.locked')}
-            </span>
-          )}
-          <span>
-            {page.updatedBy
-              ? t('wiki.updatedBy', { name: page.updatedBy.name, when: formatRelativeDate(page.updatedAt, locale) })
-              : t('wiki.updated', { when: formatRelativeDate(page.updatedAt, locale) })}
-          </span>
-        </span>
+        <WikiMeta page={page} className="wiki-row-meta" />
       </span>
     </button>
   )

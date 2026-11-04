@@ -6,7 +6,15 @@
     "appStore": "App Store",
     "playStore": "Google Play"
   },
-  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Live Photo pauzeren", "playLivePhoto": "Live Photo afspelen", "playVideo": "Video afspelen", "processing": "Media wordt verwerkt…", "processingFailed": "Verwerken van media mislukt"},
+  "media": {
+    "livePhoto": "Live Photo",
+    "video": "Video",
+    "pauseLivePhoto": "Live Photo pauzeren",
+    "playLivePhoto": "Live Photo afspelen",
+    "playVideo": "Video afspelen",
+    "processing": "Media wordt verwerkt…",
+    "processingFailed": "Verwerken van media mislukt"
+  },
   "common": {
     "appName": "Famlin",
     "loading": "Bezig...",

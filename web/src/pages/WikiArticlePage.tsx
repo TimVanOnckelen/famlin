@@ -5,8 +5,7 @@ import { deleteWikiPage, fetchWikiPage } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { WikiContent } from '@/components/WikiContent'
-import { formatRelativeDate } from '@/utils/time'
-import { WikiShell, type WikiShellProps } from './WikiHomePage'
+import { WikiMeta, WikiShell, type WikiShellProps } from '@/components/WikiShell'
 import './WikiPages.css'
 
 // One Family Wiki page (issue #118), read-only, with Edit/Delete for whoever
@@ -65,27 +64,7 @@ export function WikiArticlePage({
                 )}
                 {page.title}
               </h1>
-              <div className="wiki-row-meta">
-                {page.category && <span className="wiki-badge">{page.category}</span>}
-                {page.circle && (
-                  <span className="wiki-badge wiki-badge-circle" title={t('wiki.circleHint')}>
-                    <Icon name="users" size={12} /> {page.circle.name}
-                  </span>
-                )}
-                {page.locked && (
-                  <span className="wiki-badge" title={t('wiki.lockedHint')}>
-                    <Icon name="lock" size={12} /> {t('wiki.locked')}
-                  </span>
-                )}
-                <span>
-                  {page.updatedBy
-                    ? t('wiki.updatedBy', {
-                        name: page.updatedBy.name,
-                        when: formatRelativeDate(page.updatedAt, i18n.language),
-                      })
-                    : t('wiki.updated', { when: formatRelativeDate(page.updatedAt, i18n.language) })}
-                </span>
-              </div>
+              <WikiMeta page={page} className="wiki-row-meta" />
               {(page.canEdit || page.canManage) && (
                 <div className="wiki-article-actions">
                   {page.canEdit && (
