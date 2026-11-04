@@ -29,6 +29,7 @@ export function PostDetailPage({
   onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onLogout,
 }: {
   user: User
@@ -45,6 +46,7 @@ export function PostDetailPage({
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -110,6 +112,7 @@ export function PostDetailPage({
       onFavorites={onOpenFavorites}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onChat={onOpenChat}
       onProfile={onOpenProfile ?? (() => {})}

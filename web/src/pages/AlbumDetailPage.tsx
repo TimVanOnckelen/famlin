@@ -35,6 +35,7 @@ export function AlbumDetailPage({
   onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onLogout,
 }: {
   user: User
@@ -49,6 +50,7 @@ export function AlbumDetailPage({
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onLogout: () => void
 }) {
   const { t } = useTranslation()
@@ -85,6 +87,7 @@ export function AlbumDetailPage({
         onFavorites={onOpenFavorites}
         onWiki={onOpenWiki}
         onNotifications={onOpenNotifications}
+        onMembers={onOpenMembers}
         onSearch={onOpenSearch}
         onChat={onOpenChat}
         onProfile={onOpenProfile ?? (() => {})}

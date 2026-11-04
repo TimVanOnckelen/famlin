@@ -26,6 +26,7 @@ export function PhotosPage({
   onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onOpenAlbum,
   onLogout,
 }: {
@@ -37,6 +38,7 @@ export function PhotosPage({
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onOpenAlbum?: (postId: string) => void
   onLogout: () => void
 }) {
@@ -153,6 +155,7 @@ export function PhotosPage({
       onFavorites={onOpenFavorites}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}
       // Same no-family rule as the feed: no groups → no composer to open, so

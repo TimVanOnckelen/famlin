@@ -169,6 +169,7 @@ function AppRoutes({ user }: { user: User }) {
     onOpenChat: nav.toChat,
     onOpenFavorites: nav.toFavorites,
     onOpenWiki: nav.toWiki,
+    onOpenMembers: () => nav.toMembers(),
     onOpenNotifications: nav.toNotifications,
     onOpenSearch: nav.toSearch,
     onLogout: () => logout(),
@@ -215,6 +216,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenFavorites={nav.toFavorites}
                 onOpenWiki={nav.toWiki}
                 onOpenNotifications={nav.toNotifications}
+                onOpenMembers={() => nav.toMembers()}
                 onOpenSearch={nav.toSearch}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
@@ -234,6 +236,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenFavorites={nav.toFavorites}
                 onOpenWiki={nav.toWiki}
                 onOpenNotifications={nav.toNotifications}
+                onOpenMembers={() => nav.toMembers()}
                 onOpenSearch={nav.toSearch}
                 onLogout={() => logout()}
               />
@@ -252,6 +255,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenFavorites={nav.toFavorites}
               onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
+              onOpenMembers={() => nav.toMembers()}
               onOpenSearch={nav.toSearch}
               onLogout={() => logout()}
             />
@@ -269,6 +273,7 @@ function AppRoutes({ user }: { user: User }) {
               onBack={nav.toFeed}
               onOpenNotifications={nav.toNotifications}
               onOpenWiki={nav.toWiki}
+              onOpenMembers={() => nav.toMembers()}
               onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
@@ -293,6 +298,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenProfile={nav.toProfile}
               onOpenPost={nav.toPost}
               onOpenSearch={nav.toSearch}
+              onOpenMembers={() => nav.toMembers()}
               onLogout={() => logout()}
             />
           }
@@ -329,6 +335,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenFavorites={nav.toFavorites}
               onOpenWiki={nav.toWiki}
               onOpenNotifications={nav.toNotifications}
+              onOpenMembers={() => nav.toMembers()}
               onOpenProfile={nav.toProfile}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
@@ -458,6 +465,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenFavorites={nav.toFavorites}
       onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -481,6 +489,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenFavorites={nav.toFavorites}
       onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -504,6 +513,7 @@ function GiftListRoute({ user }: { user: User }) {
       onOpenFavorites={nav.toFavorites}
       onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -530,6 +540,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenFavorites={nav.toFavorites}
       onOpenWiki={nav.toWiki}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />

@@ -14,6 +14,7 @@ export interface WikiShellProps {
   onOpenChat?: () => void
   onOpenFavorites?: () => void
   onOpenWiki?: () => void
+  onOpenMembers?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: () => void
   onLogout: () => void
@@ -29,6 +30,7 @@ export function WikiShell({ shell, children }: { shell: WikiShellProps; children
       onChat={shell.onOpenChat}
       onFavorites={shell.onOpenFavorites}
       onWiki={shell.onOpenWiki ?? (() => {})}
+      onMembers={shell.onOpenMembers}
       onNotifications={shell.onOpenNotifications}
       onSearch={shell.onOpenSearch}
       onProfile={shell.onOpenProfile}

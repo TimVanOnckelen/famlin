@@ -54,6 +54,7 @@ export interface ServerSettings {
   defaultLanguage: string
   appStoreUrl: string
   playStoreUrl: string
+  publicUrl: string
   allowedEmails: string[]
   oidcName: string
   oidcIssuer: string

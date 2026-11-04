@@ -465,7 +465,8 @@
     "favoritePost": "收藏动态",
     "goNotifications": "前往通知",
     "goSearch": "前往搜索",
-    "goWiki": "前往家庭百科"
+    "goWiki": "前往家庭百科",
+    "goMembers": "前往成员"
   },
   "notifications": {
     "title": "通知",

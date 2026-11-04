@@ -255,3 +255,31 @@ it('shows Search in the sidebar and compact header and follows the family visibi
   renderShell({ onSearch }, [])
   expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument()
 })
+
+it('offers Members in the avatar menu and hides it for a user in no families', async () => {
+  const user = userEvent.setup()
+  const onMembers = vi.fn()
+  const { unmount } = renderShell({ onMembers })
+  await user.click((await screen.findAllByRole('button', { name: 'Grandpa John' }))[0])
+  await user.click(await screen.findByRole('menuitem', { name: 'Members' }))
+  expect(onMembers).toHaveBeenCalledTimes(1)
+  unmount()
+
+  vi.mocked(fetchGroups).mockResolvedValue([])
+  renderShell({ onMembers }, [])
+  await user.click((await screen.findAllByRole('button', { name: 'Grandpa John' }))[0])
+  expect(await screen.findByRole('menuitem', { name: 'Log out' })).toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'Members' })).not.toBeInTheDocument()
+})
+
+it('navigates to members with "g then m" and to search with "/"', async () => {
+  const user = userEvent.setup()
+  const onMembers = vi.fn()
+  const onSearch = vi.fn()
+  renderShell({ onMembers, onSearch })
+  await screen.findAllByRole('button', { name: 'Search' })
+  await user.keyboard('gm')
+  expect(onMembers).toHaveBeenCalledTimes(1)
+  await user.keyboard('/')
+  expect(onSearch).toHaveBeenCalledTimes(1)
+})

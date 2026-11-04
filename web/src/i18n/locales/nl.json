@@ -465,7 +465,8 @@
     "favoritePost": "Bericht favorieten",
     "goNotifications": "Ga naar meldingen",
     "goSearch": "Naar zoeken",
-    "goWiki": "Naar de Familiewiki"
+    "goWiki": "Naar de Familiewiki",
+    "goMembers": "Naar leden"
   },
   "notifications": {
     "title": "Meldingen",

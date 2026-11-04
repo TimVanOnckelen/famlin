@@ -22,6 +22,7 @@ export function NotificationsPage({
   onOpenFavorites,
   onOpenWiki,
   onOpenSearch,
+  onOpenMembers,
   onOpenProfile,
   onOpenPost,
   onLogout,
@@ -33,6 +34,7 @@ export function NotificationsPage({
   onOpenFavorites: () => void
   onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onOpenProfile: () => void
   onOpenPost: (id: string) => void
   onLogout: () => void
@@ -75,6 +77,7 @@ export function NotificationsPage({
       onWiki={onOpenWiki}
       onSearch={onOpenSearch}
       onNotifications={() => {}}
+      onMembers={onOpenMembers}
       onProfile={onOpenProfile}
       onLogout={onLogout}
     >

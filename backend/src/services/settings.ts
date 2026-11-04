@@ -23,6 +23,11 @@ export interface ServerSettings {
   defaultLanguage: SupportedLanguage
   appStoreUrl: string
   playStoreUrl: string
+  // The address members reach this server at (e.g. https://famlin.example.com).
+  // Origins are otherwise derived per request (request.host), but
+  // notification emails are sent from a subscriber/job with no request, so
+  // links in them need this. '' = not configured: emails carry no link.
+  publicUrl: string
   allowedEmails: string[]
   oidcName: string
   oidcIssuer: string
@@ -65,6 +70,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'defaultLanguage',
   'appStoreUrl',
   'playStoreUrl',
+  'publicUrl',
   'allowedEmails',
   'oidcName',
   'oidcIssuer',
@@ -101,6 +107,11 @@ function serializeValue(key: keyof ServerSettings, value: unknown): string {
     // capitalization than the OIDC/login email arrives in.
     return Array.isArray(value) ? value.map((v) => String(v).toLowerCase().trim()).join(',') : String(value)
   }
+  if (key === 'publicUrl') {
+    return String(value ?? '')
+      .trim()
+      .replace(/\/+$/, '')
+  }
   return String(value ?? '')
 }
 
@@ -111,6 +122,9 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
+  }
+  if (key === 'publicUrl') {
+    return value.trim().replace(/\/+$/, '')
   }
   if (key === 'smtpPort') {
     const n = parseInt(value, 10)
@@ -161,6 +175,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
       'playStoreUrl',
       map.has('playStoreUrl') ? map.get('playStoreUrl')! : DEFAULT_PLAY_STORE_URL
     ),
+    publicUrl: parseValue('publicUrl', map.get('publicUrl') || ''),
     allowedEmails: parseValue('allowedEmails', map.get('allowedEmails') || ''),
     oidcName: parseValue('oidcName', map.get('oidcName') || 'SSO'),
     oidcIssuer: parseValue('oidcIssuer', map.get('oidcIssuer') || ''),

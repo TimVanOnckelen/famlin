@@ -39,6 +39,7 @@ export function ProfilePage({
   onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onLogout,
 }: {
   user: User
@@ -50,6 +51,7 @@ export function ProfilePage({
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onLogout: () => void
 }) {
   const { t, i18n: i18nInstance } = useTranslation()
@@ -205,6 +207,7 @@ export function ProfilePage({
       onFavorites={onOpenFavorites}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onProfile={() => {}}
       onLogout={onLogout}

@@ -146,6 +146,7 @@
     "pushTitle": "Famlin",
     "emailSubject": "New activity on Famlin",
     "emailBody": "{{message}}\n\nView it in the Famlin app.",
+    "emailBodyWithLink": "{{message}}\n\nView it in Famlin: {{link}}",
     "newStory": "{{author}} shared a story in {{group}}",
     "storyReply": "{{author}} replied to your story: \"{{excerpt}}\"",
     "storyReaction": "{{author}} reacted {{emoji}} to your story in {{group}}",

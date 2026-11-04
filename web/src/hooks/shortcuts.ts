@@ -18,6 +18,8 @@ export const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['g', 'b'], labelKey: 'shortcuts.goFavorites' },
   { keys: ['g', 's'], labelKey: 'shortcuts.goSearch' },
   { keys: ['g', 'w'], labelKey: 'shortcuts.goWiki' },
+  { keys: ['/'], labelKey: 'shortcuts.goSearch' },
+  { keys: ['g', 'm'], labelKey: 'shortcuts.goMembers' },
   { keys: ['g', 'u'], labelKey: 'shortcuts.goProfile' },
   { keys: ['n'], labelKey: 'shortcuts.newPost' },
   { keys: ['?'], labelKey: 'shortcuts.openHelp' },

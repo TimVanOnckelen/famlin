@@ -32,6 +32,7 @@ export function FavoritesPage({
   onOpenNotifications,
   onOpenWiki,
   onOpenSearch,
+  onOpenMembers,
 }: {
   user: User
   onBack: () => void
@@ -45,6 +46,7 @@ export function FavoritesPage({
   onOpenNotifications?: () => void
   onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
 }) {
   const { t } = useTranslation()
   const openPostModal = useOpenPostModal()
@@ -82,6 +84,7 @@ export function FavoritesPage({
       onFavorites={() => {}}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}
       onLogout={onLogout}

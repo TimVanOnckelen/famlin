@@ -151,7 +151,11 @@ family; otherwise it defaults to the first available family. Results reuse
 `PostCard` and open the post detail modal over the search page; trips and
 albums open their dedicated pages. Search appears in the desktop sidebar and
 compact mobile header, following the same family visibility rules as
-Favorites and Notifications. The keyboard shortcut is `g` then `s`.
+Favorites and Notifications. The keyboard shortcuts are `/` and `g` then `s`.
+
+The `/members` page is reached from the avatar menu (`AppShell`'s `onMembers`
+callback, hidden for users without families), the feed header and the
+side panel's member card, or `g` then `m`.
 
 ## Internationalization
 
@@ -230,7 +234,7 @@ A `PostTypeHandler` has four optional hooks beyond its `id` and `typeDataSchema`
 Domain events (`src/events.ts`) feed the notifications subscriber (`src/subscribers/notifications.ts`), which decides who gets told what — thread participants for comments, validated mentions, the target author for reactions — and calls `services/notifications.ts`. `notify()` always writes the in-app `Notification` history row, then fans out to **notification channels**: implementations of the `NotificationChannel` interface in `services/notificationChannels/` (per-channel `isEnabled()` server switch, per-recipient `wants()` preference check, `send()` delivery), registered in that directory's `index.ts`. Adding a delivery mechanism (Telegram, ntfy, ...) = one new file there. Channels run in parallel with per-channel error trapping, so one broken mechanism never blocks the others. Two ship today:
 
 - **`push`** via Expo's push service (requires a development/production build).
-- **`email`** via Nodemailer + SMTP, configurable per user with `emailOnNewPost`/`emailOnNewComment`/`emailOnNewLike`.
+- **`email`** via Nodemailer + SMTP, configurable per user with `emailOnNewPost`/`emailOnNewComment`/`emailOnNewLike`. When the admin has set the `publicUrl` setting, each email ends with a web-app link built by `notificationLink()` (`/posts/:id`, or `/trips/:id`/`/albums/:id`/`/gift-lists/:id` by post type, `/photos` for `new_media_assets`); the origin can't come from `request.host` as elsewhere, because emails are sent from the subscriber/jobs with no request. Unset (the default) = no link. The link names only the post, so it exposes nothing: recipients were already circle-filtered and the web app re-checks access.
 
 Both respect group membership: only members of the relevant group are notified, because the subscriber derives recipients from `GroupMember` before any channel runs.
 

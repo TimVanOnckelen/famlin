@@ -465,7 +465,8 @@
     "favoritePost": "Favorite post",
     "goNotifications": "Go to notifications",
     "goSearch": "Go to search",
-    "goWiki": "Go to the Family Wiki"
+    "goWiki": "Go to the Family Wiki",
+    "goMembers": "Go to members"
   },
   "notifications": {
     "title": "Notifications",

@@ -23,6 +23,7 @@ export function SearchPage({
   onOpenFavorites,
   onOpenWiki,
   onOpenNotifications,
+  onOpenMembers,
   onOpenTrip,
   onOpenAlbum,
   onOpenGiftList,
@@ -39,6 +40,7 @@ export function SearchPage({
   onOpenFavorites?: () => void
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
+  onOpenMembers?: () => void
   onOpenTrip?: (id: string) => void
   onOpenAlbum?: (id: string) => void
   onOpenGiftList?: (id: string) => void
@@ -84,6 +86,7 @@ export function SearchPage({
       onFavorites={onOpenFavorites}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onProfile={onOpenProfile}
       onLogout={onLogout}
     >

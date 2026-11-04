@@ -146,6 +146,7 @@
     "pushTitle": "Famlin",
     "emailSubject": "Nieuwe activiteit op Famlin",
     "emailBody": "{{message}}\n\nBekijk het in de Famlin app.",
+    "emailBodyWithLink": "{{message}}\n\nBekijk het in Famlin: {{link}}",
     "newStory": "{{author}} deelde een verhaal in {{group}}",
     "storyReply": "{{author}} reageerde op je verhaal: \"{{excerpt}}\"",
     "storyReaction": "{{author}} reageerde met {{emoji}} op je verhaal in {{group}}",

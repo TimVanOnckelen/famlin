@@ -28,11 +28,34 @@ describe('useKeyboardShortcuts', () => {
       ['p', 'photos'],
       ['c', 'chat'],
       ['u', 'profile'],
+      ['s', 'search'],
+      ['m', 'members'],
     ] as const) {
       fireKey('g')
       fireKey(key)
       expect(onNavigate).toHaveBeenLastCalledWith(view)
     }
+  })
+
+  it('jumps to search on a bare "/" and swallows the key', () => {
+    const onNavigate = vi.fn()
+    renderHook(() => useKeyboardShortcuts({ onNavigate, onHelp: vi.fn() }))
+
+    const event = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true })
+    document.body.dispatchEvent(event)
+    expect(onNavigate).toHaveBeenCalledWith('search')
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('does not hijack "/" while typing in an input', () => {
+    const onNavigate = vi.fn()
+    renderHook(() => useKeyboardShortcuts({ onNavigate, onHelp: vi.fn() }))
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+
+    fireKey('/', input)
+    expect(onNavigate).not.toHaveBeenCalled()
+    input.remove()
   })
 
   it('calls onNewPost for a bare "n"', () => {

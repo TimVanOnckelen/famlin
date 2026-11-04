@@ -50,6 +50,7 @@ export function ChatPage({
   onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onLogout,
 }: {
   user: User
@@ -60,6 +61,7 @@ export function ChatPage({
   onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onLogout: () => void
 }) {
   const { t, i18n } = useTranslation()
@@ -219,6 +221,7 @@ export function ChatPage({
       onFavorites={onOpenFavorites}
       onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile ?? (() => {})}
       onLogout={onLogout}
