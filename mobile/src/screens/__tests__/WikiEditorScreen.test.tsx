@@ -2,6 +2,10 @@ import React from 'react'
 import { render, fireEvent, waitFor, screen } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// The first render of the full editor is slow on a cold CI runner (same
+// precedent as DateField.test.tsx).
+jest.setTimeout(15000)
+
 const mockNavigation = { goBack: jest.fn(), replace: jest.fn(), navigate: jest.fn() }
 let mockParams: Record<string, string> = {}
 jest.mock('@react-navigation/native', () => ({
@@ -73,7 +77,11 @@ function wikiPage(overrides: Record<string, unknown> = {}) {
 }
 
 function renderScreen() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  // gcTime: Infinity — the default 5-minute cache GC timer would outlive the
+  // test and keep the Jest worker alive after the run.
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } },
+  })
   return render(
     <QueryClientProvider client={client}>
       <WikiEditorScreen />
