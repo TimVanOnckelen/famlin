@@ -422,3 +422,42 @@
     font-size: 24px;
   }
 }
+
+/* ── "Link a post" picker ──────────────────────────────────────────────── */
+
+.wiki-link-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(640px, 90vh);
+}
+.wiki-link-modal .wiki-search {
+  box-shadow: none;
+  border: 1.5px solid var(--fam-border);
+}
+.wiki-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wiki-link-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--r-md);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.wiki-link-row:hover {
+  background: var(--fam-primary-tint);
+}

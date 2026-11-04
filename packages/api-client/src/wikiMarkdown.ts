@@ -256,3 +256,41 @@ export function parseWikiInline(text: string): WikiInline[] {
   flush()
   return out
 }
+
+// The in-app path a wiki link to a post should use: trips, albums and gift
+// lists have their own pages; everything else opens as a post. Both clients
+// route these paths (web's router, mobile's WikiContent link handler).
+export function wikiPostPath(post: { id: string; type: string }): string {
+  const id = encodeURIComponent(post.id)
+  if (post.type === 'TRIP') return `/trips/${id}`
+  if (post.type === 'ALBUM') return `/albums/${id}`
+  if (post.type === 'GIFT_LIST') return `/gift-lists/${id}`
+  return `/posts/${id}`
+}
+
+// A readable one-line label for a post: its trip/album/gift list title, a
+// milestone's tag, or the start of its text — `fallback` (e.g. "Post from
+// 4 November") when it has none of those.
+export function wikiPostLabel(
+  post: {
+    content?: string | null
+    milestoneTag?: string | null
+    trip?: { title: string } | null
+    album?: { title: string } | null
+    giftList?: { title: string } | null
+  },
+  fallback: string,
+  max = 60
+): string {
+  const raw =
+    post.trip?.title || post.album?.title || post.giftList?.title || post.milestoneTag || post.content || fallback
+  const oneLine = raw.replace(/\s+/g, ' ').trim() || fallback
+  return oneLine.length > max ? `${oneLine.slice(0, max - 1).trimEnd()}…` : oneLine
+}
+
+// The Markdown inserted by the editors' "Link a post" picker. Brackets are
+// stripped from the label so they can't break out of the link syntax.
+export function wikiPostLinkMarkdown(post: { id: string; type: string }, label: string): string {
+  const safe = label.replace(/[[\]]/g, '').trim() || '…'
+  return `[${safe}](${wikiPostPath(post)})`
+}

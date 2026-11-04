@@ -10,11 +10,14 @@ import {
   updateWikiPage,
   uploadFiles,
   wikiConflictPage,
+  wikiPostLinkMarkdown,
+  type Post,
   type WikiPage,
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { WikiContent } from '@/components/WikiContent'
+import { WikiLinkPostModal } from '@/components/WikiLinkPostModal'
 import { isBrowserDecodableImage } from '@/utils/media'
 import { WikiShell, type WikiShellProps } from '@/components/WikiShell'
 import './WikiPages.css'
@@ -74,6 +77,8 @@ export function WikiEditorPage({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<WikiPage | null>(null)
+  const [linkingPost, setLinkingPost] = useState(false)
+  const linkRange = useRef<[number, number] | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -135,6 +140,20 @@ export function WikiEditorPage({
     requestAnimationFrame(() => {
       el?.focus()
       el?.setSelectionRange(pos + insert.length, pos + insert.length)
+    })
+  }
+
+  // Replaces the selection with a link to the picked post; selected text, if
+  // any, becomes the link's label instead of the post's own.
+  function insertPostLink(post: Post, label: string) {
+    setLinkingPost(false)
+    const el = textareaRef.current
+    const [start, end] = linkRange.current ?? [content.length, content.length]
+    const link = wikiPostLinkMarkdown(post, content.slice(start, end).trim() || label)
+    setContent(content.slice(0, start) + link + content.slice(end))
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(start + link.length, start + link.length)
     })
   }
 
@@ -361,6 +380,20 @@ export function WikiEditorPage({
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      // Focus moves into the picker, so remember where to insert.
+                      const el = textareaRef.current
+                      linkRange.current = el ? [el.selectionStart, el.selectionEnd] : null
+                      setLinkingPost(true)
+                    }}
+                    disabled={!familyId}
+                    title={t('wiki.fmtLinkPost')}
+                    aria-label={t('wiki.fmtLinkPost')}
+                  >
+                    <Icon name="link" size={16} />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
                     title={t('wiki.fmtPhoto')}
@@ -427,6 +460,9 @@ export function WikiEditorPage({
           </form>
         )}
       </div>
+      {linkingPost && familyId && (
+        <WikiLinkPostModal groupId={familyId} onPick={insertPostLink} onClose={() => setLinkingPost(false)} />
+      )}
     </WikiShell>
   )
 }

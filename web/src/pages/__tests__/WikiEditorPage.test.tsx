@@ -1,13 +1,15 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WikiEditorPage } from '../WikiEditorPage'
-import { makeUser, renderWithQueryClient } from '@/test/fixtures'
+import { makePost, makeUser, renderWithQueryClient } from '@/test/fixtures'
 import {
   createWikiPage,
   fetchGroups,
   fetchMyCircles,
   fetchWikiCategories,
+  fetchPosts,
   fetchWikiPage,
+  searchPosts,
   updateWikiPage,
   type WikiPage,
 } from '@famlin/api-client'
@@ -21,6 +23,8 @@ vi.mock('@famlin/api-client', async (original) => ({
   createWikiPage: vi.fn(),
   updateWikiPage: vi.fn(),
   uploadFiles: vi.fn(),
+  fetchPosts: vi.fn(),
+  searchPosts: vi.fn(),
   fetchServerInfo: vi.fn().mockResolvedValue({ version: '1.0.0', readOnly: false, branding: null }),
   fetchUnreadNotificationCount: vi.fn().mockResolvedValue(0),
   fetchChatUnreadCounts: vi.fn().mockResolvedValue({}),
@@ -200,4 +204,34 @@ it('does not offer the form for a locked page the user cannot edit', async () =>
   renderPage({ pageId: 'page-1' })
   expect(await screen.findByText(/Only the page's creator or an admin/)).toBeInTheDocument()
   expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
+})
+
+it('links a post picked from the family, using the selected text as the label', async () => {
+  vi.mocked(createWikiPage).mockResolvedValue(makePage({ id: 'new-1' }))
+  vi.mocked(fetchPosts).mockResolvedValue({
+    items: [makePost({ id: 'post-9', type: 'TRIP', trip: { title: 'Italy 2026' } as never })],
+    nextCursor: null,
+  })
+  vi.mocked(searchPosts).mockResolvedValue({
+    items: [makePost({ id: 'post-7', content: 'Lasagna night' })],
+    nextCursor: null,
+  })
+  renderPage({ groupId: 'group-1' })
+  await userEvent.type(await screen.findByLabelText('Title'), 'Trips')
+  const content = screen.getByLabelText('Page content')
+  await userEvent.type(content, 'See ')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Link a post' }))
+  await userEvent.click(await screen.findByRole('button', { name: /Italy 2026/ }))
+  expect(fetchPosts).toHaveBeenCalledWith({ groupIds: ['group-1'] })
+  expect(content).toHaveValue('See [Italy 2026](/trips/post-9)')
+
+  // Searching narrows the list; a selection becomes the label.
+  // userEvent tracks its own cursor, so select and open the picker directly.
+  ;(content as HTMLTextAreaElement).setSelectionRange(0, 3)
+  fireEvent.click(screen.getByRole('button', { name: 'Link a post' }))
+  await userEvent.type(screen.getByLabelText("Search this family's posts"), 'lasagna')
+  await userEvent.click(await screen.findByRole('button', { name: /Lasagna night/ }))
+  expect(searchPosts).toHaveBeenCalledWith({ groupId: 'group-1', q: 'lasagna' })
+  expect(content).toHaveValue('[See](/posts/post-7) [Italy 2026](/trips/post-9)')
 })

@@ -51,3 +51,24 @@ export declare function wikiLinkTarget(href: string): {
 export declare function isWikiImageSrc(src: string): boolean;
 export declare function parseWikiMarkdown(source: string): WikiBlock[];
 export declare function parseWikiInline(text: string): WikiInline[];
+export declare function wikiPostPath(post: {
+    id: string;
+    type: string;
+}): string;
+export declare function wikiPostLabel(post: {
+    content?: string | null;
+    milestoneTag?: string | null;
+    trip?: {
+        title: string;
+    } | null;
+    album?: {
+        title: string;
+    } | null;
+    giftList?: {
+        title: string;
+    } | null;
+}, fallback: string, max?: number): string;
+export declare function wikiPostLinkMarkdown(post: {
+    id: string;
+    type: string;
+}, label: string): string;

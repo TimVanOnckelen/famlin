@@ -18,6 +18,9 @@ exports.wikiLinkTarget = wikiLinkTarget;
 exports.isWikiImageSrc = isWikiImageSrc;
 exports.parseWikiMarkdown = parseWikiMarkdown;
 exports.parseWikiInline = parseWikiInline;
+exports.wikiPostPath = wikiPostPath;
+exports.wikiPostLabel = wikiPostLabel;
+exports.wikiPostLinkMarkdown = wikiPostLinkMarkdown;
 const UPLOAD_IMAGE_REGEX = /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|gif|webp|heic|heif)$/;
 // Classifies a link target: an in-app path, an allowed external URL, or null
 // (unsafe — rendered as plain text).
@@ -218,4 +221,31 @@ function parseWikiInline(text) {
     }
     flush();
     return out;
+}
+// The in-app path a wiki link to a post should use: trips, albums and gift
+// lists have their own pages; everything else opens as a post. Both clients
+// route these paths (web's router, mobile's WikiContent link handler).
+function wikiPostPath(post) {
+    const id = encodeURIComponent(post.id);
+    if (post.type === 'TRIP')
+        return `/trips/${id}`;
+    if (post.type === 'ALBUM')
+        return `/albums/${id}`;
+    if (post.type === 'GIFT_LIST')
+        return `/gift-lists/${id}`;
+    return `/posts/${id}`;
+}
+// A readable one-line label for a post: its trip/album/gift list title, a
+// milestone's tag, or the start of its text — `fallback` (e.g. "Post from
+// 4 November") when it has none of those.
+function wikiPostLabel(post, fallback, max = 60) {
+    const raw = post.trip?.title || post.album?.title || post.giftList?.title || post.milestoneTag || post.content || fallback;
+    const oneLine = raw.replace(/\s+/g, ' ').trim() || fallback;
+    return oneLine.length > max ? `${oneLine.slice(0, max - 1).trimEnd()}…` : oneLine;
+}
+// The Markdown inserted by the editors' "Link a post" picker. Brackets are
+// stripped from the label so they can't break out of the link syntax.
+function wikiPostLinkMarkdown(post, label) {
+    const safe = label.replace(/[[\]]/g, '').trim() || '…';
+    return `[${safe}](${wikiPostPath(post)})`;
 }

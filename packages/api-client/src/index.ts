@@ -178,7 +178,15 @@ export {
   wikiConflictPage,
 } from './wiki'
 export type { WikiInline, WikiListItem, WikiBlock } from './wikiMarkdown'
-export { parseWikiMarkdown, parseWikiInline, wikiLinkTarget, isWikiImageSrc } from './wikiMarkdown'
+export {
+  parseWikiMarkdown,
+  parseWikiInline,
+  wikiLinkTarget,
+  isWikiImageSrc,
+  wikiPostPath,
+  wikiPostLabel,
+  wikiPostLinkMarkdown,
+} from './wikiMarkdown'
 
 export type { CreateCommentBody, UpdateCommentBody } from './comments'
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments'

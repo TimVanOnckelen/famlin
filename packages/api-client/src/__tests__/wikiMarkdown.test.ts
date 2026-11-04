@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { parseWikiInline, parseWikiMarkdown, wikiLinkTarget } from '../wikiMarkdown'
+import {
+  parseWikiInline,
+  parseWikiMarkdown,
+  wikiLinkTarget,
+  wikiPostLabel,
+  wikiPostLinkMarkdown,
+} from '../wikiMarkdown'
 
 const PHOTO = '/uploads/123e4567-e89b-12d3-a456-426614174000.jpg'
 
@@ -107,5 +113,27 @@ describe('parseWikiInline', () => {
       { type: 'text', text: '[a](b ' },
       { type: 'link', href: '/d', internal: true, children: [{ type: 'text', text: 'c' }] },
     ])
+  })
+})
+
+describe('post links', () => {
+  it('uses type-specific paths and safe labels', () => {
+    expect(wikiPostLinkMarkdown({ id: 'a', type: 'UPDATE' }, 'Our [big] day')).toBe('[Our big day](/posts/a)')
+    expect(wikiPostLinkMarkdown({ id: 't', type: 'TRIP' }, 'Italy')).toBe('[Italy](/trips/t)')
+    expect(wikiPostLinkMarkdown({ id: 'g', type: 'GIFT_LIST' }, 'Xmas')).toBe('[Xmas](/gift-lists/g)')
+    // The link round-trips through the parser as an in-app link.
+    expect(parseWikiInline(wikiPostLinkMarkdown({ id: 'b', type: 'ALBUM' }, 'Summer'))[0]).toMatchObject({
+      type: 'link',
+      href: '/albums/b',
+      internal: true,
+    })
+  })
+
+  it('labels a post by title, tag or text', () => {
+    expect(wikiPostLabel({ trip: { title: 'Italy 2026' }, content: 'x' }, 'fb')).toBe('Italy 2026')
+    expect(wikiPostLabel({ milestoneTag: 'First steps' }, 'fb')).toBe('First steps')
+    expect(wikiPostLabel({ content: '  Hello\n  world ' }, 'fb')).toBe('Hello world')
+    expect(wikiPostLabel({ content: '' }, 'Post from today')).toBe('Post from today')
+    expect(wikiPostLabel({ content: 'a'.repeat(100) }, 'fb', 10)).toBe('aaaaaaaaa…')
   })
 })
