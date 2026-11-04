@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { fetchPosts, searchPosts, wikiPostLabel, type Post } from '@famlin/api-client'
@@ -6,6 +6,7 @@ import { Avatar } from '@/components/Avatar'
 import { Icon } from '@/components/Icon'
 import { useModalFocus } from '@/hooks/useModalFocus'
 import { formatRelativeDate } from '@/utils/time'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import './NewPostModal.css'
 
 // The wiki editor's "Link a post" picker (issue #118): the family's recent
@@ -26,11 +27,7 @@ export function WikiLinkPostModal({
   useModalFocus(cardRef, onClose)
 
   const [query, setQuery] = useState('')
-  const [debounced, setDebounced] = useState('')
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [query])
+  const debounced = useDebouncedValue(query.trim())
 
   const postsQuery = useQuery({
     queryKey: ['wiki', 'link-posts', groupId, debounced],

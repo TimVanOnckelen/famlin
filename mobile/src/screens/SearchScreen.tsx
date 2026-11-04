@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { View, StyleSheet, FlatList, TextInput } from 'react-native'
 import { KeyboardAvoidingSafeAreaView } from '@/components/KeyboardAware'
 import { useNavigation, useRoute } from '@react-navigation/native'
@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/components/ScreenHeader'
 import { EmptyState } from '@/components/EmptyState'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import { searchPosts } from '@famlin/api-client'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 export function SearchScreen() {
   const { t } = useTranslation()
@@ -19,12 +20,7 @@ export function SearchScreen() {
   const { groupId, groupName } = route.params as { groupId: string; groupName: string }
 
   const [queryInput, setQueryInput] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(queryInput.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [queryInput])
+  const debouncedQuery = useDebouncedValue(queryInput.trim())
 
   const {
     query,

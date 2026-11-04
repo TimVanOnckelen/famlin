@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { fetchGroups, searchPosts, type Post, type User } from '@famlin/api-client'
@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon'
 import { PostCard } from '@/components/PostCard'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { useOpenPostModal } from '@/utils/routes'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import './FeedPage.css'
 import './SearchPage.css'
 
@@ -49,11 +50,7 @@ export function SearchPage({
   const groups = groupsQuery.data ?? []
   const family = groups.find((group) => group.id === groupId) ?? groups[0]
   const familyId = family?.id
-  const [debouncedQuery, setDebouncedQuery] = useState(query.trim())
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [query])
+  const debouncedQuery = useDebouncedValue(query.trim())
   useEffect(() => {
     if (familyId && familyId !== groupId) onSearchChange(query, familyId)
   }, [familyId, groupId, query, onSearchChange])

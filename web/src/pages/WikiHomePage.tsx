@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { fetchGroups, fetchWikiCategories, fetchWikiPages, type WikiPageSummary } from '@famlin/api-client'
@@ -6,6 +6,7 @@ import { WikiMeta, WikiShell, type WikiShellProps } from '@/components/WikiShell
 import { Icon } from '@/components/Icon'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import type { WikiFilters } from '@/utils/routes'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import './FeedPage.css'
 import './WikiPages.css'
 
@@ -34,11 +35,7 @@ export function WikiHomePage({
   const family = groups.find((group) => group.id === groupId) ?? groups[0]
   const familyId = family?.id
 
-  const [debouncedQuery, setDebouncedQuery] = useState(query.trim())
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [query])
+  const debouncedQuery = useDebouncedValue(query.trim())
   useEffect(() => {
     if (familyId && familyId !== groupId) onFiltersChange({ groupId: familyId, q: query, category })
   }, [familyId, groupId, query, category, onFiltersChange])

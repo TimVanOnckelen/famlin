@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
@@ -10,6 +10,7 @@ import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { formatRelativeDate } from '@/i18n/utils'
 import type { Post } from '@/types'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 interface WikiLinkPostModalProps {
   visible: boolean
@@ -24,12 +25,7 @@ interface WikiLinkPostModalProps {
 export function WikiLinkPostModal({ visible, groupId, onPick, onCancel }: WikiLinkPostModalProps) {
   const { t, i18n } = useTranslation()
   const [queryInput, setQueryInput] = useState('')
-  const [debounced, setDebounced] = useState('')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(queryInput.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [queryInput])
+  const debounced = useDebouncedValue(queryInput.trim())
 
   const postsQuery = useQuery({
     queryKey: ['wiki', 'link-posts', groupId, debounced],

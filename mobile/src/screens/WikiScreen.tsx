@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { WikiMeta } from '@/components/WikiMeta'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import type { Group } from '@/types'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 // The Family Wiki overview (issue #118): one family's wiki at a time, its
 // categories as filter chips, a search box, and the pages — most recently
@@ -34,12 +35,7 @@ export function WikiScreen() {
   // undefined = every category, '' = uncategorized pages only.
   const [category, setCategory] = useState<string | undefined>(undefined)
   const [queryInput, setQueryInput] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(queryInput.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [queryInput])
+  const debouncedQuery = useDebouncedValue(queryInput.trim())
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
   const groups: Group[] = groupsQuery.data ?? []
@@ -70,7 +66,6 @@ export function WikiScreen() {
     setSelectedGroupId(id)
     setCategory(undefined)
     setQueryInput('')
-    setDebouncedQuery('')
   }
 
   function refresh() {
