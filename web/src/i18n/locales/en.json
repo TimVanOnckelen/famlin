@@ -635,7 +635,7 @@
     "uploadFailed": "Couldn't upload the photo.",
     "contentLabel": "Page content",
     "contentPlaceholder": "Write the page here…",
-    "formatHelp": "Formatting: ## heading, **bold**, *italic*, - list, - [ ] checklist, [text](link). Link to a post by pasting its address, e.g. [our trip](/posts/…).",
+    "formatHelp": "Formatting: ## heading, **bold**, *italic*, - list, - [ ] checklist, [text](link). Use the link button to link to a post your family shared.",
     "lockLabel": "Lock page.",
     "lockHelp": "Only you and admins can edit it.",
     "conflict": "{{name}} saved this page while you were editing.",

@@ -635,7 +635,7 @@
     "uploadFailed": "De foto kon niet worden geüpload.",
     "contentLabel": "Inhoud van de pagina",
     "contentPlaceholder": "Schrijf hier de pagina…",
-    "formatHelp": "Opmaak: ## kop, **vet**, *cursief*, - lijst, - [ ] checklist, [tekst](link). Link naar een bericht door het adres ervan te plakken, bijv. [onze reis](/posts/…).",
+    "formatHelp": "Opmaak: ## kop, **vet**, *cursief*, - lijst, - [ ] checklist, [tekst](link). Gebruik de linkknop om naar een bericht van je familie te linken.",
     "lockLabel": "Pagina vergrendelen.",
     "lockHelp": "Alleen jij en beheerders kunnen haar bewerken.",
     "conflict": "{{name}} heeft deze pagina opgeslagen terwijl jij bezig was met bewerken.",

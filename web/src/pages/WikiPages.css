@@ -324,9 +324,13 @@
   display: flex;
   gap: 12px;
 }
-.wiki-emoji-field {
-  width: 88px;
-  flex-shrink: 0;
+/* Scoped under the row so they win over the shared `.field { width: 100% }`. */
+.wiki-editor-row > .field {
+  flex: 1;
+  min-width: 0;
+}
+.wiki-editor-row > .wiki-emoji-field {
+  flex: 0 0 88px;
 }
 .wiki-emoji-field input {
   text-align: center;
@@ -415,8 +419,8 @@
   .wiki-editor-row {
     flex-direction: column;
   }
-  .wiki-emoji-field {
-    width: 100%;
+  .wiki-editor-row > .wiki-emoji-field {
+    flex-basis: auto;
   }
   .wiki-article-title {
     font-size: 24px;

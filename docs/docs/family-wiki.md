@@ -17,12 +17,16 @@ Every family (group) has its own wiki. Switch between your families with the fam
 
 Open the wiki from **Wiki** in the web app's sidebar (or press <kbd>g</kbd> then <kbd>w</kbd>), or from the book icon at the top of the feed in the mobile app. Both apps can read, create and edit pages; on mobile, the save button sits at the top of the editor and deleting asks for confirmation in a dialog.
 
+![The Family Wiki overview: family chips, search, categories and recently updated pages](./img/wiki-overview.png)
+
 ## Creating, editing and searching
 
 - **Create a page** with **New page** (or open `/wiki/new`). Pick the family, write a title and content, and use the **Preview** tab to check how it will look.
 - **Edit a page** with **Edit** on the page. Any family member who can see a page can edit it, so it stays up to date without waiting for whoever wrote it first. The page shows who updated it last and when.
 - **Search** with the search box on the overview. It looks through titles, categories and the full text of the pages you can see, and the newest edits come first.
 - **Recently updated** on the overview lists the pages edited most recently.
+
+![A wiki page with headings, inline code, a quote and a link to a trip](./img/wiki-page.png)
 
 ## Categories
 
@@ -31,6 +35,8 @@ A category is a free-text label, one level deep. Type a new one when you create 
 ## Writing with Markdown
 
 Pages support a small, safe subset of Markdown. The editor has toolbar buttons for the common ones.
+
+![The editor with its formatting toolbar](./img/wiki-editor.png)
 
 | You type | You get |
 | --- | --- |
@@ -50,6 +56,8 @@ Anything else (raw HTML, scripts, other link types) is shown as plain text, neve
 ### Linking to posts and other pages
 
 Use **Link a post** in the editor's toolbar to link to something your family already shared: it lists the family's recent posts, with a search box, and inserts a link at the cursor. If you select some text first, that text becomes the link; otherwise the link is labelled with the post's title or its first words. Trips, albums and gift lists link to their own pages.
+
+![The Link a post picker](./img/wiki-link-post.png)
 
 You can also type a link yourself, using an in-app path as the target: a post's permalink is `/posts/<id>`, for example `[our Italy trip](/posts/abc123)`; a wiki page's is `/wiki/<id>`. Clicking an in-app link opens it inside the app. The page you link to keeps its own audience: someone who can't see that post still can't open it.
 
