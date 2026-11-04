@@ -38,6 +38,7 @@ export function AppShell({
   onFavorites,
   onNotifications,
   onSearch,
+  onMembers,
   onProfile,
   onNewPost,
   onLogout,
@@ -51,6 +52,11 @@ export function AppShell({
   onFavorites?: () => void
   onNotifications?: () => void
   onSearch?: () => void
+  // The standalone /members page (every family + the caller's own circles).
+  // Reached from the avatar menu rather than a sidebar item — mobile has no
+  // tab for it either — and hidden, like the family-scoped tabs, for a user
+  // in no families.
+  onMembers?: () => void
   onProfile: () => void
   onNewPost?: () => void
   onLogout: () => void
@@ -100,6 +106,7 @@ export function AppShell({
   const photosNav = showPhotosTab ? onPhotos : undefined
   const chatNav = showChatTab ? onChat : undefined
   const favoritesNav = showFavoritesNav ? onFavorites : undefined
+  const membersNav = (!!onMembers || active === 'members') && hasGroups ? onMembers : undefined
 
   function goTo(view: NavView) {
     if (view === 'feed') onFeed()
@@ -108,6 +115,7 @@ export function AppShell({
     else if (view === 'favorites') favoritesNav?.()
     else if (view === 'search') searchNav?.()
     else if (view === 'notifications') notificationsNav?.()
+    else if (view === 'members') membersNav?.()
     else onProfile()
   }
 
@@ -216,7 +224,13 @@ export function AppShell({
         </button>
 
         <div className="sidebar-footer">
-          <UserMenu user={user} onProfile={onProfile} onApiTokens={() => setApiTokensOpen(true)} onLogout={onLogout} />
+          <UserMenu
+            user={user}
+            onProfile={onProfile}
+            onMembers={membersNav}
+            onApiTokens={() => setApiTokensOpen(true)}
+            onLogout={onLogout}
+          />
         </div>
       </nav>
       <header className="mobile-header">

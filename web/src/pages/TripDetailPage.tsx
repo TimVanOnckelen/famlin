@@ -38,6 +38,7 @@ export function TripDetailPage({
   onOpenFavorites,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
   onLogout,
 }: {
   user: User
@@ -51,6 +52,7 @@ export function TripDetailPage({
   onOpenFavorites?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
   onLogout: () => void
 }) {
   const { t, i18n } = useTranslation()
@@ -85,6 +87,7 @@ export function TripDetailPage({
         onPhotos={onOpenPhotos}
         onFavorites={onOpenFavorites}
         onNotifications={onOpenNotifications}
+        onMembers={onOpenMembers}
         onSearch={onOpenSearch}
         onChat={onOpenChat}
         onProfile={onOpenProfile ?? (() => {})}

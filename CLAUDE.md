@@ -22,7 +22,9 @@ Favorites/Notifications: desktop sidebar and compact mobile header, hidden
 for users without families. The feed passes its single-family filter when
 opening search. Search results use the `['posts', 'search', groupId, query]`
 cache prefix so reactions/favorites stay in sync through `patchPostInCaches`,
-and open the standard post modal over the search URL. Keyboard: `g` then `s`.
+and open the standard post modal over the search URL. Keyboard: `/` or `g` then `s`.
+`/members` is reached from the avatar menu (`AppShell`'s `onMembers`, hidden
+without families), the feed header/side panel, or `g` then `m`.
 
 ## Commands
 

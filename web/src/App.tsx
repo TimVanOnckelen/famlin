@@ -197,6 +197,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
                 onOpenNotifications={nav.toNotifications}
+                onOpenMembers={() => nav.toMembers()}
                 onOpenSearch={nav.toSearch}
                 onOpenAlbum={nav.toAlbum}
                 onLogout={() => logout()}
@@ -215,6 +216,7 @@ function AppRoutes({ user }: { user: User }) {
                 onOpenProfile={nav.toProfile}
                 onOpenFavorites={nav.toFavorites}
                 onOpenNotifications={nav.toNotifications}
+                onOpenMembers={() => nav.toMembers()}
                 onOpenSearch={nav.toSearch}
                 onLogout={() => logout()}
               />
@@ -232,6 +234,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
+              onOpenMembers={() => nav.toMembers()}
               onOpenSearch={nav.toSearch}
               onLogout={() => logout()}
             />
@@ -248,6 +251,7 @@ function AppRoutes({ user }: { user: User }) {
               user={user}
               onBack={nav.toFeed}
               onOpenNotifications={nav.toNotifications}
+              onOpenMembers={() => nav.toMembers()}
               onOpenSearch={nav.toSearch}
               onOpenProfile={nav.toProfile}
               onOpenPhotos={nav.toPhotos}
@@ -271,6 +275,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenProfile={nav.toProfile}
               onOpenPost={nav.toPost}
               onOpenSearch={nav.toSearch}
+              onOpenMembers={() => nav.toMembers()}
               onLogout={() => logout()}
             />
           }
@@ -305,6 +310,7 @@ function AppRoutes({ user }: { user: User }) {
               onOpenChat={nav.toChat}
               onOpenFavorites={nav.toFavorites}
               onOpenNotifications={nav.toNotifications}
+              onOpenMembers={() => nav.toMembers()}
               onOpenProfile={nav.toProfile}
               onOpenTrip={nav.toTrip}
               onOpenAlbum={nav.toAlbum}
@@ -401,6 +407,7 @@ function TripRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -423,6 +430,7 @@ function AlbumRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -445,6 +453,7 @@ function GiftListRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />
@@ -470,6 +479,7 @@ function PostRoute({ user }: { user: User }) {
       onOpenProfile={nav.toProfile}
       onOpenFavorites={nav.toFavorites}
       onOpenNotifications={nav.toNotifications}
+      onOpenMembers={() => nav.toMembers()}
       onOpenSearch={nav.toSearch}
       onLogout={() => logout()}
     />

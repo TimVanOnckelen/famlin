@@ -17,9 +17,10 @@ const NAV_KEYS: Record<string, NavView> = {
   n: 'notifications',
   u: 'profile',
   s: 'search',
+  m: 'members',
 }
 
-// Global "g then <letter>" / "n" / "?" shortcuts (the Gmail/Linear-style
+// Global "g then <letter>" / "n" / "/" / "?" shortcuts (the Gmail/Linear-style
 // chord pattern). Ignored while typing in a field or contenteditable, while
 // any modal is open (every modal in this app shares the `.modal-overlay`
 // convention — see NewPostModal.tsx et al.), or while a modifier key is
@@ -68,6 +69,14 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
 
       if (e.key === 'n' && handlersRef.current.onNewPost) {
         handlersRef.current.onNewPost()
+        return
+      }
+
+      // `/` jumps to search (the GitHub/YouTube convention). preventDefault
+      // so Firefox's quick-find bar doesn't open on top of it.
+      if (e.key === '/') {
+        e.preventDefault()
+        handlersRef.current.onNavigate('search')
         return
       }
 

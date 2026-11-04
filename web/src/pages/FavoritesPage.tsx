@@ -31,6 +31,7 @@ export function FavoritesPage({
   onLogout,
   onOpenNotifications,
   onOpenSearch,
+  onOpenMembers,
 }: {
   user: User
   onBack: () => void
@@ -43,6 +44,7 @@ export function FavoritesPage({
   onLogout: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
+  onOpenMembers?: () => void
 }) {
   const { t } = useTranslation()
   const openPostModal = useOpenPostModal()
@@ -79,6 +81,7 @@ export function FavoritesPage({
       onChat={onOpenChat}
       onFavorites={() => {}}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}
       onLogout={onLogout}

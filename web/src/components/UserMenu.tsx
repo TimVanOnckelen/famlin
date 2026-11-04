@@ -4,18 +4,21 @@ import { User } from '@famlin/api-client'
 import { Avatar } from '@/components/Avatar'
 import './UserMenu.css'
 
-// The avatar menu (profile / API tokens / logout) — AppShell's sidebar
+// The avatar menu (profile / members / API tokens / logout) — AppShell's sidebar
 // footer. It used to render in the compact mobile header too, but that
 // header dropped the avatar (profile has its own BottomNav tab; the menu's
 // unique items live on ProfilePage), so the sidebar is its only home.
 export function UserMenu({
   user,
   onProfile,
+  onMembers,
   onApiTokens,
   onLogout,
 }: {
   user: User
   onProfile: () => void
+  // Omitted (no item) for a user in no families, see AppShell.
+  onMembers?: () => void
   onApiTokens: () => void
   onLogout: () => void
 }) {
@@ -72,6 +75,7 @@ export function UserMenu({
 
   const items = [
     { key: 'profile', label: t('profile.title'), action: onProfile },
+    ...(onMembers ? [{ key: 'members', label: t('members.title'), action: onMembers }] : []),
     { key: 'apiTokens', label: t('apiTokens.menuItem'), action: onApiTokens },
     { key: 'logout', label: t('common.logout'), action: onLogout },
   ]

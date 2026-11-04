@@ -21,6 +21,7 @@ export function SearchPage({
   onOpenChat,
   onOpenFavorites,
   onOpenNotifications,
+  onOpenMembers,
   onOpenTrip,
   onOpenAlbum,
   onOpenGiftList,
@@ -36,6 +37,7 @@ export function SearchPage({
   onOpenChat?: () => void
   onOpenFavorites?: () => void
   onOpenNotifications?: () => void
+  onOpenMembers?: () => void
   onOpenTrip?: (id: string) => void
   onOpenAlbum?: (id: string) => void
   onOpenGiftList?: (id: string) => void
@@ -84,6 +86,7 @@ export function SearchPage({
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers}
       onProfile={onOpenProfile}
       onLogout={onLogout}
     >
