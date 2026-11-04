@@ -63,6 +63,7 @@ export function ServerSettingsPage() {
     defaultLanguage: 'en',
     appStoreUrl: '',
     playStoreUrl: '',
+    publicUrl: '',
     allowedEmails: [],
     oidcName: '',
     oidcIssuer: '',
@@ -332,6 +333,27 @@ export function ServerSettingsPage() {
                   </select>
                 </label>
                 <p className="hint">{t('serverSettings.defaultLanguageHint')}</p>
+                <label>
+                  {t('serverSettings.publicUrl')}
+                  <input
+                    type="url"
+                    value={form.publicUrl}
+                    onChange={(e) => updateField('publicUrl', e.target.value)}
+                    placeholder="https://famlin.example.com"
+                  />
+                </label>
+                {form.publicUrl !== window.location.origin && (
+                  <div className="settings-test-row">
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => updateField('publicUrl', window.location.origin)}
+                    >
+                      {t('serverSettings.publicUrlUseCurrent', { url: window.location.origin })}
+                    </button>
+                  </div>
+                )}
+                <p className="hint">{t('serverSettings.publicUrlHint')}</p>
                 <div className="row">
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.appStoreUrl')}

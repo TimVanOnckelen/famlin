@@ -335,7 +335,7 @@
   "serverSettings": {
     "title": "Server settings",
     "general": "General",
-    "generalDesc": "Language and app store links.",
+    "generalDesc": "Language, public address and app store links.",
     "signInAccess": "Sign-in & access",
     "notifications": "Notifications",
     "media": "Media",
@@ -350,6 +350,9 @@
     "appStoreUrl": "App Store URL",
     "playStoreUrl": "Google Play URL",
     "storeUrlsHint": "Optional. If set, the invite link page shows download buttons for people who don't have the app yet. Leave blank to hide them.",
+    "publicUrl": "Public address",
+    "publicUrlUseCurrent": "Use {{url}}",
+    "publicUrlHint": "The address your family opens Famlin at, e.g. https://famlin.example.com. Notification emails link to the post in the web app when this is set; leave it blank to send emails without a link.",
     "dataExport": "Data export",
     "dataExportDesc": "Download a zip of all family content — posts, comments, reactions, poll votes, favorites, chat messages, circles, the member list, and every uploaded photo/video. It can be restored onto a new, empty Famlin server from its first-run setup screen. Server configuration and secrets (SMTP, OIDC, Immich, passwords, invite links, tokens) are never included.",
     "dataExportDownload": "Download export",

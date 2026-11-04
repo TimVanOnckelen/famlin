@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { prisma } from '../../db.js'
 import i18n from '../../i18n/index.js'
 import { getAllSettings } from '../settings.js'
 import type { NotificationChannel, NotifyType, Recipient } from './types.js'
@@ -17,6 +18,35 @@ const EMAIL_PREF_FIELD: Partial<Record<NotifyType, 'emailOnNewPost' | 'emailOnNe
   mention: 'emailOnNewComment',
   on_this_day: 'emailOnNewPost',
   new_media_assets: 'emailOnNewPost',
+}
+
+// Post types that open their own page in the web app instead of the generic
+// /posts/:id permalink (mirrors web/src/utils/routes.ts). The permalink would
+// hand these on anyway; linking directly just skips the redirect.
+const POST_TYPE_PATHS: Record<string, string> = {
+  TRIP: 'trips',
+  ALBUM: 'albums',
+  GIFT_LIST: 'gift-lists',
+}
+
+// The web-app link a notification email carries, or null when the admin
+// hasn't set the publicUrl setting (there is no request to derive an origin
+// from here). The link only names the post — the web app still requires
+// sign-in and applies the usual group/circle checks, and recipients were
+// already circle-filtered by notify(), so it exposes nothing new. A signed-out
+// reader lands back on it after logging in (rememberReturnPath in web/).
+export function notificationLink(
+  publicUrl: string,
+  post: { id: string; type: string } | null,
+  type: NotifyType
+): string | null {
+  const base = publicUrl.trim().replace(/\/+$/, '')
+  if (!base) return null
+  if (post) return `${base}/${POST_TYPE_PATHS[post.type] ?? 'posts'}/${encodeURIComponent(post.id)}`
+  // new_media_assets is tied to an album, not a post — the Photos tab is
+  // where those assets show up.
+  if (type === 'new_media_assets') return `${base}/photos`
+  return `${base}/`
 }
 
 export async function createTransporter(settings?: Awaited<ReturnType<typeof getAllSettings>>) {
@@ -48,7 +78,7 @@ export const emailChannel: NotificationChannel = {
     return field ? recipient[field] : false
   },
 
-  async send({ recipients, message, settings }) {
+  async send({ type, recipients, message, settings, postId }) {
     const transporter = await createTransporter(settings)
     if (!transporter) return
 
@@ -57,7 +87,16 @@ export const emailChannel: NotificationChannel = {
     const subject = brandName
       ? t('notifications.emailSubjectBranded', { name: brandName })
       : t('notifications.emailSubject')
-    const body = t('notifications.emailBody', { message })
+    let link: string | null = null
+    if (settings.publicUrl) {
+      const post = postId
+        ? await prisma.post.findUnique({ where: { id: postId }, select: { id: true, type: true } })
+        : null
+      link = notificationLink(settings.publicUrl, post, type)
+    }
+    const body = link
+      ? t('notifications.emailBodyWithLink', { message, link })
+      : t('notifications.emailBody', { message })
 
     // Send in parallel so one slow/hanging recipient doesn't serialize the rest.
     await Promise.all(
