@@ -455,7 +455,8 @@
     "likePost": "点赞动态",
     "favoritePost": "收藏动态",
     "goNotifications": "前往通知",
-    "goSearch": "前往搜索"
+    "goSearch": "前往搜索",
+    "goMembers": "前往成员"
   },
   "notifications": {
     "title": "通知",

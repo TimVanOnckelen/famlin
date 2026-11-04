@@ -182,6 +182,7 @@ export function FeedPage({
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
       onNotifications={onOpenNotifications}
+      onMembers={onOpenMembers ? () => onOpenMembers() : undefined}
       onSearch={
         onOpenSearch ? () => onOpenSearch(selectedGroupIds.length === 1 ? selectedGroupIds[0] : undefined) : undefined
       }

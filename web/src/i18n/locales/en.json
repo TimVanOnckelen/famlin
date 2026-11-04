@@ -455,7 +455,8 @@
     "likePost": "Like post",
     "favoritePost": "Favorite post",
     "goNotifications": "Go to notifications",
-    "goSearch": "Go to search"
+    "goSearch": "Go to search",
+    "goMembers": "Go to members"
   },
   "notifications": {
     "title": "Notifications",

@@ -455,7 +455,8 @@
     "likePost": "Bericht liken",
     "favoritePost": "Bericht favorieten",
     "goNotifications": "Ga naar meldingen",
-    "goSearch": "Naar zoeken"
+    "goSearch": "Naar zoeken",
+    "goMembers": "Naar leden"
   },
   "notifications": {
     "title": "Meldingen",

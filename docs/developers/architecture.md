@@ -149,7 +149,11 @@ family; otherwise it defaults to the first available family. Results reuse
 `PostCard` and open the post detail modal over the search page; trips and
 albums open their dedicated pages. Search appears in the desktop sidebar and
 compact mobile header, following the same family visibility rules as
-Favorites and Notifications. The keyboard shortcut is `g` then `s`.
+Favorites and Notifications. The keyboard shortcuts are `/` and `g` then `s`.
+
+The `/members` page is reached from the avatar menu (`AppShell`'s `onMembers`
+callback, hidden for users without families), the feed header and the
+side panel's member card, or `g` then `m`.
 
 ## Internationalization
 
