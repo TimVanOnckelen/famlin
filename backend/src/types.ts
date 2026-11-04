@@ -353,6 +353,32 @@ export const updateServerSettingsBodySchema = z.object({
   defaultLanguage: z.enum(SUPPORTED_LANGUAGES).optional(),
   appStoreUrl: z.union([z.literal(''), z.string().url()]).optional(),
   playStoreUrl: z.union([z.literal(''), z.string().url()]).optional(),
+  // Where members reach this server — the base of links in notification
+  // emails (services/notificationChannels/email.ts). http(s) only, and an
+  // origin rather than a path: the web app is always served at `/`.
+  publicUrl: z
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .trim()
+        .url()
+        .refine((value) => {
+          // zod still runs this refinement after .url() has failed, so a
+          // non-URL must not reach `new URL()` (it throws → a 500).
+          if (!URL.canParse(value)) return false
+          const url = new URL(value)
+          return (
+            (url.protocol === 'https:' || url.protocol === 'http:') &&
+            url.pathname.replace(/\/+$/, '') === '' &&
+            !url.search &&
+            !url.hash &&
+            !url.username &&
+            !url.password
+          )
+        }, 'Must be an http(s) address without a path'),
+    ])
+    .optional(),
   allowedEmails: z.array(z.string().email()).optional(),
   oidcName: z.string().max(50).optional(),
   oidcIssuer: z.string().optional(),

@@ -335,7 +335,7 @@
   "serverSettings": {
     "title": "服务器设置",
     "general": "常规",
-    "generalDesc": "语言和应用商店链接。",
+    "generalDesc": "语言、公开地址和应用商店链接。",
     "signInAccess": "登录与访问",
     "notifications": "通知",
     "media": "媒体",
@@ -350,6 +350,9 @@
     "appStoreUrl": "App Store 链接",
     "playStoreUrl": "Google Play 链接",
     "storeUrlsHint": "可选。填写后，邀请页面将向尚未安装应用的人显示下载按钮；留空则隐藏。",
+    "publicUrl": "公开地址",
+    "publicUrlUseCurrent": "使用 {{url}}",
+    "publicUrlHint": "家人访问 Famlin 的地址，例如 https://famlin.example.com。填写后，通知邮件会链接到网页版中的帖子；留空则发送不带链接的邮件。",
     "dataExport": "数据导出",
     "dataExportDesc": "下载包含全部家庭内容的 ZIP：动态、评论、回应、投票、收藏、聊天消息、圈子、成员列表及所有上传的照片和视频。可在全新空白服务器的首次设置页恢复。导出不包含服务器配置及密钥（SMTP、OIDC、Immich、密码、邀请链接、令牌）。",
     "dataExportDownload": "下载导出文件",

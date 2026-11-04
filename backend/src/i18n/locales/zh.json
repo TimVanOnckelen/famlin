@@ -141,6 +141,7 @@
     "pushTitle": "Famlin",
     "emailSubject": "Famlin 有新动态",
     "emailBody": "{{message}}\n\n请在 Famlin 应用中查看。",
+    "emailBodyWithLink": "{{message}}\n\n在 Famlin 中查看：{{link}}",
     "newStory": "{{author}} 在 {{group}} 分享了限时动态",
     "storyReply": "{{author}} 回复了你的限时动态：“{{excerpt}}”",
     "storyReaction": "{{author}} 用 {{emoji}} 回应了你在 {{group}} 的限时动态",
