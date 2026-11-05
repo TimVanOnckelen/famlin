@@ -111,16 +111,34 @@ export async function canReadUpload(pathOrFilename: string, userId: string): Pro
   const row = await getUploadRow(uploadAssetKey(pathOrFilename))
   if (!row) return true
   if (row.livePhoto) return canReadUpload(`/uploads/${row.livePhoto.assetKey}.jpg`, userId)
-  if (row.circleId) return isCircleMember(row.circleId, userId)
+  return isUploadRowReadable(row, userId, {
+    inCircle: (circleId) => isCircleMember(circleId, userId),
+    inAnyGroup: async (groupIds) =>
+      !!(await prisma.groupMember.findFirst({
+        where: { userId, groupId: { in: groupIds } },
+        select: { id: true },
+      })),
+  })
+}
+
+export type UploadScopeRow = Pick<UploadRow, 'uploaderId' | 'circleId' | 'bound' | 'groupIds' | 'serverWide'>
+
+// THE readability rule for one Upload row (see canReadUpload above), with
+// the membership lookups left to the caller: canReadUpload checks them live
+// per request, the member export (services/memberExport.ts) against sets it
+// loaded once. Never re-implement it elsewhere.
+export async function isUploadRowReadable(
+  row: UploadScopeRow,
+  userId: string,
+  viewer: {
+    inCircle: (circleId: string) => boolean | Promise<boolean>
+    inAnyGroup: (groupIds: string[]) => boolean | Promise<boolean>
+  }
+): Promise<boolean> {
+  if (row.circleId) return viewer.inCircle(row.circleId)
   if (!row.bound) return row.uploaderId === userId
   if (row.serverWide) return true
-  if (row.groupIds.length > 0) {
-    const membership = await prisma.groupMember.findFirst({
-      where: { userId, groupId: { in: row.groupIds } },
-      select: { id: true },
-    })
-    return !!membership
-  }
+  if (row.groupIds.length > 0) return viewer.inAnyGroup(row.groupIds)
   return true
 }
 
