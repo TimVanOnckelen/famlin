@@ -1,6 +1,7 @@
 import { reportDevice } from '@famlin/api-client'
 import { getDeviceReport, setDeviceReport } from '@/utils/storage'
 import { syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
+import { checkServerSupports } from '@/utils/serverFeatures'
 
 jest.mock('expo-constants', () => ({ expoConfig: { version: '1.8.2' }, nativeBuildVersion: '245' }))
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'install-uuid') }))
@@ -8,6 +9,7 @@ jest.mock('expo-device', () => ({ osVersion: '18.1' }))
 jest.mock('expo-notifications', () => ({ getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }) }))
 jest.mock('react-native', () => ({ Platform: { OS: 'ios', Version: '18.1' } }))
 jest.mock('@famlin/api-client', () => ({ reportDevice: jest.fn().mockResolvedValue(undefined) }))
+jest.mock('@/utils/serverFeatures', () => ({ checkServerSupports: jest.fn() }))
 jest.mock('@/utils/storage', () => ({
   getDeviceInstallId: jest.fn().mockResolvedValue('install-uuid'),
   setDeviceInstallId: jest.fn().mockResolvedValue(undefined),
@@ -20,6 +22,18 @@ describe('syncDeviceDiagnostics', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(getDeviceReport as jest.Mock).mockResolvedValue(null)
+    jest.mocked(checkServerSupports).mockResolvedValue(true)
+  })
+
+  it('skips silently, storing nothing, on a server without deviceDiagnostics', async () => {
+    jest.mocked(checkServerSupports).mockResolvedValue(false)
+
+    const result = await syncDeviceDiagnostics('member-1')
+
+    expect(checkServerSupports).toHaveBeenCalledWith('deviceDiagnostics')
+    expect(reportDevice).not.toHaveBeenCalled()
+    expect(setDeviceReport).not.toHaveBeenCalled()
+    expect(result).toBeNull()
   })
 
   it('stores a report only after sending the current payload', async () => {

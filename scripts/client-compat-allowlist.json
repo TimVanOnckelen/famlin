@@ -25,16 +25,6 @@
       "method": "POST",
       "path": "/api/auth/apple",
       "reason": "new in 0.6.3, but only offered when GET /api/auth/oidc-config returns appleSignInEnabled, which older servers don't send"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/auth/me",
-      "reason": "new in 0.6.3 and not feature-gated: on 0.5.0-0.6.2 the account-deletion request 404s and the app shows the error. Accepted rather than adding a feature id; add one (and gate the button) if it should be hidden instead"
-    },
-    {
-      "method": "GET",
-      "path": "/api/auth/me/export",
-      "reason": "new in 0.8.0 and not feature-gated: on older servers the export download fails and the app shows its export-failed error. Accepted rather than adding a feature id; add one (and gate the button) if it should be hidden instead"
     }
   ]
 }

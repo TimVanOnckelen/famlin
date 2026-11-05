@@ -21,6 +21,9 @@ jest.mock('@famlin/api-client', () => ({
   setMediaToken: jest.fn(),
   unregisterPushToken: jest.fn().mockResolvedValue(undefined),
   unregisterDevice: jest.fn().mockResolvedValue(undefined),
+  getCurrentServerUrl: jest.fn(() => 'http://example.com'),
+  fetchServerInfo: jest.fn().mockResolvedValue({ version: '0.9.0', features: ['deviceDiagnostics'] }),
+  serverSupports: jest.requireActual('@famlin/api-client').serverSupports,
 }))
 
 const testUser: User = {
@@ -104,6 +107,34 @@ describe('authStore', () => {
 
     expect(client.unregisterDevice).toHaveBeenCalledWith('install-uuid')
     expect(storage.deleteDeviceReport).toHaveBeenCalledTimes(1)
+  })
+
+  it('logout skips the device DELETE on a server without deviceDiagnostics, and still signs out', async () => {
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    storage.getDeviceInstallId.mockResolvedValue('install-uuid')
+    client.fetchServerInfo.mockResolvedValue({ version: '0.8.7' })
+    const { useAuthStore } = require('@/stores/authStore')
+
+    await useAuthStore.getState().logout()
+
+    expect(client.unregisterDevice).not.toHaveBeenCalled()
+    expect(storage.deleteDeviceReport).toHaveBeenCalledTimes(1)
+    expect(storage.deleteToken).toHaveBeenCalledTimes(1)
+    expect(useAuthStore.getState().user).toBeNull()
+  })
+
+  it('logout still signs out when server-info itself fails', async () => {
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    storage.getDeviceInstallId.mockResolvedValue('install-uuid')
+    client.fetchServerInfo.mockRejectedValue(new Error('offline'))
+    const { useAuthStore } = require('@/stores/authStore')
+
+    await useAuthStore.getState().logout()
+
+    expect(client.unregisterDevice).not.toHaveBeenCalled()
+    expect(storage.deleteToken).toHaveBeenCalledTimes(1)
   })
 
   it('clearSession deletes the token but PRESERVES the server URL', async () => {

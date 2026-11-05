@@ -37,7 +37,7 @@ import {
   NotificationPrefs,
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-import { useServerInfo } from '@/hooks/useServerInfo'
+import { useServerInfo, useServerSupports } from '@/hooks/useServerInfo'
 import { setLanguage } from '@/utils/storage'
 import { formatDayMonth } from '@/i18n/utils'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
@@ -45,11 +45,23 @@ import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 export function ProfileScreen() {
   const { t, i18n: i18nInstance } = useTranslation()
   const navigation = useNavigation<any>()
+  // Sections backed by an endpoint an older server may lack are hidden —
+  // and their queries never sent — until server-info confirms the feature
+  // (issue #380). Server-info is normally cached by then (the feed loads it).
+  const supportsGiftLists = useServerSupports('giftLists') === true
+  const supportsDevices = useServerSupports('deviceDiagnostics') === true
+  const supportsExport = useServerSupports('memberExport') === true
+  const supportsAccountDeletion = useServerSupports('accountDeletion') === true
   // "My gift lists" (issue #307): every gift list the user takes part in.
-  const { data: giftLists = [] } = useQuery({ queryKey: ['gift-lists'], queryFn: fetchMyGiftLists })
+  const { data: giftLists = [] } = useQuery({
+    queryKey: ['gift-lists'],
+    queryFn: fetchMyGiftLists,
+    enabled: supportsGiftLists,
+  })
   const { data: devices = [], isLoading: devicesLoading } = useQuery({
     queryKey: ['my-devices'],
     queryFn: fetchMyDevices,
+    enabled: supportsDevices,
   })
   const { user, logout, serverUrl, updateUser } = useAuthStore()
   const queryClient = useQueryClient()
@@ -225,7 +237,7 @@ export function ProfileScreen() {
           )}
         </View>
 
-        {giftLists.length > 0 && (
+        {supportsGiftLists && giftLists.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.myGiftLists')}</Text>
             {giftLists.map((post) => (
@@ -290,37 +302,39 @@ export function ProfileScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.devices.title')}</Text>
-          <Text style={styles.settingDescription}>{t('profile.devices.description')}</Text>
-          {devicesLoading ? (
-            <ActivityIndicator color={colors.primary} style={styles.deviceLoading} />
-          ) : devices.length === 0 ? (
-            <Text style={[styles.settingDescription, styles.deviceEmpty]}>{t('profile.devices.empty')}</Text>
-          ) : (
-            devices.map((device) => (
-              <View key={device.installId} style={styles.deviceCard}>
-                {(
-                  [
-                    ['installId', device.installId],
-                    ['platform', device.platform],
-                    ['osVersion', device.osVersion],
-                    ['appVersion', device.appVersion],
-                    ['appBuild', device.appBuild],
-                    ['pushPermission', t(`profile.devices.permissions.${device.pushPermission}`)],
-                  ] as const
-                ).map(([field, value]) => (
-                  <View key={field} style={styles.deviceField}>
-                    <Text style={styles.deviceFieldLabel}>{t(`profile.devices.fields.${field}`)}</Text>
-                    <Text selectable style={styles.deviceFieldValue}>
-                      {value}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ))
-          )}
-        </View>
+        {supportsDevices && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.devices.title')}</Text>
+            <Text style={styles.settingDescription}>{t('profile.devices.description')}</Text>
+            {devicesLoading ? (
+              <ActivityIndicator color={colors.primary} style={styles.deviceLoading} />
+            ) : devices.length === 0 ? (
+              <Text style={[styles.settingDescription, styles.deviceEmpty]}>{t('profile.devices.empty')}</Text>
+            ) : (
+              devices.map((device) => (
+                <View key={device.installId} style={styles.deviceCard}>
+                  {(
+                    [
+                      ['installId', device.installId],
+                      ['platform', device.platform],
+                      ['osVersion', device.osVersion],
+                      ['appVersion', device.appVersion],
+                      ['appBuild', device.appBuild],
+                      ['pushPermission', t(`profile.devices.permissions.${device.pushPermission}`)],
+                    ] as const
+                  ).map(([field, value]) => (
+                    <View key={field} style={styles.deviceField}>
+                      <Text style={styles.deviceFieldLabel}>{t(`profile.devices.fields.${field}`)}</Text>
+                      <Text selectable style={styles.deviceFieldValue}>
+                        {value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ))
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
@@ -393,25 +407,27 @@ export function ProfileScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
-          <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
-          <TouchableOpacity
-            style={[styles.exportButton, exportData.isPending && styles.exportButtonDisabled]}
-            onPress={() => exportData.mutate()}
-            disabled={exportData.isPending}
-            accessibilityRole="button"
-          >
-            {exportData.isPending ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Icon name="download" size={16} color={colors.primary} />
-            )}
-            <Text style={styles.exportButtonText}>
-              {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {supportsExport && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
+            <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
+            <TouchableOpacity
+              style={[styles.exportButton, exportData.isPending && styles.exportButtonDisabled]}
+              onPress={() => exportData.mutate()}
+              disabled={exportData.isPending}
+              accessibilityRole="button"
+            >
+              {exportData.isPending ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Icon name="download" size={16} color={colors.primary} />
+              )}
+              <Text style={styles.exportButtonText}>
+                {exportData.isPending ? t('profile.exportPreparing') : t('profile.exportButton')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.server')}</Text>
@@ -448,14 +464,16 @@ export function ProfileScreen() {
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
 
-        <View style={styles.dangerSection}>
-          <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
-          <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>
-          <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteModal}>
-            <Icon name="trash" size={16} color={colors.danger} />
-            <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
-          </TouchableOpacity>
-        </View>
+        {supportsAccountDeletion && (
+          <View style={styles.dangerSection}>
+            <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
+            <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>
+            <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteModal}>
+              <Icon name="trash" size={16} color={colors.danger} />
+              <Text style={styles.deleteAccountButtonText}>{t('profile.deleteAccount')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <DeleteAccountModal
           visible={deleteModalVisible}

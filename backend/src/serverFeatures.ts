@@ -18,8 +18,10 @@
 //
 // The comment after each id is the release that first shipped it.
 export const SERVER_FEATURES = [
+  'accountDeletion', // 0.6.3 — DELETE /api/auth/me (self-service account deletion)
   'circles', // 0.7.0 — Family Circles (/api/circles, post/story circleId)
   'stories', // 0.8.0 — /api/stories
+  'memberExport', // 0.8.0 — GET /api/auth/me/export (member data export)
   'giftLists', // 0.8.5 — GIFT_LIST posts + /api/gift-lists
   'uploadProcessing', // 0.8.7 — GET /api/uploads/status/:assetKey + post upload metadata
   'livePhotos', // 0.8.7 — Live Photo pairing (`kind: 'livePhoto'`, `videoUrl`)

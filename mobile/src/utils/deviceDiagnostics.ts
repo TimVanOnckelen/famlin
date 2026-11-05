@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import { reportDevice, DevicePayload } from '@famlin/api-client'
 import { getDeviceInstallId, setDeviceInstallId, getDeviceReport, setDeviceReport, getServerUrl } from '@/utils/storage'
+import { checkServerSupports } from '@/utils/serverFeatures'
 
 export async function getOrCreateDeviceInstallId(): Promise<string> {
   const existing = await getDeviceInstallId()
@@ -35,6 +36,11 @@ export async function syncDeviceDiagnostics(userId: string) {
   }
   const reportKey = JSON.stringify({ serverUrl, userId, installId, payload })
   if ((await getDeviceReport()) === reportKey) return { installId, payload, changed: false }
+
+  // A server without /api/devices (before deviceDiagnostics) gets nothing:
+  // skipped silently, and nothing stored, so it reports once the server is
+  // upgraded.
+  if (!(await checkServerSupports('deviceDiagnostics'))) return null
 
   await reportDevice(installId, payload)
   // Store only after the server accepted the report. Failed requests retry on

@@ -6,8 +6,10 @@ import type { ServerInfo } from './auth'
 // Ids are stable — never renamed or removed — and a new client-visible
 // capability adds its id on both sides. The comment is the first release.
 export type ServerFeature =
+  | 'accountDeletion' // 0.6.3
   | 'circles' // 0.7.0
   | 'stories' // 0.8.0
+  | 'memberExport' // 0.8.0
   | 'giftLists' // 0.8.5
   | 'uploadProcessing' // 0.8.7
   | 'livePhotos' // 0.8.7

@@ -79,6 +79,7 @@ async function fetchServerInfo() {
 // cascades to (posts, comments, reactions, favorites, chat messages,
 // notifications). There is no restore — callers must confirm first.
 async function deleteAccount() {
+    // requires-feature: accountDeletion
     await client_1.api.delete('/auth/me');
 }
 // Self-service data export (GET /api/auth/me/export): a zip of everything
@@ -88,6 +89,7 @@ async function deleteAccount() {
 // to disk instead via getMyExportRequest(), since holding a whole family's
 // media in JS memory would not survive on a phone.
 async function downloadMyExport() {
+    // requires-feature: memberExport
     const response = await client_1.api.get('/auth/me/export', { responseType: 'blob', timeout: 0 });
     return response.data;
 }
@@ -98,6 +100,7 @@ async function getMyExportRequest() {
     if (!serverUrl)
         throw new Error('No server URL configured');
     const token = await (0, storage_1.getStorageAdapter)().getItem(storage_1.TOKEN_KEY);
+    // requires-feature: memberExport
     return {
         url: `${serverUrl}/api/auth/me/export`,
         headers: token ? { Authorization: `Bearer ${token}` } : {},

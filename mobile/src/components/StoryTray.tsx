@@ -11,14 +11,18 @@ import { Avatar } from '@/components/Avatar'
 import { Icon } from '@/components/Icon'
 import { getUploadUrl } from '@/api/uploads'
 import { useAuthStore } from '@/stores/authStore'
+import { useServerSupports } from '@/hooks/useServerInfo'
 import { firstUnseenIndex, traySequences } from '@/utils/stories'
 
 // The feed's story strip: a "your story" bubble to post one, every author
 // with a live story (coloured ring while they have something you haven't
 // seen), then the group's Highlights — pinned stories as one flat strip,
 // newest first. Follows the feed's family filter, and hides entirely when
-// none of the selected families has stories turned on.
-export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: boolean }) {
+// none of the selected families has stories turned on — or the server
+// predates stories altogether (issue #380), in which case nothing is fetched.
+export function StoryTray({ groupIds, enabled: enabledProp }: { groupIds: string[]; enabled: boolean }) {
+  const supportsStories = useServerSupports('stories')
+  const enabled = enabledProp && supportsStories === true
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const me = useAuthStore((state) => state.user)

@@ -188,6 +188,7 @@ export async function fetchServerInfo(): Promise<ServerInfo> {
 // cascades to (posts, comments, reactions, favorites, chat messages,
 // notifications). There is no restore — callers must confirm first.
 export async function deleteAccount(): Promise<void> {
+  // requires-feature: accountDeletion
   await api.delete('/auth/me')
 }
 
@@ -198,6 +199,7 @@ export async function deleteAccount(): Promise<void> {
 // to disk instead via getMyExportRequest(), since holding a whole family's
 // media in JS memory would not survive on a phone.
 export async function downloadMyExport(): Promise<Blob> {
+  // requires-feature: memberExport
   const response = await api.get<Blob>('/auth/me/export', { responseType: 'blob', timeout: 0 })
   return response.data
 }
@@ -208,6 +210,7 @@ export async function getMyExportRequest(): Promise<{ url: string; headers: Reco
   const serverUrl = getCurrentServerUrl()
   if (!serverUrl) throw new Error('No server URL configured')
   const token = await getStorageAdapter().getItem(TOKEN_KEY)
+  // requires-feature: memberExport
   return {
     url: `${serverUrl}/api/auth/me/export`,
     headers: token ? { Authorization: `Bearer ${token}` } : {},

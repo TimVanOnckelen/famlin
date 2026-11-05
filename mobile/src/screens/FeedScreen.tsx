@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { StoryTray } from '@/components/StoryTray'
 import { OldServerBanner } from '@/components/OldServerBanner'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { useServerSupports } from '@/hooks/useServerInfo'
 import { Group, Post } from '@/types'
 import {
   fetchGroups,
@@ -61,10 +62,12 @@ export function FeedScreen() {
   // outside a circle never learns it exists — so there's nothing to filter
   // out here. Scoped to the single narrowed family, mirroring how
   // on-this-day and search already work.
+  // Never asked of a server without circles (issue #380): no chips then.
+  const supportsCircles = useServerSupports('circles')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleActiveGroup?.id],
     queryFn: () => fetchMyCircles(singleActiveGroup!.id),
-    enabled: !!singleActiveGroup,
+    enabled: !!singleActiveGroup && supportsCircles === true,
   })
 
   function toggleGroup(groupId: string) {
