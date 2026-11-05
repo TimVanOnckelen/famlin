@@ -72,12 +72,12 @@ CI backs this up for the API surface: when a PR changes `docs/openapi/famlin.yam
 
 Famlin is self-hosted, so a family's server is often older than the app on their phones: app stores update the app, but nobody updates the server for them. The breaking-change rules above protect older apps from a newer server. This section covers the other direction: a newer app talking to an older server. See [App and server versions](/maintenance#app-and-server-versions) for what this means for people running a server.
 
-**The support window is three minor versions.** A mobile app release must keep working against every server back to its own minor version minus three: app 0.8.x supports servers 0.5.0 and newer. "Working" means everything the older server can do still works. What it can't do is hidden, never shown as an error.
+**The support window is three minor versions.** A mobile app release must keep working against every server back to its own minor version minus three: app 0.8.x supports servers 0.5.0 and newer. "Working" means everything the older server can do still works. What it can't do is hidden, or explained when the app can only find out by trying.
 
 **New capabilities are detected by named features, never by version numbers.** If a change adds something a client has to detect before using it, it's a feature. That covers a new endpoint, a new request or response field the app relies on, or new behavior. A server inside the window without it would break or mislead the app. For each one:
 
 1. Add an id to `SERVER_FEATURES` in `backend/src/serverFeatures.ts`, and the same id to `ServerFeature` in `packages/api-client/src/features.ts`.
-2. Gate the client's use of it with `serverFeatureSupport(serverInfo, '<id>')` (mobile: `useServerFeatureSupport('<id>')`). Hide it when that's `unsupported`. On `unknown` (a server older than the `features` field), try it and treat a 404 from its endpoint as unsupported.
+2. Gate the client's use of it with `serverFeatureSupport(serverInfo, '<id>')` (mobile: `useServerFeatureSupport('<id>')`). Hide it when that's `unsupported`. On `unknown` (server-info not loaded yet, or, for an id that predates the field, a server older than the `features` field), try it and treat a 404 from its endpoint as unsupported. A new id is always `unsupported` on a server without the field, so it needs no extra step there.
 
 The full steps and the rules for ids (never rename or remove one) are in [Server feature flags](./architecture.md#server-feature-flags). Web is served by the server it talks to, so it never needs these checks. Something every server in the window already has needs no id, and neither does an additive field an older app can ignore.
 

@@ -12,8 +12,12 @@
 //   here, plus the matching `ServerFeature` member in
 //   packages/api-client/src/features.ts.
 // - Servers that predate this list send no `features` at all; clients then
-//   know only `IMPLICIT_BASELINE_FEATURES` (packages/api-client) for sure and
-//   treat everything else as "unknown" — try it, and a 404 means unsupported.
+//   know only `IMPLICIT_BASELINE_FEATURES` (packages/api-client) for sure.
+//   Ids for capabilities that shipped before this list
+//   (`PRE_FEATURE_LIST_FEATURES` there) are "unknown" on such a server — try
+//   it, and a 404 means unsupported — and every other id, i.e. anything
+//   shipped with or after this list (deviceDiagnostics onward), is
+//   "unsupported", so a new id needs no extra step on the client.
 //   Ids for capabilities older than the server that introduced this list
 //   must stay here too: a server sending the list without an id is read as
 //   definitely lacking it.

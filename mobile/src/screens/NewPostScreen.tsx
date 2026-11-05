@@ -42,7 +42,7 @@ import {
 } from '@/utils/newPost'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
-import { retryUnlessNotFound } from '@/utils/serverFeatures'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { usePendingShareStore, PendingShare } from '@/stores/pendingShareStore'
 import { MAX_POST_ATTACHMENTS, MAX_VIDEO_DURATION_SECONDS, fitSharedItems } from '@/utils/sharedMedia'
 
@@ -179,7 +179,7 @@ export function NewPostScreen() {
   const circlesSupport = useServerFeatureSupport('circles')
   const { data: circlesData } = useQuery({
     queryKey: ['circles', primaryGroupId],
-    queryFn: () => fetchMyCircles(primaryGroupId!),
+    queryFn: rememberNotFound('circles', () => fetchMyCircles(primaryGroupId!)),
     // A server without circles (issue #380) gets no audience picker: never
     // asked when it says so, and a 404 from an older one leaves it empty.
     enabled: !!primaryGroupId && canChooseCircle && circlesSupport !== 'unsupported',

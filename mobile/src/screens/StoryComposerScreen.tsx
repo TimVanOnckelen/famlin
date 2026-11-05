@@ -28,7 +28,7 @@ import { Group, createStory, fetchGroups, fetchMyCircles } from '@famlin/api-cli
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
-import { retryUnlessNotFound } from '@/utils/serverFeatures'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { uploadMedia } from '@/api/uploads'
 import {
   ComposerState,
@@ -93,7 +93,7 @@ export function StoryComposerScreen() {
   const circlesSupport = useServerFeatureSupport('circles')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleGroupId],
-    queryFn: () => fetchMyCircles(singleGroupId!),
+    queryFn: rememberNotFound('circles', () => fetchMyCircles(singleGroupId!)),
     enabled: !!singleGroupId && circlesSupport !== 'unsupported',
     retry: retryUnlessNotFound,
   })

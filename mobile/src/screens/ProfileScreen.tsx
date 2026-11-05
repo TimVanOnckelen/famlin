@@ -38,7 +38,7 @@ import {
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
 import { useServerInfo, useServerFeatureSupport } from '@/hooks/useServerInfo'
-import { retryUnlessNotFound } from '@/utils/serverFeatures'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { setLanguage } from '@/utils/storage'
 import { formatDayMonth } from '@/i18n/utils'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
@@ -58,13 +58,13 @@ export function ProfileScreen() {
   // "My gift lists" (issue #307): every gift list the user takes part in.
   const { data: giftLists = [] } = useQuery({
     queryKey: ['gift-lists'],
-    queryFn: fetchMyGiftLists,
+    queryFn: rememberNotFound('giftLists', fetchMyGiftLists),
     enabled: giftListsSupport !== 'unsupported',
     retry: retryUnlessNotFound,
   })
   const devicesQuery = useQuery({
     queryKey: ['my-devices'],
-    queryFn: fetchMyDevices,
+    queryFn: rememberNotFound('deviceDiagnostics', fetchMyDevices),
     enabled: devicesSupport !== 'unsupported',
     retry: retryUnlessNotFound,
   })
@@ -189,10 +189,12 @@ export function ProfileScreen() {
       }
     },
     onError: (err: any) => {
-      // The native downloader reports the HTTP status in its message; a 404
-      // is a server too old to advertise features (before 0.8.0).
+      // The native downloader reports the HTTP status in its message ("…
+      // response has status: 404"); a 404 is a server too old to advertise
+      // features (before 0.8.0). Matched on the status phrase, not any "404"
+      // that might appear elsewhere in the message.
       const message = String(err?.message ?? '')
-      if (isNotFoundError(err) || message.includes('404')) {
+      if (isNotFoundError(err) || /(status:?|HTTP) 404\b/.test(message)) {
         Alert.alert(t('common.error'), t('profile.featureUnavailable'))
         return
       }

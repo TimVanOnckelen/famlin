@@ -8,6 +8,50 @@ import {
   type ServerInfo,
 } from '@famlin/api-client'
 
+// Features a server answered 404 for while it was 'unknown' (it predates the
+// `features` field), keyed by server: the 404 proves it lacks them, so
+// later checks report 'unsupported' and later mounts of a gated query stay
+// disabled instead of asking again. In memory only — an app restart asks
+// once more — and it only ever turns 'unknown' into 'unsupported', so a
+// server that is upgraded and starts advertising features wins over it.
+const missingFeatures = new Set<string>()
+
+function missingKey(feature: ServerFeature): string | null {
+  const serverUrl = getCurrentServerUrl()
+  return serverUrl ? `${serverUrl}\n${feature}` : null
+}
+
+export function markFeatureMissing(feature: ServerFeature) {
+  const key = missingKey(feature)
+  if (key) missingFeatures.add(key)
+}
+
+export function isFeatureMarkedMissing(feature: ServerFeature): boolean {
+  const key = missingKey(feature)
+  return key !== null && missingFeatures.has(key)
+}
+
+// Applies the 404 mark to a server-info based answer.
+export function withMissingMark(support: FeatureSupport, feature: ServerFeature): FeatureSupport {
+  return support === 'unknown' && isFeatureMarkedMissing(feature) ? 'unsupported' : support
+}
+
+// Wraps a feature-gated query's fetcher so a 404 is remembered
+// (markFeatureMissing) before the error reaches react-query.
+export function rememberNotFound<A extends unknown[], T>(
+  feature: ServerFeature,
+  fetcher: (...args: A) => Promise<T>
+): (...args: A) => Promise<T> {
+  return async (...args: A) => {
+    try {
+      return await fetcher(...args)
+    } catch (error) {
+      if (isNotFoundError(error)) markFeatureMissing(feature)
+      throw error
+    }
+  }
+}
+
 // Non-hook counterpart of useServerFeatureSupport() (hooks/useServerInfo.ts)
 // for code outside React — device diagnostics, logout (issue #380).
 // Server-info is memoized per server for a while, like the hook's query; a
@@ -29,9 +73,9 @@ export async function checkServerFeature(feature: ServerFeature): Promise<Featur
         if (cached?.info === info) cached = null
       })
     }
-    return serverFeatureSupport(await entry.info, feature)
+    return withMissingMark(serverFeatureSupport(await entry.info, feature), feature)
   } catch {
-    return 'unknown'
+    return withMissingMark('unknown', feature)
   }
 }
 
@@ -41,7 +85,8 @@ export function retryUnlessNotFound(failureCount: number, error: unknown): boole
   return !isNotFoundError(error) && failureCount < 3
 }
 
-// Tests only: forget the memoized server-info.
+// Tests only: forget the memoized server-info and every recorded 404.
 export function resetServerFeatureCache() {
   cached = null
+  missingFeatures.clear()
 }

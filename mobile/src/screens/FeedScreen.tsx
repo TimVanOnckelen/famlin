@@ -15,7 +15,7 @@ import { StoryTray } from '@/components/StoryTray'
 import { OldServerBanner } from '@/components/OldServerBanner'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
-import { retryUnlessNotFound } from '@/utils/serverFeatures'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { Group, Post } from '@/types'
 import {
   fetchGroups,
@@ -68,7 +68,7 @@ export function FeedScreen() {
   const circlesSupport = useServerFeatureSupport('circles')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleActiveGroup?.id],
-    queryFn: () => fetchMyCircles(singleActiveGroup!.id),
+    queryFn: rememberNotFound('circles', () => fetchMyCircles(singleActiveGroup!.id)),
     enabled: !!singleActiveGroup && circlesSupport !== 'unsupported',
     retry: retryUnlessNotFound,
   })

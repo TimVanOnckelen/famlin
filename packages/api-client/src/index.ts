@@ -49,7 +49,13 @@ export {
 export { compareVersions } from './version'
 
 export type { ServerFeature, FeatureSupport } from './features'
-export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES } from './features'
+export {
+  serverSupports,
+  serverFeatureSupport,
+  isNotFoundError,
+  IMPLICIT_BASELINE_FEATURES,
+  PRE_FEATURE_LIST_FEATURES,
+} from './features'
 
 export {
   generateRandomString,

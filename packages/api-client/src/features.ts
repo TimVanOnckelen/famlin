@@ -21,11 +21,29 @@ export type ServerFeature =
 // 0.8.7 — the baseline may therefore only hold features every server since
 // 0.5.0 has. Every id above is newer than that, so the baseline is empty;
 // it only grows if an id is added for a capability 0.5.0 already had.
-// Anything newer is "unknown" on such a server, not "unsupported": a 0.8.7
-// server has stories, circles, gift lists and upload processing without
-// saying so, so clients detect those by trying the endpoint and treating a
-// 404 as unsupported (see serverFeatureSupport() below).
+// The rest split in two: ids in PRE_FEATURE_LIST_FEATURES below may exist
+// on such a server without it saying so (a 0.8.7 server has stories,
+// circles, gift lists and upload processing), so they are "unknown" there —
+// clients try the endpoint and treat a 404 as unsupported. Every other id
+// is "unsupported" there (see serverFeatureSupport() below).
 export const IMPLICIT_BASELINE_FEATURES: readonly ServerFeature[] = []
+
+// Ids whose capability shipped *before* the release that introduced the
+// `features` field (i.e. in 0.8.7 or earlier), so a server without the
+// field may or may not have them: "unknown" there. Any id not listed here
+// shipped in or after that release, so a server without `features`
+// definitely lacks it: "unsupported", and clients never send a request
+// that would only 404. Closed list — never add to it: a new id is
+// automatically "unsupported" on featureless servers, with no extra step.
+export const PRE_FEATURE_LIST_FEATURES: readonly ServerFeature[] = [
+  'accountDeletion',
+  'circles',
+  'stories',
+  'memberExport',
+  'giftLists',
+  'uploadProcessing',
+  'livePhotos',
+]
 
 // Strict check against a server-info response: true only when the server
 // advertises the feature (or it's in the implicit baseline). `null`/
@@ -44,15 +62,19 @@ export type FeatureSupport = 'supported' | 'unsupported' | 'unknown'
 // - 'unsupported': the server sends a `features` list without it — hide
 //   the feature and never call its endpoints.
 // - 'unknown': server-info hasn't loaded/failed, or the server predates the
-//   `features` field (0.8.7 and older). Try the feature anyway, and treat a
-//   404 from its endpoint (isNotFoundError) as unsupported: hide it
-//   silently, no error UI, no retry.
+//   `features` field (0.8.7 and older) and the feature is one such a server
+//   may have (PRE_FEATURE_LIST_FEATURES). Try the feature anyway, and treat
+//   a 404 from its endpoint (isNotFoundError) as unsupported: hide it, no
+//   retry. On a server without `features`, any other id is 'unsupported'.
 export function serverFeatureSupport(
   serverInfo: ServerInfo | null | undefined,
   feature: ServerFeature
 ): FeatureSupport {
   if (IMPLICIT_BASELINE_FEATURES.includes(feature)) return 'supported'
-  if (!serverInfo || !Array.isArray(serverInfo.features)) return 'unknown'
+  if (!serverInfo) return 'unknown'
+  if (!Array.isArray(serverInfo.features)) {
+    return PRE_FEATURE_LIST_FEATURES.includes(feature) ? 'unknown' : 'unsupported'
+  }
   return serverInfo.features.includes(feature) ? 'supported' : 'unsupported'
 }
 

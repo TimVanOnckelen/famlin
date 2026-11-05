@@ -506,10 +506,13 @@ paths:
                       removed; a newer server may list ids a client doesn't
                       know, which it should ignore. An id missing from the
                       list means the server lacks that capability. Absent on
-                      servers up to 0.8.7; clients then treat every id beyond
-                      their implicit baseline (currently none) as unknown,
-                      try the feature and read a 404 from its endpoint as
-                      unsupported.
+                      servers up to 0.8.7; clients then treat the ids that
+                      shipped before this field (`accountDeletion`,
+                      `circles`, `stories`, `memberExport`, `giftLists`,
+                      `uploadProcessing`, `livePhotos`) as unknown, try the
+                      feature and read a 404 from its endpoint as
+                      unsupported, and every other id (anything that shipped
+                      with or after this field) as unsupported.
                       Known ids: `accountDeletion` (0.6.3, `DELETE
                       /api/auth/me`), `circles` (0.7.0), `stories` (0.8.0),
                       `memberExport` (0.8.0, `GET /api/auth/me/export`),

@@ -5,7 +5,7 @@ export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, Server
 export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
 export { compareVersions } from './version';
 export type { ServerFeature, FeatureSupport } from './features';
-export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES } from './features';
+export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES, PRE_FEATURE_LIST_FEATURES } from './features';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
 export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
 export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';

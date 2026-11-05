@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { ServerInfo } from '../auth'
-import { IMPLICIT_BASELINE_FEATURES, isNotFoundError, serverFeatureSupport, serverSupports } from '../features'
+import {
+  IMPLICIT_BASELINE_FEATURES,
+  PRE_FEATURE_LIST_FEATURES,
+  isNotFoundError,
+  serverFeatureSupport,
+  serverSupports,
+} from '../features'
 
 describe('serverSupports', () => {
   it('reads the features a server advertises', () => {
@@ -37,6 +43,24 @@ describe('serverFeatureSupport', () => {
     expect(serverFeatureSupport({ version: '0.8.7' }, 'stories')).toBe('unknown')
     expect(serverFeatureSupport(undefined, 'stories')).toBe('unknown')
     expect(serverFeatureSupport(null, 'stories')).toBe('unknown')
+  })
+
+  it('is unknown on a featureless server for every id that predates the features list', () => {
+    for (const feature of PRE_FEATURE_LIST_FEATURES) {
+      expect(serverFeatureSupport({ version: '0.8.7' }, feature)).toBe('unknown')
+    }
+  })
+
+  it('is unsupported on a featureless server for ids that shipped with or after the features list', () => {
+    // deviceDiagnostics shipped in the same release as `features`, so a
+    // server without the field definitely lacks it.
+    expect(PRE_FEATURE_LIST_FEATURES).not.toContain('deviceDiagnostics')
+    expect(serverFeatureSupport({ version: '0.8.7' }, 'deviceDiagnostics')).toBe('unsupported')
+    expect(serverSupports({ version: '0.8.7' }, 'deviceDiagnostics')).toBe(false)
+  })
+
+  it('stays unknown for every id before server-info loads', () => {
+    expect(serverFeatureSupport(undefined, 'deviceDiagnostics')).toBe('unknown')
   })
 })
 
