@@ -34,10 +34,10 @@ import {
   deleteAccount,
   getMyExportRequest,
   fetchNotificationConfig,
-  fetchServerInfo,
   NotificationPrefs,
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
+import { useServerInfo } from '@/hooks/useServerInfo'
 import { setLanguage } from '@/utils/storage'
 import { formatDayMonth } from '@/i18n/utils'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
@@ -70,10 +70,7 @@ export function ProfileScreen() {
   const showPush = notificationConfig?.pushEnabled ?? true
   const showEmail = notificationConfig?.emailEnabled ?? true
 
-  const { data: serverInfo } = useQuery({
-    queryKey: ['server-info'],
-    queryFn: fetchServerInfo,
-  })
+  const { data: serverInfo } = useServerInfo()
 
   const updatePrefs = useMutation({
     mutationFn: async (prefs: NotificationPrefs) => {

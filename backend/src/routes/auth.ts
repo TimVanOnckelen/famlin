@@ -30,6 +30,7 @@ import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js'
 import { buildMemberExportArchive } from '../services/memberExport.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
+import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -818,6 +819,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // Per-family branding (issue #164), or null when unbranded. Additive:
       // older clients ignore it. `hash` lets mobile detect a change cheaply.
       branding: await getBranding(),
+      // Named capabilities (issue #380) — see serverFeatures.ts. Additive:
+      // clients treat a missing array as their implicit baseline.
+      features: [...SERVER_FEATURES],
     }
   })
 }

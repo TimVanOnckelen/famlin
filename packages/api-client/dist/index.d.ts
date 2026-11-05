@@ -4,6 +4,8 @@ export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMedia
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo, Branding, BrandPalette, BrandSemantic, } from './auth';
 export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
 export { compareVersions } from './version';
+export type { ServerFeature } from './features';
+export { serverSupports, IMPLICIT_BASELINE_FEATURES } from './features';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
 export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
 export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';

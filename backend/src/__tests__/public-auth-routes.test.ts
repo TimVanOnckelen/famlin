@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../app.js'
 import { prisma } from '../db.js'
+import { SERVER_FEATURES } from '../serverFeatures.js'
 
 // Covers the public, unauthenticated GET /api/auth/server-info route —
 // mobile's update-required gate and the profile screen depend on its shape.
@@ -33,5 +34,15 @@ describe('GET /api/auth/server-info', () => {
     // has never been saved; an admin can still clear either one to null.
     expect(body.appStoreUrl).toBe('https://apps.apple.com/us/app/famlin/id6786783660')
     expect(body.playStoreUrl).toBe('https://play.google.com/store/apps/details?id=be.xeweb.famlin')
+  })
+
+  it('advertises its named features (issue #380)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/auth/server-info' })
+
+    expect(res.statusCode).toBe(200)
+    const { features } = res.json()
+    expect(features).toEqual([...SERVER_FEATURES])
+    // Ids the mobile app gates on — renaming one silently hides the feature.
+    expect(features).toEqual(expect.arrayContaining(['uploadProcessing', 'livePhotos']))
   })
 })

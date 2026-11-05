@@ -121,6 +121,10 @@ export interface ServerInfo {
   // Per-family branding (issue #164). `null` on an unbranded server, absent
   // on a server that predates the feature — treat both as "today's look".
   branding?: Branding | null
+  // Named capabilities (issue #380), absent on servers up to 0.8.7. Plain
+  // strings: a newer server may list ids this client doesn't know. Check
+  // with serverSupports() (./features) rather than reading it directly.
+  features?: string[]
 }
 
 // The family's derived palette — computed server-side (one implementation

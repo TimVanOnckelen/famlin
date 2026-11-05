@@ -48,6 +48,9 @@ export {
 
 export { compareVersions } from './version'
 
+export type { ServerFeature } from './features'
+export { serverSupports, IMPLICIT_BASELINE_FEATURES } from './features'
+
 export {
   generateRandomString,
   generateCodeChallenge,

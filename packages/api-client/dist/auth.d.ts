@@ -48,6 +48,7 @@ export interface ServerInfo {
     playStoreUrl?: string | null;
     readOnly?: boolean;
     branding?: Branding | null;
+    features?: string[];
 }
 export interface BrandPalette {
     primary: string;
