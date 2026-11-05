@@ -65,9 +65,10 @@ export const appleLoginBodySchema = z.object({
   identityToken: z.string(),
   fullName: z.string().max(100).optional(),
   inviteToken: z.string().optional(),
-  // The unhashed nonce the app bound the token to this server with (see
-  // appleNonceFor in services/appleLogin.ts). Absent from older app builds.
+  // How the app bound the token to this server (appleNonceFor in
+  // services/appleLogin.ts). Absent from older app builds.
   rawNonce: z.string().min(16).max(200).optional(),
+  nonceHost: z.string().min(1).max(300).optional(),
 })
 
 // Used by the admin UI when the configured OIDC provider requires a client

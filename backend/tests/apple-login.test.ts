@@ -14,8 +14,7 @@ import { buildTestApp, createUser } from './helpers.js'
 
 const APPLE_ISSUER = 'https://appleid.apple.com'
 const AUDIENCE = 'be.xeweb.famlin'
-// app.inject() sends `Host: localhost:80`, which normalizes to `localhost`.
-const SERVER_HOST = 'localhost'
+// app.inject() sends `Host: localhost:80`.
 
 let privateKey: CryptoKey
 let app: FastifyInstance
@@ -53,59 +52,80 @@ afterEach(async () => {
   await updateSettings({ publicUrl: '' })
 })
 
-describe('POST /api/auth/apple nonce binding', () => {
-  it('accepts a token whose nonce is bound to this server', async () => {
-    const user = await createUser()
-    const rawNonce = crypto.randomBytes(16).toString('hex')
-    const token = await identityToken({ email: user.email, nonce: appleNonceFor(SERVER_HOST, rawNonce) })
+function bound(email: string, nonceHost: string) {
+  const rawNonce = crypto.randomUUID()
+  return identityToken({ email, nonce: appleNonceFor(nonceHost, rawNonce) }).then((token) => ({
+    identityToken: token,
+    rawNonce,
+    nonceHost,
+  }))
+}
 
-    const res = await login({ identityToken: token, rawNonce })
+describe('POST /api/auth/apple nonce binding', () => {
+  it('accepts a token bound to the host the request reached', async () => {
+    const user = await createUser()
+    const res = await login(await bound(user.email, 'localhost'))
     expect(res.statusCode).toBe(200)
     expect(res.json().user.id).toBe(user.id)
   })
 
+  it('ignores the port, which a proxy forwarding `Host $host` drops', async () => {
+    const user = await createUser()
+    const res = await login(await bound(user.email, 'localhost:8443'))
+    expect(res.statusCode).toBe(200)
+  })
+
   it('rejects a token requested for another server (cross-server replay)', async () => {
     const user = await createUser()
-    const rawNonce = crypto.randomBytes(16).toString('hex')
-    const token = await identityToken({ email: user.email, nonce: appleNonceFor('evil.example', rawNonce) })
+    const res = await login(await bound(user.email, 'evil.example'))
+    expect(res.statusCode).toBe(401)
+  })
 
-    const res = await login({ identityToken: token, rawNonce })
+  it('rejects a nonceHost that is not the one the token was hashed with', async () => {
+    const user = await createUser()
+    const body = await bound(user.email, 'evil.example')
+    const res = await login({ ...body, nonceHost: 'localhost' })
     expect(res.statusCode).toBe(401)
   })
 
   it('rejects a nonce-bound token sent without its raw nonce', async () => {
     const user = await createUser()
-    const token = await identityToken({ email: user.email, nonce: appleNonceFor(SERVER_HOST, 'a'.repeat(32)) })
-
-    const res = await login({ identityToken: token })
+    const { identityToken: token, nonceHost } = await bound(user.email, 'localhost')
+    const res = await login({ identityToken: token, nonceHost })
     expect(res.statusCode).toBe(401)
   })
 
-  it('rejects a raw nonce when the token carries none', async () => {
-    const user = await createUser()
-    const token = await identityToken({ email: user.email })
-
-    const res = await login({ identityToken: token, rawNonce: 'b'.repeat(32) })
-    expect(res.statusCode).toBe(401)
-  })
-
-  it('accepts a token bound to the configured publicUrl host', async () => {
+  it('with publicUrl set, accepts only its host — a spoofed Host header does not help', async () => {
     const user = await createUser()
     await updateSettings({ publicUrl: 'https://Family.Example.com' })
-    const rawNonce = crypto.randomBytes(16).toString('hex')
-    const token = await identityToken({ email: user.email, nonce: appleNonceFor('family.example.com', rawNonce) })
 
-    const res = await login({ identityToken: token, rawNonce })
-    expect(res.statusCode).toBe(200)
+    expect((await login(await bound(user.email, 'family.example.com'))).statusCode).toBe(200)
+
+    const replay = await app.inject({
+      method: 'POST',
+      url: '/api/auth/apple',
+      headers: { host: 'evil.example' },
+      payload: await bound(user.email, 'evil.example'),
+    })
+    expect(replay.statusCode).toBe(401)
+  })
+
+  it('never trusts X-Forwarded-Host', async () => {
+    const user = await createUser()
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/apple',
+      headers: { 'x-forwarded-host': 'evil.example' },
+      payload: await bound(user.email, 'evil.example'),
+    })
+    expect(res.statusCode).toBe(401)
   })
 
   // Older app builds don't send a nonce yet; they keep working until
   // MIN_APP_VERSION excludes them.
   it('still accepts a legacy token without any nonce', async () => {
     const user = await createUser()
-    const token = await identityToken({ email: user.email })
-
-    const res = await login({ identityToken: token })
+    const res = await login({ identityToken: await identityToken({ email: user.email }) })
     expect(res.statusCode).toBe(200)
     expect(await prisma.user.count({ where: { email: user.email } })).toBe(1)
   })

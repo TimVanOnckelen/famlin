@@ -29,11 +29,10 @@ async function loginWithOidc(idToken, inviteToken) {
 // authorization for this app — Apple never discloses it again, so pass it
 // through when present and omit it otherwise (the server keeps the name
 // already on file).
-async function loginWithApple(identityToken, fullName, inviteToken, 
-// The unhashed nonce the token was bound to this server with — see
-// performAppleLogin in the mobile app and appleNonceFor on the server.
-rawNonce) {
-    const response = await client_1.api.post('/auth/apple', { identityToken, fullName, inviteToken, rawNonce });
+// `binding` is how the app tied the token to this server (performAppleLogin
+// in the mobile app, appleNonceFor on the server).
+async function loginWithApple(identityToken, fullName, inviteToken, binding) {
+    const response = await client_1.api.post('/auth/apple', { identityToken, fullName, inviteToken, ...binding });
     return response.data;
 }
 async function exchangeOidcMobileHandoff(code) {

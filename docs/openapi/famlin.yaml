@@ -231,13 +231,19 @@ paths:
                   description: |
                     The unhashed nonce the app bound the token to this server
                     with. The app requests the token with
-                    `nonce = sha256hex("famlin-apple-signin|<server host>|<rawNonce>")`,
-                    where `<server host>` is the lowercase `host[:port]` it
-                    talks to (default ports dropped). A token carrying a nonce
-                    is rejected (401) unless it matches this server's host or
-                    its configured public URL — that stops a token sent to one
-                    Famlin server from being replayed on another. Tokens without
-                    a nonce (older app builds) are still accepted.
+                    `nonce = sha256hex("famlin-apple-signin|<nonceHost>|<rawNonce>")`.
+                    A token carrying a nonce is rejected (401) unless that hash
+                    matches and `nonceHost`'s hostname (port ignored) is this
+                    server's: its configured public URL, or while that's unset
+                    the request's `Host` header. Tokens without a nonce (older
+                    app builds) are still accepted.
+                nonceHost:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+                  description: |
+                    The lowercase `host[:port]` of the server URL the app
+                    signed in to, as used in the nonce. Required with `rawNonce`.
       responses:
         '200':
           description: Logged in

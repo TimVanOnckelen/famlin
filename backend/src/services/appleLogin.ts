@@ -23,35 +23,38 @@ export const appleDeps: { jwks: JWTVerifyGetKey } = { jwks: createRemoteJWKSet(A
 // token the app sent to one server — a malicious one, or one an invite link
 // pointed it at — could be replayed to another within its ~10 minute
 // lifetime, logging in as that user there. The app (mobile
-// utils/appleLogin.ts) therefore asks Apple for
-//   nonce = sha256hex("famlin-apple-signin|<server host>|<rawNonce>")
-// with the host it is actually talking to, and sends rawNonce alongside the
-// token; a server only accepts it for a host it answers to. Keep the format
-// in lockstep with the mobile app.
+// utils/appleLogin.ts) asks Apple for
+//   nonce = sha256hex("famlin-apple-signin|<nonceHost>|<rawNonce>")
+// where nonceHost is the server host it is talking to, and sends nonceHost
+// and rawNonce with the token. Keep the format in lockstep with the app.
 export function appleNonceFor(host: string, rawNonce: string): string {
   return createHash('sha256').update(`famlin-apple-signin|${host}|${rawNonce}`).digest('hex')
 }
 
-// Lowercase host[:port], without a default port, so `Example.com:443` and
-// `example.com` compare equal — mirrors appleNonceHost() in the mobile app.
-export function normalizeAppleNonceHost(host: string): string {
-  return host
-    .trim()
-    .toLowerCase()
-    .replace(/:(80|443)$/, '')
+// Hostname only (lowercase, no port, no trailing dot): a proxy forwarding
+// `Host $host` drops a non-default port, and a port on the same hostname
+// doesn't separate one server operator from another.
+function hostnameOf(host: string): string {
+  return host.toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '')
 }
 
-export interface AppleNonceBinding {
+interface AppleNonceBinding {
   rawNonce?: string
-  // Every host this server answers to for this request — the host the
-  // request reached it as, plus the configured publicUrl's.
-  hosts: string[]
+  nonceHost?: string
+  // The host this server knows itself by: the publicUrl setting's, else the
+  // request's own Host header — never X-Forwarded-Host, which a client can
+  // set and a proxy may pass through.
+  serverHost: string
 }
 
 // Thrown for expected, user-facing Sign in with Apple failures so the route
 // can map them to a translated message instead of leaking jose internals.
 export class AppleAuthError extends Error {
-  constructor(public code: 'invalid_token' | 'no_email' | 'not_allowed') {
+  constructor(
+    public code: 'invalid_token' | 'host_mismatch' | 'no_email' | 'not_allowed',
+    // host_mismatch only: both hosts, for the server log.
+    public hosts?: { app: string; server: string }
+  ) {
     super(code)
     this.name = 'AppleAuthError'
   }
@@ -87,18 +90,16 @@ export async function verifyAppleIdentityToken(
     throw new AppleAuthError('invalid_token')
   }
 
-  // A token carrying a nonce must have been requested for this server (see
-  // appleNonceFor). One without is from an app build predating the binding
-  // and is still accepted for now — enforcing it would lock those users out
-  // of Apple sign-in until they update; drop this fallback once
-  // MIN_APP_VERSION excludes them.
-  if (typeof payload.nonce === 'string' || binding.rawNonce) {
-    const { rawNonce } = binding
-    const expected = rawNonce
-      ? new Set(binding.hosts.map((host) => appleNonceFor(normalizeAppleNonceHost(host), rawNonce)))
-      : new Set<string>()
-    if (typeof payload.nonce !== 'string' || !expected.has(payload.nonce)) {
+  // A token carrying a nonce must have been requested for this server. One
+  // without is from an app build predating the binding and is still accepted
+  // for now; drop that once MIN_APP_VERSION excludes those builds.
+  if (payload.nonce !== undefined) {
+    const { rawNonce, nonceHost, serverHost } = binding
+    if (!rawNonce || !nonceHost || appleNonceFor(nonceHost, rawNonce) !== payload.nonce) {
       throw new AppleAuthError('invalid_token')
+    }
+    if (hostnameOf(nonceHost) !== hostnameOf(serverHost)) {
+      throw new AppleAuthError('host_mismatch', { app: nonceHost, server: serverHost })
     }
   }
 

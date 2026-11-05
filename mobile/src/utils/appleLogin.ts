@@ -48,30 +48,28 @@ export function useAppleSignInAvailable(): boolean {
   return available
 }
 
-// The host part of the server URL ("host[:port]", lowercase, default port
-// dropped) — the same normalization as normalizeAppleNonceHost on the server.
-// Parsed by hand: React Native's URL polyfill doesn't implement `host`.
+// The host[:port] of the server URL, lowercase. Parsed by hand: React
+// Native's URL polyfill doesn't implement `host`.
 export function appleNonceHost(serverUrl: string): string | null {
-  const match = /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?([^/?#]+)/i.exec(serverUrl.trim())
-  return match ? match[1].toLowerCase().replace(/:(80|443)$/, '') : null
-}
-
-// Binds the identity token to the server this app is signing in to. Every
-// Famlin server accepts tokens for this same app, so without the binding any
-// server the user signs in to could replay their token on another one. Apple
-// copies the requested nonce into the token unchanged; the server recomputes
-// it from rawNonce and its own host (appleNonceFor in the backend's
-// services/appleLogin.ts — keep the format in lockstep).
-export async function appleNonceFor(host: string, rawNonce: string): Promise<string> {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `famlin-apple-signin|${host}|${rawNonce}`)
+  const match = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)/i.exec(serverUrl.trim())
+  return match ? match[1].toLowerCase() : null
 }
 
 export async function performAppleLogin(inviteToken?: string): Promise<LoginResponse> {
+  // Binds the identity token to the server this app signs in to: every
+  // Famlin server accepts tokens for this same app, so without it any server
+  // the user signs in to could replay their token on another one. Apple
+  // copies the nonce into the token unchanged; the server recomputes it
+  // (appleNonceFor in the backend's services/appleLogin.ts — keep the format
+  // in lockstep) and checks nonceHost against its own host.
   const serverUrl = getCurrentServerUrl()
-  const host = serverUrl ? appleNonceHost(serverUrl) : null
-  if (!host) throw new Error('No server selected for Sign in with Apple')
-  const rawNonce = Array.from(await Crypto.getRandomBytesAsync(16), (b) => b.toString(16).padStart(2, '0')).join('')
-  const nonce = await appleNonceFor(host, rawNonce)
+  const nonceHost = serverUrl ? appleNonceHost(serverUrl) : null
+  if (!nonceHost) throw new Error('No server selected for Sign in with Apple')
+  const rawNonce = Crypto.randomUUID()
+  const nonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    `famlin-apple-signin|${nonceHost}|${rawNonce}`
+  )
 
   let credential: AppleAuthentication.AppleAuthenticationCredential
   try {
@@ -92,5 +90,8 @@ export async function performAppleLogin(inviteToken?: string): Promise<LoginResp
     throw new Error('Apple did not return an identity token')
   }
 
-  return loginWithApple(credential.identityToken, formatFullName(credential.fullName), inviteToken, rawNonce)
+  return loginWithApple(credential.identityToken, formatFullName(credential.fullName), inviteToken, {
+    rawNonce,
+    nonceHost,
+  })
 }
