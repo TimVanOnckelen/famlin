@@ -2,18 +2,21 @@
 // Checks that every endpoint @famlin/api-client calls exists on the OLDEST
 // server release the apps still support (issue #382, epic #378).
 //
-// New mobile apps talk to older self-hosted servers: the support window is
-// the current release's minor version minus 3 (app 0.8.x → servers >= 0.5.0).
+// New mobile apps talk to older self-hosted servers. The oldest one the app
+// supports is MIN_SERVER_VERSION in mobile/src/utils/serverVersion.ts — the
+// single source of truth this check reads (policy: at most 3 minor versions
+// behind the app, e.g. app 0.8.x → servers >= 0.5.0).
 // The `api-breaking-changes` CI job covers the other direction (a new server
 // must not break old clients); this one covers new clients vs old servers.
 //
 // How it works:
-//   1. Collects every `api.get/post/put/patch/delete(...)` call in
+//   1. Collects every `api.get/post/put/patch/delete(...)` call (also split
+//      across lines, `api\n  .get(...)`; calls inside comments are ignored) in
 //      packages/api-client/src/*.ts whose path is a string or template
 //      literal, normalizing `${...}` to a path parameter and prefixing the
 //      client's `/api` base URL (see setApiBaseUrl() in client.ts).
-//   2. Reads docs/openapi/famlin.yaml as it was at the oldest supported
-//      release tag (`git show <tag>:docs/openapi/famlin.yaml`).
+//   2. Reads docs/openapi/famlin.yaml as it was at the earliest release tag
+//      >= MIN_SERVER_VERSION (`git show <tag>:docs/openapi/famlin.yaml`).
 //   3. Fails for every call whose method + path template is missing there,
 //      unless it is
 //        - feature-gated: a `// requires-feature: <id>` comment in the
@@ -24,9 +27,11 @@
 //          (for legacy cases, e.g. an endpoint the old server had but its
 //          spec didn't document).
 //
-// Usage: node scripts/check-client-vs-old-spec.mjs [--tag vX.Y.Z]
+// Usage: node scripts/check-client-vs-old-spec.mjs [--tag vX.Y.Z] [--src <dir>]
 //   The tag can also come from CLIENT_COMPAT_TAG. Needs the release tags in
-//   the local clone (CI: actions/checkout with fetch-depth: 0).
+//   the local clone (CI: actions/checkout with fetch-depth: 0). --src points
+//   the scan at another directory of .ts files instead of
+//   packages/api-client/src (for testing the scanner itself).
 //
 // Only axios calls through `api` are seen. A URL built by hand for a native
 // downloader (getMyExportRequest() in auth.ts) isn't, so its endpoint must
@@ -42,17 +47,28 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SPEC_PATH = 'docs/openapi/famlin.yaml'
-const CLIENT_DIR = join(root, 'packages/api-client/src')
+const SERVER_VERSION_FILE = join(root, 'mobile/src/utils/serverVersion.ts')
 const FEATURES_FILE = join(root, 'backend/src/serverFeatures.ts')
 const ALLOWLIST_FILE = join(root, 'scripts/client-compat-allowlist.json')
 const API_BASE = '/api' // client.ts: currentBaseUrl = `${serverUrl}/api`
-const SUPPORTED_MINOR_VERSIONS_BACK = 3
 const METHODS = ['get', 'post', 'put', 'patch', 'delete']
 
 function fail(message) {
   console.error(`✖ ${message}`)
   process.exit(1)
 }
+
+// The value following `--name`, or undefined if the flag is absent. A flag
+// given without a value is an error rather than a silent fallback.
+function flagValue(name) {
+  const index = process.argv.indexOf(name)
+  if (index === -1) return undefined
+  const value = process.argv[index + 1]
+  if (!value || value.startsWith('--')) fail(`${name} needs a value`)
+  return value
+}
+
+const CLIENT_DIR = flagValue('--src') ?? join(root, 'packages/api-client/src')
 
 function git(...args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -69,14 +85,23 @@ function compareVersions(a, b) {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2]
 }
 
+// The app's own minimum server version — the same constant the app uses to
+// decide when to warn about an old server, so CI and the app can't disagree.
+function readMinServerVersion() {
+  const file = relative(root, SERVER_VERSION_FILE)
+  const source = readFileSync(SERVER_VERSION_FILE, 'utf8')
+  const match = /^export const MIN_SERVER_VERSION\s*=\s*['"]([^'"]+)['"]/m.exec(source)
+  if (!match) fail(`Could not find \`export const MIN_SERVER_VERSION = '...'\` in ${file}`)
+  const version = parseVersion(match[1])
+  if (!version) fail(`Unparseable MIN_SERVER_VERSION "${match[1]}" in ${file}`)
+  return { raw: match[1], version }
+}
+
 function resolveOldestTag() {
-  const argIndex = process.argv.indexOf('--tag')
-  const override = argIndex !== -1 ? process.argv[argIndex + 1] : process.env.CLIENT_COMPAT_TAG
+  const override = flagValue('--tag') ?? process.env.CLIENT_COMPAT_TAG
   if (override) return { tag: override, reason: 'explicit override' }
 
-  const current = JSON.parse(readFileSync(join(root, 'mobile/package.json'), 'utf8')).version
-  const [major, minor] = parseVersion(current) ?? fail(`Unparseable mobile/package.json version "${current}"`)
-  const floor = [major, Math.max(0, minor - SUPPORTED_MINOR_VERSIONS_BACK), 0]
+  const { raw, version: floor } = readMinServerVersion()
   const tags = git('tag', '--list', 'v*')
     .split('\n')
     .map((t) => ({ tag: t.trim(), version: parseVersion(t.trim()) }))
@@ -84,13 +109,13 @@ function resolveOldestTag() {
     .sort((a, b) => compareVersions(a.version, b.version))
   if (tags.length === 0) {
     fail(
-      `No release tag >= v${floor.join('.')} found. Fetch tags (CI: actions/checkout with fetch-depth: 0) ` +
+      `No release tag >= v${raw} (MIN_SERVER_VERSION) found. Fetch tags (CI: actions/checkout with fetch-depth: 0) ` +
         'or pass --tag / CLIENT_COMPAT_TAG.'
     )
   }
   return {
     tag: tags[0].tag,
-    reason: `app ${current} supports servers down to ${major}.${floor[1]}.0 (${SUPPORTED_MINOR_VERSIONS_BACK} minor versions back); earliest release tag at or above that`,
+    reason: `mobile MIN_SERVER_VERSION is ${raw}; earliest release tag at or above it`,
   }
 }
 
@@ -166,6 +191,63 @@ function skipGeneric(src, i) {
   return i
 }
 
+// Blanks out `//` and `/* */` comments (newlines kept, so offsets and line
+// numbers stay valid) while leaving string and template literal contents —
+// e.g. a `//` in a URL — untouched. Template `${...}` expressions are code
+// again, nested to any depth. Regex literals aren't recognized; none in the
+// client contain a quote or `//`.
+function stripComments(src) {
+  const out = src.split('')
+  const blank = (from, to) => {
+    for (let k = from; k < to; k++) if (out[k] !== '\n') out[k] = ' '
+  }
+  // Each frame is a template literal or a code block nested in one; the
+  // bottom frame is top-level code. braces counts `{` opened in a code frame.
+  const stack = [{ mode: 'code', braces: 0 }]
+  let i = 0
+  while (i < src.length) {
+    const frame = stack[stack.length - 1]
+    const c = src[i]
+    if (frame.mode === 'template') {
+      if (c === '\\') i += 2
+      else if (c === '`') {
+        stack.pop()
+        i++
+      } else if (c === '$' && src[i + 1] === '{') {
+        stack.push({ mode: 'code', braces: 0 })
+        i += 2
+      } else i++
+      continue
+    }
+    if (c === '/' && src[i + 1] === '/') {
+      const end = src.indexOf('\n', i)
+      const stop = end === -1 ? src.length : end
+      blank(i, stop)
+      i = stop
+    } else if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2)
+      const stop = end === -1 ? src.length : end + 2
+      blank(i, stop)
+      i = stop
+    } else if (c === "'" || c === '"') {
+      for (i++; i < src.length && src[i] !== c && src[i] !== '\n'; i++) if (src[i] === '\\') i++
+      i++
+    } else if (c === '`') {
+      stack.push({ mode: 'template' })
+      i++
+    } else if (c === '{') {
+      frame.braces++
+      i++
+    } else if (c === '}') {
+      if (frame.braces === 0 && stack.length > 1)
+        stack.pop() // end of a `${...}`
+      else frame.braces--
+      i++
+    } else i++
+  }
+  return out.join('')
+}
+
 // The `//` comment lines directly above `lineIndex`, nearest first.
 function commentBlockAbove(lines, lineIndex) {
   const block = []
@@ -178,12 +260,15 @@ function collectClientCalls() {
   const unparsed = []
   const files = readdirSync(CLIENT_DIR).filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
   for (const file of files) {
-    const src = readFileSync(join(CLIENT_DIR, file), 'utf8')
-    const lines = src.split('\n')
-    const callRe = new RegExp(`\\bapi\\.(${METHODS.join('|')})\\b`, 'g')
+    const original = readFileSync(join(CLIENT_DIR, file), 'utf8')
+    // Scan code with comments blanked out, but read `requires-feature`
+    // annotations (which are comments) from the original lines.
+    const src = stripComments(original)
+    const lines = original.split('\n')
+    const callRe = new RegExp(`\\bapi\\s*\\.\\s*(${METHODS.join('|')})\\b`, 'g')
     for (const match of src.matchAll(callRe)) {
       const lineIndex = src.slice(0, match.index).split('\n').length - 1
-      const location = `packages/api-client/src/${file}:${lineIndex + 1}`
+      const location = `${relative(root, join(CLIENT_DIR, file))}:${lineIndex + 1}`
       let i = skipGeneric(src, match.index + match[0].length)
       if (src[i] !== '(') continue // e.g. a reference, not a call
       i++

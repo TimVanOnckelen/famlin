@@ -165,7 +165,7 @@ Since schema migrations run automatically on start (see above), an unattended up
 
 The mobile apps update through the app stores, so they're often newer than your server. Each app release supports servers up to **three minor versions older** than itself: app 0.8.x works with servers 0.5.0 and newer, app 0.11.x with servers 0.8.0 and newer.
 
-Within that window, a new app feature your server doesn't have yet is simply hidden — the app asks the server which features it supports and never shows a button that would fail. Update the server to get it.
+Within that window, a new app feature your server doesn't have yet is hidden: the app asks the server which features it supports and hides the ones it reports as missing. Servers too old to report their features at all get a best-effort fallback — the app tries the feature and hides it, or explains it isn't available, when the server turns out not to have it. Update the server to get it.
 
 When your server is older than the window, the app shows a warning banner at the top of the feed. It's a soft warning: the app keeps working, but some things may not. Members are asked to contact their admin; admins see the minimum server version and a link to this page. The banner can be dismissed, once per server version — it comes back if the server changes to another version that's still too old.
 
