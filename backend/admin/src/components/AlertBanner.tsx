@@ -1,3 +1,5 @@
+import { Alert } from '@famlin/ui/alert'
+import { Button } from '@famlin/ui/button'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -52,7 +54,7 @@ export function AlertBanner() {
   return (
     <>
       {alerts.length > 0 && (
-        <div className="card alert-banner" role="alert">
+        <Alert className="mb-6 flex flex-wrap items-center gap-4 border-destructive/20 bg-destructive/10 p-5">
           <span className="alert-banner-icon">
             <Icon name="shield" size={18} />
           </span>
@@ -66,10 +68,13 @@ export function AlertBanner() {
               {t('systemStatus.alerts.viewStatus')}
             </Link>
           )}
-        </div>
+        </Alert>
       )}
       {showUpdate && update && (
-        <div className={`card update-banner${update.breaking ? ' update-banner-breaking' : ''}`} role="status">
+        <Alert
+          className={`mb-6 flex flex-wrap items-center gap-4 p-5 ${update.breaking ? 'border-warning/20 bg-warning/10' : 'border-primary/10 bg-secondary'}`}
+          role="status"
+        >
           <span className="update-banner-icon">
             <Icon name="bell" size={18} />
           </span>
@@ -92,10 +97,16 @@ export function AlertBanner() {
           <a className="update-banner-link" href={MAINTENANCE_DOCS_URL} target="_blank" rel="noreferrer">
             {t('updateBanner.howToUpdate')}
           </a>
-          <button type="button" className="secondary" onClick={dismissUpdate} aria-label={t('updateBanner.dismiss')}>
+          <Button
+            variant="secondary"
+            type="button"
+            className="secondary"
+            onClick={dismissUpdate}
+            aria-label={t('updateBanner.dismiss')}
+          >
             {t('updateBanner.dismiss')}
-          </button>
-        </div>
+          </Button>
+        </Alert>
       )}
     </>
   )

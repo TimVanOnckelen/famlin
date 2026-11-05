@@ -115,6 +115,12 @@ npm run ios        # or: npm run android (needs Xcode / Android Studio)
 
 Leaving the server field empty at login uses `EXPO_PUBLIC_API_URL` from `mobile/.env`: `http://localhost:3000` on the iOS simulator, `http://10.0.2.2:3000` on the Android emulator.
 
+**Admin and shared UI** — run `npm ci` at the repo root, then
+`npm --prefix backend/admin ci` and `npm run dev:admin`. Browser primitives and
+independent compositions live in `packages/ui`; shared values live in
+`packages/design-tokens`. See the [shared UI guide](docs/developers/shared-ui.md)
+for ownership, checks and token generation. Web and mobile keep their current UI.
+
 **Tests** — `cd backend && npm run test:docker` runs the backend suite inside the dev container against a separate test database. `npm test` in `web/`, `mobile/` and `packages/api-client/` runs their unit tests.
 
 Useful commands:
@@ -134,7 +140,9 @@ famlin/
     admin/                 React + Vite admin UI (served at /admin)
   web/                     React + Vite member-facing web app (served at /)
   mobile/                  Expo React Native app (iOS + Android)
-  packages/api-client/     shared API/data layer for web + mobile
+  packages/api-client/     shared API/data layer for web + mobile + admin
+  packages/design-tokens/  JSON tokens, typed exports and generated CSS
+  packages/ui/             shared browser components (admin consumer)
   docs/                    Docusaurus documentation (famlin.app/docs)
   website/                 landing page (famlin.app)
   design/                  styleguide, the source of the design tokens

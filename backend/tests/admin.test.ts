@@ -96,6 +96,61 @@ describe('admin routes', () => {
     expect(await listIds()).toEqual(expected)
   })
 
+  it('includes user avatars on administrative identity and moderation surfaces', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const author = await createUser({ name: 'Avatar Author' })
+    const avatarUrl = '/uploads/admin-avatar-test.jpg'
+    await prisma.user.update({ where: { id: author.id }, data: { avatarUrl } })
+    const group = await createGroupWithMember(author)
+    const post = await createPost({ groupId: group.id, authorId: author.id })
+    const comment = await createComment({ postId: post.id, authorId: author.id })
+    const story = await prisma.story.create({
+      data: {
+        authorId: author.id,
+        groupId: group.id,
+        imageUrl: '/uploads/story.jpg',
+        expiresAt: new Date(Date.now() + 86_400_000),
+      },
+    })
+    const invite = await prisma.invite.create({
+      data: { token: `avatar-${post.id}`, groupId: group.id, usedById: author.id, usedAt: new Date() },
+    })
+    const link = await prisma.mediaPersonLink.create({
+      data: { provider: 'immich', externalPersonId: `avatar-${author.id}`, label: author.name, userId: author.id },
+    })
+    async function get(path: string) {
+      const response = await app.inject({ method: 'GET', url: `/api/admin/${path}`, headers: authHeader(admin) })
+      expect(response.statusCode).toBe(200)
+      return response.json()
+    }
+    expect((await get('users')).items.find((user: { id: string }) => user.id === author.id)).toMatchObject({
+      avatarUrl,
+    })
+    expect(
+      (await get(`groups/${group.id}/members`)).find((user: { id: string }) => user.id === author.id)
+    ).toMatchObject({ avatarUrl })
+    for (const [path, id] of [
+      ['posts', post.id],
+      ['comments', comment.id],
+      ['stories', story.id],
+    ]) {
+      const item = (await get(`content/${path}`)).items.find((item: { id: string }) => item.id === id)
+      expect(item.author).toEqual({ id: author.id, name: author.name, avatarUrl })
+    }
+    expect((await get('stats')).recentPosts.find((item: { id: string }) => item.id === post.id)).toMatchObject({
+      authorAvatarUrl: avatarUrl,
+    })
+    expect(
+      (await get(`groups/${group.id}/invites`)).find((item: { id: string }) => item.id === invite.id).usedBy
+    ).toMatchObject({ avatarUrl })
+    expect((await get('media/people-links')).find((item: { id: string }) => item.id === link.id).user).toMatchObject({
+      avatarUrl,
+    })
+    expect((await get('users')).items.find((user: { id: string }) => user.id === admin.id)).toMatchObject({
+      avatarUrl: null,
+    })
+  })
+
   // requireAdmin() sends the 403 itself and returns true; every handler must
   // `return` on that signal or it keeps running the mutation after denying
   // the response. These regression tests check the actual database state,

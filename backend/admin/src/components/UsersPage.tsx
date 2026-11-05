@@ -1,3 +1,10 @@
+import { InitialAvatar } from './common/InitialAvatar'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Badge } from '@famlin/ui/badge'
 import { AdminModal } from './AdminModal'
 import { useAdminDialogs } from './AdminDialogs'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -153,63 +160,83 @@ export function UsersPage() {
     if (saved) await dialogs.showMessage(t('users.passwordChanged', { name: user.name }))
   }
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>
+  if (loading)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('users.title')}</h2>
-        <button onClick={() => setShowAddMember(true)}>{t('members.addMember')}</button>
-      </div>
+      <PageHeader
+        title={t('users.title')}
+        actions={
+          <>
+            <Button onClick={() => setShowAddMember(true)}>{t('members.addMember')}</Button>
+          </>
+        }
+      />
 
       {error && (
-        <div className="error" role="alert">
+        <StateMessage variant="error" className="error" role="alert">
           {error}{' '}
-          <button type="button" className="link-button" onClick={() => void load()}>
+          <Button variant="link" type="button" className="link-button" onClick={() => void load()}>
             {t('common.retry')}
-          </button>
-        </div>
+          </Button>
+        </StateMessage>
       )}
-      <div className="card" aria-busy={refreshing || loadingMore}>
+      <Card className="p-6 gap-4" aria-busy={refreshing || loadingMore}>
         {users.length === 0 ? (
-          !error && <div className="empty">{t('users.noUsers')}</div>
+          !error && (
+            <StateMessage variant="empty" className="empty">
+              {t('users.noUsers')}
+            </StateMessage>
+          )
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>{t('users.table.name')}</th>
-                <th>{t('users.table.groups')}</th>
-                <th>{t('users.table.admin')}</th>
-                <th>{t('users.table.notifications')}</th>
-                <th>{t('users.table.memberSince')}</th>
-                <th>{t('users.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('users.table.name')}</TableHead>
+                <TableHead>{t('users.table.groups')}</TableHead>
+                <TableHead>{t('users.table.admin')}</TableHead>
+                <TableHead>{t('users.table.notifications')}</TableHead>
+                <TableHead>{t('users.table.memberSince')}</TableHead>
+                <TableHead>{t('users.table.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <span className="cell-name">
-                      {user.name}
-                      {!user.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
-                    </span>
-                    <span className="cell-email">{user.email}</span>
-                  </td>
-                  <td>
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
+                      <div className="min-w-0">
+                        {' '}
+                        <span className="cell-name">
+                          {user.name}
+                          {!user.hasPassword && <Badge variant="accent">{t('users.table.sso')}</Badge>}
+                        </span>
+                        <span className="cell-email">{user.email}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="group-badges">
                       {user.groups && user.groups.length > 0 ? (
                         user.groups.map((g) => (
-                          <span key={g.id} className="badge">
+                          <Badge variant="secondary" key={g.id} className="badge">
                             {g.name}
-                          </span>
+                          </Badge>
                         ))
                       ) : (
                         <span className="muted">{t('users.noGroups')}</span>
                       )}
                     </div>
-                  </td>
-                  <td>
-                    <button
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
                       type="button"
                       className={`mini-toggle${user.isAdmin ? ' active' : ''}`}
                       title={t('users.table.admin')}
@@ -218,66 +245,80 @@ export function UsersPage() {
                       onClick={() => void toggleAdmin(user)}
                     >
                       <Icon name="shield" size={14} />
-                    </button>
-                  </td>
-                  <td>
+                    </Button>
+                  </TableCell>
+                  <TableCell>
                     <div className="toggle-group">
-                      <label
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className={`mini-toggle${isPushEnabled(user) ? ' active' : ''}`}
                         title={t('users.table.pushNotifications')}
-                        onClick={() => togglePushNotifications(user)}
+                        aria-label={t('users.table.pushNotifications')}
+                        aria-pressed={isPushEnabled(user)}
+                        onClick={() => void togglePushNotifications(user)}
                       >
-                        <input type="checkbox" checked={isPushEnabled(user)} onChange={() => {}} />
-                        <Icon name="bell" size={14} />
-                      </label>
-                      <label
+                        <Icon name="bell" size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className={`mini-toggle${isEmailEnabled(user) ? ' active' : ''}`}
                         title={t('users.table.emailNotifications')}
-                        onClick={() => toggleEmailNotifications(user)}
+                        aria-label={t('users.table.emailNotifications')}
+                        aria-pressed={isEmailEnabled(user)}
+                        onClick={() => void toggleEmailNotifications(user)}
                       >
-                        <input type="checkbox" checked={isEmailEnabled(user)} onChange={() => {}} />
-                        <Icon name="mail" size={14} />
-                      </label>
+                        <Icon name="mail" size={16} />
+                      </Button>
                     </div>
-                  </td>
-                  <td>{new Date(user.createdAt).toLocaleDateString(i18n.language)}</td>
-                  <td className="actions">
-                    <button
+                  </TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString(i18n.language)}</TableCell>
+                  <TableCell className="actions">
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="icon-button"
                       title={t('users.manageGroups')}
                       aria-label={t('users.manageGroups')}
                       onClick={() => setManagingUser(user)}
                     >
                       <Icon name="users" size={15} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="icon-button"
                       title={t('users.password')}
                       aria-label={t('users.password')}
                       onClick={() => handleResetPassword(user)}
                     >
                       <Icon name="key" size={15} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       className="icon-button danger"
                       title={t('common.delete')}
                       aria-label={t('common.delete')}
                       onClick={() => handleDelete(user)}
                     >
                       <Icon name="trash" size={15} />
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
         {nextCursor && (
-          <button className="secondary" disabled={loadingMore || refreshing} onClick={loadMore}>
+          <Button variant="secondary" className="secondary" disabled={loadingMore || refreshing} onClick={loadMore}>
             {loadingMore ? t('common.loading') : t('common.loadMore')}
-          </button>
+          </Button>
         )}
-      </div>
+      </Card>
 
       {managingUser && (
         <ManageGroupsModal user={managingUser} groups={groups} onClose={() => setManagingUser(null)} onChanged={load} />
@@ -319,9 +360,20 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
   }
 
   return (
-    <AdminModal title={t('users.manageGroupsFor', { name: user.name })} onClose={onClose} busy={!!busyGroupId}>
+    <AdminModal
+      title={
+        <span className="inline-flex items-center gap-3">
+          <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
+          {t('users.manageGroupsFor', { name: user.name })}
+        </span>
+      }
+      onClose={onClose}
+      busy={!!busyGroupId}
+    >
       {groups.length === 0 ? (
-        <div className="empty">{t('groups.noGroups')}</div>
+        <StateMessage variant="empty" className="empty">
+          {t('groups.noGroups')}
+        </StateMessage>
       ) : (
         <ul className="membership-list">
           {groups.map((group) => {
@@ -329,22 +381,22 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
             return (
               <li key={group.id} className="membership-row">
                 <span>{group.name}</span>
-                <button
-                  className={isMember ? 'danger' : ''}
+                <Button
+                  variant={isMember ? 'destructive' : 'default'}
                   disabled={!!busyGroupId}
                   onClick={() => toggleMembership(group, isMember)}
                 >
                   {isMember ? t('common.remove') : t('common.add')}
-                </button>
+                </Button>
               </li>
             )
           })}
         </ul>
       )}
       <div className="modal-actions">
-        <button className="secondary" onClick={onClose} disabled={!!busyGroupId}>
+        <Button variant="secondary" className="secondary" onClick={onClose} disabled={!!busyGroupId}>
           {t('common.close')}
-        </button>
+        </Button>
       </div>
     </AdminModal>
   )

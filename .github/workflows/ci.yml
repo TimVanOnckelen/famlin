@@ -209,6 +209,14 @@ jobs:
       - name: Install dependencies
         working-directory: backend/admin
         run: npm ci
+      - name: Check shared design tokens and UI
+        run: |
+          npm run check --workspace=@famlin/design-tokens
+          npm run typecheck --workspace=@famlin/ui
+          npm run lint --workspace=@famlin/ui
+          npm run test --workspace=@famlin/ui
+          npm --prefix backend/admin test
+          npm --prefix backend/admin run lint
       - name: Typecheck
         working-directory: backend/admin
         run: npx tsc --noEmit

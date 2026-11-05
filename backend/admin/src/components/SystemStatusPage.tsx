@@ -1,3 +1,9 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Badge } from '@famlin/ui/badge'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -30,9 +36,19 @@ function hourLabel(hour: number): string {
 
 function ResultBadge({ ok, running }: { ok: boolean | null; running?: boolean }) {
   const { t } = useTranslation()
-  if (running) return <span className="badge">{t('systemStatus.running')}</span>
-  if (ok === null) return <span className="badge">{t('systemStatus.never')}</span>
-  return <span className={`badge ${ok ? 'ok' : 'err'}`}>{ok ? t('systemStatus.ok') : t('systemStatus.failed')}</span>
+  if (running)
+    return (
+      <Badge variant="secondary" className="badge">
+        {t('systemStatus.running')}
+      </Badge>
+    )
+  if (ok === null)
+    return (
+      <Badge variant="secondary" className="badge">
+        {t('systemStatus.never')}
+      </Badge>
+    )
+  return <Badge variant={ok ? 'success' : 'destructive'}>{ok ? t('systemStatus.ok') : t('systemStatus.failed')}</Badge>
 }
 
 function DiskRow({ label, disk }: { label: string; disk: DiskUsage | null }) {
@@ -54,7 +70,7 @@ function DiskRow({ label, disk }: { label: string; disk: DiskUsage | null }) {
         </span>
         <span>
           {t('systemStatus.disk.free', { free: formatBytes(disk.freeBytes), total: formatBytes(disk.totalBytes) })}{' '}
-          {disk.low && <span className="badge err">{t('systemStatus.disk.low')}</span>}
+          {disk.low && <Badge variant="destructive">{t('systemStatus.disk.low')}</Badge>}
         </span>
       </div>
       <div className={`disk-bar${disk.low ? ' low' : ''}`} aria-hidden>
@@ -67,11 +83,23 @@ function DiskRow({ label, disk }: { label: string; disk: DiskUsage | null }) {
 function IntegrationRow({ label, status }: { label: string; status: IntegrationStatus | undefined }) {
   const { t } = useTranslation()
   let badge
-  if (!status) badge = <span className="badge">{t('common.loading')}</span>
-  else if (!status.configured) badge = <span className="badge">{t('systemStatus.integrations.notConfigured')}</span>
-  else if (status.ok) badge = <span className="badge ok">{t('systemStatus.ok')}</span>
+  if (!status)
+    badge = (
+      <Badge variant="secondary" className="badge">
+        {t('common.loading')}
+      </Badge>
+    )
+  else if (!status.configured)
+    badge = (
+      <Badge variant="secondary" className="badge">
+        {t('systemStatus.integrations.notConfigured')}
+      </Badge>
+    )
+  else if (status.ok) badge = <Badge variant="success">{t('systemStatus.ok')}</Badge>
   else
-    badge = <span className="badge err">{t(`systemStatus.integrations.errors.${status.error ?? 'unreachable'}`)}</span>
+    badge = (
+      <Badge variant="destructive">{t(`systemStatus.integrations.errors.${status.error ?? 'unreachable'}`)}</Badge>
+    )
   return (
     <div className="status-row">
       <span>{label}</span>
@@ -84,31 +112,31 @@ function JobsTable({ jobs }: { jobs: JobStatus[] }) {
   const { t } = useTranslation()
   return (
     <div className="content-table">
-      <table>
-        <thead>
-          <tr>
-            <th>{t('systemStatus.jobs.job')}</th>
-            <th>{t('systemStatus.jobs.lastRun')}</th>
-            <th>{t('systemStatus.jobs.result')}</th>
-            <th>{t('systemStatus.jobs.lastSuccess')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('systemStatus.jobs.job')}</TableHead>
+            <TableHead>{t('systemStatus.jobs.lastRun')}</TableHead>
+            <TableHead>{t('systemStatus.jobs.result')}</TableHead>
+            <TableHead>{t('systemStatus.jobs.lastSuccess')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {jobs.map((job) => (
-            <tr key={job.job}>
-              <td>
+            <TableRow key={job.job}>
+              <TableCell>
                 {t(`systemStatus.jobs.names.${job.job}`)}
                 {job.lastError && job.lastOk === false && <div className="status-job-error">{job.lastError}</div>}
-              </td>
-              <td className="muted">{formatDate(job.lastStartedAt) ?? '—'}</td>
-              <td>
+              </TableCell>
+              <TableCell className="muted">{formatDate(job.lastStartedAt) ?? '—'}</TableCell>
+              <TableCell>
                 <ResultBadge ok={job.lastOk} running={job.running} />
-              </td>
-              <td className="muted">{formatDate(job.lastSuccessAt) ?? '—'}</td>
-            </tr>
+              </TableCell>
+              <TableCell className="muted">{formatDate(job.lastSuccessAt) ?? '—'}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -164,8 +192,18 @@ export function SystemStatusPage() {
     }
   }
 
-  if (error && !status) return <div className="error">{error}</div>
-  if (!status) return <div className="loading">{t('common.loading')}</div>
+  if (error && !status)
+    return (
+      <StateMessage variant="error" className="error">
+        {error}
+      </StateMessage>
+    )
+  if (!status)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   const { backups, disk, jobs, migrations, push } = status
   const backupJob = jobs.find((j) => j.job === 'backup')
@@ -175,22 +213,27 @@ export function SystemStatusPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('systemStatus.title')}</h2>
-        <button
-          className="secondary"
-          onClick={() => {
-            loadStatus()
-            setIntegrations(null)
-            loadIntegrations()
-          }}
-        >
-          {t('systemStatus.refresh')}
-        </button>
-      </div>
+      <PageHeader
+        title={t('systemStatus.title')}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              className="secondary"
+              onClick={() => {
+                loadStatus()
+                setIntegrations(null)
+                loadIntegrations()
+              }}
+            >
+              {t('systemStatus.refresh')}
+            </Button>
+          </>
+        }
+      />
 
       <div className="status-grid">
-        <section className="card">
+        <Card className="p-6 gap-4">
           <h3>{t('systemStatus.backups.title')}</h3>
           <div className="status-row">
             <span>{t('systemStatus.backups.schedule')}</span>
@@ -202,7 +245,7 @@ export function SystemStatusPage() {
                 })
               ) : (
                 <>
-                  <span className="badge off">{t('serverSettings.statusDisabled')}</span>{' '}
+                  <Badge variant="outline">{t('serverSettings.statusDisabled')}</Badge>{' '}
                   <Link to="/settings">{t('systemStatus.backups.enableInSettings')}</Link>
                 </>
               )}
@@ -257,20 +300,22 @@ export function SystemStatusPage() {
             </details>
           )}
           <div className="settings-test-row">
-            <button onClick={handleRunBackup} disabled={starting || backups.running}>
+            <Button onClick={handleRunBackup} disabled={starting || backups.running}>
               {backups.running ? t('systemStatus.backups.running') : t('systemStatus.backups.runNow')}
-            </button>
+            </Button>
             {backupError && <span className="test-err">{backupError}</span>}
           </div>
-        </section>
+        </Card>
 
-        <section className="card">
+        <Card className="p-6 gap-4">
           <h3>{t('systemStatus.disk.title')}</h3>
           {disk.uploadsDriver === 's3' ? (
             <>
               <div className="status-row">
                 <span>{t('systemStatus.disk.uploads')}</span>
-                <span className="badge">S3</span>
+                <Badge variant="secondary" className="badge">
+                  S3
+                </Badge>
               </div>
               <p className="hint">{t('systemStatus.disk.s3Capacity')}</p>
             </>
@@ -279,17 +324,17 @@ export function SystemStatusPage() {
           )}
           {!disk.sameVolume && <DiskRow label={t('systemStatus.disk.backups')} disk={disk.backups} />}
           {disk.sameVolume && <p className="hint">{t('systemStatus.disk.sameVolume')}</p>}
-        </section>
+        </Card>
 
-        <section className="card">
+        <Card className="p-6 gap-4">
           <h3>{t('systemStatus.integrations.title')}</h3>
           <IntegrationRow label={t('systemStatus.integrations.smtp')} status={integrations?.smtp} />
           <IntegrationRow label={t('systemStatus.integrations.oidc')} status={integrations?.oidc} />
           <IntegrationRow label={t('systemStatus.integrations.immich')} status={integrations?.immich} />
           <IntegrationRow label={t('systemStatus.integrations.localMedia')} status={integrations?.localMedia} />
-        </section>
+        </Card>
 
-        <section className="card">
+        <Card className="p-6 gap-4">
           <h3>{t('systemStatus.push.title')}</h3>
           <div className="status-row">
             <span>{t('systemStatus.push.last24h')}</span>
@@ -313,14 +358,14 @@ export function SystemStatusPage() {
           </div>
           {push.unhealthy && <p className="test-err">{t('systemStatus.push.unhealthy')}</p>}
           <Link to="/push-log">{t('systemStatus.push.viewLog')}</Link>
-        </section>
+        </Card>
 
-        <section className="card status-wide">
+        <Card className="p-6 gap-4 status-wide">
           <h3>{t('systemStatus.jobs.title')}</h3>
           <JobsTable jobs={jobs} />
-        </section>
+        </Card>
 
-        <section className="card status-wide">
+        <Card className="p-6 gap-4 status-wide">
           <h3>{t('systemStatus.migrations.title')}</h3>
           <div className="status-row">
             <span>{t('systemStatus.migrations.latest')}</span>
@@ -335,15 +380,15 @@ export function SystemStatusPage() {
             {migrations.pending === null ? (
               <span className="muted">{t('systemStatus.migrations.unknown')}</span>
             ) : migrations.pending.length === 0 ? (
-              <span className="badge ok">{t('systemStatus.migrations.upToDate')}</span>
+              <Badge variant="success">{t('systemStatus.migrations.upToDate')}</Badge>
             ) : (
-              <span className="badge err">{migrations.pending.join(', ')}</span>
+              <Badge variant="destructive">{migrations.pending.join(', ')}</Badge>
             )}
           </div>
           {migrations.failed.length > 0 && (
             <p className="test-err">{t('systemStatus.migrations.failed', { names: migrations.failed.join(', ') })}</p>
           )}
-        </section>
+        </Card>
       </div>
     </>
   )

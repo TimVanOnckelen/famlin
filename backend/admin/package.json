@@ -15,7 +15,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@famlin/api-client": "file:../../packages/api-client",
@@ -26,7 +27,12 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-i18next": "^17.1.9",
-    "react-router-dom": "^7.18.5"
+    "react-router-dom": "^7.18.5",
+    "@tailwindcss/vite": "^4.3.4",
+    "lucide-react": "^1.67.0",
+    "tailwindcss": "^4.3.4",
+    "@famlin/ui": "file:../../packages/ui",
+    "@famlin/design-tokens": "file:../../packages/design-tokens"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -39,7 +45,8 @@
     "globals": "^17.13.0",
     "typescript": "^5.5.2",
     "typescript-eslint": "^8.72.1",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "@types/node": "^26.6.6"
   },
   "overrides": {
     "nanoid": "^3.3.19",

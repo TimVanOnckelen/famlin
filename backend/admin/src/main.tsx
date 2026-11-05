@@ -6,6 +6,8 @@ import { adminLocalStorageAdapter } from './storageAdapter'
 import i18n from './i18n'
 import App from './App'
 import { AdminDialogProvider } from './components/AdminDialogs'
+import { TooltipProvider } from '@famlin/ui/tooltip'
+import { Toaster } from '@famlin/ui/sonner'
 import './index.css'
 
 // Required once at startup for the shared package's browser OIDC helpers
@@ -21,9 +23,12 @@ setLanguageResolver(() => i18n.resolvedLanguage ?? i18n.language)
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter basename="/admin/">
-      <AdminDialogProvider>
-        <App />
-      </AdminDialogProvider>
+      <TooltipProvider>
+        <AdminDialogProvider>
+          <App />
+        </AdminDialogProvider>
+        <Toaster theme="light" />
+      </TooltipProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

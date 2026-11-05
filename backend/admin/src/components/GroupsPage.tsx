@@ -1,3 +1,11 @@
+import { InitialAvatar } from './common/InitialAvatar'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
+import { Badge } from '@famlin/ui/badge'
+import { SelectField } from '@famlin/ui/common/select-field'
+import { Input } from '@famlin/ui/input'
 import { AdminModal } from './AdminModal'
 import { AddMembersModal } from './AddMembersModal'
 import { MemberCards } from './MemberCards'
@@ -257,42 +265,56 @@ export function GroupsPage() {
     (a) => !mediaLinks.some((link) => link.provider === selectedProvider && link.externalAlbumId === a.id)
   )
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>
+  if (loading)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('groups.title')}</h2>
-        <button onClick={() => setFormGroup({ id: '', name: '', description: '', createdAt: '' })}>
-          {t('groups.newGroup')}
-        </button>
-      </div>
+      <PageHeader
+        title={t('groups.title')}
+        actions={
+          <>
+            <Button onClick={() => setFormGroup({ id: '', name: '', description: '', createdAt: '' })}>
+              {t('groups.newGroup')}
+            </Button>
+          </>
+        }
+      />
 
       {groups.length === 0 ? (
-        <div className="card empty">{t('groups.noGroups')}</div>
+        <Card className="p-6 gap-4 empty">{t('groups.noGroups')}</Card>
       ) : (
         <div className="master-detail">
           {/* Master: group list */}
           <aside className="md-list card">
             {groups.map((group) => (
-              <button
+              <Button
+                variant="ghost"
                 key={group.id}
-                className={`md-list-item${group.id === selectedId ? ' active' : ''}`}
+                className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 md-list-item${group.id === selectedId ? ' active' : ''}`}
                 onClick={() => setSelectedId(group.id)}
               >
                 <span className="md-list-item-main">
                   <span className="md-list-item-name">{group.name}</span>
                   {group.description && <span className="md-list-item-desc">{group.description}</span>}
                 </span>
-                <span className="badge">{t('groups.memberCount', { count: group.memberCount ?? 0 })}</span>
-              </button>
+                <Badge variant="secondary" className="badge">
+                  {t('groups.memberCount', { count: group.memberCount ?? 0 })}
+                </Badge>
+              </Button>
             ))}
           </aside>
 
           {/* Detail: selected group */}
-          <section className="md-detail card">
+          <Card className="md-detail p-6 gap-4">
             {!selectedGroup ? (
-              <div className="empty">{t('groups.selectGroupHint')}</div>
+              <StateMessage variant="empty" className="empty">
+                {t('groups.selectGroupHint')}
+              </StateMessage>
             ) : (
               <>
                 <div className="md-detail-header">
@@ -303,33 +325,40 @@ export function GroupsPage() {
                     </p>
                   </div>
                   <div className="actions">
-                    <button className="secondary" onClick={() => setFormGroup(selectedGroup)}>
+                    <Button variant="secondary" className="secondary" onClick={() => setFormGroup(selectedGroup)}>
                       {t('common.edit')}
-                    </button>
-                    <button className="danger" onClick={() => handleDelete(selectedGroup)}>
+                    </Button>
+                    <Button variant="destructive" className="danger" onClick={() => handleDelete(selectedGroup)}>
                       {t('common.delete')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 <div className="md-section-header">
                   <h4>{t('groups.invites.title')}</h4>
-                  <button type="button" className="link-button" onClick={() => setShowAddMember(true)}>
+                  <Button variant="link" type="button" className="link-button" onClick={() => setShowAddMember(true)}>
                     {t('members.addMember')}
-                  </button>
+                  </Button>
                 </div>
                 <p className="hint">{t('groups.invites.hint')}</p>
 
                 {invitesLoading ? (
-                  <div className="loading">{t('common.loading')}</div>
+                  <StateMessage variant="loading" className="loading">
+                    {t('common.loading')}
+                  </StateMessage>
                 ) : invites.length === 0 ? (
-                  <div className="empty">{t('groups.invites.noInvites')}</div>
+                  <StateMessage variant="empty" className="empty">
+                    {t('groups.invites.noInvites')}
+                  </StateMessage>
                 ) : (
                   <ul className="member-cards">
                     {invites.map((invite) => {
+                      const usedBy = invite.usedBy
+                        ? (users.find((user) => user.id === invite.usedBy?.id) ?? invite.usedBy)
+                        : null
                       const expired = !invite.usedAt && !!invite.expiresAt && new Date(invite.expiresAt) < new Date()
                       const status = invite.usedAt
-                        ? t('groups.invites.statusUsedBy', { name: invite.usedBy?.name ?? t('common.unknown') })
+                        ? t('groups.invites.statusUsedBy', { name: usedBy?.name ?? t('common.unknown') })
                         : expired
                           ? t('groups.invites.statusExpired')
                           : t('groups.invites.statusActive')
@@ -340,7 +369,12 @@ export function GroupsPage() {
                           <span className="member-card-info">
                             <span className="member-card-name">
                               {invite.email || t('groups.invites.anyEmail')}
-                              <span className={`badge${revocable ? '' : ' admin'}`}>{status}</span>
+                              <span className="inline-flex items-center gap-2">
+                                {usedBy && (
+                                  <InitialAvatar name={usedBy.name} avatarUrl={usedBy.avatarUrl} className="size-6" />
+                                )}
+                                <Badge variant={revocable ? 'secondary' : 'default'}>{status}</Badge>
+                              </span>
                             </span>
                             <span className="member-card-sub">
                               {invite.expiresAt
@@ -354,20 +388,27 @@ export function GroupsPage() {
                               })}
                             </span>
                           </span>
-                          <button type="button" className="secondary" onClick={() => handleCopyInviteLink(invite)}>
+                          <Button
+                            variant="secondary"
+                            type="button"
+                            className="secondary"
+                            onClick={() => handleCopyInviteLink(invite)}
+                          >
                             {copiedInviteId === invite.id
                               ? t('groups.invites.linkCopied')
                               : t('groups.invites.copyLink')}
-                          </button>
+                          </Button>
                           {revocable && (
-                            <button
+                            <Button
+                              variant="destructive"
+                              size="icon"
                               className="icon-button danger"
                               title={t('groups.invites.revoke')}
                               aria-label={t('groups.invites.revoke')}
                               onClick={() => handleRevokeInvite(invite)}
                             >
                               <Icon name="x" size={14} />
-                            </button>
+                            </Button>
                           )}
                         </li>
                       )
@@ -382,15 +423,19 @@ export function GroupsPage() {
 
                 <div className="md-section-header">
                   <h4>{t('groups.memberCount', { count: members.length })}</h4>
-                  <button type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
+                  <Button variant="link" type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
                     {t('groups.addExistingUser')}
-                  </button>
+                  </Button>
                 </div>
 
                 {membersLoading ? (
-                  <div className="loading">{t('common.loading')}</div>
+                  <StateMessage variant="loading" className="loading">
+                    {t('common.loading')}
+                  </StateMessage>
                 ) : members.length === 0 ? (
-                  <div className="empty">{t('groups.noMembers')}</div>
+                  <StateMessage variant="empty" className="empty">
+                    {t('groups.noMembers')}
+                  </StateMessage>
                 ) : (
                   <MemberCards members={members} onRemove={handleRemoveMember} />
                 )}
@@ -398,47 +443,56 @@ export function GroupsPage() {
                 <div className="md-section-header">
                   <h4>{t('groups.mediaAlbums.title')}</h4>
                   <form className="md-add-member" onSubmit={handleLinkAlbum}>
-                    <select
+                    <SelectField
                       value={selectedProvider}
-                      onChange={(e) => {
-                        setSelectedProvider(e.target.value as MediaProviderId)
+                      onValueChange={(value) => {
+                        setSelectedProvider(value as MediaProviderId)
                         setSelectedAlbumId('')
                       }}
                       aria-label={t('groups.mediaAlbums.providerLabel')}
-                    >
-                      <option value="immich">{t('groups.mediaAlbums.providers.immich')}</option>
-                      <option value="local">{t('groups.mediaAlbums.providers.local')}</option>
-                    </select>
+                      items={[
+                        { value: 'immich', label: <>{t('groups.mediaAlbums.providers.immich')}</> },
+                        { value: 'local', label: <>{t('groups.mediaAlbums.providers.local')}</> },
+                      ]}
+                    />
                     {currentCatalog.notConfigured ? (
                       <span className="hint">{t('groups.mediaAlbums.notConfigured')}</span>
                     ) : currentCatalog.error ? (
                       <span className="hint">{t('groups.mediaAlbums.loadError')}</span>
                     ) : (
                       <>
-                        <select
+                        <SelectField
                           value={selectedAlbumId}
-                          onChange={(e) => setSelectedAlbumId(e.target.value)}
+                          onValueChange={(value) => setSelectedAlbumId(value)}
                           disabled={linkableAlbums.length === 0}
-                        >
-                          <option value="">{t('groups.mediaAlbums.selectAlbum')}</option>
-                          {linkableAlbums.map((album) => (
-                            <option key={album.id} value={album.id}>
-                              {album.name} ({album.assetCount})
-                            </option>
-                          ))}
-                        </select>
-                        <button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
+                          items={[
+                            { value: '', label: <>{t('groups.mediaAlbums.selectAlbum')}</> },
+                            ...linkableAlbums.map((album) => ({
+                              value: album.id,
+                              label: (
+                                <>
+                                  {album.name}({album.assetCount})
+                                </>
+                              ),
+                            })),
+                          ]}
+                        />
+                        <Button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
                           {t('groups.mediaAlbums.linkAlbum')}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </form>
                 </div>
 
                 {mediaLinksLoading ? (
-                  <div className="loading">{t('common.loading')}</div>
+                  <StateMessage variant="loading" className="loading">
+                    {t('common.loading')}
+                  </StateMessage>
                 ) : mediaLinks.length === 0 ? (
-                  <div className="empty">{t('groups.mediaAlbums.noAlbums')}</div>
+                  <StateMessage variant="empty" className="empty">
+                    {t('groups.mediaAlbums.noAlbums')}
+                  </StateMessage>
                 ) : (
                   <>
                     <ul className="member-cards">
@@ -447,19 +501,22 @@ export function GroupsPage() {
                           <span className="member-card-info">
                             <span className="member-card-name">
                               {link.albumName}
-                              <span className="badge">{t(`groups.mediaAlbums.providers.${link.provider}`)}</span>
+                              <Badge variant="secondary" className="badge">
+                                {t(`groups.mediaAlbums.providers.${link.provider}`)}
+                              </Badge>
                             </span>
                             <span className="member-card-sub">
                               {t('groups.mediaAlbums.newAssetMode')}:
-                              <select
+                              <SelectField
                                 value={link.newAssetMode}
-                                onChange={(e) => handleUpdateNewAssetMode(link, e.target.value as NewAssetMode)}
+                                onValueChange={(value) => handleUpdateNewAssetMode(link, value as NewAssetMode)}
                                 style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}
-                              >
-                                <option value="OFF">{t('groups.mediaAlbums.newAssetMode.off')}</option>
-                                <option value="MANUAL">{t('groups.mediaAlbums.newAssetMode.manual')}</option>
-                                <option value="AUTO">{t('groups.mediaAlbums.newAssetMode.auto')}</option>
-                              </select>
+                                items={[
+                                  { value: 'OFF', label: <>{t('groups.mediaAlbums.newAssetMode.off')}</> },
+                                  { value: 'MANUAL', label: <>{t('groups.mediaAlbums.newAssetMode.manual')}</> },
+                                  { value: 'AUTO', label: <>{t('groups.mediaAlbums.newAssetMode.auto')}</> },
+                                ]}
+                              />
                             </span>
                             {link.newAssetMode !== 'OFF' && (
                               <span className="hint" style={{ marginTop: '0.25rem' }}>
@@ -467,14 +524,16 @@ export function GroupsPage() {
                               </span>
                             )}
                           </span>
-                          <button
+                          <Button
+                            variant="destructive"
+                            size="icon"
                             className="icon-button danger"
                             title={t('common.remove')}
                             aria-label={t('common.remove')}
                             onClick={() => handleUnlinkAlbum(link)}
                           >
                             <Icon name="x" size={14} />
-                          </button>
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -482,7 +541,7 @@ export function GroupsPage() {
                 )}
               </>
             )}
-          </section>
+          </Card>
         </div>
       )}
 
@@ -594,11 +653,11 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
       <form onSubmit={submit}>
         <label>
           {t('groups.form.name')}
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          <Input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
         </label>
         <label>
           {t('groups.form.description')}
-          <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
 
         <div>
@@ -606,7 +665,9 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
             {t('groups.form.allowedPostTypes')}
           </span>
           {loadingPostTypes ? (
-            <div className="loading">{t('common.loading')}</div>
+            <StateMessage variant="loading" className="loading">
+              {t('common.loading')}
+            </StateMessage>
           ) : (
             <ul className="membership-list">
               {postTypes.map((pt) => (
@@ -622,7 +683,9 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
           )}
           <p className="hint">{t('groups.form.allowedPostTypesHint')}</p>
           {noTypesSelected && !loadingPostTypes && (
-            <div className="error">{t('groups.form.allowedPostTypesError')}</div>
+            <StateMessage variant="error" className="error">
+              {t('groups.form.allowedPostTypesError')}
+            </StateMessage>
           )}
         </div>
 
@@ -641,12 +704,12 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
         />
 
         <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose} disabled={saving}>
+          <Button variant="secondary" type="button" className="secondary" onClick={onClose} disabled={saving}>
             {t('common.cancel')}
-          </button>
-          <button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
+          </Button>
+          <Button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
             {isEdit ? t('groups.save') : t('groups.add')}
-          </button>
+          </Button>
         </div>
       </form>
     </AdminModal>

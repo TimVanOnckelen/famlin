@@ -59,7 +59,7 @@ export default tseslint.config(
   },
   {
     // web/src/**: browser React app.
-    files: ['web/**/*.{ts,tsx}'],
+    files: ['web/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     languageOptions: {
       globals: { ...globals.browser },
@@ -81,7 +81,7 @@ export default tseslint.config(
   {
     // packages/api-client: isomorphic lib (used by mobile + web + admin),
     // so allow both node and browser globals.
-    files: ['packages/api-client/**/*.ts'],
+    files: ['packages/api-client/**/*.ts', 'packages/design-tokens/**/*.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },

@@ -1,10 +1,20 @@
+import { Tabs, TabsList, TabsTrigger } from '@famlin/ui/tabs'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Textarea } from '@famlin/ui/textarea'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
+import { Input } from '@famlin/ui/input'
+import { SelectField } from '@famlin/ui/common/select-field'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Badge } from '@famlin/ui/badge'
 import { AdminModal } from './AdminModal'
 import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, Group, ModerationComment, ModerationPost, ModerationStory, User } from '../api/client'
 import i18n from '../i18n'
-import { avatarColor, initials } from '../avatar'
 import { Icon } from './Icon'
 
 type Tab = 'posts' | 'comments' | 'stories'
@@ -14,12 +24,10 @@ function truncate(text: string | null, length = 90) {
   return text.length > length ? `${text.slice(0, length)}…` : text
 }
 
-function AuthorCell({ name }: { name: string }) {
+function AuthorCell({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   return (
     <span className="cell-person">
-      <span className="avatar avatar-sm" style={{ background: avatarColor(name) }}>
-        {initials(name)}
-      </span>
+      <InitialAvatar name={name} avatarUrl={avatarUrl} className="size-8" />
       <span className="cell-name">{name}</span>
     </span>
   )
@@ -85,21 +93,34 @@ function EditPostDialog({
   }
 
   return (
-    <AdminModal title={t('content.editPostTitle', { name: post.author.name })} onClose={onClose} busy={saving}>
+    <AdminModal
+      title={
+        <span className="inline-flex items-center gap-3">
+          <InitialAvatar name={post.author.name} avatarUrl={post.author.avatarUrl} />
+          {t('content.editPostTitle', { name: post.author.name })}
+        </span>
+      }
+      onClose={onClose}
+      busy={saving}
+    >
       <form onSubmit={submit}>
         <label>
           {t('content.table.content')}
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} maxLength={5000} autoFocus />
+          <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} maxLength={5000} autoFocus />
         </label>
         <p className="hint">{t('content.editPostHint')}</p>
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <StateMessage variant="error" className="error">
+            {error}
+          </StateMessage>
+        )}
         <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose} disabled={saving}>
+          <Button variant="secondary" type="button" className="secondary" onClick={onClose} disabled={saving}>
             {t('common.cancel')}
-          </button>
-          <button type="submit" disabled={saving || !content.trim()}>
+          </Button>
+          <Button type="submit" disabled={saving || !content.trim()}>
             {t('common.save')}
-          </button>
+          </Button>
         </div>
       </form>
     </AdminModal>
@@ -273,25 +294,34 @@ export function ContentPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('content.title')}</h2>
-        <div className="seg-tabs">
-          <button className={`seg-tab${tab === 'posts' ? ' active' : ''}`} onClick={() => setTab('posts')}>
-            <Icon name="image" size={14} />
-            {t('content.tabPosts')}
-          </button>
-          <button className={`seg-tab${tab === 'comments' ? ' active' : ''}`} onClick={() => setTab('comments')}>
-            <Icon name="message-circle" size={14} />
-            {t('content.tabComments')}
-          </button>
-          <button className={`seg-tab${tab === 'stories' ? ' active' : ''}`} onClick={() => setTab('stories')}>
-            <Icon name="clock" size={14} />
-            {t('content.tabStories')}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('content.title')}
+        actions={
+          <>
+            <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
+              <TabsList aria-label={t('content.title')}>
+                <TabsTrigger value="posts">
+                  <Icon name="image" />
+                  {t('content.tabPosts')}
+                </TabsTrigger>
+                <TabsTrigger value="comments">
+                  <Icon name="message-circle" />
+                  {t('content.tabComments')}
+                </TabsTrigger>
+                <TabsTrigger value="stories">
+                  <Icon name="clock" />
+                  {t('content.tabStories')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </>
+        }
+      />
 
-      <div className="card">
+      <Card
+        key={tab}
+        className="p-6 gap-4 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 motion-reduce:animate-none"
+      >
         <div className="content-toolbar">
           {/* Stories are photos — there is no text to search. */}
           {tab !== 'stories' && (
@@ -299,7 +329,8 @@ export function ContentPage() {
               <span className="search-icon">
                 <Icon name="search" size={15} />
               </span>
-              <input
+              <Input
+                className="pl-9"
                 type="search"
                 placeholder={t('content.searchPlaceholder')}
                 value={search}
@@ -307,63 +338,81 @@ export function ContentPage() {
               />
             </div>
           )}
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-            <option value="">{t('content.allGroups')}</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-          <select value={authorId} onChange={(e) => setAuthorId(e.target.value)}>
-            <option value="">{t('content.allAuthors')}</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            aria-label={t('content.allGroups')}
+            className="w-full sm:w-auto sm:min-w-40"
+            value={groupId}
+            onValueChange={(value) => setGroupId(value)}
+            items={[
+              { value: '', label: <>{t('content.allGroups')}</> },
+              ...groups.map((g) => ({ value: g.id, label: <>{g.name}</> })),
+            ]}
+          />
+          <SelectField
+            aria-label={t('content.allAuthors')}
+            className="w-full sm:w-auto sm:min-w-40"
+            value={authorId}
+            onValueChange={(value) => setAuthorId(value)}
+            items={[
+              { value: '', label: <>{t('content.allAuthors')}</> },
+              ...users.map((u) => ({
+                value: u.id,
+                label: (
+                  <span className="flex items-center gap-2">
+                    <InitialAvatar name={u.name} avatarUrl={u.avatarUrl} className="size-6" />
+                    {u.name}
+                  </span>
+                ),
+              })),
+            ]}
+          />
           {hasFilters && (
-            <button className="link-button" onClick={clearFilters}>
+            <Button variant="link" className="link-button" onClick={clearFilters}>
               {t('content.clearFilters')}
-            </button>
+            </Button>
           )}
         </div>
 
         {loading ? (
-          <div className="loading">{t('common.loading')}</div>
+          <StateMessage variant="loading" className="loading">
+            {t('common.loading')}
+          </StateMessage>
         ) : items.length === 0 ? (
-          <div className="empty">{emptyMessage}</div>
+          <StateMessage variant="empty" className="empty">
+            {emptyMessage}
+          </StateMessage>
         ) : (
           <div className={`content-table${fetching ? ' refreshing' : ''}`}>
             {tab === 'posts' ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t('content.table.author')}</th>
-                    <th>{t('content.table.content')}</th>
-                    <th>{t('content.table.group')}</th>
-                    <th>{t('content.table.activity')}</th>
-                    <th>{t('content.table.date')}</th>
-                    <th>{t('content.table.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('content.table.author')}</TableHead>
+                    <TableHead>{t('content.table.content')}</TableHead>
+                    <TableHead>{t('content.table.group')}</TableHead>
+                    <TableHead>{t('content.table.activity')}</TableHead>
+                    <TableHead>{t('content.table.date')}</TableHead>
+                    <TableHead>{t('content.table.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {posts.map((post) => (
-                    <tr key={post.id}>
-                      <td>
-                        <AuthorCell name={post.author.name} />
-                      </td>
-                      <td className="cell-content">
-                        {post.type === 'MILESTONE' && <span className="badge milestone">{t('content.milestone')}</span>}
+                    <TableRow key={post.id}>
+                      <TableCell>
+                        <AuthorCell name={post.author.name} avatarUrl={post.author.avatarUrl} />
+                      </TableCell>
+                      <TableCell className="cell-content">
+                        {post.type === 'MILESTONE' && <Badge variant="milestone">{t('content.milestone')}</Badge>}
                         {post.content ? truncate(post.content) : <span className="muted">{t('content.noText')}</span>}
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <div className="group-badges">
-                          <span className="badge">{post.group.name}</span>
+                          <Badge variant="secondary" className="badge">
+                            {post.group.name}
+                          </Badge>
                         </div>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <span className="activity-counts">
                           <span title={t('content.commentsTooltip')}>
                             <Icon name="message-circle" size={13} />
@@ -374,63 +423,69 @@ export function ContentPage() {
                             {post.likeCount}
                           </span>
                         </span>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <DateCell iso={post.createdAt} />
-                      </td>
-                      <td className="actions">
-                        <button
+                      </TableCell>
+                      <TableCell className="actions">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="icon-button"
                           title={t('content.retriggerPush')}
                           aria-label={t('content.retriggerPush')}
                           onClick={() => handleRetriggerPush(post)}
                         >
                           <Icon name="bell" size={15} />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="icon-button"
                           title={t('common.edit')}
                           aria-label={t('common.edit')}
                           onClick={() => setEditingPost(post)}
                         >
                           <Icon name="edit" size={15} />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
                           className="icon-button danger"
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
                           onClick={() => handleDeletePost(post)}
                         >
                           <Icon name="trash" size={15} />
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : tab === 'stories' ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t('content.table.author')}</th>
-                    <th>{t('content.table.content')}</th>
-                    <th>{t('content.table.group')}</th>
-                    <th>{t('content.table.activity')}</th>
-                    <th>{t('content.table.date')}</th>
-                    <th>{t('content.table.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('content.table.author')}</TableHead>
+                    <TableHead>{t('content.table.content')}</TableHead>
+                    <TableHead>{t('content.table.group')}</TableHead>
+                    <TableHead>{t('content.table.activity')}</TableHead>
+                    <TableHead>{t('content.table.date')}</TableHead>
+                    <TableHead>{t('content.table.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {stories.map((story) => (
-                    <tr key={story.id}>
-                      <td>
-                        <AuthorCell name={story.author.name} />
-                      </td>
-                      <td className="cell-content">
+                    <TableRow key={story.id}>
+                      <TableCell>
+                        <AuthorCell name={story.author.name} avatarUrl={story.author.avatarUrl} />
+                      </TableCell>
+                      <TableCell className="cell-content">
                         <span className="story-cell">
                           <StoryThumb imageUrl={story.imageUrl} />
                           {story.pinnedAt ? (
-                            <span className="badge milestone">{t('content.storyHighlight')}</span>
+                            <Badge variant="milestone">{t('content.storyHighlight')}</Badge>
                           ) : (
                             <span className="muted">
                               {t('content.storyLive', {
@@ -439,14 +494,20 @@ export function ContentPage() {
                             </span>
                           )}
                         </span>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <div className="group-badges">
-                          <span className="badge">{story.group.name}</span>
-                          {story.circleId && <span className="badge">{t('content.storyCircle')}</span>}
+                          <Badge variant="secondary" className="badge">
+                            {story.group.name}
+                          </Badge>
+                          {story.circleId && (
+                            <Badge variant="secondary" className="badge">
+                              {t('content.storyCircle')}
+                            </Badge>
+                          )}
                         </div>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <span className="activity-counts">
                           <span title={t('content.viewsTooltip')}>
                             <Icon name="eye" size={13} />
@@ -457,83 +518,89 @@ export function ContentPage() {
                             {story.reactionCount}
                           </span>
                         </span>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <DateCell iso={story.createdAt} />
-                      </td>
-                      <td className="actions">
-                        <button
+                      </TableCell>
+                      <TableCell className="actions">
+                        <Button
+                          variant="destructive"
+                          size="icon"
                           className="icon-button danger"
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
                           onClick={() => handleDeleteStory(story)}
                         >
                           <Icon name="trash" size={15} />
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t('content.table.author')}</th>
-                    <th>{t('content.table.comment')}</th>
-                    <th>{t('content.table.onPost')}</th>
-                    <th>{t('content.table.group')}</th>
-                    <th>{t('content.table.date')}</th>
-                    <th>{t('content.table.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('content.table.author')}</TableHead>
+                    <TableHead>{t('content.table.comment')}</TableHead>
+                    <TableHead>{t('content.table.onPost')}</TableHead>
+                    <TableHead>{t('content.table.group')}</TableHead>
+                    <TableHead>{t('content.table.date')}</TableHead>
+                    <TableHead>{t('content.table.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {comments.map((comment) => (
-                    <tr key={comment.id}>
-                      <td>
-                        <AuthorCell name={comment.author.name} />
-                      </td>
-                      <td className="cell-content">{truncate(comment.content)}</td>
-                      <td className="cell-content">
+                    <TableRow key={comment.id}>
+                      <TableCell>
+                        <AuthorCell name={comment.author.name} avatarUrl={comment.author.avatarUrl} />
+                      </TableCell>
+                      <TableCell className="cell-content">{truncate(comment.content)}</TableCell>
+                      <TableCell className="cell-content">
                         {comment.post.content ? (
                           <span className="cell-sub">{truncate(comment.post.content, 60)}</span>
                         ) : (
                           <span className="muted">{t('content.noText')}</span>
                         )}
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <div className="group-badges">
-                          <span className="badge">{comment.post.group.name}</span>
+                          <Badge variant="secondary" className="badge">
+                            {comment.post.group.name}
+                          </Badge>
                         </div>
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         <DateCell iso={comment.createdAt} />
-                      </td>
-                      <td className="actions">
-                        <button
+                      </TableCell>
+                      <TableCell className="actions">
+                        <Button
+                          variant="destructive"
+                          size="icon"
                           className="icon-button danger"
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
                           onClick={() => handleDeleteComment(comment)}
                         >
                           <Icon name="trash" size={15} />
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </div>
         )}
         {!loading && nextCursor && (
           <div className="load-more">
-            <button className="secondary" disabled={loadingMore} onClick={loadMore}>
+            <Button variant="secondary" className="secondary" disabled={loadingMore} onClick={loadMore}>
               {loadingMore ? t('common.loading') : t('common.loadMore')}
-            </button>
+            </Button>
           </div>
         )}
-      </div>
+      </Card>
       {editingPost && (
         <EditPostDialog
           post={editingPost}

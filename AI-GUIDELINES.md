@@ -59,9 +59,13 @@ Example: "In `backend/src/routes/posts.ts`, add a `GET /on-this-day` endpoint th
 
 For significant changes, run the full test suite:
 ```bash
-npm test                  # workspace packages
-npm run test:docker       # backend (needs Docker)
-npm run test:mobile       # mobile
+npm test --workspace=@famlin/api-client
+npm test --workspace=famlin-web
+npm test --workspace=@famlin/ui
+npm run check --workspace=@famlin/design-tokens
+npm --prefix backend/admin test
+npm --prefix backend run test:docker  # needs Docker
+npm --prefix mobile test
 ```
 
 ## Code Quality Standards
@@ -84,9 +88,17 @@ npm run test:mobile       # mobile
 - **Don't mock inappropriately** — integration tests should hit real databases/APIs where safe
 
 ### i18n
-- **No hardcoded UI strings** — add keys to `en.json`, then `nl.json`
+- **No hardcoded UI strings** — add keys to `en.json`, then `nl.json` and `zh.json`
 - **Structured keys** — use dot notation (`errors.unauthorized`, `labels.groupName`)
-- **Both languages** — every new string needs both English and Dutch
+- **All locales** — every new string needs English, Dutch and Chinese; run `npm run check:locales`
+
+### Shared UI and tokens
+
+- Follow [Shared UI](docs/developers/shared-ui.md) for package boundaries and checks.
+- Reuse `@famlin/ui/<component>` and `@famlin/ui/common/<composition>` in admin; use relative imports inside the package and add explicit exports for new components.
+- Keep translations, API/auth, routing and storage in consumers; pass labels, callbacks and the auth logo as props. Protected avatar loading/cache stays in admin's `InitialAvatar` adapter.
+- Edit `packages/design-tokens/src/tokens.json`, regenerate `tokens.css` and check it before delivery. Keep app layout values in the app.
+- Web/mobile adoption is separate work; browser UI is not a React Native library.
 
 ### Security
 - **Validate at boundaries** — user input, external APIs, files

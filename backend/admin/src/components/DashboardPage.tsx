@@ -1,9 +1,14 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+import { Badge } from '@famlin/ui/badge'
+import { Card } from '@famlin/ui/card'
+import { Button } from '@famlin/ui/button'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, DashboardStats } from '../api/client'
 import { Icon, IconName } from './Icon'
 import i18n from '../i18n'
-import { avatarColor, initials } from '../avatar'
 import { Link } from 'react-router-dom'
 import { ConnectAppQr } from './ConnectAppQr'
 import {
@@ -46,19 +51,22 @@ export function DashboardPage() {
       .catch(() => {})
   }, [])
 
-  if (loading || !stats) return <div className="loading">{t('common.loading')}</div>
+  if (loading || !stats)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   const maxDayCount = Math.max(1, ...stats.postsByDay.map((d) => d.count))
   const maxGroupPosts = Math.max(1, ...stats.topGroups.map((g) => g.postCount))
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('dashboard.title')}</h2>
-      </div>
+      <PageHeader title={t('dashboard.title')} />
 
       {checklist && !checklistDismissed && !isChecklistComplete(checklist) && (
-        <div className="card">
+        <Card className="p-6 gap-4">
           <h3>{t('checklist.title')}</h3>
           <ul className="checklist">
             {(
@@ -78,7 +86,8 @@ export function DashboardPage() {
             <Link className="button" to="/getting-started">
               {t('checklist.continue')}
             </Link>
-            <button
+            <Button
+              variant="secondary"
               type="button"
               className="secondary"
               onClick={() => {
@@ -87,9 +96,9 @@ export function DashboardPage() {
               }}
             >
               {t('checklist.dismiss')}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="stat-grid">
@@ -105,7 +114,7 @@ export function DashboardPage() {
         <StatTile icon="heart" label={t('dashboard.stats.likes')} value={stats.counts.likes} />
       </div>
 
-      <div className="card">
+      <Card className="p-6 gap-4">
         <h3>{t('dashboard.trend.title')}</h3>
         <div className="bar-chart">
           {stats.postsByDay.map((day, i) => {
@@ -144,29 +153,29 @@ export function DashboardPage() {
             )
           })}
         </div>
-      </div>
+      </Card>
 
       <div className="dashboard-columns">
         <div className="dashboard-col-main">
-          <div className="card">
+          <Card className="p-6 gap-4">
             <h3>{t('dashboard.activity.title')}</h3>
             {stats.recentPosts.length === 0 ? (
-              <div className="empty">{t('dashboard.activity.empty')}</div>
+              <StateMessage variant="empty" className="empty">
+                {t('dashboard.activity.empty')}
+              </StateMessage>
             ) : (
               <ul className="member-cards">
                 {stats.recentPosts.map((post) => (
                   <li key={post.id} className="member-card">
-                    <span className="avatar" style={{ background: avatarColor(post.authorName) }}>
-                      {initials(post.authorName)}
-                    </span>
+                    <InitialAvatar name={post.authorName} avatarUrl={post.authorAvatarUrl} />
                     <div className="member-card-info">
                       <div className="member-card-name">
                         {post.authorName}
-                        <span className={`badge${post.type === 'MILESTONE' ? ' milestone' : ''}`}>
+                        <Badge variant={post.type === 'MILESTONE' ? 'milestone' : 'secondary'}>
                           {post.type === 'MILESTONE'
                             ? t('dashboard.activity.milestone')
                             : t('dashboard.activity.update')}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="member-card-sub">
                         {t('dashboard.activity.postedIn', { group: post.groupName })} ·{' '}
@@ -188,14 +197,16 @@ export function DashboardPage() {
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
         </div>
 
         <div className="dashboard-col-side">
-          <div className="card">
+          <Card className="p-6 gap-4">
             <h3>{t('dashboard.topGroups.title')}</h3>
             {stats.topGroups.length === 0 ? (
-              <div className="empty">{t('dashboard.topGroups.empty')}</div>
+              <StateMessage variant="empty" className="empty">
+                {t('dashboard.topGroups.empty')}
+              </StateMessage>
             ) : (
               <ul className="topgroup-list">
                 {stats.topGroups.map((group) => (
@@ -212,14 +223,14 @@ export function DashboardPage() {
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
 
-          <div className="card">
+          <Card className="p-6 gap-4">
             <h3>{t('connectApp.title')}</h3>
             <ConnectAppQr appStoreUrl={storeLinks.appStoreUrl} playStoreUrl={storeLinks.playStoreUrl} />
-          </div>
+          </Card>
 
-          <div className="card">
+          <Card className="p-6 gap-4">
             <h3>{t('dashboard.quickLinks')}</h3>
             <ul>
               <li>
@@ -228,7 +239,7 @@ export function DashboardPage() {
                 </a>
               </li>
             </ul>
-          </div>
+          </Card>
         </div>
       </div>
     </>

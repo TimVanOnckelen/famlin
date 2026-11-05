@@ -1,3 +1,5 @@
+import { tokens } from '@famlin/design-tokens'
+
 export function initials(name: string) {
   return name
     .split(' ')
@@ -8,7 +10,13 @@ export function initials(name: string) {
 }
 
 export function avatarColor(name: string) {
-  const palette = ['#006e94', '#318ea2', '#187191', '#005480', '#ed835e']
+  const palette = [
+    tokens['fam-primary'],
+    tokens['fam-primary-light'],
+    tokens['fam-primary-mid'],
+    tokens['fam-primary-dark'],
+    tokens['fam-accent'],
+  ]
   let hash = 0
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash)
