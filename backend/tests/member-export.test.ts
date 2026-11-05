@@ -210,6 +210,43 @@ describe('GET /api/auth/me/export', () => {
     expect(body).not.toContain(theirs)
   })
 
+  // The export's file list is a regex over every serialized row, free text
+  // included, so a member can name any upload path in their own post or
+  // comment. Another family's photo must still be left out — the same
+  // canReadUpload() rule /uploads/* enforces (e.g. for a member who was
+  // removed from that family but kept its photo URLs).
+  it("never attaches another family's photo referenced from the caller's own content", async () => {
+    const me = await createUser()
+    const stranger = await createUser()
+    const myGroup = await createGroupWithMember(me)
+    const otherGroup = await createGroupWithMember(stranger)
+
+    const theirs = crypto.randomUUID()
+    const mine = crypto.randomUUID()
+    await writeUpload(`${theirs}.jpg`)
+    await writeUpload(`originals/${theirs}.heic`)
+    await writeUpload(`${mine}.jpg`)
+    await prisma.upload.createMany({
+      data: [
+        { assetKey: theirs, uploaderId: stranger.id, bound: true, groupIds: [otherGroup.id] },
+        { assetKey: mine, uploaderId: me.id, bound: true, groupIds: [myGroup.id] },
+      ],
+    })
+
+    const post = await createPost({
+      groupId: myGroup.id,
+      authorId: me.id,
+      content: `look /uploads/${theirs}.jpg`,
+      uploadedAssetUrls: [`/uploads/${mine}.jpg`],
+    })
+    await createComment({ postId: post.id, authorId: me.id, attachmentUrl: `/uploads/${theirs}.jpg` })
+
+    const body = await exportBody(app, me)
+    expect(body).toContain(`fixture:${mine}.jpg`)
+    expect(body).not.toContain(`fixture:${theirs}.jpg`)
+    expect(body).not.toContain(`fixture:originals/${theirs}.heic`)
+  })
+
   it("never includes credentials, invites, or other members' private data", async () => {
     const me = await createUser({ password: 'my-own-password' })
     const relative = await createUser({ password: 'relative-password' })

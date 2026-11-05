@@ -161,17 +161,19 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
 
   // Upload files: only what the rows above reference, never the directory.
   // The rows are already scoped, so this should never drop anything — the
-  // Upload-table check is belt and braces for the same canReadUpload() rule
-  // /uploads/* enforces per request (services/uploads.ts): a circle-bound
-  // file needs circle membership, an unbound draft is its uploader's only.
+  // Upload-table check applies the exact canReadUpload() rule /uploads/*
+  // enforces per request (services/uploads.ts) — circle membership, group
+  // membership, uploader-only drafts. It is NOT optional: the keys come from
+  // a regex over every serialized row, free text included, so a member can
+  // name any upload path (another family's photo) in their own post or
+  // comment. Never re-implement the rule here; call it.
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, motionAssetKey: true },
+    select: { assetKey: true, motionAssetKey: true },
   })
-  const circleSet = new Set(circleIds)
   for (const row of uploadRows) {
-    const readable = row.circleId ? circleSet.has(row.circleId) : row.bound || row.uploaderId === userId
+    const readable = await canReadUpload(`/uploads/${row.assetKey}.jpg`, userId)
     if (!readable) referencedKeys.delete(row.assetKey)
     else if (row.motionAssetKey && (await canReadUpload(`/uploads/${row.motionAssetKey}.mp4`, userId)))
       referencedKeys.add(row.motionAssetKey)
