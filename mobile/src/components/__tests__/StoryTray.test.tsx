@@ -18,8 +18,11 @@ jest.mock('@famlin/api-client', () => ({
   fetchStoryHighlights: jest.fn(),
 }))
 
-function renderTray() {
+// `serverInfo` primes the cache, as the feed has normally loaded it already;
+// without it server-info is fetched (and 'unknown' until it lands).
+function renderTray(serverInfo?: object) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
+  if (serverInfo) client.setQueryData(['server-info', 'https://family.example'], serverInfo)
   return render(
     <QueryClientProvider client={client}>
       <StoryTray groupIds={['g1']} enabled />
@@ -40,20 +43,36 @@ it('shows the tray and fetches stories on a server with stories', async () => {
   await waitFor(() => expect(fetchStoryTray).toHaveBeenCalledWith(['g1']))
 })
 
-it('renders nothing and never calls /api/stories on a server without stories', async () => {
-  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.7.0' } as never)
-  await renderTray()
-  await waitFor(() => expect(fetchServerInfo).toHaveBeenCalled())
-  // Let the server-info result settle before asserting nothing followed it.
+it('renders nothing and never calls /api/stories on a server that says it lacks stories', async () => {
+  await renderTray({ version: '0.9.0', features: ['circles'] })
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(screen.queryByText('stories.yourStory')).toBeNull()
   expect(fetchStoryTray).not.toHaveBeenCalled()
   expect(fetchStoryHighlights).not.toHaveBeenCalled()
 })
 
-it('stays hidden while server-info is still loading', async () => {
+it('tries on a server too old to say, and hides silently on a 404 without retrying', async () => {
+  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.7.0' } as never)
+  const notFound = Object.assign(new Error('Not Found'), { response: { status: 404 } })
+  jest.mocked(fetchStoryTray).mockRejectedValue(notFound)
+  jest.mocked(fetchStoryHighlights).mockRejectedValue(notFound)
+  await renderTray()
+  await waitFor(() => expect(fetchStoryTray).toHaveBeenCalled())
+  await waitFor(() => expect(screen.queryByText('stories.yourStory')).toBeNull())
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(fetchStoryTray).toHaveBeenCalledTimes(1)
+})
+
+it('shows the tray on a 0.8.7 server that has stories but predates the features list', async () => {
+  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.8.7' } as never)
+  await renderTray()
+  expect(await screen.findByText('stories.yourStory')).toBeTruthy()
+  expect(fetchStoryTray).toHaveBeenCalledWith(['g1'])
+})
+
+it('does not wait for server-info: unknown means try', async () => {
   jest.mocked(fetchServerInfo).mockReturnValue(new Promise(() => {}))
   await renderTray()
-  expect(screen.queryByText('stories.yourStory')).toBeNull()
-  expect(fetchStoryTray).not.toHaveBeenCalled()
+  expect(await screen.findByText('stories.yourStory')).toBeTruthy()
+  expect(fetchStoryTray).toHaveBeenCalledWith(['g1'])
 })

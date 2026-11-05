@@ -41,7 +41,8 @@ import {
   reconcilePostTypeSelection,
 } from '@/utils/newPost'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
-import { useServerSupports } from '@/hooks/useServerInfo'
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { retryUnlessNotFound } from '@/utils/serverFeatures'
 import { usePendingShareStore, PendingShare } from '@/stores/pendingShareStore'
 import { MAX_POST_ATTACHMENTS, MAX_VIDEO_DURATION_SECONDS, fitSharedItems } from '@/utils/sharedMedia'
 
@@ -175,12 +176,14 @@ export function NewPostScreen() {
   // for a single-family post: cross-posting to several families can't be
   // narrowed to a circle.
   const canChooseCircle = selectedGroupIds.length === 1
-  const supportsCircles = useServerSupports('circles')
+  const circlesSupport = useServerFeatureSupport('circles')
   const { data: circlesData } = useQuery({
     queryKey: ['circles', primaryGroupId],
     queryFn: () => fetchMyCircles(primaryGroupId!),
-    // A server without circles (issue #380) gets no audience picker at all.
-    enabled: !!primaryGroupId && canChooseCircle && supportsCircles === true,
+    // A server without circles (issue #380) gets no audience picker: never
+    // asked when it says so, and a 404 from an older one leaves it empty.
+    enabled: !!primaryGroupId && canChooseCircle && circlesSupport !== 'unsupported',
+    retry: retryUnlessNotFound,
   })
   const circles = canChooseCircle ? (circlesData ?? []) : []
 
@@ -203,11 +206,11 @@ export function NewPostScreen() {
   // disjoint allow-lists) disables submit with a notice instead.
   // A gift list's participants come from one family, so it's only offered
   // for a single-family post. An older server's resolved allowedPostTypes
-  // never lists GIFT_LIST anyway; the feature check is a second guard that
-  // only hides it once the server is known to lack it, so it can't flicker.
-  const supportsGiftLists = useServerSupports('giftLists')
+  // never lists GIFT_LIST anyway; the feature check is a second guard for a
+  // server that says it lacks gift lists.
+  const giftListsSupport = useServerFeatureSupport('giftLists')
   const offeredPostTypes = resolveOfferedPostTypes(POST_TYPES, groups, selectedGroupIds).filter(
-    (type) => type !== 'GIFT_LIST' || (selectedGroupIds.length === 1 && supportsGiftLists !== false)
+    (type) => type !== 'GIFT_LIST' || (selectedGroupIds.length === 1 && giftListsSupport !== 'unsupported')
   )
   const noOfferedPostTypes = offeredPostTypes.length === 0
 

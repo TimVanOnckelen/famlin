@@ -1,7 +1,8 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react-native'
+import { Alert } from 'react-native'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fetchMyDevices, fetchMyGiftLists, fetchServerInfo } from '@famlin/api-client'
+import { fetchMyDevices, fetchMyGiftLists, fetchServerInfo, getMyExportRequest } from '@famlin/api-client'
 
 import { ProfileScreen } from '@/screens/ProfileScreen'
 import { useAuthStore } from '@/stores/authStore'
@@ -29,13 +30,16 @@ jest.mock('@famlin/api-client', () => ({
   fetchServerInfo: jest.fn(),
   fetchMyGiftLists: jest.fn(),
   fetchMyDevices: jest.fn(),
+  getMyExportRequest: jest.fn(),
   fetchNotificationConfig: jest.fn().mockResolvedValue({ pushEnabled: true, emailEnabled: true }),
 }))
 
 const ALL = ['giftLists', 'deviceDiagnostics', 'memberExport', 'accountDeletion']
 
-function renderProfile() {
+// `serverInfo` primes the cache, as the feed has normally loaded it already.
+function renderProfile(serverInfo?: object) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
+  if (serverInfo) client.setQueryData(['server-info', 'https://family.example'], serverInfo)
   return render(
     <QueryClientProvider client={client}>
       <ProfileScreen />
@@ -68,11 +72,9 @@ it('shows the export, delete, devices and gift list sections on a server that su
   expect(fetchMyDevices).toHaveBeenCalled()
 })
 
-it('hides them, and never queries gift lists or devices, on a 0.5.0 server', async () => {
-  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.5.0' } as never)
-  await renderProfile()
+it('hides them, and never queries gift lists or devices, on a server that says it lacks them', async () => {
+  await renderProfile({ version: '0.9.0', features: ['stories'] })
   expect(await screen.findByText('profile.logout')).toBeTruthy()
-  await waitFor(() => expect(fetchServerInfo).toHaveBeenCalled())
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(screen.queryByText('profile.exportButton')).toBeNull()
   expect(screen.queryByText('profile.deleteAccount')).toBeNull()
@@ -80,4 +82,25 @@ it('hides them, and never queries gift lists or devices, on a 0.5.0 server', asy
   expect(screen.queryByText('profile.myGiftLists')).toBeNull()
   expect(fetchMyGiftLists).not.toHaveBeenCalled()
   expect(fetchMyDevices).not.toHaveBeenCalled()
+})
+
+it('on a server too old to say, hides 404ing sections and explains a 404 export', async () => {
+  const notFound = Object.assign(new Error('Not Found'), { response: { status: 404 } })
+  jest.mocked(fetchMyGiftLists).mockRejectedValue(notFound)
+  jest.mocked(fetchMyDevices).mockRejectedValue(notFound)
+  jest.mocked(getMyExportRequest).mockRejectedValue(notFound)
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {})
+  await renderProfile({ version: '0.5.0' })
+
+  // Export and delete stay offered: the server might have them.
+  expect(await screen.findByText('profile.exportButton')).toBeTruthy()
+  expect(screen.getByText('profile.deleteAccount')).toBeTruthy()
+  await waitFor(() => expect(fetchMyDevices).toHaveBeenCalledTimes(1))
+  await waitFor(() => expect(fetchMyGiftLists).toHaveBeenCalledTimes(1))
+  expect(screen.queryByText('profile.devices.title')).toBeNull()
+  expect(screen.queryByText('profile.myGiftLists')).toBeNull()
+
+  await fireEvent.press(screen.getByText('profile.exportButton'))
+  await waitFor(() => expect(alert).toHaveBeenCalledWith('common.error', 'profile.featureUnavailable'))
+  alert.mockRestore()
 })

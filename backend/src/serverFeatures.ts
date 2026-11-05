@@ -12,9 +12,11 @@
 //   here, plus the matching `ServerFeature` member in
 //   packages/api-client/src/features.ts.
 // - Servers that predate this list send no `features` at all; clients then
-//   assume only `IMPLICIT_BASELINE_FEATURES` (packages/api-client), so ids
-//   for capabilities older than the server that introduced this list must
-//   stay here too — they can't be inferred from its absence.
+//   know only `IMPLICIT_BASELINE_FEATURES` (packages/api-client) for sure and
+//   treat everything else as "unknown" — try it, and a 404 means unsupported.
+//   Ids for capabilities older than the server that introduced this list
+//   must stay here too: a server sending the list without an id is read as
+//   definitely lacking it.
 //
 // The comment after each id is the release that first shipped it.
 export const SERVER_FEATURES = [

@@ -1,4 +1,5 @@
 import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from './client'
+import { isNotFoundError } from './features'
 
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
@@ -171,7 +172,7 @@ export async function fetchUploadProcessing(assetKey: string): Promise<UploadPro
     // fall back to the original URL). Newer servers also 404 when the caller
     // can't read the upload, which is safe to map the same way: the image
     // request itself is refused too.
-    if ((error as { response?: { status?: number } } | null)?.response?.status === 404) {
+    if (isNotFoundError(error)) {
       return { status: 'ready', url: null, thumbnailUrl: null }
     }
     throw error

@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { uploadKey, fetchUploadProcessing, type UploadProcessing } from '@famlin/api-client'
-import { useServerSupports } from './useServerInfo'
+import { useServerFeatureSupport } from './useServerInfo'
 
 export const UploadProcessingContext = createContext<Record<string, UploadProcessing> | undefined>(undefined)
 const finished = (state?: UploadProcessing) => state?.status === 'ready' || state?.status === 'failed'
@@ -15,22 +15,22 @@ export function useUploadProcessing(url: string) {
   const key = uploadKey(url)
   const metadata = useContext(UploadProcessingContext)
   const initial = key ? metadata?.[key] : undefined
-  const supportsProcessing = useServerSupports('uploadProcessing')
-  // Post upload metadata only ever comes from a server with the feature, so
-  // it settles the question before /server-info has loaded. Without either,
-  // the status request waits (shown as pending, as it would be while that
-  // request runs) rather than hitting an endpoint an older server lacks.
-  const supported = initial !== undefined || supportsProcessing === true
+  // Only a server that advertises a features list without uploadProcessing
+  // is skipped (issue #380). On one too old to advertise ('unknown'), the
+  // status request runs and fetchUploadProcessing maps its 404 to ready.
+  // Post upload metadata only ever comes from a server with the feature.
+  const support = useServerFeatureSupport('uploadProcessing')
+  const unsupported = initial === undefined && support === 'unsupported'
   const query = useQuery({
     queryKey: ['upload-processing', key],
     queryFn: () => fetchUploadProcessing(key!),
     initialData: initial,
-    enabled: (query) => !!key && supported && !finished(initial) && !finished(query.state.data),
+    enabled: (query) => !!key && !unsupported && !finished(initial) && !finished(query.state.data),
     staleTime: Infinity,
-    refetchInterval: (query) => (!supported || finished(initial) || finished(query.state.data) ? false : 2000),
+    refetchInterval: (query) => (unsupported || finished(initial) || finished(query.state.data) ? false : 2000),
     retry: 1,
   })
-  if (!supported && supportsProcessing === false) {
+  if (unsupported) {
     return { ...READY, pending: false, failed: false }
   }
   // A fresh post response can already contain the result of a pending job.

@@ -504,9 +504,12 @@ paths:
                       hide what an older server can't do by feature rather
                       than by version. Ids are stable and never renamed or
                       removed; a newer server may list ids a client doesn't
-                      know, which it should ignore. Absent on servers up to
-                      0.8.7 — clients then assume only their implicit baseline
-                      (features every supported server has, currently none).
+                      know, which it should ignore. An id missing from the
+                      list means the server lacks that capability. Absent on
+                      servers up to 0.8.7; clients then treat every id beyond
+                      their implicit baseline (currently none) as unknown,
+                      try the feature and read a 404 from its endpoint as
+                      unsupported.
                       Known ids: `accountDeletion` (0.6.3, `DELETE
                       /api/auth/me`), `circles` (0.7.0), `stories` (0.8.0),
                       `memberExport` (0.8.0, `GET /api/auth/me/export`),

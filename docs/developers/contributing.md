@@ -77,7 +77,7 @@ Famlin is self-hosted, so a family's server is often older than the app on their
 **New capabilities are detected by named features, never by version numbers.** If a change adds something a client has to detect before using it, it's a feature. That covers a new endpoint, a new request or response field the app relies on, or new behavior. A server inside the window without it would break or mislead the app. For each one:
 
 1. Add an id to `SERVER_FEATURES` in `backend/src/serverFeatures.ts`, and the same id to `ServerFeature` in `packages/api-client/src/features.ts`.
-2. Gate the client's use of it with `serverSupports(serverInfo, '<id>')` (mobile: `useServerSupports('<id>')`), and hide it when that's `false`.
+2. Gate the client's use of it with `serverFeatureSupport(serverInfo, '<id>')` (mobile: `useServerFeatureSupport('<id>')`). Hide it when that's `unsupported`. On `unknown` (a server older than the `features` field), try it and treat a 404 from its endpoint as unsupported.
 
 The full steps and the rules for ids (never rename or remove one) are in [Server feature flags](./architecture.md#server-feature-flags). Web is served by the server it talks to, so it never needs these checks. Something every server in the window already has needs no id, and neither does an additive field an older app can ignore.
 

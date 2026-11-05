@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchServerInfo, getCurrentServerUrl, serverSupports, type ServerFeature } from '@famlin/api-client'
+import {
+  fetchServerInfo,
+  getCurrentServerUrl,
+  serverFeatureSupport,
+  type FeatureSupport,
+  type ServerFeature,
+} from '@famlin/api-client'
 
 // GET /api/auth/server-info, keyed by server so switching servers never
 // serves the previous one's info (the query cache isn't cleared on logout).
@@ -12,13 +18,13 @@ export function useServerInfo() {
   })
 }
 
-// Whether the connected server has a named capability (issue #380) — hide
-// the UI for it silently when not. `undefined` while server-info is still
-// loading, so a caller can wait instead of flickering; treat it as `false`
-// (the implicit baseline) when waiting isn't worth it. A failed request
-// counts as the baseline.
-export function useServerSupports(feature: ServerFeature): boolean | undefined {
-  const { data, isPending, isError } = useServerInfo()
-  if (isPending && !isError) return undefined
-  return serverSupports(data, feature)
+// Whether the connected server has a named capability (issue #380):
+// 'supported' / 'unsupported' when it advertises its features, 'unknown'
+// while server-info loads, if it failed, or on a server that predates the
+// `features` field (0.8.7 and older). Hide the feature only when
+// 'unsupported'; on 'unknown' use it and treat a 404 from its endpoint as
+// unsupported (isNotFoundError, retryUnlessNotFound in utils/serverFeatures).
+export function useServerFeatureSupport(feature: ServerFeature): FeatureSupport {
+  const { data } = useServerInfo()
+  return serverFeatureSupport(data, feature)
 }

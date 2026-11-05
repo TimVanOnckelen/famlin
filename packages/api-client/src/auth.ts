@@ -123,7 +123,8 @@ export interface ServerInfo {
   branding?: Branding | null
   // Named capabilities (issue #380), absent on servers up to 0.8.7. Plain
   // strings: a newer server may list ids this client doesn't know. Check
-  // with serverSupports() (./features) rather than reading it directly.
+  // with serverFeatureSupport()/serverSupports() (./features) rather than
+  // reading it directly.
   features?: string[]
 }
 

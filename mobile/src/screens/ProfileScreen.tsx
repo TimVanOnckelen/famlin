@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
-import { fetchMyGiftLists, fetchMyDevices } from '@famlin/api-client'
+import { fetchMyGiftLists, fetchMyDevices, isNotFoundError } from '@famlin/api-client'
 import * as ImagePicker from 'expo-image-picker'
 import Constants from 'expo-constants'
 import { File, Paths } from 'expo-file-system'
@@ -37,7 +37,8 @@ import {
   NotificationPrefs,
 } from '@/api/auth'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-import { useServerInfo, useServerSupports } from '@/hooks/useServerInfo'
+import { useServerInfo, useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { retryUnlessNotFound } from '@/utils/serverFeatures'
 import { setLanguage } from '@/utils/storage'
 import { formatDayMonth } from '@/i18n/utils'
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
@@ -45,24 +46,32 @@ import { SUPPORTED_LANGUAGES, SupportedLanguage } from '@/i18n'
 export function ProfileScreen() {
   const { t, i18n: i18nInstance } = useTranslation()
   const navigation = useNavigation<any>()
-  // Sections backed by an endpoint an older server may lack are hidden —
-  // and their queries never sent — until server-info confirms the feature
-  // (issue #380). Server-info is normally cached by then (the feed loads it).
-  const supportsGiftLists = useServerSupports('giftLists') === true
-  const supportsDevices = useServerSupports('deviceDiagnostics') === true
-  const supportsExport = useServerSupports('memberExport') === true
-  const supportsAccountDeletion = useServerSupports('accountDeletion') === true
+  // Sections backed by an endpoint an older server may lack (issue #380):
+  // hidden, with no request sent, when the server says it lacks the
+  // feature. On a server too old to say ('unknown'), the queries run and a
+  // 404 hides their section; the export/delete buttons stay and explain a
+  // 404 instead (featureUnavailable).
+  const giftListsSupport = useServerFeatureSupport('giftLists')
+  const devicesSupport = useServerFeatureSupport('deviceDiagnostics')
+  const showExport = useServerFeatureSupport('memberExport') !== 'unsupported'
+  const showAccountDeletion = useServerFeatureSupport('accountDeletion') !== 'unsupported'
   // "My gift lists" (issue #307): every gift list the user takes part in.
   const { data: giftLists = [] } = useQuery({
     queryKey: ['gift-lists'],
     queryFn: fetchMyGiftLists,
-    enabled: supportsGiftLists,
+    enabled: giftListsSupport !== 'unsupported',
+    retry: retryUnlessNotFound,
   })
-  const { data: devices = [], isLoading: devicesLoading } = useQuery({
+  const devicesQuery = useQuery({
     queryKey: ['my-devices'],
     queryFn: fetchMyDevices,
-    enabled: supportsDevices,
+    enabled: devicesSupport !== 'unsupported',
+    retry: retryUnlessNotFound,
   })
+  const { data: devices = [], isLoading: devicesLoading } = devicesQuery
+  // Known-supported: show it (with its spinner) right away. Unknown: only
+  // once the list actually loaded, so an older server's 404 never flashes it.
+  const showDevices = devicesSupport === 'supported' ? !isNotFoundError(devicesQuery.error) : devicesQuery.isSuccess
   const { user, logout, serverUrl, updateUser } = useAuthStore()
   const queryClient = useQueryClient()
   const [languageModalVisible, setLanguageModalVisible] = useState(false)
@@ -156,6 +165,11 @@ export function ProfileScreen() {
       await logout()
     },
     onError: (err: any) => {
+      // A server too old to advertise features 404s here (before 0.6.3).
+      if (isNotFoundError(err)) {
+        setDeleteError(t('profile.featureUnavailable'))
+        return
+      }
       setDeleteError(err.response?.data?.error || err.message || t('common.tryAgain'))
     },
   })
@@ -175,7 +189,14 @@ export function ProfileScreen() {
       }
     },
     onError: (err: any) => {
-      const rateLimited = String(err?.message ?? '').includes('429')
+      // The native downloader reports the HTTP status in its message; a 404
+      // is a server too old to advertise features (before 0.8.0).
+      const message = String(err?.message ?? '')
+      if (isNotFoundError(err) || message.includes('404')) {
+        Alert.alert(t('common.error'), t('profile.featureUnavailable'))
+        return
+      }
+      const rateLimited = message.includes('429')
       Alert.alert(t('common.error'), rateLimited ? t('profile.exportRateLimited') : t('profile.exportFailed'))
     },
   })
@@ -237,7 +258,7 @@ export function ProfileScreen() {
           )}
         </View>
 
-        {supportsGiftLists && giftLists.length > 0 && (
+        {giftLists.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.myGiftLists')}</Text>
             {giftLists.map((post) => (
@@ -302,7 +323,7 @@ export function ProfileScreen() {
           </View>
         )}
 
-        {supportsDevices && (
+        {showDevices && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.devices.title')}</Text>
             <Text style={styles.settingDescription}>{t('profile.devices.description')}</Text>
@@ -407,7 +428,7 @@ export function ProfileScreen() {
           </View>
         )}
 
-        {supportsExport && (
+        {showExport && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.yourData')}</Text>
             <Text style={styles.exportDescription}>{t('profile.exportDescription')}</Text>
@@ -464,7 +485,7 @@ export function ProfileScreen() {
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
 
-        {supportsAccountDeletion && (
+        {showAccountDeletion && (
           <View style={styles.dangerSection}>
             <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
             <Text style={styles.dangerDescription}>{t('profile.deleteAccountDescription')}</Text>

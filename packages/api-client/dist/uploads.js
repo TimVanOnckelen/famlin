@@ -9,6 +9,7 @@ exports.ensureFreshMediaToken = ensureFreshMediaToken;
 exports.uploadKey = uploadKey;
 exports.fetchUploadProcessing = fetchUploadProcessing;
 const client_1 = require("./client");
+const features_1 = require("./features");
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
 // never get one. Uploads made before that feature shipped also won't have
@@ -136,7 +137,7 @@ async function fetchUploadProcessing(assetKey) {
         // fall back to the original URL). Newer servers also 404 when the caller
         // can't read the upload, which is safe to map the same way: the image
         // request itself is refused too.
-        if (error?.response?.status === 404) {
+        if ((0, features_1.isNotFoundError)(error)) {
             return { status: 'ready', url: null, thumbnailUrl: null };
         }
         throw error;

@@ -14,7 +14,7 @@ import {
 import { setApiBaseUrl, setMediaToken, unregisterDevice, unregisterPushToken } from '@famlin/api-client'
 import { refreshMediaToken } from '@/api/uploads'
 import { usePendingShareStore } from '@/stores/pendingShareStore'
-import { checkServerSupports } from '@/utils/serverFeatures'
+import { checkServerFeature } from '@/utils/serverFeatures'
 
 interface AuthState {
   user: User | null
@@ -57,9 +57,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       await deletePushToken()
     }
     const installId = await getDeviceInstallId()
-    // Only on a server that has /api/devices; the check never throws, so an
-    // older server can't make sign-out fail.
-    if (installId && (await checkServerSupports('deviceDiagnostics'))) {
+    // Skipped on a server that says it lacks /api/devices; on an older one
+    // that 404s, the catch swallows it. The check never throws, so neither
+    // can make sign-out fail.
+    if (installId && (await checkServerFeature('deviceDiagnostics')) !== 'unsupported') {
       await unregisterDevice(installId).catch(() => {})
     }
     await deleteDeviceReport()

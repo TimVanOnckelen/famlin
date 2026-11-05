@@ -23,7 +23,7 @@ jest.mock('@famlin/api-client', () => ({
   unregisterDevice: jest.fn().mockResolvedValue(undefined),
   getCurrentServerUrl: jest.fn(() => 'http://example.com'),
   fetchServerInfo: jest.fn().mockResolvedValue({ version: '0.9.0', features: ['deviceDiagnostics'] }),
-  serverSupports: jest.requireActual('@famlin/api-client').serverSupports,
+  serverFeatureSupport: jest.requireActual('@famlin/api-client').serverFeatureSupport,
 }))
 
 const testUser: User = {
@@ -109,11 +109,11 @@ describe('authStore', () => {
     expect(storage.deleteDeviceReport).toHaveBeenCalledTimes(1)
   })
 
-  it('logout skips the device DELETE on a server without deviceDiagnostics, and still signs out', async () => {
+  it('logout skips the device DELETE on a server that says it lacks deviceDiagnostics, and still signs out', async () => {
     const storage = require('@/utils/storage')
     const client = require('@famlin/api-client')
     storage.getDeviceInstallId.mockResolvedValue('install-uuid')
-    client.fetchServerInfo.mockResolvedValue({ version: '0.8.7' })
+    client.fetchServerInfo.mockResolvedValue({ version: '0.9.0', features: [] })
     const { useAuthStore } = require('@/stores/authStore')
 
     await useAuthStore.getState().logout()
@@ -124,17 +124,19 @@ describe('authStore', () => {
     expect(useAuthStore.getState().user).toBeNull()
   })
 
-  it('logout still signs out when server-info itself fails', async () => {
+  it('logout tries the device DELETE on a server too old to say, and still signs out on its 404', async () => {
     const storage = require('@/utils/storage')
     const client = require('@famlin/api-client')
     storage.getDeviceInstallId.mockResolvedValue('install-uuid')
     client.fetchServerInfo.mockRejectedValue(new Error('offline'))
+    client.unregisterDevice.mockRejectedValue(Object.assign(new Error('Not Found'), { response: { status: 404 } }))
     const { useAuthStore } = require('@/stores/authStore')
 
     await useAuthStore.getState().logout()
 
-    expect(client.unregisterDevice).not.toHaveBeenCalled()
+    expect(client.unregisterDevice).toHaveBeenCalledWith('install-uuid')
     expect(storage.deleteToken).toHaveBeenCalledTimes(1)
+    expect(useAuthStore.getState().user).toBeNull()
   })
 
   it('clearSession deletes the token but PRESERVES the server URL', async () => {
