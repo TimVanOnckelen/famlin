@@ -21,59 +21,72 @@ function groupParams(groupIds) {
     return groupIds && groupIds.length > 0 ? { groupIds: groupIds.join(',') } : {};
 }
 async function fetchStoryTray(groupIds) {
+    // requires-feature: stories
     const response = await client_1.api.get('/stories', { params: groupParams(groupIds) });
     return response.data;
 }
 async function fetchStoryHighlights(groupIds, cursor) {
+    // requires-feature: stories
     const response = await client_1.api.get('/stories/highlights', {
         params: { ...groupParams(groupIds), ...(cursor ? { cursor } : {}) },
     });
     return response.data;
 }
 async function fetchStory(id) {
+    // requires-feature: stories
     const response = await client_1.api.get(`/stories/${id}`);
     return response.data;
 }
 async function createStory(body) {
+    // requires-feature: stories
     const response = await client_1.api.post('/stories', body);
     return response.data;
 }
 async function markStoryViewed(id) {
+    // requires-feature: stories
     await client_1.api.post(`/stories/${id}/view`);
 }
 async function fetchStoryViews(id) {
+    // requires-feature: stories
     const response = await client_1.api.get(`/stories/${id}/views`);
     return response.data.items;
 }
 // Same reaction again removes it; a different one switches it.
 async function reactToStory(id, type) {
+    // requires-feature: stories
     const response = await client_1.api.post(`/stories/${id}/reaction`, { type });
     return response.data;
 }
 async function fetchStoryReactions(id) {
+    // requires-feature: stories
     const response = await client_1.api.get(`/stories/${id}/reactions`);
     return response.data.items;
 }
 // One private reply per viewer, only while the story is live.
 async function replyToStory(id, content) {
+    // requires-feature: stories
     const response = await client_1.api.post(`/stories/${id}/reply`, { content });
     return response.data;
 }
 async function fetchStoryReplies(id) {
+    // requires-feature: stories
     const response = await client_1.api.get(`/stories/${id}/replies`);
     return response.data.items;
 }
 async function pinStory(id) {
+    // requires-feature: stories
     const response = await client_1.api.post(`/stories/${id}/pin`);
     return response.data;
 }
 // On an expired Highlight this DELETES the story (`deleted: true`) — confirm
 // with the user first.
 async function unpinStory(id) {
+    // requires-feature: stories
     const response = await client_1.api.delete(`/stories/${id}/pin`);
     return response.data;
 }
 async function deleteStory(id) {
+    // requires-feature: stories
     await client_1.api.delete(`/stories/${id}`);
 }
 // Has this story's 24h window passed? Clients use it to drop a story from an

@@ -161,6 +161,7 @@ export function uploadKey(url: string): string | null {
 
 export async function fetchUploadProcessing(assetKey: string): Promise<UploadProcessing> {
   try {
+    // requires-feature: uploadProcessing
     const response = await api.get<UploadProcessing>(`/uploads/status/${assetKey}`)
     return response.data
   } catch (error) {

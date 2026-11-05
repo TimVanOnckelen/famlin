@@ -125,6 +125,7 @@ function uploadKey(url) {
 }
 async function fetchUploadProcessing(assetKey) {
     try {
+        // requires-feature: uploadProcessing
         const response = await client_1.api.get(`/uploads/status/${assetKey}`);
         return response.data;
     }

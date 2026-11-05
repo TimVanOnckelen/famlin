@@ -1,0 +1,40 @@
+{
+  "$comment": "api-client calls scripts/check-client-vs-old-spec.mjs accepts although the oldest supported server's OpenAPI spec lacks them. Legacy cases only, each with a reason: an endpoint that server had but its spec didn't document, or one the client only reaches through a gate the server's own response provides. A genuinely new endpoint gets a `// requires-feature: <id>` comment above the call instead.",
+  "entries": [
+    {
+      "method": "GET",
+      "path": "/api/auth/oidc-config",
+      "reason": "served since before 0.5.0 (routes/auth.ts at v0.5.0), just undocumented in that release's spec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/oidc",
+      "reason": "served since before 0.5.0 (routes/auth.ts at v0.5.0), just undocumented in that release's spec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/oidc/exchange",
+      "reason": "served since before 0.5.0 (routes/auth.ts at v0.5.0), just undocumented in that release's spec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/oidc/mobile-handoff",
+      "reason": "served since before 0.5.0 (routes/auth.ts at v0.5.0), just undocumented in that release's spec"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/apple",
+      "reason": "new in 0.6.3, but only offered when GET /api/auth/oidc-config returns appleSignInEnabled, which older servers don't send"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/auth/me",
+      "reason": "new in 0.6.3 and not feature-gated: on 0.5.0-0.6.2 the account-deletion request 404s and the app shows the error. Accepted rather than adding a feature id; add one (and gate the button) if it should be hidden instead"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me/export",
+      "reason": "new in 0.8.0 and not feature-gated: on older servers the export download fails and the app shows its export-failed error. Accepted rather than adding a feature id; add one (and gate the button) if it should be hidden instead"
+    }
+  ]
+}
