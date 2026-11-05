@@ -511,6 +511,7 @@ describe('admin routes', () => {
   describe('media person links', () => {
     it('rejects a non-admin listing or creating people-links', async () => {
       const nonAdmin = await createUser()
+      const countBefore = await prisma.mediaPersonLink.count()
 
       const listRes = await app.inject({
         method: 'GET',
@@ -527,7 +528,7 @@ describe('admin routes', () => {
       })
       expect(createRes.statusCode).toBe(403)
 
-      expect(await prisma.mediaPersonLink.count()).toBe(0)
+      expect(await prisma.mediaPersonLink.count()).toBe(countBefore)
     })
 
     it('creates a people-link and lists it with the mapped user', async () => {
