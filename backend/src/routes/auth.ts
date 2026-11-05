@@ -363,11 +363,20 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // as any other login (an Apple private-relay address will practically
   // always need an invite, since it can't be whitelisted in advance).
   fastify.post('/apple', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body)
+    const { identityToken, fullName, inviteToken, rawNonce } = appleLoginBodySchema.parse(request.body)
     const t = getT(request)
 
+    // The hosts a nonce-bound token may have been requested for: the one
+    // this request reached us as (host, not hostname — it must keep a
+    // non-default port) and the configured publicUrl's. Behind the Caddy or
+    // tunnel overlays the request host is pinned to the real domain; on a
+    // directly exposed server the Host header is client-chosen, so there the
+    // replay protection relies on the reverse proxy — see docs/docs/security.md.
+    const { publicUrl } = await getAllSettings()
+    const hosts = [request.host, ...(publicUrl ? [new URL(publicUrl).host] : [])]
+
     try {
-      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t)
+      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t, { rawNonce, hosts })
       if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
       return outcome.result
     } catch (err) {

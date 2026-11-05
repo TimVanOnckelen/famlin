@@ -224,6 +224,20 @@ paths:
                     Optional invite token; when valid the account joins the
                     invite's group and may be provisioned even if its email
                     isn't on the allow-list.
+                rawNonce:
+                  type: string
+                  minLength: 16
+                  maxLength: 200
+                  description: |
+                    The unhashed nonce the app bound the token to this server
+                    with. The app requests the token with
+                    `nonce = sha256hex("famlin-apple-signin|<server host>|<rawNonce>")`,
+                    where `<server host>` is the lowercase `host[:port]` it
+                    talks to (default ports dropped). A token carrying a nonce
+                    is rejected (401) unless it matches this server's host or
+                    its configured public URL — that stops a token sent to one
+                    Famlin server from being replayed on another. Tokens without
+                    a nonce (older app builds) are still accepted.
       responses:
         '200':
           description: Logged in

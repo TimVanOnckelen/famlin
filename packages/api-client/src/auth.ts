@@ -43,9 +43,12 @@ export async function loginWithOidc(idToken: string, inviteToken?: string): Prom
 export async function loginWithApple(
   identityToken: string,
   fullName?: string,
-  inviteToken?: string
+  inviteToken?: string,
+  // The unhashed nonce the token was bound to this server with — see
+  // performAppleLogin in the mobile app and appleNonceFor on the server.
+  rawNonce?: string
 ): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken })
+  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken, rawNonce })
   return response.data
 }
 
