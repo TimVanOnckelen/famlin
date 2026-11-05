@@ -93,10 +93,12 @@ jobs:
       # comments current. Local reusable workflows (`./...`) are exempt.
       - name: Check GitHub Actions are pinned to a commit SHA
         run: |
-          unpinned=$(grep -rnE '^\s*-?\s*uses:\s*[^.[:space:]][^@[:space:]]*@' .github/workflows \
-            | grep -vE '@[0-9a-f]{40}([[:space:]]|$)' || true)
+          unpinned=$(grep -rnE '^\s*-?\s*uses:' .github/workflows \
+            | grep -vE "uses:\s*['\"]?\./" \
+            | grep -vE "uses:\s*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?(\s|$)" \
+            | grep -vE "uses:\s*['\"]?docker://[^@[:space:]'\"]+@sha256:[0-9a-f]{64}['\"]?(\s|$)" || true)
           if [ -n "$unpinned" ]; then
-            echo "::error::Pin these actions to a full commit SHA (with a '# vX.Y.Z' comment):"
+            echo "::error::Pin these actions to a full commit SHA (with a '# vX.Y.Z' comment), docker:// images to @sha256:"
             echo "$unpinned"
             exit 1
           fi
