@@ -644,5 +644,12 @@
     "exclusionsHintMobile": "Tik op een persoon en daarna op een andere, zodat ze elkaar niet kunnen trekken (bv. partners).",
     "continue": "Doorgaan",
     "notAvailable": "Deze cadeaulijst is niet beschikbaar."
+  },
+  "serverVersion": {
+    "title": "Je server is verouderd",
+    "memberMessage": "Sommige functies werken mogelijk niet. Vraag je beheerder om de Famlin-server bij te werken.",
+    "adminMessage": "Deze server draait Famlin {{current}}, die deze app niet meer volledig ondersteunt. Werk je server bij naar {{version}} of nieuwer.",
+    "howToUpdate": "Zo werk je bij",
+    "dismiss": "Sluiten"
   }
 }

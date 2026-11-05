@@ -161,6 +161,16 @@ watchtower:
 
 Since schema migrations run automatically on start (see above), an unattended update also means unattended migrations. That's usually fine, but a breaking change would apply itself before you've had a chance to read the release notes — if you'd rather review [breaking changes](https://github.com/timvanonckelen/famlin/releases) first, stick to the manual `pull`/`up -d` flow above, or pin `FAMLIN_VERSION` and bump it deliberately instead of running Watchtower against `latest`.
 
+## App and server versions
+
+The mobile apps update through the app stores, so they're often newer than your server. Each app release supports servers up to **three minor versions older** than itself: app 0.8.x works with servers 0.5.0 and newer, app 0.11.x with servers 0.8.0 and newer.
+
+Within that window, a new app feature your server doesn't have yet is simply hidden — the app asks the server which features it supports and never shows a button that would fail. Update the server to get it.
+
+When your server is older than the window, the app shows a warning banner at the top of the feed. It's a soft warning: the app keeps working, but some things may not. Members are asked to contact their admin; admins see the minimum server version and a link to this page. The banner can be dismissed, once per server version — it comes back if the server changes to another version that's still too old.
+
+If you're an admin and see it, [update your server](#updating). The minimum server version is only raised in an app release marked as a breaking change, so it's called out in the release notes.
+
 ## Pinning a version
 
 `docker-compose.yml` runs the pre-built image published to `ghcr.io/timvanonckelen/famlin` on every tagged release (e.g. `ghcr.io/timvanonckelen/famlin:1.2.0`, plus a rolling `latest`). By default it tracks `latest`; set `FAMLIN_VERSION` in `.env` to pin a specific version instead, so updates are a deliberate, reviewed step:

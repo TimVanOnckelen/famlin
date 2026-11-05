@@ -12,6 +12,7 @@ import { Icon } from '@/components/Icon'
 import { PostCard } from '@/components/PostCard'
 import { EmptyState } from '@/components/EmptyState'
 import { StoryTray } from '@/components/StoryTray'
+import { OldServerBanner } from '@/components/OldServerBanner'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import { Group, Post } from '@/types'
 import {
@@ -263,6 +264,7 @@ export function FeedScreen() {
         updateCellsBatchingPeriod={50}
         ListHeaderComponent={
           <>
+            <OldServerBanner />
             <StoryTray groupIds={selectedGroupIds} enabled={hasGroups && storiesEnabled} />
             {hasGroups && onThisDay && onThisDay.length > 0 ? (
               <TouchableOpacity

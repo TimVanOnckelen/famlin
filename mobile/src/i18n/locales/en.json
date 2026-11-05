@@ -644,5 +644,12 @@
     "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners).",
     "continue": "Continue",
     "notAvailable": "This gift list is not available."
+  },
+  "serverVersion": {
+    "title": "Your server is out of date",
+    "memberMessage": "Some features may not work. Ask your admin to update the Famlin server.",
+    "adminMessage": "This server runs Famlin {{current}}, which this app no longer fully supports. Update your server to {{version}} or newer.",
+    "howToUpdate": "How to update",
+    "dismiss": "Dismiss"
   }
 }

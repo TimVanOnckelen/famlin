@@ -644,5 +644,12 @@
     "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。",
     "continue": "继续",
     "notAvailable": "这个礼物清单不可用。"
+  },
+  "serverVersion": {
+    "title": "你的服务器版本过旧",
+    "memberMessage": "部分功能可能无法使用。请联系管理员更新 Famlin 服务器。",
+    "adminMessage": "此服务器运行的是 Famlin {{current}}，本应用已不再完全支持该版本。请将服务器更新到 {{version}} 或更高版本。",
+    "howToUpdate": "如何更新",
+    "dismiss": "关闭"
   }
 }
