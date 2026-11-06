@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "This email address is already in use",
     "authFailed": "Authentication failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "adminRequired": "Admin required",

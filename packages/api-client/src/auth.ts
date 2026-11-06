@@ -95,6 +95,8 @@ export interface NotificationPrefs {
 }
 
 export interface UpdateMeBody extends NotificationPrefs {
+  name?: string
+  email?: string
   avatarUrl?: string | null
 }
 

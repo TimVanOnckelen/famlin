@@ -302,6 +302,8 @@ export const notificationPrefsSchema = z.object({
 // pictures are synced separately in routes/auth.ts and don't go through this
 // schema.)
 export const updateUserBodySchema = notificationPrefsSchema.extend({
+  name: z.string().trim().min(1).max(100).optional(),
+  email: z.string().trim().email().max(254).toLowerCase().optional(),
   avatarUrl: uploadPathSchema.optional().nullable(),
 })
 

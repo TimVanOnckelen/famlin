@@ -289,3 +289,13 @@ Original filenames remain in Upload metadata for Live Photo pairing. Storage key
 use `originals/<assetKey>/<name>`, with a deterministic URL-safe name for filenames
 outside the storage key alphabet. Nested originals map to their parent asset key
 for export filtering; member exports include the paired motion asset too.
+
+## Self-service profile details
+
+`PATCH /api/auth/me` accepts optional `name` (trimmed, 1–100 characters) and
+`email` (trimmed, lowercased, valid email, at most 254 characters). Email
+availability is checked case-insensitively against other users; unique
+constraint conflicts are also returned as HTTP 409 to handle concurrent
+updates. A conflict applies neither field. Web exposes these fields in the
+profile's Personal details section and updates its authenticated user state
+from the successful response.

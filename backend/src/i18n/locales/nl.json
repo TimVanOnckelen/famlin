@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "Dit e-mailadres is al in gebruik",
     "authFailed": "Authenticatie mislukt",
     "invalidEmailOrPassword": "Ongeldig e-mailadres of wachtwoord",
     "adminRequired": "Admin rechten vereist",
