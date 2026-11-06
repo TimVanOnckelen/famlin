@@ -172,6 +172,13 @@
     "failed": "Your changes couldn't be saved. Try again."
   },
   "profile": {
+    "detailsTitle": "Personal details",
+    "displayName": "Name",
+    "emailAddress": "Email address",
+    "saveDetails": "Save details",
+    "detailsSaved": "Your details have been saved",
+    "detailsFailed": "Could not save your details",
+    "emailInUse": "This email address is already in use",
     "title": "Profile",
     "changePhoto": "Change profile photo",
     "photoUploadFailed": "Your photo couldn't be uploaded. Try again.",
@@ -217,7 +224,13 @@
     },
     "notifyNewStory": "Stories (push only)",
     "myGiftLists": "My gift lists",
-    "notifyGiftList": "Gift lists"
+    "notifyGiftList": "Gift lists",
+    "cropTitle": "Crop profile photo",
+    "cropHint": "Drag the photo to position it. Use + and − to zoom.",
+    "cropPreview": "Profile photo preview",
+    "cropZoomIn": "Zoom in",
+    "cropZoomOut": "Zoom out",
+    "cropSave": "Save"
   },
   "apiTokens": {
     "menuItem": "API tokens",

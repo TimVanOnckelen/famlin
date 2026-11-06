@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "此电子邮箱地址已被使用",
     "authFailed": "身份验证失败",
     "invalidEmailOrPassword": "邮箱或密码错误",
     "adminRequired": "需要管理员权限",

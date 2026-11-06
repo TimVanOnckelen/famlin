@@ -34,6 +34,8 @@ export interface NotificationPrefs {
     pushOnGiftList?: boolean;
 }
 export interface UpdateMeBody extends NotificationPrefs {
+    name?: string;
+    email?: string;
     avatarUrl?: string | null;
 }
 export declare function updateMe(data: UpdateMeBody): Promise<User>;
