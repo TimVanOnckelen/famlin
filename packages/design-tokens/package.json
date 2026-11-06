@@ -6,10 +6,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./css": "./tokens.css",
-    "./tokens.json": "./src/tokens.json"
+    "./tokens.json": "./src/tokens.json",
+    "./native": "./src/generated.ts"
   },
   "scripts": {
     "generate": "node scripts/generate.mjs",
-    "check": "node scripts/generate.mjs --check"
+    "check": "node scripts/generate.mjs --check",
+    "test": "node --test tests/*.test.mjs"
   }
 }

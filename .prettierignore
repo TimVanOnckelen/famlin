@@ -26,3 +26,6 @@ backend/uploads/
 docs/
 website/
 design/
+
+# Generated design-token TS; formatting is owned by its deterministic generator.
+packages/design-tokens/src/generated.ts

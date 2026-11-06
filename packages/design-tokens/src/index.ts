@@ -1,4 +1,2 @@
-import tokens from './tokens.json'
-export { tokens }
-export type TokenName = keyof typeof tokens
-export default tokens
+export { tokens, default } from './generated'
+export type { DesignTokens } from './generated'

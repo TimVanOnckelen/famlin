@@ -212,6 +212,7 @@ jobs:
       - name: Check shared design tokens and UI
         run: |
           npm run check --workspace=@famlin/design-tokens
+          npm run test --workspace=@famlin/design-tokens
           npm run typecheck --workspace=@famlin/ui
           npm run lint --workspace=@famlin/ui
           npm run test --workspace=@famlin/ui

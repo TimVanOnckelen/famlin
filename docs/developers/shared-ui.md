@@ -13,6 +13,7 @@ Keep the repository structure when working with local `file:` dependencies:
 npm ci
 npm --prefix backend/admin ci
 npm run check --workspace=@famlin/design-tokens
+npm run test --workspace=@famlin/design-tokens
 npm run typecheck --workspace=@famlin/ui
 npm run lint --workspace=@famlin/ui
 npm run test --workspace=@famlin/ui
@@ -22,7 +23,7 @@ npm run build:admin
 ```
 
 Edit `packages/design-tokens/src/tokens.json`, then run
-`npm run generate --workspace=@famlin/design-tokens` and commit `tokens.css`.
+`npm run generate --workspace=@famlin/design-tokens` and commit `tokens.css` and `src/generated.ts`.
 The initial brand colors match `design/styleguide.html`; existing admin semantic
 colors, shadows and radius remain unchanged. Layout settings such as sidebar
 width belong to the application. This extraction does not normalize mobile or
@@ -41,6 +42,26 @@ import { AuthShell } from '@famlin/ui/common/auth-shell'
 Pass translated text and callbacks from the application. `UserAvatar` accepts
 `name`, `src` and `className`; admin's `InitialAvatar` retains authenticated
 loading, session-scoped cache, request deduplication and object URL cleanup.
+
+## Platform-independent token contract
+
+`src/tokens.json` contains colors, numeric dimensions in logical units, a font
+family, structured shadows and gradients. References use `{ "ref": "color.primary" }`;
+the generator resolves them and rejects missing/circular references and CSS expressions.
+Do not put `var()`, `px`, `rem` or CSS gradient strings in this source.
+
+The package root and `@famlin/design-tokens/native` export the same resolved,
+readonly TypeScript values with literal types. For example, a future React Native
+consumer can use `tokens.color.primary` as `backgroundColor` and
+`tokens.radius.control` as `borderRadius` directly in `StyleSheet.create`.
+No CSS parsing or React/browser dependency is required. Mobile is not migrated here.
+
+Shadows and gradients are structured design data, not complete React Native styles:
+platform adapters choose supported shadow/gradient APIs. Font loading and browser
+fallbacks also belong to platform layers. Numeric dimensions map to CSS pixels;
+spacing maps to rem using a 16px reference and stays numeric in the native export.
+Browser semantic aliases for shadcn live in `packages/ui/styles.css`, while shared
+brand values are generated into `tokens.css`. Generated files must not be edited manually.
 
 ## Checks and ownership
 
@@ -80,7 +101,7 @@ consumers also need TypeScript `react` / `react/*` paths pointing to their own
 admin's `tsconfig.json`. No JavaScript library build is required: Vite consumes
 TS/TSX source exports.
 
-Mobile can consume the JSON/TypeScript tokens separately. Browser components
+Mobile can consume the resolved TypeScript export separately; the JSON source is a schema with references, not a ready-to-use native theme. Browser components
 are not React Native components; a future native UI package is a separate
 architecture decision.
 

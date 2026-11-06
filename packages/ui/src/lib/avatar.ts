@@ -11,11 +11,11 @@ export function initials(name: string) {
 
 export function avatarColor(name: string) {
   const palette = [
-    tokens['fam-primary'],
-    tokens['fam-primary-light'],
-    tokens['fam-primary-mid'],
-    tokens['fam-primary-dark'],
-    tokens['fam-accent'],
+    tokens.color['primary'],
+    tokens.color['primary-light'],
+    tokens.color['primary-mid'],
+    tokens.color['primary-dark'],
+    tokens.color['accent'],
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) {

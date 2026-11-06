@@ -36,3 +36,27 @@
   --radius-3xl: calc(var(--radius) * 2);
   --radius-4xl: 9999px;
 }
+
+:root {
+  --background: var(--fam-bg);
+  --foreground: var(--fam-text-body);
+  --card: var(--fam-surface);
+  --card-foreground: var(--fam-text-body);
+  --popover: var(--fam-surface);
+  --popover-foreground: var(--fam-text-body);
+  --primary: var(--fam-primary);
+  --primary-foreground: var(--fam-white);
+  --secondary: var(--fam-primary-tint);
+  --secondary-foreground: var(--fam-text-title);
+  --muted: var(--fam-muted);
+  --muted-foreground: var(--fam-text-muted);
+  --accent: var(--fam-primary-tint);
+  --accent-foreground: var(--fam-primary-dark);
+  --destructive: var(--fam-destructive);
+  --success: var(--fam-success);
+  --warning: var(--fam-warning);
+  --border: var(--fam-border);
+  --input: var(--fam-border);
+  --ring: var(--fam-primary);
+  --fam-font-sans: var(--fam-font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
