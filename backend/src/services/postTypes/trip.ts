@@ -546,7 +546,7 @@ export const tripHandler: PostTypeHandler = {
           : null
 
       // Stored order preserved; a traveler whose account was since deleted
-      // simply drops out (user deletion is a hard delete, see CLAUDE.md).
+      // simply drops out (user deletion is a hard delete, see AGENTS.md).
       // The author is never in travelerUserIds, so never duplicated here —
       // the UI shows the author separately.
       const travelers = (typeData.travelerUserIds ?? [])

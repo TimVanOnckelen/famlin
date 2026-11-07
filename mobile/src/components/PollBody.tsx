@@ -15,7 +15,7 @@ const MAX_VOTER_AVATARS = 3
 // the question itself is `post.content`, already rendered by the caller as
 // the post's normal content; this only renders the options underneath it.
 // See postTypes/index.ts for how PostCard picks this up via the renderer
-// registry, and CLAUDE.md's PostTypeHandler notes for the server-side shape
+// registry, and AGENTS.md's PostTypeHandler notes for the server-side shape
 // (`poll` is the read-time-enriched view of `typeData`, see services/postTypes/poll.ts).
 export function PollBody({ post }: { post: Post }) {
   const { t } = useTranslation()

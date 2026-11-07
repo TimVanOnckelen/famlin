@@ -9,7 +9,7 @@ import { buildTestApp, createUser, createGroup, createGroupWithMember, addMember
 // `addPhotos` interaction, with an author-only `close`. Contributions are
 // stored as Comment rows with a {kind: 'album_photo', contributionId,
 // photoUrls} metadata discriminator, mirroring how a TRIP check-in reuses the
-// comment infrastructure. See CLAUDE.md and album.ts for the full contract.
+// comment infrastructure. See AGENTS.md and album.ts for the full contract.
 const assetPath = () => `/uploads/${randomUUID()}.jpg`
 
 describe('ALBUM posts', () => {

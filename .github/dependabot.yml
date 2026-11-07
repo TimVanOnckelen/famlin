@@ -2,7 +2,7 @@ version: 2
 
 # Famlin installs in five independent trees, so each needs its own entry:
 # the root npm workspace (web/ + packages/api-client), backend/,
-# backend/admin/, mobile/, and docs/. See CLAUDE.md > Commands.
+# backend/admin/, mobile/, and docs/. See AGENTS.md > Commands.
 #
 # Updates are grouped so one PR carries a whole ecosystem's patch/minor bumps
 # instead of one PR per package — the lockfiles are large and CI runs a full
@@ -86,6 +86,7 @@ updates:
       - dependency-name: react-native
       - dependency-name: react-native-*
       - dependency-name: '@react-native-async-storage/*'
+      - dependency-name: '@react-native-community/*'
       - dependency-name: react
       - dependency-name: react-test-renderer
       - dependency-name: jest-expo

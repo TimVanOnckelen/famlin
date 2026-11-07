@@ -16,10 +16,10 @@ jobs:
     outputs:
       mobile: ${{ steps.filter.outputs.mobile }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           # Empty token = diff against local .git history instead of calling the
@@ -38,8 +38,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -86,6 +86,22 @@ jobs:
       # ubuntu-latest ships shellcheck; covers the installer served at famlin.app/install.sh.
       - name: Lint shell scripts (ShellCheck)
         run: shellcheck scripts/*.sh
+      # Third-party actions run with this repo's tokens and secrets (GHCR
+      # push, EAS, release-please). A mutable tag (`@v4`) can be repointed to
+      # malicious code if the action's repo is compromised; a full commit SHA
+      # can't. Dependabot/Renovate keep the pins and their `# vX.Y.Z`
+      # comments current. Local reusable workflows (`./...`) are exempt.
+      - name: Check GitHub Actions are pinned to a commit SHA
+        run: |
+          unpinned=$(grep -rnE '^\s*-?\s*uses:' .github/workflows \
+            | grep -vE "uses:\s*['\"]?\./" \
+            | grep -vE "uses:\s*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?(\s|$)" \
+            | grep -vE "uses:\s*['\"]?docker://[^@[:space:]'\"]+@sha256:[0-9a-f]{64}['\"]?(\s|$)" || true)
+          if [ -n "$unpinned" ]; then
+            echo "::error::Pin these actions to a full commit SHA (with a '# vX.Y.Z' comment), docker:// images to @sha256:"
+            echo "$unpinned"
+            exit 1
+          fi
 
   backend:
     name: Backend
@@ -108,8 +124,8 @@ jobs:
       DATABASE_URL: postgresql://famlin:famlin@localhost:5432/famlin_test?schema=public
       JWT_SECRET: ci-test-secret-at-least-32-characters-long
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -161,8 +177,8 @@ jobs:
       BACKUPS_DIR: /tmp/famlin-storage-test-backups
       TEST_S3_ENDPOINT: http://127.0.0.1:9000
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -191,8 +207,8 @@ jobs:
     name: Admin UI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -222,8 +238,8 @@ jobs:
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -279,8 +295,8 @@ jobs:
     name: Web app & shared API client
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -306,8 +322,8 @@ jobs:
     name: Docs site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -332,7 +348,7 @@ jobs:
   # unmarked breaking change ships silently as a minor entry.
   docs-required:
     # Every new feature ships with documentation (see "Documentation" in
-    # CLAUDE.md and docs/developers/contributing.md). A PR whose title or any
+    # AGENTS.md and docs/developers/contributing.md). A PR whose title or any
     # commit is a conventional-commit `feat` must touch docs/ or website/,
     # unless a commit carries a `Docs-not-needed: <reason>` trailer, or the PR
     # description does.
@@ -340,7 +356,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Require a docs change for feat PRs
@@ -366,7 +382,7 @@ jobs:
             echo "Documentation explicitly marked as not needed — OK."
             exit 0
           fi
-          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in CLAUDE.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
+          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in AGENTS.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
           exit 1
 
   api-breaking-changes:
@@ -376,7 +392,7 @@ jobs:
     env:
       SPEC: docs/openapi/famlin.yaml
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Compare spec against base and require a breaking marker
@@ -441,8 +457,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
           config-file: ./.github/dependency-review-config.yml
 
@@ -462,10 +478,10 @@ jobs:
             cache-scope: linux-arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build backend image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           # Repo-root context: the image also bundles web/ + packages/ — see
           # backend/Dockerfile.
