@@ -2,6 +2,43 @@
 # app (web/) and its shared package (packages/api-client) live outside
 # backend/ but are bundled into this same image, so the context must span the
 # whole repo. Build with:  docker build -f backend/Dockerfile .
+# Build both frontends with the shared workspace packages and root lockfile.
+# Keep the monorepo layout so admin's independent file: dependencies resolve.
+# Vite outputs land in /repo/backend/dist/{web,admin}.
+FROM node:22-alpine AS webbuild
+
+WORKDIR /repo
+
+COPY package.json package-lock.json* ./
+COPY packages ./packages
+COPY web ./web
+COPY backend/admin ./backend/admin
+# --ignore-scripts is deliberate, for two reasons:
+#
+# 1. Reliability. npm 10's lifecycle-script runner has a race that intermittently
+#    kills the install with "npm error Exit handler never called!" (exit 1) —
+#    npm's own process exits before its exit handler runs. It shows up under
+#    slow/loaded installs, so it fails a CI or cold-cache image build maybe one
+#    run in three while passing locally on a warm cache. Skipping the script
+#    runner removes the code path the race lives in; both `--ignore-scripts` and
+#    `--foreground-scripts` avoid it, and the former also gets us (2).
+# 2. Determinism. The only script that matters here is @famlin/api-client's
+#    `prepare` hook, which compiles it to dist/ as an implicit side effect of
+#    install (and silently falls back to the committed dist/ when tsc isn't
+#    resolvable — see packages/api-client/scripts/prepare.js). Building it as an
+#    explicit step means this image always bundles a dist/ compiled from the
+#    source in this build context, never a stale committed one.
+#
+# Nothing else is skipped: fsevents is the only third-party dependency in the
+# root lockfile with an install script, and it's darwin-only, so it is never
+# installed here anyway. (The backend stages above/below must NOT do this —
+# their trees need prisma's and esbuild's install scripts to run.)
+RUN npm ci --ignore-scripts
+RUN npm run build --workspace=packages/api-client
+RUN npm run build --workspace=web
+RUN npm --prefix backend/admin ci --ignore-scripts
+RUN npm --prefix backend/admin run build
+
 FROM node:22-alpine AS base
 
 WORKDIR /app
@@ -35,36 +72,9 @@ COPY backend/prisma ./prisma
 COPY backend/prisma.config.ts ./
 RUN npx prisma generate
 
-# The admin UI depends on the shared api-client via file:../../packages/api-client
-# (see backend/admin/package.json). /app holds backend/, so that path resolves to
-# /packages/api-client — copy it there for the `npm ci` that `npm run build` runs
-# inside admin/. Its committed dist/ is used as-is (same pattern as mobile's
-# file: dependency; no build step needed).
-#
-# /packages/api-client has no lockfile of its own (it normally relies on the
-# root workspace's), and sits outside admin's node_modules tree entirely, so
-# without its own node_modules here, admin's `vite build` can't resolve the
-# runtime deps its compiled dist/*.js files `require()` (axios, at least) —
-# Rollup silently leaves those as unresolved external imports instead of
-# failing the build, which breaks the shipped bundle at runtime in the
-# browser ("Failed to resolve module specifier axios") rather than at build
-# time. Give it its own node_modules so those resolve locally.
-#
-# --legacy-peer-deps is load-bearing, not cargo cult: with no lockfile this
-# install re-resolves from the registry every build, and --omit=dev only omits
-# dev dependencies from *installation* — arborist still builds them into the
-# ideal tree and walks their peer graphs. vitest 4.1.11's peers crash npm
-# 10.9.x there ("Cannot read properties of null (reading 'edgesOut')"), which
-# turned a previously-green build red with no code change. Skipping peer
-# resolution is the right semantics anyway: this stage only needs the runtime
-# deps admin's Vite build resolves against, and the package's peerDependencies
-# already duplicate its dependencies.
-COPY packages /packages
-RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
-
-# Copy source and build (backend + admin UI -> dist/, dist/admin)
+# Compile the backend independently; frontend assets come from webbuild below.
 COPY backend/ ./
-RUN npm run build
+RUN npx tsc
 
 # Compile the Prisma seed script so the production image can run it without
 # tsx (which is a devDependency). Used by docker-compose.demo.yml to populate
@@ -73,40 +83,14 @@ RUN npx tsc prisma/seed.ts --outDir dist/prisma \
     --module NodeNext --moduleResolution NodeNext --target ES2022 \
     --esModuleInterop --strict --skipLibCheck --resolveJsonModule
 
-# Build the member-facing web app in its own stage: it's an npm-workspace
-# member at the repo root together with packages/api-client, so it installs
-# from the root lockfile, not backend's. Its vite outDir is
-# ../backend/dist/web, which lands at /repo/backend/dist/web here.
-FROM node:22-alpine AS webbuild
-
-WORKDIR /repo
-
-COPY package.json package-lock.json* ./
-COPY packages ./packages
-COPY web ./web
-# --ignore-scripts is deliberate, for two reasons:
-#
-# 1. Reliability. npm 10's lifecycle-script runner has a race that intermittently
-#    kills the install with "npm error Exit handler never called!" (exit 1) —
-#    npm's own process exits before its exit handler runs. It shows up under
-#    slow/loaded installs, so it fails a CI or cold-cache image build maybe one
-#    run in three while passing locally on a warm cache. Skipping the script
-#    runner removes the code path the race lives in; both `--ignore-scripts` and
-#    `--foreground-scripts` avoid it, and the former also gets us (2).
-# 2. Determinism. The only script that matters here is @famlin/api-client's
-#    `prepare` hook, which compiles it to dist/ as an implicit side effect of
-#    install (and silently falls back to the committed dist/ when tsc isn't
-#    resolvable — see packages/api-client/scripts/prepare.js). Building it as an
-#    explicit step means this image always bundles a dist/ compiled from the
-#    source in this build context, never a stale committed one.
-#
-# Nothing else is skipped: fsevents is the only third-party dependency in the
-# root lockfile with an install script, and it's darwin-only, so it is never
-# installed here anyway. (The backend stages above/below must NOT do this —
-# their trees need prisma's and esbuild's install scripts to run.)
-RUN npm ci --ignore-scripts
-RUN npm run build --workspace=packages/api-client
-RUN npm run build --workspace=web
+# The development overlay targets base and bind-mounts backend at /app.
+# Preserve its admin watch-build: relative file links then resolve under
+# /packages, whose dependencies resolve from /node_modules. Both installs
+# below are copied from the lockfile-driven frontend stage.
+COPY --from=webbuild /repo/packages /packages
+COPY --from=webbuild /repo/node_modules /node_modules
+COPY --from=webbuild /repo/backend/admin/node_modules ./admin/node_modules
+COPY --from=webbuild /repo/backend/dist/admin ./dist/admin
 
 # Production image
 FROM node:22-alpine AS production
@@ -170,6 +154,7 @@ COPY --from=base /app/prisma ./prisma
 COPY --from=base /app/prisma.config.ts ./
 COPY --from=base /app/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
+COPY --from=webbuild /repo/backend/dist/admin ./dist/admin
 
 # Create the uploads, backups and data directories with proper permissions and
 # run as the unprivileged `node` user rather than root. All are volume mount

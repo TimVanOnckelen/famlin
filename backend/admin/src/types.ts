@@ -122,7 +122,7 @@ export interface AdminDevice {
   appVersion: string
   appBuild: string
   pushPermission: 'granted' | 'denied' | 'undetermined'
-  user: Pick<User, 'id' | 'name' | 'email'>
+  user: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>
 }
 
 export interface DeviceSummary {
@@ -214,7 +214,7 @@ export interface MediaPersonLink {
   provider: MediaProviderId
   externalPersonId: string
   label: string
-  user: { id: string; name: string; email: string } | null
+  user: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'> | null
   createdAt: string
 }
 
@@ -226,7 +226,7 @@ export interface Invite {
   email: string | null
   expiresAt: string | null
   usedAt: string | null
-  usedBy: { id: string; name: string } | null
+  usedBy: Pick<User, 'id' | 'name' | 'avatarUrl'> | null
   createdAt: string
 }
 
@@ -249,7 +249,7 @@ export interface ModerationPost {
   type: 'UPDATE' | 'MILESTONE'
   createdAt: string
   editedAt: string | null
-  author: { id: string; name: string }
+  author: Pick<User, 'id' | 'name' | 'avatarUrl'>
   group: { id: string; name: string }
   commentCount: number
   likeCount: number
@@ -260,7 +260,7 @@ export interface ModerationComment {
   content: string
   createdAt: string
   editedAt: string | null
-  author: { id: string; name: string }
+  author: Pick<User, 'id' | 'name' | 'avatarUrl'>
   post: { id: string; content: string | null; group: { id: string; name: string } }
 }
 
@@ -273,7 +273,7 @@ export interface ModerationStory {
   expiresAt: string
   pinnedAt: string | null
   circleId: string | null
-  author: { id: string; name: string }
+  author: Pick<User, 'id' | 'name' | 'avatarUrl'>
   group: { id: string; name: string }
   viewCount: number
   reactionCount: number
@@ -295,7 +295,7 @@ export interface PushDeliveryLog {
   failureCount: number
   createdAt: string
   post: { id: string; content: string | null; group: { id: string; name: string } } | null
-  triggeredByAdmin: { id: string; name: string } | null
+  triggeredByAdmin: Pick<User, 'id' | 'name' | 'avatarUrl'> | null
 }
 
 export interface DashboardStats {
@@ -313,6 +313,7 @@ export interface DashboardStats {
     type: 'UPDATE' | 'MILESTONE'
     createdAt: string
     authorName: string
+    authorAvatarUrl: string | null
     groupName: string
     commentCount: number
     likeCount: number

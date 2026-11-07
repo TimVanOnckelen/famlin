@@ -1,3 +1,6 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { Input } from '@famlin/ui/input'
+import { Button } from '@famlin/ui/button'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AdminModal } from './AdminModal'
 import { useTranslation } from 'react-i18next'
@@ -124,7 +127,7 @@ function AdminDialog({
         {isPassword && (
           <label>
             {t('common.password')}
-            <input
+            <Input
               data-initial-focus
               type="password"
               value={password}
@@ -141,13 +144,14 @@ function AdminDialog({
           </label>
         )}
         {error && (
-          <div id="admin-dialog-error" className="error" role="alert">
+          <StateMessage variant="error" id="admin-dialog-error" className="error" role="alert">
             {error}
-          </div>
+          </StateMessage>
         )}
         <div className="modal-actions">
           {request.kind !== 'message' && (
-            <button
+            <Button
+              variant="secondary"
               data-initial-focus={isPassword ? undefined : true}
               type="button"
               className="secondary"
@@ -155,10 +159,10 @@ function AdminDialog({
               onClick={() => onFinish(request, false)}
             >
               {t('common.cancel')}
-            </button>
+            </Button>
           )}
-          <button
-            className={request.kind === 'confirm' ? 'danger' : undefined}
+          <Button
+            variant={request.kind === 'confirm' ? 'destructive' : 'default'}
             data-initial-focus={request.kind === 'message' ? true : undefined}
             type="submit"
             disabled={saving}
@@ -172,7 +176,7 @@ function AdminDialog({
                     ? 'common.confirm'
                     : 'common.done'
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </AdminModal>

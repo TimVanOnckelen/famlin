@@ -1,5 +1,6 @@
 import { defineConfig, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // admin installs independently (not an npm workspace member — see the root
@@ -24,6 +25,7 @@ function redirectAdminRoot(server: Pick<ViteDevServer, 'middlewares'>) {
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     {
       name: 'redirect-admin-root',
       configureServer: redirectAdminRoot,
@@ -31,6 +33,12 @@ export default defineConfig({
     },
   ],
   base: '/admin/',
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+    alias: {
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, '../dist/admin'),
     emptyOutDir: true,
@@ -70,6 +78,10 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/uploads': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },

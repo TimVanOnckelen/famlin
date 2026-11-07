@@ -1,3 +1,8 @@
+import { Tabs, TabsList, TabsTrigger } from '@famlin/ui/tabs'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { Button } from '@famlin/ui/button'
+import { Input } from '@famlin/ui/input'
+import { SelectField } from '@famlin/ui/common/select-field'
 import { AdminModal } from './AdminModal'
 import { CheckboxField } from './CheckboxField'
 import { useEffect, useState } from 'react'
@@ -101,152 +106,167 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
   return (
     <AdminModal title={t('members.addMember')} onClose={onClose} busy={creating || generatingInvite}>
       {!createdInvite && (
-        <div className="seg-tabs" style={{ marginBottom: '1rem' }}>
-          <button
-            type="button"
-            className={`seg-tab${mode === 'invite' ? ' active' : ''}`}
-            onClick={() => setMode('invite')}
-          >
-            {t('members.modeInvite')}
-          </button>
-          <button
-            type="button"
-            className={`seg-tab${mode === 'create' ? ' active' : ''}`}
-            onClick={() => setMode('create')}
-          >
-            {t('members.modeCreate')}
-          </button>
-        </div>
+        <Tabs value={mode} onValueChange={(value) => setMode(value as Mode)}>
+          <TabsList aria-label={t('members.addMember')} className="w-full">
+            <TabsTrigger value="invite">{t('members.modeInvite')}</TabsTrigger>
+            <TabsTrigger value="create">{t('members.modeCreate')}</TabsTrigger>
+          </TabsList>
+        </Tabs>
       )}
 
-      {mode === 'invite' ? (
-        createdInvite ? (
-          <div>
-            <p className="hint">
-              {createdInvite.email
-                ? t('members.inviteSentHint', { email: createdInvite.email })
-                : t('groups.invites.hint')}
-            </p>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input
-                type="text"
-                readOnly
-                value={createdInvite.link}
-                onFocus={(e) => e.target.select()}
-                style={{ flex: 1 }}
-              />
-              <button type="button" className="secondary" onClick={handleCopyLink}>
-                {copied ? t('groups.invites.linkCopied') : t('groups.invites.copyLink')}
-              </button>
+      <div key={mode} className="animate-in fade-in-0 slide-in-from-bottom-1 duration-200 motion-reduce:animate-none">
+        {mode === 'invite' ? (
+          createdInvite ? (
+            <div>
+              <p className="hint">
+                {createdInvite.email
+                  ? t('members.inviteSentHint', { email: createdInvite.email })
+                  : t('groups.invites.hint')}
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <Input
+                  type="text"
+                  readOnly
+                  value={createdInvite.link}
+                  onFocus={(e) => e.target.select()}
+                  style={{ flex: 1 }}
+                />
+                <Button variant="secondary" type="button" className="secondary" onClick={handleCopyLink}>
+                  {copied ? t('groups.invites.linkCopied') : t('groups.invites.copyLink')}
+                </Button>
+              </div>
+              <div className="modal-actions">
+                <Button type="button" onClick={onClose}>
+                  {t('common.done')}
+                </Button>
+              </div>
             </div>
-            <div className="modal-actions">
-              <button type="button" onClick={onClose}>
-                {t('common.done')}
-              </button>
-            </div>
-          </div>
+          ) : (
+            <form onSubmit={handleGenerateInvite}>
+              <label>
+                {t('members.groupLabel')}
+                <SelectField
+                  value={inviteGroupId}
+                  onValueChange={(value) => setInviteGroupId(value)}
+                  required
+                  disabled={loadingGroups}
+                  autoFocus
+                  items={[
+                    { value: '', label: <>{t('members.selectGroup')}</> },
+                    ...groups.map((g) => ({ value: g.id, label: <>{g.name}</> })),
+                  ]}
+                />
+              </label>
+              <label>
+                {t('groups.invites.emailLabel')}
+                <Input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder={t('groups.invites.emailPlaceholder')}
+                />
+              </label>
+              <label>
+                {t('groups.invites.expiresLabel')}
+                <SelectField
+                  value={inviteExpiry}
+                  onValueChange={(value) => setInviteExpiry(value as '7' | '30' | 'never')}
+                  items={[
+                    { value: '7', label: <>{t('groups.invites.expires7Days')}</> },
+                    { value: '30', label: <>{t('groups.invites.expires30Days')}</> },
+                    { value: 'never', label: <>{t('groups.invites.expiresNever')}</> },
+                  ]}
+                />
+              </label>
+              {inviteError && (
+                <StateMessage variant="error" className="error">
+                  {inviteError}
+                </StateMessage>
+              )}
+              <div className="modal-actions">
+                <Button
+                  variant="secondary"
+                  type="button"
+                  className="secondary"
+                  onClick={onClose}
+                  disabled={creating || generatingInvite}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" disabled={!inviteGroupId || generatingInvite}>
+                  {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
+                </Button>
+              </div>
+            </form>
+          )
         ) : (
-          <form onSubmit={handleGenerateInvite}>
+          <form onSubmit={handleCreate}>
             <label>
-              {t('members.groupLabel')}
-              <select
-                value={inviteGroupId}
-                onChange={(e) => setInviteGroupId(e.target.value)}
-                required
-                disabled={loadingGroups}
-                autoFocus
-              >
-                <option value="">{t('members.selectGroup')}</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+              {t('users.form.name')}
+              <Input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
             </label>
             <label>
-              {t('groups.invites.emailLabel')}
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder={t('groups.invites.emailPlaceholder')}
+              {t('users.form.email')}
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
+            <label>
+              {t('users.form.password')}
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
               />
             </label>
-            <label>
-              {t('groups.invites.expiresLabel')}
-              <select value={inviteExpiry} onChange={(e) => setInviteExpiry(e.target.value as '7' | '30' | 'never')}>
-                <option value="7">{t('groups.invites.expires7Days')}</option>
-                <option value="30">{t('groups.invites.expires30Days')}</option>
-                <option value="never">{t('groups.invites.expiresNever')}</option>
-              </select>
-            </label>
-            {inviteError && <div className="error">{inviteError}</div>}
+            <CheckboxField label={t('users.form.admin')} checked={isAdmin} onChange={setIsAdmin} />
+
+            <div>
+              <span className="hint" style={{ marginTop: 0 }}>
+                {t('members.groupsLabel')}
+              </span>
+              {groups.length === 0 ? (
+                <StateMessage variant="empty" className="empty">
+                  {t('groups.noGroups')}
+                </StateMessage>
+              ) : (
+                <ul className="membership-list">
+                  {groups.map((g) => (
+                    <li key={g.id} className="membership-row">
+                      <CheckboxField
+                        label={g.name}
+                        checked={groupIds.includes(g.id)}
+                        onChange={() => toggleGroup(g.id)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {createError && (
+              <StateMessage variant="error" className="error">
+                {createError}
+              </StateMessage>
+            )}
             <div className="modal-actions">
-              <button type="button" className="secondary" onClick={onClose} disabled={creating || generatingInvite}>
+              <Button
+                variant="secondary"
+                type="button"
+                className="secondary"
+                onClick={onClose}
+                disabled={creating || generatingInvite}
+              >
                 {t('common.cancel')}
-              </button>
-              <button type="submit" disabled={!inviteGroupId || generatingInvite}>
-                {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
-              </button>
+              </Button>
+              <Button type="submit" disabled={creating || !name.trim() || !email.trim() || password.length < 8}>
+                {creating ? t('common.loading') : t('users.createUser')}
+              </Button>
             </div>
           </form>
-        )
-      ) : (
-        <form onSubmit={handleCreate}>
-          <label>
-            {t('users.form.name')}
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-          </label>
-          <label>
-            {t('users.form.email')}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </label>
-          <label>
-            {t('users.form.password')}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </label>
-          <CheckboxField label={t('users.form.admin')} checked={isAdmin} onChange={setIsAdmin} />
-
-          <div>
-            <span className="hint" style={{ marginTop: 0 }}>
-              {t('members.groupsLabel')}
-            </span>
-            {groups.length === 0 ? (
-              <div className="empty">{t('groups.noGroups')}</div>
-            ) : (
-              <ul className="membership-list">
-                {groups.map((g) => (
-                  <li key={g.id} className="membership-row">
-                    <CheckboxField
-                      label={g.name}
-                      checked={groupIds.includes(g.id)}
-                      onChange={() => toggleGroup(g.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {createError && <div className="error">{createError}</div>}
-          <div className="modal-actions">
-            <button type="button" className="secondary" onClick={onClose} disabled={creating || generatingInvite}>
-              {t('common.cancel')}
-            </button>
-            <button type="submit" disabled={creating || !name.trim() || !email.trim() || password.length < 8}>
-              {creating ? t('common.loading') : t('users.createUser')}
-            </button>
-          </div>
-        </form>
-      )}
+        )}
+      </div>
     </AdminModal>
   )
 }

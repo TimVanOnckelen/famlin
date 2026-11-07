@@ -1,7 +1,13 @@
+import { InitialAvatar } from './common/InitialAvatar'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, PushDeliveryLog } from '../api/client'
 import i18n from '../i18n'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { Button } from '@famlin/ui/button'
+import { Card, CardContent } from '@famlin/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@famlin/ui/table'
 
 function truncate(text: string | null, length = 60) {
   if (!text) return ''
@@ -11,7 +17,7 @@ function truncate(text: string | null, length = 60) {
 function DateCell({ iso }: { iso: string }) {
   const date = new Date(iso)
   return (
-    <span className="muted" title={date.toLocaleString(i18n.language)}>
+    <span className="text-sm text-muted-foreground" title={date.toLocaleString(i18n.language)}>
       {date.toLocaleString(i18n.language)}
     </span>
   )
@@ -57,74 +63,80 @@ export function PushLogPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('pushLog.title')}</h2>
-      </div>
-
-      <div className="card">
-        {loading ? (
-          <div className="loading">{t('common.loading')}</div>
-        ) : logs.length === 0 ? (
-          <div className="empty">{t('pushLog.noLogs')}</div>
-        ) : (
-          <div className="content-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('pushLog.table.date')}</th>
-                  <th>{t('pushLog.table.type')}</th>
-                  <th>{t('pushLog.table.post')}</th>
-                  <th>{t('pushLog.table.recipients')}</th>
-                  <th>{t('pushLog.table.delivered')}</th>
-                  <th>{t('pushLog.table.failed')}</th>
-                  <th>{t('pushLog.table.triggeredBy')}</th>
-                </tr>
-              </thead>
-              <tbody>
+      <PageHeader title={t('pushLog.title')} />
+      <Card className="py-0 shadow-sm">
+        <CardContent className="px-0">
+          {loading ? (
+            <StateMessage variant="loading">{t('common.loading')}</StateMessage>
+          ) : logs.length === 0 ? (
+            <StateMessage>{t('pushLog.noLogs')}</StateMessage>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('pushLog.table.date')}</TableHead>
+                  <TableHead>{t('pushLog.table.type')}</TableHead>
+                  <TableHead>{t('pushLog.table.post')}</TableHead>
+                  <TableHead>{t('pushLog.table.recipients')}</TableHead>
+                  <TableHead>{t('pushLog.table.delivered')}</TableHead>
+                  <TableHead>{t('pushLog.table.failed')}</TableHead>
+                  <TableHead>{t('pushLog.table.triggeredBy')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {logs.map((log) => (
-                  <tr key={log.id}>
-                    <td>
+                  <TableRow key={log.id}>
+                    <TableCell>
                       <DateCell iso={log.createdAt} />
-                    </td>
-                    <td>{t(`pushLog.types.${log.notifyType}`, log.notifyType)}</td>
-                    <td className="cell-content">
+                    </TableCell>
+                    <TableCell>{t(`pushLog.types.${log.notifyType}`, log.notifyType)}</TableCell>
+                    <TableCell className="max-w-80 whitespace-normal">
                       {log.post ? (
                         <>
                           {log.post.content ? (
                             truncate(log.post.content)
                           ) : (
-                            <span className="muted">{t('content.noText')}</span>
+                            <span className="text-muted-foreground">{t('content.noText')}</span>
                           )}
-                          <span className="cell-sub"> — {log.post.group.name}</span>
+                          <span className="text-xs text-muted-foreground"> — {log.post.group.name}</span>
                         </>
                       ) : (
-                        <span className="muted">{t('pushLog.noPost')}</span>
+                        <span className="text-muted-foreground">{t('pushLog.noPost')}</span>
                       )}
-                    </td>
-                    <td>{log.recipientCount}</td>
-                    <td>{log.successCount}</td>
-                    <td>{log.failureCount > 0 ? log.failureCount : <span className="muted">0</span>}</td>
-                    <td>
+                    </TableCell>
+                    <TableCell>{log.recipientCount}</TableCell>
+                    <TableCell>{log.successCount}</TableCell>
+                    <TableCell>
+                      {log.failureCount > 0 ? log.failureCount : <span className="text-muted-foreground">0</span>}
+                    </TableCell>
+                    <TableCell>
                       {log.triggeredByAdmin ? (
-                        log.triggeredByAdmin.name
+                        <span className="inline-flex items-center gap-2">
+                          <InitialAvatar
+                            name={log.triggeredByAdmin.name}
+                            avatarUrl={log.triggeredByAdmin.avatarUrl}
+                            className="size-8"
+                          />
+                          {log.triggeredByAdmin.name}
+                        </span>
                       ) : (
-                        <span className="muted">{t('pushLog.system')}</span>
+                        <span className="text-muted-foreground">{t('pushLog.system')}</span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {!loading && nextCursor && (
-          <div className="load-more">
-            <button className="secondary" disabled={loadingMore} onClick={loadMore}>
-              {loadingMore ? t('common.loading') : t('common.loadMore')}
-            </button>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+          {!loading && nextCursor && (
+            <div className="flex justify-center p-4">
+              <Button variant="secondary" disabled={loadingMore} onClick={loadMore}>
+                {loadingMore ? t('common.loading') : t('common.loadMore')}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   )
 }

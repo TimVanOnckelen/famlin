@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react'
+import { Checkbox } from '@famlin/ui/checkbox'
 
 export function CheckboxField({
   label,
@@ -15,12 +16,7 @@ export function CheckboxField({
   return (
     <div className="checkbox-field">
       <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => onChange(event.target.checked)}
-          aria-describedby={hint ? hintId : undefined}
-        />
+        <Checkbox checked={checked} onCheckedChange={onChange} aria-describedby={hint ? hintId : undefined} />
         <span>{label}</span>
       </label>
       {hint && (

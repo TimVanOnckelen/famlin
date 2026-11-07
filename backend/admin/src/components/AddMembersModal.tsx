@@ -1,9 +1,11 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+import { Button } from '@famlin/ui/button'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdminModal } from './AdminModal'
-import { avatarColor, initials } from '../avatar'
 
-type Candidate = { id: string; name: string; email: string }
+type Candidate = { id: string; name: string; email: string; avatarUrl: string | null }
 
 export function AddMembersModal({
   title,
@@ -40,39 +42,39 @@ export function AddMembersModal({
   return (
     <AdminModal title={title} onClose={onClose} busy={!!busyId}>
       {error && (
-        <div className="error" role="alert">
+        <StateMessage variant="error" className="error" role="alert">
           {error}
-        </div>
+        </StateMessage>
       )}
       {available.length === 0 ? (
-        <div className="empty">{t('members.noneAvailable')}</div>
+        <StateMessage variant="empty" className="empty">
+          {t('members.noneAvailable')}
+        </StateMessage>
       ) : (
         <ul className="member-cards admin-member-picker" aria-busy={!!busyId}>
           {available.map((user) => (
             <li key={user.id} className="member-card">
-              <span className="avatar" style={{ background: avatarColor(user.name) }}>
-                {initials(user.name)}
-              </span>
+              <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
               <span className="member-card-info">
                 <span className="member-card-name">{user.name}</span>
                 <span className="member-card-sub">{user.email}</span>
               </span>
-              <button
+              <Button
                 type="button"
                 disabled={!!busyId}
                 onClick={() => void add(user.id)}
                 aria-label={t('members.addNamed', { name: user.name })}
               >
                 {t(busyId === user.id ? 'common.loading' : 'common.add')}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
       <div className="modal-actions">
-        <button type="button" className="secondary" disabled={!!busyId} onClick={onClose}>
+        <Button variant="secondary" type="button" className="secondary" disabled={!!busyId} onClick={onClose}>
           {t('common.close')}
-        </button>
+        </Button>
       </div>
     </AdminModal>
   )

@@ -1,3 +1,8 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
+import { Input } from '@famlin/ui/input'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -52,19 +57,22 @@ export function GettingStartedPage() {
   }
   const next = () => go(Math.min(index + 1, STEPS.length - 1))
 
-  if (!ready) return <div className="loading">{t('common.loading')}</div>
+  if (!ready)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('wizard.title')}</h2>
-      </div>
+      <PageHeader title={t('wizard.title')} />
       <ol className="wizard-steps" aria-label={t('wizard.title')}>
         {STEPS.map((s, i) => (
           <li key={s} className={i === index ? 'active' : i < index ? 'done' : ''} aria-current={i === index}>
-            <button type="button" className="link-button" onClick={() => go(i)}>
+            <Button variant="link" type="button" className="link-button" onClick={() => go(i)}>
               {i + 1}. {t(`wizard.steps.${s}`)}
-            </button>
+            </Button>
           </li>
         ))}
       </ol>
@@ -73,14 +81,14 @@ export function GettingStartedPage() {
           {notice}
         </div>
       )}
-      <div className="card wizard-card">
+      <Card className="p-6 gap-4 wizard-card">
         <h3>{t(`wizard.steps.${step}`)}</h3>
         {step === 'family' && <FamilyStep group={group} onGroup={setGroup} onNotice={setNotice} onNext={next} />}
         {step === 'invite' && <InviteStep group={group} onNext={next} onBack={() => go(0)} />}
         {step === 'app' && <AppStep onNext={next} />}
         {step === 'backups' && <BackupsStep onNext={next} />}
         {step === 'done' && <DoneStep />}
-      </div>
+      </Card>
     </>
   )
 }
@@ -99,13 +107,13 @@ function StepActions({
   const { t } = useTranslation()
   return (
     <div className="wizard-actions">
-      <button type="button" onClick={onNext} disabled={nextDisabled}>
+      <Button type="button" onClick={onNext} disabled={nextDisabled}>
         {nextLabel ?? t('wizard.next')}
-      </button>
+      </Button>
       {skipLabel !== '' && (
-        <button type="button" className="secondary" onClick={onNext}>
+        <Button variant="secondary" type="button" className="secondary" onClick={onNext}>
           {skipLabel ?? t('wizard.skip')}
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -187,7 +195,7 @@ function FamilyStep({
       </p>
       <label>
         {t('wizard.family.nameLabel')}
-        <input
+        <Input
           type="text"
           value={name}
           maxLength={100}
@@ -202,7 +210,8 @@ function FamilyStep({
           <span className="branding-label">{t('wizard.family.colorLabel')}</span>
           <div className="branding-swatches" role="radiogroup" aria-label={t('wizard.family.colorLabel')}>
             {brand.presets.map((option) => (
-              <button
+              <Button
+                variant="ghost"
                 key={option.id}
                 type="button"
                 role="radio"
@@ -218,17 +227,17 @@ function FamilyStep({
         </div>
       )}
       {error && (
-        <div className="error" role="alert">
+        <StateMessage variant="error" className="error" role="alert">
           {error}
-        </div>
+        </StateMessage>
       )}
       <div className="wizard-actions">
-        <button type="submit" disabled={busy || !name.trim()}>
+        <Button type="submit" disabled={busy || !name.trim()}>
           {busy ? t('common.loading') : t('wizard.family.create')}
-        </button>
-        <button type="button" className="secondary" onClick={onNext} disabled={busy}>
+        </Button>
+        <Button variant="secondary" type="button" className="secondary" onClick={onNext} disabled={busy}>
           {t('wizard.skip')}
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -246,12 +255,12 @@ function InviteStep({ group, onNext, onBack }: { group: Group | null; onNext: ()
       <>
         <p>{t('wizard.invite.needFamily')}</p>
         <div className="wizard-actions">
-          <button type="button" onClick={onBack}>
+          <Button type="button" onClick={onBack}>
             {t('wizard.back')}
-          </button>
-          <button type="button" className="secondary" onClick={onNext}>
+          </Button>
+          <Button variant="secondary" type="button" className="secondary" onClick={onNext}>
             {t('wizard.skip')}
-          </button>
+          </Button>
         </div>
       </>
     )
@@ -296,28 +305,28 @@ function InviteStep({ group, onNext, onBack }: { group: Group | null; onNext: ()
         <>
           <code className="connect-qr-url">{link}</code>
           <div className="wizard-actions">
-            <button type="button" onClick={copy}>
+            <Button type="button" onClick={copy}>
               {copied ? t('wizard.invite.copied') : t('wizard.invite.copy')}
-            </button>
+            </Button>
             {typeof navigator.share === 'function' && (
-              <button type="button" className="secondary" onClick={share}>
+              <Button variant="secondary" type="button" className="secondary" onClick={share}>
                 {t('wizard.invite.share')}
-              </button>
+              </Button>
             )}
           </div>
           <p className="hint">{t('wizard.invite.expiryHint')}</p>
         </>
       ) : (
         <div className="wizard-actions">
-          <button type="button" onClick={create} disabled={busy}>
+          <Button type="button" onClick={create} disabled={busy}>
             {busy ? t('common.loading') : t('wizard.invite.create')}
-          </button>
+          </Button>
         </div>
       )}
       {error && (
-        <div className="error" role="alert">
+        <StateMessage variant="error" className="error" role="alert">
           {error}
-        </div>
+        </StateMessage>
       )}
       <StepActions onNext={onNext} nextLabel={link ? t('wizard.next') : undefined} skipLabel={link ? '' : undefined} />
     </>

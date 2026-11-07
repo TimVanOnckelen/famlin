@@ -48,6 +48,8 @@ services:
       - /app/node_modules
       - /app/dist
       - /app/admin/node_modules
+      # Shared UI/tokens are linked by admin at ../../packages.
+      - ./packages:/packages
       # The member-facing web app builds on the HOST (it needs the root npm
       # workspace, which isn't mounted into this container) into
       # backend/dist/web — this more-specific bind punches through the

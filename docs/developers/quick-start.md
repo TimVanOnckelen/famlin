@@ -77,6 +77,23 @@ This builds into `backend/dist/web`, which the dev compose overlay bind-mounts i
 
 > After changing `packages/api-client/src/`, rebuild it with `npm run build:api-client` (or rerun the root `npm install`) — the mobile app and the web app both consume the compiled `dist/`, not the TypeScript source.
 
+### Admin UI and shared components
+
+The dev container rebuilds admin automatically and serves it at
+http://localhost:3000/admin/. Shared UI and token sources under `packages/`
+are mounted into the container for the same watch-build.
+
+For the admin Vite dev server on the host, install both dependency trees:
+
+```bash
+npm ci                               # repo root: shared workspace dependencies
+npm --prefix backend/admin ci        # admin remains independently installed
+npm run dev:admin
+```
+
+Open http://localhost:5173/admin/. For component ownership, token generation,
+checks and future web adoption, see [Shared UI](./shared-ui.md).
+
 ## 6. Test the mobile app on a simulator or emulator
 
 If you have Node installed locally (and the backend is already running in Docker):

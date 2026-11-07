@@ -1,3 +1,10 @@
+import { InitialAvatar } from './common/InitialAvatar'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { Card } from '@famlin/ui/card'
+import { Button } from '@famlin/ui/button'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Badge } from '@famlin/ui/badge'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, type AdminDevice, type DeviceSummary } from '../api/client'
@@ -61,22 +68,20 @@ export function DevicesPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('devices.title')}</h2>
-      </div>
+      <PageHeader title={t('devices.title')} />
       <p className="md-hint">{t('devices.description')}</p>
 
       {summary && (
         <div className="devices-summary">
-          <div className="card">
+          <Card className="p-6 gap-4">
             <span>{t('devices.totalDevices')}</span>
             <strong>{summary.total}</strong>
-          </div>
-          <div className="card">
+          </Card>
+          <Card className="p-6 gap-4">
             <span>{t('devices.pushDenied')}</span>
             <strong>{summary.pushDenied}</strong>
-          </div>
-          <div className="card devices-versions">
+          </Card>
+          <Card className="p-6 gap-4 devices-versions">
             <span>{t('devices.appVersions')}</span>
             {summary.versions.length === 0 ? (
               <strong>—</strong>
@@ -89,82 +94,92 @@ export function DevicesPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 
-      <section className="card">
+      <Card className="p-6 gap-4">
         {error && (
-          <div className="error" role="alert">
+          <StateMessage variant="error" className="error" role="alert">
             {error}{' '}
-            <button className="secondary" onClick={() => void load()}>
+            <Button variant="secondary" className="secondary" onClick={() => void load()}>
               {t('common.retry')}
-            </button>
-          </div>
+            </Button>
+          </StateMessage>
         )}
         {loading ? (
-          <div className="loading">{t('common.loading')}</div>
+          <StateMessage variant="loading" className="loading">
+            {t('common.loading')}
+          </StateMessage>
         ) : devices.length === 0 ? (
-          <div className="empty">{t('devices.empty')}</div>
+          <StateMessage variant="empty" className="empty">
+            {t('devices.empty')}
+          </StateMessage>
         ) : (
           <div className="content-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('devices.member')}</th>
-                  <th>{t('devices.installId')}</th>
-                  <th>{t('devices.platform')}</th>
-                  <th>{t('devices.osVersion')}</th>
-                  <th>{t('devices.appVersion')}</th>
-                  <th>{t('devices.appBuild')}</th>
-                  <th>{t('devices.pushPermission')}</th>
-                  <th>{t('common.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('devices.member')}</TableHead>
+                  <TableHead>{t('devices.installId')}</TableHead>
+                  <TableHead>{t('devices.platform')}</TableHead>
+                  <TableHead>{t('devices.osVersion')}</TableHead>
+                  <TableHead>{t('devices.appVersion')}</TableHead>
+                  <TableHead>{t('devices.appBuild')}</TableHead>
+                  <TableHead>{t('devices.pushPermission')}</TableHead>
+                  <TableHead>{t('common.actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {devices.map((device) => (
-                  <tr key={device.id}>
-                    <td>
-                      <strong className="device-member-name">{device.user.name}</strong>
-                      <span className="cell-sub device-member-email">{device.user.email}</span>
-                    </td>
-                    <td className="device-install-id">{device.installId}</td>
-                    <td>{device.platform}</td>
-                    <td>{device.osVersion}</td>
-                    <td>{device.appVersion}</td>
-                    <td>{device.appBuild}</td>
-                    <td>
-                      <span
-                        className={`badge ${
+                  <TableRow key={device.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <InitialAvatar name={device.user.name} avatarUrl={device.user.avatarUrl} />
+                        <div className="min-w-0">
+                          {' '}
+                          <strong className="device-member-name">{device.user.name}</strong>
+                          <span className="cell-sub device-member-email">{device.user.email}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="device-install-id">{device.installId}</TableCell>
+                    <TableCell>{device.platform}</TableCell>
+                    <TableCell>{device.osVersion}</TableCell>
+                    <TableCell>{device.appVersion}</TableCell>
+                    <TableCell>{device.appBuild}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
                           device.pushPermission === 'denied'
-                            ? 'err'
+                            ? 'destructive'
                             : device.pushPermission === 'granted'
-                              ? 'ok'
-                              : 'off'
-                        }`}
+                              ? 'success'
+                              : 'outline'
+                        }
                       >
                         {t(`devices.permissions.${device.pushPermission}`)}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="danger" onClick={() => void removeDevice(device)}>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="destructive" className="danger" onClick={() => void removeDevice(device)}>
                         {t('devices.remove')}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         {!loading && nextCursor && (
           <div className="load-more">
-            <button className="secondary" disabled={loadingMore} onClick={() => void loadMore()}>
+            <Button variant="secondary" className="secondary" disabled={loadingMore} onClick={() => void loadMore()}>
               {loadingMore ? t('common.loading') : t('common.loadMore')}
-            </button>
+            </Button>
           </div>
         )}
-      </section>
+      </Card>
     </>
   )
 }

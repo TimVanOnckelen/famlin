@@ -152,7 +152,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           appVersion: true,
           appBuild: true,
           pushPermission: true,
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
         },
       }),
       prisma.device.count(),
@@ -224,7 +224,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           id: true,
           type: true,
           createdAt: true,
-          author: { select: { name: true } },
+          author: { select: { name: true, avatarUrl: true } },
           group: { select: { name: true } },
           _count: { select: { comments: true, likes: true } },
         },
@@ -260,6 +260,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       recentPosts: recentPosts.map(({ author, group, _count, ...post }) => ({
         ...post,
         authorName: author.name,
+        authorAvatarUrl: author.avatarUrl,
         groupName: group.name,
         commentCount: _count.comments,
         likeCount: _count.likes,
@@ -557,7 +558,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const invites = await prisma.invite.findMany({
       where: { groupId: id },
       orderBy: { createdAt: 'desc' },
-      include: { usedBy: { select: { id: true, name: true } } },
+      include: { usedBy: { select: { id: true, name: true, avatarUrl: true } } },
     })
 
     return invites.map((invite) => ({ ...invite, link: `${origin}/invite/${invite.token}` }))
@@ -844,7 +845,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
-        author: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, avatarUrl: true } },
         group: { select: { id: true, name: true } },
         _count: { select: { comments: true, likes: true } },
       },
@@ -896,7 +897,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       orderBy: { createdAt: 'desc' },
       ...paginationArgs({ cursor, take }),
       include: {
-        author: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, avatarUrl: true } },
         post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
       },
     })
@@ -927,7 +928,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...paginationArgs({ cursor, take }),
       include: {
-        author: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, avatarUrl: true } },
         group: { select: { id: true, name: true } },
         _count: { select: { views: true, reactions: true } },
       },
@@ -1020,7 +1021,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       ...paginationArgs({ cursor, take }),
       include: {
         post: { select: { id: true, content: true, group: { select: { id: true, name: true } } } },
-        triggeredByAdmin: { select: { id: true, name: true } },
+        triggeredByAdmin: { select: { id: true, name: true, avatarUrl: true } },
       },
     })
 
@@ -1359,7 +1360,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     return prisma.mediaPersonLink.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
     })
   })
 
@@ -1389,7 +1390,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         label: body.label,
         userId: body.userId ?? null,
       },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
     })
   })
 

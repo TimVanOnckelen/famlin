@@ -1,3 +1,9 @@
+import { InitialAvatar } from './common/InitialAvatar'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { Badge } from '@famlin/ui/badge'
+import { Button } from '@famlin/ui/button'
+import { Input } from '@famlin/ui/input'
+import { SelectField } from '@famlin/ui/common/select-field'
 import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -144,7 +150,12 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
   const filteredUnmapped = query ? unmappedPeople.filter((p) => p.name.toLowerCase().includes(query)) : unmappedPeople
   const visibleUnmapped = showAllUnmapped ? filteredUnmapped : filteredUnmapped.slice(0, UNMAPPED_PREVIEW_COUNT)
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>
+  if (loading)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   if (error && people.length === 0) {
     return (
@@ -154,7 +165,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
         {error === 'not_configured' ? (
           <p className="hint">{t('media.peopleMapping.notConfigured')}</p>
         ) : (
-          <div className="error">{error}</div>
+          <StateMessage variant="error" className="error">
+            {error}
+          </StateMessage>
         )}
       </div>
     )
@@ -170,9 +183,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
         <>
           <h5 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
             {t('media.peopleMapping.mapped')}
-            <span className="badge" style={{ marginLeft: '0.5rem' }}>
+            <Badge variant="secondary" className="h-auto gap-2 py-1" style={{ marginLeft: '0.5rem' }}>
               {peopleLinks.length}
-            </span>
+            </Badge>
           </h5>
           <ul className="member-cards">
             {mappedGroups.map((group) => {
@@ -198,21 +211,24 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                       <span className="member-card-name">
                         {link.label}
                         {link.user && (
-                          <span className="badge" style={{ marginLeft: '0.5rem' }}>
+                          <Badge variant="secondary" className="h-auto gap-2 py-1" style={{ marginLeft: '0.5rem' }}>
+                            <InitialAvatar name={link.user.name} avatarUrl={link.user.avatarUrl} className="size-6" />
                             {link.user.name}
-                          </span>
+                          </Badge>
                         )}
                       </span>
                       {link.user && <span className="member-card-sub">{link.user.email}</span>}
                     </span>
-                    <button
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       className="icon-button danger"
                       title={t('common.remove')}
                       aria-label={t('common.remove')}
                       onClick={() => handleRemoveMapping(link)}
                     >
                       <Icon name="x" size={14} />
-                    </button>
+                    </Button>
                   </li>
                 )
               }
@@ -224,18 +240,20 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                     <span className="member-card-name">
                       {group.label}
                       {group.user && (
-                        <span className="badge" style={{ marginLeft: '0.5rem' }}>
+                        <Badge variant="secondary" className="h-auto gap-2 py-1" style={{ marginLeft: '0.5rem' }}>
+                          <InitialAvatar name={group.user.name} avatarUrl={group.user.avatarUrl} className="size-6" />
                           {group.user.name}
-                        </span>
+                        </Badge>
                       )}
-                      <span
+                      <Badge
+                        variant="secondary"
                         className="badge"
                         style={{ marginLeft: '0.5rem' }}
                         title={t('media.peopleMapping.linkedPersons', { count: group.links.length })}
                         aria-label={t('media.peopleMapping.linkedPersons', { count: group.links.length })}
                       >
                         {group.links.length}
-                      </span>
+                      </Badge>
                     </span>
                     {group.user && <span className="member-card-sub">{group.user.email}</span>}
                     <ul className="person-link-rows">
@@ -251,14 +269,16 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                               </span>
                             )}
                             <span className="person-link-name">{person?.name || t('media.peopleMapping.unnamed')}</span>
-                            <button
+                            <Button
+                              variant="destructive"
+                              size="icon"
                               className="icon-button danger"
                               title={t('common.remove')}
                               aria-label={t('common.remove')}
                               onClick={() => handleRemoveMapping(link)}
                             >
                               <Icon name="x" size={12} />
-                            </button>
+                            </Button>
                           </li>
                         )
                       })}
@@ -276,9 +296,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
         <>
           <h5 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
             {t('media.peopleMapping.unmapped')}
-            <span className="badge" style={{ marginLeft: '0.5rem' }}>
+            <Badge variant="secondary" className="h-auto gap-2 py-1" style={{ marginLeft: '0.5rem' }}>
               {unmappedPeople.length}
-            </span>
+            </Badge>
           </h5>
 
           {selectedPerson ? (
@@ -299,7 +319,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                 <div style={{ flex: 1 }}>
                   <label>
                     {t('media.peopleMapping.displayName')}
-                    <input
+                    <Input
                       type="text"
                       value={personLabel}
                       onChange={(e) => setPersonLabel(e.target.value)}
@@ -326,28 +346,41 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   )}
                   <label>
                     {t('media.peopleMapping.familyMember')}
-                    <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                      <option value="">{t('media.peopleMapping.selectUser')}</option>
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} ({u.email})
-                        </option>
-                      ))}
-                    </select>
+                    <SelectField
+                      value={selectedUserId}
+                      onValueChange={(value) => setSelectedUserId(value)}
+                      items={[
+                        { value: '', label: <>{t('media.peopleMapping.selectUser')}</> },
+                        ...users.map((u) => ({
+                          value: u.id,
+                          label: (
+                            <>
+                              <span className="flex items-center gap-2">
+                                <InitialAvatar name={u.name} avatarUrl={u.avatarUrl} className="size-6" />
+                                <span>
+                                  {u.name} ({u.email})
+                                </span>
+                              </span>
+                            </>
+                          ),
+                        })),
+                      ]}
+                    />
                   </label>
                   <p className="hint">{t('media.peopleMapping.userMappingHint')}</p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button type="button" onClick={handleSaveMapping} disabled={saving || !personLabel.trim()}>
+                    <Button type="button" onClick={handleSaveMapping} disabled={saving || !personLabel.trim()}>
                       {saving ? t('common.loading') : t('common.save')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="secondary"
                       type="button"
                       className="secondary"
                       onClick={() => setSelectedPerson(null)}
                       disabled={saving}
                     >
                       {t('common.cancel')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -355,7 +388,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
           ) : (
             <>
               <div className="people-toolbar">
-                <input
+                <Input
                   type="search"
                   value={personQuery}
                   onChange={(e) => setPersonQuery(e.target.value)}
@@ -367,12 +400,19 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                 />
               </div>
               {filteredUnmapped.length === 0 ? (
-                <div className="empty">{t('media.peopleMapping.noMatches')}</div>
+                <StateMessage variant="empty" className="empty">
+                  {t('media.peopleMapping.noMatches')}
+                </StateMessage>
               ) : (
                 <ul className="people-grid">
                   {visibleUnmapped.map((person) => (
                     <li key={person.id}>
-                      <button type="button" className="person-tile" onClick={() => handleSelectPerson(person)}>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="h-auto justify-start whitespace-normal rounded-sm px-3 py-3 person-tile"
+                        onClick={() => handleSelectPerson(person)}
+                      >
                         {person.thumbnailDataUri ? (
                           <img src={person.thumbnailDataUri} alt="" className="person-tile-photo" />
                         ) : (
@@ -381,13 +421,14 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                           </span>
                         )}
                         <span className="person-tile-name">{person.name || t('media.peopleMapping.unnamed')}</span>
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
               )}
               {filteredUnmapped.length > UNMAPPED_PREVIEW_COUNT && (
-                <button
+                <Button
+                  variant="secondary"
                   type="button"
                   className="secondary people-show-more"
                   onClick={() => setShowAllUnmapped((v) => !v)}
@@ -395,7 +436,7 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
                   {showAllUnmapped
                     ? t('media.peopleMapping.showFewer')
                     : t('media.peopleMapping.showAll', { count: filteredUnmapped.length })}
-                </button>
+                </Button>
               )}
             </>
           )}
@@ -403,9 +444,9 @@ export function PeopleMappingSection({ users }: PeopleMappingSectionProps) {
       )}
 
       {people.length === 0 && peopleLinks.length === 0 && (
-        <div className="empty" style={{ marginTop: '1rem' }}>
+        <StateMessage variant="empty" className="empty" style={{ marginTop: '1rem' }}>
           {t('media.peopleMapping.noPeople')}
-        </div>
+        </StateMessage>
       )}
     </div>
   )
