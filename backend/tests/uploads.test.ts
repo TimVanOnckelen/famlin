@@ -272,6 +272,34 @@ describe('POST /api/uploads — compression', () => {
     await waitForProcessing(app, uuid, member)
   })
 
+  it('backfills a -thumbnail.jpg the request-time preview failed to write (issue #386)', async () => {
+    const member = await createUser()
+    const uuid = randomUUID()
+    writtenUuids.push(uuid)
+    await sharp({ create: { width: 1200, height: 900, channels: 3, background: 'blue' } })
+      .jpeg()
+      .toFile(path.join(uploadsDir, 'originals', `${uuid}.jpg`))
+    // Queued with no thumbnail on disk — what the upload route leaves behind
+    // when createUploadPreview throws.
+    await prisma.upload.create({
+      data: {
+        assetKey: uuid,
+        uploaderId: member.id,
+        sourceFilename: `${uuid}.jpg`,
+        mediaUrl: `/uploads/${uuid}.jpg`,
+        processingStatus: 'queued',
+      },
+    })
+    await waitForProcessing(app, uuid, member)
+    const thumbRes = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}-thumbnail.jpg`,
+      headers: authHeader(member),
+    })
+    expect(thumbRes.statusCode).toBe(200)
+    expect((await sharp(thumbRes.rawPayload).metadata()).width).toBe(400)
+  })
+
   it('stores and serves a .gif upload unprocessed (no resize, animation-safe)', async () => {
     const member = await createUser()
     const gif = await sharp({ create: { width: 20, height: 20, channels: 3, background: { r: 0, g: 255, b: 0 } } })
