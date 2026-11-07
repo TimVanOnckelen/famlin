@@ -389,14 +389,39 @@ jobs:
           } >> notes.md
           gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file notes.md
 
+  # release-please creates the Release as a draft (`draft` +
+  # `force-tag-creation` in .github/release-please-config.json, so the tag
+  # exists right away for the jobs above). Publish it only now, once the
+  # image, the rewritten notes, the compose files and the APK are all in
+  # place — so nobody sees a half-finished Release, and the update check in
+  # running servers (GitHub's "latest release", which skips drafts) and
+  # scripts/install.sh don't point at an image that doesn't exist yet. The
+  # store build (build-mobile) is deliberately not waited for: it takes hours
+  # and store review is announced in the notes anyway.
+  # If anything before this failed, the Release stays a draft: fix and re-run
+  # the failed jobs (this one follows), or publish it by hand.
+  publish-release:
+    needs: [release-please, release-assets]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.release-assets.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --draft=false --latest
+
   # Tell the Home Assistant add-on repository about the new release so its
   # "Bump version" workflow opens a PR. Optional: skipped when the
   # HA_ADDON_DISPATCH_TOKEN secret (a PAT with write access to
-  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-docker so the
-  # image the add-on builds on exists by the time the PR is merged.
+  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-release so
+  # the image the add-on builds on exists and the Release is public by the
+  # time the PR is opened.
   notify-ha-addon:
-    needs: [release-please, publish-docker]
-    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
+    needs: [release-please, publish-release]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.publish-release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions: {}
     env:
