@@ -75,7 +75,11 @@ const createdQueryClients: QueryClient[] = []
 // @testing-library/react-native's render() is async (it renders under the
 // new concurrent-root test-renderer via act()) — every caller must await it.
 async function renderWithClient(ui: React.ReactElement) {
-  const queryClient = new QueryClient()
+  // gcTime: Infinity — a cache GC timer outliving the test keeps the Jest
+  // worker alive after the run ("failed to exit gracefully").
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity }, mutations: { gcTime: Infinity } },
+  })
   createdQueryClients.push(queryClient)
   const result = await render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
   return { ...result, queryClient }

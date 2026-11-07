@@ -1,0 +1,1 @@
+{"schema":{"type":"object","properties":{"name":{"type":"string","nullable":true,"description":"`null` = uncategorized pages."},"pageCount":{"type":"integer","example":7}},"title":"WikiCategory"},"schemaType":"response"}

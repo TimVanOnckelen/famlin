@@ -30,6 +30,7 @@ export function FavoritesPage({
   onOpenGiftList,
   onLogout,
   onOpenNotifications,
+  onOpenWiki,
   onOpenSearch,
   onOpenMembers,
 }: {
@@ -43,6 +44,7 @@ export function FavoritesPage({
   onOpenGiftList?: (postId: string) => void
   onLogout: () => void
   onOpenNotifications?: () => void
+  onOpenWiki?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenMembers?: () => void
 }) {
@@ -80,6 +82,7 @@ export function FavoritesPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={() => {}}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onMembers={onOpenMembers}
       onSearch={onOpenSearch}

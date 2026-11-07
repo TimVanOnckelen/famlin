@@ -36,6 +36,7 @@ export function TripDetailPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenMembers,
@@ -50,6 +51,7 @@ export function TripDetailPage({
   onOpenChat?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenMembers?: () => void
@@ -86,6 +88,7 @@ export function TripDetailPage({
         onFeed={onOpenFeed ?? onBack}
         onPhotos={onOpenPhotos}
         onFavorites={onOpenFavorites}
+        onWiki={onOpenWiki}
         onNotifications={onOpenNotifications}
         onMembers={onOpenMembers}
         onSearch={onOpenSearch}

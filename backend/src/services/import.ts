@@ -249,6 +249,21 @@ const giftListItemRow = z.object({
   updatedAt: date,
 })
 
+const wikiPageRow = z.object({
+  id,
+  groupId: id,
+  circleId: nullableString,
+  title: z.string(),
+  emoji: nullableString,
+  category: nullableString,
+  content: z.string(),
+  locked: z.boolean().default(false),
+  createdById: nullableString,
+  updatedById: nullableString,
+  createdAt: date,
+  updatedAt: date,
+})
+
 const giftDrawAssignmentRow = z.object({ id, postId: id, giverId: id, recipientId: id, createdAt: date })
 
 const storyReactionRow = z.object({ id, userId: id, type: z.enum(ReactionType).optional(), createdAt: date })
@@ -308,6 +323,7 @@ const DATA_FILES = {
     schema: z.array(giftDrawAssignmentRow),
     required: false,
   },
+  wikiPages: { file: 'data/wiki-pages.json', schema: z.array(wikiPageRow), required: false },
 } as const
 
 type DataKey = keyof typeof DATA_FILES
@@ -568,6 +584,7 @@ async function insertAll(
   })
   await tx.giftListItem.createMany({ data: data.giftListItems })
   await tx.giftDrawAssignment.createMany({ data: data.giftDrawAssignments })
+  await tx.wikiPage.createMany({ data: data.wikiPages })
   for (const row of data.branding) {
     await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row })
   }
@@ -697,6 +714,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     branding: data.branding.length,
     giftListItems: data.giftListItems.length,
     giftDrawAssignments: data.giftDrawAssignments.length,
+    wikiPages: data.wikiPages.length,
     files: fileCount,
   }
 
