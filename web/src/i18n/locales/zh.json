@@ -180,6 +180,13 @@
     "failed": "无法保存你的更改，请重试。"
   },
   "profile": {
+    "detailsTitle": "个人信息",
+    "displayName": "姓名",
+    "emailAddress": "电子邮箱地址",
+    "saveDetails": "保存信息",
+    "detailsSaved": "你的信息已保存",
+    "detailsFailed": "无法保存你的信息",
+    "emailInUse": "此电子邮箱地址已被使用",
     "title": "我的",
     "changePhoto": "更换头像",
     "photoUploadFailed": "头像上传失败，请重试。",
@@ -225,7 +232,13 @@
     },
     "notifyNewStory": "限时动态（仅推送）",
     "myGiftLists": "我的礼物清单",
-    "notifyGiftList": "礼物清单"
+    "notifyGiftList": "礼物清单",
+    "cropTitle": "裁剪头像",
+    "cropHint": "拖动照片调整位置。使用 + 和 − 缩放。",
+    "cropPreview": "头像预览",
+    "cropZoomIn": "放大",
+    "cropZoomOut": "缩小",
+    "cropSave": "保存"
   },
   "apiTokens": {
     "menuItem": "API 令牌",

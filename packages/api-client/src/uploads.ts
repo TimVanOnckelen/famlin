@@ -18,7 +18,19 @@ const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set([
   '.webm',
 ])
 
+// Media-proxy URLs (/api/media/assets/<linkId>/<assetId>/<variant>.<ext>, and
+// the legacy /api/immich/assets/... shape) carry the rendition as the last
+// path segment, not in the filename — the backend's parseMediaAssetPath only
+// accepts thumbnail.jpg/preview.jpg/original.<ext>, so a `-thumbnail.jpg`
+// suffix there 404s (issue #386). Swap the segment instead.
+const MEDIA_PROXY_ASSET_PATH = /^(\/api\/(?:media|immich)\/assets\/[^/]+\/[^/]+\/)[^/]+$/
+
 function toThumbnailPath(path: string): string {
+  const proxyMatch = path.match(MEDIA_PROXY_ASSET_PATH)
+  if (proxyMatch) return `${proxyMatch[1]}thumbnail.jpg`
+  // Only local uploads have -thumbnail.jpg siblings; any other shape (an
+  // external URL, an unknown path) is left as-is rather than guessed at.
+  if (!path.startsWith('/uploads/')) return path
   const dotIndex = path.lastIndexOf('.')
   const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : ''
   if (!THUMBNAIL_ELIGIBLE_EXTENSIONS.has(ext)) return path

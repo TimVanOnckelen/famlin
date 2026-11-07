@@ -180,6 +180,13 @@
     "failed": "Je wijzigingen konden niet worden opgeslagen. Probeer het opnieuw."
   },
   "profile": {
+    "detailsTitle": "Persoonlijke gegevens",
+    "displayName": "Naam",
+    "emailAddress": "E-mailadres",
+    "saveDetails": "Gegevens opslaan",
+    "detailsSaved": "Je gegevens zijn opgeslagen",
+    "detailsFailed": "Je gegevens konden niet worden opgeslagen",
+    "emailInUse": "Dit e-mailadres is al in gebruik",
     "title": "Profiel",
     "changePhoto": "Profielfoto wijzigen",
     "photoUploadFailed": "Je foto kon niet geüpload worden. Probeer opnieuw.",
@@ -225,7 +232,13 @@
     },
     "notifyNewStory": "Verhalen (alleen push)",
     "myGiftLists": "Mijn cadeaulijsten",
-    "notifyGiftList": "Cadeaulijsten"
+    "notifyGiftList": "Cadeaulijsten",
+    "cropTitle": "Profielfoto bijsnijden",
+    "cropHint": "Sleep de foto om deze te positioneren. Gebruik + en − om te zoomen.",
+    "cropPreview": "Voorbeeld van profielfoto",
+    "cropZoomIn": "Inzoomen",
+    "cropZoomOut": "Uitzoomen",
+    "cropSave": "Opslaan"
   },
   "apiTokens": {
     "menuItem": "API-tokens",

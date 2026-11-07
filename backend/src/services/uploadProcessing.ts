@@ -121,12 +121,32 @@ export function startUploadWorker(log: { warn: (error: unknown, message: string)
       try {
         await withUploadSource(job.sourceFilename, async (source, directory) => {
           const temporary = path.join(directory, `converted${path.extname(targetKey)}`)
-          await convertUpload(source, temporary, targetKey.endsWith('.mp4'))
+          const video = targetKey.endsWith('.mp4')
+          await convertUpload(source, temporary, video)
+          // The upload route makes the -thumbnail.jpg preview at request time,
+          // but only best-effort: if that failed (a large JPEG/HEIC batch), the
+          // row would otherwise turn `ready` with clients 404ing on a thumbnail
+          // that never gets written (issue #386). Backfill it here from the
+          // converted copy, still best-effort — it never fails the job.
+          const thumbnailKey = `${path.basename(targetKey, path.extname(targetKey))}-thumbnail.jpg`
+          const backend = getStorageConfiguration().primary.backend
+          let thumbnailFile: string | null = null
+          if (!(await backend.stat(thumbnailKey))) {
+            const candidate = path.join(directory, thumbnailKey)
+            try {
+              await createUploadPreview(temporary, candidate, video)
+              thumbnailFile = candidate
+            } catch (error) {
+              log.warn(error, 'Upload thumbnail backfill failed')
+            }
+          }
           // One lifecycle/key lock set coordinates deletion and migration.
           // Publishing and checking the row must happen under that same lock.
-          await withStorageKeys([targetKey, uploadLifecycleKey(job.assetKey)], async (tx) => {
+          const keys = [targetKey, uploadLifecycleKey(job.assetKey), ...(thumbnailFile ? [thumbnailKey] : [])]
+          await withStorageKeys(keys, async (tx) => {
             if (!(await tx.upload.findUnique({ where: { id: job.id }, select: { id: true } }))) return
-            await getStorageConfiguration().primary.backend.put(targetKey, { filePath: temporary })
+            await backend.put(targetKey, { filePath: temporary })
+            if (thumbnailFile) await backend.put(thumbnailKey, { filePath: thumbnailFile })
             await tx.upload.updateMany({
               where: { id: job.id },
               data: { processingStatus: 'ready', processingError: null },

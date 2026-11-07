@@ -40,12 +40,15 @@ export async function loginWithOidc(idToken: string, inviteToken?: string): Prom
 // authorization for this app — Apple never discloses it again, so pass it
 // through when present and omit it otherwise (the server keeps the name
 // already on file).
+// `binding` is how the app tied the token to this server (performAppleLogin
+// in the mobile app, appleNonceFor on the server).
 export async function loginWithApple(
   identityToken: string,
   fullName?: string,
-  inviteToken?: string
+  inviteToken?: string,
+  binding?: { rawNonce: string; nonceHost: string }
 ): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken })
+  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken, ...binding })
   return response.data
 }
 
@@ -95,6 +98,8 @@ export interface NotificationPrefs {
 }
 
 export interface UpdateMeBody extends NotificationPrefs {
+  name?: string
+  email?: string
   avatarUrl?: string | null
 }
 

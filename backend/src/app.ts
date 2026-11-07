@@ -13,6 +13,7 @@ import { createReadStream } from 'fs'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
+import { resolveMissingThumbnail } from './services/thumbnailBackfill.js'
 import { uploadSourceKey } from './services/uploadSources.js'
 import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
 import { injectBrandingIntoHtml } from './services/branding/css.js'
@@ -302,7 +303,11 @@ export async function buildApp() {
             }
           }
         }
-        const rendition = request.method === 'GET' ? await resolveStoredHeicRendition(requestedFile) : null
+        const rendition =
+          request.method === 'GET'
+            ? ((await resolveStoredHeicRendition(requestedFile)) ??
+              ((await storage.stat(requestedFile)) ? null : await resolveMissingThumbnail(requestedFile)))
+            : null
         const types: Record<string, string> = {
           '.jpg': 'image/jpeg',
           '.jpeg': 'image/jpeg',

@@ -37,7 +37,7 @@ import { getStorage } from './storage/registry.js'
 import { appendStoredObject } from './storage/archive.js'
 import { getUserCircleIds, visiblePostsWhere } from './circles.js'
 import { visibleWikiPagesWhere } from './wiki.js'
-import { uploadAssetKey, canReadUpload } from './uploads.js'
+import { uploadAssetKey, isUploadRowReadable } from './uploads.js'
 import { redactGiftListTypeData } from './giftLists.js'
 import pkg from '../../package.json' with { type: 'json' }
 
@@ -165,21 +165,26 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   ) as Record<keyof typeof data, string>
 
   // Upload files: only what the rows above reference, never the directory.
-  // The rows are already scoped, so this should never drop anything — the
-  // Upload-table check is belt and braces for the same canReadUpload() rule
-  // /uploads/* enforces per request (services/uploads.ts): a circle-bound
-  // file needs circle membership, an unbound draft is its uploader's only.
+  // The keys come from a regex over every serialized row, free text included,
+  // so a member can name any upload path (another family's photo) in their
+  // own post or comment — each is filtered through the same rule /uploads/*
+  // enforces (isUploadRowReadable), against memberships loaded above.
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
+  const scope = { uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true } as const
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, motionAssetKey: true },
+    select: { assetKey: true, motionAssetKey: true, ...scope, livePhoto: { select: scope } },
   })
-  const circleSet = new Set(circleIds)
+  const myGroups = new Set(groupIds)
+  const myCircles = new Set(circleIds)
+  const viewer = {
+    inCircle: (circleId: string) => myCircles.has(circleId),
+    inAnyGroup: (ids: string[]) => ids.some((id) => myGroups.has(id)),
+  }
   for (const row of uploadRows) {
-    const readable = row.circleId ? circleSet.has(row.circleId) : row.bound || row.uploaderId === userId
-    if (!readable) referencedKeys.delete(row.assetKey)
-    else if (row.motionAssetKey && (await canReadUpload(`/uploads/${row.motionAssetKey}.mp4`, userId)))
-      referencedKeys.add(row.motionAssetKey)
+    // A Live Photo's motion clip is readable exactly when its photo is.
+    if (!(await isUploadRowReadable(row.livePhoto ?? row, userId, viewer))) referencedKeys.delete(row.assetKey)
+    else if (row.motionAssetKey) referencedKeys.add(row.motionAssetKey)
   }
 
   const uploadFiles: { rel: string }[] = []

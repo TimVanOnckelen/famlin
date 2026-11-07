@@ -16,6 +16,8 @@ import {
 } from '@famlin/api-client'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
+import { ProfileDetailsForm } from '@/components/ProfileDetailsForm'
+import { AvatarCropModal } from '@/components/AvatarCropModal'
 import { AppShell } from '@/components/AppShell'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { ApiTokensModal } from '@/components/ApiTokensModal'
@@ -57,6 +59,7 @@ export function ProfilePage({
   const { t, i18n: i18nInstance } = useTranslation()
   const { updateUser } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -174,8 +177,11 @@ export function ProfilePage({
 
   function pickAvatar(files: FileList | null) {
     const file = files?.[0]
-    if (file) updateAvatar.mutate(file)
-    // Allow re-picking the same file after a failure.
+    if (file) {
+      setUploadError(null)
+      setAvatarFile(file)
+    }
+    // Allow re-picking the same file after cancelling or a failed upload.
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -237,6 +243,8 @@ export function ProfilePage({
             </div>
           )}
         </section>
+
+        <ProfileDetailsForm key={user.id} user={user} onSaved={updateUser} />
 
         {giftLists.length > 0 && (
           <section className="profile-section">
@@ -498,6 +506,16 @@ export function ProfilePage({
         </section>
       </div>
 
+      {avatarFile && (
+        <AvatarCropModal
+          file={avatarFile}
+          onClose={() => setAvatarFile(null)}
+          onSave={(file) => {
+            setAvatarFile(null)
+            updateAvatar.mutate(file)
+          }}
+        />
+      )}
       {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
     </AppShell>
   )

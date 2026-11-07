@@ -56,5 +56,5 @@ services:
       # change) from the repo root; the backend must (re)start after the
       # first build to pick it up. Unlike the admin watch-build below,
       # `watch:web` also auto-refreshes the browser tab — see the
-      # `LIVERELOAD`/`watchLivereload()` note in CLAUDE.md.
+      # `LIVERELOAD`/`watchLivereload()` note in AGENTS.md.
       - ./backend/dist/web:/app/dist/web

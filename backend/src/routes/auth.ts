@@ -1,4 +1,4 @@
-import { isRecordNotFound } from '../utils/prismaErrors.js'
+import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 import { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -73,12 +73,14 @@ const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
 
 const APPLE_ERROR_KEY: Record<AppleAuthError['code'], string> = {
   invalid_token: 'errors.authFailed',
+  host_mismatch: 'errors.authFailed',
   no_email: 'errors.appleAccountNoEmail',
   not_allowed: 'errors.emailNotAllowed',
 }
 
 const APPLE_ERROR_STATUS: Record<AppleAuthError['code'], number> = {
   invalid_token: 401,
+  host_mismatch: 401,
   no_email: 403,
   not_allowed: 403,
 }
@@ -363,15 +365,31 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // as any other login (an Apple private-relay address will practically
   // always need an invite, since it can't be whitelisted in advance).
   fastify.post('/apple', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body)
+    const { identityToken, fullName, inviteToken, rawNonce, nonceHost } = appleLoginBodySchema.parse(request.body)
     const t = getT(request)
 
+    // Which host a nonce-bound token must name (services/appleLogin.ts): the
+    // configured publicUrl's, else the raw Host header. Not request.host —
+    // with TRUST_PROXY on that is X-Forwarded-Host, which a client can set.
+    const { publicUrl } = await getAllSettings()
+    const serverHost = publicUrl ? new URL(publicUrl).host : (request.headers.host ?? '')
+
     try {
-      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t)
+      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t, {
+        rawNonce,
+        nonceHost,
+        serverHost,
+      })
       if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
       return outcome.result
     } catch (err) {
       if (err instanceof AppleAuthError) {
+        if (err.code === 'host_mismatch') {
+          request.log.warn(
+            err.hosts,
+            'Sign in with Apple refused: the app signed in for a different host than this server. If both are this server, set Server settings → Public URL to the address members use.'
+          )
+        }
         return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) })
       }
       fastify.log.error(err)
@@ -689,13 +707,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
-  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request) => {
+  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = updateUserBodySchema.parse(request.body)
+    const emailConflict = () => reply.status(409).send({ error: getT(request)('errors.emailAlreadyInUse') })
+    if (body.email !== undefined) {
+      const existing = await prisma.user.findFirst({
+        where: { email: { equals: body.email, mode: 'insensitive' }, id: { not: request.user!.id } },
+        select: { id: true },
+      })
+      if (existing) return emailConflict()
+    }
 
-    const user = await prisma.user.update({
-      where: { id: request.user!.id },
-      data: body,
-    })
+    let user
+    try {
+      user = await prisma.user.update({ where: { id: request.user!.id }, data: body })
+    } catch (error) {
+      // Another request may claim the address after the availability check.
+      if (body.email !== undefined && isUniqueConstraintViolation(error)) return emailConflict()
+      throw error
+    }
 
     // An avatar shows up in every group the user belongs to (and in groups
     // they join later), so it's bound server-wide rather than to any group.

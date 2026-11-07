@@ -13,6 +13,94 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Architecture overview
+
+A high-level picture of how Famlin fits together. The sections below go into the details.
+
+```mermaid
+flowchart LR
+  family(["Family members"]):::people
+  admin(["Admin"]):::people
+
+  subgraph apps["Apps"]
+    mobile["📱 Mobile app<br/>iOS and Android"]:::app
+    web["💻 Web app"]:::app
+    adminui["⚙️ Admin UI"]:::app
+  end
+
+  subgraph server["Your server"]
+    backend["Famlin<br/>one Docker container"]:::server
+    db[("Database")]:::store
+    files[("Photos and videos")]:::store
+  end
+
+  subgraph optional["Optional connections"]
+    login["Single sign-on"]:::optional
+    notify["Push and email"]:::optional
+    photos["Photo library<br/>Immich or a folder"]:::optional
+  end
+
+  family --> mobile
+  family --> web
+  admin --> adminui
+  mobile --> backend
+  web --> backend
+  adminui --> backend
+  backend --> db
+  backend --> files
+  backend -.-> optional
+
+```
+
+- **One server per family.** Everything runs in a single Famlin container next to a Postgres database. The web app and the admin UI are served by that same container; the mobile app connects to it over the internet.
+- **Everything stays on your own server.** Posts, comments and photos are stored in the database and on the server's own storage.
+- **External services are optional.** Single sign-on, push and email notifications, and an existing photo library (Immich or a folder) can be switched on later from the admin UI.
+
+### Inside the Famlin server
+
+One level deeper: what happens inside that one container. Every request passes the same two checks before it reaches a feature, and anything that should notify other people happens afterwards, in the background.
+
+```mermaid
+flowchart LR
+  apps(["Apps<br/>mobile, web, admin"]):::people
+
+  subgraph famlin["Famlin server"]
+    direction LR
+    check["🔐 Who are you?<br/>login or API token"]:::server
+    access["👪 Which family?<br/>only your families,<br/>and your circles"]:::server
+
+    subgraph features["Features"]
+      direction TB
+      posts["Posts, comments<br/>and reactions"]
+      photos["Photos and albums"]
+      extras["Polls, trips,<br/>gift lists"]
+      social["Stories and chat"]
+      manage["Admin and settings"]
+    end
+
+    events["Something happened<br/>new post, comment, reaction"]:::app
+    notifier["Notifications<br/>who should hear about it"]:::app
+    jobs["Scheduled tasks<br/>backups, story cleanup,<br/>on this day, new photos"]:::app
+  end
+
+  db[("Database")]:::store
+  files[("Photos and videos")]:::store
+  push["Push and email"]:::optional
+  library["Photo library"]:::optional
+
+  apps --> check --> access --> features
+  features --> db
+  features --> files
+  photos -.-> library
+  features --> events --> notifier -.-> push
+  jobs --> db
+
+```
+
+- **Family membership is the main rule.** You only ever see posts, photos and chat from families you belong to; circles narrow that further to a smaller group within a family.
+- **Features don't send notifications themselves.** They report what happened, and one notifications part decides who is told, by push or email. A failing notification never breaks the post that triggered it.
+- **New post types, photo sources and notification channels plug in** without changing the rest; see [Custom post types](#custom-post-types), [Media integrations](#media-integrations) and [Notifications](#notifications).
+
 ## Web trip composer
 
 The web post composer also creates `TRIP` posts via `createPost`: title,
@@ -35,7 +123,7 @@ On screens at least 1200px wide, the right column shows the family filter above 
 
 | File | Prefix | Notes |
 | --- | --- | --- |
-| `auth.ts` | `/api/auth` | Generic OIDC (`/oidc`, `/oidc-config`) + local password login, `/me`, register/reset (admin; `POST /register` also accepts an optional `groupIds: string[]` — every id is validated to exist and the user plus its `GroupMember` rows are created atomically in one transaction), first-run admin bootstrap (`/setup-status`, `/setup`, and `/setup/restore` — see [Restoring an export](#restoring-an-export)), public `/server-info` (`{ version, minAppVersion, appStoreUrl, playStoreUrl, readOnly }` — `version` is the backend's own `package.json` version, shown in the mobile app's and web app's profile screens; `minAppVersion` is the oldest mobile app version this server still supports, bumped only when compatibility is genuinely dropped (a breaking change) so mobile can show a blocking update-required screen against it; `appStoreUrl`/`playStoreUrl` are this deployment's store links, from `Setting`, for that screen to link to — `null` when unset; `branding` is the per-family [branding](#branding) or `null`; `readOnly` is `true` when the server is running in demo/read-only mode, so clients can hide or warn about disabled mutations). `/oidc/exchange`, `/oidc/mobile-callback`, and `/oidc/mobile-handoff` support providers (e.g. Google) that require a client secret — see [OIDC / client-secret providers](#oidc--client-secret-providers) below. `POST /apple` is Sign in with Apple: it verifies an Apple identity token against Apple's fixed issuer/JWKS with the client app's bundle id as the audience, so unlike OIDC it needs nothing configured per deployment (`appleBundleIds` in `Setting` only adds bundle ids for self-hosters shipping their own iOS build; the official app's is always accepted) — `GET /oidc-config` advertises it via `appleSignInEnabled` so an app on an older server hides the button. It shares the allow-list/invite provisioning path with OIDC (`completeFederatedLogin` in `services/oidcLogin.ts`). `DELETE /me` is self-service account deletion: the same permanent, cascading hard delete an admin can do, initiated by the account's owner, refused with `400` only when they're the last remaining admin. `GET /me/export` is the member-facing self-service data export (`services/memberExport.ts`) — a separate entry point from the admin `GET /api/admin/export`, not a relaxed guard on it: a zip of everything the caller can already see (every post in their groups, filtered through `visiblePostsWhere` so circle-private posts in circles they're not in are excluded; comments and reactions on those posts; their own favorites only; chat of their groups with chitchat on, minus milestone messages about posts they can't see; fellow members' `{id, name, email, avatarUrl}` only; `crossPostId` omitted) plus only the `/uploads/` files those rows reference (display copy, thumbnail, original — re-checked against the same `Upload`-table rule `/uploads/*` enforces). Keeps every admin-export exclusion. Rate-limited per user, 5 per hour |
+| `auth.ts` | `/api/auth` | Generic OIDC (`/oidc`, `/oidc-config`) + local password login, `/me`, register/reset (admin; `POST /register` also accepts an optional `groupIds: string[]` — every id is validated to exist and the user plus its `GroupMember` rows are created atomically in one transaction), first-run admin bootstrap (`/setup-status`, `/setup`, and `/setup/restore` — see [Restoring an export](#restoring-an-export)), public `/server-info` (`{ version, minAppVersion, appStoreUrl, playStoreUrl, readOnly }` — `version` is the backend's own `package.json` version, shown in the mobile app's and web app's profile screens; `minAppVersion` is the oldest mobile app version this server still supports, bumped only when compatibility is genuinely dropped (a breaking change) so mobile can show a blocking update-required screen against it; `appStoreUrl`/`playStoreUrl` are this deployment's store links, from `Setting`, for that screen to link to — `null` when unset; `branding` is the per-family [branding](#branding) or `null`; `readOnly` is `true` when the server is running in demo/read-only mode, so clients can hide or warn about disabled mutations). `/oidc/exchange`, `/oidc/mobile-callback`, and `/oidc/mobile-handoff` support providers (e.g. Google) that require a client secret — see [OIDC / client-secret providers](#oidc--client-secret-providers) below. `POST /apple` is Sign in with Apple: it verifies an Apple identity token against Apple's fixed issuer/JWKS with the client app's bundle id as the audience, so unlike OIDC it needs nothing configured per deployment (`appleBundleIds` in `Setting` only adds bundle ids for self-hosters shipping their own iOS build; the official app's is always accepted) — `GET /oidc-config` advertises it via `appleSignInEnabled` so an app on an older server hides the button. It shares the allow-list/invite provisioning path with OIDC (`completeFederatedLogin` in `services/oidcLogin.ts`). Since every deployment accepts that same audience, the mobile app binds each token to the server it talks to through the `nonce` claim (`sha256hex("famlin-apple-signin\|<nonceHost>\|<rawNonce>")`, `rawNonce` and `nonceHost` sent in the body), and the server rejects a nonce-bound token unless the hash matches and `nonceHost`'s hostname (port ignored) is the `publicUrl` setting's — or, while that's unset, the raw `Host` header's (never `X-Forwarded-Host`) — so a token sent to one Famlin server can't be replayed on another. Tokens without a nonce (older app builds) are still accepted for now. `DELETE /me` is self-service account deletion: the same permanent, cascading hard delete an admin can do, initiated by the account's owner, refused with `400` only when they're the last remaining admin. `GET /me/export` is the member-facing self-service data export (`services/memberExport.ts`) — a separate entry point from the admin `GET /api/admin/export`, not a relaxed guard on it: a zip of everything the caller can already see (every post in their groups, filtered through `visiblePostsWhere` so circle-private posts in circles they're not in are excluded; comments and reactions on those posts; their own favorites only; chat of their groups with chitchat on, minus milestone messages about posts they can't see; fellow members' `{id, name, email, avatarUrl}` only; `crossPostId` omitted) plus only the `/uploads/` files those rows reference (display copy, thumbnail, original — re-checked against the same `Upload`-table rule `/uploads/*` enforces). Keeps every admin-export exclusion. Rate-limited per user, 5 per hour |
 | `groups.ts` | `/api/groups` | Read-only, member-facing: your groups, group detail, member list. List/detail responses also carry `allowedPostTypes: string[]` — the group's *resolved* effective list of creatable post types (never empty; see [Custom post types](#custom-post-types)) |
 | `admin.ts` | `/api/admin` | All admin mutations: users, groups CRUD, membership, settings, cross-group content moderation (`/content/posts`, `/content/comments` — both take optional `groupId`, `authorId`, and `q` (case-insensitive content search) query filters), media album linking. Media/album mutations: `PATCH /media-albums/:id` body `{newAssetMode}` (OFF/MANUAL/AUTO); `GET /media/:provider/people` lists recognized people (returns array of `{id, name, thumbnailDataUri}` objects, 400 if provider lacks support); `GET /media/people-links` (array of links, each with optional `user` field); `POST /media/people-links` body `{provider, externalPersonId, label, userId?}` (upsert); `DELETE /media/people-links/:id`. `GET /post-types` lists the registered post types (`{ items: [{ id }] }`, see [Custom post types](#custom-post-types)); group create/update bodies accept an optional `allowedPostTypes: string[]` (each id validated against the registry, omitted/`[]` = all types including future ones), and admin group responses carry the **raw** stored array (unlike `groups.ts`'s resolved one) so the UI can tell "all" apart from an explicit list. `POST /content/posts/:id/retrigger-push` manually resends a post's push notification (push-only, see [Notifications](#notifications)); `GET /push-log?postId=` lists `PushDeliveryLog` rows (cursor-paginated), optionally filtered to one post. `GET /export` streams a full data export as a zip (`services/export.ts`): users (safe fields only — no `passwordHash`/`tokenVersion`), groups + membership, circles + members, posts, post interactions (poll votes), comments, reactions, favorites, chat messages, chat read positions, media album links, media person links, and `Upload` rows as JSON under `data/`, plus the entire `uploads/` directory (including originals); a `manifest.json` records the export time, server version, and row counts. Built with `archiver` in store mode (most bytes are already-compressed media). Deliberately excludes `Setting` (SMTP/OIDC/Immich secrets), `Invite` (live tokens), `PushToken`/`ApiToken`, and notification/push-delivery history — this is family content + media, not server configuration or credentials. **System status** (issue #228): `GET /status` returns `{backups, disk, jobs, migrations, push, alerts}` — backup settings/next run/stored dumps/whether `/app/backups` is a mount point, `statfs` free space on the uploads and backups volumes, every job's `JobStatus` row, applied vs. pending vs. failed migrations (`_prisma_migrations` against `prisma/migrations/`), `PushDeliveryLog` failure rates over 24h/7d, and the active alert conditions (`services/systemStatus.ts`, `services/systemAlerts.ts`); `GET /status/integrations` probes SMTP (`verify()`), OIDC discovery (fetched fresh, bypassing `getDiscovery()`'s cache), Immich and the local media path, each `{configured, ok, error?}` with an error *code*, never a message; `GET /status/alerts` returns just the alert conditions, for the banner on every admin page; `POST /backups/run` starts a backup in the background (202, 409 `errors.backupInProgress` if one is running) |
 | `circles.ts` | `/api/circles` | **Read-only, member-facing** (plus one self-service mutation): `GET /?groupId=` lists only the circles the caller belongs to, `GET /:circleId/members` lists a circle's members (caller must be in it, otherwise 404), `DELETE /:circleId/members/me` leaves a circle without touching the underlying `GroupMember` row. Deliberately has no create/edit/delete or membership-management routes — those are admin mutations in `admin.ts`, mirroring how `groups.ts` is read-only. There is deliberately **no** "list every circle in this group" endpoint: circles are fully private, so a group member outside one must not be able to learn it exists |
@@ -174,9 +262,9 @@ Photos are uploaded directly to the Famlin backend (`POST /api/uploads`) and sto
 
 Uploaded images and videos are processed by the background worker in `services/uploadProcessing.ts`. Images get a JPEG display copy capped at 1920px; videos (`mp4`/`mov`/`m4v`/`webm`) get an H.264/AAC MP4 display copy (CRF 23, AAC 128 kbps, `faststart`), capped at 1920×1080 for landscape or 1080×1920 for portrait without upscaling. Container metadata and chapters are removed from the video display copy. Original bytes are retained privately under `uploads/originals/`; direct requests to that directory return 404. GIFs remain unprocessed to preserve animation.
 
-Uploads return before full conversion finishes. The worker processes one job at a time per server process, using two video encoding threads, and recovers abandoned jobs after a restart. A 400px `-thumbnail.jpg` preview is generated during upload on a best-effort basis; video previews use FFmpeg's `thumbnail` filter to select a representative frame from the first batch of up to 100 frames. Failed preview generation does not fail the upload. Display copies are published atomically under the canonical URL. Until a display copy exists, including after a conversion failure, the backend can serve the original at that URL with its original content type and `Cache-Control: no-store`. Web and mobile show a processing placeholder while conversion is pending and allow video playback from the original if conversion fails; playback then depends on the client's support for the source codec. This fallback preserves the original's metadata, so metadata stripping applies only to successful conversions.
+Uploads return before full conversion finishes. The worker processes one job at a time per server process, using two video encoding threads, and recovers abandoned jobs after a restart. A 400px `-thumbnail.jpg` preview is generated during upload on a best-effort basis; video previews use FFmpeg's `thumbnail` filter to select a representative frame from the first batch of up to 100 frames. Failed preview generation does not fail the upload; the background worker regenerates a missing `-thumbnail.jpg` from the converted copy before marking the upload `ready`, and for older uploads that are already missing one, `app.ts`'s `/uploads/` handler generates it on first request from the stored display copy or video (`resolveMissingThumbnail` in `services/thumbnailBackfill.ts`) and saves it under its real key, so later requests are plain hits (issue #386). Display copies are published atomically under the canonical URL. Until a display copy exists, including after a conversion failure, the backend can serve the original at that URL with its original content type and `Cache-Control: no-store`. Web and mobile show a processing placeholder while conversion is pending and allow video playback from the original if conversion fails; playback then depends on the client's support for the source codec. This fallback preserves the original's metadata, so metadata stripping applies only to successful conversions.
 
-These changes apply to new uploads; historical uploads are not reprocessed automatically. FFmpeg is installed in the Docker image's development and production stages. HEIC/HEIF decoding needs `sharp` built against a libvips with HEIF support; the production Docker image installs Alpine's `vips`/`vips-heif` packages and builds `sharp` against them.
+These changes apply to new uploads; historical uploads are not reprocessed automatically, apart from the on-demand thumbnail and HEIC exceptions. FFmpeg is installed in the Docker image's development and production stages. HEIC/HEIF decoding needs `sharp` built against a libvips with HEIF support; the production Docker image installs Alpine's `vips`/`vips-heif` packages and builds `sharp` against them.
 
 
 That scope note has one exception, because HEIC is the iPhone camera's default format and no browser but Safari can decode it: an upload still stored as `/uploads/<uuid>.heic` (or `.heif`) — anything predating the pipeline above, plus any upload whose conversion failed at the time — renders as a broken image in the web app while the iOS app shows it fine. Those URLs are baked into `Post.uploadedAssetUrls`, `Comment.attachmentUrls`, chat messages, and already-shipped clients, so they can't be rewritten; instead `app.ts`'s `/uploads/` hook serves a **generated JPEG rendition under the very same URL** (`resolveHeicRendition` in `services/uploadVariants.ts`). It reuses `generateUploadVariants()` — the same function the upload route runs — instead of re-deriving the sizing, so the two can't drift apart and one decode yields both the display copy and the `-thumbnail.jpg` a legacy HEIC never got (that request would otherwise 404). Renditions are generated on first request, cached in `uploads/derived/` inside the same volume, and 404'd under their own path exactly like `uploads/originals/`; concurrent misses for one file collapse onto a single call. It's fail-soft in the same way the upload pipeline is — a `sharp` build without HEIF support or an undecodable file falls through to serving the raw stored bytes, as before. Non-HEIC requests never touch this path. The composers in the web app apply the client-side half of the same problem: a freshly picked `.heic` can't be previewed from a `blob:` URL either, so `isBrowserDecodableImage` (`web/src/utils/media.ts`) swaps the `<img>` for a format-badge placeholder tile until it's uploaded.
@@ -210,7 +298,7 @@ External photo sources are **media providers**: implementations of the `MediaPro
 
 Providers throw a typed `MediaProviderError` (`not_configured`/`unreachable`/`unauthorized`) the same way `plugins/auth.ts`'s `OidcError` does, so routes can map it to a translated message instead of leaking fetch/fs internals; `mediaErrorKey()`/`mediaErrorStatus()` in the registry are the single mapping every route imports rather than re-deriving. Linking is an admin mutation (`GET`/`POST /api/admin/groups/:id/media-albums`, `DELETE /api/admin/media-albums/:id`, catalog via `GET /api/admin/media/:provider/albums`, connection tests via `POST /api/admin/immich/test` / `POST /api/admin/media/local/test`).
 
-A provider-sourced photo is represented as just another string in `Post.uploadedAssetUrls` — a proxy URL shape (`/api/media/assets/<linkId>/<assetId>/<variant>.<ext>`, or the legacy `/api/immich/assets/...` equivalent) rather than the usual `/uploads/<uuid>.<ext>` one, validated by `parseMediaAssetPath()` in `types.ts` — the single place both shapes are defined, reused by the zod validator, the routes' `:variantExt` checks, and `routes/posts.ts`'s cross-group check. Because it's "just another asset URL," every feature that already operates on `uploadedAssetUrls` — feed rendering, the image viewer, per-photo comment pinning (`Comment.assetUrl`) — needs no provider-specific code. The extension reflects the real bytes each variant streams: `thumbnail`/`preview` are always `.jpg`, while `original` matches the asset's real type (`.mp4` for an Immich video, the actual image extension for a local file) — that's also why the mobile picker attaches `originalUrl` (not `previewUrl`) for a video, so `isVideoUrl()` and the `<Video>` player it feeds get an actually-playable file. `streamAsset()` implementations must honor the client's `Range` header and relay/produce `206`/`Content-Range`/`Accept-Ranges` responses — native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via byte-range requests and refuse to play when the server ignores them, while web `<video>` tolerates a full-body `200`, so dropping `Range` breaks video only on mobile.
+A provider-sourced photo is represented as just another string in `Post.uploadedAssetUrls` — a proxy URL shape (`/api/media/assets/<linkId>/<assetId>/<variant>.<ext>`, or the legacy `/api/immich/assets/...` equivalent) rather than the usual `/uploads/<uuid>.<ext>` one, validated by `parseMediaAssetPath()` in `types.ts` — the single place both shapes are defined, reused by the zod validator, the routes' `:variantExt` checks, and `routes/posts.ts`'s cross-group check. Clients from before the issue #386 fix asked for a proxy thumbnail as `…/<variant>-thumbnail.jpg`, borrowing the `/uploads/` naming; the proxy routes still map that shape to the `thumbnail` rendition (`normalizeLegacyMediaVariant()`, applied to `:variantExt` only), so `parseMediaAssetPath()` itself, and the validation of stored URLs, stays strict. Because it's "just another asset URL," every feature that already operates on `uploadedAssetUrls` — feed rendering, the image viewer, per-photo comment pinning (`Comment.assetUrl`) — needs no provider-specific code. The extension reflects the real bytes each variant streams: `thumbnail`/`preview` are always `.jpg`, while `original` matches the asset's real type (`.mp4` for an Immich video, the actual image extension for a local file) — that's also why the mobile picker attaches `originalUrl` (not `previewUrl`) for a video, so `isVideoUrl()` and the `<Video>` player it feeds get an actually-playable file. `streamAsset()` implementations must honor the client's `Range` header and relay/produce `206`/`Content-Range`/`Accept-Ranges` responses — native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via byte-range requests and refuse to play when the server ignores them, while web `<video>` tolerates a full-body `200`, so dropping `Range` breaks video only on mobile.
 
 Authorization for the asset proxy routes resolves `linkId → groupId`, checks the requester is a member of that group, and then calls the provider's `isAssetInAlbum()` to confirm the requested `:assetId` is actually one of that album's assets (Immich caches this album listing in memory for 60 seconds — single-instance, matching `getAllSettings()`'s settings cache — so an image grid doesn't re-query Immich per tile; the local provider stats the file inside the album directory). That re-check is part of the `MediaProvider` contract, not an optimization: a provider's server-level credential (Immich's API key) or source-wide root (the local folder) can read anything on the source, so without it a member who learns an asset id from elsewhere (e.g. another group's post) could read assets never linked to Famlin at all, not just ones linked to a different group. `routes/posts.ts`'s `POST /` additionally checks, for any media proxy URL in `uploadedAssetUrls`, that the URL's embedded `linkId` belongs to the post's own `groupId` — otherwise a member of one group could attach another group's linked album photos to a post in a group they share only incidentally.
 
@@ -291,3 +379,13 @@ Original filenames remain in Upload metadata for Live Photo pairing. Storage key
 use `originals/<assetKey>/<name>`, with a deterministic URL-safe name for filenames
 outside the storage key alphabet. Nested originals map to their parent asset key
 for export filtering; member exports include the paired motion asset too.
+
+## Self-service profile details
+
+`PATCH /api/auth/me` accepts optional `name` (trimmed, 1–100 characters) and
+`email` (trimmed, lowercased, valid email, at most 254 characters). Email
+availability is checked case-insensitively against other users; unique
+constraint conflicts are also returned as HTTP 409 to handle concurrent
+updates. A conflict applies neither field. Web exposes these fields in the
+profile's Personal details section and updates its authenticated user state
+from the successful response.

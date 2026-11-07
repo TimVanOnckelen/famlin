@@ -74,6 +74,28 @@ describe('uploads', () => {
       )
     })
 
+    it('swaps the variant segment for media-proxy URLs instead of suffixing the filename (issue #386)', async () => {
+      const client = await import('../client.js')
+      ;(client.getCurrentServerUrl as any).mockReturnValue('http://example.com')
+      ;(client.getCurrentMediaToken as any).mockReturnValue('tok123')
+
+      const { getUploadUrl } = await import('../uploads.js')
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/preview.jpg', 'thumbnail')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/thumbnail.jpg?token=tok123'
+      )
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/original.mp4', 'thumbnail')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/thumbnail.jpg?token=tok123'
+      )
+      expect(
+        getUploadUrl('/api/immich/assets/link1/0b6e4c1a-1111-4222-8333-944445555666/preview.jpg', 'thumbnail')
+      ).toBe(
+        'http://example.com/api/immich/assets/link1/0b6e4c1a-1111-4222-8333-944445555666/thumbnail.jpg?token=tok123'
+      )
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/preview.jpg')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/preview.jpg?token=tok123'
+      )
+    })
+
     it('returns the plain path when no variant is passed, unchanged from before', async () => {
       const client = await import('../client.js')
       ;(client.getCurrentServerUrl as any).mockReturnValue('http://example.com')

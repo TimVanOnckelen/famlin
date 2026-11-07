@@ -16,7 +16,10 @@ export interface OidcConfig {
 }
 export declare function fetchOidcConfig(): Promise<OidcConfig>;
 export declare function loginWithOidc(idToken: string, inviteToken?: string): Promise<LoginResponse>;
-export declare function loginWithApple(identityToken: string, fullName?: string, inviteToken?: string): Promise<LoginResponse>;
+export declare function loginWithApple(identityToken: string, fullName?: string, inviteToken?: string, binding?: {
+    rawNonce: string;
+    nonceHost: string;
+}): Promise<LoginResponse>;
 export declare function exchangeOidcMobileHandoff(code: string): Promise<LoginResponse>;
 export declare function exchangeOidcCode(code: string, redirectUri: string, codeVerifier: string, inviteToken?: string): Promise<LoginResponse>;
 export declare function loginWithPassword(email: string, password: string, inviteToken?: string): Promise<LoginResponse>;
@@ -34,6 +37,8 @@ export interface NotificationPrefs {
     pushOnGiftList?: boolean;
 }
 export interface UpdateMeBody extends NotificationPrefs {
+    name?: string;
+    email?: string;
     avatarUrl?: string | null;
 }
 export declare function updateMe(data: UpdateMeBody): Promise<User>;

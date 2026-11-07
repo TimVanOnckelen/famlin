@@ -52,6 +52,16 @@ export function parseMediaAssetPath(path: string): MediaAssetPath | null {
   return { linkId, assetId, variant: (thumbOrPreview ?? original) as MediaAssetPath['variant'] }
 }
 
+// Web/mobile clients before the #386 fix requested a media-proxy thumbnail
+// by suffixing the filename (`preview.jpg` -> `preview-thumbnail.jpg`), the
+// /uploads/ convention. Already-installed apps and cached web bundles keep
+// sending that, so the proxy routes map it to the `thumbnail` rendition the
+// client wanted. Route-only on purpose: parseMediaAssetPath (and so the
+// validation of URLs stored in posts) stays strict.
+export function normalizeLegacyMediaVariant(variantExt: string): string {
+  return /^(?:thumbnail|preview|original)-thumbnail\.jpg$/.test(variantExt) ? 'thumbnail.jpg' : variantExt
+}
+
 const mediaAssetPathSchema = z
   .string()
   .refine((path) => parseMediaAssetPath(path) !== null, 'Must be a valid media asset path')
@@ -69,6 +79,10 @@ export const appleLoginBodySchema = z.object({
   identityToken: z.string(),
   fullName: z.string().max(100).optional(),
   inviteToken: z.string().optional(),
+  // How the app bound the token to this server (appleNonceFor in
+  // services/appleLogin.ts). Absent from older app builds.
+  rawNonce: z.string().min(16).max(200).optional(),
+  nonceHost: z.string().min(1).max(300).optional(),
 })
 
 // Used by the admin UI when the configured OIDC provider requires a client
@@ -306,6 +320,8 @@ export const notificationPrefsSchema = z.object({
 // pictures are synced separately in routes/auth.ts and don't go through this
 // schema.)
 export const updateUserBodySchema = notificationPrefsSchema.extend({
+  name: z.string().trim().min(1).max(100).optional(),
+  email: z.string().trim().email().max(254).toLowerCase().optional(),
   avatarUrl: uploadPathSchema.optional().nullable(),
 })
 
