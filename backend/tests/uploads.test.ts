@@ -422,6 +422,34 @@ describe('GET /uploads/<uuid>.heic — legacy HEIC renditions', () => {
     expect(res.statusCode).toBe(404)
   })
 
+  it('generates a missing -thumbnail.jpg for an older JPEG upload on first request (issue #386)', async () => {
+    const member = await createUser()
+    const uuid = await writeLegacyUpload('.jpg', 1600, 1200)
+    const url = `/uploads/${uuid}-thumbnail.jpg`
+
+    const [first, concurrent] = await Promise.all([
+      app.inject({ method: 'GET', url, headers: authHeader(member) }),
+      app.inject({ method: 'GET', url, headers: authHeader(member) }),
+    ])
+    for (const res of [first, concurrent]) {
+      expect(res.statusCode).toBe(200)
+      expect(res.headers['content-type']).toBe('image/jpeg')
+      expect((await sharp(res.rawPayload).metadata()).width).toBe(400)
+    }
+    // Written under its real key, so later requests are plain hits.
+    expect((await sharp(path.join(uploadsDir, `${uuid}-thumbnail.jpg`)).metadata()).width).toBe(400)
+  })
+
+  it('still 404s a thumbnail with no display copy to derive it from', async () => {
+    const member = await createUser()
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/${randomUUID()}-thumbnail.jpg`,
+      headers: authHeader(member),
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
   it('leaves a non-HEIC upload untouched', async () => {
     const member = await createUser()
     const uuid = randomUUID()

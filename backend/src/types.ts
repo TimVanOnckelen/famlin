@@ -48,6 +48,16 @@ export function parseMediaAssetPath(path: string): MediaAssetPath | null {
   return { linkId, assetId, variant: (thumbOrPreview ?? original) as MediaAssetPath['variant'] }
 }
 
+// Web/mobile clients before the #386 fix requested a media-proxy thumbnail
+// by suffixing the filename (`preview.jpg` -> `preview-thumbnail.jpg`), the
+// /uploads/ convention. Already-installed apps and cached web bundles keep
+// sending that, so the proxy routes map it to the `thumbnail` rendition the
+// client wanted. Route-only on purpose: parseMediaAssetPath (and so the
+// validation of URLs stored in posts) stays strict.
+export function normalizeLegacyMediaVariant(variantExt: string): string {
+  return /^(?:thumbnail|preview|original)-thumbnail\.jpg$/.test(variantExt) ? 'thumbnail.jpg' : variantExt
+}
+
 const mediaAssetPathSchema = z
   .string()
   .refine((path) => parseMediaAssetPath(path) !== null, 'Must be a valid media asset path')
