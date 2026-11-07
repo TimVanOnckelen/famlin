@@ -26,7 +26,7 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           config-file: .github/release-please-config.json
@@ -68,7 +68,7 @@ jobs:
     outputs:
       changed: ${{ steps.check.outputs.changed }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Check for meaningful mobile changes since the previous release
@@ -146,11 +146,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -165,7 +165,7 @@ jobs:
         working-directory: mobile
         run: npx expo install --check
 
-      - uses: expo/expo-github-action@v9
+      - uses: expo/expo-github-action@9da89d3617bb88139671bad31b09c65714c2ee06 # 9.0.1
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
@@ -226,7 +226,7 @@ jobs:
       - name: Generate human-readable notes
         id: ai
         continue-on-error: true
-        uses: actions/ai-inference@v3
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
         with:
           prompt-file: prompt.md
           max-completion-tokens: '1500'
@@ -285,7 +285,7 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
           # Full history so the thank-you step can find the previous tag.
@@ -389,14 +389,39 @@ jobs:
           } >> notes.md
           gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --notes-file notes.md
 
+  # release-please creates the Release as a draft (`draft` +
+  # `force-tag-creation` in .github/release-please-config.json, so the tag
+  # exists right away for the jobs above). Publish it only now, once the
+  # image, the rewritten notes, the compose files and the APK are all in
+  # place — so nobody sees a half-finished Release, and the update check in
+  # running servers (GitHub's "latest release", which skips drafts) and
+  # scripts/install.sh don't point at an image that doesn't exist yet. The
+  # store build (build-mobile) is deliberately not waited for: it takes hours
+  # and store review is announced in the notes anyway.
+  # If anything before this failed, the Release stays a draft: fix and re-run
+  # the failed jobs (this one follows), or publish it by hand.
+  publish-release:
+    needs: [release-please, release-assets]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.release-assets.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release edit "$TAG_NAME" -R "$GITHUB_REPOSITORY" --draft=false --latest
+
   # Tell the Home Assistant add-on repository about the new release so its
   # "Bump version" workflow opens a PR. Optional: skipped when the
   # HA_ADDON_DISPATCH_TOKEN secret (a PAT with write access to
-  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-docker so the
-  # image the add-on builds on exists by the time the PR is merged.
+  # TimVanOnckelen/famlin-ha-addon) isn't set. Runs after publish-release so
+  # the image the add-on builds on exists and the Release is public by the
+  # time the PR is opened.
   notify-ha-addon:
-    needs: [release-please, publish-docker]
-    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.publish-docker.result == 'success' }}
+    needs: [release-please, publish-release]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' && needs.publish-release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions: {}
     env:

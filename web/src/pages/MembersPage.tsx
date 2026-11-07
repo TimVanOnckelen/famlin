@@ -119,6 +119,7 @@ export function MembersPage({
   onOpenPhotos,
   onOpenChat,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenProfile,
@@ -130,6 +131,7 @@ export function MembersPage({
   onOpenPhotos?: () => void
   onOpenChat?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenProfile: () => void
@@ -145,6 +147,7 @@ export function MembersPage({
       onPhotos={onOpenPhotos}
       onChat={onOpenChat}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onSearch={onOpenSearch}
       onProfile={onOpenProfile}

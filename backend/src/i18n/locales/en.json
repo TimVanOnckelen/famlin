@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "This email address is already in use",
     "authFailed": "Authentication failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "adminRequired": "Admin required",
@@ -117,7 +118,12 @@
     "giftDrawTooFewParticipants": "A Secret Santa draw needs at least 3 participants.",
     "giftDrawImpossible": "No draw is possible with these exclusions. Remove some exclusions and try again.",
     "giftAlreadyDrawn": "The names have already been drawn.",
-    "giftDrawWillReset": "This change discards the current draw. Confirm to redraw the names."
+    "giftDrawWillReset": "This change discards the current draw. Confirm to redraw the names.",
+    "wikiPageNotFound": "Wiki page not found",
+    "wikiPageLocked": "This page is locked. Only its creator or an admin can edit it.",
+    "wikiPageLockForbidden": "Only the page's creator or an admin can lock or unlock it.",
+    "wikiPageDeleteForbidden": "Only the page's creator or an admin can delete it.",
+    "wikiPageConflict": "Someone else saved this page in the meantime. Review their changes and try again."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

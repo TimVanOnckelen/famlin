@@ -748,12 +748,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const circle = await prisma.circle.findUnique({
       where: { id: circleId, kind: MANAGED_CIRCLE_KIND },
-      select: { id: true, _count: { select: { posts: true } } },
+      select: { id: true, _count: { select: { posts: true, wikiPages: true } } },
     })
     if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
-    if (circle._count.posts > 0 && !deleteContent) {
-      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts })
+    // Circle-private wiki pages cascade with the circle too (they must never
+    // fall back to family-wide), so they count as content needing consent.
+    const { posts: postCount, wikiPages: wikiPageCount } = circle._count
+    if ((postCount > 0 || wikiPageCount > 0) && !deleteContent) {
+      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount, wikiPageCount })
     }
 
     // The circle's stories cascade with it; delete them explicitly first so
@@ -762,7 +765,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     await deleteStoriesWithMedia({ circleId })
     await prisma.circle.delete({ where: { id: circleId } })
 
-    return { success: true, deletedPostCount: circle._count.posts }
+    return { success: true, deletedPostCount: postCount, deletedWikiPageCount: wikiPageCount }
   })
 
   fastify.post('/circles/:circleId/members', async (request, reply) => {

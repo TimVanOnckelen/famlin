@@ -3,8 +3,8 @@ name: Mobile build
 # Store builds are chained from release-please.yml via workflow_call — the
 # `on: release` event does NOT fire for release-please's GITHUB_TOKEN-created
 # release (GitHub suppresses workflow-triggered-workflow events), same as
-# docker-publish.yml. `on: release` is kept only for manually-published
-# releases; workflow_dispatch runs a manual build without store submission
+# docker-publish.yml. `on: release` is kept only for releases created by
+# hand (release-please's own drafts are skipped, see the job's `if`); workflow_dispatch runs a manual build without store submission
 # unless the production profile is chosen with a release event.
 on:
   release:
@@ -32,15 +32,20 @@ on:
 
 jobs:
   build:
+    # release-please's Releases are drafts published by its own workflow,
+    # which already chains this build — so a release-please draft published
+    # by hand (after a failed run) must not trigger a second store build.
+    # Its author is github-actions[bot]; a release created by hand isn't.
+    if: ${{ github.event_name != 'release' || github.event.release.author.login != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # When chained from release-please, build the released tag; empty
           # means the triggering ref (release tag / dispatched branch).
           ref: ${{ inputs.tag_name || '' }}
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -59,7 +64,7 @@ jobs:
         working-directory: mobile
         run: npx expo install --check
 
-      - uses: expo/expo-github-action@v9
+      - uses: expo/expo-github-action@9da89d3617bb88139671bad31b09c65714c2ee06 # 9.0.1
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}

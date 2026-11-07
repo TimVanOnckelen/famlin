@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Platform } from 'react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
+import * as Crypto from 'expo-crypto'
 
-import { LoginResponse, loginWithApple } from '@/api/auth'
+import { LoginResponse, getCurrentServerUrl, loginWithApple } from '@/api/auth'
 
 export class AppleCancelledError extends Error {}
 
@@ -47,7 +48,29 @@ export function useAppleSignInAvailable(): boolean {
   return available
 }
 
+// The host[:port] of the server URL, lowercase. Parsed by hand: React
+// Native's URL polyfill doesn't implement `host`.
+export function appleNonceHost(serverUrl: string): string | null {
+  const match = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)/i.exec(serverUrl.trim())
+  return match ? match[1].toLowerCase() : null
+}
+
 export async function performAppleLogin(inviteToken?: string): Promise<LoginResponse> {
+  // Binds the identity token to the server this app signs in to: every
+  // Famlin server accepts tokens for this same app, so without it any server
+  // the user signs in to could replay their token on another one. Apple
+  // copies the nonce into the token unchanged; the server recomputes it
+  // (appleNonceFor in the backend's services/appleLogin.ts — keep the format
+  // in lockstep) and checks nonceHost against its own host.
+  const serverUrl = getCurrentServerUrl()
+  const nonceHost = serverUrl ? appleNonceHost(serverUrl) : null
+  if (!nonceHost) throw new Error('No server selected for Sign in with Apple')
+  const rawNonce = Crypto.randomUUID()
+  const nonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    `famlin-apple-signin|${nonceHost}|${rawNonce}`
+  )
+
   let credential: AppleAuthentication.AppleAuthenticationCredential
   try {
     credential = await AppleAuthentication.signInAsync({
@@ -55,6 +78,7 @@ export async function performAppleLogin(inviteToken?: string): Promise<LoginResp
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+      nonce,
     })
   } catch (err: any) {
     // Dismissing the native sheet isn't a failure worth alerting about.
@@ -66,5 +90,8 @@ export async function performAppleLogin(inviteToken?: string): Promise<LoginResp
     throw new Error('Apple did not return an identity token')
   }
 
-  return loginWithApple(credential.identityToken, formatFullName(credential.fullName), inviteToken)
+  return loginWithApple(credential.identityToken, formatFullName(credential.fullName), inviteToken, {
+    rawNonce,
+    nonceHost,
+  })
 }

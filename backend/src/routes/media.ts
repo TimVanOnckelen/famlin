@@ -13,7 +13,7 @@ import {
 } from '../services/media/routeHelpers.js'
 import { resolvePersonFilterForAlbum } from '../services/media/personFilter.js'
 import { getGroupPhotoTimeline } from '../services/media/photoTimeline.js'
-import { parseMediaAssetPath, photoTimelineQuerySchema } from '../types.js'
+import { normalizeLegacyMediaVariant, parseMediaAssetPath, photoTimelineQuerySchema } from '../types.js'
 import { getT } from '../i18n/index.js'
 
 const MEDIA_ASSET_URL_PREFIX = '/api/media/assets'
@@ -146,7 +146,9 @@ export default async function mediaRoutes(fastify: FastifyInstance) {
     if (!userId) return reply.status(401).send({ error: t('errors.unauthorized') })
 
     const { linkId, assetId, variantExt } = request.params as { linkId: string; assetId: string; variantExt: string }
-    const parsed = parseMediaAssetPath(`${MEDIA_ASSET_URL_PREFIX}/${linkId}/${assetId}/${variantExt}`)
+    const parsed = parseMediaAssetPath(
+      `${MEDIA_ASSET_URL_PREFIX}/${linkId}/${assetId}/${normalizeLegacyMediaVariant(variantExt)}`
+    )
     if (!parsed) {
       return reply.status(404).send({ error: t(NOT_FOUND_KEY) })
     }

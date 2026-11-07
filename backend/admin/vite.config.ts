@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // admin installs independently (not an npm workspace member — see the root
-// CLAUDE.md), so @famlin/api-client is a plain `file:../../packages/api-client`
+// AGENTS.md), so @famlin/api-client is a plain `file:../../packages/api-client`
 // dependency instead. npm still links it as a symlink though, resolving to a
 // real path two levels up under packages/api-client — same situation web/'s
 // vite.config.ts documents for its own (workspace) symlink.

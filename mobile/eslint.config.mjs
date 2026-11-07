@@ -1,6 +1,6 @@
 // ESLint flat config for the Expo / React Native app.
 //
-// mobile/ installs independently (see repo root CLAUDE.md), so it carries
+// mobile/ installs independently (see repo root AGENTS.md), so it carries
 // its own eslint + eslint-config-expo devDependencies rather than relying
 // on the root workspace's hoisted node_modules. `eslint-config-expo` is the
 // lightweight Expo-ecosystem-standard base (typescript-eslint + React +

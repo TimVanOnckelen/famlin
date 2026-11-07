@@ -36,7 +36,8 @@ import { prisma } from '../db.js'
 import { getStorage } from './storage/registry.js'
 import { appendStoredObject } from './storage/archive.js'
 import { getUserCircleIds, visiblePostsWhere } from './circles.js'
-import { uploadAssetKey, canReadUpload } from './uploads.js'
+import { visibleWikiPagesWhere } from './wiki.js'
+import { uploadAssetKey, isUploadRowReadable } from './uploads.js'
 import { redactGiftListTypeData } from './giftLists.js'
 import pkg from '../../package.json' with { type: 'json' }
 
@@ -115,24 +116,27 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   const chatGroupIds = groups.filter((g) => g.chitchatEnabled).map((g) => g.id)
   const otherUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))].filter((id) => id !== userId)
 
-  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftDrawAssignments] = await Promise.all([
-    prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
-    prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
-    // Only groups with chat switched on — a disabled group's chat is
-    // unreadable in the app (403 errors.chitchatDisabled), so it's unreadable
-    // here too. A SYSTEM_MILESTONE message about a circle post the caller
-    // can't see is dropped below.
-    prisma.chatMessage.findMany({ where: { groupId: { in: chatGroupIds } }, orderBy: { createdAt: 'asc' } }),
-    prisma.user.findMany({
-      where: { id: { in: otherUserIds } },
-      select: { id: true, email: true, name: true, avatarUrl: true },
-    }),
-    // Every wishlist on the gift lists the caller can see (posts above are
-    // already narrowed to their hidden circles) — as in the app.
-    prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
-    // Secret Santa: ONLY the caller's own assignment, never anyone else's.
-    prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
-  ])
+  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftDrawAssignments, wikiPages] =
+    await Promise.all([
+      prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
+      prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
+      // Only groups with chat switched on — a disabled group's chat is
+      // unreadable in the app (403 errors.chitchatDisabled), so it's unreadable
+      // here too. A SYSTEM_MILESTONE message about a circle post the caller
+      // can't see is dropped below.
+      prisma.chatMessage.findMany({ where: { groupId: { in: chatGroupIds } }, orderBy: { createdAt: 'asc' } }),
+      prisma.user.findMany({
+        where: { id: { in: otherUserIds } },
+        select: { id: true, email: true, name: true, avatarUrl: true },
+      }),
+      // Every wishlist on the gift lists the caller can see (posts above are
+      // already narrowed to their hidden circles) — as in the app.
+      prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
+      // Secret Santa: ONLY the caller's own assignment, never anyone else's.
+      prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
+      // Family Wiki pages the caller can read in the app — same circle rule.
+      prisma.wikiPage.findMany({ where: visibleWikiPagesWhere(groupIds, circleIds), orderBy: { createdAt: 'asc' } }),
+    ])
 
   const commentIds = comments.map((c) => c.id)
   const reactions = await prisma.like.findMany({
@@ -154,27 +158,33 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
     chatMessages: visibleChat,
     giftListItems,
     giftDrawAssignments,
+    wikiPages,
   }
   const serialized = Object.fromEntries(
     Object.entries(data).map(([key, rows]) => [key, JSON.stringify(rows, null, 2)])
   ) as Record<keyof typeof data, string>
 
   // Upload files: only what the rows above reference, never the directory.
-  // The rows are already scoped, so this should never drop anything — the
-  // Upload-table check is belt and braces for the same canReadUpload() rule
-  // /uploads/* enforces per request (services/uploads.ts): a circle-bound
-  // file needs circle membership, an unbound draft is its uploader's only.
+  // The keys come from a regex over every serialized row, free text included,
+  // so a member can name any upload path (another family's photo) in their
+  // own post or comment — each is filtered through the same rule /uploads/*
+  // enforces (isUploadRowReadable), against memberships loaded above.
   const referencedKeys = collectUploadKeys(Object.values(serialized).join('\n'))
+  const scope = { uploaderId: true, circleId: true, bound: true, groupIds: true, serverWide: true } as const
   const uploadRows = await prisma.upload.findMany({
     where: { assetKey: { in: [...referencedKeys] } },
-    select: { assetKey: true, uploaderId: true, circleId: true, bound: true, motionAssetKey: true },
+    select: { assetKey: true, motionAssetKey: true, ...scope, livePhoto: { select: scope } },
   })
-  const circleSet = new Set(circleIds)
+  const myGroups = new Set(groupIds)
+  const myCircles = new Set(circleIds)
+  const viewer = {
+    inCircle: (circleId: string) => myCircles.has(circleId),
+    inAnyGroup: (ids: string[]) => ids.some((id) => myGroups.has(id)),
+  }
   for (const row of uploadRows) {
-    const readable = row.circleId ? circleSet.has(row.circleId) : row.bound || row.uploaderId === userId
-    if (!readable) referencedKeys.delete(row.assetKey)
-    else if (row.motionAssetKey && (await canReadUpload(`/uploads/${row.motionAssetKey}.mp4`, userId)))
-      referencedKeys.add(row.motionAssetKey)
+    // A Live Photo's motion clip is readable exactly when its photo is.
+    if (!(await isUploadRowReadable(row.livePhoto ?? row, userId, viewer))) referencedKeys.delete(row.assetKey)
+    else if (row.motionAssetKey) referencedKeys.add(row.motionAssetKey)
   }
 
   const uploadFiles: { rel: string }[] = []
@@ -202,6 +212,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
       chatMessages: visibleChat.length,
       giftListItems: giftListItems.length,
       giftDrawAssignments: giftDrawAssignments.length,
+      wikiPages: wikiPages.length,
       uploadFiles: uploadFiles.length,
     },
   }
@@ -217,6 +228,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   archive.append(serialized.chatMessages, { name: 'data/chat-messages.json' })
   archive.append(serialized.giftListItems, { name: 'data/gift-list-items.json' })
   archive.append(serialized.giftDrawAssignments, { name: 'data/gift-draw-assignments.json' })
+  archive.append(serialized.wikiPages, { name: 'data/wiki-pages.json' })
 
   for (const file of uploadFiles) {
     appendStoredObject(archive, file.rel)

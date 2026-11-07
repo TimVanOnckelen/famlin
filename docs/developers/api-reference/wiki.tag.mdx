@@ -1,0 +1,30 @@
+---
+id: wiki
+title: "Wiki"
+description: "Wiki"
+custom_edit_url: null
+---
+
+
+
+The Family Wiki: durable, editable family knowledge (recipes, the
+holiday house's Wi-Fi, traditions), one wiki per family (group). Any
+member who can see a page can edit it, unless the page is `locked`
+(then only its creator or an admin). A page can be narrowed to one
+circle at creation; circle-private pages are invisible to everyone
+outside the circle (`404`, never `403`). `content` is a small, safe
+Markdown subset: headings, bold/italic, lists, checklists, quotes, code,
+rules, links to `http(s)`/`mailto:`/`tel:` or in-app paths such as
+`/posts/<id>`, and images from uploaded `/uploads/` files only.
+Concurrent edits are detected with `baseUpdatedAt`.
+
+
+
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
+
+<DocCardList items={useCurrentSidebarCategory().items}/>
+```
+      

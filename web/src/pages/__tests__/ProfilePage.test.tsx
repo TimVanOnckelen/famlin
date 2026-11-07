@@ -1,8 +1,9 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { prepareAvatar } from '@/utils/avatar-image'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { downloadMyExport, fetchNotificationConfig, fetchServerInfo, updateMe } from '@famlin/api-client'
+import { downloadMyExport, fetchNotificationConfig, fetchServerInfo, updateMe, uploadFiles } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -10,6 +11,12 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   fetchServerInfo: vi.fn(),
   updateMe: vi.fn(),
   downloadMyExport: vi.fn(),
+  uploadFiles: vi.fn(),
+}))
+
+vi.mock('@/utils/avatar-image', async (original) => ({
+  ...(await original<typeof import('@/utils/avatar-image')>()),
+  prepareAvatar: vi.fn(),
 }))
 
 beforeEach(() => {
@@ -100,4 +107,27 @@ describe('ProfilePage', () => {
     await user.click(screen.getByRole('button', { name: 'Log out' }))
     expect(onLogout).toHaveBeenCalled()
   })
+})
+
+it('uploads only the compressed crop after confirmation and allows choosing the same file again after cancellation', async () => {
+  const user = userEvent.setup()
+  Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:profile-photo'), revokeObjectURL: vi.fn() })
+  const compressed = new File(['jpeg'], 'avatar.jpg', { type: 'image/jpeg' })
+  vi.mocked(prepareAvatar).mockResolvedValue(compressed)
+  vi.mocked(uploadFiles).mockResolvedValue(['/uploads/avatar.jpg'])
+  const { container } = renderWithQueryClient(<ProfilePage user={makeUser()} onBack={() => {}} onLogout={() => {}} />)
+  const input = container.querySelector('input[type="file"]') as HTMLInputElement
+  const original = new File(['4k png'], 'photo.png', { type: 'image/png' })
+  await user.upload(input, original)
+  expect(screen.getByRole('dialog', { name: 'Crop profile photo' })).toBeInTheDocument()
+  expect(uploadFiles).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(updateMe).not.toHaveBeenCalled()
+  await user.upload(input, original)
+  const image = screen.getByAltText('Profile photo preview')
+  Object.defineProperties(image, { naturalWidth: { value: 4000 }, naturalHeight: { value: 3000 } })
+  fireEvent.load(image)
+  await user.click(screen.getByRole('button', { name: 'Save' }))
+  await waitFor(() => expect(uploadFiles).toHaveBeenCalledWith([compressed]))
+  await waitFor(() => expect(updateMe).toHaveBeenCalledWith({ avatarUrl: '/uploads/avatar.jpg' }))
 })

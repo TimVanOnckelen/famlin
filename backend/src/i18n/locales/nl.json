@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "Dit e-mailadres is al in gebruik",
     "authFailed": "Authenticatie mislukt",
     "invalidEmailOrPassword": "Ongeldig e-mailadres of wachtwoord",
     "adminRequired": "Admin rechten vereist",
@@ -117,7 +118,12 @@
     "giftDrawTooFewParticipants": "Lootjes trekken kan pas vanaf 3 deelnemers.",
     "giftDrawImpossible": "Met deze uitsluitingen is geen trekking mogelijk. Verwijder enkele uitsluitingen en probeer opnieuw.",
     "giftAlreadyDrawn": "De lootjes zijn al getrokken.",
-    "giftDrawWillReset": "Deze wijziging maakt de huidige trekking ongedaan. Bevestig om opnieuw lootjes te trekken."
+    "giftDrawWillReset": "Deze wijziging maakt de huidige trekking ongedaan. Bevestig om opnieuw lootjes te trekken.",
+    "wikiPageNotFound": "Wikipagina niet gevonden",
+    "wikiPageLocked": "Deze pagina is vergrendeld. Alleen de maker of een beheerder kan ze bewerken.",
+    "wikiPageLockForbidden": "Alleen de maker van de pagina of een beheerder kan ze vergrendelen of ontgrendelen.",
+    "wikiPageDeleteForbidden": "Alleen de maker van de pagina of een beheerder kan ze verwijderen.",
+    "wikiPageConflict": "Iemand anders heeft deze pagina intussen opgeslagen. Bekijk hun wijzigingen en probeer opnieuw."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",
