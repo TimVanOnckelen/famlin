@@ -51,7 +51,7 @@ What "documented" means depends on who notices the feature:
 - **Developers / API users** (an endpoint, a field, an architectural pattern): update `docs/openapi/famlin.yaml` (and regenerate the API reference) and `docs/developers/architecture.md`.
 - **Marketing claims** (a headline feature): consider `website/index.html` too.
 
-The [Documentation table in CLAUDE.md](https://github.com/TimVanOnckelen/famlin/blob/main/CLAUDE.md#documentation) maps each kind of change to the page to update.
+The [Documentation table in AGENTS.md](https://github.com/TimVanOnckelen/famlin/blob/main/AGENTS.md#documentation) maps each kind of change to the page to update.
 
 CI enforces this: the `Documentation required for features` job fails a PR whose title or any commit is a `feat` (`feat:`, `feat(scope):`, `feat!:`) but that changes nothing under `docs/` or `website/`. If a feature really has nothing to document (rare: a `feat` with no visible behavior is usually a `refactor` or `chore`), add a line `Docs-not-needed: <reason>` to a commit message or to the PR description. After editing the description, re-run the job or push again, because the check reads the description only when it runs.
 
@@ -64,7 +64,7 @@ If your change is **breaking** — an existing deployment would need manual acti
 - append `!` to the type: `feat!: require TRUST_PROXY behind a reverse proxy`, or
 - add a footer explaining the migration: `BREAKING CHANGE: media tokens issued before this release are invalidated; clients must request a new one.`
 
-This marker is what drives the release automation: release-please adds the commit to a dedicated **⚠ BREAKING CHANGES** section in `CHANGELOG.md` and the GitHub Release, applies the corresponding version bump, and the AI-rewritten release notes only warn self-hosting admins about changes marked this way — an unmarked breaking change ships silently as an ordinary entry. This applies to AI coding agents too: if you use Claude or a similar assistant to write commits, make sure it marks breaking changes the same way (the repo's `CLAUDE.md` instructs it to).
+This marker is what drives the release automation: release-please adds the commit to a dedicated **⚠ BREAKING CHANGES** section in `CHANGELOG.md` and the GitHub Release, applies the corresponding version bump, and the AI-rewritten release notes only warn self-hosting admins about changes marked this way — an unmarked breaking change ships silently as an ordinary entry. This applies to AI coding agents too: if you use an AI assistant (Claude Code, Codex, Copilot, Cursor, Gemini CLI, …) to write commits, make sure it marks breaking changes the same way (the repo's `AGENTS.md` instructs it to).
 
 CI backs this up for the API surface: when a PR changes `docs/openapi/famlin.yaml` in a way [oasdiff](https://github.com/oasdiff/oasdiff) classifies as breaking, the `API breaking-change check` job fails unless a commit in the PR or the PR title carries a breaking marker. Breaking changes outside the API spec (env vars, deploy steps) can't be detected automatically — marking those is on you.
 
