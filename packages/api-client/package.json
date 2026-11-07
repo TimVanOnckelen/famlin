@@ -12,16 +12,16 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-query": "^5.105.3",
     "axios": "^1.21.0",
     "tslib": "^2.9.1"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-query": "^5.105.3",
     "axios": "^1.21.0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }
