@@ -97,6 +97,18 @@ tags:
       After the draw each participant sees **only their own** recipient
       (`giftList.myRecipient` on the post) — no response exposes the full
       set of pairings, not even to the starter.
+  - name: Wiki
+    description: |
+      The Family Wiki: durable, editable family knowledge (recipes, the
+      holiday house's Wi-Fi, traditions), one wiki per family (group). Any
+      member who can see a page can edit it, unless the page is `locked`
+      (then only its creator or an admin). A page can be narrowed to one
+      circle at creation; circle-private pages are invisible to everyone
+      outside the circle (`404`, never `403`). `content` is a small, safe
+      Markdown subset: headings, bold/italic, lists, checklists, quotes, code,
+      rules, links to `http(s)`/`mailto:`/`tel:` or in-app paths such as
+      `/posts/<id>`, and images from uploaded `/uploads/` files only.
+      Concurrent edits are detected with `baseUpdatedAt`.
   - name: Notifications
     description: Your in-app notification history.
   - name: Storage administration
@@ -3584,6 +3596,238 @@ paths:
         '401': { description: Authentication required }
         '403': { description: Administrator required }
 
+  /api/wiki/pages:
+    get:
+      operationId: listWikiPages
+      tags: [Wiki]
+      summary: List or search a family's wiki pages
+      description: |
+        The wiki overview, search and "recently updated" in one list: pages
+        you can see in one family, most recently edited first,
+        cursor-paginated. Returns summaries (a plain-text `excerpt`, no
+        `content`). `q` is a case-insensitive search over title, category
+        and content.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 200 }
+          description: Search text.
+        - name: category
+          in: query
+          schema: { type: string, maxLength: 60 }
+          description: Only pages in this category (case-insensitive). An empty value selects uncategorized pages.
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of wiki page summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WikiPageSummary'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: Pass back as `?cursor=` for the next page; `null` on the last page.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+    post:
+      operationId: createWikiPage
+      tags: [Wiki]
+      summary: Create a wiki page
+      description: |
+        Creates a page in one family. With `circleId` the page is visible only
+        to that circle's members (you must be one of them; otherwise `403`).
+        Photos embedded in `content` are bound to the page's audience.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId, title]
+              properties:
+                groupId: { type: string }
+                circleId: { type: string, nullable: true, description: Narrow the page to this circle of the family. }
+                title: { type: string, minLength: 1, maxLength: 120, example: "Grandma's lasagna" }
+                emoji: { type: string, nullable: true, maxLength: 16, description: One emoji used as the page icon. }
+                category: { type: string, nullable: true, maxLength: 60, example: Recipes }
+                content: { type: string, maxLength: 50000, default: '', description: Markdown (the supported subset). }
+                locked: { type: boolean, default: false }
+      responses:
+        '201':
+          description: The created page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You are not a member of this family, or not a member of the target circle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/wiki/categories:
+    get:
+      operationId: listWikiCategories
+      tags: [Wiki]
+      summary: List a family's wiki categories
+      description: |
+        Every category in use among the pages you can see, with page counts,
+        sorted by name. Uncategorized pages are reported once as
+        `name: null`, last.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WikiCategory'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/wiki/pages/{pageId}:
+    parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getWikiPage
+      tags: [Wiki]
+      summary: Get a wiki page
+      responses:
+        '200':
+          description: The page, with its Markdown content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No such page, or you can't see it (not in the family, or a circle you're not in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      operationId: updateWikiPage
+      tags: [Wiki]
+      summary: Edit a wiki page
+      description: |
+        Any member who can see the page may edit it, unless it is `locked`
+        (then only its creator or an admin). Changing `locked` is reserved for
+        the creator or an admin. Send `baseUpdatedAt` (the `updatedAt` you
+        loaded) to detect concurrent edits: if someone saved in between, the
+        request is refused with `409` and the current page, and nothing is
+        overwritten. Omitting it saves unconditionally.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, nullable: true, maxLength: 16 }
+                category: { type: string, nullable: true, maxLength: 60 }
+                content: { type: string, maxLength: 50000 }
+                locked: { type: boolean }
+                baseUpdatedAt: { type: string, format: date-time }
+      responses:
+        '200':
+          description: The updated page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The page is locked and you are not its creator or an admin, or you tried to lock/unlock it without being either
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No such page, or you can't see it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Someone else saved the page after `baseUpdatedAt`; the body carries their current version
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      page:
+                        $ref: '#/components/schemas/WikiPage'
+    delete:
+      operationId: deleteWikiPage
+      tags: [Wiki]
+      summary: Delete a wiki page
+      description: Creator or admin only. There is no revision history, so a deleted page can't be restored.
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You are neither the page's creator nor an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No such page, or you can't see it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -4810,3 +5054,47 @@ components:
           type: string
           nullable: true
           description: Set when the invite is restricted to one email address.
+
+    WikiCategory:
+      type: object
+      properties:
+        name: { type: string, nullable: true, description: "`null` = uncategorized pages." }
+        pageCount: { type: integer, example: 7 }
+
+    WikiPageSummary:
+      type: object
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        circle:
+          type: object
+          nullable: true
+          description: Set when the page is private to a circle you belong to.
+          properties:
+            id: { type: string }
+            name: { type: string }
+        title: { type: string, example: "Grandma's lasagna" }
+        emoji: { type: string, nullable: true, example: "🍝" }
+        category: { type: string, nullable: true, example: Recipes }
+        locked: { type: boolean }
+        excerpt: { type: string, description: Plain-text preview of the content (about 160 characters). }
+        createdBy:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          nullable: true
+          description: "`null` once the author's account was deleted (the page is kept)."
+        updatedBy:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          nullable: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    WikiPage:
+      allOf:
+        - $ref: '#/components/schemas/WikiPageSummary'
+        - type: object
+          properties:
+            content: { type: string, description: Markdown (the supported subset). }
+            canEdit: { type: boolean, description: Whether you may edit it (unlocked, or you are its creator or an admin). }
+            canManage: { type: boolean, description: Whether you may lock, unlock or delete it (creator or admin). }

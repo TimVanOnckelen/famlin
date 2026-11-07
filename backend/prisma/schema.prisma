@@ -58,6 +58,8 @@ model User {
   storyViews        StoryView[]
   storyReactions    StoryReaction[]
   storyReplies      StoryReply[]
+  createdWikiPages  WikiPage[]        @relation("WikiPageCreatedBy")
+  updatedWikiPages  WikiPage[]        @relation("WikiPageUpdatedBy")
 }
 
 // A personal access token a member creates to call the API from their own
@@ -114,6 +116,7 @@ model Group {
   chatReads        ChatRead[]
   circles          Circle[]
   stories          Story[]
+  wikiPages        WikiPage[]
 }
 
 model GroupMember {
@@ -538,6 +541,7 @@ model Circle {
   members     CircleMember[]
   posts       Post[]
   stories     Story[]
+  wikiPages   WikiPage[]
 
   @@index([groupId])
 }
@@ -800,4 +804,40 @@ model GiftDrawAssignment {
   @@unique([postId, recipientId])
   @@index([giverId])
   @@index([recipientId])
+}
+
+// One page of a family's wiki (issue #118): durable, editable family
+// knowledge (recipes, the holiday house's Wi-Fi, traditions) as opposed to
+// the feed's moments. Owned by the family, not its author — any member who
+// can see a page may edit it unless it's `locked`, and deleting the author
+// keeps the page (SetNull). Same audience model as Post: group membership is
+// the outer boundary, an optional circleId narrows it (Cascade, like posts:
+// a circle's private pages must never revert to family-wide on delete), and
+// every member-facing read goes through services/wiki.ts's
+// visibleWikiPagesWhere.
+model WikiPage {
+  id          String   @id @default(cuid())
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  circleId    String?
+  circle      Circle?  @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  title       String
+  // A single emoji shown as the page's icon, optional.
+  emoji       String?
+  // Free-text, one level deep ("Recipes", "Holiday house"); null = uncategorized.
+  category    String?
+  // Markdown (a deliberately small subset, rendered client-side). Embedded
+  // images are /uploads/ paths bound to the page's audience on save.
+  content     String   @default("")
+  // Locked pages can only be edited by their creator or an admin.
+  locked      Boolean  @default(false)
+  createdById String?
+  createdBy   User?    @relation("WikiPageCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?    @relation("WikiPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([groupId, updatedAt])
+  @@index([circleId])
 }

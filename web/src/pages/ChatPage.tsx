@@ -47,6 +47,7 @@ export function ChatPage({
   onOpenPhotos,
   onOpenProfile,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenMembers,
@@ -57,6 +58,7 @@ export function ChatPage({
   onOpenPhotos?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenMembers?: () => void
@@ -217,6 +219,7 @@ export function ChatPage({
       onFeed={onBack}
       onPhotos={onOpenPhotos}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onMembers={onOpenMembers}
       onSearch={onOpenSearch}

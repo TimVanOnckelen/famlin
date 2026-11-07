@@ -12,7 +12,8 @@ import { BottomNav } from '@/components/BottomNav'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import './AppShell.css'
 
-export type NavView = 'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'profile' | 'members'
+export type NavView =
+  'feed' | 'photos' | 'chat' | 'favorites' | 'notifications' | 'search' | 'wiki' | 'profile' | 'members'
 
 // The app shell every authenticated page renders itself inside of (mirrors
 // mobile's MainTabs.tsx, adapted for wide screens): a left sidebar nav rail
@@ -38,6 +39,7 @@ export function AppShell({
   onFavorites,
   onNotifications,
   onSearch,
+  onWiki,
   onMembers,
   onProfile,
   onNewPost,
@@ -52,6 +54,7 @@ export function AppShell({
   onFavorites?: () => void
   onNotifications?: () => void
   onSearch?: () => void
+  onWiki?: () => void
   // The standalone /members page (every family + the caller's own circles).
   // Reached from the avatar menu rather than a sidebar item — mobile has no
   // tab for it either — and hidden, like the family-scoped tabs, for a user
@@ -95,6 +98,8 @@ export function AppShell({
     (!!onNotifications || active === 'notifications') && (hasGroups || active === 'notifications')
   const showSearchNav = (!!onSearch || active === 'search') && (hasGroups || active === 'search')
   const searchNav = showSearchNav ? onSearch : undefined
+  const showWikiNav = (!!onWiki || active === 'wiki') && (hasGroups || active === 'wiki')
+  const wikiNav = showWikiNav ? onWiki : undefined
   const notificationsNav = showNotificationsNav ? onNotifications : undefined
   const notificationCount = useQuery({
     queryKey: ['unread-count'],
@@ -114,6 +119,7 @@ export function AppShell({
     else if (view === 'chat') chatNav?.()
     else if (view === 'favorites') favoritesNav?.()
     else if (view === 'search') searchNav?.()
+    else if (view === 'wiki') wikiNav?.()
     else if (view === 'notifications') notificationsNav?.()
     else if (view === 'members') membersNav?.()
     else onProfile()
@@ -164,6 +170,7 @@ export function AppShell({
       badge: hasUnreadNotifications,
       show: showNotificationsNav,
     },
+    { view: 'wiki', icon: 'book-open', label: t('tabs.wiki'), keys: 'g w', onClick: wikiNav, show: showWikiNav },
     { view: 'search', icon: 'search', label: t('tabs.search'), keys: 'g s', onClick: searchNav, show: showSearchNav },
     { view: 'profile', icon: 'user', label: t('tabs.profile'), keys: 'g u', onClick: onProfile, show: true },
   ]
@@ -238,8 +245,19 @@ export function AppShell({
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        {(showFavoritesNav || showNotificationsNav || showSearchNav) && (
+        {(showFavoritesNav || showNotificationsNav || showSearchNav || showWikiNav) && (
           <div className="mobile-header-actions">
+            {showWikiNav && (
+              <button
+                type="button"
+                className="mobile-header-action"
+                onClick={wikiNav}
+                aria-current={active === 'wiki' ? 'page' : undefined}
+                aria-label={t('tabs.wiki')}
+              >
+                <Icon name="book-open" size={20} />
+              </button>
+            )}
             {showSearchNav && (
               <button
                 type="button"

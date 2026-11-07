@@ -171,6 +171,16 @@ export function FeedScreen() {
           </TouchableOpacity>
         )}
 
+        {hasGroups && (
+          <TouchableOpacity
+            style={styles.favoritesButton}
+            onPress={() => navigation.navigate('Wiki', { groupId: singleActiveGroup?.id })}
+            accessibilityLabel={t('wiki.title')}
+          >
+            <Icon name="book-open" size={20} color={colors.textTitle} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.favoritesButton}
           onPress={() => navigation.navigate('Favorites')}

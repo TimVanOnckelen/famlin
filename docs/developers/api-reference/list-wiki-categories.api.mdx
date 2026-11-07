@@ -1,0 +1,72 @@
+---
+id: list-wiki-categories
+title: "List a family's wiki categories"
+description: "Every category in use among the pages you can see, with page counts,"
+sidebar_label: "List a family's wiki categories"
+hide_title: true
+hide_table_of_contents: true
+api: eJzlVm1v2zYQ/isHflkSsHb3AgwQtgFpkW0ZOrRoUhRdbFRn6SyxoUiNRznVDAH7EfuF+yXDUUpi1+mGAftQYP5im7wj757n7uFtlW8pYDTenZcqU9ZwfG2uzVOMVPlgiJVWEStW2ZWSDbXUqiQugmnFSWXqbEOhh2J06ME46JgAG+8qiDVBixUx9L6DAh0wkYYbE+u0DoXvXGS9cOxDpBJWPThsaAav3HSi+Y3K6QwMBIHa0dK7ggB54XJxyMB11uYaLHKcLZzSqsWADUUKEvtWiZXKVBV8156XSisjwf/aUeiVVoF+7UygUmUxdKQVFzU1qLKtin0rfhyDcZUahqUYc+sdE8v+F48fy9c+JnvwFd5FclGssG2tKRLc83csptvDq/zqHRVRMghCTjTjRSZSwztmGAJK6B+uf8R9zP/DfLQS3HBl6Tbz/UTyBCt8C90hHzM1CMoVPRUSd842LlJFQWlF77Fp5eyvh0GraKL8VjsF1qth/Gj11UNAnrsNWlOC8EMcYeXLHnyAxBscMRHkJUU0lvPjf4M1Wvt8nQrj72GjEHx4CLf9OH/sGnSPAmEpWGqIAR1blELdGEx9kJ8WBbXx0TN0VYcV5VATlhTgKCeXz3Nn8+OZEiTui/Fqun95D95ZWhj0PwU+ofJQYeyH/osvYW3IlpDuElqHYXnLyeeHnPxsmI2rNJiRHA30vpV4tTATaOOvqYQiUEkuGrT/XQt8qmRMWH15iNUb3yXZcj4CQkPNigL4NcTaMCQt+l+gM2jVUKy9PDEVpdAx1ipTc2zN/MZcm3mxK5lMYXMr3F2wKlN1jC1n8/kaG2vcbBKWWeGbgwTf+C6Av3HwfbKFklrr+0YQFvVmKrpgYp8OXxEGCqedBHO13N2+ENRHYHeN7tCVgNT0UMj/0eggmFNoKbB3aAGLgpgh+mtycJSPmbxtMb6dzWa5lo5JLBiXSLihFWDbHoMPC4fAxGy8g59eX8I6+AbyF88vLiEBiF2s59ZXxuUzeOJjnWqOycV0EmNDcIN9tnC5ZCEinkosgycpavgmBfVdLi+nkGXc2qdcJyYnJE9fnCuthJkxuaILQWB9eCSYnEYuRSM8E4+V//Ls4lJOg85JWeWSRQ5//v7HfbyyG2taOL9em8KghcavjCVAV95iwzJqzOC1jBMIVw8ivTyal7QhK53Ccs/xwt0OI6vO2FJGk7Fe0rs1DkMMWKFxHMfdNTbG9p/xlMxs4Rbu1FqYOhcMAxe+HQeYk5PU2FO3c23ak5PsbgDyzvYg3TcmEkykhbs7x42iwHCUrjTEx8lzRTbNU14nt1hTILnVeSEWMPguLWNcuJbCmPoMLojg6pWodQL29MX5IRyw9gGkgkStR+nRKaKNLHjH45U3PoisT43HqVK0aj3HBt39gKGeGRapu0NMmhv2mnuvVrb36vfJTpJTx0d6H+etRZMyT7K0nXTsSmFrlFaSrAj6fbpLrWrPUUy22xUyvQp2GGR5HD1FhErDIsWlytZo+cMZbBeho5eT3h7Dx+K6pn5vzN2g7cQqad8GgxmHvavloNWo6imG0W3U/R2vg/dITrmT8h/OLtUw/AWdLU2v
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"List a family's wiki categories"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/wiki/categories"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Every category in use among the pages you can see, with page counts,
+sorted by name. Uncategorized pages are reported once as
+`name: null`, last.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./list-wiki-categories.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./list-wiki-categories.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./list-wiki-categories.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      
