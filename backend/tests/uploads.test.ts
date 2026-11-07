@@ -272,6 +272,34 @@ describe('POST /api/uploads — compression', () => {
     await waitForProcessing(app, uuid, member)
   })
 
+  it('backfills a -thumbnail.jpg the request-time preview failed to write (issue #386)', async () => {
+    const member = await createUser()
+    const uuid = randomUUID()
+    writtenUuids.push(uuid)
+    await sharp({ create: { width: 1200, height: 900, channels: 3, background: 'blue' } })
+      .jpeg()
+      .toFile(path.join(uploadsDir, 'originals', `${uuid}.jpg`))
+    // Queued with no thumbnail on disk — what the upload route leaves behind
+    // when createUploadPreview throws.
+    await prisma.upload.create({
+      data: {
+        assetKey: uuid,
+        uploaderId: member.id,
+        sourceFilename: `${uuid}.jpg`,
+        mediaUrl: `/uploads/${uuid}.jpg`,
+        processingStatus: 'queued',
+      },
+    })
+    await waitForProcessing(app, uuid, member)
+    const thumbRes = await app.inject({
+      method: 'GET',
+      url: `/uploads/${uuid}-thumbnail.jpg`,
+      headers: authHeader(member),
+    })
+    expect(thumbRes.statusCode).toBe(200)
+    expect((await sharp(thumbRes.rawPayload).metadata()).width).toBe(400)
+  })
+
   it('stores and serves a .gif upload unprocessed (no resize, animation-safe)', async () => {
     const member = await createUser()
     const gif = await sharp({ create: { width: 20, height: 20, channels: 3, background: { r: 0, g: 255, b: 0 } } })
@@ -389,6 +417,34 @@ describe('GET /uploads/<uuid>.heic — legacy HEIC renditions', () => {
     const res = await app.inject({
       method: 'GET',
       url: `/uploads/derived/${uuid}.jpg`,
+      headers: authHeader(member),
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('generates a missing -thumbnail.jpg for an older JPEG upload on first request (issue #386)', async () => {
+    const member = await createUser()
+    const uuid = await writeLegacyUpload('.jpg', 1600, 1200)
+    const url = `/uploads/${uuid}-thumbnail.jpg`
+
+    const [first, concurrent] = await Promise.all([
+      app.inject({ method: 'GET', url, headers: authHeader(member) }),
+      app.inject({ method: 'GET', url, headers: authHeader(member) }),
+    ])
+    for (const res of [first, concurrent]) {
+      expect(res.statusCode).toBe(200)
+      expect(res.headers['content-type']).toBe('image/jpeg')
+      expect((await sharp(res.rawPayload).metadata()).width).toBe(400)
+    }
+    // Written under its real key, so later requests are plain hits.
+    expect((await sharp(path.join(uploadsDir, `${uuid}-thumbnail.jpg`)).metadata()).width).toBe(400)
+  })
+
+  it('still 404s a thumbnail with no display copy to derive it from', async () => {
+    const member = await createUser()
+    const res = await app.inject({
+      method: 'GET',
+      url: `/uploads/${randomUUID()}-thumbnail.jpg`,
       headers: authHeader(member),
     })
     expect(res.statusCode).toBe(404)

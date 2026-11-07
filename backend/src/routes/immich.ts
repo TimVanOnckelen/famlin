@@ -9,7 +9,7 @@ import {
   listAndMapAlbumAssets,
   respondWithAlbumList,
 } from '../services/media/routeHelpers.js'
-import { parseMediaAssetPath } from '../types.js'
+import { normalizeLegacyMediaVariant, parseMediaAssetPath } from '../types.js'
 import { getT } from '../i18n/index.js'
 
 const IMMICH_ASSET_URL_PREFIX = '/api/immich/assets'
@@ -67,7 +67,9 @@ export default async function immichRoutes(fastify: FastifyInstance) {
     if (!userId) return reply.status(401).send({ error: t('errors.unauthorized') })
 
     const { linkId, assetId, variantExt } = request.params as { linkId: string; assetId: string; variantExt: string }
-    const parsed = parseMediaAssetPath(`${IMMICH_ASSET_URL_PREFIX}/${linkId}/${assetId}/${variantExt}`)
+    const parsed = parseMediaAssetPath(
+      `${IMMICH_ASSET_URL_PREFIX}/${linkId}/${assetId}/${normalizeLegacyMediaVariant(variantExt)}`
+    )
     if (!parsed) {
       return reply.status(404).send({ error: t(NOT_FOUND_KEY) })
     }
