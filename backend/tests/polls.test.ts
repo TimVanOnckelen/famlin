@@ -511,6 +511,7 @@ describe('custom post types + polls', () => {
         'TRIP',
         'ALBUM',
         'GIFT_LIST',
+        'EVENT',
       ])
       expect((byId.get(restrictedGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE'])
 
@@ -595,6 +596,7 @@ describe('custom post types + polls', () => {
         { id: 'TRIP' },
         { id: 'ALBUM' },
         { id: 'GIFT_LIST' },
+        { id: 'EVENT' },
       ])
 
       const denied = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(member) })

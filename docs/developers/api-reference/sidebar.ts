@@ -904,6 +904,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/postevent",
+          label: "PostEvent",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/polloptionresult",
           label: "PollOptionResult",
           className: "schema",

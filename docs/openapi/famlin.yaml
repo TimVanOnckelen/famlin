@@ -789,7 +789,8 @@ paths:
           schema: { type: string }
           description: >-
             Return only posts of this type (`UPDATE`, `MILESTONE`, `POLL`,
-            `TRIP`, `ALBUM`). An unrecognized type is a `400`.
+            `TRIP`, `ALBUM`, `GIFT_LIST`, `EVENT`). An unrecognized type is a
+            `400`.
           example: ALBUM
         - $ref: '#/components/parameters/cursor'
         - $ref: '#/components/parameters/take'
@@ -893,6 +894,16 @@ paths:
         each other (symmetric). Only participants can see the post anywhere.
         Wishlists, participant changes, settings and the draw are managed
         through the Gift lists endpoints afterwards.
+
+        `type: "EVENT"` creates an event people can RSVP to: `content` is the
+        event's title (required, non-empty) and `typeData` carries
+        `{ startsAt, endsAt?, location?, rsvpDeadline? }` — `startsAt` is
+        required; `startsAt`/`endsAt`/`rsvpDeadline` are ISO 8601 date-times
+        (an offset is accepted and normalized to UTC), `location` is free text
+        (1-200 chars). `endsAt` can't be before `startsAt`, and
+        `rsvpDeadline` can't be after it. Events cross-post like any other
+        type; RSVPs happen afterwards via
+        `POST /api/posts/{postId}/interactions` (`key: "rsvp"`, see below).
       requestBody:
         required: true
         content:
@@ -927,9 +938,9 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST, EVENT]
                   default: UPDATE
-                  description: A server may support additional types beyond these six.
+                  description: A server may support additional types beyond these seven.
                 typeData:
                   type: object
                   description: |
@@ -940,7 +951,9 @@ paths:
                     (see the `TRIP` description above). For `ALBUM`:
                     `{ title, coverPhotoUrl? }` (see the `ALBUM` description above).
                     For `GIFT_LIST`: `{ title, occasionDate?, participantUserIds?, drawEnabled?, budget?, exclusions? }`
-                    (see the `GIFT_LIST` description above).
+                    (see the `GIFT_LIST` description above). For `EVENT`:
+                    `{ startsAt, endsAt?, location?, rsvpDeadline? }` (see the
+                    `EVENT` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -1204,6 +1217,14 @@ paths:
         different option **switches** it. Votes are public to group members
         (not anonymous) and results are visible whether or not you've voted.
         Voting after `closesAt` has passed is rejected.
+
+        For an `EVENT` post: `key: "rsvp"`, `value` one of `"yes"`, `"maybe"`
+        or `"no"` (a plain string). Sending your current answer again
+        **clears** it; a different answer **switches** it. RSVPs are public
+        to the post's audience. Answering is rejected once `rsvpDeadline` has
+        passed, or once the event has started if no deadline was set. On a cross-posted event you have one answer per event,
+        not per family: answering on one copy replaces an answer you left on
+        another.
 
         For a `TRIP` post, three keys are supported. A cross-posted trip
         stays one journal — each of these applies to every sibling group's
@@ -4276,6 +4297,15 @@ components:
             counts and **your own** Secret Santa recipient. Computed on every
             read, so it's absent from `POST /api/posts` and
             `PATCH /api/posts/{id}` responses.
+        event:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostEvent'
+          description: |
+            Present only when `type` is `EVENT` — the event's details plus
+            live RSVP counts, who answered what, and your own answer. Computed
+            on every read, so it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
           nullable: true
@@ -4384,6 +4414,41 @@ components:
         closed:
           type: boolean
           description: '`true` once `closesAt` has passed. Voting a closed poll is rejected.'
+
+    PostEvent:
+      type: object
+      description: |
+        The enriched, read-time view of an `EVENT` post — computed fresh on
+        every read. RSVPs are public to the post's audience. On a cross-posted
+        event they are merged across the copies you can see, like reactions
+        and comments: the author sees every family's answers, while a member
+        of one family only sees that family's.
+      properties:
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time, nullable: true }
+        location: { type: string, nullable: true }
+        rsvpDeadline: { type: string, format: date-time, nullable: true }
+        closed:
+          type: boolean
+          description: '`true` once `rsvpDeadline` has passed, or once `startsAt` has if no deadline was set. RSVPing to a closed event is rejected.'
+        myRsvp:
+          type: string
+          enum: [yes, maybe, no]
+          nullable: true
+          description: Your own answer, or `null` if you haven't answered.
+        counts:
+          type: object
+          properties:
+            yes: { type: integer }
+            maybe: { type: integer }
+            no: { type: integer }
+        responses:
+          type: object
+          description: Who answered what, oldest answer first.
+          properties:
+            yes: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
+            maybe: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
+            no: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
 
     PollOptionResult:
       type: object

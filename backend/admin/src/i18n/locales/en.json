@@ -466,7 +466,8 @@
     "POLL": "Poll",
     "TRIP": "Trip",
     "ALBUM": "Album",
-    "GIFT_LIST": "Gift list"
+    "GIFT_LIST": "Gift list",
+    "EVENT": "Event"
   },
   "circles": {
     "edit": "Edit circle",

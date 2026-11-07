@@ -466,7 +466,8 @@
     "POLL": "Sondagem",
     "TRIP": "Viagem",
     "ALBUM": "Álbum",
-    "GIFT_LIST": "Lista de presentes"
+    "GIFT_LIST": "Lista de presentes",
+    "EVENT": "Evento"
   },
   "circles": {
     "edit": "Editar círculo",

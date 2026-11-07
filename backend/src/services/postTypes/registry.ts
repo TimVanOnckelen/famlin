@@ -5,8 +5,9 @@ import { pollHandler } from './poll.js'
 import { tripHandler, isTripCheckinMetadata } from './trip.js'
 import { albumHandler, isAlbumPhotoMetadata } from './album.js'
 import { giftListHandler } from './giftList.js'
+import { eventHandler } from './event.js'
 
-// The static post-type registry — adding a custom post type (an RSVP, ...) =
+// The static post-type registry — adding a custom post type =
 // implement PostTypeHandler in a new file in this directory and add it here.
 // Post.type stores these ids, so they must never be renamed once a
 // deployment has posts of that type. Mirrors services/media/registry.ts.
@@ -17,6 +18,7 @@ const handlers = new Map<string, PostTypeHandler>([
   [tripHandler.id, tripHandler],
   [albumHandler.id, albumHandler],
   [giftListHandler.id, giftListHandler],
+  [eventHandler.id, eventHandler],
 ])
 
 // A handler-authored Comment (a TRIP check-in, an ALBUM photo contribution)
