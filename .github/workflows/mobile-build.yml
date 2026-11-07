@@ -3,8 +3,8 @@ name: Mobile build
 # Store builds are chained from release-please.yml via workflow_call — the
 # `on: release` event does NOT fire for release-please's GITHUB_TOKEN-created
 # release (GitHub suppresses workflow-triggered-workflow events), same as
-# docker-publish.yml. `on: release` is kept only for manually-published
-# releases; workflow_dispatch runs a manual build without store submission
+# docker-publish.yml. `on: release` is kept only for releases created by
+# hand (release-please's own drafts are skipped, see the job's `if`); workflow_dispatch runs a manual build without store submission
 # unless the production profile is chosen with a release event.
 on:
   release:
@@ -32,6 +32,11 @@ on:
 
 jobs:
   build:
+    # release-please's Releases are drafts published by its own workflow,
+    # which already chains this build — so a release-please draft published
+    # by hand (after a failed run) must not trigger a second store build.
+    # Its author is github-actions[bot]; a release created by hand isn't.
+    if: ${{ github.event_name != 'release' || github.event.release.author.login != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
