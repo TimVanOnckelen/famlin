@@ -6,10 +6,14 @@ import { getLocales } from 'expo-localization'
 jest.mock('@/utils/storage', () => ({ getLanguage: jest.fn() }))
 jest.mock('expo-localization', () => ({ getLocales: jest.fn() }))
 
-function deviceLocales(...codes: string[]) {
+function deviceLocales(...tags: string[]) {
   jest
     .mocked(getLocales)
-    .mockReturnValue(codes.map((languageCode) => ({ languageCode })) as unknown as ReturnType<typeof getLocales>)
+    .mockReturnValue(
+      tags.map((languageTag) => ({ languageTag, languageCode: languageTag.split('-')[0] })) as unknown as ReturnType<
+        typeof getLocales
+      >
+    )
 }
 
 beforeEach(() => {
@@ -22,6 +26,21 @@ test('Chinese devices start in Chinese and interpolate counts', async () => {
   expect(i18n.language).toBe('zh')
   expect(i18n.t('login.continueButton')).toBe('继续')
   expect(i18n.t('relativeTime.minutesAgo', { count: 2 })).toBe('2 分钟前')
+})
+
+test('Portuguese (Portugal) devices start in pt-PT with European Portuguese plurals', async () => {
+  deviceLocales('pt-PT')
+  await initI18nLanguage()
+  expect(i18n.language).toBe('pt-PT')
+  expect(i18n.t('login.continueButton')).toBe('Continuar')
+  expect(i18n.t('relativeTime.minutesAgo', { count: 1 })).toBe('há 1 minuto')
+  expect(i18n.t('relativeTime.minutesAgo', { count: 0 })).toBe('há 0 minutos')
+})
+
+test('other Portuguese variants fall back to pt-PT', async () => {
+  deviceLocales('pt-BR')
+  await initI18nLanguage()
+  expect(i18n.language).toBe('pt-PT')
 })
 
 test('picks the first supported language in the device preference order', async () => {

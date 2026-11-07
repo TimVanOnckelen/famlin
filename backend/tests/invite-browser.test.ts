@@ -38,6 +38,7 @@ describe('invitation browser entrypoint', () => {
     ['en', 'Continue in the browser'],
     ['nl', 'Doorgaan in de browser'],
     ['zh', '在浏览器中继续'],
+    ['pt-PT', 'Continuar no navegador'],
   ] as const)('offers the browser hand-off in %s', async (language, label) => {
     await updateSettings({ defaultLanguage: language })
     const response = await app.inject({ method: 'GET', url: `/invite/${token}` })
