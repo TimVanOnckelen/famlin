@@ -1,0 +1,16 @@
+{
+  "name": "famlin-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "End-to-end smoke tests that drive a running Famlin instance in a real browser",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3"
+  }
+}

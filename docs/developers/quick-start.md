@@ -49,6 +49,31 @@ npm run test:docker
 
 This execs into the running `famlin-backend` container and runs the Vitest suite against a dedicated `<db>_test` database (created automatically on first run) — never the real one, since Postgres isn't published to the host and the suite refuses to run against any database without "test" in its name. Plain `npm test` only works if you have direct Postgres access (e.g. `DATABASE_URL` pointed at a local Postgres instead of Docker).
 
+### End-to-end smoke tests
+
+`e2e/` holds a small [Playwright](https://playwright.dev) suite that drives a running instance through its golden paths in Chromium: the first-run admin setup, a family and an invite, a member joining through it, a post with a photo, a reaction, a comment, and the member's data export. CI runs it in the `docker` job against the image that job just built, started with the real `docker-compose.yml`. The tests need a **fresh database**, since the first one runs the one-time setup. To run them locally:
+
+```bash
+# Stop the dev stack first: both publish port 3000.
+docker compose down
+
+# Build the image and start it with the production compose file.
+docker build -f backend/Dockerfile -t ghcr.io/timvanonckelen/famlin:e2e .
+FAMLIN_VERSION=e2e docker compose -p famlin-e2e -f docker-compose.yml up -d
+
+# Run the tests (once curl -f http://localhost:3000/health succeeds).
+cd e2e
+npm install
+npx playwright install chromium
+npm test
+
+# Throw the instance away; the next run needs a fresh database again.
+cd ..
+docker compose -p famlin-e2e -f docker-compose.yml down -v
+```
+
+Point the tests at another address with `FAMLIN_URL=http://host:port npm test`. A failed CI run uploads the Playwright report and traces as the `e2e-report` artifact; open a trace with `npx playwright show-trace <trace.zip>`.
+
 ## 5. Run the web app
 
 The member-facing web app (`web/`) and its shared API layer (`packages/api-client`) are npm workspaces at the repo root, so install there first:

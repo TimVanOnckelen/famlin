@@ -59,6 +59,9 @@ Run from the repo root unless noted. `backend/`, `backend/admin/`, `mobile/`, an
 **Shared API client** (`cd packages/api-client`, or `npm run build:api-client` from the root)
 - `npm run build` — `tsc` to `dist/` · `npm test` — Vitest · `npx tsc --noEmit` — typecheck.
 
+**End-to-end smoke tests** (`cd e2e`, installs independently)
+- `npm test` — Playwright (Chromium) against a running instance at `FAMLIN_URL` (default `http://localhost:3000`) with a **fresh database**: the suite runs the first-run admin setup, then invite → join → photo post → reaction → comment → export, serially, each test building on the previous one's state. CI runs it in `ci.yml`'s `docker` job (amd64 only, gated on the `e2e` paths filter) against the image just built, started with the real `docker-compose.yml` via `FAMLIN_VERSION=e2e`; local recipe in `docs/developers/quick-start.md#end-to-end-smoke-tests`. Selectors lean on English UI text (`locale: 'en-US'`), so renaming an `en.json` string a test uses means updating `e2e/tests/` too. `npx tsc --noEmit` — typecheck.
+
 **Root shortcuts** (`package.json`): `dev:backend`, `dev:admin`, `dev:mobile`, `dev:docs`, `dev:web`, `build:admin`, `build:docs`, `build:web`, `build:api-client`, `db:migrate`, `db:seed`.
 
 After any change, verify with `npx tsc --noEmit` in each affected package. Formatting is Prettier (one root `.prettierrc.json` covering backend, admin, web, api-client and mobile; Markdown/YAML/JSON/HTML and `docs/`/`website/` excluded in `.prettierignore`): run `npm run format` from the root after editing code — CI's `Lint` job runs `npm run format:check`.
