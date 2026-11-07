@@ -13,6 +13,164 @@ Famlin is a monorepo with these parts:
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
 
+## Architecture overview
+
+The diagrams below are the map; the sections further down are the detail. They describe the system as built — if you change one of the boundaries they show (a new container, a new external service, a new extension point), update the diagram in the same PR.
+
+### System context and deployment
+
+Everything a family needs runs in **one backend container plus Postgres**. The backend serves the API, the uploaded media and both single-page apps; the mobile app is the only client that isn't served by it.
+
+```mermaid
+flowchart TB
+  subgraph clients["Clients"]
+    direction LR
+    mobile["Mobile app<br/>Expo / React Native"]
+    browser["Web app<br/>React SPA, served at /"]
+    adminui["Admin UI<br/>React SPA, served at /admin"]
+    scripts["Scripts and integrations<br/>personal access tokens"]
+  end
+
+  proxy["Optional HTTPS overlay<br/>Caddy or cloudflared"]
+
+  subgraph host["Docker Compose host"]
+    subgraph backend["famlin-backend container: Fastify on Node"]
+      direction LR
+      static["Static SPAs<br/>dist/web, dist/admin"]
+      api["/api/* routes"]
+      media["/uploads/* and /api/media/*<br/>auth-gated media"]
+      jobs["Scheduled jobs<br/>node-cron"]
+    end
+    subgraph volumes["Postgres and volumes"]
+      direction LR
+      db[("famlin-db<br/>Postgres")]
+      uploads[("famlin-uploads<br/>photos and videos")]
+      backups[("famlin-backups<br/>DB dumps, media mirror")]
+      data[("famlin-data<br/>JWT secret")]
+    end
+  end
+
+  subgraph external["External services, all optional"]
+    direction LR
+    oidc["OIDC provider / Apple"]
+    smtp["SMTP server"]
+    expo["Expo push service"]
+    immich["Immich or<br/>local media folder"]
+    s3["S3-compatible storage"]
+    gh["GitHub releases"]
+  end
+
+  clients -- HTTPS --> proxy --> backend
+  api --> db
+  api --> data
+  media --> uploads
+  media -.-> s3
+  jobs --> backups
+  api --> oidc
+  api --> smtp
+  api --> expo
+  media --> immich
+  jobs -- update check --> gh
+```
+
+- **Runtime configuration lives in Postgres** (`Setting` table, edited in the admin UI) — OIDC, SMTP, Immich, branding, backups. Only a handful of startup values are env vars, see [Configuration](#configuration).
+- **External services are optional.** A fresh install works with none of them: password login, local uploads, in-app notifications. Each one is switched on from the admin UI.
+- **Postgres is never published to the host**; only the backend reaches it, over the Compose network.
+
+### Code structure
+
+The repository is a monorepo. Arrows show build-time and runtime dependencies.
+
+```mermaid
+flowchart TB
+  apiclient["packages/api-client<br/>@famlin/api-client<br/>axios layer, types, cache helpers"]
+  web["web/<br/>member web app"]
+  mobile["mobile/<br/>Expo app"]
+  admin["backend/admin/<br/>admin UI"]
+  backend["backend/<br/>Fastify + Prisma API"]
+  docs["docs/ + website/<br/>GitHub Pages, famlin.app"]
+  image[["Docker image<br/>ghcr.io/timvanonckelen/famlin"]]
+  stores[["App Store / Play Store<br/>via EAS"]]
+
+  apiclient -- npm workspace --> web
+  apiclient -- "file: dependency" --> mobile
+  web -- "vite build to backend/dist/web" --> image
+  admin -- "vite build to backend/dist/admin" --> image
+  backend -- tsc --> image
+  mobile --> stores
+  web -. HTTP .-> backend
+  mobile -. HTTP .-> backend
+  admin -. HTTP .-> backend
+```
+
+`docs/` and `website/` are deployed separately and never talk to a Famlin server.
+
+### Inside the backend
+
+Requests flow left to right. Routes stay thin: they authenticate, validate with zod, call services and emit **domain events** once a write has committed. Everything that reacts to a write — notifications today — is a subscriber, so a route never knows who gets told what.
+
+```mermaid
+flowchart TB
+  req(["HTTP request"]) --> hooks["app.ts hooks<br/>rate limit, body fix, /uploads auth"]
+  hooks --> auth["plugins/auth.ts<br/>authenticate: JWT or PAT, requireAdmin"]
+  auth --> routes["routes/*<br/>thin handlers, zod validation"]
+  cron(["node-cron in server.ts"]) --> jobsvc["scheduled jobs<br/>backups, story expiry, on this day,<br/>new assets, alerts, update check"]
+
+  routes --> services["services/*<br/>posts, comments, circles, uploads, giftLists, ..."]
+  jobsvc --> services
+
+  subgraph ext["Extension points: one file per implementation, static registry"]
+    direction LR
+    postTypes["postTypes/<br/>update, milestone, poll,<br/>trip, album, giftList"]
+    mediaProviders["media/<br/>immich, local"]
+    channels["notificationChannels/<br/>push, email"]
+  end
+
+  services --> postTypes
+  services --> mediaProviders
+  services --> prisma["Prisma Client"] --> db[("Postgres")]
+  services --> storage["storage driver<br/>local disk or S3"]
+
+  routes -- "emit after commit" --> bus{{"events.ts<br/>domain event bus"}}
+  bus --> subs["subscribers/notifications.ts<br/>who gets told what"]
+  subs --> notify["notify()<br/>in-app Notification row"]
+  notify --> channels
+```
+
+- **Group membership is the authorization boundary**, and circles narrow it: every post read composes `visiblePostsWhere()` from `services/circles.ts`. See [Authorization rules](#authorization-rules).
+- **Three extension points share one pattern** — an interface, one file per implementation, a static registry: [custom post types](#custom-post-types), [media integrations](#media-integrations) and [notification channels](#notifications). Adding a post type, photo source or delivery mechanism means adding a file there, not editing routes.
+- **Subscribers are fire-and-forget and error-trapped**, so a failing notification never fails or slows the request that caused it.
+
+### Example: creating a post
+
+How the pieces above work together for the most common write.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as Client (web or mobile)
+  participant R as POST /api/posts
+  participant H as PostTypeHandler
+  participant DB as Postgres
+  participant B as Event bus
+  participant S as Notifications subscriber
+  participant N as Push / email channels
+
+  C->>R: content, groupIds, type, typeData, uploadedAssetUrls
+  R->>R: authenticate, zod validation,<br/>caller is a member of every target group
+  R->>H: validateCreate / transformCreate
+  R->>DB: transaction: one Post per target group (shared crossPostId),<br/>bindAssetsToScope for its uploads
+  DB-->>R: committed
+  R-->>C: 201 with the shaped post
+  R--)B: emit post.created
+  B--)S: post.created
+  S->>DB: recipients = group members minus author,<br/>filterRecipientsByCircle
+  S->>N: notify(): Notification row, then each channel
+  N--)C: push notification on other members' devices
+```
+
+The response is sent before notifications go out: steps after the commit can fail without affecting the author.
+
 ## Web trip composer
 
 The web post composer also creates `TRIP` posts via `createPost`: title,

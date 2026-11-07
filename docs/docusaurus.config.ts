@@ -20,6 +20,11 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
+  // ```mermaid code blocks render as diagrams (architecture overview, etc.).
+  markdown: {
+    mermaid: true,
+  },
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -78,7 +83,7 @@ const config: Config = {
     ],
   ],
 
-  themes: ['docusaurus-theme-openapi-docs'],
+  themes: ['docusaurus-theme-openapi-docs', '@docusaurus/theme-mermaid'],
 
   themeConfig: {
     image: 'img/docusaurus-social-card.jpg',
