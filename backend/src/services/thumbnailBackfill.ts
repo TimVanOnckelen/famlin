@@ -24,17 +24,40 @@ const IMAGE_SOURCES = ['.jpg', '.jpeg', '.png', '.webp']
 const VIDEO_SOURCES = ['.mp4', '.mov', '.m4v', '.webm']
 
 // Concurrent misses for one thumbnail (a feed rendering the same photo twice)
-// share one decode; a source that can't be decoded is not retried on every
-// request for the life of the process.
+// share one decode. Different thumbnails are decoded at most MAX_CONCURRENT
+// at a time, so a gallery full of legacy uploads can't saturate the CPU. A
+// failed decode backs off for FAILURE_BACKOFF_MS instead of being retried on
+// every request — and only that long, since a failure can be transient (an
+// ffmpeg timeout under load).
+const MAX_CONCURRENT = 2
+const FAILURE_BACKOFF_MS = 10 * 60_000
 const inflight = new Map<string, Promise<string | null>>()
-const undecodable = new Set<string>()
+const failedAt = new Map<string, number>()
+let active = 0
+const waiting: (() => void)[] = []
+
+async function withSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (active >= MAX_CONCURRENT) await new Promise<void>((resolve) => waiting.push(resolve))
+  active++
+  try {
+    return await work()
+  } finally {
+    active--
+    waiting.shift()?.()
+  }
+}
 
 export function resolveMissingThumbnail(requestedFile: string): Promise<string | null> {
   const match = THUMBNAIL_RE.exec(requestedFile)
-  if (!match || undecodable.has(requestedFile)) return Promise.resolve(null)
+  if (!match) return Promise.resolve(null)
+  const failed = failedAt.get(requestedFile)
+  if (failed !== undefined) {
+    if (Date.now() - failed < FAILURE_BACKOFF_MS) return Promise.resolve(null)
+    failedAt.delete(requestedFile)
+  }
   const pending = inflight.get(requestedFile)
   if (pending) return pending
-  const work = generate(match[1], requestedFile).finally(() => inflight.delete(requestedFile))
+  const work = withSlot(() => generate(match[1], requestedFile)).finally(() => inflight.delete(requestedFile))
   inflight.set(requestedFile, work)
   return work
 }
@@ -42,40 +65,43 @@ export function resolveMissingThumbnail(requestedFile: string): Promise<string |
 async function generate(uuid: string, target: string): Promise<string | null> {
   const storage = getStorage()
   if (await storage.stat(target)) return target
-  let sourceKey: string | null = null
+  let source: string | null = null
   for (const ext of [...IMAGE_SOURCES, ...VIDEO_SOURCES])
     if (await storage.stat(`${uuid}${ext}`)) {
-      sourceKey = `${uuid}${ext}`
+      source = `${uuid}${ext}`
       break
     }
-  if (!sourceKey) return null
-  const source = sourceKey
+  if (!source) return null
   const video = VIDEO_SOURCES.includes(path.extname(source))
-  // Same key locks as deletion/migration, so a thumbnail is never written
-  // for an upload that is being deleted or moved.
-  return withStorageKeys([source, target], async () => {
-    if (await storage.stat(target)) return target
+  // Decode outside the storage lock: withStorageKeys holds a pooled DB
+  // connection for its duration, and a decode can take seconds.
+  const temp = await fsp.mkdtemp(path.join(os.tmpdir(), 'famlin-thumb-'))
+  try {
     const object = await storage.get(source)
     if (!object) return null
-    const temp = await fsp.mkdtemp(path.join(os.tmpdir(), 'famlin-thumb-'))
+    const input = path.join(temp, `input${path.extname(source)}`)
     try {
-      const input = path.join(temp, `input${path.extname(source)}`)
-      try {
-        await pipeline(object.stream, createWriteStream(input))
-      } finally {
-        object.stream.destroy()
-      }
-      const output = path.join(temp, 'thumbnail.jpg')
-      try {
-        await createUploadPreview(input, output, video)
-      } catch {
-        undecodable.add(target)
-        return null
-      }
+      await pipeline(object.stream, createWriteStream(input))
+    } finally {
+      object.stream.destroy()
+    }
+    const output = path.join(temp, 'thumbnail.jpg')
+    try {
+      await createUploadPreview(input, output, video)
+    } catch {
+      failedAt.set(target, Date.now())
+      return null
+    }
+    // Publish under the same key locks as deletion/migration, re-checking the
+    // source so a thumbnail is never written for an upload deleted meanwhile.
+    const sourceKey = source
+    return await withStorageKeys([sourceKey, target], async () => {
+      if (await storage.stat(target)) return target
+      if (!(await storage.stat(sourceKey))) return null
       await getStorageConfiguration().primary.backend.put(target, { filePath: output })
       return target
-    } finally {
-      await fsp.rm(temp, { recursive: true, force: true })
-    }
-  })
+    })
+  } finally {
+    await fsp.rm(temp, { recursive: true, force: true })
+  }
 }
