@@ -34,3 +34,149 @@
   --ifm-background-color: #0f222a;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* ── Famlin-styled Mermaid diagrams ───────────────────────────────────────
+   Colors follow web/src/index.css (--fam-* tokens). Nodes opt into a role
+   with `class <node> people|app|server|feature|store|optional|bg` in the
+   diagram source; anything without a role gets the neutral card look. */
+:root {
+  --dg-surface: #ffffff;
+  --dg-border: #d9e3e7;
+  --dg-text: #0f222a;
+  --dg-muted: #597784;
+  --dg-line: #597784;
+  --dg-group-bg: rgba(0, 110, 148, 0.04);
+  --dg-group-border: #bfe1ec;
+  --dg-primary: #006e94;
+  --dg-primary-text: #ffffff;
+  --dg-tint: #daf3fe;
+  --dg-tint-border: #318ea2;
+  --dg-accent: #ed835e;
+  --dg-accent-bg: #fbe2d4;
+  --dg-accent-text: #a8492a;
+  --dg-gold-bg: #fff3dd;
+  --dg-gold-border: #eeb154;
+  --dg-gold-text: #5c3d0a;
+}
+[data-theme='dark'] {
+  --dg-surface: #17303a;
+  --dg-border: #2d4a55;
+  --dg-text: #e6f2f6;
+  --dg-muted: #9db6bf;
+  --dg-line: #7f9ca6;
+  --dg-group-bg: rgba(49, 142, 162, 0.08);
+  --dg-group-border: #2d5966;
+  --dg-primary: #318ea2;
+  --dg-primary-text: #ffffff;
+  --dg-tint: #1d4350;
+  --dg-tint-border: #54b6cb;
+  --dg-accent: #ed835e;
+  --dg-accent-bg: #4a2a1f;
+  --dg-accent-text: #f6b49b;
+  --dg-gold-bg: #3d3018;
+  --dg-gold-border: #b9791f;
+  --dg-gold-text: #ffe6ad;
+}
+
+.docusaurus-mermaid-container {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-radius: 18px;
+  background: var(--dg-surface);
+  border: 1px solid var(--dg-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+.docusaurus-mermaid-container svg {
+  font-family: 'Nunito', system-ui, sans-serif !important;
+}
+.docusaurus-mermaid-container svg .label,
+.docusaurus-mermaid-container svg .nodeLabel,
+.docusaurus-mermaid-container svg .label text,
+.docusaurus-mermaid-container svg span {
+  color: var(--dg-text) !important;
+  fill: var(--dg-text) !important;
+}
+
+/* Default node: a white Famlin card. */
+.docusaurus-mermaid-container svg .node rect,
+.docusaurus-mermaid-container svg .node polygon,
+.docusaurus-mermaid-container svg .node path,
+.docusaurus-mermaid-container svg .node circle {
+  fill: var(--dg-surface) !important;
+  stroke: var(--dg-border) !important;
+  stroke-width: 1.5px !important;
+}
+.docusaurus-mermaid-container svg .node rect {
+  rx: 12px;
+  ry: 12px;
+}
+
+/* Groups (subgraphs): soft tinted panels with a muted uppercase title. */
+.docusaurus-mermaid-container svg .cluster rect {
+  fill: var(--dg-group-bg) !important;
+  stroke: var(--dg-group-border) !important;
+  stroke-width: 1px !important;
+  rx: 16px;
+  ry: 16px;
+}
+.docusaurus-mermaid-container svg .cluster-label .nodeLabel,
+.docusaurus-mermaid-container svg .cluster-label span {
+  color: var(--dg-muted) !important;
+}
+
+/* Arrows. */
+.docusaurus-mermaid-container svg .flowchart-link {
+  stroke: var(--dg-line) !important;
+  stroke-width: 1.5px !important;
+}
+.docusaurus-mermaid-container svg marker path,
+.docusaurus-mermaid-container svg .marker {
+  fill: var(--dg-line) !important;
+  stroke: var(--dg-line) !important;
+}
+.docusaurus-mermaid-container svg .edgeLabel,
+.docusaurus-mermaid-container svg .edgeLabel rect,
+.docusaurus-mermaid-container svg .edgeLabel p {
+  background-color: var(--dg-surface) !important;
+  fill: var(--dg-surface) !important;
+  color: var(--dg-muted) !important;
+}
+
+/* Roles. */
+.docusaurus-mermaid-container svg .node.people rect,
+.docusaurus-mermaid-container svg .node.people path {
+  fill: var(--dg-accent-bg) !important;
+  stroke: var(--dg-accent) !important;
+}
+.docusaurus-mermaid-container svg .node.people .nodeLabel {
+  color: var(--dg-accent-text) !important;
+}
+.docusaurus-mermaid-container svg .node.app rect {
+  fill: var(--dg-tint) !important;
+  stroke: var(--dg-tint-border) !important;
+}
+.docusaurus-mermaid-container svg .node.server rect,
+.docusaurus-mermaid-container svg .node.server path,
+.docusaurus-mermaid-container svg .node.server polygon {
+  fill: var(--dg-primary) !important;
+  stroke: var(--dg-primary) !important;
+  filter: drop-shadow(0 4px 10px rgba(0, 110, 148, 0.3));
+}
+.docusaurus-mermaid-container svg .node.server .nodeLabel {
+  color: var(--dg-primary-text) !important;
+}
+.docusaurus-mermaid-container svg .node.store path,
+.docusaurus-mermaid-container svg .node.store rect {
+  fill: var(--dg-gold-bg) !important;
+  stroke: var(--dg-gold-border) !important;
+}
+.docusaurus-mermaid-container svg .node.store .nodeLabel {
+  color: var(--dg-gold-text) !important;
+}
+.docusaurus-mermaid-container svg .node.optional rect {
+  stroke-dasharray: 5 4;
+}
+.docusaurus-mermaid-container svg .node.optional .nodeLabel {
+  color: var(--dg-muted) !important;
+}

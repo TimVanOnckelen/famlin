@@ -19,26 +19,25 @@ A high-level picture of how Famlin fits together. The sections below go into the
 
 ```mermaid
 flowchart LR
-  family(["Family members"])
-  admin(["Admin"])
+  family(["Family members"]):::people
+  admin(["Admin"]):::people
 
   subgraph apps["Apps"]
-    mobile["Mobile app<br/>iOS and Android"]
-    web["Web app"]
-    adminui["Admin UI"]
+    mobile["📱 Mobile app<br/>iOS and Android"]:::app
+    web["💻 Web app"]:::app
+    adminui["⚙️ Admin UI"]:::app
   end
 
-  subgraph server["Famlin server: one Docker container"]
-    backend["Famlin backend<br/>API, media, web pages"]
+  subgraph server["Your server"]
+    backend["Famlin<br/>one Docker container"]:::server
+    db[("Database")]:::store
+    files[("Photos and videos")]:::store
   end
-
-  db[("Database<br/>Postgres")]
-  files[("Photos and videos")]
 
   subgraph optional["Optional connections"]
-    login["Single sign-on"]
-    notify["Push and email"]
-    photos["Photo library<br/>Immich or a folder"]
+    login["Single sign-on"]:::optional
+    notify["Push and email"]:::optional
+    photos["Photo library<br/>Immich or a folder"]:::optional
   end
 
   family --> mobile
@@ -50,11 +49,57 @@ flowchart LR
   backend --> db
   backend --> files
   backend -.-> optional
+
 ```
 
 - **One server per family.** Everything runs in a single Famlin container next to a Postgres database. The web app and the admin UI are served by that same container; the mobile app connects to it over the internet.
 - **Everything stays on your own server.** Posts, comments and photos are stored in the database and on the server's own storage.
 - **External services are optional.** Single sign-on, push and email notifications, and an existing photo library (Immich or a folder) can be switched on later from the admin UI.
+
+### Inside the Famlin server
+
+One level deeper: what happens inside that one container. Every request passes the same two checks before it reaches a feature, and anything that should notify other people happens afterwards, in the background.
+
+```mermaid
+flowchart LR
+  apps(["Apps<br/>mobile, web, admin"]):::people
+
+  subgraph famlin["Famlin server"]
+    direction LR
+    check["🔐 Who are you?<br/>login or API token"]:::server
+    access["👪 Which family?<br/>only your families,<br/>and your circles"]:::server
+
+    subgraph features["Features"]
+      direction TB
+      posts["Posts, comments<br/>and reactions"]
+      photos["Photos and albums"]
+      extras["Polls, trips,<br/>gift lists"]
+      social["Stories and chat"]
+      manage["Admin and settings"]
+    end
+
+    events["Something happened<br/>new post, comment, reaction"]:::app
+    notifier["Notifications<br/>who should hear about it"]:::app
+    jobs["Scheduled tasks<br/>backups, story cleanup,<br/>on this day, new photos"]:::app
+  end
+
+  db[("Database")]:::store
+  files[("Photos and videos")]:::store
+  push["Push and email"]:::optional
+  library["Photo library"]:::optional
+
+  apps --> check --> access --> features
+  features --> db
+  features --> files
+  photos -.-> library
+  features --> events --> notifier -.-> push
+  jobs --> db
+
+```
+
+- **Family membership is the main rule.** You only ever see posts, photos and chat from families you belong to; circles narrow that further to a smaller group within a family.
+- **Features don't send notifications themselves.** They report what happened, and one notifications part decides who is told, by push or email. A failing notification never breaks the post that triggered it.
+- **New post types, photo sources and notification channels plug in** without changing the rest; see [Custom post types](#custom-post-types), [Media integrations](#media-integrations) and [Notifications](#notifications).
 
 ## Web trip composer
 
