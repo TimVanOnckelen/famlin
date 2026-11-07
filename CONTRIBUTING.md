@@ -53,7 +53,7 @@ docker compose up --build
 ## Code style
 
 - Use TypeScript for backend and admin code.
-- Follow the existing project structure and naming conventions described in [CLAUDE.md](CLAUDE.md).
+- Follow the existing project structure and naming conventions described in [AGENTS.md](AGENTS.md).
 - Keep commits focused and write clear commit messages.
 
 ## Communication

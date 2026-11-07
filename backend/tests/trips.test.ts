@@ -11,7 +11,7 @@ type FeedItem = { id: string; type: string }
 // TRIP posts (services/postTypes/trip.ts): a living travel journal whose
 // check-ins are stored as Comment rows with a `metadata` discriminator
 // ({kind: 'trip_checkin', place, photoUrls}) so per-check-in
-// reactions/replies ride the existing comment infrastructure. See CLAUDE.md
+// reactions/replies ride the existing comment infrastructure. See AGENTS.md
 // and trip.ts's own comments for the full contract.
 const assetPath = () => `/uploads/${randomUUID()}.jpg`
 

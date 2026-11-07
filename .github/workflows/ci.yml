@@ -348,7 +348,7 @@ jobs:
   # unmarked breaking change ships silently as a minor entry.
   docs-required:
     # Every new feature ships with documentation (see "Documentation" in
-    # CLAUDE.md and docs/developers/contributing.md). A PR whose title or any
+    # AGENTS.md and docs/developers/contributing.md). A PR whose title or any
     # commit is a conventional-commit `feat` must touch docs/ or website/,
     # unless a commit carries a `Docs-not-needed: <reason>` trailer, or the PR
     # description does.
@@ -382,7 +382,7 @@ jobs:
             echo "Documentation explicitly marked as not needed — OK."
             exit 0
           fi
-          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in CLAUDE.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
+          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in AGENTS.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
           exit 1
 
   api-breaking-changes:
