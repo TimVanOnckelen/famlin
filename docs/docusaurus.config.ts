@@ -20,6 +20,11 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
+  // ```mermaid code blocks render as diagrams (architecture overview, etc.).
+  markdown: {
+    mermaid: true,
+  },
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -78,9 +83,18 @@ const config: Config = {
     ],
   ],
 
-  themes: ['docusaurus-theme-openapi-docs'],
+  themes: ['docusaurus-theme-openapi-docs', '@docusaurus/theme-mermaid'],
 
   themeConfig: {
+    // Diagrams use Mermaid's neutral "base" theme; the Famlin look (colors,
+    // font, rounded corners, dark mode) comes from src/css/custom.css.
+    mermaid: {
+      theme: {light: 'base', dark: 'base'},
+      options: {
+        fontFamily: "'Nunito', system-ui, sans-serif",
+        flowchart: {curve: 'basis', padding: 14, nodeSpacing: 36, rankSpacing: 48},
+      },
+    },
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
