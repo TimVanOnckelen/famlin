@@ -6,9 +6,10 @@ import en from './locales/en.json'
 import nl from './locales/nl.json'
 import zh from './locales/zh.json'
 import ptPT from './locales/pt-PT.json'
+import fr from './locales/fr.json'
 import { getLanguage } from '@/utils/storage'
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh', 'pt-PT'] as const
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh', 'pt-PT', 'fr'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en'
 
@@ -17,6 +18,7 @@ const resources = {
   nl: { translation: nl },
   zh: { translation: zh },
   'pt-PT': { translation: ptPT },
+  fr: { translation: fr },
 }
 
 i18n.use(initReactI18next).init({
