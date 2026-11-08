@@ -1,5 +1,12 @@
 {
-  "media": {"livePhoto": "Live Photo", "video": "Vidéo", "pauseLivePhoto": "Mettre en pause la Live Photo", "playLivePhoto": "Lire la Live Photo", "processing": "Média en cours de traitement…", "processingFailed": "Le traitement du média a échoué"},
+  "media": {
+    "livePhoto": "Live Photo",
+    "video": "Vidéo",
+    "pauseLivePhoto": "Mettre en pause la Live Photo",
+    "playLivePhoto": "Lire la Live Photo",
+    "processing": "Média en cours de traitement…",
+    "processingFailed": "Le traitement du média a échoué"
+  },
   "common": {
     "loading": "Chargement...",
     "tryAgain": "Réessayer",
@@ -378,6 +385,7 @@
     "exportPreparing": "Préparation du téléchargement…",
     "exportFailed": "L'export n'a pas pu être téléchargé. Réessaie.",
     "exportRateLimited": "Tu as demandé plusieurs exports récemment. Réessaie dans une heure.",
+    "featureUnavailable": "Ce n’est pas encore disponible sur ce serveur. Demande à ton administrateur de mettre à jour Famlin.",
     "dangerZone": "Supprimer le compte",
     "deleteAccountDescription": "Supprime définitivement ton compte Famlin et tout son contenu. C'est irréversible.",
     "deleteAccount": "Supprimer mon compte",
@@ -646,6 +654,13 @@
     "exclusionsHintMobile": "Touche une personne, puis une autre, pour qu'elles ne se tirent pas mutuellement (par ex. un couple).",
     "continue": "Continuer",
     "notAvailable": "Cette liste de cadeaux n'est pas disponible."
+  },
+  "serverVersion": {
+    "title": "Ton serveur n'est pas à jour",
+    "memberMessage": "Certaines fonctionnalités peuvent ne pas fonctionner. Demande à ton administrateur de mettre à jour le serveur Famlin.",
+    "adminMessage": "Ce serveur exécute Famlin {{current}}, que cette application ne prend plus entièrement en charge. Mets à jour ton serveur vers la version {{version}} ou plus récente.",
+    "howToUpdate": "Comment mettre à jour",
+    "dismiss": "Ignorer"
   },
   "wiki": {
     "title": "Wiki de la famille",

@@ -539,6 +539,32 @@ paths:
                       null when the server is unbranded — clients then keep
                       the default Famlin look. Absent on servers that predate
                       branding; treat that like null.
+                  features:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      Named capabilities this server supports, so a client can
+                      hide what an older server can't do by feature rather
+                      than by version. Ids are stable and never renamed or
+                      removed; a newer server may list ids a client doesn't
+                      know, which it should ignore. An id missing from the
+                      list means the server lacks that capability. Absent on
+                      servers up to 0.8.7; clients then treat the ids that
+                      shipped before this field (`accountDeletion`,
+                      `circles`, `stories`, `memberExport`, `giftLists`,
+                      `uploadProcessing`, `livePhotos`) as unknown, try the
+                      feature and read a 404 from its endpoint as
+                      unsupported, and every other id (anything that shipped
+                      with or after this field) as unsupported.
+                      Known ids: `accountDeletion` (0.6.3, `DELETE
+                      /api/auth/me`), `circles` (0.7.0), `stories` (0.8.0),
+                      `memberExport` (0.8.0, `GET /api/auth/me/export`),
+                      `giftLists` (0.8.5), `uploadProcessing` (0.8.7, `GET
+                      /api/uploads/status/{assetKey}`), `livePhotos` (0.8.7),
+                      `deviceDiagnostics` (`/api/devices`), `wiki`
+                      (`/api/wiki`).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki]
 
   /branding/{file}:
     get:

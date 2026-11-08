@@ -11,15 +11,18 @@ const client_1 = require("./client");
 // and managing their membership, are admin operations exposed only through
 // the admin UI.
 async function fetchMyCircles(groupId) {
+    // requires-feature: circles
     const response = await client_1.api.get('/circles', { params: { groupId } });
     return response.data.items;
 }
 async function fetchCircleMembers(circleId) {
+    // requires-feature: circles
     const response = await client_1.api.get(`/circles/${circleId}/members`);
     return response.data.items;
 }
 // Leaving a circle never removes you from the family group behind it —
 // you simply stop seeing that circle's content. Rejoining requires an admin.
 async function leaveCircle(circleId) {
+    // requires-feature: circles
     await client_1.api.delete(`/circles/${circleId}/members/me`);
 }

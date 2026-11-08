@@ -1,5 +1,12 @@
 {
-  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Pause Live Photo", "playLivePhoto": "Play Live Photo", "processing": "Media is processing…", "processingFailed": "Media processing failed"},
+  "media": {
+    "livePhoto": "Live Photo",
+    "video": "Video",
+    "pauseLivePhoto": "Pause Live Photo",
+    "playLivePhoto": "Play Live Photo",
+    "processing": "Media is processing…",
+    "processingFailed": "Media processing failed"
+  },
   "common": {
     "loading": "Loading...",
     "tryAgain": "Try again",
@@ -378,6 +385,7 @@
     "exportPreparing": "Preparing your download…",
     "exportFailed": "The export couldn't be downloaded. Please try again.",
     "exportRateLimited": "You've requested several exports recently. Please try again in an hour.",
+    "featureUnavailable": "This isn't available on this server yet. Ask your admin to update Famlin.",
     "dangerZone": "Delete account",
     "deleteAccountDescription": "Permanently delete your Famlin account and everything in it. This can't be undone.",
     "deleteAccount": "Delete my account",
@@ -646,6 +654,13 @@
     "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners).",
     "continue": "Continue",
     "notAvailable": "This gift list is not available."
+  },
+  "serverVersion": {
+    "title": "Your server is out of date",
+    "memberMessage": "Some features may not work. Ask your admin to update the Famlin server.",
+    "adminMessage": "This server runs Famlin {{current}}, which this app no longer fully supports. Update your server to {{version}} or newer.",
+    "howToUpdate": "How to update",
+    "dismiss": "Dismiss"
   },
   "wiki": {
     "title": "Family Wiki",

@@ -18,46 +18,56 @@ const client_1 = require("./client");
 // anyone who isn't a participant.
 // Every gift list you take part in, across your families, newest occasion first.
 async function fetchMyGiftLists() {
+    // requires-feature: giftLists
     const response = await client_1.api.get('/gift-lists');
     return response.data.items;
 }
 async function fetchGiftListItems(postId) {
+    // requires-feature: giftLists
     const response = await client_1.api.get(`/gift-lists/${postId}/items`);
     return response.data.items;
 }
 async function createGiftListItem(postId, body) {
+    // requires-feature: giftLists
     const response = await client_1.api.post(`/gift-lists/${postId}/items`, body);
     return response.data;
 }
 async function updateGiftListItem(postId, itemId, body) {
+    // requires-feature: giftLists
     const response = await client_1.api.patch(`/gift-lists/${postId}/items/${itemId}`, body);
     return response.data;
 }
 async function deleteGiftListItem(postId, itemId) {
+    // requires-feature: giftLists
     await client_1.api.delete(`/gift-lists/${postId}/items/${itemId}`);
 }
 // `itemIds` must be every one of your own wishes, in the new order.
 async function reorderGiftListItems(postId, itemIds) {
+    // requires-feature: giftLists
     const response = await client_1.api.put(`/gift-lists/${postId}/items/order`, { itemIds });
     return response.data.items;
 }
 // Starter only.
 async function updateGiftListSettings(postId, body) {
+    // requires-feature: giftLists
     const response = await client_1.api.patch(`/gift-lists/${postId}`, body);
     return response.data;
 }
 // Starter only. `userIds` = everyone besides the starter.
 async function setGiftListParticipants(postId, userIds, confirmRedraw = false) {
+    // requires-feature: giftLists
     const response = await client_1.api.put(`/gift-lists/${postId}/participants`, { userIds, confirmRedraw });
     return response.data;
 }
 // Starter only, once.
 async function drawGiftList(postId) {
+    // requires-feature: giftLists
     const response = await client_1.api.post(`/gift-lists/${postId}/draw`);
     return response.data;
 }
 // Anyone but the starter.
 async function leaveGiftList(postId) {
+    // requires-feature: giftLists
     await client_1.api.delete(`/gift-lists/${postId}/participants/me`);
 }
 // A 409 from settings/participants means "this would discard the draw" —

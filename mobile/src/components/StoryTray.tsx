@@ -11,14 +11,26 @@ import { Avatar } from '@/components/Avatar'
 import { Icon } from '@/components/Icon'
 import { getUploadUrl } from '@/api/uploads'
 import { useAuthStore } from '@/stores/authStore'
+import { isNotFoundError } from '@famlin/api-client'
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { firstUnseenIndex, traySequences } from '@/utils/stories'
+
+// Story fetchers that remember a 404 for the server (issue #380), so later
+// mounts on a server without stories don't ask again.
+const trayFetcher = rememberNotFound('stories', fetchStoryTray)
+const highlightsFetcher = rememberNotFound('stories', fetchStoryHighlights)
 
 // The feed's story strip: a "your story" bubble to post one, every author
 // with a live story (coloured ring while they have something you haven't
 // seen), then the group's Highlights — pinned stories as one flat strip,
 // newest first. Follows the feed's family filter, and hides entirely when
-// none of the selected families has stories turned on.
-export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: boolean }) {
+// none of the selected families has stories turned on — or the server
+// lacks stories altogether (issue #380): nothing is fetched when it says so,
+// and a 404 from a server too old to say hides the tray silently.
+export function StoryTray({ groupIds, enabled: enabledProp }: { groupIds: string[]; enabled: boolean }) {
+  const storiesSupport = useServerFeatureSupport('stories')
+  const queriesEnabled = enabledProp && storiesSupport !== 'unsupported'
   const { t } = useTranslation()
   const navigation = useNavigation<any>()
   const me = useAuthStore((state) => state.user)
@@ -26,19 +38,22 @@ export function StoryTray({ groupIds, enabled }: { groupIds: string[]; enabled: 
 
   const trayQuery = useQuery({
     queryKey: ['stories', 'tray', groupKey],
-    queryFn: () => fetchStoryTray(groupIds),
-    enabled,
-    refetchInterval: 60_000,
+    queryFn: () => trayFetcher(groupIds),
+    enabled: queriesEnabled,
+    retry: retryUnlessNotFound,
+    // A 404 is final: an older server without stories is never polled again.
+    refetchInterval: (query) => (isNotFoundError(query.state.error) ? false : 60_000),
   })
   const highlightsQuery = useInfiniteQuery({
     queryKey: ['stories', 'highlights', groupKey],
-    queryFn: ({ pageParam }) => fetchStoryHighlights(groupIds, pageParam ?? undefined),
+    queryFn: ({ pageParam }) => highlightsFetcher(groupIds, pageParam ?? undefined),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
-    enabled,
+    enabled: queriesEnabled,
+    retry: retryUnlessNotFound,
   })
 
-  if (!enabled) return null
+  if (!queriesEnabled || isNotFoundError(trayQuery.error) || isNotFoundError(highlightsQuery.error)) return null
 
   const authors = trayQuery.data?.authors ?? []
   const highlights = highlightsQuery.data?.pages.flatMap((p) => p.items) ?? []

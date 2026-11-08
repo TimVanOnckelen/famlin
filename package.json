@@ -40,6 +40,7 @@
     "lint:api-client": "npm run lint --workspace=packages/api-client",
     "lint:mobile": "cd mobile && npm run lint",
     "check:locales": "node scripts/check-locales.mjs",
+    "check:client-compat": "node scripts/check-client-vs-old-spec.mjs",
     "lint": "npm run lint:backend && npm run lint:admin && npm run lint:web && npm run lint:api-client && npm run lint:mobile",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

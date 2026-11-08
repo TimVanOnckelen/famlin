@@ -81,11 +81,13 @@ function groupParams(groupIds?: string[]) {
 }
 
 export async function fetchStoryTray(groupIds?: string[]): Promise<StoryTray> {
+  // requires-feature: stories
   const response = await api.get<StoryTray>('/stories', { params: groupParams(groupIds) })
   return response.data
 }
 
 export async function fetchStoryHighlights(groupIds?: string[], cursor?: string): Promise<StoryHighlightsPage> {
+  // requires-feature: stories
   const response = await api.get<StoryHighlightsPage>('/stories/highlights', {
     params: { ...groupParams(groupIds), ...(cursor ? { cursor } : {}) },
   })
@@ -93,47 +95,56 @@ export async function fetchStoryHighlights(groupIds?: string[], cursor?: string)
 }
 
 export async function fetchStory(id: string): Promise<Story> {
+  // requires-feature: stories
   const response = await api.get<Story>(`/stories/${id}`)
   return response.data
 }
 
 export async function createStory(body: CreateStoryBody): Promise<Story> {
+  // requires-feature: stories
   const response = await api.post<Story>('/stories', body)
   return response.data
 }
 
 export async function markStoryViewed(id: string): Promise<void> {
+  // requires-feature: stories
   await api.post(`/stories/${id}/view`)
 }
 
 export async function fetchStoryViews(id: string): Promise<StoryViewer[]> {
+  // requires-feature: stories
   const response = await api.get<{ items: StoryViewer[] }>(`/stories/${id}/views`)
   return response.data.items
 }
 
 // Same reaction again removes it; a different one switches it.
 export async function reactToStory(id: string, type: ReactionType): Promise<{ myReaction: ReactionType | null }> {
+  // requires-feature: stories
   const response = await api.post<{ myReaction: ReactionType | null }>(`/stories/${id}/reaction`, { type })
   return response.data
 }
 
 export async function fetchStoryReactions(id: string): Promise<StoryReactor[]> {
+  // requires-feature: stories
   const response = await api.get<{ items: StoryReactor[] }>(`/stories/${id}/reactions`)
   return response.data.items
 }
 
 // One private reply per viewer, only while the story is live.
 export async function replyToStory(id: string, content: string): Promise<{ content: string; createdAt: string }> {
+  // requires-feature: stories
   const response = await api.post<{ content: string; createdAt: string }>(`/stories/${id}/reply`, { content })
   return response.data
 }
 
 export async function fetchStoryReplies(id: string): Promise<StoryReply[]> {
+  // requires-feature: stories
   const response = await api.get<{ items: StoryReply[] }>(`/stories/${id}/replies`)
   return response.data.items
 }
 
 export async function pinStory(id: string): Promise<{ pinnedAt: string | null; deleted: boolean }> {
+  // requires-feature: stories
   const response = await api.post<{ pinnedAt: string | null; deleted: boolean }>(`/stories/${id}/pin`)
   return response.data
 }
@@ -141,11 +152,13 @@ export async function pinStory(id: string): Promise<{ pinnedAt: string | null; d
 // On an expired Highlight this DELETES the story (`deleted: true`) — confirm
 // with the user first.
 export async function unpinStory(id: string): Promise<{ pinnedAt: string | null; deleted: boolean }> {
+  // requires-feature: stories
   const response = await api.delete<{ pinnedAt: string | null; deleted: boolean }>(`/stories/${id}/pin`)
   return response.data
 }
 
 export async function deleteStory(id: string): Promise<void> {
+  // requires-feature: stories
   await api.delete(`/stories/${id}`)
 }
 

@@ -385,6 +385,7 @@
     "exportPreparing": "A preparar a transferência…",
     "exportFailed": "Não foi possível descarregar a exportação. Tenta outra vez.",
     "exportRateLimited": "Pediste várias exportações recentemente. Tenta outra vez daqui a uma hora.",
+    "featureUnavailable": "Isto ainda não está disponível neste servidor. Peça ao seu administrador para atualizar o Famlin.",
     "dangerZone": "Eliminar conta",
     "deleteAccountDescription": "Elimina definitivamente a tua conta Famlin e tudo o que tem. Não é possível anular.",
     "deleteAccount": "Eliminar a minha conta",
@@ -653,6 +654,13 @@
     "exclusionsHintMobile": "Toca numa pessoa e depois noutra para que não se possam sortear uma à outra (ex.: casais).",
     "continue": "Continuar",
     "notAvailable": "Esta lista de presentes não está disponível."
+  },
+  "serverVersion": {
+    "title": "O seu servidor está desatualizado",
+    "memberMessage": "Algumas funcionalidades podem não funcionar. Peça ao seu administrador para atualizar o servidor Famlin.",
+    "adminMessage": "Este servidor executa o Famlin {{current}}, que esta aplicação já não suporta totalmente. Atualize o seu servidor para a versão {{version}} ou mais recente.",
+    "howToUpdate": "Como atualizar",
+    "dismiss": "Dispensar"
   },
   "wiki": {
     "title": "Wiki da Família",
