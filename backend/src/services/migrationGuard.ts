@@ -76,14 +76,22 @@ export class DatabaseNewerError extends Error {
   }
 }
 
+export class MigrateDeployError extends Error {
+  constructor(readonly exitCode: number) {
+    super(`prisma migrate deploy exited with code ${exitCode}`)
+    this.name = 'MigrateDeployError'
+  }
+}
+
 /**
- * `prisma migrate deploy` (output to this process's stdout/stderr), resolving
- * to its exit code — run by boot.ts and after a setup-screen dump restore.
+ * `prisma migrate deploy` (output to this process's stdout/stderr); rejects
+ * with a MigrateDeployError on a non-zero exit — run by boot.ts and after a
+ * setup-screen dump restore.
  */
-export function runMigrateDeploy(): Promise<number> {
+export function runMigrateDeploy(): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'inherit' })
     child.on('error', reject)
-    child.on('close', (code) => resolve(code ?? 1))
+    child.on('close', (code) => (code === 0 ? resolve() : reject(new MigrateDeployError(code ?? 1))))
   })
 }

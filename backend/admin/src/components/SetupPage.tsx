@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppIcon } from './Logo'
 import { LanguageSelector } from './LanguageSelector'
 import { api, User, ApiError } from '../api/client'
 
-// Where a scheduled backup's photos come from on a new server.
+// Where to put a scheduled backup's .dump (and its photos) on a new server.
 const DUMP_RESTORE_DOCS_URL = 'https://famlin.app/docs/maintenance#restoring-from-a-scheduled-backup'
 
 interface SetupPageProps {
@@ -26,16 +26,44 @@ export function SetupPage({ onSetupComplete, onDumpRestored }: SetupPageProps) {
   const [mode, setMode] = useState<'create' | 'restore'>('create')
   const [archive, setArchive] = useState<File | null>(null)
   const [missingMedia, setMissingMedia] = useState<string[]>([])
-  // A scheduled backup (.dump) is the whole database, accounts included, so
-  // it needs no account fields (POST /api/auth/setup/restore-dump).
-  const isDump = mode === 'restore' && !!archive?.name.toLowerCase().endsWith('.dump')
+  // Scheduled-backup dumps already in the server's backups volume. Only
+  // those can be restored (POST /api/auth/setup/restore-dump) — the whole
+  // database, accounts included, so they need no account fields.
+  const [dumps, setDumps] = useState<{ name: string; createdAt: string }[]>([])
+  const [dumpName, setDumpName] = useState('')
+
+  useEffect(() => {
+    if (mode !== 'restore') return
+    api
+      .listSetupDumps()
+      .then((list) => {
+        setDumps(list)
+        setDumpName(list[0]?.name ?? '')
+      })
+      .catch(() => setDumps([]))
+  }, [mode])
+
+  const handleDumpRestore = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setMissingMedia([])
+    setIsLoading(true)
+    try {
+      await api.restoreDump(dumpName)
+      onDumpRestored()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('setup.restoreFailed'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setMissingMedia([])
 
-    if (!isDump && password !== confirmPassword) {
+    if (password !== confirmPassword) {
       setError(t('setup.passwordMismatch'))
       return
     }
@@ -47,11 +75,6 @@ export function SetupPage({ onSetupComplete, onDumpRestored }: SetupPageProps) {
 
     setIsLoading(true)
     try {
-      if (isDump && archive) {
-        await api.restoreDump(archive)
-        onDumpRestored()
-        return
-      }
       const result =
         mode === 'restore' && archive
           ? await api.restoreBackup(archive, { email, name, password })
@@ -82,64 +105,80 @@ export function SetupPage({ onSetupComplete, onDumpRestored }: SetupPageProps) {
                 {t('setup.restoreArchiveLabel')}
                 <input
                   type="file"
-                  accept=".zip,.dump,application/zip"
+                  accept=".zip,application/zip"
                   onChange={(e) => setArchive(e.target.files?.[0] ?? null)}
                   required
                 />
               </label>
               <p className="hint">{t('setup.restoreSourceHint')}</p>
-              <p className="hint">
-                {t(isDump ? 'setup.restoreDumpHint' : 'setup.restoreAccountHint')}
-                {isDump && (
-                  <>
-                    {' '}
-                    <a href={DUMP_RESTORE_DOCS_URL} target="_blank" rel="noreferrer">
-                      {t('setup.restoreDumpDocsLink')}
-                    </a>
-                  </>
-                )}
-              </p>
+              <p className="hint">{t('setup.restoreAccountHint')}</p>
             </>
           )}
-          {!isDump && (
-            <>
-              <label>
-                {t('common.name')}
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-              </label>
-              <label>
-                {t('common.email')}
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </label>
-              <label>
-                {t('common.password')}
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </label>
-              <label>
-                {t('setup.confirmPasswordLabel')}
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </label>
-            </>
-          )}
-          {mode === 'restore' && !isDump && <p className="hint">{t('setup.restoreAfterHint')}</p>}
+          <label>
+            {t('common.name')}
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          </label>
+          <label>
+            {t('common.email')}
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            {t('common.password')}
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+          <label>
+            {t('setup.confirmPasswordLabel')}
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+          {mode === 'restore' && <p className="hint">{t('setup.restoreAfterHint')}</p>}
           <button type="submit" disabled={isLoading}>
             {isLoading
               ? t(mode === 'restore' ? 'setup.restoring' : 'common.loading')
               : t(mode === 'restore' ? 'setup.restoreButton' : 'setup.createAccountButton')}
           </button>
         </form>
+
+        {mode === 'restore' &&
+          (dumps.length > 0 ? (
+            <form onSubmit={handleDumpRestore}>
+              <h2>{t('setup.restoreDumpTitle')}</h2>
+              <p className="hint">
+                {t('setup.restoreDumpHint')}{' '}
+                <a href={DUMP_RESTORE_DOCS_URL} target="_blank" rel="noreferrer">
+                  {t('setup.restoreDumpDocsLink')}
+                </a>
+              </p>
+              <select value={dumpName} onChange={(e) => setDumpName(e.target.value)} required>
+                {dumps.map((dump) => (
+                  <option key={dump.name} value={dump.name}>
+                    {new Date(dump.createdAt).toLocaleString()}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" disabled={isLoading || !dumpName}>
+                {isLoading ? t('setup.restoring') : t('setup.restoreDumpButton')}
+              </button>
+            </form>
+          ) : (
+            <p className="hint">
+              {t('setup.restoreDumpNone')}{' '}
+              <a href={DUMP_RESTORE_DOCS_URL} target="_blank" rel="noreferrer">
+                {t('setup.restoreDumpDocsLink')}
+              </a>
+            </p>
+          ))}
 
         <button
           type="button"

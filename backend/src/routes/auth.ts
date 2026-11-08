@@ -30,7 +30,8 @@ import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js'
 import { buildMemberExportArchive } from '../services/memberExport.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
-import { restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
+import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
+import { BACKUP_DB_DIR } from '../services/backup/index.js'
 import { abortArchiveOnDisconnect } from '../services/storage/archive.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
@@ -41,6 +42,7 @@ import {
   passwordLoginBodySchema,
   registerBodySchema,
   setupBodySchema,
+  restoreDumpBodySchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -184,7 +186,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const passwordHash = await hashPassword(password)
 
     const user = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`
+      // Try, don't wait: a restore can hold this key far longer than the
+      // transaction's timeout.
+      const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+        SELECT pg_try_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY}) AS locked
+      `
+      if (!locked) return 'busy' as const
 
       const userCount = await tx.user.count()
       if (userCount > 0) {
@@ -201,6 +208,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       })
     })
 
+    if (user === 'busy') {
+      return reply.status(409).send({ error: t('errors.setupInProgress') })
+    }
     if (!user) {
       return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
     }
@@ -299,6 +309,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
           if (err.code === 'notEmpty') {
             return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
           }
+          if (err.code === 'busy') {
+            return reply.status(409).send({ error: t('errors.setupInProgress') })
+          }
           if (err.code === 'missingMedia') {
             return reply.status(400).send({ error: t('errors.restoreMediaMissing'), missingMedia: err.missingKeys })
           }
@@ -338,64 +351,66 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   )
 
-  // Public, zero-users only, like /setup/restore: restores a scheduled
-  // backup's `pg_dump -Fc` file (multipart field `dump`) over the whole
-  // database (services/backup/restoreDump.ts). The old accounts, passwords
-  // and settings come back, so no session is issued — the person signs in
-  // with their existing account afterwards.
+  // Public, zero-users only, like /setup/restore: the scheduled-backup dumps
+  // already in the backups volume's db/ folder, for the setup screen to offer.
+  fastify.get(
+    '/setup/dumps',
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
+      }
+      return listDumps(BACKUP_DB_DIR)
+    }
+  )
+
+  // Restores one of those dumps over the whole database
+  // (services/backup/restoreDump.ts). Deliberately no upload: pg_restore runs
+  // the dump's SQL as the database role, so only a file someone with access
+  // to the server's backups volume put there is ever restored. The old
+  // accounts, passwords and settings come back, so no session is issued —
+  // the person signs in with their existing account afterwards.
   fastify.post(
     '/setup/restore-dump',
     { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
-      if (!request.isMultipart()) {
-        return reply.status(400).send({ error: t('errors.restoreDumpMissing') })
-      }
+      const { name } = restoreDumpBodySchema.parse(request.body)
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
       }
 
-      const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
-      await fsp.mkdir(workDir, { recursive: true })
       try {
-        let dumpPath: string | null = null
-        // Streamed to disk, no fileSize cap — see /setup/restore.
-        const parts = request.parts({ limits: { fileSize: Infinity, files: 1, fields: 10 } })
-        for await (const part of parts) {
-          if (part.type !== 'file') continue
-          if (part.fieldname !== 'dump' || dumpPath) {
-            part.file.resume()
-            continue
-          }
-          dumpPath = path.join(workDir, 'backup.dump')
-          await pipeline(part.file, fs.createWriteStream(dumpPath))
-        }
-        if (!dumpPath) {
-          return reply.status(400).send({ error: t('errors.restoreDumpMissing') })
-        }
-
-        try {
-          await restoreDump(dumpPath, SETUP_ADVISORY_LOCK_KEY)
-        } catch (err) {
-          if (!(err instanceof RestoreDumpError)) throw err
-          // pg_restore's stderr stays in the server log, never the response.
+        await restoreDump(BACKUP_DB_DIR, name, SETUP_ADVISORY_LOCK_KEY)
+      } catch (err) {
+        if (!(err instanceof RestoreDumpError)) throw err
+        // pg_restore's stderr stays in the server log, never the response.
+        if (err.code === 'migrateFailed') {
+          request.log.error({ err }, 'dump restored, but prisma migrate deploy failed: restart the server')
+        } else {
           request.log.warn({ err }, 'dump restore refused or failed')
-          if (err.code === 'notEmpty') {
-            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
-          }
-          if (err.code === 'dumpTooNew') {
-            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
-          }
-          if (err.code === 'invalidDump') {
-            return reply.status(400).send({ error: t('errors.restoreDumpInvalid') })
-          }
-          return reply.status(500).send({ error: t('errors.restoreDumpFailed') })
         }
-
-        return { restored: true }
-      } finally {
-        await fsp.rm(workDir, { recursive: true, force: true })
+        switch (err.code) {
+          case 'notEmpty':
+            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+          case 'busy':
+            return reply.status(409).send({ error: t('errors.setupInProgress') })
+          case 'unknownDump':
+            return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
+          case 'invalidDump':
+            return reply.status(400).send({ error: t('errors.restoreDumpInvalid') })
+          case 'dumpTooNew':
+            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
+          case 'noPrivilege':
+            return reply.status(500).send({ error: t('errors.restoreDumpNoPrivilege') })
+          case 'migrateFailed':
+            return reply.status(500).send({ error: t('errors.restoreDumpMigrateFailed') })
+          default:
+            return reply.status(500).send({ error: t('errors.restoreDumpFailed') })
+        }
       }
+
+      return { restored: true }
     }
   )
 

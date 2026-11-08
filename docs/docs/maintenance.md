@@ -68,15 +68,19 @@ The container runs as the unprivileged `node` user (uid 1000), so that folder mu
 
 A scheduled backup is two things in the `famlin-backups` volume: a database dump `db/famlin-<timestamp>.dump` and a mirror of your photos in `uploads/`.
 
-**Onto a fresh server (or another machine): use the setup screen.** This is the easy path when the server you're restoring onto has no accounts yet.
+**Onto a fresh server (or another machine): use the setup screen.** This is the easy path when the server you're restoring onto has no accounts yet. The setup screen only restores dumps that are already in the new server's `famlin-backups` volume: it doesn't take an upload, because restoring a dump runs the SQL inside it with full database rights.
 
-1. Copy the dump you want from the old server's `famlin-backups` volume (`/app/backups/db/` inside the backend container) to the computer you'll use for the browser, for example:
+1. Get the dump onto the new server. If it's the same machine and the `famlin-backups` volume survived, there's nothing to do. Otherwise copy it out of the old server (`docker compose cp famlin-backend:/app/backups/db/famlin-<timestamp>.dump .`), move it to the new machine, and from the new server's compose folder put it in place — keep the file name as it is:
 
    ```bash
-   docker compose cp famlin-backend:/app/backups/db/famlin-<timestamp>.dump .
+   docker compose exec famlin-backend mkdir -p /app/backups/db
+   docker compose cp famlin-<timestamp>.dump famlin-backend:/app/backups/db/
+   docker compose exec -u root famlin-backend chown node:node /app/backups/db/famlin-<timestamp>.dump
    ```
 
-2. Copy the photos into the new server's uploads volume. From the new server's compose folder, with the backup's `uploads/` folder copied over to it (for example with `rsync` or `scp`) as `./backup-uploads`:
+   If you mounted a host folder at `/app/backups` instead, just copy the file into its `db/` folder, readable by uid 1000.
+
+2. Copy the photos into the new server's uploads volume. With the backup's `uploads/` folder copied over to the new server's compose folder (for example with `rsync` or `scp`) as `./backup-uploads`:
 
    ```bash
    docker compose cp ./backup-uploads/. famlin-backend:/app/uploads/
@@ -85,8 +89,10 @@ A scheduled backup is two things in the `famlin-backups` volume: a database dump
 
    If the new server already has the `famlin-backups` volume (same machine), use the `cp -a` command from step 4 of the command-line steps below instead.
 
-3. Start the new server, running the **same or a newer** Famlin version, and open `/admin`. On the first-run setup screen choose **Restore a backup**, pick the `.dump` file and press **Restore backup**. No account fields are needed.
+3. Make sure the new server runs the **same or a newer** Famlin version, and open `/admin`. On the first-run setup screen choose **Restore a backup**, pick the dump under **Restore a scheduled backup** and press **Restore scheduled backup**. No account fields are needed. If the dump doesn't show up, check its location and name, then reload the page.
 4. Sign in with your existing account. The dump is the whole database, so accounts, passwords and server settings all come back; if it came from an older Famlin version, pending migrations are applied right after the restore. A dump from a newer version is refused before anything is changed.
+
+The restore is point-in-time. Everyone is signed out of the apps and signs in again, but passwords and [API tokens](/developers/api) are as they were when the dump was taken. If an account's password or a token was changed or revoked since then because it leaked, reset or revoke it again.
 
 **On the same server, from the command line.** Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
 

@@ -626,6 +626,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/list-scheduled-backup-dumps",
+          label: "List scheduled-backup dumps on a fresh server",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/restore-scheduled-backup-dump",
           label: "Restore a scheduled-backup dump on a fresh server",
           className: "api-method post",

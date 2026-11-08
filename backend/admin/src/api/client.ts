@@ -210,22 +210,13 @@ export const api = {
     return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>
   },
 
-  // A scheduled backup's pg_dump file: replaces the whole database, so the
-  // old accounts come back and no session is issued.
-  restoreDump: async (dump: File) => {
-    const form = new FormData()
-    form.append('dump', dump)
-    const res = await fetch('/api/auth/setup/restore-dump', {
-      method: 'POST',
-      body: form,
-      headers: { 'Accept-Language': currentLanguage() },
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
-      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
-    }
-    return res.json() as Promise<{ restored: true }>
-  },
+  // Scheduled-backup dumps already in the server's backups volume (db/).
+  listSetupDumps: () => request<{ name: string; size: number; createdAt: string }[]>('/api/auth/setup/dumps'),
+
+  // Replaces the whole database with one of them: the old accounts come
+  // back, so no session is issued.
+  restoreDump: (name: string) =>
+    request<{ restored: true }>('/api/auth/setup/restore-dump', { method: 'POST', body: { name } }),
 
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
 

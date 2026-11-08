@@ -17,6 +17,64 @@ function isDumpFile(name: string): boolean {
   return name.startsWith(DUMP_PREFIX) && name.endsWith(DUMP_SUFFIX)
 }
 
+// Exactly what dumpFileName() produces: no path separators or dots outside
+// the suffix, so a matching name can only ever resolve inside the dump dir.
+const DUMP_NAME_PATTERN = /^famlin-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z\.dump$/
+
+/** When the dump was taken, from its file name, or `null` if `name` isn't a scheduled-backup dump name. */
+export function parseDumpFileName(name: string): Date | null {
+  const m = DUMP_NAME_PATTERN.exec(name)
+  if (!m) return null
+  const date = new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+export class PgToolNotInstalledError extends Error {
+  constructor(readonly tool: string) {
+    super(`${tool} is not installed in this container`)
+    this.name = 'PgToolNotInstalledError'
+  }
+}
+
+/**
+ * Runs a Postgres client tool (pg_dump/pg_restore) with the password in
+ * PGPASSWORD. Rejects on a non-zero exit with (the first 4000 chars of) its
+ * stderr. With `maxStdout`, stdout is captured and returned; more than that
+ * many bytes kills the tool and rejects. Without it, stdout is discarded.
+ */
+export function runPgTool(tool: string, args: string[], password: string, maxStdout?: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(tool, args, {
+      env: { ...process.env, PGPASSWORD: password },
+      stdio: ['ignore', maxStdout === undefined ? 'ignore' : 'pipe', 'pipe'],
+    })
+    const stdout: Buffer[] = []
+    let stdoutBytes = 0
+    let overflow = false
+    let stderr = ''
+    child.stdout?.on('data', (chunk: Buffer) => {
+      stdoutBytes += chunk.length
+      if (stdoutBytes > (maxStdout ?? 0)) {
+        overflow = true
+        child.kill()
+      } else {
+        stdout.push(chunk)
+      }
+    })
+    child.stderr?.on('data', (chunk) => {
+      if (stderr.length < 4000) stderr += chunk.toString()
+    })
+    child.on('error', (err) => {
+      reject((err as NodeJS.ErrnoException).code === 'ENOENT' ? new PgToolNotInstalledError(tool) : err)
+    })
+    child.on('close', (code) => {
+      if (overflow) reject(new Error(`${tool} printed more than ${maxStdout} bytes`))
+      else if (code === 0) resolve(Buffer.concat(stdout).toString())
+      else reject(new Error(stderr.trim() || `${tool} exited with code ${code}`))
+    })
+  })
+}
+
 // pg_dump takes a libpq URI, which rejects Prisma's `?schema=` parameter, and
 // a password in the URI would show up in `ps` — so the password moves to
 // PGPASSWORD and the schema becomes --schema.
@@ -41,27 +99,7 @@ export async function dumpDatabase(dir: string, now: Date): Promise<{ file: stri
   const args = ['-Fc', '--no-owner', '--no-privileges', '-f', partialPath, ...(schema ? ['--schema', schema] : []), uri]
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn('pg_dump', args, {
-        env: { ...process.env, PGPASSWORD: password },
-        stdio: ['ignore', 'ignore', 'pipe'],
-      })
-      let stderr = ''
-      child.stderr.on('data', (chunk) => {
-        if (stderr.length < 4000) stderr += chunk.toString()
-      })
-      child.on('error', (err) => {
-        reject(
-          (err as NodeJS.ErrnoException).code === 'ENOENT'
-            ? new Error('pg_dump is not installed in this container')
-            : err
-        )
-      })
-      child.on('close', (code) => {
-        if (code === 0) resolve()
-        else reject(new Error(stderr.trim() || `pg_dump exited with code ${code}`))
-      })
-    })
+    await runPgTool('pg_dump', args, password)
     await fsp.rename(partialPath, finalPath)
   } catch (err) {
     await fsp.rm(partialPath, { force: true })
