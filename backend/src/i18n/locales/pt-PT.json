@@ -70,6 +70,7 @@
     "mediaAlbumAlreadyLinked": "Este álbum já está associado a este grupo",
     "mediaAlbumLinkNotFound": "Associação ao álbum não encontrada",
     "apiTokenSessionRequired": "Os tokens de API só podem ser criados a partir de uma sessão normal, não com outro token de API",
+    "exportDownloadTokenInvalid": "Esta ligação de transferência expirou ou já foi utilizada. Inicie a exportação novamente.",
     "sessionRequired": "Esta ação só pode ser feita a partir de uma sessão normal, não com um token de API",
     "apiTokenNotFound": "Token de API não encontrado",
     "mediaPersonLinkNotFound": "Associação de pessoa não encontrada",

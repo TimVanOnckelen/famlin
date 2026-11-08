@@ -141,6 +141,8 @@ Restoring only works while the server has **no accounts at all**: it never merge
 - **Every previous session is signed out**, including on devices that were logged in to the old server.
 - Notification history and the push delivery log start empty.
 
+**Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN. Or move servers without the zip: restore a scheduled backup's `.dump` and copy its `uploads/` mirror, as described above.
+
 Treat the export as a complement to the volume backups above, not a replacement: volumes restore *everything*, including settings and passwords; the export is the one you can restore without them.
 
 ## Updating

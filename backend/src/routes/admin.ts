@@ -45,6 +45,8 @@ import {
 } from '../services/branding/index.js'
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js'
 import { buildExportArchive } from '../services/export.js'
+import { createExportDownloadToken, redeemExportDownloadToken } from '../services/exportDownloadTokens.js'
+import { abortArchiveOnDisconnect } from '../services/storage/archive.js'
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
@@ -132,7 +134,24 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {
-  fastify.addHook('preHandler', fastify.authenticate)
+  fastify.addHook('preHandler', async (request, reply) => {
+    // GET /export is downloaded by a plain browser navigation, which can't
+    // send an Authorization header: it may authenticate with a one-time
+    // ?downloadToken= from POST /export/token instead.
+    const downloadToken = (request.query as { downloadToken?: unknown } | undefined)?.downloadToken
+    if (
+      (request.routeOptions.config as { exportDownloadToken?: boolean }).exportDownloadToken &&
+      !request.headers.authorization &&
+      typeof downloadToken === 'string'
+    ) {
+      const user = await redeemExportDownloadToken(downloadToken)
+      if (!user) return reply.status(401).send({ error: getT(request)('errors.exportDownloadTokenInvalid') })
+      request.user = user
+      request.authMethod = 'session'
+      return
+    }
+    return fastify.authenticate(request, reply)
+  })
 
   // Device diagnostics are operational state, not activity data. The summary
   // is computed from current rows only; the detailed list is cursor-paginated.
@@ -1414,18 +1433,33 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // groups/members, posts, comments, reactions, favorites, chat messages) and
   // the entire uploads directory — see services/export.ts for exactly what's
   // deliberately left out (Setting, invites, tokens, notification history).
-  fastify.get('/export', async (request, reply) => {
+  // Mints the one-time ?downloadToken= the admin UI puts in the export's
+  // download URL — see services/exportDownloadTokens.ts. Login sessions
+  // only, like minting an API token: a PAT can call GET /export directly.
+  fastify.post('/export/token', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    return { token: await createExportDownloadToken(request.user!.id) }
+  })
+
+  fastify.get('/export', { config: { exportDownloadToken: true } }, async (request, reply) => {
     if (requireAdmin(request, reply)) return
 
-    const query = z.object({ includeMedia: z.enum(['true', 'false']).optional() }).parse(request.query)
+    const query = z
+      .object({ includeMedia: z.enum(['true', 'false']).optional(), downloadToken: z.string().optional() })
+      .parse(request.query)
     const archive = await buildExportArchive(query.includeMedia !== 'false')
     archive.on('error', (err) => {
       request.log.error(err, 'export archive stream error')
     })
+    abortArchiveOnDisconnect(archive, reply.raw, request.log)
 
     const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
     reply.header('content-type', 'application/zip')
     reply.header('content-disposition', `attachment; filename="${filename}"`)
+    reply.header('cache-control', 'no-store')
 
     // finalize() returns a promise (archiver v8) — fire it after attaching
     // the archive to the response so bytes start streaming immediately;

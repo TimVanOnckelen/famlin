@@ -70,6 +70,7 @@
     "mediaAlbumAlreadyLinked": "Cet album est déjà lié à ce groupe",
     "mediaAlbumLinkNotFound": "Lien d'album introuvable",
     "apiTokenSessionRequired": "Les jetons d'API ne peuvent être créés que depuis une session de connexion normale, pas avec un autre jeton d'API",
+    "exportDownloadTokenInvalid": "Ce lien de téléchargement a expiré ou a déjà été utilisé. Relancez l'export.",
     "sessionRequired": "Cette action n'est possible que depuis une session de connexion normale, pas avec un jeton d'API",
     "apiTokenNotFound": "Jeton d'API introuvable",
     "mediaPersonLinkNotFound": "Association de personne introuvable",

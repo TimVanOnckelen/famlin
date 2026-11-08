@@ -1,0 +1,1 @@
+{"responses":{"200":{"description":"Download token","content":{"application/json":{"schema":{"type":"object","required":["token"],"properties":{"token":{"type":"string"}}}}}},"401":{"description":"Authentication required"},"403":{"description":"Administrator required","or called with an API token":null}}}

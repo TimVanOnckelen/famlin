@@ -505,24 +505,17 @@ export const api = {
 
   // Not a JSON endpoint (returns a zip stream), so this bypasses request()
   // and does its own auth header + error handling instead.
-  downloadExport: async (includeMedia = true): Promise<{ blob: Blob; filename: string }> => {
-    const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
-    const token = getToken()
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
-    const res = await fetch(`/api/admin/export?includeMedia=${includeMedia}`, { headers })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: i18n.t('common.error') }))
-      throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code)
-    }
-
-    const blob = await res.blob()
-    const disposition = res.headers.get('content-disposition') || ''
-    const match = disposition.match(/filename="([^"]+)"/)
-    const filename = match?.[1] ?? `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
-    return { blob, filename }
+  // A real browser navigation rather than fetch + blob, so the browser streams
+  // a multi-GB zip straight to disk with its own progress UI. Navigation can't
+  // send the Authorization header, hence the one-time download token.
+  downloadExport: async (includeMedia = true): Promise<void> => {
+    const { token } = await request<{ token: string }>('/api/admin/export/token', { method: 'POST' })
+    const params = new URLSearchParams({ includeMedia: String(includeMedia), downloadToken: token })
+    const link = document.createElement('a')
+    link.href = `/api/admin/export?${params}`
+    link.download = ''
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   },
 }
