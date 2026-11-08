@@ -311,5 +311,60 @@ describe('EVENT posts', () => {
       expect((await getEvent(author, postA.id)).myRsvp).toBeNull()
       expect((await getEvent(both, postA.id)).myRsvp).toBe('no')
     })
+
+    it('clears an answer from a different copy than the one that holds it', async () => {
+      const author = await createUser()
+      const both = await createUser()
+      const groupA = await createGroupWithMember(author)
+      const groupB = await createGroupWithMember(author)
+      await addMember(groupA.id, both.id)
+      await addMember(groupB.id, both.id)
+
+      await createEvent(author, { groupIds: [groupA.id, groupB.id] })
+      const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, type: 'EVENT' } })
+      const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, type: 'EVENT' } })
+
+      await rsvp(both, postA.id, 'yes')
+      expect((await getEvent(both, postB.id)).myRsvp).toBe('yes')
+
+      const res = await rsvp(both, postB.id, 'yes')
+      expect(res.statusCode).toBe(200)
+      expect(res.json().event.myRsvp).toBeNull()
+      expect(await prisma.postInteraction.count({ where: { userId: both.id, key: 'rsvp' } })).toBe(0)
+    })
+
+    it("leaves an answer on a copy in a family they've since left alone", async () => {
+      const author = await createUser()
+      const leaver = await createUser()
+      const groupA = await createGroupWithMember(author)
+      const groupB = await createGroupWithMember(author)
+      await addMember(groupA.id, leaver.id)
+      await addMember(groupB.id, leaver.id)
+
+      await createEvent(author, { groupIds: [groupA.id, groupB.id] })
+      const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, type: 'EVENT' } })
+      const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, type: 'EVENT' } })
+
+      await rsvp(leaver, postA.id, 'yes')
+      await prisma.groupMember.deleteMany({ where: { groupId: groupA.id, userId: leaver.id } })
+      await rsvp(leaver, postB.id, 'no')
+
+      const rows = await prisma.postInteraction.findMany({ where: { userId: leaver.id, key: 'rsvp' } })
+      expect(rows.map((row) => row.postId).sort()).toEqual([postA.id, postB.id].sort())
+    })
+  })
+
+  describe('simultaneous answers', () => {
+    it('settles on one answer without a server error', async () => {
+      const author = await createUser()
+      const guest = await createUser()
+      const group = await createGroupWithMember(author)
+      await addMember(group.id, guest.id)
+      const event = await createEvent(author, { groupId: group.id })
+
+      const results = await Promise.all([rsvp(guest, event.id, 'yes'), rsvp(guest, event.id, 'no')])
+      expect(results.map((res) => res.statusCode)).toEqual([200, 200])
+      expect(await prisma.postInteraction.count({ where: { userId: guest.id, postId: event.id } })).toBe(1)
+    })
   })
 })

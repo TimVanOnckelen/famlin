@@ -2,7 +2,8 @@ import { z } from 'zod'
 import { prisma } from '../../db.js'
 import { PostTypeError } from './types.js'
 import type { PostTypeHandler } from './types.js'
-import { visibleSiblingsForPage } from '../crossPosts.js'
+import { visibleSiblingPostIds, visibleSiblingsForPage } from '../crossPosts.js'
+import { isUniqueConstraintViolation } from '../../utils/prismaErrors.js'
 
 // Client-sent typeData shape at create time (routes/posts.ts POST /). The
 // event's title lives in `content` — not here — so search, notification
@@ -89,30 +90,42 @@ export const eventHandler: PostTypeHandler = {
       throw new PostTypeError('eventClosed')
     }
 
-    const existing = await prisma.postInteraction.findUnique({
-      where: { postId_userId_key: { postId: post.id, userId, key: 'rsvp' } },
-    })
+    // A member of several target groups answers once per event, not once per
+    // sibling, and enrichPosts shows them that one answer on every copy they
+    // can see — so the toggle has to look across those same copies, or
+    // clearing from a copy that doesn't hold the row would re-create it.
+    const copyIds = await visibleSiblingPostIds(post, userId)
 
-    await prisma.$transaction(async (tx) => {
-      // A member of several target groups answers once per event, not once
-      // per sibling: drop any answer they left on another sibling, so the
-      // merged view in enrichPosts never shows them twice.
-      if (post.crossPostId) {
-        await tx.postInteraction.deleteMany({
-          where: { userId, key: 'rsvp', post: { crossPostId: post.crossPostId }, postId: { not: post.id } },
+    const answer = () =>
+      prisma.$transaction(async (tx) => {
+        const current = await tx.postInteraction.findMany({
+          where: { userId, key: 'rsvp', postId: { in: copyIds } },
+          select: { value: true },
         })
-      }
 
-      if (existing && existing.value === value) {
-        await tx.postInteraction.deleteMany({ where: { id: existing.id } })
-      } else {
+        if (current.some((row) => row.value === value)) {
+          await tx.postInteraction.deleteMany({ where: { userId, key: 'rsvp', postId: { in: copyIds } } })
+          return
+        }
+
+        await tx.postInteraction.deleteMany({
+          where: { userId, key: 'rsvp', postId: { in: copyIds.filter((id) => id !== post.id) } },
+        })
         await tx.postInteraction.upsert({
           where: { postId_userId_key: { postId: post.id, userId, key: 'rsvp' } },
           create: { postId: post.id, userId, key: 'rsvp', value },
           update: { value },
         })
-      }
-    })
+      })
+
+    // Two simultaneous answers (a double tap) can both miss the row and race
+    // to create it; the loser retries once and then sees the winner's row.
+    try {
+      await answer()
+    } catch (err) {
+      if (!isUniqueConstraintViolation(err)) throw err
+      await answer()
+    }
   },
 
   // Batch-attaches the enriched `event` view. Shaped posts no longer carry
