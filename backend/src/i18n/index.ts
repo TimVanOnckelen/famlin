@@ -4,8 +4,10 @@ import type { FastifyRequest } from 'fastify'
 import en from './locales/en.json' with { type: 'json' }
 import nl from './locales/nl.json' with { type: 'json' }
 import zh from './locales/zh.json' with { type: 'json' }
+import ptPT from './locales/pt-PT.json' with { type: 'json' }
+import fr from './locales/fr.json' with { type: 'json' }
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh'] as const
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh', 'pt-PT', 'fr'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en'
 
@@ -13,6 +15,8 @@ const resources = {
   en: { translation: en },
   nl: { translation: nl },
   zh: { translation: zh },
+  'pt-PT': { translation: ptPT },
+  fr: { translation: fr },
 }
 
 i18n.init({
@@ -24,6 +28,17 @@ i18n.init({
   },
 })
 
+// Exact tag first, then primary subtag — so pt-PT, pt and pt-BR all resolve to
+// pt-PT, and en-GB to en.
+function matchLanguage(tag: string): SupportedLanguage | undefined {
+  const lower = tag.trim().toLowerCase()
+  const primary = lower.split('-')[0]
+  return (
+    SUPPORTED_LANGUAGES.find((lang) => lang.toLowerCase() === lower) ??
+    SUPPORTED_LANGUAGES.find((lang) => lang.split('-')[0] === primary)
+  )
+}
+
 export function parseAcceptLanguage(header?: string): SupportedLanguage {
   if (!header) return DEFAULT_LANGUAGE
 
@@ -31,7 +46,7 @@ export function parseAcceptLanguage(header?: string): SupportedLanguage {
     .split(',')
     .map((part) => {
       const [lang, qualityPart] = part.trim().split(';')
-      const language = lang.split('-')[0].trim().toLowerCase()
+      const language = matchLanguage(lang)
       let quality = 1
       if (qualityPart) {
         const match = qualityPart.match(/q=([0-9.]+)/)
@@ -39,10 +54,10 @@ export function parseAcceptLanguage(header?: string): SupportedLanguage {
       }
       return { language, quality }
     })
-    .filter((item) => SUPPORTED_LANGUAGES.includes(item.language as SupportedLanguage))
+    .filter((item): item is { language: SupportedLanguage; quality: number } => item.language !== undefined)
     .sort((a, b) => b.quality - a.quality)
 
-  return (parsed[0]?.language as SupportedLanguage) || DEFAULT_LANGUAGE
+  return parsed[0]?.language ?? DEFAULT_LANGUAGE
 }
 
 export function getLanguageFromRequest(request: FastifyRequest): SupportedLanguage {

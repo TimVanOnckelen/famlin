@@ -247,14 +247,14 @@ side panel's member card, or `g` then `m`.
 
 ## Internationalization
 
-The mobile app, the web app, and the admin UI use `i18next` + `react-i18next`; the backend uses plain `i18next` for error messages, notifications, and server-rendered pages. Supported languages are English (`en`), Dutch (`nl`), and Simplified Chinese (`zh`). Locales live in:
+The mobile app, the web app, and the admin UI use `i18next` + `react-i18next`; the backend uses plain `i18next` for error messages, notifications, and server-rendered pages. Supported languages are English (`en`), Dutch (`nl`), Simplified Chinese (`zh`), European Portuguese (`pt-PT`), and French (`fr`). Locales live in:
 
-- `mobile/src/i18n/locales/{en,nl,zh}.json`
-- `web/src/i18n/locales/{en,nl,zh}.json`
-- `backend/admin/src/i18n/locales/{en,nl,zh}.json`
-- `backend/src/i18n/locales/{en,nl,zh}.json`
+- `mobile/src/i18n/locales/{en,nl,zh,pt-PT,fr}.json`
+- `web/src/i18n/locales/{en,nl,zh,pt-PT,fr}.json`
+- `backend/admin/src/i18n/locales/{en,nl,zh,pt-PT,fr}.json`
+- `backend/src/i18n/locales/{en,nl,zh,pt-PT,fr}.json`
 
-`en.json` is the source, the others are translations. `fallbackLng` is `en`. Every client sends its current UI language as `Accept-Language` on API requests, so backend error messages come back in the language the user picked. `npm run check:locales` (repo root) verifies every translation has exactly the keys and `{{placeholders}}` of its `en.json`.
+`en.json` is the source, the others are translations. `fallbackLng` is `en`. Device, browser and `Accept-Language` tags are matched exactly first, then by primary subtag, so `pt-BR` or plain `pt` resolves to `pt-PT` — a regional code is used rather than `pt` so i18next applies European Portuguese plural rules (`pt` treats 0 as singular). Every client sends its current UI language as `Accept-Language` on API requests, so backend error messages come back in the language the user picked. `npm run check:locales` (repo root) verifies every translation has exactly the keys and `{{placeholders}}` of its `en.json`.
 
 ## Photos and uploads
 
