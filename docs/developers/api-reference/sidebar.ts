@@ -618,6 +618,12 @@ const sidebar: SidebarsConfig = {
           label: "Portable family export (admin only)",
           className: "api-method get",
         },
+        {
+          type: "doc",
+          id: "api-reference/restore-scheduled-backup-dump",
+          label: "Restore a scheduled-backup dump on a fresh server",
+          className: "api-method post",
+        },
       ],
     },
     {

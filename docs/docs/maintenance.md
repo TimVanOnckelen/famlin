@@ -66,7 +66,29 @@ The container runs as the unprivileged `node` user (uid 1000), so that folder mu
 
 ### Restoring from a scheduled backup
 
-Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
+A scheduled backup is two things in the `famlin-backups` volume: a database dump `db/famlin-<timestamp>.dump` and a mirror of your photos in `uploads/`.
+
+**Onto a fresh server (or another machine): use the setup screen.** This is the easy path when the server you're restoring onto has no accounts yet.
+
+1. Copy the dump you want from the old server's `famlin-backups` volume (`/app/backups/db/` inside the backend container) to the computer you'll use for the browser, for example:
+
+   ```bash
+   docker compose cp famlin-backend:/app/backups/db/famlin-<timestamp>.dump .
+   ```
+
+2. Copy the photos into the new server's uploads volume. From the new server's compose folder, with the backup's `uploads/` folder copied over to it (for example with `rsync` or `scp`) as `./backup-uploads`:
+
+   ```bash
+   docker compose cp ./backup-uploads/. famlin-backend:/app/uploads/
+   docker compose exec -u root famlin-backend sh -c 'rm -rf /app/uploads/.deleted && chown -R node:node /app/uploads'
+   ```
+
+   If the new server already has the `famlin-backups` volume (same machine), use the `cp -a` command from step 4 of the command-line steps below instead.
+
+3. Start the new server, running the **same or a newer** Famlin version, and open `/admin`. On the first-run setup screen choose **Restore a backup**, pick the `.dump` file and press **Restore backup**. No account fields are needed.
+4. Sign in with your existing account. The dump is the whole database, so accounts, passwords and server settings all come back; if it came from an older Famlin version, pending migrations are applied right after the restore. A dump from a newer version is refused before anything is changed.
+
+**On the same server, from the command line.** Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
 
 1. List the dumps and pick one:
 
@@ -102,11 +124,11 @@ Run these from the folder that holds your `docker-compose.yml`, with `famlin-db`
 
 ### Restoring from a data export
 
-The admin UI's **Data export** (Server settings → General) is a second, independent kind of backup: one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
+The admin UI's **Data export** is a second, independent kind of backup. You download it on the old server under **Server settings → General → Data export** (leave **Include media in export** on to bring the photos along); scheduled backups never produce a zip. It's one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
 
 1. Start the new server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
 2. Open `/admin`. A fresh server shows the first-run setup screen; choose **Restore a backup**.
-3. Pick the export zip and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
+3. Pick the export `.zip` and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
 4. Wait for the upload and restore to finish — for a large photo library this takes a while.
 
 Restoring only works while the server has **no accounts at all**: it never merges into a server that's already in use, and it's refused once anyone has signed up.

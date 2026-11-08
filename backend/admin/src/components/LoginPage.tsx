@@ -7,6 +7,8 @@ import { api, OidcConfig, User } from '../api/client'
 
 interface LoginPageProps {
   onLogin: (user: User) => void
+  // Shown above the form, e.g. after a setup-screen dump restore.
+  notice?: string
 }
 
 // Must stay exactly this URL — deployments have it registered as the
@@ -15,7 +17,7 @@ function getOidcRedirectUri(): string {
   return new URL('/admin/', window.location.origin).toString()
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ onLogin, notice }: LoginPageProps) {
   const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
@@ -119,6 +121,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <p>
           {oidcConfig?.enabled ? t('login.subtitleWithSso', { name: oidcConfig.name }) : t('login.subtitleWithoutSso')}
         </p>
+        {notice && (
+          <p className="hint" role="status">
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={handlePasswordLogin}>
           <label>

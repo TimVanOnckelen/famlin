@@ -3662,6 +3662,57 @@ paths:
               schema: { type: string, format: binary }
         '401': { description: Authentication required }
         '403': { description: Administrator required }
+  /api/auth/setup/restore-dump:
+    post:
+      operationId: restoreScheduledBackupDump
+      tags: [Storage administration]
+      summary: Restore a scheduled-backup dump on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Replaces the whole database with a scheduled backup's
+        `pg_dump -Fc` file (`db/famlin-<timestamp>.dump` in the backups
+        volume), then applies pending migrations if the dump came from an
+        older Famlin version. Accounts, passwords and settings come back from
+        the dump, so no session is issued: sign in with an existing account
+        afterwards. Photos are not in the dump; copy the backup's `uploads/`
+        mirror into the uploads volume. Rate-limited to 5 requests per 15
+        minutes per IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [dump]
+              properties:
+                dump: { type: string, format: binary, description: A pg custom-format dump made by a scheduled backup }
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [restored]
+                properties:
+                  restored: { type: boolean, enum: [true] }
+        '400':
+          description: No dump sent, not a Famlin pg custom-format dump, or made by a newer Famlin version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: The server already has accounts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+        '500':
+          description: pg_restore or the migrations failed (details only in the server log)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/wiki/pages:
     get:
