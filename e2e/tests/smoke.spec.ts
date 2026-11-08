@@ -13,8 +13,11 @@ const MEMBER = { name: 'E2E Member', email: 'member@e2e.test', password: 'member
 const FAMILY = 'E2E Family'
 const POST_TEXT = `Hello from the e2e smoke test ${Date.now()}`
 const COMMENT_TEXT = 'What a lovely photo!'
+const OUTSIDER = { name: 'E2E Outsider', email: 'outsider@e2e.test', password: 'outsider-password-123' }
 
 let inviteToken = ''
+// The post photo's /uploads/ path, without the media token the web app adds.
+let photoPath = ''
 
 async function apiLogin(request: APIRequestContext, email: string, password: string) {
   const res = await request.post('/api/auth/login', { data: { email, password } })
@@ -129,6 +132,7 @@ test('the member shares a post with a photo', async ({ page }) => {
   const img = card.locator('img[src*="/uploads/"]').first()
   await expect(img).toBeVisible()
   await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true)
+  photoPath = new URL((await img.getAttribute('src'))!, page.url()).pathname
 })
 
 test('the member reacts to and comments on the post', async ({ page }) => {
@@ -147,6 +151,14 @@ test('the member reacts to and comments on the post', async ({ page }) => {
   await page.locator('.comment-send').click()
   await expect(page.getByText(COMMENT_TEXT)).toBeVisible()
   await expect(input).toHaveValue('')
+
+  // The UI updates optimistically, so only a fresh load proves the reaction
+  // and the comment were actually stored.
+  await page.goto('/')
+  const reloaded = page.getByRole('article').filter({ hasText: POST_TEXT })
+  await expect(reloaded.locator('.reaction-wrap > .action-btn')).toHaveClass(/action-btn-active/)
+  await expect(reloaded.locator('.reaction-wrap > .action-btn')).toContainText('1')
+  await expect(reloaded).toContainText('1 comment')
 })
 
 test('the admin sees the post, the reaction and the comment', async ({ page }) => {
@@ -158,6 +170,36 @@ test('the admin sees the post, the reaction and the comment', async ({ page }) =
   await expect(card).toContainText('1 comment')
 })
 
+test('nobody outside the family can read the post or its photo', async ({ request }) => {
+  expect(photoPath).toMatch(/^\/uploads\//)
+  const member = await apiLogin(request, MEMBER.email, MEMBER.password)
+  const admin = await apiLogin(request, ADMIN.email, ADMIN.password)
+
+  // Positive control: the same path works for a family member, so the denials
+  // below are about authorization, not a wrong URL.
+  expect((await request.get(photoPath, { headers: member.headers })).status()).toBe(200)
+
+  // Not signed in at all.
+  expect((await request.get(photoPath)).status()).toBe(401)
+
+  // Signed in, but not a member of the family.
+  const created = await request.post('/api/auth/register', { headers: admin.headers, data: OUTSIDER })
+  expect(created.ok(), await created.text()).toBeTruthy()
+  const outsider = await apiLogin(request, OUTSIDER.email, OUTSIDER.password)
+
+  const posts = await request.get('/api/posts', { headers: member.headers })
+  const { items } = (await posts.json()) as { items: { id: string; content: string | null }[] }
+  const post = items.find((p) => p.content === POST_TEXT)
+  expect(post, 'the member sees their own post').toBeTruthy()
+
+  expect((await request.get(photoPath, { headers: outsider.headers })).status()).toBe(404)
+  // 403 for a family you aren't in (404 is reserved for circle posts).
+  expect([403, 404]).toContain((await request.get(`/api/posts/${post!.id}`, { headers: outsider.headers })).status())
+  const outsiderFeed = await request.get('/api/posts', { headers: outsider.headers })
+  expect(outsiderFeed.ok()).toBeTruthy()
+  expect(await outsiderFeed.text()).not.toContain(POST_TEXT)
+})
+
 test('the member can download their own data export', async ({ request }) => {
   const { headers } = await apiLogin(request, MEMBER.email, MEMBER.password)
   const res = await request.get('/api/auth/me/export', { headers })
@@ -165,4 +207,9 @@ test('the member can download their own data export', async ({ request }) => {
   const zip = await res.body()
   // Zip local file header magic: "PK\x03\x04".
   expect(zip.subarray(0, 4).toString('hex')).toBe('504b0304')
+  // The archive is stored uncompressed, so its JSON is readable as-is: the
+  // member's post and comment must actually be in it, not just a valid zip.
+  const text = zip.toString('utf8')
+  expect(text).toContain(POST_TEXT)
+  expect(text).toContain(COMMENT_TEXT)
 })
