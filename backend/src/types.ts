@@ -360,6 +360,12 @@ export const setupBodySchema = z.object({
   password: z.string().min(8).max(100),
 })
 
+// A file name in the backups volume's db/ folder; the exact name pattern is
+// checked by restoreDump() (services/backup/restoreDump.ts).
+export const restoreDumpBodySchema = z.object({
+  name: z.string().min(1).max(200),
+})
+
 export const changePasswordBodySchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8).max(100),

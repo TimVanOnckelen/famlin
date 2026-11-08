@@ -1,5 +1,10 @@
 import { prisma } from './db.js'
-import { assertDatabaseNotNewer, DatabaseNewerError, runMigrateDeploy } from './services/migrationGuard.js'
+import {
+  assertDatabaseNotNewer,
+  DatabaseNewerError,
+  MigrateDeployError,
+  runMigrateDeploy,
+} from './services/migrationGuard.js'
 import pkg from '../package.json' with { type: 'json' }
 
 // The production container's entrypoint (backend/Dockerfile's CMD):
@@ -17,8 +22,13 @@ async function boot() {
     process.exit(1)
   }
 
-  const status = await runMigrateDeploy().catch(() => 1)
-  if (status !== 0) process.exit(status)
+  try {
+    await runMigrateDeploy()
+  } catch (err) {
+    // Prisma already printed why; exit with its code, as before.
+    if (!(err instanceof MigrateDeployError)) console.error(err)
+    process.exit(err instanceof MigrateDeployError ? err.exitCode : 1)
+  }
 
   await import('./server.js')
 }

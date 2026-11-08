@@ -32,7 +32,7 @@ import { invalidateSettingsCache } from './settings.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
 import pkg from '../../package.json' with { type: 'json' }
 
-export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty' | 'missingMedia'
+export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty' | 'busy' | 'missingMedia'
 
 export class RestoreError extends Error {
   constructor(
@@ -671,7 +671,11 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
   try {
     ;({ adminUserId } = await prisma.$transaction(
       async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${opts.lockKey})`
+        // Try, don't wait: a dump restore holds this key for as long as it runs.
+        const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_xact_lock(${opts.lockKey}) AS locked
+        `
+        if (!locked) throw new RestoreError('busy')
         if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty')
         const result = await insertAll(tx, data, opts.admin)
         await installFiles(filesDir, uploadsDir)

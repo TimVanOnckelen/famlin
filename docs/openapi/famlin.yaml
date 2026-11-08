@@ -3692,6 +3692,38 @@ paths:
               schema: { type: string, format: binary }
         '401': { description: Authentication required, or the download token is invalid }
         '403': { description: Administrator required }
+  /api/auth/setup/dumps:
+    get:
+      operationId: listScheduledBackupDumps
+      tags: [Storage administration]
+      summary: List scheduled-backup dumps on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Lists the scheduled-backup dumps (`famlin-<timestamp>.dump`)
+        already in the backups volume's `db/` folder, newest first. Interrupted
+        (`.partial`) and other files are left out. Rate-limited to 30 requests
+        per 15 minutes per IP.
+      security: []
+      responses:
+        '200':
+          description: The dumps, newest first (empty when there are none)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, size, createdAt]
+                  properties:
+                    name: { type: string, example: famlin-2026-10-20T03-00-00-000Z.dump }
+                    size: { type: integer, description: Size in bytes }
+                    createdAt: { type: string, format: date-time, description: When the dump was taken, from its file name }
+        '409':
+          description: The server already has accounts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
   /api/auth/setup/restore-dump:
     post:
       operationId: restoreScheduledBackupDump
@@ -3699,24 +3731,24 @@ paths:
       summary: Restore a scheduled-backup dump on a fresh server
       description: |
         First-run only: public, and refused with `409` once the server has any
-        account. Replaces the whole database with a scheduled backup's
-        `pg_dump -Fc` file (`db/famlin-<timestamp>.dump` in the backups
-        volume), then applies pending migrations if the dump came from an
-        older Famlin version. Accounts, passwords and settings come back from
-        the dump, so no session is issued: sign in with an existing account
-        afterwards. Photos are not in the dump; copy the backup's `uploads/`
-        mirror into the uploads volume. Rate-limited to 5 requests per 15
-        minutes per IP.
+        account. Replaces the whole database with one of the dumps listed by
+        `GET /api/auth/setup/dumps`, chosen by name — there is deliberately no
+        upload, because the dump's SQL runs as the database role. Pending
+        migrations are applied afterwards if the dump came from an older Famlin
+        version. Accounts, passwords and settings come back from the dump, so
+        no session is issued, and sessions issued before the restore no longer
+        work: sign in with an existing account afterwards. Rate-limited to 5
+        requests per 15 minutes per IP.
       security: []
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              required: [dump]
+              required: [name]
               properties:
-                dump: { type: string, format: binary, description: A pg custom-format dump made by a scheduled backup }
+                name: { type: string, description: A dump file name from GET /api/auth/setup/dumps }
       responses:
         '200':
           description: Restored
@@ -3728,22 +3760,21 @@ paths:
                 properties:
                   restored: { type: boolean, enum: [true] }
         '400':
-          description: No dump sent, not a Famlin pg custom-format dump, or made by a newer Famlin version
+          description: Not a dump in the backups folder, not a Famlin pg custom-format dump, or made by a newer Famlin version
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
         '409':
-          description: The server already has accounts
+          description: The server already has accounts, or setup or another restore is in progress
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
         '429': { description: Rate limit exceeded }
         '500':
-          description: pg_restore or the migrations failed (details only in the server log)
+          description: The database role can't recreate the schema (nothing changed), pg_restore failed, or the migrations failed after the restore (details only in the server log)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
-
   /api/wiki/pages:
     get:
       operationId: listWikiPages
