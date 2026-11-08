@@ -33,7 +33,7 @@ Famlin is a small social network for one family (or a few related ones): share u
 - **Your photos, your storage** — uploads stay on your server, and you can link existing albums from [Immich](https://immich.app) or a local folder.
 - **Flexible login** — email and password, any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, …), or Sign in with Apple. Invite links make joining easy.
 - **Your brand** — set your family's name, color and logo.
-- **Multilingual** — English, Dutch, Simplified Chinese and European Portuguese.
+- **Multilingual** — English, Dutch, Simplified Chinese, European Portuguese and French.
 - **Export and restore** — download everything as one archive, and restore it into a fresh server.
 
 📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**

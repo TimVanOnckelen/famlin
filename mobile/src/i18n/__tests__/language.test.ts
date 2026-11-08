@@ -43,6 +43,15 @@ test('other Portuguese variants fall back to pt-PT', async () => {
   expect(i18n.language).toBe('pt-PT')
 })
 
+test('French devices start in French with French plurals', async () => {
+  deviceLocales('fr-CH')
+  await initI18nLanguage()
+  expect(i18n.language).toBe('fr')
+  expect(i18n.t('login.continueButton')).toBe('Continuer')
+  expect(i18n.t('relativeTime.minutesAgo', { count: 0 })).toBe('il y a 0 minute')
+  expect(i18n.t('relativeTime.minutesAgo', { count: 2 })).toBe('il y a 2 minutes')
+})
+
 test('picks the first supported language in the device preference order', async () => {
   deviceLocales('de', 'nl', 'en')
   await initI18nLanguage()
