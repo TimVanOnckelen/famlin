@@ -32,7 +32,6 @@ import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
 import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
 import { BACKUP_DB_DIR } from '../services/backup/index.js'
-import { abortArchiveOnDisconnect } from '../services/storage/archive.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
   appleLoginBodySchema,
@@ -842,11 +841,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const archive = await buildMemberExportArchive(request.user!.id)
-      archive.on('error', (err) => {
+      const archive = await buildMemberExportArchive(request.user!.id, (err) => {
         request.log.error(err, 'member export archive stream error')
       })
-      abortArchiveOnDisconnect(archive, reply.raw, request.log)
 
       const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`
       reply.header('content-type', 'application/zip')

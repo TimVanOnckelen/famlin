@@ -52,7 +52,9 @@ import path from 'node:path'
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
 // stream, so headers can be sent before/while archiver produces bytes.
-export async function buildExportArchive(includeMedia = true): Promise<Archiver> {
+// `onError` is attached as soon as the archive exists: a media entry can fail
+// (and fail the archive) while the rest is still being built.
+export async function buildExportArchive(includeMedia: boolean, onError: (err: Error) => void): Promise<Archiver> {
   const [
     users,
     groups,
@@ -144,6 +146,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   })
 
   const archive: Archiver = new ZipArchive({ store: true })
+  archive.on('error', onError)
 
   const requiredMedia: { key: string; size: number }[] = []
 
@@ -214,6 +217,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   )
 
   for await (const object of getStorage().list()) {
+    if (archive.destroyed) break
     if (liveOnlyKeys.has(uploadAssetKey(object.key))) continue
     requiredMedia.push({ key: object.key, size: object.size })
     if (includeMedia) appendStoredObject(archive, object.key)

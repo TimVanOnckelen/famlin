@@ -55,7 +55,8 @@ export function collectUploadKeys(serialized: string): Set<string> {
   return keys
 }
 
-export async function buildMemberExportArchive(userId: string): Promise<Archiver> {
+// `onError` is attached as soon as the archive exists, as in buildExportArchive().
+export async function buildMemberExportArchive(userId: string, onError: (err: Error) => void): Promise<Archiver> {
   const [memberships, circleIds] = await Promise.all([
     prisma.groupMember.findMany({ where: { userId }, select: { groupId: true } }),
     getUserCircleIds(userId),
@@ -195,6 +196,7 @@ export async function buildMemberExportArchive(userId: string): Promise<Archiver
   }
 
   const archive: Archiver = new ZipArchive({ store: true })
+  archive.on('error', onError)
 
   const manifest = {
     exportedAt: new Date().toISOString(),

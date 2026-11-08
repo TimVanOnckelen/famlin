@@ -1,7 +1,5 @@
-import { Readable } from 'node:stream'
-import type { ServerResponse } from 'node:http'
+import { Readable, finished } from 'node:stream'
 import type { Archiver } from 'archiver'
-import type { FastifyBaseLogger } from 'fastify'
 import { getStorage } from './registry.js'
 
 // archiver.append() pipes every stream source into its own PassThrough at
@@ -75,11 +73,14 @@ export function lazyStoredObjectStream(key: string, slots = new OpenSlots()): Re
           source.on('data', (chunk) => {
             if (!readable.push(chunk)) source?.pause()
           })
-          source.once('end', () => {
+          // finished() also fires for a source that only emits 'close'
+          // (e.g. destroyed without an error), so its slot is always freed.
+          finished(source, (err) => {
             releaseSlot()
-            readable.push(null)
+            if (readable.destroyed) return
+            if (err) readable.destroy(err)
+            else readable.push(null)
           })
-          source.once('error', (err) => readable.destroy(err))
         },
         (err) => readable.destroy(err)
       )
@@ -108,11 +109,21 @@ export function appendStoredObject(archive: Archiver, key: string): void {
   if (!sources) {
     sources = { slots: new OpenSlots(), open: new Set() }
     archiveSources.set(archive, sources)
+    // Fastify destroys the archive when the response closes early (client
+    // gone, proxy cut-off), which emits 'close'; release every source then,
+    // even those opened while the archive was still being built. On normal
+    // completion there is nothing left open and abort() is a no-op.
+    archive.once('close', () => abortArchive(archive))
   }
   const { open } = sources
   const readable = lazyStoredObjectStream(key, sources.slots)
   open.add(readable)
   readable.once('close', () => open.delete(readable))
+  // archiver pipes the source without listening for its errors, so an
+  // unhandled 'error' here (media gone from storage, a storage stream
+  // failure) would crash the process. Fail the whole archive instead; its
+  // consumer's own 'error' listener reports it.
+  readable.once('error', (err) => archive.destroy(err))
   archive.append(readable, { name: `uploads/${key}` })
 }
 
@@ -123,14 +134,4 @@ export function abortArchive(archive: Archiver): void {
   archive.abort()
   for (const source of archiveSources.get(archive)?.open ?? []) source.destroy()
   archiveSources.delete(archive)
-}
-
-// For a route that streams `archive` as its response: abort it when the client
-// disconnects (or a proxy cuts the response off) before it was fully sent.
-export function abortArchiveOnDisconnect(archive: Archiver, response: ServerResponse, log: FastifyBaseLogger): void {
-  response.once('close', () => {
-    if (response.writableFinished) return
-    log.info('export download closed before it finished; archive aborted')
-    abortArchive(archive)
-  })
 }
