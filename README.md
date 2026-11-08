@@ -166,6 +166,7 @@ Thanks to everyone who has contributed to Famlin!
 <!-- CONTRIBUTORS:START -->
 <a href="https://github.com/TimVanOnckelen"><img src="https://avatars.githubusercontent.com/u/2817556?v=4&s=64" width="64" height="64" alt="TimVanOnckelen" title="TimVanOnckelen" /></a>
 <a href="https://github.com/codewec"><img src="https://avatars.githubusercontent.com/u/4204501?v=4&s=64" width="64" height="64" alt="codewec" title="codewec" /></a>
+<a href="https://github.com/mprazz"><img src="https://avatars.githubusercontent.com/u/23500620?v=4&s=64" width="64" height="64" alt="mprazz" title="mprazz" /></a>
 <!-- CONTRIBUTORS:END -->
 
 ## Troubleshooting
