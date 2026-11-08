@@ -31,6 +31,7 @@ import { buildMemberExportArchive } from '../services/memberExport.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
 import { restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
+import { abortArchiveOnDisconnect } from '../services/storage/archive.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
   appleLoginBodySchema,
@@ -830,10 +831,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
       archive.on('error', (err) => {
         request.log.error(err, 'member export archive stream error')
       })
+      abortArchiveOnDisconnect(archive, reply.raw, request.log)
 
       const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`
       reply.header('content-type', 'application/zip')
       reply.header('content-disposition', `attachment; filename="${filename}"`)
+      reply.header('cache-control', 'no-store')
 
       // Same finalize-after-attach pattern as GET /api/admin/export.
       archive.finalize().catch((err) => {

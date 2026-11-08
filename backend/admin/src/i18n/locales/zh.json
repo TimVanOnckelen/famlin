@@ -361,6 +361,7 @@
     "dataExportDesc": "下载包含全部家庭内容的 ZIP：动态、评论、回应、投票、收藏、聊天消息、圈子、成员列表及所有上传的照片和视频。可在全新空白服务器的首次设置页恢复。导出不包含服务器配置及密钥（SMTP、OIDC、Immich、密码、邀请链接、令牌）。",
     "dataExportDownload": "下载导出文件",
     "dataExportDownloading": "正在准备导出…",
+    "dataExportStarted": "浏览器已开始下载。包含媒体的导出可能很大，需要一些时间；如果在 Cloudflare 等代理或 CDN 后中途停止，请改为通过本地网络下载。",
     "oidc": "OIDC 登录",
     "oidcName": "显示名称",
     "oidcIssuer": "颁发者地址",

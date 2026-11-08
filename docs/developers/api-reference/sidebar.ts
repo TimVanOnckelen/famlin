@@ -614,6 +614,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/create-admin-export-download-token",
+          label: "One-time download token for the export (admin only)",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "api-reference/export-admin-data",
           label: "Portable family export (admin only)",
           className: "api-method get",

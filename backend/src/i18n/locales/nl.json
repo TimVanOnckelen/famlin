@@ -70,6 +70,7 @@
     "mediaAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
     "mediaAlbumLinkNotFound": "Media-albumkoppeling niet gevonden",
     "apiTokenSessionRequired": "API-tokens kunnen alleen worden aangemaakt vanuit een gewone inlogsessie, niet met een ander API-token",
+    "exportDownloadTokenInvalid": "Deze downloadlink is verlopen of al gebruikt. Start de export opnieuw.",
     "sessionRequired": "Deze actie kan alleen vanuit een gewone inlogsessie, niet met een API-token",
     "apiTokenNotFound": "API-token niet gevonden",
     "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",

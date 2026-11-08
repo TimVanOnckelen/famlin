@@ -70,6 +70,7 @@
     "mediaAlbumAlreadyLinked": "This album is already linked to this group",
     "mediaAlbumLinkNotFound": "Media album link not found",
     "apiTokenSessionRequired": "API tokens can only be created from a normal login session, not with another API token",
+    "exportDownloadTokenInvalid": "This download link has expired or was already used. Start the export again.",
     "sessionRequired": "This action can only be performed from a normal login session, not with an API token",
     "apiTokenNotFound": "API token not found",
     "mediaPersonLinkNotFound": "Person mapping not found",

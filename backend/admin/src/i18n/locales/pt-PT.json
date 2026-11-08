@@ -361,6 +361,7 @@
     "dataExportDesc": "Descarrega um zip com todo o conteúdo da família — publicações, comentários, reações, votos em sondagens, favoritos, mensagens, círculos, a lista de membros e todas as fotografias/vídeos carregados. Pode ser restaurado num servidor Famlin novo e vazio, a partir do ecrã de configuração inicial. A configuração do servidor e os segredos (SMTP, OIDC, Immich, palavras-passe, links de convite, tokens) nunca são incluídos.",
     "dataExportDownload": "Descarregar exportação",
     "dataExportDownloading": "A preparar a exportação...",
+    "dataExportStarted": "A transferência começou no seu navegador. Uma exportação com multimédia pode ser grande e demorar; se parar a meio atrás de um proxy ou CDN como o Cloudflare, transfira-a pela sua rede local.",
     "oidc": "Início de sessão OIDC",
     "oidcName": "Nome a mostrar",
     "oidcIssuer": "URL do emissor",

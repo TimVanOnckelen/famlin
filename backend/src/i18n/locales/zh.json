@@ -70,6 +70,7 @@
     "mediaAlbumAlreadyLinked": "此相册已关联到该群组",
     "mediaAlbumLinkNotFound": "未找到媒体相册关联",
     "apiTokenSessionRequired": "只能通过普通登录会话创建 API 令牌，不能使用另一个 API 令牌创建",
+    "exportDownloadTokenInvalid": "此下载链接已过期或已被使用。请重新开始导出。",
     "sessionRequired": "此操作需要普通登录会话，不能使用 API 令牌",
     "apiTokenNotFound": "未找到 API 令牌",
     "mediaPersonLinkNotFound": "未找到人物映射",

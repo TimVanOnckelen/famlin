@@ -3644,23 +3644,53 @@ paths:
         '409': { description: Confirmation mismatch, incomplete migration or operation already running }
         '401': { description: Authentication required }
         '403': { description: Administrator required }
+  /api/admin/export/token:
+    post:
+      operationId: createAdminExportDownloadToken
+      tags: [Storage administration]
+      summary: One-time download token for the export (admin only)
+      description: |
+        Mints a random token for `GET /api/admin/export?downloadToken=`, so a
+        browser can download the export by plain navigation (streaming it to
+        disk) without an Authorization header. Valid for 60 seconds, single
+        use, bound to the calling admin; login sessions only, not API tokens.
+      responses:
+        '200':
+          description: Download token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required, or called with an API token }
   /api/admin/export:
     get:
       operationId: exportAdminData
       tags: [Storage administration]
       summary: Portable family export (admin only)
+      description: |
+        Streams the archive with `Cache-Control: no-store`. Authenticate with
+        the Authorization header as usual, or with a one-time `downloadToken`
+        from `POST /api/admin/export/token` when the header can't be sent.
       parameters:
         - in: query
           name: includeMedia
           schema: { type: boolean, default: true }
           description: False omits media and records required keys and sizes in the manifest. Branding is always included.
+        - in: query
+          name: downloadToken
+          schema: { type: string }
+          description: One-time token from `POST /api/admin/export/token`, used only when no Authorization header is sent. An unknown, used or expired token is a `401`.
       responses:
         '200':
           description: ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes
           content:
             application/zip:
               schema: { type: string, format: binary }
-        '401': { description: Authentication required }
+        '401': { description: Authentication required, or the download token is invalid }
         '403': { description: Administrator required }
   /api/auth/setup/restore-dump:
     post:

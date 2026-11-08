@@ -97,6 +97,7 @@ export function ServerSettingsPage() {
   const [exporting, setExporting] = useState(false)
   const [exportIncludeMedia, setExportIncludeMedia] = useState(true)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [exportStarted, setExportStarted] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -158,16 +159,10 @@ export function ServerSettingsPage() {
   const handleExport = async () => {
     setExporting(true)
     setExportError(null)
+    setExportStarted(false)
     try {
-      const { blob, filename } = await api.downloadExport(exportIncludeMedia)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
+      await api.downloadExport(exportIncludeMedia)
+      setExportStarted(true)
     } catch (err: any) {
       setExportError(err.message)
     } finally {
@@ -406,6 +401,7 @@ export function ServerSettingsPage() {
                     {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}
                   </button>
                 </div>
+                {exportStarted && <p className="hint">{t('serverSettings.dataExportStarted')}</p>}
                 {exportError && <p className="test-err">{exportError}</p>}
               </SettingsCard>
             )}

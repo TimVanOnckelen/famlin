@@ -361,6 +361,7 @@
     "dataExportDesc": "Download a zip of all family content — posts, comments, reactions, poll votes, favorites, chat messages, circles, the member list, and every uploaded photo/video. It can be restored onto a new, empty Famlin server from its first-run setup screen. Server configuration and secrets (SMTP, OIDC, Immich, passwords, invite links, tokens) are never included.",
     "dataExportDownload": "Download export",
     "dataExportDownloading": "Preparing export...",
+    "dataExportStarted": "The download has started in your browser. An export with media can be large and take a while; if it stops partway behind a proxy or CDN such as Cloudflare, download it over your local network instead.",
     "oidc": "OIDC login",
     "oidcName": "Display name",
     "oidcIssuer": "Issuer URL",
