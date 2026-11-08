@@ -2,7 +2,8 @@
 # Regenerates the contributor avatars between the CONTRIBUTORS markers in
 # README.md from GitHub's contributor list, leaving out bot accounts and the
 # AI/automation accounts in EXCLUDE (which GitHub reports as regular users).
-# Run by .github/workflows/contributors.yml; also safe to run locally.
+# Run by .github/workflows/contributors.yml, which proposes the result as a
+# pull request (main only accepts PRs); also safe to run locally.
 set -euo pipefail
 
 REPO="${REPO:-TimVanOnckelen/famlin}"

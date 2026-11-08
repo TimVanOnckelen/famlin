@@ -7,8 +7,13 @@ on:
     - cron: '17 4 * * 1'
   workflow_dispatch:
 
+# main only accepts changes through a pull request, so the job proposes the
+# update on a fixed branch and keeps one PR open for it instead of pushing to
+# main. PRs opened with GITHUB_TOKEN don't trigger CI; it's a README-only
+# change, so merge it by hand.
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: contributors
@@ -23,7 +28,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: .github/scripts/update-contributors.sh
-      - name: Commit if changed
+      - name: Open or update the contributors pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: chore/update-contributors
         run: |
           if git diff --quiet README.md; then
             echo "Contributors unchanged."
@@ -31,5 +39,13 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
           git commit -am "chore: update README contributors"
-          git push
+          git push --force origin "$BRANCH"
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            echo "Updated the open contributors pull request."
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: update README contributors" \
+              --body "Regenerated the contributor avatars in README.md (\`.github/scripts/update-contributors.sh\`). Opened automatically by the *Update contributors* workflow; CI doesn't run on PRs opened with GITHUB_TOKEN, so merge it by hand."
+          fi
