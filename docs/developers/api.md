@@ -147,7 +147,7 @@ curl -X POST "$FAMLIN_URL/api/posts/$EVENT_ID/interactions" \
   -d '{"key": "rsvp", "value": "yes"}'
 ```
 
-Sending your current answer again **clears** it; a different answer **switches** it. Answers are public to the post's audience and close once `rsvpDeadline` passes, or when the event starts if no deadline was set. A cross-posted event (pass `groupIds`) keeps one answer per person, and each viewer sees the answers from the families they belong to — the author sees everyone's.
+Sending your current answer again **clears** it; a different answer **switches** it. Answers are public to the post's audience and close once `rsvpDeadline` passes, or when the event starts if no deadline was set. A cross-posted event (pass `groupIds`) keeps one answer per person. Each family's copy shows all of its own members' answers, wherever they answered, plus the answers from any other copy you can see — so the author sees everyone's, and nobody learns about members of families they're not in.
 
 ## Recipe: start a trip and check in
 

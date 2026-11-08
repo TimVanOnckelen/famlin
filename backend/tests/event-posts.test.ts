@@ -288,6 +288,33 @@ describe('EVENT posts', () => {
       expect(JSON.stringify(viewA)).not.toContain(memberB.id)
     })
 
+    it("shows a family its own members' answers even when left on another family's copy", async () => {
+      const author = await createUser()
+      const both = await createUser()
+      const onlyA = await createUser()
+      const onlyB = await createUser()
+      const groupA = await createGroupWithMember(author)
+      const groupB = await createGroupWithMember(author)
+      await addMember(groupA.id, both.id)
+      await addMember(groupB.id, both.id)
+      await addMember(groupA.id, onlyA.id)
+      await addMember(groupB.id, onlyB.id)
+
+      await createEvent(author, { groupIds: [groupA.id, groupB.id] })
+      const postA = await prisma.post.findFirstOrThrow({ where: { groupId: groupA.id, type: 'EVENT' } })
+      const postB = await prisma.post.findFirstOrThrow({ where: { groupId: groupB.id, type: 'EVENT' } })
+
+      await rsvp(both, postB.id, 'yes')
+      await rsvp(onlyB, postB.id, 'maybe')
+
+      // `both` belongs to family A too, so A's guest list includes them;
+      // onlyB doesn't, so A learns nothing about them.
+      const viewA = await getEvent(onlyA, postA.id)
+      expect(viewA.counts).toEqual({ yes: 1, maybe: 0, no: 0 })
+      expect(viewA.responses.yes.map((u) => u.id)).toEqual([both.id])
+      expect(JSON.stringify(viewA)).not.toContain(onlyB.id)
+    })
+
     it('keeps one answer per person when they belong to several target families', async () => {
       const author = await createUser()
       const both = await createUser()

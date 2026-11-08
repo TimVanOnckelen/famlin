@@ -44,8 +44,10 @@ function isEventClosed(typeData: PersistedEventTypeData): boolean {
 // Cross-posting is allowed (one gathering can span several families). Each
 // sibling keeps its own RSVP rows, and what a viewer sees is merged across
 // the siblings they can see — the same rule as reactions and comments (see
-// services/crossPosts.ts) — so the author gets the full guest list while a
-// member of one family learns nothing about the other families' members.
+// services/crossPosts.ts) — plus, unlike reactions, answers from this
+// copy's own family members left on other copies (see enrichPosts). The
+// author gets the full guest list, every family sees all of its own members'
+// answers, and a member of one family learns nothing about the others.
 export const eventHandler: PostTypeHandler = {
   id: 'EVENT',
 
@@ -128,24 +130,38 @@ export const eventHandler: PostTypeHandler = {
     }
   },
 
-  // Batch-attaches the enriched `event` view. Shaped posts no longer carry
-  // crossPostId (it's never serialized), so this looks it up first — three
-  // queries per page in total, independent of page size.
+  // Batch-attaches the enriched `event` view. A copy shows the answers left
+  // on every copy the viewer can see, plus answers left on any other copy by
+  // members of THIS copy's family — so a family's guest list includes its
+  // own members wherever they answered, while still revealing nothing about
+  // the other families. Shaped posts no longer carry crossPostId (it's never
+  // serialized), so this looks it up first; five queries per page in total,
+  // independent of page size.
   async enrichPosts(posts, viewerId) {
     const postIds = posts.map((post) => post.id)
-    const rows = await prisma.post.findMany({ where: { id: { in: postIds } }, select: { id: true, crossPostId: true } })
-    const crossPostIdByPostId = new Map(rows.map((row) => [row.id, row.crossPostId]))
-    const siblingIds = await visibleSiblingsForPage(rows, viewerId)
+    const rows = await prisma.post.findMany({
+      where: { id: { in: postIds } },
+      select: { id: true, crossPostId: true, groupId: true },
+    })
+    const rowById = new Map(rows.map((row) => [row.id, row]))
+    const visibleSiblings = await visibleSiblingsForPage(rows, viewerId)
 
-    const activityIdsByPostId = new Map<string, string[]>()
-    for (const postId of postIds) {
-      const crossPostId = crossPostIdByPostId.get(postId)
-      const siblings = crossPostId ? (siblingIds.get(crossPostId) ?? []) : []
-      activityIdsByPostId.set(postId, [postId, ...siblings.filter((id) => id !== postId)])
+    const crossPostIds = [...new Set(rows.map((row) => row.crossPostId).filter((id): id is string => !!id))]
+    const allSiblings = crossPostIds.length
+      ? await prisma.post.findMany({
+          where: { crossPostId: { in: crossPostIds } },
+          select: { id: true, crossPostId: true },
+        })
+      : []
+    const allSiblingIds = new Map<string, string[]>()
+    for (const sibling of allSiblings) {
+      const list = allSiblingIds.get(sibling.crossPostId!) ?? []
+      list.push(sibling.id)
+      allSiblingIds.set(sibling.crossPostId!, list)
     }
 
     const rsvps = await prisma.postInteraction.findMany({
-      where: { postId: { in: [...new Set([...activityIdsByPostId.values()].flat())] }, key: 'rsvp' },
+      where: { postId: { in: [...new Set([...postIds, ...allSiblings.map((s) => s.id)])] }, key: 'rsvp' },
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
       // Oldest first, so each answer's list is in reply order.
       orderBy: { createdAt: 'asc' },
@@ -158,15 +174,30 @@ export const eventHandler: PostTypeHandler = {
       else rsvpsByPostId.set(rsvp.postId, [rsvp])
     }
 
+    // Which respondents belong to which of the page's families.
+    const memberships = await prisma.groupMember.findMany({
+      where: {
+        groupId: { in: [...new Set(rows.map((row) => row.groupId))] },
+        userId: { in: [...new Set(rsvps.map((r) => r.userId))] },
+      },
+      select: { groupId: true, userId: true },
+    })
+    const isMember = new Set(memberships.map((m) => `${m.groupId}:${m.userId}`))
+
     for (const post of posts) {
       const typeData = post.typeData as PersistedEventTypeData | null
       if (!typeData) continue
+      const row = rowById.get(post.id)
+      const visible = new Set([post.id, ...(row?.crossPostId ? (visibleSiblings.get(row.crossPostId) ?? []) : [])])
+      const copies = row?.crossPostId ? (allSiblingIds.get(row.crossPostId) ?? [post.id]) : [post.id]
 
       // Keyed by user so a duplicate across siblings (a race with the
       // cleanup in interact) still counts once.
       const byUser = new Map<string, (typeof rsvps)[number]>()
-      for (const id of activityIdsByPostId.get(post.id) ?? [post.id]) {
-        for (const rsvp of rsvpsByPostId.get(id) ?? []) byUser.set(rsvp.userId, rsvp)
+      for (const id of copies) {
+        for (const rsvp of rsvpsByPostId.get(id) ?? []) {
+          if (visible.has(id) || (row && isMember.has(`${row.groupId}:${rsvp.userId}`))) byUser.set(rsvp.userId, rsvp)
+        }
       }
 
       const responses: Record<RsvpResponse, Array<{ id: string; name: string; avatarUrl: string | null }>> = {
@@ -174,7 +205,8 @@ export const eventHandler: PostTypeHandler = {
         maybe: [],
         no: [],
       }
-      for (const rsvp of byUser.values()) {
+      const shown = [...byUser.values()].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      for (const rsvp of shown) {
         if (isRsvpResponse(rsvp.value)) responses[rsvp.value].push(rsvp.user)
       }
       const mine = byUser.get(viewerId)?.value
