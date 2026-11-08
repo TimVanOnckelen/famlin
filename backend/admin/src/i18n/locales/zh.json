@@ -466,7 +466,8 @@
     "POLL": "投票",
     "TRIP": "旅程",
     "ALBUM": "相册",
-    "GIFT_LIST": "礼物清单"
+    "GIFT_LIST": "礼物清单",
+    "EVENT": "活动"
   },
   "circles": {
     "edit": "编辑圈子",

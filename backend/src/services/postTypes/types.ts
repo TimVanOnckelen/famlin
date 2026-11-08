@@ -16,8 +16,8 @@ export class PostTypeError extends Error {
   }
 }
 
-// One post type's behavior — UPDATE/MILESTONE/POLL today, more later (RSVP,
-// ...). One file per type in this directory, registered in ./registry.ts
+// One post type's behavior — UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST,
+// EVENT, ... One file per type in this directory, registered in ./registry.ts
 // (mirrors services/media/'s MediaProvider contract/registry pattern).
 //
 // Contract notes:
