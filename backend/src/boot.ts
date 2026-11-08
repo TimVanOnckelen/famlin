@@ -1,6 +1,5 @@
-import { spawnSync } from 'child_process'
 import { prisma } from './db.js'
-import { assertDatabaseNotNewer, DatabaseNewerError } from './services/migrationGuard.js'
+import { assertDatabaseNotNewer, DatabaseNewerError, runMigrateDeploy } from './services/migrationGuard.js'
 import pkg from '../package.json' with { type: 'json' }
 
 // The production container's entrypoint (backend/Dockerfile's CMD):
@@ -18,8 +17,8 @@ async function boot() {
     process.exit(1)
   }
 
-  const migrate = spawnSync('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'inherit' })
-  if (migrate.status !== 0) process.exit(migrate.status ?? 1)
+  const status = await runMigrateDeploy().catch(() => 1)
+  if (status !== 0) process.exit(status)
 
   await import('./server.js')
 }

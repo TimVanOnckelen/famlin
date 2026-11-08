@@ -1,0 +1,76 @@
+---
+id: restore-scheduled-backup-dump
+title: "Restore a scheduled-backup dump on a fresh server"
+description: "First-run only: public, and refused with `409` once the server has any"
+sidebar_label: "Restore a scheduled-backup dump on a fresh server"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV1+PGzUQ/yojv/Su2iQF0YcuCOkKrShCcOodQuhy6jq7k42pd2w89uWWUyQ+BJ+QT4LG3lyuvTyAeIQ8Zb32/Pn5N/ObvVPOY9DROHrTqVoF5OgCXrQb7JLF7qVu3yf/dRq8qlTUPav6Sl1EF3SPoLvBkOFYzqvrSnXIbTA+P9bqtQkcZyEROLJjDT6trGkr0NRBwHVi7GBr4gaaz569aMBRixA3CIzhBgNsNIOmcUm6bV2iOIe36K1ukfOu7cZZhE5HvdKMxZAG3kcOqxz6E15S4/t3XRo8zF63DayNRThputVirQdraPZFNANy1IP/ci7bGjCUPRQLvKQbZ9OAp5WsEmjvrUEGj9QZ6mEwfUGAwazzweys1QPCOrgBNC3J2Q4DvM4e4QYDG0dzOCuZcQVeM29d6DijwxijoZ6hdUOJI1ta0t56BeyAHDCyWALDYJgTdjWw6UkyKIAQ4K1hMQYTjEvS64hhq0PHczjfuOgYdEAgF/eZi4vPoXV+fADEE4Ymeet0x4tmSYMJwQUwFF3eNL2CAtYc3uqIM2sGE7GD6OA5BPw1IUdBLsAnz8UEpYjl+c35fEmqUoxtCiaOqr66rtR05KXrRlXf5UcTsFN1DAkr1TqKSFFeDclG43WIi7ULw0x4IcvChyH/i6NHVSu3+gXbqKoHtq6U5Cv89UHKIRpkOZFXDyc5BkO9qpQ40FHVamVIh1F9zPsz8D20iaMbZmVvYcSgO4TVeISlapd/EhR7R1z8f/rsWQ7jA+NvS4V26oPsMyfbzMLFLywb/27qYW/vUfr3bw4WVs5Z1HJNSGlQ9ZVcw/U++M+Oxfu9K8kzUqwyx/S+DI6iVIELD5Ai3D6qm3+T+ocpolD42BV/mMM3adA0C6g7vbJYQQya2Goh9o3Rmf3NWduij7PvNPVJ99jABrWU/EmD1Cwass3pXJUrPoBf/F9XKppoJYBXeWEP54vHcF4e+qO2EtFY+uTUSP4r0Hx6BBppOJAbDuBti9hhp3aVen6Mlb5/N9Fb6CZRPujia22kNE86jNpYzuq174wT9tb1p/8JrHeVGjBunAwH3nGOXceNqtVCe7PQKW4WjDH5xYTnrCvDQgFK5oU7lYJVtdrE6LleTLI7x1s9eIvz1g2PMv3ZpQBuS/vC79BbNw4C9e76oBEypgwFwhXqgOEsSWj3OIpHCSVvk/aVNx3r1xjYkbZSR8gM0b1HgpOmhPrO6/huPp83FbQBM94TG7a4knHgFFxYkr5X429/uizK35z/cHEJB6Ss6w01c3jpRJsD5q5YeCXTwlaP9ZIaycIF81smUw0vc9TwRQ7qy0ZkUq7F0NrlXKc7m6A6O3+jKrXvlLVqUwiC28dJv7rBMO7xnViNt95xHq8Mw9tXF5diDRIJgRrJooE/f//jEK+8jRtckluvTWu0hcGtZLySGWbChiExzuGnMp5dHUX6+mTR4Q1aqQkWP6dLGl2CVhOskrEdjHtCGIp4X6i614Y4lrdrPRg7PuEpmfmSlnRmLUw1KiMSt86L5o7w9GkfXPIw4LDCwBvjnz6tYe8zF7zUWUkkmIhLurdDkM8ynGSXBvk0n1yhddRDdGXCjRsMKF7JycWCDi7lZR2XJBNPTn0OF4hw9SPLhCbAnp2/eQwHrF0AYRBSnJpMlSO6kQVHXFxuXXiPHUyVxZkpVS7bQeeGRDrXwTRDPBxEZmUQKVrtCDSsA/JmAvNj9twdOt//U/7/U/4/n/KnBh3xNi681SYTNcvE3aQvV0p7oyolrM9yEpPPo+sDlbmu1EY0qb5Sd3fCjx+D3e1k+deEYfqEuNHBiF7K065SRQ+zLL3HUdXqq8Lk2aWEJNttktCOfU/sqv2hIrMPtj+Sf9Gpe+UUGVCVWk2fMYPr5IwYznarw18Jcrf7C5CiiDs=
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Restore a scheduled-backup dump on a fresh server"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/auth/setup/restore-dump"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+First-run only: public, and refused with `409` once the server has any
+account. Replaces the whole database with a scheduled backup's
+`pg_dump -Fc` file (`db/famlin-<timestamp>.dump` in the backups
+volume), then applies pending migrations if the dump came from an
+older Famlin version. Accounts, passwords and settings come back from
+the dump, so no session is issued: sign in with an existing account
+afterwards. Photos are not in the dump; copy the backup's `uploads/`
+mirror into the uploads volume. Rate-limited to 5 requests per 15
+minutes per IP.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./restore-scheduled-backup-dump.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./restore-scheduled-backup-dump.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

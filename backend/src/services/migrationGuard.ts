@@ -1,3 +1,4 @@
+import { spawn } from 'child_process'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -73,4 +74,16 @@ export class DatabaseNewerError extends Error {
     super(message)
     this.name = 'DatabaseNewerError'
   }
+}
+
+/**
+ * `prisma migrate deploy` (output to this process's stdout/stderr), resolving
+ * to its exit code — run by boot.ts and after a setup-screen dump restore.
+ */
+export function runMigrateDeploy(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'inherit' })
+    child.on('error', reject)
+    child.on('close', (code) => resolve(code ?? 1))
+  })
 }
