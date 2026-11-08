@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.9.0](https://github.com/TimVanOnckelen/famlin/compare/v0.8.7...v0.9.0) (2026-11-08)
+
+
+### Features
+
+* add a Caddy overlay with automatic HTTPS ([#339](https://github.com/TimVanOnckelen/famlin/issues/339)) ([9b8789b](https://github.com/TimVanOnckelen/famlin/commit/9b8789b8fb79ddab8c7d2bf22dedf77b625ad82c))
+* add a Cloudflare Tunnel overlay and guide ([#340](https://github.com/TimVanOnckelen/famlin/issues/340)) ([4bae242](https://github.com/TimVanOnckelen/famlin/commit/4bae2420352a8a881ce36a301c7ae442699a1fdb))
+* add a one-line VPS installer ([#341](https://github.com/TimVanOnckelen/famlin/issues/341)) ([ab67b15](https://github.com/TimVanOnckelen/famlin/commit/ab67b15b22a8c47b33b9d77c16089caf274cc1a6))
+* add minimal mobile device diagnostics ([158bdd0](https://github.com/TimVanOnckelen/famlin/commit/158bdd0fa54b4c2705f4e9f7ef9a814ab9b3dc71))
+* **admin:** first-run setup wizard and getting-started checklist ([#344](https://github.com/TimVanOnckelen/famlin/issues/344)) ([cd64c14](https://github.com/TimVanOnckelen/famlin/commit/cd64c147bf1fabc7fb1e8beabb45206cac047b1e))
+* **admin:** show an "update available" notice ([#347](https://github.com/TimVanOnckelen/famlin/issues/347)) ([4aee461](https://github.com/TimVanOnckelen/famlin/commit/4aee461f378d4c2605c63643926772b3bc393b9c))
+* advertise server features in server-info and add serverSupports() ([762bea0](https://github.com/TimVanOnckelen/famlin/commit/762bea0f690c6529e46e9bc162cf6489b39f9254))
+* **backend:** Implementing backend portion of event RSVPs; web and mobile screens incoming ([bd78b63](https://github.com/TimVanOnckelen/famlin/commit/bd78b6380a124f96d4cf5a58c8283b7a53e4700a))
+* **backend:** show each family all of its own members' event RSVPs ([192a6cf](https://github.com/TimVanOnckelen/famlin/commit/192a6cf8d5f78a2fb5975ced91c35ed4e0126af3))
+* **devices:** report mobile diagnostics ([c3a4a3b](https://github.com/TimVanOnckelen/famlin/commit/c3a4a3be409cb22c22062f5c9a83f6f95c6cded4)), closes [#336](https://github.com/TimVanOnckelen/famlin/issues/336)
+* easy self-hosting for non-technical users ([1e059b4](https://github.com/TimVanOnckelen/famlin/commit/1e059b4628a9ef195b67c6d1890d3e4168b2c8a4))
+* enable scheduled backups by default on new installs ([#346](https://github.com/TimVanOnckelen/famlin/issues/346)) ([5da4043](https://github.com/TimVanOnckelen/famlin/commit/5da4043f3c6ebf1bb2cb0138ac81b264ada53fe7))
+* Family Wiki backend and web app ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([9947085](https://github.com/TimVanOnckelen/famlin/commit/9947085bf2403a3ec260f154d502d5c2961b98e0))
+* Family Wiki on web and mobile ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([356813e](https://github.com/TimVanOnckelen/famlin/commit/356813e4dbcf7077d3d1707ba0acd273563304c3))
+* **i18n:** add French language support ([873a941](https://github.com/TimVanOnckelen/famlin/commit/873a94130517462a5c3b04bcd6f1a00056718957))
+* **i18n:** Adding Portuguese (Portugal) language support, mostly with AI, with human review ([779d4bc](https://github.com/TimVanOnckelen/famlin/commit/779d4bc8bb37fadf0214299759b259de0576f28a))
+* link notification emails to the web app via a publicUrl setting ([2022eb4](https://github.com/TimVanOnckelen/famlin/commit/2022eb463fe163802a5fca923eeb0b10121fd570)), closes [#243](https://github.com/TimVanOnckelen/famlin/issues/243)
+* **mobile:** Family Wiki screens ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([d64dc19](https://github.com/TimVanOnckelen/famlin/commit/d64dc199948b1daade29d04b3759e5f5764e3ebd))
+* **mobile:** hide features the connected server doesn't support ([172de74](https://github.com/TimVanOnckelen/famlin/commit/172de744a59a5f383977c7f621916a77c02bcff2))
+* **mobile:** treat features as unknown on servers without a features list ([f81b63b](https://github.com/TimVanOnckelen/famlin/commit/f81b63bf02c3dfecb3d802d98a81d480a6a63b17))
+* **mobile:** warn when the server is older than the supported window ([66b0c7a](https://github.com/TimVanOnckelen/famlin/commit/66b0c7a9f68bc7b08f924300394af3472a186ca9))
+* QR code to connect the mobile app to a server ([#345](https://github.com/TimVanOnckelen/famlin/issues/345)) ([fdfb8e1](https://github.com/TimVanOnckelen/famlin/commit/fdfb8e12fe46674cd1fa78d5ab808f6899a970ec))
+* stage a Home Assistant add-on ([#343](https://github.com/TimVanOnckelen/famlin/issues/343)) ([8e6d6c1](https://github.com/TimVanOnckelen/famlin/commit/8e6d6c1d12e8fc882096c5c0c4d672c4f0ced170))
+* stage Umbrel and CasaOS app store manifests ([#342](https://github.com/TimVanOnckelen/famlin/issues/342)) ([7159518](https://github.com/TimVanOnckelen/famlin/commit/7159518a4d77a62be12f9bf0de5a9301137a0dd5))
+* start without a .env by generating JWT and database secrets ([#338](https://github.com/TimVanOnckelen/famlin/issues/338)) ([f668aff](https://github.com/TimVanOnckelen/famlin/commit/f668affeb66e4572ef1187774451490833744efe))
+* **web:** add profile details editing and avatar cropping ([51b3244](https://github.com/TimVanOnckelen/famlin/commit/51b3244fe7e7891990001cfc2974f5afa480874e))
+* **web:** avatar-menu Members entry and "/" search shortcut ([9fa2516](https://github.com/TimVanOnckelen/famlin/commit/9fa251680c757f35416b39490e164ef1acafba1b)), closes [#242](https://github.com/TimVanOnckelen/famlin/issues/242)
+* **web:** Dutch and Chinese strings for the Family Wiki ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([41f9527](https://github.com/TimVanOnckelen/famlin/commit/41f9527392068adfe66460a543bfdb41e2f1deb6))
+* **web:** link a post from the wiki editor ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([dd6e280](https://github.com/TimVanOnckelen/famlin/commit/dd6e280d68ae612d20f2bdd31aaf1411c8b83c38))
+
+
+### Bug Fixes
+
+* address review findings for the setup wizard, HA add-on and installer ([c28246b](https://github.com/TimVanOnckelen/famlin/commit/c28246b106a97b67f71986f0e24d84ef88be1541))
+* address review findings for zero-config and QR connect ([6b1b3a9](https://github.com/TimVanOnckelen/famlin/commit/6b1b3a96021b7063a302ef71f6248ded9ddf54b4))
+* **admin:** correct docs link for off-site backups ([0afa6f3](https://github.com/TimVanOnckelen/famlin/commit/0afa6f3079c9f9828c9f1d5099dae5ebf3219482))
+* **api-client:** treat a missing upload-status endpoint as ready ([a31a848](https://github.com/TimVanOnckelen/famlin/commit/a31a8487fb7bd9a8ba3118903c891179f285858a)), closes [#377](https://github.com/TimVanOnckelen/famlin/issues/377) [#379](https://github.com/TimVanOnckelen/famlin/issues/379)
+* **auth:** bind Sign in with Apple tokens to the server via the nonce ([31bba75](https://github.com/TimVanOnckelen/famlin/commit/31bba752ea6a5f01bbec0ccd07673ea5ec85d822))
+* **auth:** check the Apple nonce host against publicUrl or the raw Host header ([74ff4c6](https://github.com/TimVanOnckelen/famlin/commit/74ff4c6a32ff4650e523f48e0286b972d36b7196))
+* **backend:** apply canReadUpload to member export files ([cecdcec](https://github.com/TimVanOnckelen/famlin/commit/cecdceca4b00fa736b582aca73aa2fab65f2eecf))
+* **backend:** clear an event RSVP from any copy of a cross-posted event ([065f4ad](https://github.com/TimVanOnckelen/famlin/commit/065f4ad53cc06601d64a49b9c513a3dbe22bcbf0))
+* bound on-demand thumbnail backfill and retry transient failures ([e494a4b](https://github.com/TimVanOnckelen/famlin/commit/e494a4bac4e3aae06f5b9c520fc984576859cf22))
+* **ci:** pin compat-job actions and gate the wiki on a server feature ([1914125](https://github.com/TimVanOnckelen/famlin/commit/1914125fa871cc0ae92322ca5f448e1494b36fb5))
+* **docs:** link to doc files instead of relative URLs ([cf6f360](https://github.com/TimVanOnckelen/famlin/commit/cf6f360c53628ad79a27fd532a521dbe3e7ac58c))
+* **docs:** link to doc files instead of relative URLs ([b398201](https://github.com/TimVanOnckelen/famlin/commit/b398201c8150d22cebb7bfddd26e4eb3eda7bc58))
+* **docs:** respect /docs image base ([c84d801](https://github.com/TimVanOnckelen/famlin/commit/c84d80118a2ebd9be45d6009d22fc0231def10d6))
+* **docs:** use the docs base path for images ([e784701](https://github.com/TimVanOnckelen/famlin/commit/e7847012a7fe58c42ef4c01fc8d20df3bd4b91a1))
+* keep wiki Markdown parsing linear and merge category case ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([dca9da4](https://github.com/TimVanOnckelen/famlin/commit/dca9da4785c193646861f378e915a57bb613b63f))
+* linked-album thumbnails 404 and missing upload thumbnails ([#386](https://github.com/TimVanOnckelen/famlin/issues/386)) ([bbb42dd](https://github.com/TimVanOnckelen/famlin/commit/bbb42dd668330c78afbebdfd899aa34ad0ce1dfa))
+* linked-album thumbnails 404 and missing upload thumbnails ([#386](https://github.com/TimVanOnckelen/famlin/issues/386)) ([063fe6e](https://github.com/TimVanOnckelen/famlin/commit/063fe6e5cd1869820cffb009b05a37852fbef82d))
+* **mobile:** align Expo SDK 58 patch versions with expo install --check ([f7b0a9e](https://github.com/TimVanOnckelen/famlin/commit/f7b0a9e70c207a2eb675558df7813ddea33c86a5))
+* **mobile:** align Expo SDK 58 patch versions with expo install --check ([39a3a5f](https://github.com/TimVanOnckelen/famlin/commit/39a3a5f5e6e11cb2dcecb710e3cd010e10513eb6))
+* **mobile:** keep push registration working when device diagnostics fail ([cbbad8b](https://github.com/TimVanOnckelen/famlin/commit/cbbad8b35eaf04493a5cb9ec840efd420254fbb3))
+* **mobile:** keep push registration working when device diagnostics fail ([76ac9db](https://github.com/TimVanOnckelen/famlin/commit/76ac9db54ae880a7f9cf9030a5ae1e0d85baae37))
+* **mobile:** pin @react-native-community/datetimepicker to Expo's 9.2.1 ([05410c5](https://github.com/TimVanOnckelen/famlin/commit/05410c53bd034a8b0339f34fbc48f672d1065f7d))
+* **mobile:** stop repeating requests for features an older server lacks ([c647a73](https://github.com/TimVanOnckelen/famlin/commit/c647a731ab6250f01cb87586890b7419fdfb1342))
+* serve thumbnails for older posts and pre-fix clients ([#386](https://github.com/TimVanOnckelen/famlin/issues/386)) ([5e28290](https://github.com/TimVanOnckelen/famlin/commit/5e2829020ff9aa356b129a23235e72cc5960ecf1))
+* stop upgrading asset requests to https so plain-HTTP access works ([db2bf1c](https://github.com/TimVanOnckelen/famlin/commit/db2bf1ce1fa78f93e27bc0c70b12b8ce7b9d262a))
+* **web:** keep the wiki editor's icon and title side by side ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([28a7fba](https://github.com/TimVanOnckelen/famlin/commit/28a7fba934670dc5a6bcb22c70d452f2a94ade3c))
+* **web:** use the upload itself when an old server has no status endpoint ([b79e6da](https://github.com/TimVanOnckelen/famlin/commit/b79e6da3c676e8cbd2d91253b759c51c7ca5240b)), closes [#377](https://github.com/TimVanOnckelen/famlin/issues/377)
+* wiki review fixes on mobile and web ([#118](https://github.com/TimVanOnckelen/famlin/issues/118)) ([b7033bb](https://github.com/TimVanOnckelen/famlin/commit/b7033bb6a28559954dc9e31a418540084f5ed57c))
+
+
+### Miscellaneous Chores
+
+* release 0.9.0 ([9dfa8fd](https://github.com/TimVanOnckelen/famlin/commit/9dfa8fda089dc83e847af0430eeebaa5e4b3328d))
+
 ## [0.8.7](https://github.com/TimVanOnckelen/famlin/compare/v0.8.6...v0.8.7) (2026-11-03)
 
 
