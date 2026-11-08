@@ -102,6 +102,21 @@ describe('local-folder media provider', () => {
     expect(meta.width).toBe(32)
   })
 
+  it('serves the thumbnail for the legacy `<variant>-thumbnail.jpg` shape older clients request (issue #386)', async () => {
+    const member = await createUser()
+    const group = await createGroupWithMember(member)
+    const link = await linkSummerAlbum(group.id)
+    const base = `/api/media/assets/${link.id}/${encodeLocalAssetId('beach.jpg')}`
+
+    for (const variant of ['preview-thumbnail.jpg', 'original-thumbnail.jpg']) {
+      const res = await app.inject({ method: 'GET', url: `${base}/${variant}`, headers: authHeader(member) })
+      expect(res.statusCode).toBe(200)
+      expect((await sharp(res.rawPayload).metadata()).width).toBe(32)
+    }
+    const bogus = await app.inject({ method: 'GET', url: `${base}/bogus-thumbnail.jpg`, headers: authHeader(member) })
+    expect(bogus.statusCode).toBe(404)
+  })
+
   it('serves the original with Range support', async () => {
     const member = await createUser()
     const group = await createGroupWithMember(member)

@@ -17,6 +17,7 @@ const NAV_KEYS: Record<string, NavView> = {
   n: 'notifications',
   u: 'profile',
   s: 'search',
+  w: 'wiki',
   m: 'members',
 }
 

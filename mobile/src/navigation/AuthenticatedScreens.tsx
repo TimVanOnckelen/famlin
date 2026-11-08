@@ -11,6 +11,9 @@ import { NotificationsScreen } from '@/screens/NotificationsScreen'
 import { FavoritesScreen } from '@/screens/FavoritesScreen'
 import { GroupMembersScreen } from '@/screens/GroupMembersScreen'
 import { SearchScreen } from '@/screens/SearchScreen'
+import { WikiScreen } from '@/screens/WikiScreen'
+import { WikiPageScreen } from '@/screens/WikiPageScreen'
+import { WikiEditorScreen } from '@/screens/WikiEditorScreen'
 import { ChatScreen } from '@/screens/ChatScreen'
 import { ChatGroupPickerScreen } from '@/screens/ChatGroupPickerScreen'
 import { ImageViewerScreen } from '@/screens/ImageViewerScreen'
@@ -98,6 +101,30 @@ export function renderAuthenticatedScreens(Stack: Stack) {
       <Stack.Screen
         name="Search"
         component={SearchScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="Wiki"
+        component={WikiScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="WikiPage"
+        component={WikiPageScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="WikiEditor"
+        component={WikiEditorScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',
