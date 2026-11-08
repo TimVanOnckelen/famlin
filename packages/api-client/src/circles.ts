@@ -9,11 +9,13 @@ import { Circle, CircleMember } from './types'
 // the admin UI.
 
 export async function fetchMyCircles(groupId: string): Promise<Circle[]> {
+  // requires-feature: circles
   const response = await api.get<{ items: Circle[] }>('/circles', { params: { groupId } })
   return response.data.items
 }
 
 export async function fetchCircleMembers(circleId: string): Promise<CircleMember[]> {
+  // requires-feature: circles
   const response = await api.get<{ items: CircleMember[] }>(`/circles/${circleId}/members`)
   return response.data.items
 }
@@ -21,5 +23,6 @@ export async function fetchCircleMembers(circleId: string): Promise<CircleMember
 // Leaving a circle never removes you from the family group behind it —
 // you simply stop seeing that circle's content. Rejoining requires an admin.
 export async function leaveCircle(circleId: string): Promise<void> {
+  // requires-feature: circles
   await api.delete(`/circles/${circleId}/members/me`)
 }

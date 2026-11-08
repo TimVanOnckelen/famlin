@@ -32,7 +32,12 @@ export async function convertAvatarForPreview(file: File, signal: AbortSignal): 
     const result = await fetchUploadProcessing(key)
     signal.throwIfAborted()
     if (result.status === 'failed') throw new Error('Image conversion failed')
-    if (result.status === 'ready' && result.url) return getUploadUrl(result.url)
+    // `ready` with no url means nothing was converted — a server without the
+    // processing queue (older than 0.8.7) answered the status request with a
+    // 404, which fetchUploadProcessing maps to this. The upload itself is
+    // already the displayable copy then, so use it rather than polling until
+    // the timeout.
+    if (result.status === 'ready') return getUploadUrl(result.url ?? url)
     await waitForPoll(signal)
   }
   throw new Error('Image conversion timed out')

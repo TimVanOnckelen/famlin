@@ -27,6 +27,8 @@ import { Group, createStory, fetchGroups, fetchMyCircles } from '@famlin/api-cli
 
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { uploadMedia } from '@/api/uploads'
 import {
   ComposerState,
@@ -88,10 +90,12 @@ export function StoryComposerScreen() {
   const [circleId, setCircleId] = useState<string | null>(null)
 
   const singleGroupId = effectiveGroupIds.length === 1 ? effectiveGroupIds[0] : null
+  const circlesSupport = useServerFeatureSupport('circles')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleGroupId],
-    queryFn: () => fetchMyCircles(singleGroupId!),
-    enabled: !!singleGroupId,
+    queryFn: rememberNotFound('circles', () => fetchMyCircles(singleGroupId!)),
+    enabled: !!singleGroupId && circlesSupport !== 'unsupported',
+    retry: retryUnlessNotFound,
   })
 
   function toggleGroup(id: string) {

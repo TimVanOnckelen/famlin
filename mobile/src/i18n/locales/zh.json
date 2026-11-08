@@ -1,5 +1,12 @@
 {
-  "media": {"livePhoto": "实况照片", "video": "视频", "pauseLivePhoto": "暂停实况照片", "playLivePhoto": "播放实况照片", "processing": "媒体正在处理中…", "processingFailed": "媒体处理失败"},
+  "media": {
+    "livePhoto": "实况照片",
+    "video": "视频",
+    "pauseLivePhoto": "暂停实况照片",
+    "playLivePhoto": "播放实况照片",
+    "processing": "媒体正在处理中…",
+    "processingFailed": "媒体处理失败"
+  },
   "common": {
     "loading": "加载中…",
     "tryAgain": "重试",
@@ -378,6 +385,7 @@
     "exportPreparing": "正在准备下载…",
     "exportFailed": "无法下载导出文件，请重试。",
     "exportRateLimited": "你最近已多次请求导出，请一小时后再试。",
+    "featureUnavailable": "此服务器尚不支持该功能。请联系管理员更新 Famlin。",
     "dangerZone": "删除账号",
     "deleteAccountDescription": "永久删除账号及其中所有内容，此操作无法撤销。",
     "deleteAccount": "删除我的账号",
@@ -646,6 +654,13 @@
     "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。",
     "continue": "继续",
     "notAvailable": "这个礼物清单不可用。"
+  },
+  "serverVersion": {
+    "title": "你的服务器版本过旧",
+    "memberMessage": "部分功能可能无法使用。请联系管理员更新 Famlin 服务器。",
+    "adminMessage": "此服务器运行的是 Famlin {{current}}，本应用已不再完全支持该版本。请将服务器更新到 {{version}} 或更高版本。",
+    "howToUpdate": "如何更新",
+    "dismiss": "关闭"
   },
   "wiki": {
     "title": "家庭百科",

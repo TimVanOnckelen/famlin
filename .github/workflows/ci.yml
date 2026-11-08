@@ -440,6 +440,29 @@ jobs:
           echo "::error::$SPEC has breaking API changes (see the job summary), but no commit or PR title carries a conventional-commit breaking marker. Mark it with a '!' after the type (e.g. 'feat!: ...') or add a 'BREAKING CHANGE: <what an admin must do when upgrading>' footer, so release-please surfaces it in the release's breaking-changes section."
           exit 1
 
+  client-compat:
+    # The other direction from api-breaking-changes: new mobile apps talk to
+    # older self-hosted servers (support window: three minor versions back,
+    # issue #378). Fails when @famlin/api-client calls an endpoint missing
+    # from the OpenAPI spec of the oldest supported release, unless the call
+    # carries a `// requires-feature: <id>` comment or is allowlisted in
+    # scripts/client-compat-allowlist.json. See "Supporting older servers"
+    # in docs/developers/contributing.md.
+    name: Client vs oldest supported server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The check reads docs/openapi/famlin.yaml at an old release tag.
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # Dependency-free script — no npm ci needed.
+      - name: Check api-client calls against the oldest supported spec
+        run: npm run check:client-compat
+
   dependency-review:
     # Diffs every lockfile in the repo (root workspace, backend/,
     # backend/admin/, mobile/, docs/) between the PR's base and head and

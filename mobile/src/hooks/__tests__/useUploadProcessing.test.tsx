@@ -1,12 +1,20 @@
 import React from 'react'
 import { renderHook, waitFor, act } from '@testing-library/react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fetchUploadProcessing, type UploadProcessing } from '@famlin/api-client'
+import {
+  api,
+  fetchServerInfo,
+  fetchUploadProcessing,
+  getCurrentServerUrl,
+  type UploadProcessing,
+} from '@famlin/api-client'
 import { UploadProcessingContext, useUploadProcessing } from '../useUploadProcessing'
 
 jest.mock('@famlin/api-client', () => ({
+  ...jest.requireActual('@famlin/api-client'),
   uploadKey: () => 'photo-key',
   fetchUploadProcessing: jest.fn(),
+  fetchServerInfo: jest.fn(),
 }))
 
 const url = '/uploads/photo.jpg'
@@ -14,9 +22,13 @@ const ready: UploadProcessing = { status: 'ready', kind: 'image', url, thumbnail
 let client: QueryClient
 beforeEach(() => {
   jest.clearAllMocks()
+  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.9.0', features: ['uploadProcessing'] })
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
 })
-afterEach(() => client.clear())
+afterEach(() => {
+  client.clear()
+  jest.restoreAllMocks()
+})
 
 function wrapper(state?: UploadProcessing) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -59,9 +71,59 @@ it('polls pending metadata and stops once ready', async () => {
   }
 })
 
-it('fetches status for older servers without post metadata', async () => {
+it('fetches status without post metadata when the server advertises uploadProcessing', async () => {
   jest.mocked(fetchUploadProcessing).mockResolvedValue(ready)
   const { result } = await renderHook(() => useUploadProcessing(url), { wrapper: wrapper() })
   await waitFor(() => expect(result.current.status).toBe('ready'))
   expect(fetchUploadProcessing).toHaveBeenCalledTimes(1)
+})
+
+it('treats a 404 from the status endpoint as ready, not failed', async () => {
+  // Run the real fetchUploadProcessing so its 404 mapping is what's exercised.
+  jest.mocked(fetchUploadProcessing).mockImplementation(jest.requireActual('@famlin/api-client').fetchUploadProcessing)
+  const get = jest
+    .spyOn(api, 'get')
+    .mockRejectedValue(Object.assign(new Error('Not Found'), { response: { status: 404 } }))
+  const { result } = await renderHook(() => useUploadProcessing(url), { wrapper: wrapper() })
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(get).toHaveBeenCalledWith('/uploads/status/photo-key')
+  expect(result.current.failed).toBe(false)
+  expect(result.current.pending).toBe(false)
+  expect(result.current.url).toBeNull()
+})
+
+it('never calls the status endpoint on a server that advertises features without uploadProcessing', async () => {
+  // Already cached, as the feed has normally loaded it by then.
+  client.setQueryData(['server-info', getCurrentServerUrl()], { version: '0.9.0', features: ['stories'] })
+  const { result } = await renderHook(() => useUploadProcessing(url), { wrapper: wrapper() })
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(result.current.pending).toBe(false)
+  expect(result.current.failed).toBe(false)
+  expect(fetchUploadProcessing).not.toHaveBeenCalled()
+})
+
+it('asks for status on a server too old to advertise features (0.8.7 has the endpoint)', async () => {
+  jest.mocked(fetchServerInfo).mockResolvedValue({ version: '0.8.7' })
+  jest.mocked(fetchUploadProcessing).mockResolvedValue(ready)
+  const { result } = await renderHook(() => useUploadProcessing(url), { wrapper: wrapper() })
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(fetchUploadProcessing).toHaveBeenCalledTimes(1)
+})
+
+it('does not wait for server-info before asking for status', async () => {
+  jest.mocked(fetchServerInfo).mockReturnValue(new Promise(() => {}))
+  jest.mocked(fetchUploadProcessing).mockResolvedValue(ready)
+  const { result } = await renderHook(() => useUploadProcessing(url), { wrapper: wrapper() })
+  await waitFor(() => expect(result.current.status).toBe('ready'))
+  expect(fetchUploadProcessing).toHaveBeenCalledTimes(1)
+})
+
+it('trusts post metadata as proof of support before server-info has loaded', async () => {
+  jest.mocked(fetchServerInfo).mockReturnValue(new Promise(() => {}))
+  const { result } = await renderHook(() => useUploadProcessing(url), {
+    wrapper: wrapper({ ...ready, kind: 'livePhoto', videoUrl: '/uploads/clip.mov' }),
+  })
+  expect(result.current.kind).toBe('livePhoto')
+  expect(result.current.videoUrl).toBe('/uploads/clip.mov')
+  expect(result.current.pending).toBe(false)
 })

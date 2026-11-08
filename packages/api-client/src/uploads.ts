@@ -1,4 +1,5 @@
 import { api, getCurrentServerUrl, getCurrentMediaToken, setMediaToken } from './client'
+import { isNotFoundError } from './features'
 
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
@@ -172,6 +173,20 @@ export function uploadKey(url: string): string | null {
 }
 
 export async function fetchUploadProcessing(assetKey: string): Promise<UploadProcessing> {
-  const response = await api.get<UploadProcessing>(`/uploads/status/${assetKey}`)
-  return response.data
+  try {
+    // requires-feature: uploadProcessing
+    const response = await api.get<UploadProcessing>(`/uploads/status/${assetKey}`)
+    return response.data
+  } catch (error) {
+    // Servers older than 0.8.7 have no status endpoint and 404 every request,
+    // even though the upload itself loads fine — report it as ready so the UI
+    // shows the photo instead of "processing failed" (null urls make callers
+    // fall back to the original URL). Newer servers also 404 when the caller
+    // can't read the upload, which is safe to map the same way: the image
+    // request itself is refused too.
+    if (isNotFoundError(error)) {
+      return { status: 'ready', url: null, thumbnailUrl: null }
+    }
+    throw error
+  }
 }
