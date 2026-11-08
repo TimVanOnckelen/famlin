@@ -115,6 +115,12 @@ jobs:
       # never creates the App Store version or submits it for review. This
       # waits for Apple to finish processing the upload, attaches it to the
       # version, fills an empty "What's New" text and submits it for review.
+      #
+      # `eas submit` above needs none of the ASC_* repo secrets (the app id is
+      # in eas.json and EAS keeps its own copy of the API key), so they may be
+      # missing. The binary is already in App Store Connect at this point, so
+      # rather than failing the release, warn and leave review submission to
+      # be done by hand. ASC_APP_ID falls back to eas.json's ascAppId.
       - name: Submit iOS build for App Store review
         if: github.event_name != 'workflow_dispatch'
         working-directory: mobile
@@ -124,6 +130,19 @@ jobs:
           ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
           ASC_API_KEY_PATH: secrets/AuthKey.p8
         run: |
+          if [ -z "$ASC_APP_ID" ]; then
+            ASC_APP_ID=$(node -p "require('./eas.json').submit.production.ios.ascAppId || ''")
+            export ASC_APP_ID
+          fi
+          missing=""
+          [ -n "$ASC_APP_ID" ] || missing="$missing ASC_APP_ID"
+          [ -n "$ASC_API_KEY_ID" ] || missing="$missing ASC_API_KEY_ID"
+          [ -n "$ASC_API_KEY_ISSUER_ID" ] || missing="$missing ASC_API_KEY_ISSUER_ID"
+          [ -s "$ASC_API_KEY_PATH" ] || missing="$missing APP_STORE_CONNECT_API_KEY_BASE64"
+          if [ -n "$missing" ]; then
+            echo "::warning title=App Store review not submitted::Missing repository secret(s):$missing. The build was uploaded to App Store Connect; submit it for review by hand, or add the secrets to automate this."
+            exit 0
+          fi
           export APP_VERSION=$(node -p "require('./app.json').expo.version")
           export APP_BUILD_NUMBER=$(node -p "require('./app.json').expo.ios.buildNumber || require('./app.json').expo.version")
           node ../scripts/asc-submit-for-review.mjs
