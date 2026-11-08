@@ -66,6 +66,9 @@ export function FeedScreen() {
   // Never asked of a server that says it has no circles, and a 404 from one
   // too old to say just leaves no chips (issue #380).
   const circlesSupport = useServerFeatureSupport('circles')
+  // The wiki's only way in; a server that doesn't list it never sees a
+  // request (issue #380).
+  const wikiSupport = useServerFeatureSupport('wiki')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleActiveGroup?.id],
     queryFn: rememberNotFound('circles', () => fetchMyCircles(singleActiveGroup!.id)),
@@ -178,7 +181,7 @@ export function FeedScreen() {
           </TouchableOpacity>
         )}
 
-        {hasGroups && (
+        {hasGroups && wikiSupport !== 'unsupported' && (
           <TouchableOpacity
             style={styles.favoritesButton}
             onPress={() => navigation.navigate('Wiki', { groupId: singleActiveGroup?.id })}

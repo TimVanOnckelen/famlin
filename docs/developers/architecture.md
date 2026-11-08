@@ -308,6 +308,7 @@ Mobile gates today:
 - `giftLists`: the profile's "My gift lists" section, plus the composer's gift-list type as a second guard behind the group's `allowedPostTypes`.
 - `uploadProcessing`: the status poll in `useUploadProcessing`. `fetchUploadProcessing` maps a 404 to "ready".
 - `deviceDiagnostics`: device reporting, the logout `DELETE` and the profile's device section. It shipped with the `features` field, so it's never `unknown` on an older server once server-info loads; if server-info is unavailable, a 404 is swallowed (nothing stored, sign-out never blocked) and the device section only shows once the list loads.
+- `wiki`: the feed header's Family Wiki button, its only entry point. Like `deviceDiagnostics` it's newer than the `features` field, so it's hidden on any server that doesn't list it.
 - `memberExport` and `accountDeletion`: the profile's export button and delete-account section. These stay visible on `unknown`, because they're user-initiated. A 404 shows `profile.featureUnavailable` ("ask your admin to update").
 
 ### How to add a server feature flag

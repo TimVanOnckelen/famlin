@@ -562,8 +562,9 @@ paths:
                       `memberExport` (0.8.0, `GET /api/auth/me/export`),
                       `giftLists` (0.8.5), `uploadProcessing` (0.8.7, `GET
                       /api/uploads/status/{assetKey}`), `livePhotos` (0.8.7),
-                      `deviceDiagnostics` (`/api/devices`).
-                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics]
+                      `deviceDiagnostics` (`/api/devices`), `wiki`
+                      (`/api/wiki`).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki]
 
   /branding/{file}:
     get:

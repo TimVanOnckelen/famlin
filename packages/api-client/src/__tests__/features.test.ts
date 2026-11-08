@@ -57,6 +57,7 @@ describe('serverFeatureSupport', () => {
     expect(PRE_FEATURE_LIST_FEATURES).not.toContain('deviceDiagnostics')
     expect(serverFeatureSupport({ version: '0.8.7' }, 'deviceDiagnostics')).toBe('unsupported')
     expect(serverSupports({ version: '0.8.7' }, 'deviceDiagnostics')).toBe(false)
+    expect(serverFeatureSupport({ version: '0.8.7' }, 'wiki')).toBe('unsupported')
   })
 
   it('stays unknown for every id before server-info loads', () => {

@@ -55,16 +55,19 @@ export interface WikiPageListParams {
 export async function fetchWikiPages(
   params: WikiPageListParams
 ): Promise<{ items: WikiPageSummary[]; nextCursor: string | null }> {
+  // requires-feature: wiki
   const response = await api.get<{ items: WikiPageSummary[]; nextCursor: string | null }>('/wiki/pages', { params })
   return response.data
 }
 
 export async function fetchWikiCategories(groupId: string): Promise<WikiCategory[]> {
+  // requires-feature: wiki
   const response = await api.get<{ items: WikiCategory[] }>('/wiki/categories', { params: { groupId } })
   return response.data.items
 }
 
 export async function fetchWikiPage(pageId: string): Promise<WikiPage> {
+  // requires-feature: wiki
   const response = await api.get<WikiPage>(`/wiki/pages/${pageId}`)
   return response.data
 }
@@ -81,6 +84,7 @@ export interface CreateWikiPageBody {
 }
 
 export async function createWikiPage(body: CreateWikiPageBody): Promise<WikiPage> {
+  // requires-feature: wiki
   const response = await api.post<WikiPage>('/wiki/pages', body)
   return response.data
 }
@@ -97,11 +101,13 @@ export interface UpdateWikiPageBody {
 }
 
 export async function updateWikiPage(pageId: string, body: UpdateWikiPageBody): Promise<WikiPage> {
+  // requires-feature: wiki
   const response = await api.patch<WikiPage>(`/wiki/pages/${pageId}`, body)
   return response.data
 }
 
 export async function deleteWikiPage(pageId: string): Promise<void> {
+  // requires-feature: wiki
   await api.delete(`/wiki/pages/${pageId}`)
 }
 
