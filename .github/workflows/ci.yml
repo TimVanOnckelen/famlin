@@ -276,6 +276,11 @@ jobs:
       - name: Check native peer dependencies are direct
         working-directory: mobile
         run: node scripts/check-native-peer-deps.mjs
+      # @famlin/api-client is symlinked in, so its @tanstack/react-query comes
+      # from the root workspace — mobile's own copy must be the same version.
+      - name: Check shared dependencies match the workspace root
+        working-directory: mobile
+        run: node scripts/check-shared-deps.mjs
       # Expo SDK precompiles native frameworks (RNReanimated etc.) against the
       # exact versions in expo/bundledNativeModules.json. A manually bumped
       # native dep (e.g. react-native-worklets 0.10.2 vs the expected 0.10.0)

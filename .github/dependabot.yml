@@ -20,8 +20,16 @@ updates:
     open-pull-requests-limit: 5
     labels: [dependencies]
     groups:
+      # mobile/ resolves @famlin/api-client's react-query from this root
+      # install (symlinked file: dependency), so mobile/package.json must be
+      # bumped to the same version by hand in this PR — CI's
+      # check-shared-deps.mjs prints the command. Kept out of the big group so
+      # that manual step never blocks the other web bumps.
+      tanstack-query:
+        patterns: ['@tanstack/*']
       web-minor-patch:
         patterns: ['*']
+        exclude-patterns: ['@tanstack/*']
         update-types: [minor, patch]
 
   # ------------------------------------------------------------- backend
@@ -94,6 +102,9 @@ updates:
       - dependency-name: eslint-config-expo
       - dependency-name: typescript
       - dependency-name: '@types/react'
+      # Must match the root workspace's version and moves with the root's
+      # tanstack-query PR instead (see the root entry above).
+      - dependency-name: '@tanstack/*'
     groups:
       mobile-minor-patch:
         patterns: ['*']
