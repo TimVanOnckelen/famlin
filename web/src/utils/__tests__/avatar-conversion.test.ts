@@ -37,6 +37,14 @@ it('waits for the full converted image and resolves its authorized URL', async (
   expect(fetchUploadProcessing).toHaveBeenCalledTimes(2)
 })
 
+it('uses the upload itself when the server reports ready without a converted copy', async () => {
+  // What fetchUploadProcessing returns for a server without the status endpoint (#377).
+  vi.mocked(getUploadUrl).mockImplementation((url) => `${url}?token=media`)
+  vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'ready', url: null, thumbnailUrl: null })
+  await expect(convertAvatarForPreview(file, new AbortController().signal)).resolves.toBe(`${url}?token=media`)
+  expect(fetchUploadProcessing).toHaveBeenCalledTimes(1)
+})
+
 it('stops polling on cancellation', async () => {
   vi.mocked(fetchUploadProcessing).mockResolvedValue({ status: 'processing', url: null, thumbnailUrl: null })
   const controller = new AbortController()
