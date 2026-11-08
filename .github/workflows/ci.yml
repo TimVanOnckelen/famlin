@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       mobile: ${{ steps.filter.outputs.mobile }}
+      e2e: ${{ steps.filter.outputs.e2e }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -33,6 +34,18 @@ jobs:
               - 'packages/api-client/**'
               - 'package.json'
               - 'package-lock.json'
+            # Everything that ends up in (or starts) the Docker image the
+            # end-to-end smoke tests drive. Docs/website/mobile-only PRs skip
+            # them.
+            e2e:
+              - 'backend/**'
+              - 'web/**'
+              - 'packages/**'
+              - 'e2e/**'
+              - 'docker-compose.yml'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
 
   lint:
     name: Lint
@@ -489,6 +502,7 @@ jobs:
     # Both architectures docker-publish.yml ships, each on a native runner —
     # a green amd64-only build says nothing about arm64.
     name: Docker build (${{ matrix.platform }})
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
@@ -532,3 +546,55 @@ jobs:
             console.log('sharp ok, libvips', sharp.versions.vips);
           "
           docker run --rm famlin-ci:test ffmpeg -hide_banner -version | head -1
+
+      # End-to-end smoke tests (e2e/): the image just built, started with the
+      # real zero-config docker-compose.yml, driven through its golden paths in
+      # Chromium — setup, invite, join, photo post, reaction, comment, export.
+      # amd64 only: the arm64 build is covered by the native smoke test above,
+      # and running the same browser flows twice would only add minutes.
+      - name: Start the stack for end-to-end tests
+        id: e2e-stack
+        if: matrix.platform == 'linux/amd64' && needs.changes.outputs.e2e == 'true'
+        env:
+          # docker-compose.yml runs ghcr.io/timvanonckelen/famlin:${FAMLIN_VERSION};
+          # the local tag means Compose uses this build and never pulls.
+          FAMLIN_VERSION: e2e
+        run: |
+          docker tag famlin-ci:test ghcr.io/timvanonckelen/famlin:e2e
+          docker compose -p famlin-e2e -f docker-compose.yml up -d
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:3000/health > /dev/null; then
+              echo "healthy after ${i}x2s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Famlin did not become healthy within 180s"
+          docker compose -p famlin-e2e logs famlin-backend
+          exit 1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.e2e-stack.outcome == 'success'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Run end-to-end tests
+        if: steps.e2e-stack.outcome == 'success'
+        working-directory: e2e
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Show server logs
+        if: failure() && steps.e2e-stack.outcome == 'success'
+        run: docker compose -p famlin-e2e logs --no-color famlin-backend | tail -n 300
+      - name: Upload end-to-end report
+        if: failure() && steps.e2e-stack.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
