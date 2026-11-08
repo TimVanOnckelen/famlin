@@ -46,7 +46,6 @@ import {
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js'
 import { buildExportArchive } from '../services/export.js'
 import { createExportDownloadToken, redeemExportDownloadToken } from '../services/exportDownloadTokens.js'
-import { abortArchiveOnDisconnect } from '../services/storage/archive.js'
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
@@ -1444,17 +1443,17 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     return { token: await createExportDownloadToken(request.user!.id) }
   })
 
-  fastify.get('/export', { config: { exportDownloadToken: true } }, async (request, reply) => {
+  // No HEAD route: a HEAD would redeem the download token and build the
+  // whole export just to discard it.
+  fastify.get('/export', { exposeHeadRoute: false, config: { exportDownloadToken: true } }, async (request, reply) => {
     if (requireAdmin(request, reply)) return
 
     const query = z
       .object({ includeMedia: z.enum(['true', 'false']).optional(), downloadToken: z.string().optional() })
       .parse(request.query)
-    const archive = await buildExportArchive(query.includeMedia !== 'false')
-    archive.on('error', (err) => {
+    const archive = await buildExportArchive(query.includeMedia !== 'false', (err) => {
       request.log.error(err, 'export archive stream error')
     })
-    abortArchiveOnDisconnect(archive, reply.raw, request.log)
 
     const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
     reply.header('content-type', 'application/zip')
