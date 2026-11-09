@@ -63,7 +63,7 @@ npm test --workspace=@famlin/api-client
 npm test --workspace=famlin-web
 npm test --workspace=@famlin/ui
 npm run check --workspace=@famlin/design-tokens
-npm --prefix backend/admin test
+npm test --workspace=famlin-admin
 npm --prefix backend run test:docker  # needs Docker
 npm --prefix mobile test
 ```

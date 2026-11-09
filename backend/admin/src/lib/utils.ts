@@ -1,1 +1,1 @@
-export { cn } from 'cn'
+export { cn } from '@famlin/ui/lib/utils'

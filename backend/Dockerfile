@@ -3,7 +3,7 @@
 # backend/ but are bundled into this same image, so the context must span the
 # whole repo. Build with:  docker build -f backend/Dockerfile .
 # Build both frontends with the shared workspace packages and root lockfile.
-# Keep the monorepo layout so admin's independent file: dependencies resolve.
+# Admin, web and shared packages install together from the root workspace lockfile.
 # Vite outputs land in /repo/backend/dist/{web,admin}.
 FROM node:22-alpine AS webbuild
 
@@ -36,12 +36,11 @@ COPY backend/admin ./backend/admin
 RUN npm ci --ignore-scripts
 RUN npm run build --workspace=packages/api-client
 RUN npm run build --workspace=web
-RUN npm --prefix backend/admin ci --ignore-scripts
-RUN npm --prefix backend/admin run build
+RUN npm run build --workspace=famlin-admin
 
 FROM node:22-alpine AS base
 
-WORKDIR /app
+WORKDIR /repo/backend
 
 # OpenSSL for Prisma; ffmpeg for video poster-frame extraction
 # (services/uploadVariants.ts) — needed here too because the dev overlay
@@ -60,7 +59,7 @@ RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+
     && pg_dump --version
 
 # Install dependencies
-COPY backend/package.json backend/package-lock.json* ./
+COPY backend/package.json backend/package-lock.json* backend/.npmrc ./
 RUN npm ci
 
 # Generate Prisma client
@@ -83,14 +82,9 @@ RUN npx tsc prisma/seed.ts --outDir dist/prisma \
     --module NodeNext --moduleResolution NodeNext --target ES2022 \
     --esModuleInterop --strict --skipLibCheck --resolveJsonModule
 
-# The development overlay targets base and bind-mounts backend at /app.
-# Preserve its admin watch-build: relative file links then resolve under
-# /packages, whose dependencies resolve from /node_modules. Both installs
-# below are copied from the lockfile-driven frontend stage.
-COPY --from=webbuild /repo/packages /packages
-COPY --from=webbuild /repo/node_modules /node_modules
-COPY --from=webbuild /repo/backend/admin/node_modules ./admin/node_modules
-COPY --from=webbuild /repo/backend/dist/admin ./dist/admin
+# Retain the workspace layout for the development target's admin watch-build.
+# Copy after backend compilation so frontend changes keep backend layers cached.
+COPY --from=webbuild /repo /repo
 
 # Production image
 FROM node:22-alpine AS production
@@ -114,7 +108,7 @@ RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+
     && apk add --no-cache "$PG_CLIENT" \
     && pg_dump --version
 
-COPY backend/package.json backend/package-lock.json* ./
+COPY backend/package.json backend/package-lock.json* backend/.npmrc ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
 # camera format) — sharp's own prebuilt binaries deliberately ship without it
 # (patent-encumbered HEVC decoder), so sharp is compiled against the system
@@ -148,11 +142,11 @@ RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-d
     && apk del .build-deps
 RUN node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }"
 
-COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=base /app/dist ./dist
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/prisma.config.ts ./
-COPY --from=base /app/dist/prisma ./dist/prisma
+COPY --from=base /repo/backend/node_modules/.prisma ./node_modules/.prisma
+COPY --from=base /repo/backend/dist ./dist
+COPY --from=base /repo/backend/prisma ./prisma
+COPY --from=base /repo/backend/prisma.config.ts ./
+COPY --from=base /repo/backend/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
 COPY --from=webbuild /repo/backend/dist/admin ./dist/admin
 

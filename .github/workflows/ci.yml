@@ -46,12 +46,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             backend/package-lock.json
-            backend/admin/package-lock.json
             mobile/package-lock.json
-      # web + packages/api-client are root workspace members. This also
-      # builds @famlin/api-client, which backend/admin's and mobile's
-      # installs below need for their `file:` dependency — see the same
-      # ordering note on the admin/mobile jobs further down.
+      # Installs admin, web and shared packages from the root lockfile.
       - name: Install workspace dependencies (builds @famlin/api-client)
         run: npm ci
       # One root Prettier config covers backend, admin, web, api-client and
@@ -71,9 +67,6 @@ jobs:
       - name: Lint backend
         working-directory: backend
         run: npm run lint
-      - name: Install admin dependencies
-        working-directory: backend/admin
-        run: npm ci
       - name: Lint admin UI
         working-directory: backend/admin
         run: npm run lint
@@ -198,16 +191,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            backend/admin/package-lock.json
-      # admin depends on @famlin/api-client via file:../../packages/api-client.
-      # That package's own dependencies (axios, etc.) are only installed by
-      # the root workspace install — see the same pattern in the mobile job
-      # below — so it must run before admin's install, here and on any fresh
-      # checkout.
       - name: Install workspace dependencies (builds @famlin/api-client)
-        run: npm ci
-      - name: Install dependencies
-        working-directory: backend/admin
         run: npm ci
       - name: Check shared design tokens and UI
         run: |
@@ -216,8 +200,8 @@ jobs:
           npm run typecheck --workspace=@famlin/ui
           npm run lint --workspace=@famlin/ui
           npm run test --workspace=@famlin/ui
-          npm --prefix backend/admin test
-          npm --prefix backend/admin run lint
+          npm test --workspace=famlin-admin
+          npm run lint --workspace=famlin-admin
       - name: Typecheck
         working-directory: backend/admin
         run: npx tsc --noEmit

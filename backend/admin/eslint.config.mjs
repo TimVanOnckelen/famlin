@@ -1,8 +1,6 @@
 // ESLint flat config for the admin UI (React + Vite).
 //
-// backend/admin/ installs independently (see repo root CLAUDE.md), so it
-// carries its own eslint + typescript-eslint + react-hooks devDependencies
-// rather than relying on the root workspace's hoisted node_modules.
+// Dependencies are installed by the root npm workspace.
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'

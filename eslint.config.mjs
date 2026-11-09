@@ -1,14 +1,8 @@
 // Root ESLint flat config.
 //
-// Only covers the packages that are part of the root npm workspace
-// (`web/` and `packages/api-client/`, see root package.json's
-// `workspaces`) — they share these hoisted devDependencies. `backend/`,
-// `backend/admin/`, and `mobile/` install independently (no access to
-// this root node_modules) and each carry their own eslint.config.mjs +
-// devDependencies instead. ESLint's flat config resolves upward through
-// parent directories, so running `eslint .` from inside `web/` or
-// `packages/api-client/` picks this file up automatically as long as
-// those packages don't have a config file of their own.
+// Shared packages and web use this config and hoisted workspace dependencies.
+// Admin is also a root workspace member but keeps its own React config.
+// Backend, mobile and docs retain independent installs/configurations.
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'

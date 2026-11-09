@@ -3,11 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-// admin installs independently (not an npm workspace member — see the root
-// CLAUDE.md), so @famlin/api-client is a plain `file:../../packages/api-client`
-// dependency instead. npm still links it as a symlink though, resolving to a
-// real path two levels up under packages/api-client — same situation web/'s
-// vite.config.ts documents for its own (workspace) symlink.
+// Shared workspace sources live outside the application root.
 const repoRoot = path.resolve(import.meta.dirname, '../..')
 
 function redirectAdminRoot(server: Pick<ViteDevServer, 'middlewares'>) {
@@ -34,7 +30,6 @@ export default defineConfig({
   ],
   base: '/admin/',
   resolve: {
-    dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
     },

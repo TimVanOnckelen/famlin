@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc && npm run build:admin",
-    "build:admin": "cd admin && npm ci && npm run build",
+    "build:admin": "npm run build --workspace=famlin-admin --prefix ..",
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

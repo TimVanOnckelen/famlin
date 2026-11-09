@@ -22,14 +22,17 @@ services:
     build:
       # Context is the repo root (not ./backend): the image also bundles the
       # member-facing web app (web/ + packages/api-client), which lives
-      # outside backend/ — see backend/Dockerfile. The dev `base` target
-      # doesn't build web; use `npm run dev:web` on the host for web dev
-      # (Vite dev server proxying /api to this container).
+      # outside backend/ — see backend/Dockerfile. The dev target retains
+      # the same /repo workspace layout as the frontend build.
       context: .
       dockerfile: backend/Dockerfile
       target: base
     environment:
       NODE_ENV: development
+      # Preserve production data-volume locations with the workspace cwd.
+      UPLOADS_DIR: /app/uploads
+      BACKUPS_DIR: /app/backups
+      DATA_DIR: /app/data
       # Uncomment if file changes are not detected on your platform
       # (some macOS/Windows Docker setups need polling for bind-mount watches):
       # CHOKIDAR_USEPOLLING: "true"
@@ -44,19 +47,21 @@ services:
         npm run dev
       "
     volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - /app/dist
-      - /app/admin/node_modules
-      # Shared UI/tokens are linked by admin at ../../packages.
-      - ./packages:/packages
-      # The member-facing web app builds on the HOST (it needs the root npm
-      # workspace, which isn't mounted into this container) into
+      - .:/repo
+      # Keep container dependencies separate from host installations.
+      - /repo/node_modules
+      - /repo/backend/node_modules
+      - /repo/backend/admin/node_modules
+      - /repo/web/node_modules
+      - /repo/packages/ui/node_modules
+      - /repo/packages/api-client/node_modules
+      - /repo/backend/dist
+      # The member-facing web app can build on the HOST into
       # backend/dist/web — this more-specific bind punches through the
-      # anonymous /app/dist volume above so the dev backend serves it at /.
+      # anonymous /repo/backend/dist volume above so the dev backend serves it at /.
       # Run `npm run build:web` (once) or `npm run watch:web` (rebuild on
       # change) from the repo root; the backend must (re)start after the
       # first build to pick it up. Unlike the admin watch-build below,
       # `watch:web` also auto-refreshes the browser tab — see the
       # `LIVERELOAD`/`watchLivereload()` note in CLAUDE.md.
-      - ./backend/dist/web:/app/dist/web
+      - ./backend/dist/web:/repo/backend/dist/web

@@ -16,18 +16,19 @@
   ],
   "workspaces": [
     "packages/*",
-    "web"
+    "web",
+    "backend/admin"
   ],
   "scripts": {
-    "install:all": "npm i && npm --prefix backend i && npm --prefix backend/admin i && npm --prefix mobile i && npm --prefix docs i",
+    "install:all": "npm i && npm --prefix backend i && npm --prefix mobile i && npm --prefix docs i",
     "clean:all": "rm -rf node_modules web/node_modules backend/node_modules backend/admin/node_modules mobile/node_modules docs/node_modules packages/*/node_modules backend/dist web/dist mobile/dist mobile/build mobile/web-build mobile/.expo docs/build docs/.docusaurus",
     "dev:backend": "cd backend && npm run dev",
     "test:backend": "cd backend && npm test",
-    "dev:admin": "cd backend/admin && npm run dev",
+    "dev:admin": "npm run dev --workspace=famlin-admin",
     "dev:mobile": "cd mobile && npm start",
     "dev:docs": "cd docs && npm start",
     "dev:web": "npm run dev --workspace=web",
-    "build:admin": "cd backend/admin && npm run build",
+    "build:admin": "npm run build --workspace=famlin-admin",
     "build:docs": "cd docs && npm run build",
     "build:web": "npm run build --workspace=web",
     "watch:web": "npm run watch --workspace=web",
@@ -35,7 +36,7 @@
     "db:migrate": "cd backend && npm run db:migrate",
     "db:seed": "cd backend && npm run db:seed",
     "lint:backend": "cd backend && npm run lint",
-    "lint:admin": "cd backend/admin && npm run lint",
+    "lint:admin": "npm run lint --workspace=famlin-admin",
     "lint:web": "npm run lint --workspace=web",
     "lint:api-client": "npm run lint --workspace=packages/api-client",
     "lint:mobile": "cd mobile && npm run lint",

@@ -81,13 +81,12 @@ This builds into `backend/dist/web`, which the dev compose overlay bind-mounts i
 
 The dev container rebuilds admin automatically and serves it at
 http://localhost:3000/admin/. Shared UI and token sources under `packages/`
-are mounted into the container for the same watch-build.
+are available through the repository mount for the same watch-build.
 
-For the admin Vite dev server on the host, install both dependency trees:
+For the admin Vite dev server on the host, install the root workspace:
 
 ```bash
-npm ci                               # repo root: shared workspace dependencies
-npm --prefix backend/admin ci        # admin remains independently installed
+npm ci                               # installs admin, web and shared packages
 npm run dev:admin
 ```
 

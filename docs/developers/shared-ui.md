@@ -7,18 +7,17 @@ Admin is the first consumer; web and mobile have not been migrated.
 
 ## Install and validate
 
-Keep the repository structure when working with local `file:` dependencies:
+Admin, web and shared packages are root npm workspace members. Install once from the root lockfile:
 
 ```sh
 npm ci
-npm --prefix backend/admin ci
 npm run check --workspace=@famlin/design-tokens
 npm run test --workspace=@famlin/design-tokens
 npm run typecheck --workspace=@famlin/ui
 npm run lint --workspace=@famlin/ui
 npm run test --workspace=@famlin/ui
-npm --prefix backend/admin test
-npm --prefix backend/admin run lint
+npm test --workspace=famlin-admin
+npm run lint --workspace=famlin-admin
 npm run build:admin
 ```
 
@@ -95,19 +94,16 @@ relative to that stylesheet). Keep reset, body and page layout styles in the
 application. Tailwind's [source registration documentation](https://tailwindcss.com/docs/detecting-classes-in-source-files)
 explains scanning dependencies. Load Nunito in the application as admin does.
 
-Set Vite `resolve.dedupe` to `['react', 'react-dom']`. Independently installed
-consumers also need TypeScript `react` / `react/*` paths pointing to their own
-`@types/react` to keep source components and JSX on one type identity; see
-admin's `tsconfig.json`. No JavaScript library build is required: Vite consumes
-TS/TSX source exports.
+Workspace consumers share the root React/React DOM installation; admin needs no React type path overrides or Vite dedupe configuration. No JavaScript library build is required: Vite consumes TS/TSX source exports.
 
 Mobile can consume the resolved TypeScript export separately; the JSON source is a schema with references, not a ready-to-use native theme. Browser components
 are not React Native components; a future native UI package is a separate
 architecture decision.
 
-The Docker frontend stage installs the root workspace and admin dependencies,
-builds both frontends under `/repo`, and copies assets to `dist/admin` and
-`dist/web`; production URL prefixes stay `/admin/` and `/`.
+The Docker frontend stage uses one root workspace install and builds both frontends under `/repo`. Production assets stay at `dist/admin` and `dist/web`, served at `/admin/` and `/`. The development stage retains `/repo` and mounts the repository there, so shared components participate in admin's watch-build without relocated package links.
 
-The Docker development overlay also mounts `packages/` so changes to shared
-components participate in the existing admin watch-build.
+## UI dependency policy
+
+`shadcn` is a development-only CLI/CSS build dependency. Production UI dependencies must not include the CLI toolchain. The shared `cn` helper uses `clsx` and `tailwind-merge`; import it relatively within the library. The Toaster accepts Sonner's `theme` prop (default `system`) and does not require a ThemeProvider or `next-themes`; each application chooses its theme explicitly.
+
+The independent backend install uses `install-strategy=shallow` in `backend/.npmrc` to keep transitive tools such as Prisma Studio (and their React dependencies) below their owning packages. Preserve this isolation: `backend/admin` must resolve React from the root workspace, not a parent backend tooling installation. The backend lockfile retains the existing package versions with the nested layout.

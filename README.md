@@ -115,8 +115,8 @@ npm run ios        # or: npm run android (needs Xcode / Android Studio)
 
 Leaving the server field empty at login uses `EXPO_PUBLIC_API_URL` from `mobile/.env`: `http://localhost:3000` on the iOS simulator, `http://10.0.2.2:3000` on the Android emulator.
 
-**Admin and shared UI** — run `npm ci` at the repo root, then
-`npm --prefix backend/admin ci` and `npm run dev:admin`. Browser primitives and
+**Admin and shared UI** — run `npm ci` once at the repo root, then
+`npm run dev:admin`. Browser primitives and
 independent compositions live in `packages/ui`; shared values live in
 `packages/design-tokens`. See the [shared UI guide](docs/developers/shared-ui.md)
 for ownership, checks and token generation. Web and mobile keep their current UI.
