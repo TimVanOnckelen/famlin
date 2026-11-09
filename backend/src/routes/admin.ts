@@ -45,6 +45,7 @@ import {
 } from '../services/branding/index.js'
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js'
 import { buildExportArchive } from '../services/export.js'
+import { createExportDownloadToken, redeemExportDownloadToken } from '../services/exportDownloadTokens.js'
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
@@ -132,7 +133,24 @@ async function isLastAdmin(userId: string): Promise<boolean> {
 }
 
 export default async function adminRoutes(fastify: FastifyInstance) {
-  fastify.addHook('preHandler', fastify.authenticate)
+  fastify.addHook('preHandler', async (request, reply) => {
+    // GET /export is downloaded by a plain browser navigation, which can't
+    // send an Authorization header: it may authenticate with a one-time
+    // ?downloadToken= from POST /export/token instead.
+    const downloadToken = (request.query as { downloadToken?: unknown } | undefined)?.downloadToken
+    if (
+      (request.routeOptions.config as { exportDownloadToken?: boolean }).exportDownloadToken &&
+      !request.headers.authorization &&
+      typeof downloadToken === 'string'
+    ) {
+      const user = await redeemExportDownloadToken(downloadToken)
+      if (!user) return reply.status(401).send({ error: getT(request)('errors.exportDownloadTokenInvalid') })
+      request.user = user
+      request.authMethod = 'session'
+      return
+    }
+    return fastify.authenticate(request, reply)
+  })
 
   // Device diagnostics are operational state, not activity data. The summary
   // is computed from current rows only; the detailed list is cursor-paginated.
@@ -749,12 +767,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
     const circle = await prisma.circle.findUnique({
       where: { id: circleId, kind: MANAGED_CIRCLE_KIND },
-      select: { id: true, _count: { select: { posts: true } } },
+      select: { id: true, _count: { select: { posts: true, wikiPages: true } } },
     })
     if (!circle) return reply.status(404).send({ error: t('errors.circleNotFound') })
 
-    if (circle._count.posts > 0 && !deleteContent) {
-      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount: circle._count.posts })
+    // Circle-private wiki pages cascade with the circle too (they must never
+    // fall back to family-wide), so they count as content needing consent.
+    const { posts: postCount, wikiPages: wikiPageCount } = circle._count
+    if ((postCount > 0 || wikiPageCount > 0) && !deleteContent) {
+      return reply.status(409).send({ error: t('errors.circleNotEmpty'), postCount, wikiPageCount })
     }
 
     // The circle's stories cascade with it; delete them explicitly first so
@@ -763,7 +784,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     await deleteStoriesWithMedia({ circleId })
     await prisma.circle.delete({ where: { id: circleId } })
 
-    return { success: true, deletedPostCount: circle._count.posts }
+    return { success: true, deletedPostCount: postCount, deletedWikiPageCount: wikiPageCount }
   })
 
   fastify.post('/circles/:circleId/members', async (request, reply) => {
@@ -1412,18 +1433,33 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // groups/members, posts, comments, reactions, favorites, chat messages) and
   // the entire uploads directory — see services/export.ts for exactly what's
   // deliberately left out (Setting, invites, tokens, notification history).
-  fastify.get('/export', async (request, reply) => {
+  // Mints the one-time ?downloadToken= the admin UI puts in the export's
+  // download URL — see services/exportDownloadTokens.ts. Login sessions
+  // only, like minting an API token: a PAT can call GET /export directly.
+  fastify.post('/export/token', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    return { token: await createExportDownloadToken(request.user!.id) }
+  })
+
+  // No HEAD route: a HEAD would redeem the download token and build the
+  // whole export just to discard it.
+  fastify.get('/export', { exposeHeadRoute: false, config: { exportDownloadToken: true } }, async (request, reply) => {
     if (requireAdmin(request, reply)) return
 
-    const query = z.object({ includeMedia: z.enum(['true', 'false']).optional() }).parse(request.query)
-    const archive = await buildExportArchive(query.includeMedia !== 'false')
-    archive.on('error', (err) => {
+    const query = z
+      .object({ includeMedia: z.enum(['true', 'false']).optional(), downloadToken: z.string().optional() })
+      .parse(request.query)
+    const archive = await buildExportArchive(query.includeMedia !== 'false', (err) => {
       request.log.error(err, 'export archive stream error')
     })
 
     const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
     reply.header('content-type', 'application/zip')
     reply.header('content-disposition', `attachment; filename="${filename}"`)
+    reply.header('cache-control', 'no-store')
 
     // finalize() returns a promise (archiver v8) — fire it after attaching
     // the archive to the response so bytes start streaming immediately;

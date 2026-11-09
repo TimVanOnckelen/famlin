@@ -40,12 +40,15 @@ export async function loginWithOidc(idToken: string, inviteToken?: string): Prom
 // authorization for this app — Apple never discloses it again, so pass it
 // through when present and omit it otherwise (the server keeps the name
 // already on file).
+// `binding` is how the app tied the token to this server (performAppleLogin
+// in the mobile app, appleNonceFor on the server).
 export async function loginWithApple(
   identityToken: string,
   fullName?: string,
-  inviteToken?: string
+  inviteToken?: string,
+  binding?: { rawNonce: string; nonceHost: string }
 ): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken })
+  const response = await api.post<LoginResponse>('/auth/apple', { identityToken, fullName, inviteToken, ...binding })
   return response.data
 }
 
@@ -95,6 +98,8 @@ export interface NotificationPrefs {
 }
 
 export interface UpdateMeBody extends NotificationPrefs {
+  name?: string
+  email?: string
   avatarUrl?: string | null
 }
 
@@ -121,6 +126,11 @@ export interface ServerInfo {
   // Per-family branding (issue #164). `null` on an unbranded server, absent
   // on a server that predates the feature — treat both as "today's look".
   branding?: Branding | null
+  // Named capabilities (issue #380), absent on servers up to 0.8.7. Plain
+  // strings: a newer server may list ids this client doesn't know. Check
+  // with serverFeatureSupport()/serverSupports() (./features) rather than
+  // reading it directly.
+  features?: string[]
 }
 
 // The family's derived palette — computed server-side (one implementation
@@ -184,6 +194,7 @@ export async function fetchServerInfo(): Promise<ServerInfo> {
 // cascades to (posts, comments, reactions, favorites, chat messages,
 // notifications). There is no restore — callers must confirm first.
 export async function deleteAccount(): Promise<void> {
+  // requires-feature: accountDeletion
   await api.delete('/auth/me')
 }
 
@@ -194,6 +205,7 @@ export async function deleteAccount(): Promise<void> {
 // to disk instead via getMyExportRequest(), since holding a whole family's
 // media in JS memory would not survive on a phone.
 export async function downloadMyExport(): Promise<Blob> {
+  // requires-feature: memberExport
   const response = await api.get<Blob>('/auth/me/export', { responseType: 'blob', timeout: 0 })
   return response.data
 }
@@ -204,6 +216,7 @@ export async function getMyExportRequest(): Promise<{ url: string; headers: Reco
   const serverUrl = getCurrentServerUrl()
   if (!serverUrl) throw new Error('No server URL configured')
   const token = await getStorageAdapter().getItem(TOKEN_KEY)
+  // requires-feature: memberExport
   return {
     url: `${serverUrl}/api/auth/me/export`,
     headers: token ? { Authorization: `Bearer ${token}` } : {},

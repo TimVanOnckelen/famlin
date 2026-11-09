@@ -3,16 +3,20 @@ import { StateMessage } from '@famlin/ui/common/state-message'
 import { AuthShell } from '@famlin/ui/common/auth-shell'
 import { Input } from '@famlin/ui/input'
 import { Button } from '@famlin/ui/button'
-import { useState } from 'react'
+import { SelectField } from '@famlin/ui/common/select-field'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelector } from './LanguageSelector'
 import { api, User, ApiError } from '../api/client'
 
+const DUMP_RESTORE_DOCS_URL = 'https://famlin.app/docs/maintenance#restoring-from-a-scheduled-backup'
+
 interface SetupPageProps {
   onSetupComplete: (user: User, restored: boolean) => void
+  onDumpRestored: () => void
 }
 
-export function SetupPage({ onSetupComplete }: SetupPageProps) {
+export function SetupPage({ onSetupComplete, onDumpRestored }: SetupPageProps) {
   const { t } = useTranslation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -26,6 +30,38 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
   const [mode, setMode] = useState<'create' | 'restore'>('create')
   const [archive, setArchive] = useState<File | null>(null)
   const [missingMedia, setMissingMedia] = useState<string[]>([])
+
+  // Scheduled-backup dumps already in the server's backups volume. Only
+  // those can be restored (POST /api/auth/setup/restore-dump) — the whole
+  // database, accounts included, so they need no account fields.
+  const [dumps, setDumps] = useState<{ name: string; createdAt: string }[]>([])
+  const [dumpName, setDumpName] = useState('')
+
+  useEffect(() => {
+    if (mode !== 'restore') return
+    api
+      .listSetupDumps()
+      .then((list) => {
+        setDumps(list)
+        setDumpName(list[0]?.name ?? '')
+      })
+      .catch(() => setDumps([]))
+  }, [mode])
+
+  const handleDumpRestore = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setMissingMedia([])
+    setIsLoading(true)
+    try {
+      await api.restoreDump(dumpName)
+      onDumpRestored()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('setup.restoreFailed'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,6 +111,7 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
                 required
               />
             </label>
+            <p className="hint">{t('setup.restoreSourceHint')}</p>
             <p className="hint">{t('setup.restoreAccountHint')}</p>
           </>
         )}
@@ -113,6 +150,37 @@ export function SetupPage({ onSetupComplete }: SetupPageProps) {
             : t(mode === 'restore' ? 'setup.restoreButton' : 'setup.createAccountButton')}
         </Button>
       </form>
+
+      {mode === 'restore' &&
+        (dumps.length > 0 ? (
+          <form onSubmit={handleDumpRestore}>
+            <h2>{t('setup.restoreDumpTitle')}</h2>
+            <p className="hint">
+              {t('setup.restoreDumpHint')}{' '}
+              <a href={DUMP_RESTORE_DOCS_URL} target="_blank" rel="noreferrer">
+                {t('setup.restoreDumpDocsLink')}
+              </a>
+            </p>
+            <SelectField
+              disabled={isLoading}
+              value={dumpName}
+              onValueChange={setDumpName}
+              required
+              aria-label={t('setup.restoreDumpTitle')}
+              items={dumps.map((dump) => ({ value: dump.name, label: new Date(dump.createdAt).toLocaleString() }))}
+            />
+            <Button type="submit" disabled={isLoading || !dumpName}>
+              {isLoading ? t('setup.restoring') : t('setup.restoreDumpButton')}
+            </Button>
+          </form>
+        ) : (
+          <p className="hint">
+            {t('setup.restoreDumpNone')}{' '}
+            <a href={DUMP_RESTORE_DOCS_URL} target="_blank" rel="noreferrer">
+              {t('setup.restoreDumpDocsLink')}
+            </a>
+          </p>
+        ))}
 
       <Button
         variant="link"

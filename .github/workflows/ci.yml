@@ -15,11 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       mobile: ${{ steps.filter.outputs.mobile }}
+      e2e: ${{ steps.filter.outputs.e2e }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           # Empty token = diff against local .git history instead of calling the
@@ -33,13 +34,25 @@ jobs:
               - 'packages/api-client/**'
               - 'package.json'
               - 'package-lock.json'
+            # Everything that ends up in (or starts) the Docker image the
+            # end-to-end smoke tests drive. Docs/website/mobile-only PRs skip
+            # them.
+            e2e:
+              - 'backend/**'
+              - 'web/**'
+              - 'packages/**'
+              - 'e2e/**'
+              - 'docker-compose.yml'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -79,6 +92,22 @@ jobs:
       # ubuntu-latest ships shellcheck; covers the installer served at famlin.app/install.sh.
       - name: Lint shell scripts (ShellCheck)
         run: shellcheck scripts/*.sh
+      # Third-party actions run with this repo's tokens and secrets (GHCR
+      # push, EAS, release-please). A mutable tag (`@v4`) can be repointed to
+      # malicious code if the action's repo is compromised; a full commit SHA
+      # can't. Dependabot/Renovate keep the pins and their `# vX.Y.Z`
+      # comments current. Local reusable workflows (`./...`) are exempt.
+      - name: Check GitHub Actions are pinned to a commit SHA
+        run: |
+          unpinned=$(grep -rnE '^\s*-?\s*uses:' .github/workflows \
+            | grep -vE "uses:\s*['\"]?\./" \
+            | grep -vE "uses:\s*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?(\s|$)" \
+            | grep -vE "uses:\s*['\"]?docker://[^@[:space:]'\"]+@sha256:[0-9a-f]{64}['\"]?(\s|$)" || true)
+          if [ -n "$unpinned" ]; then
+            echo "::error::Pin these actions to a full commit SHA (with a '# vX.Y.Z' comment), docker:// images to @sha256:"
+            echo "$unpinned"
+            exit 1
+          fi
 
   backend:
     name: Backend
@@ -101,8 +130,8 @@ jobs:
       DATABASE_URL: postgresql://famlin:famlin@localhost:5432/famlin_test?schema=public
       JWT_SECRET: ci-test-secret-at-least-32-characters-long
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -154,8 +183,8 @@ jobs:
       BACKUPS_DIR: /tmp/famlin-storage-test-backups
       TEST_S3_ENDPOINT: http://127.0.0.1:9000
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -184,8 +213,8 @@ jobs:
     name: Admin UI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -215,8 +244,8 @@ jobs:
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -240,6 +269,11 @@ jobs:
       - name: Check native peer dependencies are direct
         working-directory: mobile
         run: node scripts/check-native-peer-deps.mjs
+      # @famlin/api-client is symlinked in, so its @tanstack/react-query comes
+      # from the root workspace — mobile's own copy must be the same version.
+      - name: Check shared dependencies match the workspace root
+        working-directory: mobile
+        run: node scripts/check-shared-deps.mjs
       # Expo SDK precompiles native frameworks (RNReanimated etc.) against the
       # exact versions in expo/bundledNativeModules.json. A manually bumped
       # native dep (e.g. react-native-worklets 0.10.2 vs the expected 0.10.0)
@@ -272,8 +306,8 @@ jobs:
     name: Web app & shared API client
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -299,8 +333,8 @@ jobs:
     name: Docs site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -325,7 +359,7 @@ jobs:
   # unmarked breaking change ships silently as a minor entry.
   docs-required:
     # Every new feature ships with documentation (see "Documentation" in
-    # CLAUDE.md and docs/developers/contributing.md). A PR whose title or any
+    # AGENTS.md and docs/developers/contributing.md). A PR whose title or any
     # commit is a conventional-commit `feat` must touch docs/ or website/,
     # unless a commit carries a `Docs-not-needed: <reason>` trailer, or the PR
     # description does.
@@ -333,7 +367,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Require a docs change for feat PRs
@@ -359,7 +393,7 @@ jobs:
             echo "Documentation explicitly marked as not needed — OK."
             exit 0
           fi
-          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in CLAUDE.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
+          echo "::error::This PR adds a feature (a 'feat' commit or PR title) but changes nothing under docs/ or website/. Document the feature (see the Documentation table in AGENTS.md), or, if it really has no user-, admin- or developer-visible behavior to document, add a 'Docs-not-needed: <reason>' line to a commit message or the PR description."
           exit 1
 
   api-breaking-changes:
@@ -369,7 +403,7 @@ jobs:
     env:
       SPEC: docs/openapi/famlin.yaml
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Compare spec against base and require a breaking marker
@@ -417,6 +451,29 @@ jobs:
           echo "::error::$SPEC has breaking API changes (see the job summary), but no commit or PR title carries a conventional-commit breaking marker. Mark it with a '!' after the type (e.g. 'feat!: ...') or add a 'BREAKING CHANGE: <what an admin must do when upgrading>' footer, so release-please surfaces it in the release's breaking-changes section."
           exit 1
 
+  client-compat:
+    # The other direction from api-breaking-changes: new mobile apps talk to
+    # older self-hosted servers (support window: three minor versions back,
+    # issue #378). Fails when @famlin/api-client calls an endpoint missing
+    # from the OpenAPI spec of the oldest supported release, unless the call
+    # carries a `// requires-feature: <id>` comment or is allowlisted in
+    # scripts/client-compat-allowlist.json. See "Supporting older servers"
+    # in docs/developers/contributing.md.
+    name: Client vs oldest supported server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The check reads docs/openapi/famlin.yaml at an old release tag.
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # Dependency-free script — no npm ci needed.
+      - name: Check api-client calls against the oldest supported spec
+        run: npm run check:client-compat
+
   dependency-review:
     # Diffs every lockfile in the repo (root workspace, backend/,
     # backend/admin/, mobile/, docs/) between the PR's base and head and
@@ -434,8 +491,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           config-file: ./.github/dependency-review-config.yml
 
@@ -443,6 +500,7 @@ jobs:
     # Both architectures docker-publish.yml ships, each on a native runner —
     # a green amd64-only build says nothing about arm64.
     name: Docker build (${{ matrix.platform }})
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
@@ -455,10 +513,10 @@ jobs:
             cache-scope: linux-arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build backend image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           # Repo-root context: the image also bundles web/ + packages/ — see
           # backend/Dockerfile.
@@ -486,3 +544,55 @@ jobs:
             console.log('sharp ok, libvips', sharp.versions.vips);
           "
           docker run --rm famlin-ci:test ffmpeg -hide_banner -version | head -1
+
+      # End-to-end smoke tests (e2e/): the image just built, started with the
+      # real zero-config docker-compose.yml, driven through its golden paths in
+      # Chromium — setup, invite, join, photo post, reaction, comment, export.
+      # amd64 only: the arm64 build is covered by the native smoke test above,
+      # and running the same browser flows twice would only add minutes.
+      - name: Start the stack for end-to-end tests
+        id: e2e-stack
+        if: matrix.platform == 'linux/amd64' && needs.changes.outputs.e2e == 'true'
+        env:
+          # docker-compose.yml runs ghcr.io/timvanonckelen/famlin:${FAMLIN_VERSION};
+          # the local tag means Compose uses this build and never pulls.
+          FAMLIN_VERSION: e2e
+        run: |
+          docker tag famlin-ci:test ghcr.io/timvanonckelen/famlin:e2e
+          docker compose -p famlin-e2e -f docker-compose.yml up -d
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:3000/health > /dev/null; then
+              echo "healthy after ${i}x2s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Famlin did not become healthy within 180s"
+          docker compose -p famlin-e2e logs famlin-backend
+          exit 1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.e2e-stack.outcome == 'success'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Run end-to-end tests
+        if: steps.e2e-stack.outcome == 'success'
+        working-directory: e2e
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Show server logs
+        if: failure() && steps.e2e-stack.outcome == 'success'
+        run: docker compose -p famlin-e2e logs --no-color famlin-backend | tail -n 300
+      - name: Upload end-to-end report
+        if: failure() && steps.e2e-stack.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7

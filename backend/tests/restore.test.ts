@@ -265,6 +265,23 @@ describe('POST /api/auth/setup/restore', () => {
     })
     await prisma.user.update({ where: { id: member.id }, data: { pushOnGiftList: false } })
 
+    // Family Wiki: a locked family page and a circle-private one.
+    await prisma.wikiPage.create({
+      data: {
+        groupId: group.id,
+        title: 'Holiday house',
+        emoji: '🏠',
+        category: 'Practical',
+        content: '## Wi-Fi\nfamlin-guest',
+        locked: true,
+        createdById: admin.id,
+        updatedById: member.id,
+      },
+    })
+    await prisma.wikiPage.create({
+      data: { groupId: group.id, circleId: circle.id, title: 'Surprise party', createdById: member.id },
+    })
+
     // Stories: a pinned Highlight (restored, with its reaction) and a live
     // story (deliberately not exported — nor are views or private replies).
     await prisma.group.update({ where: { id: group.id }, data: { storiesEnabled: false } })
@@ -337,6 +354,7 @@ describe('POST /api/auth/setup/restore', () => {
       storyReactions: await prisma.storyReaction.findMany({ orderBy: { id: 'asc' } }),
       giftListItems: await prisma.giftListItem.findMany({ orderBy: { id: 'asc' } }),
       giftDrawAssignments: await prisma.giftDrawAssignment.findMany({ orderBy: { id: 'asc' } }),
+      wikiPages: await prisma.wikiPage.findMany({ orderBy: { id: 'asc' } }),
       branding: await prisma.setting.findMany({
         where: { key: { startsWith: 'brand' } },
         orderBy: { key: 'asc' },
@@ -386,6 +404,7 @@ describe('POST /api/auth/setup/restore', () => {
       branding: 3,
       giftListItems: 1,
       giftDrawAssignments: 2,
+      wikiPages: 2,
     })
 
     const after = await snapshot()

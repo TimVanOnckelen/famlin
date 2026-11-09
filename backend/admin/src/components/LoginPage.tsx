@@ -17,7 +17,7 @@ function getOidcRedirectUri(): string {
   return new URL('/admin/', window.location.origin).toString()
 }
 
-export function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
+export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; notice?: string }) {
   const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
@@ -117,6 +117,11 @@ export function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
           {oidcConfig?.enabled ? t('login.subtitleWithSso', { name: oidcConfig.name }) : t('login.subtitleWithoutSso')}
         </p>
       </div>
+      {notice && (
+        <p className="font-semibold text-muted-foreground" role="status">
+          {notice}
+        </p>
+      )}
       <form className="flex flex-col gap-4 text-left" onSubmit={handlePasswordLogin}>
         <FormField label={t('common.email')} htmlFor="login-email">
           <Input

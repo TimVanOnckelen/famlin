@@ -22,6 +22,7 @@ function App() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [needsSetup, setNeedsSetup] = useState(false)
+  const [loginNotice, setLoginNotice] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -73,12 +74,17 @@ function App() {
             navigate('/getting-started', { replace: true })
           }
         }}
+        onDumpRestored={() => {
+          // The dump brought back the old accounts: sign in with one of them.
+          setNeedsSetup(false)
+          setLoginNotice(t('setup.dumpRestored'))
+        }}
       />
     )
   }
 
   if (!user?.isAdmin) {
-    return <LoginPage onLogin={setUser} />
+    return <LoginPage onLogin={setUser} notice={loginNotice} />
   }
 
   return (

@@ -97,6 +97,18 @@ tags:
       After the draw each participant sees **only their own** recipient
       (`giftList.myRecipient` on the post) — no response exposes the full
       set of pairings, not even to the starter.
+  - name: Wiki
+    description: |
+      The Family Wiki: durable, editable family knowledge (recipes, the
+      holiday house's Wi-Fi, traditions), one wiki per family (group). Any
+      member who can see a page can edit it, unless the page is `locked`
+      (then only its creator or an admin). A page can be narrowed to one
+      circle at creation; circle-private pages are invisible to everyone
+      outside the circle (`404`, never `403`). `content` is a small, safe
+      Markdown subset: headings, bold/italic, lists, checklists, quotes, code,
+      rules, links to `http(s)`/`mailto:`/`tel:` or in-app paths such as
+      `/posts/<id>`, and images from uploaded `/uploads/` files only.
+      Concurrent edits are detected with `baseUpdatedAt`.
   - name: Notifications
     description: Your in-app notification history.
   - name: Storage administration
@@ -224,6 +236,26 @@ paths:
                     Optional invite token; when valid the account joins the
                     invite's group and may be provisioned even if its email
                     isn't on the allow-list.
+                rawNonce:
+                  type: string
+                  minLength: 16
+                  maxLength: 200
+                  description: |
+                    The unhashed nonce the app bound the token to this server
+                    with. The app requests the token with
+                    `nonce = sha256hex("famlin-apple-signin|<nonceHost>|<rawNonce>")`.
+                    A token carrying a nonce is rejected (401) unless that hash
+                    matches and `nonceHost`'s hostname (port ignored) is this
+                    server's: its configured public URL, or while that's unset
+                    the request's `Host` header. Tokens without a nonce (older
+                    app builds) are still accepted.
+                nonceHost:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+                  description: |
+                    The lowercase `host[:port]` of the server URL the app
+                    signed in to, as used in the nonce. Required with `rawNonce`.
       responses:
         '200':
           description: Logged in
@@ -282,6 +314,16 @@ paths:
             schema:
               type: object
               properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Display name; leading and trailing whitespace is removed.
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                  description: Sign-in email; trimmed and lowercased. Must not belong to another user (case-insensitive).
                 avatarUrl:
                   type: string
                   nullable: true
@@ -312,6 +354,8 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email address is already in use by another user. No profile changes are applied.
         '401':
           $ref: '#/components/responses/Unauthorized'
     delete:
@@ -495,6 +539,32 @@ paths:
                       null when the server is unbranded — clients then keep
                       the default Famlin look. Absent on servers that predate
                       branding; treat that like null.
+                  features:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      Named capabilities this server supports, so a client can
+                      hide what an older server can't do by feature rather
+                      than by version. Ids are stable and never renamed or
+                      removed; a newer server may list ids a client doesn't
+                      know, which it should ignore. An id missing from the
+                      list means the server lacks that capability. Absent on
+                      servers up to 0.8.7; clients then treat the ids that
+                      shipped before this field (`accountDeletion`,
+                      `circles`, `stories`, `memberExport`, `giftLists`,
+                      `uploadProcessing`, `livePhotos`) as unknown, try the
+                      feature and read a 404 from its endpoint as
+                      unsupported, and every other id (anything that shipped
+                      with or after this field) as unsupported.
+                      Known ids: `accountDeletion` (0.6.3, `DELETE
+                      /api/auth/me`), `circles` (0.7.0), `stories` (0.8.0),
+                      `memberExport` (0.8.0, `GET /api/auth/me/export`),
+                      `giftLists` (0.8.5), `uploadProcessing` (0.8.7, `GET
+                      /api/uploads/status/{assetKey}`), `livePhotos` (0.8.7),
+                      `deviceDiagnostics` (`/api/devices`), `wiki`
+                      (`/api/wiki`).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki]
 
   /branding/{file}:
     get:
@@ -745,7 +815,8 @@ paths:
           schema: { type: string }
           description: >-
             Return only posts of this type (`UPDATE`, `MILESTONE`, `POLL`,
-            `TRIP`, `ALBUM`). An unrecognized type is a `400`.
+            `TRIP`, `ALBUM`, `GIFT_LIST`, `EVENT`). An unrecognized type is a
+            `400`.
           example: ALBUM
         - $ref: '#/components/parameters/cursor'
         - $ref: '#/components/parameters/take'
@@ -849,6 +920,16 @@ paths:
         each other (symmetric). Only participants can see the post anywhere.
         Wishlists, participant changes, settings and the draw are managed
         through the Gift lists endpoints afterwards.
+
+        `type: "EVENT"` creates an event people can RSVP to: `content` is the
+        event's title (required, non-empty) and `typeData` carries
+        `{ startsAt, endsAt?, location?, rsvpDeadline? }` — `startsAt` is
+        required; `startsAt`/`endsAt`/`rsvpDeadline` are ISO 8601 date-times
+        (an offset is accepted and normalized to UTC), `location` is free text
+        (1-200 chars). `endsAt` can't be before `startsAt`, and
+        `rsvpDeadline` can't be after it. Events cross-post like any other
+        type; RSVPs happen afterwards via
+        `POST /api/posts/{postId}/interactions` (`key: "rsvp"`, see below).
       requestBody:
         required: true
         content:
@@ -883,9 +964,9 @@ paths:
                   maxLength: 5000
                 type:
                   type: string
-                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST]
+                  enum: [UPDATE, MILESTONE, POLL, TRIP, ALBUM, GIFT_LIST, EVENT]
                   default: UPDATE
-                  description: A server may support additional types beyond these six.
+                  description: A server may support additional types beyond these seven.
                 typeData:
                   type: object
                   description: |
@@ -896,7 +977,9 @@ paths:
                     (see the `TRIP` description above). For `ALBUM`:
                     `{ title, coverPhotoUrl? }` (see the `ALBUM` description above).
                     For `GIFT_LIST`: `{ title, occasionDate?, participantUserIds?, drawEnabled?, budget?, exclusions? }`
-                    (see the `GIFT_LIST` description above).
+                    (see the `GIFT_LIST` description above). For `EVENT`:
+                    `{ startsAt, endsAt?, location?, rsvpDeadline? }` (see the
+                    `EVENT` description above).
                   example:
                     options:
                       - { text: Pizza }
@@ -1160,6 +1243,14 @@ paths:
         different option **switches** it. Votes are public to group members
         (not anonymous) and results are visible whether or not you've voted.
         Voting after `closesAt` has passed is rejected.
+
+        For an `EVENT` post: `key: "rsvp"`, `value` one of `"yes"`, `"maybe"`
+        or `"no"` (a plain string). Sending your current answer again
+        **clears** it; a different answer **switches** it. RSVPs are public
+        to the post's audience. Answering is rejected once `rsvpDeadline` has
+        passed, or once the event has started if no deadline was set. On a cross-posted event you have one answer per event,
+        not per family: answering on one copy replaces an answer you left on
+        another.
 
         For a `TRIP` post, three keys are supported. A cross-posted trip
         stays one journal — each of these applies to every sibling group's
@@ -3553,24 +3644,368 @@ paths:
         '409': { description: Confirmation mismatch, incomplete migration or operation already running }
         '401': { description: Authentication required }
         '403': { description: Administrator required }
+  /api/admin/export/token:
+    post:
+      operationId: createAdminExportDownloadToken
+      tags: [Storage administration]
+      summary: One-time download token for the export (admin only)
+      description: |
+        Mints a random token for `GET /api/admin/export?downloadToken=`, so a
+        browser can download the export by plain navigation (streaming it to
+        disk) without an Authorization header. Valid for 60 seconds, single
+        use, bound to the calling admin; login sessions only, not API tokens.
+      responses:
+        '200':
+          description: Download token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string }
+        '401': { description: Authentication required }
+        '403': { description: Administrator required, or called with an API token }
   /api/admin/export:
     get:
       operationId: exportAdminData
       tags: [Storage administration]
       summary: Portable family export (admin only)
+      description: |
+        Streams the archive with `Cache-Control: no-store`. Authenticate with
+        the Authorization header as usual, or with a one-time `downloadToken`
+        from `POST /api/admin/export/token` when the header can't be sent.
       parameters:
         - in: query
           name: includeMedia
           schema: { type: boolean, default: true }
           description: False omits media and records required keys and sizes in the manifest. Branding is always included.
+        - in: query
+          name: downloadToken
+          schema: { type: string }
+          description: One-time token from `POST /api/admin/export/token`, used only when no Authorization header is sent. An unknown, used or expired token is a `401`.
       responses:
         '200':
           description: ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes
           content:
             application/zip:
               schema: { type: string, format: binary }
-        '401': { description: Authentication required }
+        '401': { description: Authentication required, or the download token is invalid }
         '403': { description: Administrator required }
+  /api/auth/setup/dumps:
+    get:
+      operationId: listScheduledBackupDumps
+      tags: [Storage administration]
+      summary: List scheduled-backup dumps on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Lists the scheduled-backup dumps (`famlin-<timestamp>.dump`)
+        already in the backups volume's `db/` folder, newest first. Interrupted
+        (`.partial`) and other files are left out. Rate-limited to 30 requests
+        per 15 minutes per IP.
+      security: []
+      responses:
+        '200':
+          description: The dumps, newest first (empty when there are none)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, size, createdAt]
+                  properties:
+                    name: { type: string, example: famlin-2026-10-20T03-00-00-000Z.dump }
+                    size: { type: integer, description: Size in bytes }
+                    createdAt: { type: string, format: date-time, description: When the dump was taken, from its file name }
+        '409':
+          description: The server already has accounts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+  /api/auth/setup/restore-dump:
+    post:
+      operationId: restoreScheduledBackupDump
+      tags: [Storage administration]
+      summary: Restore a scheduled-backup dump on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Replaces the whole database with one of the dumps listed by
+        `GET /api/auth/setup/dumps`, chosen by name — there is deliberately no
+        upload, because the dump's SQL runs as the database role. Pending
+        migrations are applied afterwards if the dump came from an older Famlin
+        version. Accounts, passwords and settings come back from the dump, so
+        no session is issued, and sessions issued before the restore no longer
+        work: sign in with an existing account afterwards. Rate-limited to 5
+        requests per 15 minutes per IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: A dump file name from GET /api/auth/setup/dumps }
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [restored]
+                properties:
+                  restored: { type: boolean, enum: [true] }
+        '400':
+          description: Not a dump in the backups folder, not a Famlin pg custom-format dump, or made by a newer Famlin version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: The server already has accounts, or setup or another restore is in progress
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+        '500':
+          description: The database role can't recreate the schema (nothing changed), pg_restore failed, or the migrations failed after the restore (details only in the server log)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/wiki/pages:
+    get:
+      operationId: listWikiPages
+      tags: [Wiki]
+      summary: List or search a family's wiki pages
+      description: |
+        The wiki overview, search and "recently updated" in one list: pages
+        you can see in one family, most recently edited first,
+        cursor-paginated. Returns summaries (a plain-text `excerpt`, no
+        `content`). `q` is a case-insensitive search over title, category
+        and content.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 200 }
+          description: Search text.
+        - name: category
+          in: query
+          schema: { type: string, maxLength: 60 }
+          description: Only pages in this category (case-insensitive). An empty value selects uncategorized pages.
+        - $ref: '#/components/parameters/cursor'
+        - $ref: '#/components/parameters/take'
+      responses:
+        '200':
+          description: A page of wiki page summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WikiPageSummary'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: Pass back as `?cursor=` for the next page; `null` on the last page.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+    post:
+      operationId: createWikiPage
+      tags: [Wiki]
+      summary: Create a wiki page
+      description: |
+        Creates a page in one family. With `circleId` the page is visible only
+        to that circle's members (you must be one of them; otherwise `403`).
+        Photos embedded in `content` are bound to the page's audience.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId, title]
+              properties:
+                groupId: { type: string }
+                circleId: { type: string, nullable: true, description: Narrow the page to this circle of the family. }
+                title: { type: string, minLength: 1, maxLength: 120, example: "Grandma's lasagna" }
+                emoji: { type: string, nullable: true, maxLength: 16, description: One emoji used as the page icon. }
+                category: { type: string, nullable: true, maxLength: 60, example: Recipes }
+                content: { type: string, maxLength: 50000, default: '', description: Markdown (the supported subset). }
+                locked: { type: boolean, default: false }
+      responses:
+        '201':
+          description: The created page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You are not a member of this family, or not a member of the target circle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/wiki/categories:
+    get:
+      operationId: listWikiCategories
+      tags: [Wiki]
+      summary: List a family's wiki categories
+      description: |
+        Every category in use among the pages you can see, with page counts,
+        sorted by name. Uncategorized pages are reported once as
+        `name: null`, last.
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WikiCategory'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotGroupMember'
+
+  /api/wiki/pages/{pageId}:
+    parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getWikiPage
+      tags: [Wiki]
+      summary: Get a wiki page
+      responses:
+        '200':
+          description: The page, with its Markdown content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No such page, or you can't see it (not in the family, or a circle you're not in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      operationId: updateWikiPage
+      tags: [Wiki]
+      summary: Edit a wiki page
+      description: |
+        Any member who can see the page may edit it, unless it is `locked`
+        (then only its creator or an admin). Changing `locked` is reserved for
+        the creator or an admin. Send `baseUpdatedAt` (the `updatedAt` you
+        loaded) to detect concurrent edits: if someone saved in between, the
+        request is refused with `409` and the current page, and nothing is
+        overwritten. Omitting it saves unconditionally.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, nullable: true, maxLength: 16 }
+                category: { type: string, nullable: true, maxLength: 60 }
+                content: { type: string, maxLength: 50000 }
+                locked: { type: boolean }
+                baseUpdatedAt: { type: string, format: date-time }
+      responses:
+        '200':
+          description: The updated page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiPage'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The page is locked and you are not its creator or an admin, or you tried to lock/unlock it without being either
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No such page, or you can't see it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Someone else saved the page after `baseUpdatedAt`; the body carries their current version
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      page:
+                        $ref: '#/components/schemas/WikiPage'
+    delete:
+      operationId: deleteWikiPage
+      tags: [Wiki]
+      summary: Delete a wiki page
+      description: Creator or admin only. There is no revision history, so a deleted page can't be restored.
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: You are neither the page's creator nor an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No such page, or you can't see it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
@@ -4000,6 +4435,15 @@ components:
             counts and **your own** Secret Santa recipient. Computed on every
             read, so it's absent from `POST /api/posts` and
             `PATCH /api/posts/{id}` responses.
+        event:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/PostEvent'
+          description: |
+            Present only when `type` is `EVENT` — the event's details plus
+            live RSVP counts, who answered what, and your own answer. Computed
+            on every read, so it's absent from `POST /api/posts` and
+            `PATCH /api/posts/{id}` responses.
         milestoneTag:
           type: string
           nullable: true
@@ -4108,6 +4552,43 @@ components:
         closed:
           type: boolean
           description: '`true` once `closesAt` has passed. Voting a closed poll is rejected.'
+
+    PostEvent:
+      type: object
+      description: |
+        The enriched, read-time view of an `EVENT` post — computed fresh on
+        every read. RSVPs are public to the post's audience. On a cross-posted
+        event each copy shows the answers from every copy you can see, plus
+        answers its own family's members left on other copies: the author
+        sees every family's answers, every family sees all of its own
+        members' answers, and nobody learns about members of families they're
+        not in.
+      properties:
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time, nullable: true }
+        location: { type: string, nullable: true }
+        rsvpDeadline: { type: string, format: date-time, nullable: true }
+        closed:
+          type: boolean
+          description: '`true` once `rsvpDeadline` has passed, or once `startsAt` has if no deadline was set. RSVPing to a closed event is rejected.'
+        myRsvp:
+          type: string
+          enum: [yes, maybe, no]
+          nullable: true
+          description: Your own answer, or `null` if you haven't answered.
+        counts:
+          type: object
+          properties:
+            yes: { type: integer }
+            maybe: { type: integer }
+            no: { type: integer }
+        responses:
+          type: object
+          description: Who answered what, oldest answer first.
+          properties:
+            yes: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
+            maybe: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
+            no: { type: array, items: { $ref: '#/components/schemas/UserSummary' } }
 
     PollOptionResult:
       type: object
@@ -4798,3 +5279,47 @@ components:
           type: string
           nullable: true
           description: Set when the invite is restricted to one email address.
+
+    WikiCategory:
+      type: object
+      properties:
+        name: { type: string, nullable: true, description: "`null` = uncategorized pages." }
+        pageCount: { type: integer, example: 7 }
+
+    WikiPageSummary:
+      type: object
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        circle:
+          type: object
+          nullable: true
+          description: Set when the page is private to a circle you belong to.
+          properties:
+            id: { type: string }
+            name: { type: string }
+        title: { type: string, example: "Grandma's lasagna" }
+        emoji: { type: string, nullable: true, example: "🍝" }
+        category: { type: string, nullable: true, example: Recipes }
+        locked: { type: boolean }
+        excerpt: { type: string, description: Plain-text preview of the content (about 160 characters). }
+        createdBy:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          nullable: true
+          description: "`null` once the author's account was deleted (the page is kept)."
+        updatedBy:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          nullable: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    WikiPage:
+      allOf:
+        - $ref: '#/components/schemas/WikiPageSummary'
+        - type: object
+          properties:
+            content: { type: string, description: Markdown (the supported subset). }
+            canEdit: { type: boolean, description: Whether you may edit it (unlocked, or you are its creator or an admin). }
+            canManage: { type: boolean, description: Whether you may lock, unlock or delete it (creator or admin). }

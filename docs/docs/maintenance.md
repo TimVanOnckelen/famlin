@@ -66,7 +66,35 @@ The container runs as the unprivileged `node` user (uid 1000), so that folder mu
 
 ### Restoring from a scheduled backup
 
-Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
+A scheduled backup is two things in the `famlin-backups` volume: a database dump `db/famlin-<timestamp>.dump` and a mirror of your photos in `uploads/`.
+
+**Onto a fresh server (or another machine): use the setup screen.** This is the easy path when the server you're restoring onto has no accounts yet. The setup screen only restores dumps that are already in the new server's `famlin-backups` volume: it doesn't take an upload, because restoring a dump runs the SQL inside it with full database rights.
+
+1. Get the dump onto the new server. If it's the same machine and the `famlin-backups` volume survived, there's nothing to do. Otherwise copy it out of the old server (`docker compose cp famlin-backend:/app/backups/db/famlin-<timestamp>.dump .`), move it to the new machine, and from the new server's compose folder put it in place — keep the file name as it is:
+
+   ```bash
+   docker compose exec famlin-backend mkdir -p /app/backups/db
+   docker compose cp famlin-<timestamp>.dump famlin-backend:/app/backups/db/
+   docker compose exec -u root famlin-backend chown node:node /app/backups/db/famlin-<timestamp>.dump
+   ```
+
+   If you mounted a host folder at `/app/backups` instead, just copy the file into its `db/` folder, readable by uid 1000.
+
+2. Copy the photos into the new server's uploads volume. With the backup's `uploads/` folder copied over to the new server's compose folder (for example with `rsync` or `scp`) as `./backup-uploads`:
+
+   ```bash
+   docker compose cp ./backup-uploads/. famlin-backend:/app/uploads/
+   docker compose exec -u root famlin-backend sh -c 'rm -rf /app/uploads/.deleted && chown -R node:node /app/uploads'
+   ```
+
+   If the new server already has the `famlin-backups` volume (same machine), use the `cp -a` command from step 4 of the command-line steps below instead.
+
+3. Make sure the new server runs the **same or a newer** Famlin version, and open `/admin`. On the first-run setup screen choose **Restore a backup**, pick the dump under **Restore a scheduled backup** and press **Restore scheduled backup**. No account fields are needed. If the dump doesn't show up, check its location and name, then reload the page.
+4. Sign in with your existing account. The dump is the whole database, so accounts, passwords and server settings all come back; if it came from an older Famlin version, pending migrations are applied right after the restore. A dump from a newer version is refused before anything is changed.
+
+The restore is point-in-time. Everyone is signed out of the apps and signs in again, but passwords and [API tokens](/developers/api) are as they were when the dump was taken. If an account's password or a token was changed or revoked since then because it leaked, reset or revoke it again.
+
+**On the same server, from the command line.** Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
 
 1. List the dumps and pick one:
 
@@ -102,11 +130,11 @@ Run these from the folder that holds your `docker-compose.yml`, with `famlin-db`
 
 ### Restoring from a data export
 
-The admin UI's **Data export** (Server settings → General) is a second, independent kind of backup: one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
+The admin UI's **Data export** is a second, independent kind of backup. You download it on the old server under **Server settings → General → Data export** (leave **Include media in export** on to bring the photos along); scheduled backups never produce a zip. It's one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
 
 1. Start the new server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
 2. Open `/admin`. A fresh server shows the first-run setup screen; choose **Restore a backup**.
-3. Pick the export zip and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
+3. Pick the export `.zip` and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
 4. Wait for the upload and restore to finish — for a large photo library this takes a while.
 
 Restoring only works while the server has **no accounts at all**: it never merges into a server that's already in use, and it's refused once anyone has signed up.
@@ -118,6 +146,8 @@ Restoring only works while the server has **no accounts at all**: it never merge
 - **Invite links, push tokens and API tokens are gone.** Create new invites as needed; the apps re-register for push on next sign-in; members recreate their API tokens.
 - **Every previous session is signed out**, including on devices that were logged in to the old server.
 - Notification history and the push delivery log start empty.
+
+**Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN. Or move servers without the zip: restore a scheduled backup's `.dump` and copy its `uploads/` mirror, as described above.
 
 Treat the export as a complement to the volume backups above, not a replacement: volumes restore *everything*, including settings and passwords; the export is the one you can restore without them.
 
@@ -160,6 +190,16 @@ watchtower:
 ```
 
 Since schema migrations run automatically on start (see above), an unattended update also means unattended migrations. That's usually fine, but a breaking change would apply itself before you've had a chance to read the release notes — if you'd rather review [breaking changes](https://github.com/timvanonckelen/famlin/releases) first, stick to the manual `pull`/`up -d` flow above, or pin `FAMLIN_VERSION` and bump it deliberately instead of running Watchtower against `latest`.
+
+## App and server versions
+
+The mobile apps update through the app stores, so they're often newer than your server. Each app release supports servers up to **three minor versions older** than itself: app 0.8.x works with servers 0.5.0 and newer, app 0.11.x with servers 0.8.0 and newer.
+
+Within that window, a new app feature your server doesn't have yet is hidden: the app asks the server which features it supports and hides the ones it reports as missing. Servers too old to report their features at all get a best-effort fallback — the app tries the feature and hides it, or explains it isn't available, when the server turns out not to have it. Update the server to get it.
+
+When your server is older than the window, the app shows a warning banner at the top of the feed. It's a soft warning: the app keeps working, but some things may not. Members are asked to contact their admin; admins see the minimum server version and a link to this page. The banner can be dismissed, once per server version — it comes back if the server changes to another version that's still too old.
+
+If you're an admin and see it, [update your server](#updating). The minimum server version is only raised in an app release marked as a breaking change, so it's called out in the release notes.
 
 ## Pinning a version
 

@@ -1,0 +1,81 @@
+.avatar-crop-card {
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.avatar-crop-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  align-self: center;
+  background: white;
+  touch-action: none;
+  cursor: grab;
+}
+.avatar-crop-preview:active {
+  cursor: grabbing;
+}
+.avatar-crop-preview img {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: top left;
+  transition: transform 180ms ease-out;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+.avatar-crop-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 160px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+.avatar-crop-zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+  cursor: default;
+}
+.avatar-crop-zoom button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--fam-border);
+  border-radius: 50%;
+  background: var(--fam-surface);
+  color: var(--fam-primary-dark);
+  box-shadow: var(--shadow);
+  font: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.avatar-crop-zoom button:hover:not(:disabled) {
+  background: var(--fam-primary-tint);
+}
+.avatar-crop-zoom button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.avatar-crop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.avatar-crop-preview[data-dragging] img {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar-crop-preview img {
+    transition: none;
+  }
+}

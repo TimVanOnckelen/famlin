@@ -502,6 +502,52 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Wiki",
+      link: {
+        type: "doc",
+        id: "api-reference/wiki",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/list-wiki-pages",
+          label: "List or search a family's wiki pages",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/create-wiki-page",
+          label: "Create a wiki page",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-wiki-categories",
+          label: "List a family's wiki categories",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-wiki-page",
+          label: "Get a wiki page",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/update-wiki-page",
+          label: "Edit a wiki page",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-wiki-page",
+          label: "Delete a wiki page",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Notifications",
       link: {
         type: "doc",
@@ -568,9 +614,27 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/create-admin-export-download-token",
+          label: "One-time download token for the export (admin only)",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "api-reference/export-admin-data",
           label: "Portable family export (admin only)",
           className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-scheduled-backup-dumps",
+          label: "List scheduled-backup dumps on a fresh server",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/restore-scheduled-backup-dump",
+          label: "Restore a scheduled-backup dump on a fresh server",
+          className: "api-method post",
         },
       ],
     },
@@ -858,6 +922,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/postevent",
+          label: "PostEvent",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/polloptionresult",
           label: "PollOptionResult",
           className: "schema",
@@ -1004,6 +1074,24 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/invitepreview",
           label: "InvitePreview",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/wikicategory",
+          label: "WikiCategory",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/wikipagesummary",
+          label: "WikiPageSummary",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/wikipage",
+          label: "WikiPage",
           className: "schema",
         },
       ],

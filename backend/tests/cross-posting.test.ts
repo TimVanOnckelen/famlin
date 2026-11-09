@@ -5,7 +5,7 @@ import { prisma } from '../src/db.js'
 import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js'
 
 // Cross-posting fans one write out into one Post row per target group,
-// sharing Post.crossPostId — see routes/posts.ts's POST / and CLAUDE.md.
+// sharing Post.crossPostId — see routes/posts.ts's POST / and AGENTS.md.
 // Privacy rule under test throughout: crossPostId itself must never appear
 // in any API response, and `sharedWithGroups` must only ever appear for the
 // author's own view of the post.

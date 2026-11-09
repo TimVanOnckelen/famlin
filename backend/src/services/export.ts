@@ -52,7 +52,9 @@ import path from 'node:path'
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
 // stream, so headers can be sent before/while archiver produces bytes.
-export async function buildExportArchive(includeMedia = true): Promise<Archiver> {
+// `onError` is attached as soon as the archive exists: a media entry can fail
+// (and fail the archive) while the rest is still being built.
+export async function buildExportArchive(includeMedia: boolean, onError: (err: Error) => void): Promise<Archiver> {
   const [
     users,
     groups,
@@ -71,6 +73,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
     liveStories,
     giftListItems,
     giftDrawAssignments,
+    wikiPages,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -132,6 +135,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
     // they're in the archive — the one place the full set leaves the
     // database (an admin-only download, never a member-facing response).
     prisma.giftDrawAssignment.findMany(),
+    prisma.wikiPage.findMany(),
   ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
@@ -142,6 +146,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   })
 
   const archive: Archiver = new ZipArchive({ store: true })
+  archive.on('error', onError)
 
   const requiredMedia: { key: string; size: number }[] = []
 
@@ -167,6 +172,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
       highlights: highlights.length,
       giftListItems: giftListItems.length,
       giftDrawAssignments: giftDrawAssignments.length,
+      wikiPages: wikiPages.length,
       branding: branding.length,
     },
   }
@@ -187,6 +193,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
   archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
   archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })
+  archive.append(JSON.stringify(wikiPages, null, 2), { name: 'data/wiki-pages.json' })
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)
@@ -210,6 +217,7 @@ export async function buildExportArchive(includeMedia = true): Promise<Archiver>
   )
 
   for await (const object of getStorage().list()) {
+    if (archive.destroyed) break
     if (liveOnlyKeys.has(uploadAssetKey(object.key))) continue
     requiredMedia.push({ key: object.key, size: object.size })
     if (includeMedia) appendStoredObject(archive, object.key)

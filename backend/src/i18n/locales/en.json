@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "This email address is already in use",
     "authFailed": "Authentication failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "adminRequired": "Admin required",
@@ -57,6 +58,12 @@
     "restoreArchiveMissing": "Choose a Famlin export (.zip) to restore",
     "restoreArchiveInvalid": "This file isn't a valid Famlin export",
     "restoreArchiveTooNew": "This backup was made by a newer version of Famlin. Update this server first, then restore it",
+    "restoreDumpInvalid": "This file isn't a Famlin scheduled backup (.dump)",
+    "restoreDumpFailed": "The backup couldn't be restored. Check the server log for details",
+    "restoreDumpUnknown": "That backup isn't in this server's backups folder",
+    "restoreDumpNoPrivilege": "Famlin's database account can't recreate its schema, so nothing was restored. Check the server log for details",
+    "restoreDumpMigrateFailed": "The backup was restored, but updating it to this Famlin version failed. Restart the server and check its log",
+    "setupInProgress": "Setup or a restore is already in progress. Try again in a moment",
     "immichNotConfigured": "Immich is not configured",
     "immichUnreachable": "Could not reach the Immich server with these settings",
     "immichAlbumAlreadyLinked": "This album is already linked to this group",
@@ -66,6 +73,7 @@
     "mediaAlbumAlreadyLinked": "This album is already linked to this group",
     "mediaAlbumLinkNotFound": "Media album link not found",
     "apiTokenSessionRequired": "API tokens can only be created from a normal login session, not with another API token",
+    "exportDownloadTokenInvalid": "This download link has expired or was already used. Start the export again.",
     "sessionRequired": "This action can only be performed from a normal login session, not with an API token",
     "apiTokenNotFound": "API token not found",
     "mediaPersonLinkNotFound": "Person mapping not found",
@@ -78,6 +86,10 @@
     "pollClosed": "This poll is closed",
     "invalidPollOption": "Invalid poll option",
     "pollQuestionRequired": "A poll needs a question",
+    "eventTitleRequired": "An event needs a title",
+    "eventEndsBeforeStart": "The end can't be before the start",
+    "eventDeadlineAfterStart": "The RSVP deadline can't be after the event starts",
+    "eventClosed": "RSVPs for this event are closed",
     "postTypeNotAllowed": "This post type is not allowed in this group",
     "tripNotAuthor": "Only the trip's author can do this",
     "tripNotTraveler": "Only the trip's travelers can check in",
@@ -117,7 +129,12 @@
     "giftDrawTooFewParticipants": "A Secret Santa draw needs at least 3 participants.",
     "giftDrawImpossible": "No draw is possible with these exclusions. Remove some exclusions and try again.",
     "giftAlreadyDrawn": "The names have already been drawn.",
-    "giftDrawWillReset": "This change discards the current draw. Confirm to redraw the names."
+    "giftDrawWillReset": "This change discards the current draw. Confirm to redraw the names.",
+    "wikiPageNotFound": "Wiki page not found",
+    "wikiPageLocked": "This page is locked. Only its creator or an admin can edit it.",
+    "wikiPageLockForbidden": "Only the page's creator or an admin can lock or unlock it.",
+    "wikiPageDeleteForbidden": "Only the page's creator or an admin can delete it.",
+    "wikiPageConflict": "Someone else saved this page in the meantime. Review their changes and try again."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

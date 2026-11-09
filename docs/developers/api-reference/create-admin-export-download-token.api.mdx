@@ -1,0 +1,63 @@
+---
+id: create-admin-export-download-token
+title: "One-time download token for the export (admin only)"
+description: "Mints a random token for `GET /api/admin/export?downloadToken=`, so a"
+sidebar_label: "One-time download token for the export (admin only)"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVdtu40YM/RViXpoEqp1e0Af1Bi82LVKg2KDJdlFYxpqWaGs2I87scGTHNQz0I/qF/ZKCIzvXRb+gfrEtccjDw8MzO+MDRUzW82VjSlNHwkSTprN8cRd8TK/9hp3H5sbfEpvCJFyJKafmOvmIKwLUUCtpyGFmhWlI6mhD/luaXy0nAYSI3PgOkqaBpY8w//niBsYY7DinGFMu92PzuN738wLEA1a8iH4jFKFGhmMIpJZgOAaLLQSHloFxbVcZC5xIioSd5RXYBMlX3Fi5PYWNTa3vEyDDpE+tj/bP4UBL2FAcwe/obJNBfnMOQrXnRgoQyytHFfdCBSx8zw0knzHU6JxWyY18C86vLIOQiPUs4NltC2CfYHJ1ORAgo0q5jCTBs5CYcme+PD/Xr6fsvb5v9UB/7TkRJ43EEJytM/LxB9HwnZG6pQ71V9oGMqXxiw9Up1zrY28jNTq7IdmsMCHq9JMdEAyPH85KipZXZp8/hfn6/IuXAJVA4nTAAfdVcvxXn4h/kIuPD+GF8THTSE0eT57NkS1Tcu+cQugotV5lGrxoUwFTa0rzQkXjI11CcU1RBbszfXSmNG1KQcrxeImdszyiO+yCo1HtO/Ncun/4PoLfMPyUY6Gh4Py2U/r3M81d99GmbU6+IIwUlQ1TTmePX1/rSAaCHwfds6yAFGkOM+Uh6AWYCQSK4hkdYF2TyGGVTuZDJ+8Dpvej0WhewLDDDVjO6tzQAjCEU/CxYjzqEn55dwPL6DuYX725Pm5in9pxlu98BK+8ziESCHHKmQQ7gg1uy4rnTzanhFcZNXyXQf0wV33rwCwvfe7VJqfNHZicXF2awuhkhubqPkal9XnTF2uK2yP9wyzzwgsJpNYK/HZxfZOF0nNDEebaxRz++evvB7xZRi1V7JdLW1t00PmFdQTIzZEbgV5oBO+y8mD6SaZnJ+OG1uR0Y0TrnFa89X12pEVvXQPbo14sJ1oNhiiAK7QsaXi7xM667WdyaGZUccUT5+Cw1mAFpPaBGjW0s7NV9H2AjroFRWltODsr4VhTbQUiYTM0Em2iiu/zMOSzAie5pCU5zScX5DyvIPkiH0stRdKq7HWwgHHwtRZTxYHi0PoIrolg+lYdMBM7ubp8SUc2THziB0VGtNYHnmUoufHxlho4LF52wn2RF7rD7D6MeQ/eMH2ebEeP7P7+7nhk/Cd57zMbp8/1s3uwy//vof+4hw5OlOgujTN6nUi2y93BYqcGgzWFyZlNYYZu9ejxKmnVkcup2e0WKPQ2uv1eH3/sKapDzgqzxmhxoTYwne0LMzSZzfOWtupwdU1Bc67R9YrnxQWntnp/Bahrmf3+X+MzG1k=
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"One-time download token for the export (admin only)"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/admin/export/token"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Mints a random token for `GET /api/admin/export?downloadToken=`, so a
+browser can download the export by plain navigation (streaming it to
+disk) without an Authorization header. Valid for 60 seconds, single
+use, bound to the calling admin; login sessions only, not API tokens.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./create-admin-export-download-token.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./create-admin-export-download-token.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

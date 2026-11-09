@@ -9,7 +9,7 @@ type PollTypeData = { options: PollOption[] }
 // Custom post types + polls (services/postTypes/) — Post.type is now an open
 // string discriminator validated by a PostTypeHandler registry, and
 // PostInteraction is the generic per-user-state table (votes today). See
-// CLAUDE.md and services/postTypes/poll.ts for the full contract: votes are
+// AGENTS.md and services/postTypes/poll.ts for the full contract: votes are
 // public, single-choice, options immutable after creation, and vote
 // semantics mirror reactions (same option again = unvote, different =
 // switch).
@@ -511,6 +511,7 @@ describe('custom post types + polls', () => {
         'TRIP',
         'ALBUM',
         'GIFT_LIST',
+        'EVENT',
       ])
       expect((byId.get(restrictedGroup.id) as { allowedPostTypes: string[] }).allowedPostTypes).toEqual(['UPDATE'])
 
@@ -595,6 +596,7 @@ describe('custom post types + polls', () => {
         { id: 'TRIP' },
         { id: 'ALBUM' },
         { id: 'GIFT_LIST' },
+        { id: 'EVENT' },
       ])
 
       const denied = await app.inject({ method: 'GET', url: '/api/admin/post-types', headers: authHeader(member) })

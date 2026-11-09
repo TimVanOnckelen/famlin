@@ -9,6 +9,7 @@ exports.ensureFreshMediaToken = ensureFreshMediaToken;
 exports.uploadKey = uploadKey;
 exports.fetchUploadProcessing = fetchUploadProcessing;
 const client_1 = require("./client");
+const features_1 = require("./features");
 // Extensions the backend may have generated a `-thumbnail.jpg` sibling for
 // (see backend/src/services/uploadVariants.ts) — .gif and video extensions
 // never get one. Uploads made before that feature shipped also won't have
@@ -26,7 +27,20 @@ const THUMBNAIL_ELIGIBLE_EXTENSIONS = new Set([
     '.m4v',
     '.webm',
 ]);
+// Media-proxy URLs (/api/media/assets/<linkId>/<assetId>/<variant>.<ext>, and
+// the legacy /api/immich/assets/... shape) carry the rendition as the last
+// path segment, not in the filename — the backend's parseMediaAssetPath only
+// accepts thumbnail.jpg/preview.jpg/original.<ext>, so a `-thumbnail.jpg`
+// suffix there 404s (issue #386). Swap the segment instead.
+const MEDIA_PROXY_ASSET_PATH = /^(\/api\/(?:media|immich)\/assets\/[^/]+\/[^/]+\/)[^/]+$/;
 function toThumbnailPath(path) {
+    const proxyMatch = path.match(MEDIA_PROXY_ASSET_PATH);
+    if (proxyMatch)
+        return `${proxyMatch[1]}thumbnail.jpg`;
+    // Only local uploads have -thumbnail.jpg siblings; any other shape (an
+    // external URL, an unknown path) is left as-is rather than guessed at.
+    if (!path.startsWith('/uploads/'))
+        return path;
     const dotIndex = path.lastIndexOf('.');
     const ext = dotIndex >= 0 ? path.slice(dotIndex).toLowerCase() : '';
     if (!THUMBNAIL_ELIGIBLE_EXTENSIONS.has(ext))
@@ -124,6 +138,21 @@ function uploadKey(url) {
     return (url.match(/\/uploads\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-thumbnail)?\.[a-z0-9]+(?:\?|$)/i)?.[1] ?? null);
 }
 async function fetchUploadProcessing(assetKey) {
-    const response = await client_1.api.get(`/uploads/status/${assetKey}`);
-    return response.data;
+    try {
+        // requires-feature: uploadProcessing
+        const response = await client_1.api.get(`/uploads/status/${assetKey}`);
+        return response.data;
+    }
+    catch (error) {
+        // Servers older than 0.8.7 have no status endpoint and 404 every request,
+        // even though the upload itself loads fine — report it as ready so the UI
+        // shows the photo instead of "processing failed" (null urls make callers
+        // fall back to the original URL). Newer servers also 404 when the caller
+        // can't read the upload, which is safe to map the same way: the image
+        // request itself is refused too.
+        if ((0, features_1.isNotFoundError)(error)) {
+            return { status: 'ready', url: null, thumbnailUrl: null };
+        }
+        throw error;
+    }
 }

@@ -29,8 +29,10 @@ async function loginWithOidc(idToken, inviteToken) {
 // authorization for this app — Apple never discloses it again, so pass it
 // through when present and omit it otherwise (the server keeps the name
 // already on file).
-async function loginWithApple(identityToken, fullName, inviteToken) {
-    const response = await client_1.api.post('/auth/apple', { identityToken, fullName, inviteToken });
+// `binding` is how the app tied the token to this server (performAppleLogin
+// in the mobile app, appleNonceFor on the server).
+async function loginWithApple(identityToken, fullName, inviteToken, binding) {
+    const response = await client_1.api.post('/auth/apple', { identityToken, fullName, inviteToken, ...binding });
     return response.data;
 }
 async function exchangeOidcMobileHandoff(code) {
@@ -79,6 +81,7 @@ async function fetchServerInfo() {
 // cascades to (posts, comments, reactions, favorites, chat messages,
 // notifications). There is no restore — callers must confirm first.
 async function deleteAccount() {
+    // requires-feature: accountDeletion
     await client_1.api.delete('/auth/me');
 }
 // Self-service data export (GET /api/auth/me/export): a zip of everything
@@ -88,6 +91,7 @@ async function deleteAccount() {
 // to disk instead via getMyExportRequest(), since holding a whole family's
 // media in JS memory would not survive on a phone.
 async function downloadMyExport() {
+    // requires-feature: memberExport
     const response = await client_1.api.get('/auth/me/export', { responseType: 'blob', timeout: 0 });
     return response.data;
 }
@@ -98,6 +102,7 @@ async function getMyExportRequest() {
     if (!serverUrl)
         throw new Error('No server URL configured');
     const token = await (0, storage_1.getStorageAdapter)().getItem(storage_1.TOKEN_KEY);
+    // requires-feature: memberExport
     return {
         url: `${serverUrl}/api/auth/me/export`,
         headers: token ? { Authorization: `Bearer ${token}` } : {},

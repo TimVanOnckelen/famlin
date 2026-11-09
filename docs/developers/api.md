@@ -67,7 +67,7 @@ Media tokens are valid for 7 days, can only read media (they are not a session c
 
 **Requests and responses are JSON** (`Content-Type: application/json`), except file uploads (multipart) and media downloads. IDs are opaque strings (cuid). Timestamps are ISO 8601 in UTC, e.g. `"2026-07-08T09:00:00.000Z"`.
 
-**Errors** always have the shape `{ "error": "<message>" }`. Validation failures (400) add a `details` object describing the offending fields. Error messages are translated: send `Accept-Language: nl` for Dutch or `Accept-Language: zh` for Simplified Chinese (default English).
+**Errors** always have the shape `{ "error": "<message>" }`. Validation failures (400) add a `details` object describing the offending fields. Error messages are translated: send `Accept-Language: nl` for Dutch, `Accept-Language: zh` for Simplified Chinese `Accept-Language: pt-PT` for European Portuguese or `Accept-Language: fr` for French (default English; any other `pt` variant also gets European Portuguese).
 
 | Status | Meaning |
 | --- | --- |
@@ -128,6 +128,26 @@ curl -X POST "$FAMLIN_URL/api/posts/$POST_ID/interactions" \
 ```
 
 Sending the same `{"key": "vote", "value": {"optionId": "..."}}` again **removes** your vote; sending a different `optionId` **switches** it — the same toggle-or-switch behavior as reactions. Votes are public to group members (not anonymous), and everyone can see the tally whether or not they've voted yet.
+
+## Recipe: create an event and RSVP
+
+`type: "EVENT"` creates an event: `content` is its title, and `typeData` carries `{startsAt, endsAt?, location?, rsvpDeadline?}` (ISO 8601 date-times; only `startsAt` is required). RSVPs go through [`POST /api/posts/{postId}/interactions`](./api-reference/interact-with-post) with `key: "rsvp"` and a plain-string `value` of `"yes"`, `"maybe"` or `"no"`:
+
+```bash
+EVENT_ID=$(curl -s -X POST "$FAMLIN_URL/api/posts" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"groupId": "cmb1ghi...", "type": "EVENT", "content": "Sunday lunch at grandma'"'"'s", "typeData": {"startsAt": "2026-11-15T13:00:00+00:00", "location": "Grandma'"'"'s house", "rsvpDeadline": "2026-11-13T20:00:00Z"}}' \
+  | jq -r '.id')
+
+# Answer — the response is the full post, with counts and the guest list in `event`
+curl -X POST "$FAMLIN_URL/api/posts/$EVENT_ID/interactions" \
+  -H "Authorization: Bearer $FAMLIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "rsvp", "value": "yes"}'
+```
+
+Sending your current answer again **clears** it; a different answer **switches** it. Answers are public to the post's audience and close once `rsvpDeadline` passes, or when the event starts if no deadline was set. A cross-posted event (pass `groupIds`) keeps one answer per person. Each family's copy shows all of its own members' answers, wherever they answered, plus the answers from any other copy you can see — so the author sees everyone's, and nobody learns about members of families they're not in.
 
 ## Recipe: start a trip and check in
 

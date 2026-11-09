@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "Dit e-mailadres is al in gebruik",
     "authFailed": "Authenticatie mislukt",
     "invalidEmailOrPassword": "Ongeldig e-mailadres of wachtwoord",
     "adminRequired": "Admin rechten vereist",
@@ -57,6 +58,12 @@
     "restoreArchiveMissing": "Kies een Famlin-export (.zip) om terug te zetten",
     "restoreArchiveInvalid": "Dit bestand is geen geldige Famlin-export",
     "restoreArchiveTooNew": "Deze back-up is gemaakt met een nieuwere versie van Famlin. Werk deze server eerst bij en zet de back-up daarna terug",
+    "restoreDumpInvalid": "Dit bestand is geen geplande Famlin-back-up (.dump)",
+    "restoreDumpFailed": "De back-up kon niet worden teruggezet. Bekijk het serverlogboek voor details",
+    "restoreDumpUnknown": "Die back-up staat niet in de back-upmap van deze server",
+    "restoreDumpNoPrivilege": "Het databaseaccount van Famlin kan het schema niet opnieuw aanmaken, dus er is niets teruggezet. Bekijk het serverlogboek voor details",
+    "restoreDumpMigrateFailed": "De back-up is teruggezet, maar bijwerken naar deze Famlin-versie is mislukt. Herstart de server en bekijk het logboek",
+    "setupInProgress": "Er loopt al een installatie of herstel. Probeer het zo opnieuw",
     "immichNotConfigured": "Immich is niet geconfigureerd",
     "immichUnreachable": "Kan de Immich-server niet bereiken met deze instellingen",
     "immichAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
@@ -66,6 +73,7 @@
     "mediaAlbumAlreadyLinked": "Dit album is al gekoppeld aan deze groep",
     "mediaAlbumLinkNotFound": "Media-albumkoppeling niet gevonden",
     "apiTokenSessionRequired": "API-tokens kunnen alleen worden aangemaakt vanuit een gewone inlogsessie, niet met een ander API-token",
+    "exportDownloadTokenInvalid": "Deze downloadlink is verlopen of al gebruikt. Start de export opnieuw.",
     "sessionRequired": "Deze actie kan alleen vanuit een gewone inlogsessie, niet met een API-token",
     "apiTokenNotFound": "API-token niet gevonden",
     "mediaPersonLinkNotFound": "Persoonskoppeling niet gevonden",
@@ -78,6 +86,10 @@
     "pollClosed": "Deze peiling is gesloten",
     "invalidPollOption": "Ongeldige peilingsoptie",
     "pollQuestionRequired": "Een peiling heeft een vraag nodig",
+    "eventTitleRequired": "Een evenement heeft een titel nodig",
+    "eventEndsBeforeStart": "Het einde kan niet voor het begin liggen",
+    "eventDeadlineAfterStart": "De deadline om te reageren kan niet na de start van het evenement liggen",
+    "eventClosed": "Reageren op dit evenement is gesloten",
     "postTypeNotAllowed": "Dit berichttype is niet toegestaan in deze groep",
     "tripNotAuthor": "Alleen de auteur van de reis kan dit doen",
     "tripNotTraveler": "Alleen de reizigers van deze reis kunnen inchecken",
@@ -117,7 +129,12 @@
     "giftDrawTooFewParticipants": "Lootjes trekken kan pas vanaf 3 deelnemers.",
     "giftDrawImpossible": "Met deze uitsluitingen is geen trekking mogelijk. Verwijder enkele uitsluitingen en probeer opnieuw.",
     "giftAlreadyDrawn": "De lootjes zijn al getrokken.",
-    "giftDrawWillReset": "Deze wijziging maakt de huidige trekking ongedaan. Bevestig om opnieuw lootjes te trekken."
+    "giftDrawWillReset": "Deze wijziging maakt de huidige trekking ongedaan. Bevestig om opnieuw lootjes te trekken.",
+    "wikiPageNotFound": "Wikipagina niet gevonden",
+    "wikiPageLocked": "Deze pagina is vergrendeld. Alleen de maker of een beheerder kan ze bewerken.",
+    "wikiPageLockForbidden": "Alleen de maker van de pagina of een beheerder kan ze vergrendelen of ontgrendelen.",
+    "wikiPageDeleteForbidden": "Alleen de maker van de pagina of een beheerder kan ze verwijderen.",
+    "wikiPageConflict": "Iemand anders heeft deze pagina intussen opgeslagen. Bekijk hun wijzigingen en probeer opnieuw."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

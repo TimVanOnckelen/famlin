@@ -4,8 +4,12 @@ import { SUPPORTED_LANGUAGES } from './i18n/index.js'
 // Matches exactly what routes/uploads.ts writes: /uploads/<uuid>.<allowed-ext>.
 // Rejects arbitrary external URLs so a post/comment can't point at a
 // tracking pixel or another group's asset path.
-const UPLOAD_PATH_REGEX =
-  /^\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)$/
+const UPLOAD_PATH_SOURCE =
+  '/uploads/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpg|jpeg|png|gif|webp|heic|heif|mp4|mov|m4v|webm)'
+const UPLOAD_PATH_REGEX = new RegExp(`^${UPLOAD_PATH_SOURCE}$`)
+// The same shape, unanchored, for finding upload paths embedded in free text
+// (a wiki page's Markdown, services/wiki.ts). Global — use with match().
+export const EMBEDDED_UPLOAD_PATH_REGEX = new RegExp(UPLOAD_PATH_SOURCE, 'g')
 // Exported so postTypes handlers (e.g. trip.ts's coverPhotoUrl/photoUrls) can
 // reuse the exact same "must be a /uploads/ path" check without re-deriving
 // the regex.
@@ -48,6 +52,16 @@ export function parseMediaAssetPath(path: string): MediaAssetPath | null {
   return { linkId, assetId, variant: (thumbOrPreview ?? original) as MediaAssetPath['variant'] }
 }
 
+// Web/mobile clients before the #386 fix requested a media-proxy thumbnail
+// by suffixing the filename (`preview.jpg` -> `preview-thumbnail.jpg`), the
+// /uploads/ convention. Already-installed apps and cached web bundles keep
+// sending that, so the proxy routes map it to the `thumbnail` rendition the
+// client wanted. Route-only on purpose: parseMediaAssetPath (and so the
+// validation of URLs stored in posts) stays strict.
+export function normalizeLegacyMediaVariant(variantExt: string): string {
+  return /^(?:thumbnail|preview|original)-thumbnail\.jpg$/.test(variantExt) ? 'thumbnail.jpg' : variantExt
+}
+
 const mediaAssetPathSchema = z
   .string()
   .refine((path) => parseMediaAssetPath(path) !== null, 'Must be a valid media asset path')
@@ -65,6 +79,10 @@ export const appleLoginBodySchema = z.object({
   identityToken: z.string(),
   fullName: z.string().max(100).optional(),
   inviteToken: z.string().optional(),
+  // How the app bound the token to this server (appleNonceFor in
+  // services/appleLogin.ts). Absent from older app builds.
+  rawNonce: z.string().min(16).max(200).optional(),
+  nonceHost: z.string().min(1).max(300).optional(),
 })
 
 // Used by the admin UI when the configured OIDC provider requires a client
@@ -302,6 +320,8 @@ export const notificationPrefsSchema = z.object({
 // pictures are synced separately in routes/auth.ts and don't go through this
 // schema.)
 export const updateUserBodySchema = notificationPrefsSchema.extend({
+  name: z.string().trim().min(1).max(100).optional(),
+  email: z.string().trim().email().max(254).toLowerCase().optional(),
   avatarUrl: uploadPathSchema.optional().nullable(),
 })
 
@@ -338,6 +358,12 @@ export const setupBodySchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100),
   password: z.string().min(8).max(100),
+})
+
+// A file name in the backups volume's db/ folder; the exact name pattern is
+// checked by restoreDump() (services/backup/restoreDump.ts).
+export const restoreDumpBodySchema = z.object({
+  name: z.string().min(1).max(200),
 })
 
 export const changePasswordBodySchema = z.object({
@@ -567,4 +593,53 @@ export const adminDeleteCircleQuerySchema = z.object({
     .union([z.literal('true'), z.literal('false')])
     .optional()
     .transform((v) => v === 'true'),
+})
+
+// Family Wiki (issue #118), routes/wiki.ts.
+const wikiTitleSchema = z.string().trim().min(1).max(120)
+// One short emoji (a grapheme can be several code units — flags, ZWJ
+// sequences — hence the generous max), or null/'' to clear it.
+const wikiEmojiSchema = z
+  .string()
+  .trim()
+  .max(16)
+  .nullable()
+  .transform((v) => (v ? v : null))
+const wikiCategorySchema = z
+  .string()
+  .trim()
+  .max(60)
+  .nullable()
+  .transform((v) => (v ? v : null))
+const wikiContentSchema = z.string().max(50_000)
+
+export const wikiListQuerySchema = paginationQuerySchema.extend({
+  groupId: z.string().min(1),
+  q: z.string().trim().max(200).optional(),
+  // '' selects uncategorized pages.
+  category: z.string().trim().max(60).optional(),
+})
+
+export const wikiCategoriesQuerySchema = z.object({ groupId: z.string().min(1) })
+
+export const createWikiPageSchema = z.object({
+  groupId: z.string().min(1),
+  circleId: z.string().min(1).nullable().optional(),
+  title: wikiTitleSchema,
+  emoji: wikiEmojiSchema.optional(),
+  category: wikiCategorySchema.optional(),
+  content: wikiContentSchema.default(''),
+  locked: z.boolean().optional(),
+})
+
+export const updateWikiPageSchema = z.object({
+  title: wikiTitleSchema.optional(),
+  emoji: wikiEmojiSchema.optional(),
+  category: wikiCategorySchema.optional(),
+  content: wikiContentSchema.optional(),
+  locked: z.boolean().optional(),
+  // Optimistic concurrency: the updatedAt the editor started from. When it no
+  // longer matches, someone else saved in between and the PATCH 409s
+  // (errors.wikiPageConflict) instead of silently overwriting their edit.
+  baseUpdatedAt: z.string().datetime().optional(),
 })

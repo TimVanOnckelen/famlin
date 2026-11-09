@@ -33,7 +33,7 @@ Famlin is a small social network for one family (or a few related ones): share u
 - **Your photos, your storage** — uploads stay on your server, and you can link existing albums from [Immich](https://immich.app) or a local folder.
 - **Flexible login** — email and password, any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak, …), or Sign in with Apple. Invite links make joining easy.
 - **Your brand** — set your family's name, color and logo.
-- **Multilingual** — English, Dutch and Simplified Chinese.
+- **Multilingual** — English, Dutch, Simplified Chinese, European Portuguese and French.
 - **Export and restore** — download everything as one archive, and restore it into a fresh server.
 
 📖 Full documentation: **[famlin.app/docs](https://famlin.app/docs)**
@@ -174,6 +174,8 @@ Thanks to everyone who has contributed to Famlin!
 <!-- CONTRIBUTORS:START -->
 <a href="https://github.com/TimVanOnckelen"><img src="https://avatars.githubusercontent.com/u/2817556?v=4&s=64" width="64" height="64" alt="TimVanOnckelen" title="TimVanOnckelen" /></a>
 <a href="https://github.com/codewec"><img src="https://avatars.githubusercontent.com/u/4204501?v=4&s=64" width="64" height="64" alt="codewec" title="codewec" /></a>
+<a href="https://github.com/mprazz"><img src="https://avatars.githubusercontent.com/u/23500620?v=4&s=64" width="64" height="64" alt="mprazz" title="mprazz" /></a>
+<a href="https://github.com/TremorsCreed"><img src="https://avatars.githubusercontent.com/u/78454488?v=4&s=64" width="64" height="64" alt="TremorsCreed" title="TremorsCreed" /></a>
 <!-- CONTRIBUTORS:END -->
 
 ## Troubleshooting

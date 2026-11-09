@@ -13,6 +13,7 @@ import { createReadStream } from 'fs'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
+import { resolveMissingThumbnail } from './services/thumbnailBackfill.js'
 import { uploadSourceKey } from './services/uploadSources.js'
 import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from './services/branding/index.js'
 import { injectBrandingIntoHtml } from './services/branding/css.js'
@@ -29,6 +30,7 @@ import adminRoutes from './routes/admin.js'
 import groupRoutes from './routes/groups.js'
 import circleRoutes from './routes/circles.js'
 import giftListRoutes from './routes/giftLists.js'
+import wikiRoutes from './routes/wiki.js'
 import postRoutes from './routes/posts.js'
 import commentRoutes from './routes/comments.js'
 import likeRoutes from './routes/likes.js'
@@ -301,7 +303,11 @@ export async function buildApp() {
             }
           }
         }
-        const rendition = request.method === 'GET' ? await resolveStoredHeicRendition(requestedFile) : null
+        const rendition =
+          request.method === 'GET'
+            ? ((await resolveStoredHeicRendition(requestedFile)) ??
+              ((await storage.stat(requestedFile)) ? null : await resolveMissingThumbnail(requestedFile)))
+            : null
         const types: Record<string, string> = {
           '.jpg': 'image/jpeg',
           '.jpeg': 'image/jpeg',
@@ -368,6 +374,7 @@ export async function buildApp() {
   await fastify.register(circleRoutes, { prefix: '/api/circles' })
   await fastify.register(postRoutes, { prefix: '/api/posts' })
   await fastify.register(giftListRoutes, { prefix: '/api/gift-lists' })
+  await fastify.register(wikiRoutes, { prefix: '/api/wiki' })
   await fastify.register(commentRoutes, { prefix: '/api' })
   await fastify.register(likeRoutes, { prefix: '/api' })
   await fastify.register(favoriteRoutes, { prefix: '/api' })

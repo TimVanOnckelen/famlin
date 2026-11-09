@@ -91,6 +91,13 @@
     "modeRestore": "Back-up terugzetten",
     "restoreSubtitle": "Verhuis je van server of herstel je een probleem? Upload een Famlin-data-export om alle families, berichten, foto's en chatberichten terug te zetten.",
     "restoreArchiveLabel": "Famlin-export (.zip)",
+    "restoreSourceHint": "Download hem op je oude server via Serverinstellingen → Algemeen → Gegevens exporteren.",
+    "restoreDumpTitle": "Een geplande back-up terugzetten",
+    "restoreDumpHint": "Zet alles terug, ook accounts en instellingen. Foto's kopieer je apart.",
+    "restoreDumpButton": "Geplande back-up terugzetten",
+    "restoreDumpNone": "Om een geplande back-up terug te zetten, zet je het .dump-bestand in de map db/ van het back-upvolume en laad je deze pagina opnieuw.",
+    "restoreDumpDocsLink": "Hoe",
+    "dumpRestored": "Back-up teruggezet. Log in met je bestaande account.",
     "restoreAccountHint": "Dit wordt je beheerderslogin. Als de back-up al een account met dit e-mailadres bevat, wordt dat account beheerder en krijgt het dit wachtwoord; anders wordt een nieuw beheerdersaccount aangemaakt.",
     "restoreAfterHint": "Een back-up bevat nooit wachtwoorden of serverinstellingen. Stel na het terugzetten aanmelden (OIDC) en e-mail opnieuw in onder Serverinstellingen — leden melden zich dan aan via SSO, of je stelt hun wachtwoord opnieuw in onder Gebruikers.",
     "restoreButton": "Back-up terugzetten",
@@ -358,6 +365,7 @@
     "dataExportDesc": "Download een zip met alle familie-inhoud — berichten, reacties, likes, poll-stemmen, favorieten, chatberichten, kringen, de ledenlijst en elke geüploade foto/video. Je kunt hem terugzetten op een nieuwe, lege Famlin-server via het installatiescherm. Serverconfiguratie en geheimen (SMTP, OIDC, Immich, wachtwoorden, uitnodigingslinks, tokens) worden nooit meegenomen.",
     "dataExportDownload": "Export downloaden",
     "dataExportDownloading": "Export voorbereiden...",
+    "dataExportStarted": "De download is gestart in je browser. Een export met media kan groot zijn en even duren; stopt hij halverwege achter een proxy of CDN zoals Cloudflare, download hem dan via je lokale netwerk.",
     "oidc": "OIDC-login",
     "oidcName": "Weergavenaam",
     "oidcIssuer": "Issuer-URL",
@@ -467,7 +475,8 @@
     "POLL": "Poll",
     "TRIP": "Reis",
     "ALBUM": "Album",
-    "GIFT_LIST": "Cadeaulijst"
+    "GIFT_LIST": "Cadeaulijst",
+    "EVENT": "Evenement"
   },
   "circles": {
     "edit": "Kring bewerken",

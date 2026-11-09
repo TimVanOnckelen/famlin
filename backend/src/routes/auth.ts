@@ -1,4 +1,4 @@
-import { isRecordNotFound } from '../utils/prismaErrors.js'
+import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
 import { FastifyInstance } from 'fastify'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -30,6 +30,9 @@ import { bindAssetsToScope, SERVER_WIDE } from '../services/uploads.js'
 import { buildMemberExportArchive } from '../services/memberExport.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
+import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
+import { BACKUP_DB_DIR } from '../services/backup/index.js'
+import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
   appleLoginBodySchema,
   loginBodySchema,
@@ -38,6 +41,7 @@ import {
   passwordLoginBodySchema,
   registerBodySchema,
   setupBodySchema,
+  restoreDumpBodySchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -73,12 +77,14 @@ const OIDC_ERROR_KEY: Record<OidcError['code'], string> = {
 
 const APPLE_ERROR_KEY: Record<AppleAuthError['code'], string> = {
   invalid_token: 'errors.authFailed',
+  host_mismatch: 'errors.authFailed',
   no_email: 'errors.appleAccountNoEmail',
   not_allowed: 'errors.emailNotAllowed',
 }
 
 const APPLE_ERROR_STATUS: Record<AppleAuthError['code'], number> = {
   invalid_token: 401,
+  host_mismatch: 401,
   no_email: 403,
   not_allowed: 403,
 }
@@ -179,7 +185,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const passwordHash = await hashPassword(password)
 
     const user = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY})`
+      // Try, don't wait: a restore can hold this key far longer than the
+      // transaction's timeout.
+      const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+        SELECT pg_try_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY}) AS locked
+      `
+      if (!locked) return 'busy' as const
 
       const userCount = await tx.user.count()
       if (userCount > 0) {
@@ -196,6 +207,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       })
     })
 
+    if (user === 'busy') {
+      return reply.status(409).send({ error: t('errors.setupInProgress') })
+    }
     if (!user) {
       return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
     }
@@ -294,6 +308,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
           if (err.code === 'notEmpty') {
             return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
           }
+          if (err.code === 'busy') {
+            return reply.status(409).send({ error: t('errors.setupInProgress') })
+          }
           if (err.code === 'missingMedia') {
             return reply.status(400).send({ error: t('errors.restoreMediaMissing'), missingMedia: err.missingKeys })
           }
@@ -333,6 +350,69 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   )
 
+  // Public, zero-users only, like /setup/restore: the scheduled-backup dumps
+  // already in the backups volume's db/ folder, for the setup screen to offer.
+  fastify.get(
+    '/setup/dumps',
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
+      }
+      return listDumps(BACKUP_DB_DIR)
+    }
+  )
+
+  // Restores one of those dumps over the whole database
+  // (services/backup/restoreDump.ts). Deliberately no upload: pg_restore runs
+  // the dump's SQL as the database role, so only a file someone with access
+  // to the server's backups volume put there is ever restored. The old
+  // accounts, passwords and settings come back, so no session is issued —
+  // the person signs in with their existing account afterwards.
+  fastify.post(
+    '/setup/restore-dump',
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request)
+      const { name } = restoreDumpBodySchema.parse(request.body)
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+      }
+
+      try {
+        await restoreDump(BACKUP_DB_DIR, name, SETUP_ADVISORY_LOCK_KEY)
+      } catch (err) {
+        if (!(err instanceof RestoreDumpError)) throw err
+        // pg_restore's stderr stays in the server log, never the response.
+        if (err.code === 'migrateFailed') {
+          request.log.error({ err }, 'dump restored, but prisma migrate deploy failed: restart the server')
+        } else {
+          request.log.warn({ err }, 'dump restore refused or failed')
+        }
+        switch (err.code) {
+          case 'notEmpty':
+            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+          case 'busy':
+            return reply.status(409).send({ error: t('errors.setupInProgress') })
+          case 'unknownDump':
+            return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
+          case 'invalidDump':
+            return reply.status(400).send({ error: t('errors.restoreDumpInvalid') })
+          case 'dumpTooNew':
+            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
+          case 'noPrivilege':
+            return reply.status(500).send({ error: t('errors.restoreDumpNoPrivilege') })
+          case 'migrateFailed':
+            return reply.status(500).send({ error: t('errors.restoreDumpMigrateFailed') })
+          default:
+            return reply.status(500).send({ error: t('errors.restoreDumpFailed') })
+        }
+      }
+
+      return { restored: true }
+    }
+  )
+
   // Generic OIDC login — works with any OpenID Connect provider (Google,
   // Microsoft, Authentik, Keycloak, Auth0, ...) configured via /admin. Used
   // when the client did its own PKCE exchange directly against the provider
@@ -363,15 +443,31 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // as any other login (an Apple private-relay address will practically
   // always need an invite, since it can't be whitelisted in advance).
   fastify.post('/apple', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const { identityToken, fullName, inviteToken } = appleLoginBodySchema.parse(request.body)
+    const { identityToken, fullName, inviteToken, rawNonce, nonceHost } = appleLoginBodySchema.parse(request.body)
     const t = getT(request)
 
+    // Which host a nonce-bound token must name (services/appleLogin.ts): the
+    // configured publicUrl's, else the raw Host header. Not request.host —
+    // with TRUST_PROXY on that is X-Forwarded-Host, which a client can set.
+    const { publicUrl } = await getAllSettings()
+    const serverHost = publicUrl ? new URL(publicUrl).host : (request.headers.host ?? '')
+
     try {
-      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t)
+      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t, {
+        rawNonce,
+        nonceHost,
+        serverHost,
+      })
       if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
       return outcome.result
     } catch (err) {
       if (err instanceof AppleAuthError) {
+        if (err.code === 'host_mismatch') {
+          request.log.warn(
+            err.hosts,
+            'Sign in with Apple refused: the app signed in for a different host than this server. If both are this server, set Server settings → Public URL to the address members use.'
+          )
+        }
         return reply.status(APPLE_ERROR_STATUS[err.code]).send({ error: t(APPLE_ERROR_KEY[err.code]) })
       }
       fastify.log.error(err)
@@ -689,13 +785,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
-  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request) => {
+  fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = updateUserBodySchema.parse(request.body)
+    const emailConflict = () => reply.status(409).send({ error: getT(request)('errors.emailAlreadyInUse') })
+    if (body.email !== undefined) {
+      const existing = await prisma.user.findFirst({
+        where: { email: { equals: body.email, mode: 'insensitive' }, id: { not: request.user!.id } },
+        select: { id: true },
+      })
+      if (existing) return emailConflict()
+    }
 
-    const user = await prisma.user.update({
-      where: { id: request.user!.id },
-      data: body,
-    })
+    let user
+    try {
+      user = await prisma.user.update({ where: { id: request.user!.id }, data: body })
+    } catch (error) {
+      // Another request may claim the address after the availability check.
+      if (body.email !== undefined && isUniqueConstraintViolation(error)) return emailConflict()
+      throw error
+    }
 
     // An avatar shows up in every group the user belongs to (and in groups
     // they join later), so it's bound server-wide rather than to any group.
@@ -733,14 +841,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const archive = await buildMemberExportArchive(request.user!.id)
-      archive.on('error', (err) => {
+      const archive = await buildMemberExportArchive(request.user!.id, (err) => {
         request.log.error(err, 'member export archive stream error')
       })
 
       const filename = `famlin-my-export-${new Date().toISOString().slice(0, 10)}.zip`
       reply.header('content-type', 'application/zip')
       reply.header('content-disposition', `attachment; filename="${filename}"`)
+      reply.header('cache-control', 'no-store')
 
       // Same finalize-after-attach pattern as GET /api/admin/export.
       archive.finalize().catch((err) => {
@@ -818,6 +926,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // Per-family branding (issue #164), or null when unbranded. Additive:
       // older clients ignore it. `hash` lets mobile detect a change cheaply.
       branding: await getBranding(),
+      // Named capabilities (issue #380) — see serverFeatures.ts. Additive:
+      // clients treat a missing array as their implicit baseline.
+      features: [...SERVER_FEATURES],
     }
   })
 }

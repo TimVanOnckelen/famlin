@@ -1,0 +1,76 @@
+---
+id: restore-scheduled-backup-dump
+title: "Restore a scheduled-backup dump on a fresh server"
+description: "First-run only: public, and refused with `409` once the server has any"
+sidebar_label: "Restore a scheduled-backup dump on a fresh server"
+hide_title: true
+hide_table_of_contents: true
+api: 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
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Restore a scheduled-backup dump on a fresh server"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/auth/setup/restore-dump"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+First-run only: public, and refused with `409` once the server has any
+account. Replaces the whole database with one of the dumps listed by
+`GET /api/auth/setup/dumps`, chosen by name — there is deliberately no
+upload, because the dump's SQL runs as the database role. Pending
+migrations are applied afterwards if the dump came from an older Famlin
+version. Accounts, passwords and settings come back from the dump, so
+no session is issued, and sessions issued before the restore no longer
+work: sign in with an existing account afterwards. Rate-limited to 5
+requests per 15 minutes per IP.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./restore-scheduled-backup-dump.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./restore-scheduled-backup-dump.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

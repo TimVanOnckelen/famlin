@@ -74,6 +74,28 @@ describe('uploads', () => {
       )
     })
 
+    it('swaps the variant segment for media-proxy URLs instead of suffixing the filename (issue #386)', async () => {
+      const client = await import('../client.js')
+      ;(client.getCurrentServerUrl as any).mockReturnValue('http://example.com')
+      ;(client.getCurrentMediaToken as any).mockReturnValue('tok123')
+
+      const { getUploadUrl } = await import('../uploads.js')
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/preview.jpg', 'thumbnail')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/thumbnail.jpg?token=tok123'
+      )
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/original.mp4', 'thumbnail')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/thumbnail.jpg?token=tok123'
+      )
+      expect(
+        getUploadUrl('/api/immich/assets/link1/0b6e4c1a-1111-4222-8333-944445555666/preview.jpg', 'thumbnail')
+      ).toBe(
+        'http://example.com/api/immich/assets/link1/0b6e4c1a-1111-4222-8333-944445555666/thumbnail.jpg?token=tok123'
+      )
+      expect(getUploadUrl('/api/media/assets/link1/asset-1/preview.jpg')).toBe(
+        'http://example.com/api/media/assets/link1/asset-1/preview.jpg?token=tok123'
+      )
+    })
+
     it('returns the plain path when no variant is passed, unchanged from before', async () => {
       const client = await import('../client.js')
       ;(client.getCurrentServerUrl as any).mockReturnValue('http://example.com')
@@ -258,6 +280,36 @@ describe('uploads', () => {
       await ensureFreshMediaToken()
 
       expect(client.api.get).not.toHaveBeenCalled()
+    })
+  })
+  describe('fetchUploadProcessing', () => {
+    it('returns the server status', async () => {
+      const client = await import('../client.js')
+      const state = { status: 'processing', url: null, thumbnailUrl: null }
+      ;(client.api.get as any).mockResolvedValue({ data: state })
+
+      const { fetchUploadProcessing } = await import('../uploads.js')
+      await expect(fetchUploadProcessing('abc')).resolves.toEqual(state)
+      expect(client.api.get).toHaveBeenCalledWith('/uploads/status/abc')
+    })
+
+    it('treats a 404 (server without the status endpoint) as ready', async () => {
+      const client = await import('../client.js')
+      ;(client.api.get as any).mockRejectedValue(Object.assign(new Error('Not Found'), { response: { status: 404 } }))
+
+      const { fetchUploadProcessing } = await import('../uploads.js')
+      await expect(fetchUploadProcessing('abc')).resolves.toEqual({ status: 'ready', url: null, thumbnailUrl: null })
+    })
+
+    it('still throws on other errors', async () => {
+      const client = await import('../client.js')
+      const serverError = Object.assign(new Error('Server Error'), { response: { status: 500 } })
+      ;(client.api.get as any).mockRejectedValueOnce(serverError)
+      ;(client.api.get as any).mockRejectedValueOnce(new Error('Network Error'))
+
+      const { fetchUploadProcessing } = await import('../uploads.js')
+      await expect(fetchUploadProcessing('abc')).rejects.toBe(serverError)
+      await expect(fetchUploadProcessing('abc')).rejects.toThrow('Network Error')
     })
   })
 })

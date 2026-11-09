@@ -1,0 +1,39 @@
+---
+id: postevent
+title: "PostEvent"
+description: "The enriched, read-time view of an `EVENT` post — computed fresh on"
+sidebar_label: "PostEvent"
+hide_title: true
+hide_table_of_contents: true
+schema: true
+sample: {"startsAt":"2024-07-29T15:51:28.071Z","endsAt":"2024-07-29T15:51:28.071Z","location":"string","rsvpDeadline":"2024-07-29T15:51:28.071Z","closed":true,"myRsvp":"yes","counts":{"yes":0,"maybe":0,"no":0},"responses":{"yes":[{"id":"string","name":"string","avatarUrl":"string"}],"maybe":[{"id":"string","name":"string","avatarUrl":"string"}],"no":[{"id":"string","name":"string","avatarUrl":"string"}]}}
+custom_edit_url: null
+---
+
+import Schema from "@theme/Schema";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"PostEvent"}
+>
+</Heading>
+
+
+
+The enriched, read-time view of an `EVENT` post — computed fresh on
+every read. RSVPs are public to the post's audience. On a cross-posted
+event each copy shows the answers from every copy you can see, plus
+answers its own family's members left on other copies: the author
+sees every family's answers, every family sees all of its own
+members' answers, and nobody learns about members of families they're
+not in.
+
+
+<Schema
+  {...require("./postevent.Schema.json")}
+>
+  
+</Schema>
+            

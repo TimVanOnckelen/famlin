@@ -6,7 +6,15 @@
     "appStore": "App Store",
     "playStore": "Google Play"
   },
-  "media": {"livePhoto": "Live Photo", "video": "Video", "pauseLivePhoto": "Pause Live Photo", "playLivePhoto": "Play Live Photo", "playVideo": "Play video", "processing": "Media is processing…", "processingFailed": "Media processing failed"},
+  "media": {
+    "livePhoto": "Live Photo",
+    "video": "Video",
+    "pauseLivePhoto": "Pause Live Photo",
+    "playLivePhoto": "Play Live Photo",
+    "playVideo": "Play video",
+    "processing": "Media is processing…",
+    "processingFailed": "Media processing failed"
+  },
   "common": {
     "appName": "Famlin",
     "loading": "Loading...",
@@ -172,6 +180,13 @@
     "failed": "Your changes couldn't be saved. Try again."
   },
   "profile": {
+    "detailsTitle": "Personal details",
+    "displayName": "Name",
+    "emailAddress": "Email address",
+    "saveDetails": "Save details",
+    "detailsSaved": "Your details have been saved",
+    "detailsFailed": "Could not save your details",
+    "emailInUse": "This email address is already in use",
     "title": "Profile",
     "changePhoto": "Change profile photo",
     "photoUploadFailed": "Your photo couldn't be uploaded. Try again.",
@@ -213,11 +228,19 @@
     "languages": {
       "en": "English",
       "nl": "Nederlands",
-      "zh": "简体中文"
+      "zh": "简体中文",
+      "pt-PT": "Português (Portugal)",
+      "fr": "Français"
     },
     "notifyNewStory": "Stories (push only)",
     "myGiftLists": "My gift lists",
-    "notifyGiftList": "Gift lists"
+    "notifyGiftList": "Gift lists",
+    "cropTitle": "Crop profile photo",
+    "cropHint": "Drag the photo to position it. Use + and − to zoom.",
+    "cropPreview": "Profile photo preview",
+    "cropZoomIn": "Zoom in",
+    "cropZoomOut": "Zoom out",
+    "cropSave": "Save"
   },
   "apiTokens": {
     "menuItem": "API tokens",
@@ -306,7 +329,8 @@
     "chat": "Chat",
     "favorites": "Favorites",
     "notifications": "Notifications",
-    "search": "Search"
+    "search": "Search",
+    "wiki": "Wiki"
   },
   "demo": {
     "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
@@ -456,6 +480,7 @@
     "favoritePost": "Favorite post",
     "goNotifications": "Go to notifications",
     "goSearch": "Go to search",
+    "goWiki": "Go to the Family Wiki",
     "goMembers": "Go to members"
   },
   "notifications": {
@@ -566,5 +591,75 @@
     "addExclusion": "Add exclusion",
     "saveSettings": "Save settings",
     "photoUploadFailed": "The photo couldn't be uploaded. Try another one."
+  },
+  "wiki": {
+    "title": "Family Wiki",
+    "intro": "Recipes, the holiday house's Wi-Fi, traditions: the things your family keeps explaining, written down once.",
+    "family": "Family",
+    "newPage": "New page",
+    "editPage": "Edit page",
+    "searchPlaceholder": "Search the wiki",
+    "categories": "Categories",
+    "allCategories": "All",
+    "uncategorized": "Uncategorized",
+    "recentlyUpdated": "Recently updated",
+    "results": "Pages",
+    "empty": "No pages yet. Start with something your family keeps asking about.",
+    "noResults": "No pages match.",
+    "noGroups": "You're not in a family yet.",
+    "loadFailed": "Couldn't load the wiki.",
+    "loadMore": "Load more",
+    "locked": "Locked",
+    "lockedHint": "Only the page's creator or an admin can edit this page.",
+    "circleHint": "Only members of this circle can see this page.",
+    "circleOnly": "Only visible to {{circle}}.",
+    "updatedBy": "Updated by {{name}} {{when}}",
+    "updated": "Updated {{when}}",
+    "createdBy": "Created by {{name}} on {{when}}",
+    "notAvailable": "This page isn't available. It may have been deleted, or it's private to a circle you're not in.",
+    "emptyPage": "This page is still empty.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this page for everyone? This can't be undone.",
+    "deleteFailed": "Couldn't delete the page.",
+    "inFamily": "New page in {{family}}",
+    "emojiLabel": "Icon",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Grandma's lasagna",
+    "categoryLabel": "Category",
+    "categoryPlaceholder": "e.g. Recipes",
+    "audienceLabel": "Visible to",
+    "audienceFamily": "The whole family",
+    "write": "Write",
+    "preview": "Preview",
+    "formatting": "Formatting",
+    "fmtHeading": "Heading",
+    "fmtBold": "bold",
+    "fmtItalic": "italic",
+    "fmtList": "Bulleted list",
+    "fmtChecklist": "Checklist",
+    "fmtLink": "Link",
+    "fmtLinkText": "link text",
+    "fmtLinkPost": "Link a post",
+    "linkPostTitle": "Link a post",
+    "linkPostSearch": "Search this family's posts",
+    "linkPostEmpty": "No posts found.",
+    "linkPostFailed": "Couldn't load posts.",
+    "postFrom": "Post from {{date}}",
+    "fmtPhoto": "Add photo",
+    "uploading": "Uploading…",
+    "uploadFailed": "Couldn't upload the photo.",
+    "contentLabel": "Page content",
+    "contentPlaceholder": "Write the page here…",
+    "formatHelp": "Formatting: ## heading, **bold**, *italic*, - list, - [ ] checklist, [text](link). Use the link button to link to a post your family shared.",
+    "lockLabel": "Lock page.",
+    "lockHelp": "Only you and admins can edit it.",
+    "conflict": "{{name}} saved this page while you were editing.",
+    "someoneElse": "Someone else",
+    "conflictTakeTheirs": "Discard mine, load theirs",
+    "conflictKeepMine": "Save mine anyway",
+    "saveFailed": "Couldn't save the page.",
+    "save": "Save",
+    "saving": "Saving…"
   }
 }

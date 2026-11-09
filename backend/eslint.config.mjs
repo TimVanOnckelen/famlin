@@ -1,6 +1,6 @@
 // ESLint flat config for the backend (Fastify + TS, ESM/NodeNext).
 //
-// backend/ installs independently (see repo root CLAUDE.md), so it carries
+// backend/ installs independently (see repo root AGENTS.md), so it carries
 // its own eslint + typescript-eslint devDependencies rather than relying on
 // the root workspace's hoisted node_modules.
 //

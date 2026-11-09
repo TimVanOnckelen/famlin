@@ -1,6 +1,6 @@
 {
   "name": "famlin-admin",
-  "version": "0.8.7",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "description": "React + Vite admin UI for Famlin",
@@ -22,11 +22,11 @@
     "@famlin/api-client": "*",
     "@tanstack/react-query": "^5.48.0",
     "axios": "^1.7.2",
-    "i18next": "^26.5.12",
+    "i18next": "^26.7.2",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^17.1.9",
+    "react-i18next": "^17.1.13",
     "react-router-dom": "^7.18.5",
     "@tailwindcss/vite": "^4.3.4",
     "lucide-react": "^1.67.0",
@@ -39,13 +39,13 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.2.1",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "typescript": "^5.5.2",
     "typescript-eslint": "^8.72.1",
-    "vite": "^8.3.5",
+    "vite": "^8.3.6",
     "@types/node": "^26.6.6"
   }
 }

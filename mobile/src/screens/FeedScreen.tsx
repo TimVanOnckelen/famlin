@@ -12,7 +12,10 @@ import { Icon } from '@/components/Icon'
 import { PostCard } from '@/components/PostCard'
 import { EmptyState } from '@/components/EmptyState'
 import { StoryTray } from '@/components/StoryTray'
+import { OldServerBanner } from '@/components/OldServerBanner'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
+import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { Group, Post } from '@/types'
 import {
   fetchGroups,
@@ -60,10 +63,17 @@ export function FeedScreen() {
   // outside a circle never learns it exists — so there's nothing to filter
   // out here. Scoped to the single narrowed family, mirroring how
   // on-this-day and search already work.
+  // Never asked of a server that says it has no circles, and a 404 from one
+  // too old to say just leaves no chips (issue #380).
+  const circlesSupport = useServerFeatureSupport('circles')
+  // The wiki's only way in; a server that doesn't list it never sees a
+  // request (issue #380).
+  const wikiSupport = useServerFeatureSupport('wiki')
   const { data: circles } = useQuery({
     queryKey: ['circles', singleActiveGroup?.id],
-    queryFn: () => fetchMyCircles(singleActiveGroup!.id),
-    enabled: !!singleActiveGroup,
+    queryFn: rememberNotFound('circles', () => fetchMyCircles(singleActiveGroup!.id)),
+    enabled: !!singleActiveGroup && circlesSupport !== 'unsupported',
+    retry: retryUnlessNotFound,
   })
 
   function toggleGroup(groupId: string) {
@@ -171,6 +181,16 @@ export function FeedScreen() {
           </TouchableOpacity>
         )}
 
+        {hasGroups && wikiSupport !== 'unsupported' && (
+          <TouchableOpacity
+            style={styles.favoritesButton}
+            onPress={() => navigation.navigate('Wiki', { groupId: singleActiveGroup?.id })}
+            accessibilityLabel={t('wiki.title')}
+          >
+            <Icon name="book-open" size={20} color={colors.textTitle} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.favoritesButton}
           onPress={() => navigation.navigate('Favorites')}
@@ -263,6 +283,7 @@ export function FeedScreen() {
         updateCellsBatchingPeriod={50}
         ListHeaderComponent={
           <>
+            <OldServerBanner />
             <StoryTray groupIds={selectedGroupIds} enabled={hasGroups && storiesEnabled} />
             {hasGroups && onThisDay && onThisDay.length > 0 ? (
               <TouchableOpacity

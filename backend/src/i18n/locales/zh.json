@@ -1,5 +1,6 @@
 {
   "errors": {
+    "emailAlreadyInUse": "此电子邮箱地址已被使用",
     "authFailed": "身份验证失败",
     "invalidEmailOrPassword": "邮箱或密码错误",
     "adminRequired": "需要管理员权限",
@@ -57,6 +58,12 @@
     "restoreArchiveMissing": "请选择要恢复的 Famlin 导出文件（.zip）",
     "restoreArchiveInvalid": "这不是有效的 Famlin 导出文件",
     "restoreArchiveTooNew": "此备份由更新版本的 Famlin 创建，请先升级服务器再恢复",
+    "restoreDumpInvalid": "此文件不是 Famlin 计划备份（.dump）",
+    "restoreDumpFailed": "无法恢复备份，请查看服务器日志了解详情",
+    "restoreDumpUnknown": "该备份不在此服务器的备份文件夹中",
+    "restoreDumpNoPrivilege": "Famlin 的数据库账户无法重新创建其架构，因此未恢复任何内容。请查看服务器日志了解详情",
+    "restoreDumpMigrateFailed": "备份已恢复，但升级到当前 Famlin 版本失败。请重启服务器并查看日志",
+    "setupInProgress": "初始化或恢复正在进行中，请稍后再试",
     "immichNotConfigured": "尚未配置 Immich",
     "immichUnreachable": "无法使用当前设置连接 Immich 服务器",
     "immichAlbumAlreadyLinked": "此相册已关联到该群组",
@@ -66,6 +73,7 @@
     "mediaAlbumAlreadyLinked": "此相册已关联到该群组",
     "mediaAlbumLinkNotFound": "未找到媒体相册关联",
     "apiTokenSessionRequired": "只能通过普通登录会话创建 API 令牌，不能使用另一个 API 令牌创建",
+    "exportDownloadTokenInvalid": "此下载链接已过期或已被使用。请重新开始导出。",
     "sessionRequired": "此操作需要普通登录会话，不能使用 API 令牌",
     "apiTokenNotFound": "未找到 API 令牌",
     "mediaPersonLinkNotFound": "未找到人物映射",
@@ -78,6 +86,10 @@
     "pollClosed": "投票已结束",
     "invalidPollOption": "投票选项无效",
     "pollQuestionRequired": "请填写投票问题",
+    "eventTitleRequired": "活动需要一个标题",
+    "eventEndsBeforeStart": "结束时间不能早于开始时间",
+    "eventDeadlineAfterStart": "回复截止时间不能晚于活动开始时间",
+    "eventClosed": "此活动的回复已截止",
     "postTypeNotAllowed": "该群组不允许此动态类型",
     "tripNotAuthor": "只有旅程作者可以执行此操作",
     "tripNotTraveler": "只有同行旅伴可以打卡",
@@ -117,7 +129,12 @@
     "giftDrawTooFewParticipants": "神秘圣诞老人抽签至少需要 3 位参与者。",
     "giftDrawImpossible": "在这些排除规则下无法抽签。请删除一些排除规则后再试。",
     "giftAlreadyDrawn": "已经抽过签了。",
-    "giftDrawWillReset": "这个更改会作废当前的抽签结果。请确认以重新抽签。"
+    "giftDrawWillReset": "这个更改会作废当前的抽签结果。请确认以重新抽签。",
+    "wikiPageNotFound": "未找到百科页面",
+    "wikiPageLocked": "此页面已锁定，只有创建者或管理员可以编辑。",
+    "wikiPageLockForbidden": "只有页面创建者或管理员可以锁定或解锁此页面。",
+    "wikiPageDeleteForbidden": "只有页面创建者或管理员可以删除此页面。",
+    "wikiPageConflict": "其他人刚刚保存了此页面。请查看他们的更改后重试。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

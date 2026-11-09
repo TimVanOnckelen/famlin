@@ -4,6 +4,8 @@ export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMedia
 export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo, Branding, BrandPalette, BrandSemantic, } from './auth';
 export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
 export { compareVersions } from './version';
+export type { ServerFeature, FeatureSupport } from './features';
+export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES, PRE_FEATURE_LIST_FEATURES, } from './features';
 export { generateRandomString, generateCodeChallenge, startBrowserOidcLogin, completeBrowserOidcLogin, clearBrowserOidcLogin, } from './oidcBrowser';
 export type { MediaGroupAlbum, MediaAsset, MediaPerson, PhotoItem, PhotoTimelinePage } from './media';
 export { getGroupMediaAlbums, getGroupMediaPeople, getMediaAlbumAssets, getGroupPhotoTimeline } from './media';
@@ -21,6 +23,10 @@ export type { FetchPostsParams, PostsPage, SearchPostsParams, CreatePostBody, Up
 export { fetchPosts, fetchAlbumPosts, fetchPost, fetchOnThisDay, searchPosts, fetchFavorites, createPost, updatePost, deletePost, reactToPost, fetchPostReactions, toggleFavoritePost, interactWithPost, votePoll, checkInTrip, closeTrip, setTripTravelers, addAlbumPhotos, closeAlbum, } from './posts';
 export type { GiftListItemBody, GiftListSettingsBody } from './giftLists';
 export { fetchMyGiftLists, fetchGiftListItems, createGiftListItem, updateGiftListItem, deleteGiftListItem, reorderGiftListItems, updateGiftListSettings, setGiftListParticipants, drawGiftList, leaveGiftList, isGiftDrawResetConflict, } from './giftLists';
+export type { WikiPerson, WikiPageSummary, WikiPage, WikiCategory, WikiPageListParams, CreateWikiPageBody, UpdateWikiPageBody, } from './wiki';
+export { fetchWikiPages, fetchWikiCategories, fetchWikiPage, createWikiPage, updateWikiPage, deleteWikiPage, wikiConflictPage, } from './wiki';
+export type { WikiInline, WikiListItem, WikiBlock } from './wikiMarkdown';
+export { parseWikiMarkdown, parseWikiInline, wikiLinkTarget, isWikiImageSrc, wikiPostPath, wikiPostLabel, wikiPostLinkMarkdown, } from './wikiMarkdown';
 export type { CreateCommentBody, UpdateCommentBody } from './comments';
 export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments';
 export type { CommentGroup } from './commentGroups';

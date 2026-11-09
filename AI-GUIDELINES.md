@@ -28,7 +28,7 @@ This document provides guidance on how to effectively and responsibly use AI too
 
 ## Before Starting
 
-1. **Read CLAUDE.md** — understand the project structure, conventions, and architecture
+1. **Read AGENTS.md** — understand the project structure, conventions, and architecture
 2. **Check the codebase** — understand existing patterns (folder structure, naming, testing)
 3. **Know the constraints** — ESM modules, TypeScript strict mode, i18n requirement, permission model
 4. **Review recent PRs** — see what's been done, what was rejected, and why
@@ -73,7 +73,7 @@ npm --prefix mobile test
 ### TypeScript
 - **No `any`** — types must be explicit or inferred from context
 - **Strict mode enabled** — the tsconfig is strict; AI should follow it
-- **Named exports** — especially in `packages/api-client` (see CLAUDE.md)
+- **Named exports** — especially in `packages/api-client` (see AGENTS.md)
 
 ### Style & conventions
 - **Follow existing patterns** — if a codebase pattern conflicts with what AI suggests, stick with the pattern
@@ -134,7 +134,7 @@ npm --prefix mobile test
 
 ❌ User-facing features need docs; breaking API changes need release notes.
 
-✅ Check the CLAUDE.md "## Documentation" table; update the relevant files.
+✅ Check the AGENTS.md "## Documentation" table; update the relevant files.
 
 ### Committing generated code as-is
 > "AI wrote it, so it must be good"
@@ -182,6 +182,18 @@ AI generated the initial route scaffolding and test structure; I reviewed for co
 ```
 
 ## Tools & Workflows
+
+### Project instructions for agents
+The repo follows the [AGENTS.md](https://agents.md) convention, so any coding agent picks up the same project context:
+
+| Agent | How it gets the instructions |
+| --- | --- |
+| OpenAI Codex, GitHub Copilot (coding agent & VS Code), Cursor, Zed, Aider, Jules, … | Read `AGENTS.md` natively |
+| Claude Code | `CLAUDE.md` imports `AGENTS.md` (`@AGENTS.md`) |
+| Gemini CLI | `.gemini/settings.json` sets `context.fileName` to `AGENTS.md` |
+| Anything else | Point it at `AGENTS.md` (Aider: `aider --read AGENTS.md`) |
+
+Edit only `AGENTS.md` — the other files are thin shims. Reusable task recipes live in `.claude/skills/*/SKILL.md`; they're plain Markdown, so with any other agent just ask it to read and follow e.g. `.claude/skills/verify/SKILL.md`.
 
 ### Claude Code (CLI & IDE extensions)
 - Use `/code-review` for inline feedback on pending changes

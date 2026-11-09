@@ -26,6 +26,7 @@ export function PostDetailPage({
   onOpenChat,
   onOpenProfile,
   onOpenFavorites,
+  onOpenWiki,
   onOpenNotifications,
   onOpenSearch,
   onOpenMembers,
@@ -42,6 +43,7 @@ export function PostDetailPage({
   onOpenChat?: () => void
   onOpenProfile?: () => void
   onOpenFavorites?: () => void
+  onOpenWiki?: () => void
   onOpenNotifications?: () => void
   onOpenSearch?: (groupId?: string) => void
   onOpenMembers?: () => void
@@ -108,6 +110,7 @@ export function PostDetailPage({
       onFeed={onOpenFeed ?? onBack}
       onPhotos={onOpenPhotos}
       onFavorites={onOpenFavorites}
+      onWiki={onOpenWiki}
       onNotifications={onOpenNotifications}
       onMembers={onOpenMembers}
       onSearch={onOpenSearch}

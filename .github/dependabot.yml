@@ -2,7 +2,7 @@ version: 2
 
 # Famlin installs in five independent trees, so each needs its own entry:
 # the root npm workspace (web/ + packages/api-client), backend/,
-# backend/admin/, mobile/, and docs/. See CLAUDE.md > Commands.
+# backend/admin/, mobile/, and docs/. See AGENTS.md > Commands.
 #
 # Updates are grouped so one PR carries a whole ecosystem's patch/minor bumps
 # instead of one PR per package — the lockfiles are large and CI runs a full
@@ -20,8 +20,16 @@ updates:
     open-pull-requests-limit: 5
     labels: [dependencies]
     groups:
+      # mobile/ resolves @famlin/api-client's react-query from this root
+      # install (symlinked file: dependency), so mobile/package.json must be
+      # bumped to the same version by hand in this PR — CI's
+      # check-shared-deps.mjs prints the command. Kept out of the big group so
+      # that manual step never blocks the other web bumps.
+      tanstack-query:
+        patterns: ['@tanstack/*']
       web-minor-patch:
         patterns: ['*']
+        exclude-patterns: ['@tanstack/*']
         update-types: [minor, patch]
 
   # ------------------------------------------------------------- backend
@@ -86,6 +94,7 @@ updates:
       - dependency-name: react-native
       - dependency-name: react-native-*
       - dependency-name: '@react-native-async-storage/*'
+      - dependency-name: '@react-native-community/*'
       - dependency-name: react
       - dependency-name: react-test-renderer
       - dependency-name: jest-expo
@@ -93,6 +102,9 @@ updates:
       - dependency-name: eslint-config-expo
       - dependency-name: typescript
       - dependency-name: '@types/react'
+      # Must match the root workspace's version and moves with the root's
+      # tanstack-query PR instead (see the root entry above).
+      - dependency-name: '@tanstack/*'
     groups:
       mobile-minor-patch:
         patterns: ['*']
@@ -115,6 +127,19 @@ updates:
         patterns: ['*']
         exclude-patterns: ['@docusaurus/*', 'docusaurus-*']
         update-types: [minor, patch]
+
+  # ----------------------------------------------------------------- e2e
+  # The Playwright smoke tests CI runs against the Docker image. Test-only,
+  # never shipped, so monthly and grouped is plenty.
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    labels: [dependencies, ci]
+    groups:
+      e2e:
+        patterns: ['*']
 
   # ------------------------------------------------------- github-actions
   - package-ecosystem: github-actions

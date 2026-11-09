@@ -62,3 +62,7 @@ allow-dependencies-licenses:
   - pkg:npm/lightningcss-win32-x64-msvc
   # elkjs: EPL-2.0, Mermaid's diagram layout engine in the docs site only.
   - pkg:npm/elkjs
+  # robust-predicates: public domain AND Unlicense (both impose no terms;
+  # GitHub reports the public-domain part as a LicenseRef), pulled in by
+  # Mermaid via d3-delaunay in the docs site only.
+  - pkg:npm/robust-predicates
