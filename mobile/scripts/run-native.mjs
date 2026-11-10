@@ -40,10 +40,6 @@ const appId = dev ? 'be.xeweb.famlin.dev' : 'be.xeweb.famlin'
 const env = { ...process.env }
 if (dev) {
   env.APP_VARIANT = 'development'
-  // The dev variant is never a store build, so the hidden feed scroll
-  // diagnostics (#427) are compiled into it in Release configuration too —
-  // the only configuration whose scroll performance means anything.
-  env.EXPO_PUBLIC_SCROLL_DIAGNOSTICS ??= '1'
 } else {
   delete env.APP_VARIANT
 }
