@@ -7,6 +7,7 @@ const sidebars: SidebarsConfig = {
   developersSidebar: [
     'quick-start',
     'architecture',
+    'demo-instance',
     'shared-ui',
     'api',
     {

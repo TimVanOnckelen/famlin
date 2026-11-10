@@ -13,7 +13,10 @@ Famlin is a monorepo with these parts:
 - **`packages/design-tokens/`** — shared JSON values, typed TS exports and generated CSS, independent of React and browser APIs.
 - **`packages/ui/`** — shared browser primitives and compositions (Base UI/shadcn + Tailwind), exported as TS/TSX subpaths and a separate stylesheet. Admin is its first consumer through the root npm workspace; web and mobile retain their existing UI.
 - **`mobile/`** — Expo / React Native app for iOS and Android.
+- **`deploy/`** — packaging for third-party app stores.
 - **`docs/`** — Docusaurus documentation site (this website).
+- **`website/`** — static marketing landing page at `famlin.app`.
+- **`docker-compose.yml` / `docker-compose.override.yml`** — the production stack and local hot-reload overrides.
 
 ## Shared UI and design tokens
 

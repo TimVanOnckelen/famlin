@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'install-vps',
         'server-setup',
+        'install-synology',
         'install-umbrel-casaos',
         'install-home-assistant',
         'storage',
