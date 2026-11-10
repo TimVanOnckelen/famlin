@@ -149,6 +149,41 @@ After changing native dependencies or anything in `app.config.js` (permissions, 
 npx expo prebuild --clean       # add -p android / -p ios to limit it to one platform
 ```
 
+`npm run ios` / `npm run android` do this for you when the existing native project was generated for the other app variant (see below); after any other `app.config.js` change, run it yourself.
+
+### Development variant: install next to the store app
+
+A plain `npm run android` / `npm run ios` builds the production app id (`be.xeweb.famlin`), so on a phone that also has Famlin from the App Store or Google Play it replaces that install (or fails with `INSTALL_FAILED_VERSION_DOWNGRADE`) and shares its login and drafts. Build the **development variant** instead to keep both side by side:
+
+```bash
+npm run android:dev
+```
+
+```bash
+npm run ios:dev
+```
+
+| | Store app | Development variant |
+| --- | --- | --- |
+| Bundle id / package | `be.xeweb.famlin` | `be.xeweb.famlin.dev` |
+| Name on the home screen | Famlin | Famlin (dev) |
+| Icon | teal | orange, with a "DEV" label |
+
+Both scripts set `APP_VARIANT=development`, which `mobile/app.config.js` reads, and run `scripts/run-native.mjs`. That script regenerates `android/`/`ios/` with `expo prebuild --clean` when they were generated for the other variant, so switching back and forth just works (at the cost of one full native rebuild per switch). Extra arguments go after `--`, e.g. `npm run android:dev -- --device Pixel_7`.
+
+This is **local-only**. No `eas.json` profile sets `APP_VARIANT`, so every EAS and CI build — `development`, `preview`, `production`, `apk` — stays the production app id.
+
+**Measuring performance:** a debug build runs the JS bundle in development mode and is much slower than what users get, so judge scrolling and animations in a Release build of the dev variant: `npm run android:dev -- --variant release` or `npm run ios:dev -- --configuration Release --device`. The scripts also set `EXPO_PUBLIC_SCROLL_DIAGNOSTICS=1` for the dev variant, so the hidden feed scroll diagnostics stay available in that Release build.
+
+The dev icons are generated from the production ones by `python3 scripts/generate-dev-icons.py` (Pillow); re-run it after changing `assets/icon.png` or `assets/adaptive-icon.png`.
+
+Things the variant does **not** separate, and what to know about them:
+
+- **Deep links share the `famlin://` scheme** on purpose (less to configure). With both apps installed, Android asks which app should open an invite link, a `/connect` link or the server-mediated (Google) SSO callback; on iOS it's undefined which app gets them, and the dev app's share extension may hand shared photos to the store app. Plain PKCE SSO login is unaffected, because its redirect URI comes from `makeRedirectUri()`. Uninstall one of the two when testing those flows.
+- **Push notifications on Android** need `be.xeweb.famlin.dev` registered as a second Android app in the same Firebase project, and the downloaded `mobile/google-services.json` (which then lists both packages) committed. Until then `app.config.js` builds the dev variant without Firebase and logs a warning: everything works except push. Expo's push service also needs the FCM V1 key assigned to the new package: `eas credentials` → Android → `be.xeweb.famlin.dev` → Push Notifications. This only configures credentials; it doesn't start an EAS build.
+- **Push notifications on iOS** need a physical device (the simulator has no APNs), an App ID for `be.xeweb.famlin.dev` with the Push Notifications capability in the Apple Developer account, and the APNs key assigned to that bundle id in `eas credentials`. Building on a device with Xcode's automatic signing registers the App IDs (`be.xeweb.famlin.dev`, `be.xeweb.famlin.dev.share-extension`) and the App Group `group.be.xeweb.famlin.dev` for you.
+- **Sign in with Apple** against your own server: the server only accepts `be.xeweb.famlin` as audience by default, so add `be.xeweb.famlin.dev` to **Extra Apple bundle IDs** (`/admin` → Server settings).
+
 Then point the app at your local backend on the first launch screen:
 
 | Where the app runs | Server address to enter |

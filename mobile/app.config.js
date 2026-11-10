@@ -29,20 +29,50 @@ function versionCodeFromVersion(version) {
 const CAMERA_PERMISSION =
   "Famlin uses your camera so you can take a photo to share as a story with your family, or scan the QR code your family server shows to connect the app to it. Photos are uploaded only to the family server you're signed in to; nothing the camera sees when scanning is saved."
 
+// Opt-in development variant (issue #352): `APP_VARIANT=development` gives a
+// local build its own bundle id / package, name and icon so it installs next
+// to the store app instead of replacing it (and sharing its data). Only the
+// local `npm run android:dev` / `ios:dev` scripts set it — EAS profiles never
+// do, so every EAS/CI build stays the production app. The `famlin://` scheme
+// is deliberately shared, see docs/developers/quick-start.md.
+const IS_DEV_VARIANT = process.env.APP_VARIANT === 'development'
+const APP_ID = IS_DEV_VARIANT ? 'be.xeweb.famlin.dev' : 'be.xeweb.famlin'
+
+/**
+ * Gradle's google-services plugin fails the build when the file has no client
+ * for the app's package. Until be.xeweb.famlin.dev is registered in Firebase
+ * (and the downloaded google-services.json carries both clients), the dev
+ * variant is built without Firebase: everything works except push.
+ */
+function googleServicesFileFor(file) {
+  if (!IS_DEV_VARIANT) return file
+  try {
+    const json = JSON.parse(readFileSync(join(__dirname, file), 'utf8'))
+    const hasClient = (json.client ?? []).some((c) => c.client_info?.android_client_info?.package_name === APP_ID)
+    if (hasClient) return file
+  } catch {
+    // Missing or unreadable file: same outcome as no matching client.
+  }
+  console.warn(
+    `[app.config] ${file} has no Firebase client for ${APP_ID}; building the dev variant without push notifications.`
+  )
+  return undefined
+}
+
 export default ({ config }) => ({
   ...config,
-  name: 'Famlin',
+  name: IS_DEV_VARIANT ? 'Famlin (dev)' : 'Famlin',
   slug: 'famlin',
   owner: 'thexeroxs-team',
   version: config.version,
   orientation: 'default',
-  icon: './assets/icon.png',
+  icon: IS_DEV_VARIANT ? './assets/icon-dev.png' : './assets/icon.png',
   userInterfaceStyle: 'light',
   scheme: 'famlin',
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'be.xeweb.famlin',
+    bundleIdentifier: APP_ID,
     buildNumber: config.ios?.buildNumber,
     // Adds the Sign in with Apple entitlement — required alongside the
     // expo-apple-authentication plugin below for the login option App Store
@@ -62,13 +92,15 @@ export default ({ config }) => ({
     },
   },
   android: {
-    package: 'be.xeweb.famlin',
+    package: APP_ID,
     versionCode: versionCodeFromVersion(config.version),
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#006e94',
+      foregroundImage: IS_DEV_VARIANT ? './assets/adaptive-icon-dev.png' : './assets/adaptive-icon.png',
+      // The dev colour is the brand teal hue-rotated to orange, matching
+      // scripts/generate-dev-icons.py.
+      backgroundColor: IS_DEV_VARIANT ? '#943b00' : '#006e94',
     },
-    googleServicesFile: config.android?.googleServicesFile ?? './google-services.json',
+    googleServicesFile: googleServicesFileFor(config.android?.googleServicesFile ?? './google-services.json'),
   },
   web: {
     favicon: './assets/favicon.png',
@@ -146,8 +178,8 @@ export default ({ config }) => ({
     [
       // "Share → Famlin" from the OS share sheet (issue #199): photos and
       // videos only, several at once, handed to the new-post composer. On iOS
-      // this adds a share extension target (be.xeweb.famlin.share-extension)
-      // sharing the App Group group.be.xeweb.famlin with the app — both need
+      // this adds a share extension target (<bundle id>.share-extension)
+      // sharing the App Group group.<bundle id> with the app — both need
       // provisioning on EAS, see docs/developers/ios-app-review.md.
       // The extension only hands the files to the app; it never sees the
       // auth token. iOS caps the count above the composer's 10 on purpose:

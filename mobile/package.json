@@ -13,8 +13,10 @@
   ],
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "android": "node scripts/run-native.mjs android",
+    "ios": "node scripts/run-native.mjs ios",
+    "android:dev": "node scripts/run-native.mjs android --dev",
+    "ios:dev": "node scripts/run-native.mjs ios --dev",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
     "test": "jest",

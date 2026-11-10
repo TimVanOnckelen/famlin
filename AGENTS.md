@@ -54,6 +54,7 @@ Because that `file:` dependency is a symlink, tsc and Metro resolve the package'
 
 **Mobile** (`cd mobile`)
 - `npm start` (Expo) · `npm run ios` · `npm run android` · `npx tsc --noEmit` — typecheck.
+- `npm run android:dev` / `ios:dev` — local-only **development variant** (`APP_VARIANT=development` in `app.config.js`: `be.xeweb.famlin.dev`, "Famlin (dev)", orange icon from `scripts/generate-dev-icons.py`) that installs next to the store app (issue #352). Every run goes through `scripts/run-native.mjs`, which re-runs `expo prebuild --clean` when `android/`/`ios/` were generated for the other variant. No `eas.json` profile sets `APP_VARIANT` — keep it that way, or EAS would ship the dev id. Without a Firebase client for the dev package in `google-services.json` the dev variant builds without push; the `famlin://` scheme is shared on purpose. Details: `docs/developers/quick-start.md`.
 - `npm test` — Jest (`jest-expo` preset) unit/hook tests, no device/simulator needed.
 - `npm run build:ios` / `build:android` — EAS builds.
 
