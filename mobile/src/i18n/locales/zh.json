@@ -731,5 +731,16 @@
     "saveFailed": "无法保存页面。",
     "save": "保存",
     "saving": "正在保存…"
+  },
+  "scrollDiagnostics": {
+    "title": "滚动诊断",
+    "enabled": "滚动诊断已开启",
+    "hint": "点击“开始”，然后滚动动态。",
+    "recording": "正在记录…滚动动态，然后点击“停止”。",
+    "uiResult": "屏幕：卡顿 {{hitches}} 毫秒/秒，丢帧 {{dropped}}",
+    "jsResult": "应用：卡顿 {{hitches}} 毫秒/秒，丢帧 {{dropped}}",
+    "start": "开始",
+    "stop": "停止",
+    "share": "分享"
   }
 }

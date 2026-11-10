@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
     },
     'contributing',
     'ios-app-review',
+    'mobile-performance',
     'project-brief',
   ],
 };

@@ -731,5 +731,16 @@
     "saveFailed": "Não foi possível guardar a página.",
     "save": "Guardar",
     "saving": "A guardar…"
+  },
+  "scrollDiagnostics": {
+    "title": "Diagnóstico de deslocamento",
+    "enabled": "Diagnóstico de deslocamento ativo",
+    "hint": "Toque em Iniciar e depois percorra o feed.",
+    "recording": "A gravar… percorra o feed e depois toque em Parar.",
+    "uiResult": "Ecrã: {{hitches}} ms/s de soluços, {{dropped}} fotogramas perdidos",
+    "jsResult": "App: {{hitches}} ms/s de soluços, {{dropped}} fotogramas perdidos",
+    "start": "Iniciar",
+    "stop": "Parar",
+    "share": "Partilhar"
   }
 }

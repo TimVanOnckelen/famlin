@@ -28,6 +28,7 @@ import { Logo } from '@/components/Logo'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
 import { useAuthStore } from '@/stores/authStore'
+import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
 import {
   updateMe,
   changePassword,
@@ -92,6 +93,8 @@ export function ProfileScreen() {
   const showEmail = notificationConfig?.emailEnabled ?? true
 
   const { data: serverInfo } = useServerInfo()
+  const scrollDiagnostics = useScrollDiagnosticsStore((s) => s.enabled)
+  const setScrollDiagnostics = useScrollDiagnosticsStore((s) => s.setEnabled)
 
   const updatePrefs = useMutation({
     mutationFn: async (prefs: NotificationPrefs) => {
@@ -472,15 +475,25 @@ export function ProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.app')}</Text>
-          <View style={styles.appInfo}>
+          {/* Long-pressing the version row switches the hidden feed scroll
+              diagnostics on and off (issue #357) — for testers, so there is
+              deliberately no visible control until it is on. */}
+          <TouchableOpacity
+            style={styles.appInfo}
+            activeOpacity={1}
+            delayLongPress={1000}
+            onLongPress={() => setScrollDiagnostics(!scrollDiagnostics)}
+            testID="app-version-row"
+          >
             <Logo size={40} />
             <View style={styles.appInfoText}>
               <Text style={styles.appName}>{t('common.appName')}</Text>
               <Text style={styles.appVersion}>
                 {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
               </Text>
+              {scrollDiagnostics && <Text style={styles.appVersion}>{t('scrollDiagnostics.enabled')}</Text>}
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>

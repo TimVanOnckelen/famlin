@@ -731,5 +731,16 @@
     "saveFailed": "De pagina kon niet worden opgeslagen.",
     "save": "Opslaan",
     "saving": "Opslaan…"
+  },
+  "scrollDiagnostics": {
+    "title": "Scrolldiagnose",
+    "enabled": "Scrolldiagnose aan",
+    "hint": "Druk op Start en scrol dan door de feed.",
+    "recording": "Bezig met opnemen… scrol door de feed en druk dan op Stop.",
+    "uiResult": "Scherm: {{hitches}} ms/s haperingen, {{dropped}} gemiste frames",
+    "jsResult": "App: {{hitches}} ms/s haperingen, {{dropped}} gemiste frames",
+    "start": "Start",
+    "stop": "Stop",
+    "share": "Delen"
   }
 }

@@ -731,5 +731,16 @@
     "saveFailed": "Impossible d'enregistrer la page.",
     "save": "Enregistrer",
     "saving": "Enregistrement…"
+  },
+  "scrollDiagnostics": {
+    "title": "Diagnostic de défilement",
+    "enabled": "Diagnostic de défilement activé",
+    "hint": "Appuyez sur Démarrer, puis faites défiler le fil.",
+    "recording": "Enregistrement… faites défiler le fil, puis appuyez sur Arrêter.",
+    "uiResult": "Écran : {{hitches}} ms/s de saccades, {{dropped}} images perdues",
+    "jsResult": "App : {{hitches}} ms/s de saccades, {{dropped}} images perdues",
+    "start": "Démarrer",
+    "stop": "Arrêter",
+    "share": "Partager"
   }
 }
