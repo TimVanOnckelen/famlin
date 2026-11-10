@@ -257,6 +257,12 @@ describe('POST /api/auth/setup/restore', () => {
     await prisma.giftListItem.create({
       data: { postId: giftList.id, ownerId: member.id, title: 'Scarf', url: 'https://example.com', position: 0 },
     })
+    const guest = await prisma.giftListGuest.create({
+      data: { postId: giftList.id, name: 'Little one', managedById: member.id },
+    })
+    await prisma.giftListItem.create({
+      data: { postId: giftList.id, ownerId: member.id, guestId: guest.id, title: 'Blocks', position: 0 },
+    })
     await prisma.giftDrawAssignment.createMany({
       data: [
         { postId: giftList.id, giverId: admin.id, recipientId: member.id },
@@ -352,6 +358,7 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: await prisma.upload.findMany({ where: { assetKey: { not: liveKey } }, orderBy: { id: 'asc' } }),
       stories: await prisma.story.findMany({ where: { pinnedAt: { not: null } }, orderBy: { id: 'asc' } }),
       storyReactions: await prisma.storyReaction.findMany({ orderBy: { id: 'asc' } }),
+      giftListGuests: await prisma.giftListGuest.findMany({ orderBy: { id: 'asc' } }),
       giftListItems: await prisma.giftListItem.findMany({ orderBy: { id: 'asc' } }),
       giftDrawAssignments: await prisma.giftDrawAssignment.findMany({ orderBy: { id: 'asc' } }),
       wikiPages: await prisma.wikiPage.findMany({ orderBy: { id: 'asc' } }),
@@ -402,7 +409,8 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: 5,
       highlights: 1,
       branding: 3,
-      giftListItems: 1,
+      giftListGuests: 1,
+      giftListItems: 2,
       giftDrawAssignments: 2,
       wikiPages: 2,
     })

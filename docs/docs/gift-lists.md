@@ -31,6 +31,20 @@ Every participant keeps their own wishlist inside the gift list. A wish has a ti
 
 There's deliberately no way to mark a wish as "taken" or "bought" — the draw is what keeps people from buying the same thing.
 
+## Wishlists for people without an account
+
+Not everyone has a Famlin account — young children, or a grandparent without a smartphone. Any participant can add a wishlist for them with **Add a wishlist for someone without an account** at the bottom of the gift list, and give it a name ("Lotte", "Grandpa Jef").
+
+- The participant who adds it **keeps it up**: only they can add, edit and reorder its wishes. It's shown right below their own wishlist, marked **No account**.
+- Every participant can see it, just like any other wishlist.
+- They (or the person who started the gift list) can rename or remove it. Removing it deletes its wishes.
+- People without an account **don't take part in the Secret Santa draw** — nobody draws them and they don't draw anyone. Their wishlist is there for anyone who wants to bring them something.
+- If the participant who keeps it up leaves the gift list (or the family), the wishlist goes with them.
+
+A gift list can hold up to 30 such wishlists. This needs a server that supports it; older mobile app versions simply don't show these wishlists.
+
+![A gift list with wishlists for a child and a grandparent without an account](img/gift-list-guest-wishlists.png)
+
 ## The Secret Santa draw
 
 Once everyone is in (at least 3 participants), the person who started the gift list draws the names. Everyone then sees **only who they are buying for**, with a shortcut to that person's wishlist. Nobody can see the other pairings — not the starter, and not an admin.

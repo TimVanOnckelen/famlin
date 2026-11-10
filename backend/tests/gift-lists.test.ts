@@ -371,6 +371,126 @@ describe('wishlists', () => {
   })
 })
 
+describe('wishlists for people without an account', () => {
+  let postId: string
+
+  async function addGuest(by: User, name: string) {
+    return app.inject({
+      method: 'POST',
+      url: `/api/gift-lists/${postId}/guests`,
+      headers: authHeader(by),
+      payload: { name },
+    })
+  }
+
+  beforeAll(async () => {
+    postId = (
+      await createGiftList(starter, { title: 'Family Xmas', participantUserIds: [alice.id, bob.id, carol.id] })
+    ).json().id
+  })
+
+  it('lets a participant add a guest and keep up only that wishlist', async () => {
+    const res = await addGuest(alice, 'Lotte')
+    expect(res.statusCode).toBe(200)
+    const guest = res.json().giftList.guests[0]
+    expect(guest).toMatchObject({ name: 'Lotte', managedById: alice.id, itemCount: 0 })
+
+    const wish = await addItem(alice, postId, { title: 'Teddy bear', guestId: guest.id })
+    expect(wish.statusCode).toBe(200)
+    expect(wish.json()).toMatchObject({ ownerId: alice.id, guestId: guest.id, position: 0 })
+    const own = (await addItem(alice, postId, { title: 'Scarf' })).json()
+    expect(own).toMatchObject({ guestId: null, position: 0 })
+
+    // Everyone sees it; only Alice fills it.
+    const items = await app.inject({ method: 'GET', url: `/api/gift-lists/${postId}/items`, headers: authHeader(bob) })
+    expect(items.json().items.find((i: { guestId: string | null }) => i.guestId === guest.id).title).toBe('Teddy bear')
+    expect((await addItem(bob, postId, { title: 'Nope', guestId: guest.id })).statusCode).toBe(404)
+    const bobRename = await app.inject({
+      method: 'PATCH',
+      url: `/api/gift-lists/${postId}/guests/${guest.id}`,
+      headers: authHeader(bob),
+      payload: { name: 'Hacked' },
+    })
+    expect(bobRename.statusCode).toBe(404)
+    const bobEdit = await app.inject({
+      method: 'PATCH',
+      url: `/api/gift-lists/${postId}/items/${wish.json().id}`,
+      headers: authHeader(bob),
+      payload: { title: 'Hacked' },
+    })
+    expect(bobEdit.statusCode).toBe(404)
+
+    // Counted on the guest, not on Alice's own wishlist.
+    const post = (await getPost(bob, postId)).json()
+    expect(post.giftList.participants.find((p: { id: string }) => p.id === alice.id).itemCount).toBe(1)
+    expect(post.giftList.guests[0].itemCount).toBe(1)
+    expect(post.giftList.itemCount).toBe(2)
+
+    // Reordering the guest's list leaves Alice's own alone.
+    const second = (await addItem(alice, postId, { title: 'Puzzle', guestId: guest.id })).json()
+    const reorder = await app.inject({
+      method: 'PUT',
+      url: `/api/gift-lists/${postId}/items/order`,
+      headers: authHeader(alice),
+      payload: { guestId: guest.id, itemIds: [second.id, wish.json().id] },
+    })
+    expect(reorder.json().items.map((i: { title: string }) => i.title)).toEqual(['Puzzle', 'Teddy bear'])
+  })
+
+  it('404s the guest routes for a non-participant', async () => {
+    expect((await addGuest(outsider, 'Sneaky')).statusCode).toBe(404)
+  })
+
+  it('lets the starter rename or remove any guest, taking its wishes along', async () => {
+    const guest = (await addGuest(bob, 'Opa')).json().giftList.guests.find((g: { name: string }) => g.name === 'Opa')
+    await addItem(bob, postId, { title: 'Slippers', guestId: guest.id })
+
+    const rename = await app.inject({
+      method: 'PATCH',
+      url: `/api/gift-lists/${postId}/guests/${guest.id}`,
+      headers: authHeader(starter),
+      payload: { name: 'Grandpa' },
+    })
+    expect(rename.json().giftList.guests.map((g: { name: string }) => g.name)).toContain('Grandpa')
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: `/api/gift-lists/${postId}/guests/${guest.id}`,
+      headers: authHeader(starter),
+    })
+    expect(del.statusCode).toBe(200)
+    expect(await prisma.giftListItem.count({ where: { guestId: guest.id } })).toBe(0)
+  })
+
+  it('keeps guests out of the draw', async () => {
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/gift-lists/${postId}`,
+      headers: authHeader(starter),
+      payload: { drawEnabled: true },
+    })
+    const draw = await app.inject({
+      method: 'POST',
+      url: `/api/gift-lists/${postId}/draw`,
+      headers: authHeader(starter),
+    })
+    expect(draw.statusCode).toBe(200)
+    const assignments = await prisma.giftDrawAssignment.findMany({ where: { postId } })
+    expect(assignments).toHaveLength(4)
+  })
+
+  it("removes a guest's wishlist when its manager leaves", async () => {
+    const leave = await app.inject({
+      method: 'DELETE',
+      url: `/api/gift-lists/${postId}/participants/me`,
+      headers: authHeader(alice),
+    })
+    expect(leave.statusCode).toBe(200)
+    expect(await prisma.giftListGuest.count({ where: { postId } })).toBe(0)
+    expect(await prisma.giftListItem.count({ where: { postId, ownerId: alice.id } })).toBe(0)
+  })
+})
+
 describe('Secret Santa draw', () => {
   let postId: string
 

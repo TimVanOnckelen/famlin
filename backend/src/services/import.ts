@@ -245,9 +245,13 @@ const giftListItemRow = z.object({
   url: nullableString,
   photoUrl: nullableString,
   position: z.number().int(),
+  // Archives from before guest wishlists lack it.
+  guestId: nullableString,
   createdAt: date,
   updatedAt: date,
 })
+
+const giftListGuestRow = z.object({ id, postId: id, name: z.string(), managedById: id, createdAt: date })
 
 const wikiPageRow = z.object({
   id,
@@ -317,6 +321,7 @@ const DATA_FILES = {
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
   highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
   branding: { file: 'data/branding.json', schema: z.array(brandingRow), required: false },
+  giftListGuests: { file: 'data/gift-list-guests.json', schema: z.array(giftListGuestRow), required: false },
   giftListItems: { file: 'data/gift-list-items.json', schema: z.array(giftListItemRow), required: false },
   giftDrawAssignments: {
     file: 'data/gift-draw-assignments.json',
@@ -582,6 +587,7 @@ async function insertAll(
   await tx.storyReaction.createMany({
     data: data.highlights.flatMap((story) => story.reactions.map((r) => ({ ...r, storyId: story.id }))),
   })
+  await tx.giftListGuest.createMany({ data: data.giftListGuests })
   await tx.giftListItem.createMany({ data: data.giftListItems })
   await tx.giftDrawAssignment.createMany({ data: data.giftDrawAssignments })
   await tx.wikiPage.createMany({ data: data.wikiPages })
@@ -716,6 +722,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     uploads: data.uploads.length,
     highlights: data.highlights.length,
     branding: data.branding.length,
+    giftListGuests: data.giftListGuests.length,
     giftListItems: data.giftListItems.length,
     giftDrawAssignments: data.giftDrawAssignments.length,
     wikiPages: data.wikiPages.length,

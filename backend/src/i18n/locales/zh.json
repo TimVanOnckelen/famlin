@@ -125,6 +125,8 @@
     "giftListItemNotFound": "找不到这个愿望。",
     "giftListTooManyItems": "愿望清单最多可以有 100 个愿望。",
     "giftListInvalidOrder": "新的顺序必须恰好包含你的每个愿望一次。",
+    "giftListGuestNotFound": "未找到愿望清单。",
+    "giftListTooManyGuests": "一个礼物清单最多可以为没有账户的人添加 30 个愿望清单。",
     "giftDrawDisabled": "这个礼物清单没有开启神秘圣诞老人抽签。",
     "giftDrawTooFewParticipants": "神秘圣诞老人抽签至少需要 3 位参与者。",
     "giftDrawImpossible": "在这些排除规则下无法抽签。请删除一些排除规则后再试。",
