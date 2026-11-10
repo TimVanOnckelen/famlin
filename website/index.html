@@ -63,6 +63,8 @@
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .hero-meta { margin-top: 22px; font-size: 14px; color: var(--muted); }
   .hero-meta a { font-weight: 700; }
+  .hero-demo { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .admin-demo { margin-top: 14px; font-size: 16px; font-weight: 800; }
   .hero-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
   .hero-langs li { background: var(--tint); color: var(--brand-dark); font-weight: 700; padding: 3px 10px; border-radius: 100px; }
   .hero-langs li:first-child { background: none; color: var(--muted); font-weight: 600; padding-left: 0; }
@@ -223,6 +225,7 @@
       <a href="#features" class="hide-sm">Features</a>
       <a href="#install" class="hide-sm">Self-host</a>
       <a href="/docs/">Docs</a>
+      <a href="https://demo.famlin.app/" class="hide-sm">Demo</a>
       <a href="/support/" class="hide-sm">Support</a>
       <a href="#install" class="btn btn-primary">Install</a>
     </div>
@@ -239,8 +242,9 @@
         <p class="lead">Famlin is an open-source family app you host yourself. Share photos, milestones, trips and the small everyday stuff with the people who actually care, in plain chronological order. No ads, no recommendations, no company in between.</p>
         <div class="hero-actions">
           <a href="#install" class="btn btn-primary">Set up your server</a>
-          <a href="/docs/" class="btn btn-ghost">Read the docs</a>
+          <a href="https://demo.famlin.app/" class="btn btn-ghost">Try the live demo</a>
         </div>
+        <p class="hero-demo">The demo is a read-only sample family. No sign-up: the login screen fills in a demo account.</p>
         <p class="hero-meta">Free and MIT-licensed · iOS, Android and web · <a href="https://github.com/TimVanOnckelen/famlin">Source on GitHub</a></p>
         <ul class="hero-langs" aria-label="App languages">
           <li>The apps speak</li>
@@ -347,6 +351,7 @@
       <div>
         <h2 id="admin-title">For whoever runs the server</h2>
         <p class="lead">Running Famlin for your family should take an evening to set up and a few minutes a month after that. Everything is managed from a web admin panel; you don't need to edit config files after the first start.</p>
+        <p class="admin-demo"><a href="https://demo.famlin.app/admin">Look around the admin panel in the demo →</a></p>
         <div class="admin-shot">
           <img src="/assets/images/screenshots/admin-status.webp" width="1200" height="1266" alt="The Famlin admin panel's system status page with backups, disk space and jobs" loading="lazy">
         </div>
@@ -451,6 +456,7 @@
         <div>
           <h2 id="apps-title">Get the app</h2>
           <p class="lead">The apps are free. On first launch they ask for your server's address, so the same download works for every family. Prefer the browser? Every Famlin server also serves the full web app at its own address.</p>
+          <p class="lead" style="font-size:16px;">Want to try an app first? Enter <code>demo.famlin.app</code> as the server address and sign in with <code>test@example.com</code> / <code>test123456</code>.</p>
         </div>
         <div class="actions">
           <a href="https://apps.apple.com/us/app/famlin/id6786783660" class="btn btn-primary">App Store (iPhone, iPad)</a>
@@ -483,6 +489,7 @@
       <a href="#features">Features</a>
       <a href="#install">Install</a>
       <a href="#download">Get the app</a>
+      <a href="https://demo.famlin.app/">Live demo</a>
       <a href="https://github.com/TimVanOnckelen/famlin/releases">Releases</a>
     </div>
     <div>
