@@ -113,6 +113,41 @@
   padding: 28px;
 }
 
+.login-demo {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  border-radius: var(--r-lg);
+  background: var(--fam-milestone-bg);
+  border: 1.5px solid var(--fam-accent);
+  color: var(--fam-text-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-demo-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fam-accent-ink);
+}
+
+.login-demo p {
+  margin: 0;
+}
+
+.login-demo-credentials {
+  margin-top: 8px !important;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.login-demo-fill {
+  margin-top: 12px;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

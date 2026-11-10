@@ -353,7 +353,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Modo de demonstração — só de leitura. Podes explorar, mas publicar e comentar estão desativados."
+    "readOnlyBanner": "Modo de demonstração — só de leitura. Podes explorar, mas publicar e comentar estão desativados.",
+    "demoTitle": "Demonstração",
+    "demoText": "Esta é uma demonstração só de leitura com uma família de exemplo. Explora à vontade — publicar, comentar e outras alterações estão desativados.",
+    "demoCredentials": "Inicia sessão com:",
+    "useDemoLogin": "Preencher login de demonstração",
+    "blockedAction": "Isto é uma demonstração — as alterações estão desativadas. Podes explorar, mas não publicar, comentar ou editar."
   },
   "trip": {
     "detail": {

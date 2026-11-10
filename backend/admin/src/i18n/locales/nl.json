@@ -45,7 +45,8 @@
     "logout": "Uitloggen",
     "language": "Taal",
     "version": "Versie {{version}}",
-    "systemStatus": "Systeemstatus"
+    "systemStatus": "Systeemstatus",
+    "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen."
   },
   "devices": {
     "title": "Mobiele apparaten",
@@ -78,7 +79,11 @@
     "loginButton": "Inloggen",
     "loginWithSso": "Doorgaan met {{name}}",
     "ssoLoginFailed": "SSO-login mislukt.",
-    "loginFailed": "Inloggen mislukt."
+    "loginFailed": "Inloggen mislukt.",
+    "demoTitle": "Demo",
+    "demoText": "Dit is het beheerpaneel van de alleen-lezen demo. Je kunt rondkijken, maar instellingen kunnen niet worden gewijzigd.",
+    "demoCredentials": "Log in met:",
+    "useDemoLogin": "Demo-login invullen"
   },
   "setup": {
     "title": "Welkom bij Famlin",

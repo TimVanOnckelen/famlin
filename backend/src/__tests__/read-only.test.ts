@@ -43,6 +43,7 @@ describe('read-only mode', () => {
     expect(res.statusCode).toBe(403)
     const body = res.json()
     expect(body.error).toContain('read-only')
+    expect(body.code).toBe('READ_ONLY')
   })
 
   it('blocks DELETE /api/posts/:id', async () => {

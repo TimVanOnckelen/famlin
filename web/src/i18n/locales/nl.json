@@ -353,7 +353,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
+    "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld.",
+    "demoTitle": "Demo",
+    "demoText": "Dit is een alleen-lezen demo met een voorbeeldfamilie. Kijk gerust rond — berichten plaatsen, reageren en andere wijzigingen zijn uitgeschakeld.",
+    "demoCredentials": "Log in met:",
+    "useDemoLogin": "Demo-login invullen",
+    "blockedAction": "Dit is een demo — wijzigingen zijn uitgeschakeld. Je kunt rondkijken, maar niets plaatsen, reageren of aanpassen."
   },
   "trip": {
     "detail": {

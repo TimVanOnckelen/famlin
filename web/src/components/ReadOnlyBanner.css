@@ -7,3 +7,41 @@
   font-weight: 500;
   flex-shrink: 0;
 }
+
+.read-only-toast-region {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 96px;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.read-only-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 480px;
+  padding: 12px 12px 12px 16px;
+  border-radius: var(--r-md, 12px);
+  background: var(--fam-text-title);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: var(--shadow-raised);
+  pointer-events: auto;
+}
+
+.read-only-toast-close {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}

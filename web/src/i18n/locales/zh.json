@@ -353,7 +353,12 @@
     "wiki": "百科"
   },
   "demo": {
-    "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。"
+    "readOnlyBanner": "只读演示模式：可以浏览，但不能发布或评论。",
+    "demoTitle": "演示",
+    "demoText": "这是一个带示例家庭的只读演示。可以随意浏览，但发布、评论及其他修改均已禁用。",
+    "demoCredentials": "登录账号：",
+    "useDemoLogin": "填入演示账号",
+    "blockedAction": "这是演示版——修改已禁用。可以浏览，但不能发布、评论或编辑任何内容。"
   },
   "trip": {
     "detail": {

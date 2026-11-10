@@ -353,6 +353,10 @@ JWT_SECRET=your-jwt-secret POSTGRES_PASSWORD=your-db-password \
 
 Log in with `admin@example.com` / `test123456` or `test@example.com` / `test123456` to browse the sample family.
 
+The sample data is in English. The seed only creates rows that don't exist yet, so an existing demo database keeps whatever it was seeded with before — to switch an older demo to the current sample data, empty its database (for the Compose demo: `docker compose -f docker-compose.demo.yml down -v`) and start it again.
+
+While read-only mode is on, both login screens say the server is a demo and show the demo account — `test@example.com` on the web app, `admin@example.com` on `/admin` — with a button that fills it in. After signing in, a banner at the top of the web app and the admin panel keeps saying it's a demo, and any action the demo blocks (posting, commenting, reacting, saving a setting, …) shows a notice explaining that changes are disabled, instead of failing silently. Blocked writes are answered with a `403` whose body carries `"code": "READ_ONLY"`, so other clients can recognize them too.
+
 :::warning Don't hand the demo instance to an app store reviewer
 Read-only mode blocks every mutation except the login endpoints, account
 deletion (`DELETE /api/auth/me`) included — so on the demo a reviewer can't

@@ -353,7 +353,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled."
+    "readOnlyBanner": "Demo mode — read-only. You can browse, but posting and commenting are disabled.",
+    "demoTitle": "Demo",
+    "demoText": "This is a read-only demo with a sample family. Browse freely — posting, commenting and other changes are disabled.",
+    "demoCredentials": "Sign in with:",
+    "useDemoLogin": "Fill in demo login",
+    "blockedAction": "This is a demo — changes are disabled. You can browse, but you can't post, comment or edit anything."
   },
   "trip": {
     "detail": {
