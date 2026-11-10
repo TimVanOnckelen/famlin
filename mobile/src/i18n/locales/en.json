@@ -376,6 +376,7 @@
     "server": "Server",
     "connectedTo": "Connected to",
     "serverVersion": "Server version {{version}}",
+    "advanced": "Advanced",
     "app": "App",
     "version": "Version {{version}}",
     "logout": "Log out",
@@ -734,13 +735,19 @@
   },
   "scrollDiagnostics": {
     "title": "Scroll diagnostics",
-    "enabled": "Scroll diagnostics on",
     "hint": "Press Start, then scroll the feed.",
     "recording": "Recording… scroll the feed, then press Stop.",
     "uiResult": "Screen: {{hitches}} ms/s stutter, {{dropped}} dropped frames",
     "jsResult": "App: {{hitches}} ms/s stutter, {{dropped}} dropped frames",
     "start": "Start",
     "stop": "Stop",
-    "share": "Share"
+    "share": "Share",
+    "settingLabel": "Report scrolling performance",
+    "settingDescription": "Shows a bar above the feed that measures how smoothly it scrolls. You can send the result to your server's admin or share it yourself; nothing is sent automatically. Turns off when you close the app.",
+    "sendToAdmin": "Send to admin",
+    "sending": "Sending…",
+    "sent": "Sent to admin",
+    "sendFailed": "Not sent, try again",
+    "close": "Close scroll diagnostics"
   }
 }

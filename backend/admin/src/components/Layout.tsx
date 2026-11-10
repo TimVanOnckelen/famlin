@@ -17,7 +17,7 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
-const OPERATIONS_ROUTES = ['/push-log', '/devices', '/storage', '/status']
+const OPERATIONS_ROUTES = ['/push-log', '/devices', '/diagnostics', '/storage', '/status']
 
 export function Layout({ user, children }: LayoutProps) {
   const { t } = useTranslation()
@@ -78,6 +78,7 @@ export function Layout({ user, children }: LayoutProps) {
           <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
             <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
             <NavLink to="/devices">{t('layout.devices')}</NavLink>
+            <NavLink to="/diagnostics">{t('layout.diagnostics')}</NavLink>
             <NavLink to="/storage">{t('storage.title')}</NavLink>
             <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
           </div>

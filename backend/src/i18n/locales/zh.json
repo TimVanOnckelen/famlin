@@ -27,6 +27,7 @@
     "failedToRegisterPushToken": "注册推送令牌失败",
     "deviceLimitReached": "此账号已达到 20 台设备的上限",
     "deviceNotFound": "未找到设备",
+    "diagnosticReportNotFound": "未找到诊断报告",
     "pushNotificationsDisabled": "此服务器已关闭推送通知",
     "cannotDeleteYourself": "不能删除自己",
     "oidcNotConfigured": "尚未配置 OIDC 登录",

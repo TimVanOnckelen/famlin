@@ -764,6 +764,22 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Diagnostics",
+      link: {
+        type: "doc",
+        id: "api-reference/diagnostics",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "api-reference/send-diagnostic-report",
+          label: "Send a performance report to this server's admin",
+          className: "api-method post",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Invites",
       link: {
         type: "doc",
@@ -818,6 +834,18 @@ const sidebar: SidebarsConfig = {
       type: "category",
       label: "Schemas",
       items: [
+        {
+          type: "doc",
+          id: "api-reference/schemas/diagnosticframestats",
+          label: "DiagnosticFrameStats",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/feedscrolldiagnosticreport",
+          label: "FeedScrollDiagnosticReport",
+          className: "schema",
+        },
         {
           type: "doc",
           id: "api-reference/schemas/device",

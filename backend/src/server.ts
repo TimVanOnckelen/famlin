@@ -7,6 +7,7 @@ import { runOnThisDayJob } from './jobs/onThisDay.js'
 import { runNewAssetsJob } from './jobs/newAssets.js'
 import { runExpireStoriesJob } from './jobs/expireStories.js'
 import { recordJobRun } from './services/jobRuns.js'
+import { pruneDiagnosticReports } from './services/diagnosticReports.js'
 import { runScheduledBackupIfDue } from './services/backup/index.js'
 import { runSystemAlertsCheck } from './services/systemAlerts.js'
 import { runUpdateCheck } from './services/updateCheck.js'
@@ -96,6 +97,16 @@ async function start() {
   const updateCheckTask = cron.schedule('20 6 * * *', updateCheck)
   setTimeout(updateCheck, 30_000).unref()
 
+  // Daily: deletes diagnostic reports older than the retention window
+  // (services/diagnosticReports.ts).
+  const pruneDiagnosticReportsTask = cron.schedule('40 4 * * *', () => {
+    recordJobRun(
+      'pruneDiagnosticReports',
+      () => pruneDiagnosticReports(),
+      (deleted) => ({ deleted })
+    ).catch((err) => fastify.log.error(err, 'prune-diagnostic-reports job failed'))
+  })
+
   // `docker stop` sends SIGTERM, then SIGKILLs after the compose file's
   // stop_grace_period (30s). Drain in-flight requests (an upload mid-write)
   // instead of dying with them: fastify.close() stops accepting connections,
@@ -111,7 +122,15 @@ async function start() {
       fastify.log.error('graceful shutdown timed out, forcing exit')
       process.exit(1)
     }, SHUTDOWN_TIMEOUT_MS).unref()
-    for (const task of [onThisDayTask, newAssetsTask, expireStoriesTask, backupTask, systemAlertsTask, updateCheckTask])
+    for (const task of [
+      onThisDayTask,
+      newAssetsTask,
+      expireStoriesTask,
+      backupTask,
+      systemAlertsTask,
+      updateCheckTask,
+      pruneDiagnosticReportsTask,
+    ])
       task.stop()
     try {
       await fastify.close()

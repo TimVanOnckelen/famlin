@@ -45,7 +45,8 @@
     "language": "Idioma",
     "version": "Versão {{version}}",
     "systemStatus": "Estado do sistema",
-    "demoBanner": "Modo de demonstração — este painel de administração é só de leitura. Podes explorar, mas as alterações não são guardadas."
+    "demoBanner": "Modo de demonstração — este painel de administração é só de leitura. Podes explorar, mas as alterações não são guardadas.",
+    "diagnostics": "Diagnóstico"
   },
   "devices": {
     "title": "Dispositivos móveis",
@@ -69,6 +70,30 @@
       "granted": "Permitida",
       "denied": "Recusada",
       "undetermined": "Por decidir"
+    }
+  },
+  "diagnostics": {
+    "title": "Relatórios de diagnóstico",
+    "description": "Relatórios de desempenho que os membros enviaram a partir da aplicação móvel (Perfil → Avançado). Ficam neste servidor e são eliminados ao fim de {{days}} dias. Nada é enviado aos programadores do Famlin; para reportar um problema, copie um relatório para uma issue no",
+    "issuesLink": "GitHub.",
+    "empty": "Ainda não há relatórios.",
+    "app": "app {{version}}",
+    "uiThread": "UI",
+    "jsThread": "JS",
+    "hitches": "{{thread}} {{value}} ms/s",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyError": "Não foi possível copiar o relatório.",
+    "remove": "Eliminar",
+    "removeConfirm": "Eliminar este relatório de {{name}}?",
+    "removeError": "Não foi possível eliminar o relatório: {{error}}",
+    "ratings": {
+      "good": "bom",
+      "warning": "percetível",
+      "critical": "mau"
+    },
+    "kinds": {
+      "feed_scroll": "Deslocamento do feed"
     }
   },
   "login": {
@@ -622,7 +647,8 @@
         "expireStories": "Expirar histórias",
         "backup": "Cópia de segurança",
         "systemAlerts": "Verificação de alertas",
-        "updateCheck": "Verificação de atualizações"
+        "updateCheck": "Verificação de atualizações",
+        "pruneDiagnosticReports": "Limpar relatórios de diagnóstico"
       }
     },
     "migrations": {

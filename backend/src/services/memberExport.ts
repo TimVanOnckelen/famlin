@@ -63,7 +63,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   ])
   const groupIds = memberships.map((m) => m.groupId)
 
-  const [groups, posts, self, devices] = await Promise.all([
+  const [groups, posts, self, devices, diagnosticReports] = await Promise.all([
     prisma.group.findMany({
       where: { id: { in: groupIds } },
       select: {
@@ -110,6 +110,12 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
         pushPermission: true,
       },
     }),
+    // Performance reports the member sent to the admin (pruned after 30 days).
+    prisma.diagnosticReport.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, kind: true, platform: true, appVersion: true, text: true, data: true, createdAt: true },
+    }),
   ])
 
   const postIds = posts.map((p) => p.id)
@@ -149,6 +155,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   const data = {
     users,
     devices,
+    diagnosticReports,
     groups,
     // A gift list's exclusions are the starter's configuration (and hint at
     // pairings), so they're stripped exactly as the app strips them.
@@ -206,6 +213,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
     counts: {
       users: users.length,
       devices: devices.length,
+      diagnosticReports: diagnosticReports.length,
       groups: groups.length,
       posts: posts.length,
       comments: comments.length,
@@ -222,6 +230,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
   archive.append(serialized.users, { name: 'data/users.json' })
   archive.append(serialized.devices, { name: 'data/devices.json' })
+  archive.append(serialized.diagnosticReports, { name: 'data/diagnostic-reports.json' })
   archive.append(serialized.groups, { name: 'data/groups.json' })
   archive.append(serialized.posts, { name: 'data/posts.json' })
   archive.append(serialized.comments, { name: 'data/comments.json' })

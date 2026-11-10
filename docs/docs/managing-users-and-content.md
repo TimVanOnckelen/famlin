@@ -35,6 +35,16 @@ The **Devices** page shows the latest mobile diagnostics each member has shared 
 
 This is current state only. There are no timestamps, last-seen values or activity history, and the page receives no data from the web app. Removing a device clears its diagnostics row; its push token remains registered unless the member logs out or Expo reports the token as unregistered.
 
+## Diagnostic reports
+
+Members can measure how smoothly the feed scrolls on their phone and send the result to you (**Profile → Advanced → Report scrolling performance** in the mobile app; see [Report a slow feed](./notifications-and-profile.mdx#report-a-slow-feed-mobile)). The **Diagnostics** page (under **Operations**) lists those reports, newest first: who sent it and when, the phone and app version, a rating for the screen (UI) and app (JS) threads, and the full report text.
+
+![The admin diagnostics page](./img/admin-diagnostics.png)
+
+The ratings use Apple's hitch-time thresholds: under 5 ms of late frames per second of scrolling is *good*, 5 to 10 is *noticeable*, above 10 is *poor*.
+
+Reports stay on your server: Famlin never forwards them, and they're deleted automatically after 30 days (the **Prune diagnostic reports** job on the System status page). If a report points at a problem in Famlin itself, use **Copy** and paste the text into an issue on [GitHub](https://github.com/TimVanOnckelen/famlin/issues) — that's the only way the developers see it. **Delete** removes a report straight away. Reports are not part of the admin export or a restore; a member's own reports are in their member export, and are deleted with their account.
+
 ## Groups
 
 The **Groups** page is a two-pane view: pick a group on the left, manage it on the right.

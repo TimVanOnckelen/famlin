@@ -28,7 +28,7 @@ on:
         required: true
         default: preview
         type: choice
-        options: [production, diagnostics, preview, development]
+        options: [production, preview, development]
 
 jobs:
   build:

@@ -376,6 +376,7 @@
     "server": "Server",
     "connectedTo": "Verbonden met",
     "serverVersion": "Serverversie {{version}}",
+    "advanced": "Geavanceerd",
     "app": "App",
     "version": "Versie {{version}}",
     "logout": "Uitloggen",
@@ -734,13 +735,19 @@
   },
   "scrollDiagnostics": {
     "title": "Scrolldiagnose",
-    "enabled": "Scrolldiagnose aan",
     "hint": "Druk op Start en scrol dan door de feed.",
     "recording": "Bezig met opnemen… scrol door de feed en druk dan op Stop.",
     "uiResult": "Scherm: {{hitches}} ms/s haperingen, {{dropped}} gemiste frames",
     "jsResult": "App: {{hitches}} ms/s haperingen, {{dropped}} gemiste frames",
     "start": "Start",
     "stop": "Stop",
-    "share": "Delen"
+    "share": "Delen",
+    "settingLabel": "Scrollprestaties melden",
+    "settingDescription": "Toont een balk boven de feed die meet hoe vlot die scrolt. Het resultaat kun je naar de admin van je server sturen of zelf delen; er wordt niets automatisch verstuurd. Gaat uit als je de app sluit.",
+    "sendToAdmin": "Naar admin sturen",
+    "sending": "Versturen…",
+    "sent": "Naar admin gestuurd",
+    "sendFailed": "Niet verstuurd, probeer opnieuw",
+    "close": "Scrolldiagnose sluiten"
   }
 }

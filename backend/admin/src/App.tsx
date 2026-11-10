@@ -14,6 +14,7 @@ import { PushLogPage } from './components/PushLogPage'
 import { ServerSettingsPage } from './components/ServerSettingsPage'
 import { SystemStatusPage } from './components/SystemStatusPage'
 import { DevicesPage } from './components/DevicesPage'
+import { DiagnosticsPage } from './components/DiagnosticsPage'
 import { api, User } from './api/client'
 import { StateMessage } from '@famlin/ui/common/state-message'
 
@@ -97,6 +98,7 @@ function App() {
         <Route path="/content" element={<ContentPage />} />
         <Route path="/push-log" element={<PushLogPage />} />
         <Route path="/devices" element={<DevicesPage />} />
+        <Route path="/diagnostics" element={<DiagnosticsPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
         <Route path="/storage" element={<StoragePage />} />
         <Route path="/status" element={<SystemStatusPage />} />

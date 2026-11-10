@@ -25,6 +25,8 @@
 //  - `Device`/`PushToken`/`ApiToken`: device diagnostics and push tokens are
 //    operational state; personal access token hashes are credentials, not
 //    family content.
+//  - `DiagnosticReport`: performance reports members sent to the admin —
+//    short-lived support data (pruned after 30 days), not family content.
 //  - `Notification`/`PushDeliveryLog`: internal delivery/telemetry history,
 //    not something a family needs in a portable export.
 //  - Live (unpinned) stories, story views and private story replies: a live

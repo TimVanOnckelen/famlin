@@ -376,6 +376,7 @@
     "server": "Servidor",
     "connectedTo": "Ligado a",
     "serverVersion": "Versão do servidor {{version}}",
+    "advanced": "Avançado",
     "app": "App",
     "version": "Versão {{version}}",
     "logout": "Terminar sessão",
@@ -734,13 +735,19 @@
   },
   "scrollDiagnostics": {
     "title": "Diagnóstico de deslocamento",
-    "enabled": "Diagnóstico de deslocamento ativo",
     "hint": "Toque em Iniciar e depois percorra o feed.",
     "recording": "A gravar… percorra o feed e depois toque em Parar.",
     "uiResult": "Ecrã: {{hitches}} ms/s de soluços, {{dropped}} fotogramas perdidos",
     "jsResult": "App: {{hitches}} ms/s de soluços, {{dropped}} fotogramas perdidos",
     "start": "Iniciar",
     "stop": "Parar",
-    "share": "Partilhar"
+    "share": "Partilhar",
+    "settingLabel": "Reportar o desempenho do deslocamento",
+    "settingDescription": "Mostra uma barra por cima do feed que mede a fluidez do deslocamento. Pode enviar o resultado ao administrador do seu servidor ou partilhá-lo; nada é enviado automaticamente. Desliga-se quando fecha a app.",
+    "sendToAdmin": "Enviar ao administrador",
+    "sending": "A enviar…",
+    "sent": "Enviado ao administrador",
+    "sendFailed": "Não enviado, tente novamente",
+    "close": "Fechar diagnóstico de deslocamento"
   }
 }

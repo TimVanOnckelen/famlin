@@ -475,25 +475,35 @@ export function ProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.app')}</Text>
-          {/* Long-pressing the version row switches the hidden feed scroll
-              diagnostics on and off (issue #357) — for testers, so there is
-              deliberately no visible control until it is on. */}
-          <TouchableOpacity
-            style={styles.appInfo}
-            activeOpacity={1}
-            delayLongPress={1000}
-            onLongPress={() => setScrollDiagnostics(!scrollDiagnostics)}
-            testID="app-version-row"
-          >
+          <View style={styles.appInfo}>
             <Logo size={40} />
             <View style={styles.appInfoText}>
               <Text style={styles.appName}>{t('common.appName')}</Text>
               <Text style={styles.appVersion}>
                 {t('profile.version', { version: Constants.expoConfig?.version ?? t('common.unknown') })}
               </Text>
-              {scrollDiagnostics && <Text style={styles.appVersion}>{t('scrollDiagnostics.enabled')}</Text>}
             </View>
-          </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.advanced')}</Text>
+          {/* Feed scroll diagnostics (issue #357): a visible, explained
+              setting in every build rather than a hidden tester gesture. */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingTextWrap}>
+              <Text style={styles.settingLabel}>{t('scrollDiagnostics.settingLabel')}</Text>
+              <Text style={styles.settingDescription}>{t('scrollDiagnostics.settingDescription')}</Text>
+            </View>
+            <Switch
+              testID="scroll-diagnostics-switch"
+              accessibilityLabel={t('scrollDiagnostics.settingLabel')}
+              value={scrollDiagnostics}
+              onValueChange={setScrollDiagnostics}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
@@ -883,6 +893,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
+  },
+  settingTextWrap: {
+    flex: 1,
+    marginRight: 12,
   },
   settingItemBorder: {
     borderTopWidth: 1,

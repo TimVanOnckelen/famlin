@@ -99,7 +99,8 @@ export interface UpdateNotice {
   updateAvailable: boolean
 }
 
-export type JobId = 'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts' | 'updateCheck'
+export type JobId =
+  'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts' | 'updateCheck' | 'pruneDiagnosticReports'
 
 export interface JobStatus {
   job: JobId
@@ -122,6 +123,24 @@ export interface AdminDevice {
   appVersion: string
   appBuild: string
   pushPermission: 'granted' | 'denied' | 'undetermined'
+  user: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>
+}
+
+// A performance report a member sent from the app (GET /api/admin/diagnostics).
+// `data` is kind-specific; only feed_scroll exists today.
+export interface DiagnosticReport {
+  id: string
+  kind: 'feed_scroll' | (string & {})
+  platform: 'ios' | 'android'
+  appVersion: string
+  text: string
+  data: {
+    device?: string
+    os?: string
+    ui?: { hitchMsPerSecond: number }
+    js?: { hitchMsPerSecond: number }
+  }
+  createdAt: string
   user: Pick<User, 'id' | 'name' | 'email' | 'avatarUrl'>
 }
 

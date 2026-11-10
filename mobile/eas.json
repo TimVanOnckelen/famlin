@@ -10,9 +10,6 @@
       "environment": "development",
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_PUBLIC_SCROLL_DIAGNOSTICS": "1"
       }
     },
     "preview": {
@@ -20,21 +17,12 @@
       "environment": "preview",
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_PUBLIC_SCROLL_DIAGNOSTICS": "1"
       }
     },
     "production": {
       "environment": "production",
       "ios": {
         "resourceClass": "m-medium"
-      }
-    },
-    "diagnostics": {
-      "extends": "production",
-      "env": {
-        "EXPO_PUBLIC_SCROLL_DIAGNOSTICS": "1"
       }
     },
     "apk": {

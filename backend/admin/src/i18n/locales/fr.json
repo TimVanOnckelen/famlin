@@ -45,7 +45,8 @@
     "language": "Langue",
     "version": "Version {{version}}",
     "systemStatus": "État du système",
-    "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées."
+    "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées.",
+    "diagnostics": "Diagnostics"
   },
   "devices": {
     "title": "Appareils mobiles",
@@ -69,6 +70,30 @@
       "granted": "Autorisé",
       "denied": "Refusé",
       "undetermined": "Pas encore choisi"
+    }
+  },
+  "diagnostics": {
+    "title": "Rapports de diagnostic",
+    "description": "Rapports de performance envoyés par les membres depuis l'application mobile (Profil → Avancé). Ils restent sur ce serveur et sont supprimés après {{days}} jours. Rien n'est envoyé aux développeurs de Famlin ; pour signaler un problème, copiez un rapport dans un ticket sur",
+    "issuesLink": "GitHub.",
+    "empty": "Aucun rapport pour l'instant.",
+    "app": "app {{version}}",
+    "uiThread": "UI",
+    "jsThread": "JS",
+    "hitches": "{{thread}} {{value}} ms/s",
+    "copy": "Copier",
+    "copied": "Copié",
+    "copyError": "Impossible de copier le rapport.",
+    "remove": "Supprimer",
+    "removeConfirm": "Supprimer ce rapport de {{name}} ?",
+    "removeError": "Impossible de supprimer le rapport : {{error}}",
+    "ratings": {
+      "good": "bon",
+      "warning": "perceptible",
+      "critical": "mauvais"
+    },
+    "kinds": {
+      "feed_scroll": "Défilement du fil"
     }
   },
   "login": {
@@ -622,7 +647,8 @@
         "expireStories": "Expiration des stories",
         "backup": "Sauvegarde",
         "systemAlerts": "Vérification des alertes",
-        "updateCheck": "Recherche de mises à jour"
+        "updateCheck": "Recherche de mises à jour",
+        "pruneDiagnosticReports": "Nettoyage des rapports de diagnostic"
       }
     },
     "migrations": {

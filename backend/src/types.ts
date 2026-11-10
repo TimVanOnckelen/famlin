@@ -286,6 +286,51 @@ export const devicePayloadSchema = z.object({
   pushPermission: z.enum(['granted', 'denied', 'undetermined']),
 })
 
+// A diagnostic report a member sends to their server's admin (issue #357).
+// The structured `data` is kind-specific; only feed_scroll exists today, and a
+// new kind joins the discriminated union below. Every number and string is
+// bounded so the endpoint can't be used to park arbitrary data on the server.
+const boundedCount = z.number().int().min(0).max(1_000_000)
+const boundedMs = z.number().min(0).max(10_000_000)
+const diagnosticFrameStatsSchema = z.object({
+  frames: boundedCount,
+  durationMs: boundedMs,
+  droppedFrames: boundedCount,
+  hitchMsPerSecond: z.number().min(0).max(1000),
+  worstFrameMs: boundedMs,
+  p95FrameMs: boundedMs,
+})
+export const feedScrollReportDataSchema = z.object({
+  device: z.string().max(100),
+  os: z.string().max(100),
+  app: z.string().max(100),
+  server: z.string().max(100),
+  refreshHz: z.number().min(0).max(1000),
+  ui: diagnosticFrameStatsSchema,
+  js: diagnosticFrameStatsSchema,
+  content: z.object({
+    posts: boundedCount,
+    postsWithMedia: boundedCount,
+    multiMediaPosts: boundedCount,
+    mediaItems: boundedCount,
+    videos: boundedCount,
+    byType: z
+      .record(z.string().max(40), boundedCount)
+      .refine((byType) => Object.keys(byType).length <= 30, { message: 'Too many post types' }),
+  }),
+  imageLoads: z.object({ network: boundedCount, disk: boundedCount, memory: boundedCount }),
+})
+
+export const diagnosticReportBodySchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('feed_scroll'),
+    platform: z.enum(['ios', 'android']),
+    appVersion: z.string().min(1).max(100),
+    text: z.string().min(1).max(4000),
+    data: feedScrollReportDataSchema,
+  }),
+])
+
 export const devicePathParamsSchema = z.object({
   installId: z.string().uuid(),
 })

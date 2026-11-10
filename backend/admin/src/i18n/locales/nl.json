@@ -46,7 +46,8 @@
     "language": "Taal",
     "version": "Versie {{version}}",
     "systemStatus": "Systeemstatus",
-    "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen."
+    "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen.",
+    "diagnostics": "Diagnose"
   },
   "devices": {
     "title": "Mobiele apparaten",
@@ -70,6 +71,30 @@
       "granted": "Toegestaan",
       "denied": "Geweigerd",
       "undetermined": "Nog niet gekozen"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnoserapporten",
+    "description": "Prestatierapporten die leden vanuit de mobiele app stuurden (Profiel → Geavanceerd). Ze blijven op deze server en worden na {{days}} dagen verwijderd. Er gaat niets naar de ontwikkelaars van Famlin; wil je een probleem melden, kopieer dan een rapport in een issue op",
+    "issuesLink": "GitHub.",
+    "empty": "Nog geen rapporten.",
+    "app": "app {{version}}",
+    "uiThread": "UI",
+    "jsThread": "JS",
+    "hitches": "{{thread}} {{value}} ms/s",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd",
+    "copyError": "Kon het rapport niet kopiëren.",
+    "remove": "Verwijderen",
+    "removeConfirm": "Dit rapport van {{name}} verwijderen?",
+    "removeError": "Kon het rapport niet verwijderen: {{error}}",
+    "ratings": {
+      "good": "goed",
+      "warning": "merkbaar",
+      "critical": "slecht"
+    },
+    "kinds": {
+      "feed_scroll": "Feed scrollen"
     }
   },
   "login": {
@@ -623,7 +648,8 @@
         "expireStories": "Verhalen laten verlopen",
         "backup": "Back-up",
         "systemAlerts": "Waarschuwingscontrole",
-        "updateCheck": "Updatecontrole"
+        "updateCheck": "Updatecontrole",
+        "pruneDiagnosticReports": "Diagnoserapporten opruimen"
       }
     },
     "migrations": {

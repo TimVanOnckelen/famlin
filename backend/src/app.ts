@@ -39,6 +39,7 @@ import chatRoutes from './routes/chat.js'
 import storyRoutes from './routes/stories.js'
 import pushTokenRoutes from './routes/push-tokens.js'
 import deviceRoutes from './routes/devices.js'
+import diagnosticsRoutes from './routes/diagnostics.js'
 import apiTokenRoutes from './routes/api-tokens.js'
 import notificationRoutes from './routes/notifications.js'
 import uploadRoutes from './routes/uploads.js'
@@ -382,6 +383,7 @@ export async function buildApp() {
   await fastify.register(storyRoutes, { prefix: '/api/stories' })
   await fastify.register(pushTokenRoutes, { prefix: '/api/push-tokens' })
   await fastify.register(deviceRoutes, { prefix: '/api/devices' })
+  await fastify.register(diagnosticsRoutes, { prefix: '/api/diagnostics' })
   await fastify.register(apiTokenRoutes, { prefix: '/api/api-tokens' })
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' })
   await fastify.register(uploadRoutes, { prefix: '/api/uploads' })
