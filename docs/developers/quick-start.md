@@ -38,7 +38,7 @@ In a second terminal:
 docker compose exec famlin-backend npx prisma db seed
 ```
 
-This creates a group "Familie de Vries" with sample users and posts.
+This creates two groups, "The Miller Family" and "Ardennes Weekend", with sample users and posts (in English).
 
 ## 4. Run backend tests
 
