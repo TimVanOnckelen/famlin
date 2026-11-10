@@ -28,7 +28,13 @@ export interface GiftListItemBody {
   photoUrl?: string | null
 }
 
-export async function createGiftListItem(postId: string, body: GiftListItemBody): Promise<GiftListItem> {
+// Creating a wish: with guestId it goes on that guest's wishlist (one you
+// manage) instead of your own — giftListGuests servers only.
+export interface CreateGiftListItemBody extends GiftListItemBody {
+  guestId?: string | null
+}
+
+export async function createGiftListItem(postId: string, body: CreateGiftListItemBody): Promise<GiftListItem> {
   // requires-feature: giftLists
   const response = await api.post<GiftListItem>(`/gift-lists/${postId}/items`, body)
   return response.data
@@ -49,11 +55,39 @@ export async function deleteGiftListItem(postId: string, itemId: string): Promis
   await api.delete(`/gift-lists/${postId}/items/${itemId}`)
 }
 
-// `itemIds` must be every one of your own wishes, in the new order.
-export async function reorderGiftListItems(postId: string, itemIds: string[]): Promise<GiftListItem[]> {
+// `itemIds` must be every one of your own wishes (or, with guestId, of that
+// guest's wishlist you manage), in the new order.
+export async function reorderGiftListItems(
+  postId: string,
+  itemIds: string[],
+  guestId?: string | null
+): Promise<GiftListItem[]> {
   // requires-feature: giftLists
-  const response = await api.put<{ items: GiftListItem[] }>(`/gift-lists/${postId}/items/order`, { itemIds })
+  const response = await api.put<{ items: GiftListItem[] }>(`/gift-lists/${postId}/items/order`, {
+    itemIds,
+    ...(guestId ? { guestId } : {}),
+  })
   return response.data.items
+}
+
+// Wishlists for people without an account. Any participant adds one and is
+// its only editor; the starter can also rename or remove it.
+export async function addGiftListGuest(postId: string, name: string): Promise<Post> {
+  // requires-feature: giftListGuests
+  const response = await api.post<Post>(`/gift-lists/${postId}/guests`, { name })
+  return response.data
+}
+
+export async function renameGiftListGuest(postId: string, guestId: string, name: string): Promise<Post> {
+  // requires-feature: giftListGuests
+  const response = await api.patch<Post>(`/gift-lists/${postId}/guests/${guestId}`, { name })
+  return response.data
+}
+
+export async function removeGiftListGuest(postId: string, guestId: string): Promise<Post> {
+  // requires-feature: giftListGuests
+  const response = await api.delete<Post>(`/gift-lists/${postId}/guests/${guestId}`)
+  return response.data
 }
 
 export interface GiftListSettingsBody {

@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 import {
+  addGiftListGuest,
   createGiftListItem,
   deleteGiftListItem,
   deletePost,
@@ -26,12 +27,14 @@ import {
   fetchPost,
   isGiftDrawResetConflict,
   leaveGiftList,
+  removeGiftListGuest,
+  renameGiftListGuest,
   reorderGiftListItems,
   setGiftListParticipants,
   updateGiftListItem,
   updateGiftListSettings,
 } from '@famlin/api-client'
-import type { GiftListItem, GiftListItemBody, GiftListSettingsBody, Post } from '@/types'
+import type { GiftListGuest, GiftListItem, GiftListItemBody, GiftListSettingsBody, Post } from '@/types'
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
 import { Avatar } from '@/components/Avatar'
@@ -208,20 +211,42 @@ export function GiftListScreen() {
           )}
 
           {participants.map((p) => (
-            <Wishlist
-              key={p.id}
-              postId={postId}
-              participant={p}
-              isMine={p.id === user.id}
-              isRecipient={p.id === recipient?.id}
-              items={items.filter((item) => item.ownerId === p.id)}
-              onLayout={(y) => (wishlistY.current[p.id] = y)}
-              onChanged={() => {
-                queryClient.invalidateQueries({ queryKey: ['post', postId] })
-                queryClient.invalidateQueries({ queryKey: ['gift-list-items', postId] })
-              }}
-            />
+            <React.Fragment key={p.id}>
+              <Wishlist
+                postId={postId}
+                participant={p}
+                isMine={p.id === user.id}
+                isRecipient={p.id === recipient?.id}
+                items={items.filter((item) => item.ownerId === p.id && !item.guestId)}
+                onLayout={(y) => (wishlistY.current[p.id] = y)}
+                onChanged={() => refresh()}
+              />
+              {/* Wishlists this participant keeps for people without an
+                  account follow their own. */}
+              {(giftList.guests ?? [])
+                .filter((guest) => guest.managedById === p.id)
+                .map((guest) => (
+                  <Wishlist
+                    key={guest.id}
+                    postId={postId}
+                    participant={{ id: guest.id, name: guest.name, avatarUrl: null }}
+                    guest={{
+                      ...guest,
+                      managerName: p.id === user.id ? null : p.name,
+                      canManage: guest.managedById === user.id || giftList.isManager,
+                    }}
+                    isMine={guest.managedById === user.id}
+                    isRecipient={false}
+                    items={items.filter((item) => item.guestId === guest.id)}
+                    onLayout={() => {}}
+                    onChanged={() => refresh()}
+                  />
+                ))}
+            </React.Fragment>
           ))}
+
+          {/* Missing on servers without guest wishlists (giftListGuests). */}
+          {giftList.guests && <AddGuest postId={postId} onAdded={refresh} />}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -250,9 +275,58 @@ function Button({
   )
 }
 
+// "Add a wishlist for someone without an account" — a child, a grandparent
+// without a phone. Whoever adds it keeps it up; it's never in the draw.
+function AddGuest({ postId, onAdded }: { postId: string; onAdded: (post: Post) => void }) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const mutation = useMutation({
+    mutationFn: () => addGiftListGuest(postId, name.trim()),
+    onSuccess: (post) => {
+      onAdded(post)
+      setName('')
+      setOpen(false)
+    },
+    onError: (err: any) => Alert.alert(t('common.error'), err.response?.data?.error || t('giftList.actionFailed')),
+  })
+
+  return (
+    <View style={styles.section}>
+      {open ? (
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('giftList.guestNamePlaceholder')}
+            maxLength={80}
+            autoFocus
+          />
+          <View style={styles.row}>
+            <Button label={t('common.cancel')} onPress={() => setOpen(false)} />
+            <Button
+              primary
+              label={t('giftList.addGuestSubmit')}
+              disabled={mutation.isPending || !name.trim()}
+              onPress={() => mutation.mutate()}
+            />
+          </View>
+        </View>
+      ) : (
+        <Button label={t('giftList.addGuest')} onPress={() => setOpen(true)} />
+      )}
+      <Text style={styles.muted}>{t('giftList.guestHint')}</Text>
+    </View>
+  )
+}
+
+// One participant's wishlist — or, with `guest`, that of someone without an
+// account, kept up by one participant.
 function Wishlist({
   postId,
   participant,
+  guest,
   isMine,
   isRecipient,
   items,
@@ -261,6 +335,12 @@ function Wishlist({
 }: {
   postId: string
   participant: { id: string; name: string; avatarUrl: string | null }
+  guest?: GiftListGuest & {
+    // null = you keep it up yourself.
+    managerName: string | null
+    // Rename/remove: its manager or the list's starter.
+    canManage: boolean
+  }
   isMine: boolean
   isRecipient: boolean
   items: GiftListItem[]
@@ -269,10 +349,14 @@ function Wishlist({
 }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<string | 'new' | null>(null)
+  // Renaming a guest: the new name being typed, null when not renaming.
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const guestId = guest?.id ?? null
   const mutation = useMutation({
     mutationFn: (run: () => Promise<unknown>) => run(),
     onSuccess: () => {
       setEditing(null)
+      setRenaming(null)
       onChanged()
     },
     onError: (err: any) => Alert.alert(t('common.error'), err.response?.data?.error || t('giftList.actionFailed')),
@@ -282,7 +366,7 @@ function Wishlist({
     const ids = items.map((i) => i.id)
     const [moved] = ids.splice(index, 1)
     ids.splice(index + delta, 0, moved)
-    mutation.mutate(() => reorderGiftListItems(postId, ids))
+    mutation.mutate(() => reorderGiftListItems(postId, ids, guestId))
   }
 
   return (
@@ -292,14 +376,64 @@ function Wishlist({
     >
       <View style={styles.wishlistHeader}>
         <Avatar name={participant.name} avatarUrl={participant.avatarUrl} size={30} />
-        <Text style={styles.wishlistTitle}>
-          {isMine ? t('giftList.myWishlist') : t('giftList.wishlistOf', { name: participant.name })}
+        <Text style={[styles.wishlistTitle, guest && styles.flex]}>
+          {isMine && !guest ? t('giftList.myWishlist') : t('giftList.wishlistOf', { name: participant.name })}
         </Text>
+        {guest?.canManage && (
+          <View style={styles.itemActions}>
+            <IconButton name="edit-2" label={t('giftList.renameGuest')} onPress={() => setRenaming(guest.name)} />
+            <IconButton
+              name="trash-2"
+              label={t('giftList.removeGuest')}
+              onPress={() =>
+                Alert.alert(t('giftList.removeGuestConfirm', { name: guest.name }), undefined, [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  {
+                    text: t('giftList.removeGuest'),
+                    style: 'destructive',
+                    onPress: () => mutation.mutate(() => removeGiftListGuest(postId, guest.id)),
+                  },
+                ])
+              }
+            />
+          </View>
+        )}
       </View>
       {isRecipient && <Text style={styles.recipientTag}>{t('giftList.recipientBadge')}</Text>}
+      {guest && (
+        <Text style={styles.muted}>
+          {t('giftList.guestBadge')} ·{' '}
+          {guest.managerName
+            ? t('giftList.guestManagedBy', { name: guest.managerName })
+            : t('giftList.guestManagedByYou')}
+        </Text>
+      )}
+      {guest && renaming !== null && (
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            value={renaming}
+            onChangeText={setRenaming}
+            placeholder={t('giftList.renameGuestPrompt')}
+            maxLength={80}
+            autoFocus
+          />
+          <View style={styles.row}>
+            <Button label={t('common.cancel')} onPress={() => setRenaming(null)} />
+            <Button
+              primary
+              label={t('common.save')}
+              disabled={mutation.isPending || !renaming.trim()}
+              onPress={() => mutation.mutate(() => renameGiftListGuest(postId, guest.id, renaming.trim()))}
+            />
+          </View>
+        </View>
+      )}
 
       {items.length === 0 && editing !== 'new' && (
-        <Text style={styles.muted}>{isMine ? t('giftList.myWishlistEmpty') : t('giftList.wishlistEmpty')}</Text>
+        <Text style={styles.muted}>
+          {isMine && !guest ? t('giftList.myWishlistEmpty') : t('giftList.wishlistEmpty')}
+        </Text>
       )}
 
       {items.map((item, index) =>
@@ -365,7 +499,9 @@ function Wishlist({
           <ItemForm
             busy={mutation.isPending}
             onCancel={() => setEditing(null)}
-            onSave={(body) => mutation.mutate(() => createGiftListItem(postId, body as GiftListItemBody))}
+            onSave={(body) =>
+              mutation.mutate(() => createGiftListItem(postId, { ...(body as GiftListItemBody), guestId }))
+            }
           />
         ) : (
           <Button label={t('giftList.addItem')} onPress={() => setEditing('new')} />

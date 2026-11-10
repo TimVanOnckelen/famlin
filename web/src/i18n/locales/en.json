@@ -615,7 +615,18 @@
     "exclusionPerson": "Person {{number}}",
     "addExclusion": "Add exclusion",
     "saveSettings": "Save settings",
-    "photoUploadFailed": "The photo couldn't be uploaded. Try another one."
+    "photoUploadFailed": "The photo couldn't be uploaded. Try another one.",
+    "addGuest": "Add a wishlist for someone without an account",
+    "addGuestSubmit": "Add wishlist",
+    "guestNamePlaceholder": "Name, e.g. a child",
+    "guestHint": "For children or anyone not on Famlin. You keep their wishlist up; they're not part of the draw.",
+    "guestBadge": "No account",
+    "guestManagedBy": "Kept up by {{name}}",
+    "guestManagedByYou": "Kept up by you",
+    "renameGuest": "Rename",
+    "renameGuestPrompt": "New name",
+    "removeGuest": "Remove wishlist",
+    "removeGuestConfirm": "Remove {{name}}'s wishlist and all its wishes?"
   },
   "wiki": {
     "title": "Family Wiki",

@@ -125,6 +125,8 @@
     "giftListItemNotFound": "Wens niet gevonden.",
     "giftListTooManyItems": "Een verlanglijst kan maximaal 100 wensen bevatten.",
     "giftListInvalidOrder": "De nieuwe volgorde moet elk van je wensen precies één keer bevatten.",
+    "giftListGuestNotFound": "Verlanglijstje niet gevonden.",
+    "giftListTooManyGuests": "Een verlanglijst kan maximaal 30 lijstjes hebben voor mensen zonder account.",
     "giftDrawDisabled": "Lootjes trekken staat niet aan voor deze cadeaulijst.",
     "giftDrawTooFewParticipants": "Lootjes trekken kan pas vanaf 3 deelnemers.",
     "giftDrawImpossible": "Met deze uitsluitingen is geen trekking mogelijk. Verwijder enkele uitsluitingen en probeer opnieuw.",

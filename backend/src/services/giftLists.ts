@@ -20,6 +20,8 @@ export const GIFT_LIST_POST_TYPE = 'GIFT_LIST'
 export const MAX_GIFT_LIST_PARTICIPANTS = 50
 export const MIN_DRAW_PARTICIPANTS = 3
 export const MAX_ITEMS_PER_WISHLIST = 100
+// Wishlists for people without an account (GiftListGuest) per gift list.
+export const MAX_GUESTS_PER_LIST = 30
 
 // The persisted shape of Post.typeData for a GIFT_LIST post. Like TRIP and
 // ALBUM, a lifecycle type whose own routes keep writing typeData after
@@ -315,6 +317,8 @@ export async function afterGiftListParticipantsRemoved(lists: GiftListsOfUser, a
       if (!locked) return 'unchanged' as const
       const participantIds = await getParticipantIds(locked, tx)
       await tx.giftListItem.deleteMany({ where: { postId, ownerId: { notIn: participantIds } } })
+      // A guest's wishlist goes with the participant who kept it up.
+      await tx.giftListGuest.deleteMany({ where: { postId, managedById: { notIn: participantIds } } })
       return saveGiftList(tx, postId, locked, locked.typeData)
     })
     if (outcome === 'drawn') emitDomainEvent('giftList.drawn', { postId, actorId })

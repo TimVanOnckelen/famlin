@@ -615,7 +615,18 @@
     "exclusionPerson": "Pessoa {{number}}",
     "addExclusion": "Adicionar exclusão",
     "saveSettings": "Guardar definições",
-    "photoUploadFailed": "Não foi possível carregar a fotografia. Experimenta outra."
+    "photoUploadFailed": "Não foi possível carregar a fotografia. Experimenta outra.",
+    "addGuest": "Adicionar uma lista para alguém sem conta",
+    "addGuestSubmit": "Adicionar lista",
+    "guestNamePlaceholder": "Nome, p. ex. uma criança",
+    "guestHint": "Para crianças ou quem não esteja no Famlin. É você quem mantém a lista; não entram no sorteio.",
+    "guestBadge": "Sem conta",
+    "guestManagedBy": "Mantida por {{name}}",
+    "guestManagedByYou": "Mantida por si",
+    "renameGuest": "Mudar o nome",
+    "renameGuestPrompt": "Novo nome",
+    "removeGuest": "Remover lista",
+    "removeGuestConfirm": "Remover a lista de {{name}} e todos os seus desejos?"
   },
   "wiki": {
     "title": "Wiki da Família",

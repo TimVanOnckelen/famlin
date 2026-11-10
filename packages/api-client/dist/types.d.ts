@@ -145,6 +145,12 @@ export interface GiftListParticipant {
     avatarUrl: string | null;
     itemCount: number;
 }
+export interface GiftListGuest {
+    id: string;
+    name: string;
+    managedById: string;
+    itemCount: number;
+}
 export interface GiftListEnrichment {
     title: string;
     occasionDate: string | null;
@@ -155,6 +161,7 @@ export interface GiftListEnrichment {
     managerId: string;
     isManager: boolean;
     participants: GiftListParticipant[];
+    guests?: GiftListGuest[];
     itemCount: number;
     exclusions: Array<[string, string]> | null;
     myRecipient: {
@@ -172,6 +179,7 @@ export interface GiftListItem {
     url: string | null;
     photoUrl: string | null;
     position: number;
+    guestId?: string | null;
     createdAt: string;
     updatedAt: string;
 }

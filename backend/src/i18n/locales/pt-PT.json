@@ -125,6 +125,8 @@
     "giftListItemNotFound": "Desejo não encontrado.",
     "giftListTooManyItems": "Uma lista de desejos pode ter no máximo 100 desejos.",
     "giftListInvalidOrder": "A nova ordem tem de incluir cada um dos teus desejos exatamente uma vez.",
+    "giftListGuestNotFound": "Lista de desejos não encontrada.",
+    "giftListTooManyGuests": "Uma lista de presentes pode ter no máximo 30 listas para pessoas sem conta.",
     "giftDrawDisabled": "O sorteio do Amigo Secreto não está ativado nesta lista de presentes.",
     "giftDrawTooFewParticipants": "Um sorteio de Amigo Secreto precisa de pelo menos 3 participantes.",
     "giftDrawImpossible": "Não é possível fazer o sorteio com estas exclusões. Remove algumas exclusões e tenta outra vez.",

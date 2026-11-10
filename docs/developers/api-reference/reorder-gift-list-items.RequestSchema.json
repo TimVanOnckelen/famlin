@@ -1,1 +1,1 @@
-{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["itemIds"],"properties":{"itemIds":{"type":"array","items":{"type":"string"}}}}}}}}
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["itemIds"],"properties":{"itemIds":{"type":"array","items":{"type":"string"}},"guestId":{"type":"string","nullable":true,"description":"Reorder this guest's wishlist (server feature `giftListGuests`)."}}}}}}}

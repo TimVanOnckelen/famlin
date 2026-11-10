@@ -222,6 +222,15 @@ export interface GiftListParticipant {
   itemCount: number
 }
 
+// A wishlist on a gift list for someone without an account (a young child,
+// say), kept up by one participant (`managedById`). Never part of the draw.
+export interface GiftListGuest {
+  id: string
+  name: string
+  managedById: string
+  itemCount: number
+}
+
 // Present only when type === 'GIFT_LIST' — participants, wishlist counts and
 // the viewer's OWN Secret Santa recipient. The server never sends anyone
 // else's pairing.
@@ -235,6 +244,8 @@ export interface GiftListEnrichment {
   managerId: string
   isManager: boolean
   participants: GiftListParticipant[]
+  // Missing on servers without the giftListGuests feature.
+  guests?: GiftListGuest[]
   itemCount: number
   // Only for the starter; null for everyone else.
   exclusions: Array<[string, string]> | null
@@ -250,6 +261,9 @@ export interface GiftListItem {
   url: string | null
   photoUrl: string | null
   position: number
+  // Set when the wish is on a guest's wishlist; ownerId is then the guest's
+  // manager. Missing (= own wishlist) on older servers.
+  guestId?: string | null
   createdAt: string
   updatedAt: string
 }
