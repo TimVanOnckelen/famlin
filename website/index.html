@@ -62,16 +62,21 @@
   .nav .btn { padding: 9px 16px; font-size: 15px; }
 
   /* hero */
-  .hero { padding: 64px 0 40px; }
-  .hero .wrap { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
-  .hero h1 { font-size: 52px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; }
+  .hero { padding: 64px 0 32px; overflow-x: clip; }
+  .hero .wrap { display: flex; flex-direction: column; align-items: center; gap: 52px; }
+  .hero-copy { text-align: center; max-width: 800px; }
+  .hero h1 { font-size: 54px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; text-wrap: balance; }
   .hero h1 span { color: var(--brand); }
-  .hero .lead { font-size: 20px; color: var(--text); margin-top: 20px; }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .hero .lead { font-size: 20px; color: var(--text); margin: 20px auto 0; max-width: 680px; }
+  .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
   .hero-meta { margin-top: 22px; font-size: 14px; color: var(--muted); }
   .hero-meta a { font-weight: 700; }
+  .hero-visual { position: relative; width: 100%; max-width: 1000px; padding: 0 160px 44px 0; }
+  .hero-visual .browser { margin-top: 0; box-shadow: 0 28px 70px rgba(19,37,45,0.16); }
   .phone { width: 280px; margin: 0 auto; border-radius: 40px; padding: 9px; background: #1b2d35; box-shadow: 0 24px 60px rgba(19,37,45,0.18); }
   .phone img { display: block; width: 100%; height: auto; border-radius: 31px; }
+  .hero-visual .phone { position: absolute; right: 0; bottom: 0; width: 236px; margin: 0; border-radius: 36px; padding: 8px; box-shadow: 0 30px 70px rgba(19,37,45,0.32); }
+  .hero-visual .phone img { border-radius: 28px; }
 
   /* principles */
   .principles { padding: 8px 0 0; }
@@ -162,6 +167,9 @@
     .hero .wrap, .admin .wrap, .install .wrap, .apps .box { grid-template-columns: 1fr; gap: 36px; }
     .hero { padding-top: 40px; }
     .hero h1 { font-size: 40px; letter-spacing: -1.2px; }
+    .hero-visual { padding: 0 120px 32px 0; }
+    .hero-visual .phone { width: 184px; border-radius: 30px; padding: 7px; }
+    .hero-visual .phone img { border-radius: 23px; }
     .principles ul { grid-template-columns: 1fr 1fr; }
     .principles li:nth-child(3) { padding-left: 0; border-left: 0; }
     .principles li:nth-child(n+3) { border-top: 1px solid var(--line); }
@@ -178,8 +186,9 @@
     .lead, .hero .lead { font-size: 17px; }
     .hero h1 { font-size: 34px; }
     .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
-    .phone { width: 230px; border-radius: 34px; }
-    .phone img { border-radius: 26px; }
+    .hero-visual { padding: 0 64px 24px 0; }
+    .hero-visual .phone { width: 116px; border-radius: 20px; padding: 4px; }
+    .hero-visual .phone img { border-radius: 16px; }
     .principles ul { grid-template-columns: 1fr; }
     .principles li, .principles li + li { padding: 14px 0; border-left: 0; }
     .principles li + li { border-top: 1px solid var(--line); }
@@ -232,7 +241,7 @@
   <!-- Hero -->
   <header class="hero" id="top">
     <div class="wrap">
-      <div>
+      <div class="hero-copy">
         <h1>A private place for your family, <span>on a server you own.</span></h1>
         <p class="lead">Famlin is an open-source family app you host yourself. Share photos, milestones, trips and the small everyday stuff with the people who actually care, in plain chronological order. No ads, no recommendations, no company in between.</p>
         <div class="hero-actions">
@@ -241,8 +250,14 @@
         </div>
         <p class="hero-meta">Free and MIT-licensed · iOS, Android and web · <a href="https://github.com/TimVanOnckelen/famlin">Source on GitHub</a></p>
       </div>
-      <div class="phone">
-        <img src="/assets/images/screenshots/feed.webp" alt="The Famlin feed on a phone: a birthday milestone post and a photo post, with a filter for each family" width="640" height="1392" fetchpriority="high">
+      <div class="hero-visual">
+        <div class="browser">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>famlin.yourfamily.example</span></div>
+          <img src="/assets/images/screenshots/web-feed.webp" alt="The Famlin web app in a browser, showing stories, a gift list and a poll in one family's feed" width="1800" height="1125" fetchpriority="high">
+        </div>
+        <div class="phone">
+          <img src="/assets/images/screenshots/feed.webp" alt="The Famlin feed on a phone: a birthday milestone post and a photo post, with a filter for each family" width="640" height="1392" loading="lazy">
+        </div>
       </div>
     </div>
   </header>
@@ -263,13 +278,6 @@
     <div class="wrap">
       <h2>What your family gets</h2>
       <p class="lead">One app for several families. Grandma can follow both sides of the family in one feed, and still see which family each post came from.</p>
-      <figure style="margin:0;">
-        <div class="browser">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>famlin.yourfamily.example</span></div>
-          <img src="/assets/images/screenshots/web-feed.webp" alt="The Famlin web app in a browser, showing stories, a gift list and a poll in one family's feed" width="1800" height="1125" loading="lazy">
-        </div>
-        <figcaption class="browser-caption">The web app on a laptop: stories at the top, the family list on the side, and the same feed as on your phone.</figcaption>
-      </figure>
 
       <div class="rows">
         <div class="row">
