@@ -1,5 +1,6 @@
 import { InitialAvatar } from './common/InitialAvatar'
 import { Button } from '@famlin/ui/button'
+import { Alert } from '@famlin/ui/alert'
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
@@ -24,6 +25,7 @@ export function Layout({ user, children }: LayoutProps) {
   const operationsActive = OPERATIONS_ROUTES.includes(pathname)
   const [operationsOpen, setOperationsOpen] = useState(operationsActive)
   const [version, setVersion] = useState<string | null>(null)
+  const [readOnly, setReadOnly] = useState(false)
 
   useEffect(() => {
     if (OPERATIONS_ROUTES.includes(pathname)) setOperationsOpen(true)
@@ -34,7 +36,10 @@ export function Layout({ user, children }: LayoutProps) {
   useEffect(() => {
     api
       .getServerInfo()
-      .then((info) => setVersion(info.version))
+      .then((info) => {
+        setVersion(info.version)
+        setReadOnly(info.readOnly === true)
+      })
       .catch(() => {})
   }, [])
 
@@ -96,6 +101,11 @@ export function Layout({ user, children }: LayoutProps) {
         </div>
       </aside>
       <main className="main">
+        {readOnly && (
+          <Alert className="mb-6 border-warning/20 bg-warning/10 p-5 font-semibold" role="status">
+            {t('layout.demoBanner')}
+          </Alert>
+        )}
         <AlertBanner />
         {children}
       </main>

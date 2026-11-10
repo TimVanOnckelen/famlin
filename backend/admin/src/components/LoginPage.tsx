@@ -10,6 +10,7 @@ import { Button } from '@famlin/ui/button'
 import { Input } from '@famlin/ui/input'
 import { Alert, AlertDescription } from '@famlin/ui/alert'
 import { Separator } from '@famlin/ui/separator'
+import { DEMO_ADMIN_LOGIN } from '../demo'
 
 // Must stay exactly this URL — deployments have it registered as the
 // redirect_uri with their OIDC provider.
@@ -25,6 +26,7 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
   const [isLoading, setIsLoading] = useState(false)
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
+  const [readOnly, setReadOnly] = useState(false)
 
   const finishLogin = (result: { token: string; user: User }) => {
     if (!result.user.isAdmin) {
@@ -41,6 +43,10 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
       .getOidcConfig()
       .then(setOidcConfig)
       .catch(() => setOidcConfig(null))
+    api
+      .getServerInfo()
+      .then((info) => setReadOnly(info.readOnly === true))
+      .catch(() => {})
   }, [])
 
   // Finish an SSO round-trip: the provider redirected back to us with
@@ -121,6 +127,29 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
         <p className="font-semibold text-muted-foreground" role="status">
           {notice}
         </p>
+      )}
+      {readOnly && (
+        <Alert className="border-warning/20 bg-warning/10 text-left" role="status">
+          <AlertDescription className="flex flex-col gap-2">
+            <strong className="text-sm uppercase tracking-wider">{t('login.demoTitle')}</strong>
+            <span>{t('login.demoText')}</span>
+            <span className="font-semibold [overflow-wrap:anywhere]">
+              {t('login.demoCredentials')} <code>{DEMO_ADMIN_LOGIN.email}</code> /{' '}
+              <code>{DEMO_ADMIN_LOGIN.password}</code>
+            </span>
+            <Button
+              type="button"
+              variant="secondary"
+              className="self-start"
+              onClick={() => {
+                setEmail(DEMO_ADMIN_LOGIN.email)
+                setPassword(DEMO_ADMIN_LOGIN.password)
+              }}
+            >
+              {t('login.useDemoLogin')}
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
       <form className="flex flex-col gap-4 text-left" onSubmit={handlePasswordLogin}>
         <FormField label={t('common.email')} htmlFor="login-email">

@@ -333,7 +333,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Mode démo en lecture seule. Tu peux parcourir, mais pas publier ni commenter."
+    "readOnlyBanner": "Mode démo en lecture seule. Tu peux parcourir, mais pas publier ni commenter.",
+    "demoTitle": "Démo",
+    "demoText": "Ceci est une démo en lecture seule avec une famille d'exemple. Parcours librement : publier, commenter et toute autre modification sont désactivés.",
+    "demoCredentials": "Connecte-toi avec :",
+    "useDemoLogin": "Remplir la connexion démo",
+    "blockedAction": "Ceci est une démo : les modifications sont désactivées. Tu peux parcourir, mais pas publier, commenter ni modifier."
   },
   "trip": {
     "detail": {

@@ -45,7 +45,8 @@
     "logout": "退出登录",
     "language": "语言",
     "version": "版本 {{version}}",
-    "systemStatus": "系统状态"
+    "systemStatus": "系统状态",
+    "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。"
   },
   "devices": {
     "title": "移动设备",
@@ -78,7 +79,11 @@
     "loginButton": "登录",
     "loginWithSso": "使用 {{name}} 继续",
     "ssoLoginFailed": "单点登录失败。",
-    "loginFailed": "登录失败。"
+    "loginFailed": "登录失败。",
+    "demoTitle": "演示",
+    "demoText": "这是只读演示的管理面板。可以随意查看，但无法更改设置。",
+    "demoCredentials": "登录账号：",
+    "useDemoLogin": "填入演示账号"
   },
   "setup": {
     "title": "欢迎使用 Famlin",
