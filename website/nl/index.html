@@ -62,21 +62,21 @@
   .nav .btn { padding: 9px 16px; font-size: 15px; }
 
   /* hero */
-  .hero { padding: 64px 0 32px; overflow-x: clip; }
-  .hero .wrap { display: flex; flex-direction: column; align-items: center; gap: 52px; }
-  .hero-copy { text-align: center; max-width: 800px; }
-  .hero h1 { font-size: 54px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; text-wrap: balance; }
+  .hero { padding: 64px 0 48px; overflow-x: clip; }
+  .hero .wrap { display: grid; grid-template-columns: 0.92fr 1.08fr; gap: 48px; align-items: center; }
+  .hero h1 { font-size: 52px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; }
   .hero h1 span { color: var(--brand); }
-  .hero .lead { font-size: 20px; color: var(--text); margin: 20px auto 0; max-width: 680px; }
-  .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+  .hero .lead { font-size: 20px; color: var(--text); margin-top: 20px; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .hero-meta { margin-top: 22px; font-size: 14px; color: var(--muted); }
   .hero-meta a { font-weight: 700; }
-  .hero-visual { position: relative; width: 100%; max-width: 1000px; padding: 0 160px 44px 0; }
-  .hero-visual .browser { margin-top: 0; box-shadow: 0 28px 70px rgba(19,37,45,0.16); }
+  .hero-visual { position: relative; margin-right: -150px; padding: 40px 0 64px 76px; }
+  .hero-visual::before { content: ""; position: absolute; top: 0; bottom: 24px; left: 36px; right: -600px; border-radius: 32px 0 0 32px; background: linear-gradient(135deg, #fbf1e1 0%, #f6e3c8 100%); }
+  .hero-visual .browser { position: relative; margin-top: 0; box-shadow: 0 30px 70px rgba(70,45,10,0.18); }
   .phone { width: 280px; margin: 0 auto; border-radius: 40px; padding: 9px; background: #1b2d35; box-shadow: 0 24px 60px rgba(19,37,45,0.18); }
   .phone img { display: block; width: 100%; height: auto; border-radius: 31px; }
-  .hero-visual .phone { position: absolute; right: 0; bottom: 0; width: 236px; margin: 0; border-radius: 36px; padding: 8px; box-shadow: 0 30px 70px rgba(19,37,45,0.32); }
-  .hero-visual .phone img { border-radius: 28px; }
+  .hero-visual .phone { position: absolute; left: 0; bottom: 0; width: 158px; margin: 0; border-radius: 28px; padding: 6px; box-shadow: 0 26px 60px rgba(19,37,45,0.32); transform: rotate(-4deg); }
+  .hero-visual .phone img { border-radius: 22px; }
 
   /* principles */
   .principles { padding: 8px 0 0; }
@@ -167,9 +167,8 @@
     .hero .wrap, .admin .wrap, .install .wrap, .apps .box { grid-template-columns: 1fr; gap: 36px; }
     .hero { padding-top: 40px; }
     .hero h1 { font-size: 40px; letter-spacing: -1.2px; }
-    .hero-visual { padding: 0 120px 32px 0; }
-    .hero-visual .phone { width: 184px; border-radius: 30px; padding: 7px; }
-    .hero-visual .phone img { border-radius: 23px; }
+    .hero-visual { margin-right: -24px; padding: 32px 0 52px 64px; }
+    .hero-visual .phone { width: 140px; }
     .principles ul { grid-template-columns: 1fr 1fr; }
     .principles li:nth-child(3) { padding-left: 0; border-left: 0; }
     .principles li:nth-child(n+3) { border-top: 1px solid var(--line); }
@@ -186,9 +185,10 @@
     .lead, .hero .lead { font-size: 17px; }
     .hero h1 { font-size: 34px; }
     .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
-    .hero-visual { padding: 0 64px 24px 0; }
-    .hero-visual .phone { width: 116px; border-radius: 20px; padding: 4px; }
-    .hero-visual .phone img { border-radius: 16px; }
+    .hero-visual { margin-right: -18px; padding: 20px 0 36px 40px; }
+    .hero-visual::before { left: 20px; border-radius: 22px 0 0 22px; }
+    .hero-visual .phone { width: 92px; border-radius: 18px; padding: 4px; }
+    .hero-visual .phone img { border-radius: 14px; }
     .principles ul { grid-template-columns: 1fr; }
     .principles li, .principles li + li { padding: 14px 0; border-left: 0; }
     .principles li + li { border-top: 1px solid var(--line); }
@@ -256,7 +256,7 @@
           <img src="/assets/images/screenshots/web-feed.webp" alt="De Famlin-webapp in een browser, met stories, een verlanglijst en een peiling in de feed van één familie" width="1800" height="1125" fetchpriority="high">
         </div>
         <div class="phone">
-          <img src="/assets/images/screenshots/feed.webp" alt="De Famlin-feed op een telefoon: een mijlpaalbericht over een verjaardag en een fotobericht, met een filter per familie" width="640" height="1392" loading="lazy">
+          <img src="/assets/images/screenshots/feed.webp" alt="De Famlin-feed op een telefoon: een mijlpaalbericht over een verjaardag en een fotobericht, met een filter per familie" width="640" height="1392">
         </div>
       </div>
     </div>
