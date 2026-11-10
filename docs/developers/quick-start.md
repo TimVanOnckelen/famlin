@@ -173,7 +173,7 @@ Both scripts set `APP_VARIANT=development`, which `mobile/app.config.js` reads, 
 
 This is **local-only**. No `eas.json` profile sets `APP_VARIANT`, so every EAS and CI build — `development`, `preview`, `production`, `apk` — stays the production app id.
 
-**Measuring performance:** a debug build runs the JS bundle in development mode and is much slower than what users get, so judge scrolling and animations in a Release build of the dev variant: `npm run android:dev -- --variant release` or `npm run ios:dev -- --configuration Release --device`. The scripts also set `EXPO_PUBLIC_SCROLL_DIAGNOSTICS=1` for the dev variant, so the hidden feed scroll diagnostics stay available in that Release build.
+**Measuring performance:** a debug build runs the JS bundle in development mode and is much slower than what users get, so judge scrolling and animations in a Release build of the dev variant: `npm run android:dev -- --variant release` or `npm run ios:dev -- --configuration Release --device`.
 
 The dev icons are generated from the production ones by `python3 scripts/generate-dev-icons.py` (Pillow); re-run it after changing `assets/icon.png` or `assets/adaptive-icon.png`.
 
