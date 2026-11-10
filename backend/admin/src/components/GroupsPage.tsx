@@ -7,6 +7,7 @@ import { Badge } from '@famlin/ui/badge'
 import { SelectField } from '@famlin/ui/common/select-field'
 import { Input } from '@famlin/ui/input'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { AddMembersModal } from './AddMembersModal'
 import { MemberCards } from './MemberCards'
 import { CheckboxField } from './CheckboxField'
@@ -703,14 +704,14 @@ function GroupFormModal({ group, onClose, onSubmit }: GroupFormModalProps) {
           onChange={setStoriesEnabled}
         />
 
-        <div className="modal-actions">
+        <DialogActions>
           <Button variant="secondary" type="button" className="secondary" onClick={onClose} disabled={saving}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={saving || !name.trim() || loadingPostTypes || noTypesSelected}>
             {isEdit ? t('groups.save') : t('groups.add')}
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </AdminModal>
   )

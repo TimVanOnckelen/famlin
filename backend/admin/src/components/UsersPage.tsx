@@ -3,9 +3,10 @@ import { StateMessage } from '@famlin/ui/common/state-message'
 import { PageHeader } from '@famlin/ui/common/page-header'
 import { Button } from '@famlin/ui/button'
 import { Card } from '@famlin/ui/card'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TableActionsCell } from '@famlin/ui/table'
 import { Badge } from '@famlin/ui/badge'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { useAdminDialogs } from './AdminDialogs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -194,7 +195,7 @@ export function UsersPage() {
             </StateMessage>
           )
         ) : (
-          <Table>
+          <Table stacked>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('users.table.name')}</TableHead>
@@ -221,7 +222,7 @@ export function UsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell label={t('users.table.groups')}>
                     <div className="group-badges">
                       {user.groups && user.groups.length > 0 ? (
                         user.groups.map((g) => (
@@ -234,7 +235,7 @@ export function UsersPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell label={t('users.table.admin')}>
                     <Button
                       variant="ghost"
                       type="button"
@@ -247,7 +248,7 @@ export function UsersPage() {
                       <Icon name="shield" size={14} />
                     </Button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell label={t('users.table.notifications')}>
                     <div className="toggle-group">
                       <Button
                         type="button"
@@ -275,8 +276,10 @@ export function UsersPage() {
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString(i18n.language)}</TableCell>
-                  <TableCell className="actions">
+                  <TableCell label={t('users.table.memberSince')}>
+                    {new Date(user.createdAt).toLocaleDateString(i18n.language)}
+                  </TableCell>
+                  <TableActionsCell className="actions">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -307,7 +310,7 @@ export function UsersPage() {
                     >
                       <Icon name="trash" size={15} />
                     </Button>
-                  </TableCell>
+                  </TableActionsCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -393,11 +396,11 @@ function ManageGroupsModal({ user, groups, onClose, onChanged }: ManageGroupsMod
           })}
         </ul>
       )}
-      <div className="modal-actions">
+      <DialogActions>
         <Button variant="secondary" className="secondary" onClick={onClose} disabled={!!busyGroupId}>
           {t('common.close')}
         </Button>
-      </div>
+      </DialogActions>
     </AdminModal>
   )
 }

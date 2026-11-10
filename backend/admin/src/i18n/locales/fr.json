@@ -44,7 +44,10 @@
     "logout": "Se déconnecter",
     "language": "Langue",
     "version": "Version {{version}}",
-    "systemStatus": "État du système"
+    "systemStatus": "État du système",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu"
   },
   "devices": {
     "title": "Appareils mobiles",

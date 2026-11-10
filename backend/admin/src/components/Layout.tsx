@@ -1,5 +1,6 @@
 import { InitialAvatar } from './common/InitialAvatar'
 import { Button } from '@famlin/ui/button'
+import { NavShell } from '@famlin/ui/common/nav-shell'
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
@@ -43,62 +44,74 @@ export function Layout({ user, children }: LayoutProps) {
     window.location.href = '/admin/'
   }
 
+  const sidebar = (
+    <>
+      <div className="sidebar-brand">
+        <Logo size={40} />
+        <h1>{t('common.appName')}</h1>
+      </div>
+      <nav aria-label={t('layout.menu')}>
+        <NavLink to="/" end>
+          {t('layout.dashboard')}
+        </NavLink>
+        <NavLink to="/users">{t('layout.users')}</NavLink>
+        <NavLink to="/groups">{t('layout.groups')}</NavLink>
+        <NavLink to="/content">{t('layout.content')}</NavLink>
+        <Button
+          variant="ghost"
+          type="button"
+          className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
+          aria-expanded={operationsOpen}
+          aria-controls="sidebar-operations-links"
+          onClick={() => setOperationsOpen((open) => !open)}
+        >
+          {t('layout.operations')}
+          <span className={operationsOpen ? 'sidebar-nav-chevron expanded' : 'sidebar-nav-chevron'}>
+            <Icon name="chevron-down" size={16} />
+          </span>
+        </Button>
+        <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
+          <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
+          <NavLink to="/devices">{t('layout.devices')}</NavLink>
+          <NavLink to="/storage">{t('storage.title')}</NavLink>
+          <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
+        </div>
+        <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
+      </nav>
+      <div className="user">
+        <div className="flex items-center gap-3">
+          <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
+          <div className="min-w-0">
+            <div className="truncate font-bold">{user.name}</div>
+            <div className="truncate text-xs">{user.email}</div>
+          </div>
+        </div>
+        <LanguageSelector className="sidebar-language" />
+        <Button variant="secondary" className="secondary" onClick={handleLogout}>
+          {t('layout.logout')}
+        </Button>
+        {version && <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>{t('layout.version', { version })}</div>}
+      </div>
+    </>
+  )
+
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <Logo size={40} />
-          <h1>{t('common.appName')}</h1>
-        </div>
-        <nav>
-          <NavLink to="/" end>
-            {t('layout.dashboard')}
-          </NavLink>
-          <NavLink to="/users">{t('layout.users')}</NavLink>
-          <NavLink to="/groups">{t('layout.groups')}</NavLink>
-          <NavLink to="/content">{t('layout.content')}</NavLink>
-          <Button
-            variant="ghost"
-            type="button"
-            className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
-            aria-expanded={operationsOpen}
-            aria-controls="sidebar-operations-links"
-            onClick={() => setOperationsOpen((open) => !open)}
-          >
-            {t('layout.operations')}
-            <span className={operationsOpen ? 'sidebar-nav-chevron expanded' : 'sidebar-nav-chevron'}>
-              <Icon name="chevron-down" size={16} />
-            </span>
-          </Button>
-          <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
-            <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
-            <NavLink to="/devices">{t('layout.devices')}</NavLink>
-            <NavLink to="/storage">{t('storage.title')}</NavLink>
-            <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
-          </div>
-          <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
-        </nav>
-        <div className="user">
-          <div className="flex items-center gap-3">
-            <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
-            <div className="min-w-0">
-              <div className="truncate font-bold">{user.name}</div>
-              <div className="truncate text-xs">{user.email}</div>
-            </div>
-          </div>
-          <LanguageSelector className="sidebar-language" />
-          <Button variant="secondary" className="secondary" onClick={handleLogout}>
-            {t('layout.logout')}
-          </Button>
-          {version && (
-            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>{t('layout.version', { version })}</div>
-          )}
-        </div>
-      </aside>
-      <main className="main">
-        <AlertBanner />
-        {children}
-      </main>
-    </div>
+    <NavShell
+      sidebar={sidebar}
+      brand={
+        <>
+          <Logo size={32} />
+          <span className="text-xl font-black tracking-tight text-primary">{t('common.appName')}</span>
+        </>
+      }
+      menuLabel={t('layout.menu')}
+      openMenuLabel={t('layout.openMenu')}
+      closeMenuLabel={t('layout.closeMenu')}
+      sidebarClassName="sidebar"
+      mainClassName="main"
+    >
+      <AlertBanner />
+      {children}
+    </NavShell>
   )
 }

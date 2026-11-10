@@ -13,6 +13,7 @@ test('native values use numbers and resolved colors without browser expressions'
   assert.equal(tokens.shadow.primary.color, tokens.color.primary)
   assert.deepEqual(tokens.gradient.brand.colors, ['#318ea2', '#005480'])
   assert.equal(tokens.font.body.family, 'Nunito')
+  assert.equal(tokens.breakpoint.desktop, 721)
   assert.doesNotMatch(JSON.stringify(tokens), /var\(|linear-gradient\(|\d(?:px|rem)\b|"ref"/)
   const generated = read('../src/generated.ts')
   assert.equal(generated, renderTypeScript(tokens))
@@ -23,6 +24,8 @@ test('native values use numbers and resolved colors without browser expressions'
 test('preserves all existing browser values through the token and UI layers', () => {
   const css = renderCss(tokens)
   assert.equal(read('../tokens.css'), css)
+  // Tailwind breakpoint for the compact (≤720px) / desktop layout switch.
+  assert.match(css, /@theme \{\n {2}--breakpoint-desktop: 45\.0625rem;\n\}/)
   const theme = read('../../ui/styles.css')
   const roots = [...theme.matchAll(/:root \{([\s\S]*?)\}/g)].map((match) => match[1]).join('\n')
   const values = Object.fromEntries(

@@ -3,7 +3,7 @@ import { PageHeader } from '@famlin/ui/common/page-header'
 import { StateMessage } from '@famlin/ui/common/state-message'
 import { Card } from '@famlin/ui/card'
 import { Button } from '@famlin/ui/button'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TableActionsCell } from '@famlin/ui/table'
 import { Badge } from '@famlin/ui/badge'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -117,7 +117,7 @@ export function DevicesPage() {
           </StateMessage>
         ) : (
           <div className="content-table">
-            <Table>
+            <Table stacked>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('devices.member')}</TableHead>
@@ -143,12 +143,14 @@ export function DevicesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="device-install-id">{device.installId}</TableCell>
-                    <TableCell>{device.platform}</TableCell>
-                    <TableCell>{device.osVersion}</TableCell>
-                    <TableCell>{device.appVersion}</TableCell>
-                    <TableCell>{device.appBuild}</TableCell>
-                    <TableCell>
+                    <TableCell label={t('devices.installId')} className="device-install-id">
+                      {device.installId}
+                    </TableCell>
+                    <TableCell label={t('devices.platform')}>{device.platform}</TableCell>
+                    <TableCell label={t('devices.osVersion')}>{device.osVersion}</TableCell>
+                    <TableCell label={t('devices.appVersion')}>{device.appVersion}</TableCell>
+                    <TableCell label={t('devices.appBuild')}>{device.appBuild}</TableCell>
+                    <TableCell label={t('devices.pushPermission')}>
                       <Badge
                         variant={
                           device.pushPermission === 'denied'
@@ -161,11 +163,11 @@ export function DevicesPage() {
                         {t(`devices.permissions.${device.pushPermission}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableActionsCell>
                       <Button variant="destructive" className="danger" onClick={() => void removeDevice(device)}>
                         {t('devices.remove')}
                       </Button>
-                    </TableCell>
+                    </TableActionsCell>
                   </TableRow>
                 ))}
               </TableBody>

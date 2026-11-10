@@ -4,6 +4,7 @@ import { Button } from '@famlin/ui/button'
 import { Input } from '@famlin/ui/input'
 import { SelectField } from '@famlin/ui/common/select-field'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { CheckboxField } from './CheckboxField'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -135,11 +136,11 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
                   {copied ? t('groups.invites.linkCopied') : t('groups.invites.copyLink')}
                 </Button>
               </div>
-              <div className="modal-actions">
+              <DialogActions>
                 <Button type="button" onClick={onClose}>
                   {t('common.done')}
                 </Button>
-              </div>
+              </DialogActions>
             </div>
           ) : (
             <form onSubmit={handleGenerateInvite}>
@@ -183,7 +184,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
                   {inviteError}
                 </StateMessage>
               )}
-              <div className="modal-actions">
+              <DialogActions>
                 <Button
                   variant="secondary"
                   type="button"
@@ -196,7 +197,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
                 <Button type="submit" disabled={!inviteGroupId || generatingInvite}>
                   {generatingInvite ? t('groups.invites.generating') : t('groups.invites.generateLink')}
                 </Button>
-              </div>
+              </DialogActions>
             </form>
           )
         ) : (
@@ -250,7 +251,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
                 {createError}
               </StateMessage>
             )}
-            <div className="modal-actions">
+            <DialogActions>
               <Button
                 variant="secondary"
                 type="button"
@@ -263,7 +264,7 @@ export function AddMemberModal({ onClose, onCreated, defaultGroupId, defaultMode
               <Button type="submit" disabled={creating || !name.trim() || !email.trim() || password.length < 8}>
                 {creating ? t('common.loading') : t('users.createUser')}
               </Button>
-            </div>
+            </DialogActions>
           </form>
         )}
       </div>

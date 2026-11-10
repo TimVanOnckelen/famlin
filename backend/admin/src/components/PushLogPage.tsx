@@ -71,7 +71,7 @@ export function PushLogPage() {
           ) : logs.length === 0 ? (
             <StateMessage>{t('pushLog.noLogs')}</StateMessage>
           ) : (
-            <Table>
+            <Table stacked>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('pushLog.table.date')}</TableHead>
@@ -89,8 +89,10 @@ export function PushLogPage() {
                     <TableCell>
                       <DateCell iso={log.createdAt} />
                     </TableCell>
-                    <TableCell>{t(`pushLog.types.${log.notifyType}`, log.notifyType)}</TableCell>
-                    <TableCell className="max-w-80 whitespace-normal">
+                    <TableCell label={t('pushLog.table.type')}>
+                      {t(`pushLog.types.${log.notifyType}`, log.notifyType)}
+                    </TableCell>
+                    <TableCell label={t('pushLog.table.post')} className="max-w-80 whitespace-normal">
                       {log.post ? (
                         <>
                           {log.post.content ? (
@@ -104,12 +106,12 @@ export function PushLogPage() {
                         <span className="text-muted-foreground">{t('pushLog.noPost')}</span>
                       )}
                     </TableCell>
-                    <TableCell>{log.recipientCount}</TableCell>
-                    <TableCell>{log.successCount}</TableCell>
-                    <TableCell>
+                    <TableCell label={t('pushLog.table.recipients')}>{log.recipientCount}</TableCell>
+                    <TableCell label={t('pushLog.table.delivered')}>{log.successCount}</TableCell>
+                    <TableCell label={t('pushLog.table.failed')}>
                       {log.failureCount > 0 ? log.failureCount : <span className="text-muted-foreground">0</span>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell label={t('pushLog.table.triggeredBy')}>
                       {log.triggeredByAdmin ? (
                         <span className="inline-flex items-center gap-2">
                           <InitialAvatar

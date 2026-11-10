@@ -31,3 +31,7 @@
   --fam-space-6: 1.5rem;
   --fam-space-8: 2rem;
 }
+
+@theme {
+  --breakpoint-desktop: 45.0625rem;
+}

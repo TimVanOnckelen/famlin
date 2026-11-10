@@ -8,7 +8,6 @@
     "loading": "Loading...",
     "loadMore": "Load more",
     "cancel": "Cancel",
-    "confirm": "Confirm",
     "save": "Save",
     "add": "Add",
     "delete": "Delete",
@@ -45,7 +44,10 @@
     "logout": "Log out",
     "language": "Language",
     "version": "Version {{version}}",
-    "systemStatus": "System status"
+    "systemStatus": "System status",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "devices": {
     "title": "Mobile devices",

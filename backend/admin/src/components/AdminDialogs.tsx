@@ -3,6 +3,7 @@ import { Input } from '@famlin/ui/input'
 import { Button } from '@famlin/ui/button'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { useTranslation } from 'react-i18next'
 
 type PasswordOptions = { onSubmit: (password: string) => Promise<void> }
@@ -148,7 +149,7 @@ function AdminDialog({
             {error}
           </StateMessage>
         )}
-        <div className="modal-actions">
+        <DialogActions>
           {request.kind !== 'message' && (
             <Button
               variant="secondary"
@@ -177,7 +178,7 @@ function AdminDialog({
                     : 'common.done'
             )}
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </AdminModal>
   )

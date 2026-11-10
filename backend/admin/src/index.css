@@ -62,11 +62,8 @@
     margin-top: -0.5rem;
   }
 
-  .app-layout {
-    display: flex;
-    min-height: 100vh;
-  }
-
+  /* The shell itself is @famlin/ui's NavShell; .sidebar styles both its
+     desktop aside and its compact-screen drawer. */
   .sidebar {
     width: var(--sidebar-width);
     background: var(--card);
@@ -195,10 +192,17 @@
   }
 
   .main {
-    margin-left: var(--sidebar-width);
-    flex: 1;
     padding: 2rem;
-    max-width: calc(100% - var(--sidebar-width));
+
+    @variant desktop {
+      margin-left: var(--sidebar-width);
+      max-width: calc(100% - var(--sidebar-width));
+    }
+
+    @variant max-desktop {
+      width: 100%;
+      padding: 1rem;
+    }
   }
 
   .page-header {
@@ -387,12 +391,6 @@
     font-size: 0.8rem;
   }
 
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-  }
   .master-detail {
     display: flex;
     gap: 1.5rem;
@@ -790,6 +788,7 @@
   @media (max-width: 900px) {
     .dashboard-columns {
       flex-direction: column;
+      align-items: stretch;
     }
   }
   .settings-layout {
@@ -1492,7 +1491,7 @@
     padding-left: 1.1rem;
   }
 
-  @media (max-width: 720px) {
+  @variant max-desktop {
     .status-grid {
       grid-template-columns: 1fr;
     }
@@ -1712,33 +1711,11 @@
     min-height: 44px;
   }
 }
-@media (max-width: 767px) {
-  .app-layout {
-    flex-direction: column;
-  }
-  .sidebar {
-    position: static;
-    width: 100%;
-    padding: 1rem;
-  }
-  .sidebar-brand {
-    margin-bottom: 1rem;
-  }
-  .sidebar nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .sidebar-subnav {
-    grid-column: 1 / -1;
-  }
-  .sidebar .user {
-    margin-top: 1rem;
-  }
-  .main {
-    margin-left: 0;
-    max-width: 100%;
-    width: 100%;
-    padding: 1rem;
+@variant max-desktop {
+  /* Banner text takes the row beside its icon; links and buttons wrap below. */
+  .update-banner-text,
+  .alert-banner-text {
+    flex: 1 1 calc(100% - 36px - 1rem);
   }
   .page-header {
     flex-wrap: wrap;
@@ -1752,7 +1729,12 @@
     flex-wrap: wrap;
   }
   .settings-nav {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-nav-item {
+    width: 100%;
+    min-width: 0;
   }
   form .row {
     flex-direction: column;
@@ -1782,7 +1764,7 @@
     width: 100%;
   }
 }
-@media (max-width: 767px) {
+@variant max-desktop {
   .md-detail-header {
     flex-wrap: wrap;
   }

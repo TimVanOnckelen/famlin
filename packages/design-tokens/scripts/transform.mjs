@@ -42,9 +42,19 @@ export function renderCss(tokens) {
   // Browser spacing uses rem (16px reference); native exports retain logical units.
   for (const [name, value] of Object.entries(tokens.spacing))
     declarations.push([`fam-space-${name}`, `${value / 16}rem`])
+  // Breakpoints become Tailwind theme breakpoints (`desktop:` / `max-desktop:`
+  // variants), since a custom property can't be used inside a media query.
+  // rem like Tailwind's own breakpoints (16px reference, as spacing) so the
+  // variants sort correctly. Browsers ignore the @theme at-rule when this
+  // file is loaded outside Tailwind.
+  const breakpoints = Object.entries(tokens.breakpoint)
+    .map(([name, value]) => `  --breakpoint-${name}: ${value / 16}rem;`)
+    .join('\n')
   return (
     '/* Generated from src/tokens.json. Run npm run generate. */\n:root {\n' +
     declarations.map(([key, value]) => `  --${key}: ${value};`).join('\n') +
+    '\n}\n\n@theme {\n' +
+    breakpoints +
     '\n}\n'
   )
 }

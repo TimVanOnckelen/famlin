@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
+import { ADMIN } from './accounts'
 
 // The golden path of a fresh install, in order: first-run admin setup, a
 // family plus an invite, a member joining through it, a photo post, a
@@ -8,7 +9,6 @@ import { fileURLToPath } from 'node:url'
 test.describe.configure({ mode: 'serial' })
 
 const PHOTO = fileURLToPath(new URL('./fixtures/photo.jpg', import.meta.url))
-const ADMIN = { name: 'E2E Admin', email: 'admin@e2e.test', password: 'admin-password-123' }
 const MEMBER = { name: 'E2E Member', email: 'member@e2e.test', password: 'member-password-123' }
 const FAMILY = 'E2E Family'
 const POST_TEXT = `Hello from the e2e smoke test ${Date.now()}`

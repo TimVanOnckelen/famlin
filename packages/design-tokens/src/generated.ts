@@ -31,6 +31,9 @@ export const tokens = {
     "6": 24,
     "8": 32
   },
+  "breakpoint": {
+    "desktop": 721
+  },
   "font": {
     "body": {
       "family": "Nunito"

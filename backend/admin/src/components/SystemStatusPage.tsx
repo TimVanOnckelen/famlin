@@ -112,7 +112,7 @@ function JobsTable({ jobs }: { jobs: JobStatus[] }) {
   const { t } = useTranslation()
   return (
     <div className="content-table">
-      <Table>
+      <Table stacked>
         <TableHeader>
           <TableRow>
             <TableHead>{t('systemStatus.jobs.job')}</TableHead>
@@ -128,11 +128,15 @@ function JobsTable({ jobs }: { jobs: JobStatus[] }) {
                 {t(`systemStatus.jobs.names.${job.job}`)}
                 {job.lastError && job.lastOk === false && <div className="status-job-error">{job.lastError}</div>}
               </TableCell>
-              <TableCell className="muted">{formatDate(job.lastStartedAt) ?? '—'}</TableCell>
-              <TableCell>
+              <TableCell label={t('systemStatus.jobs.lastRun')} className="muted">
+                {formatDate(job.lastStartedAt) ?? '—'}
+              </TableCell>
+              <TableCell label={t('systemStatus.jobs.result')}>
                 <ResultBadge ok={job.lastOk} running={job.running} />
               </TableCell>
-              <TableCell className="muted">{formatDate(job.lastSuccessAt) ?? '—'}</TableCell>
+              <TableCell label={t('systemStatus.jobs.lastSuccess')} className="muted">
+                {formatDate(job.lastSuccessAt) ?? '—'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

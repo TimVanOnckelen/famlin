@@ -4,6 +4,7 @@ import { Button } from '@famlin/ui/button'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 
 type Candidate = { id: string; name: string; email: string; avatarUrl: string | null }
 
@@ -71,11 +72,11 @@ export function AddMembersModal({
           ))}
         </ul>
       )}
-      <div className="modal-actions">
+      <DialogActions>
         <Button variant="secondary" type="button" className="secondary" disabled={!!busyId} onClick={onClose}>
           {t('common.close')}
         </Button>
-      </div>
+      </DialogActions>
     </AdminModal>
   )
 }

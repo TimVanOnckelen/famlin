@@ -8,7 +8,6 @@
     "loading": "加载中…",
     "loadMore": "加载更多",
     "cancel": "取消",
-    "confirm": "确认",
     "save": "保存",
     "add": "添加",
     "delete": "删除",
@@ -45,7 +44,10 @@
     "logout": "退出登录",
     "language": "语言",
     "version": "版本 {{version}}",
-    "systemStatus": "系统状态"
+    "systemStatus": "系统状态",
+    "menu": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单"
   },
   "devices": {
     "title": "移动设备",

@@ -8,7 +8,6 @@
     "loading": "Laden...",
     "loadMore": "Meer laden",
     "cancel": "Annuleer",
-    "confirm": "Bevestigen",
     "save": "Opslaan",
     "add": "Toevoegen",
     "delete": "Verwijder",
@@ -45,7 +44,10 @@
     "logout": "Uitloggen",
     "language": "Taal",
     "version": "Versie {{version}}",
-    "systemStatus": "Systeemstatus"
+    "systemStatus": "Systeemstatus",
+    "menu": "Menu",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten"
   },
   "devices": {
     "title": "Mobiele apparaten",

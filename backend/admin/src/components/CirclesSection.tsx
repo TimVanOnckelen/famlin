@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { api, type Circle, type GroupMember } from '../api/client'
 import { useAdminDialogs } from './AdminDialogs'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { AddMembersModal } from './AddMembersModal'
 import { MemberCards } from './MemberCards'
 import { Icon } from './Icon'
@@ -316,7 +317,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                 {formError}
               </StateMessage>
             )}
-            <div className="modal-actions">
+            <DialogActions>
               <Button
                 variant="secondary"
                 type="button"
@@ -332,7 +333,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
               <Button type="submit" disabled={busy || !newName.trim()}>
                 {t(busy ? 'common.loading' : 'common.save')}
               </Button>
-            </div>
+            </DialogActions>
           </form>
         </AdminModal>
       )}

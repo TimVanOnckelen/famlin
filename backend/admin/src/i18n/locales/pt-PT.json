@@ -44,7 +44,10 @@
     "logout": "Terminar sessão",
     "language": "Idioma",
     "version": "Versão {{version}}",
-    "systemStatus": "Estado do sistema"
+    "systemStatus": "Estado do sistema",
+    "menu": "Menu",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu"
   },
   "devices": {
     "title": "Dispositivos móveis",

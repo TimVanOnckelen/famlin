@@ -7,9 +7,10 @@ import { Button } from '@famlin/ui/button'
 import { Card } from '@famlin/ui/card'
 import { Input } from '@famlin/ui/input'
 import { SelectField } from '@famlin/ui/common/select-field'
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TableActionsCell } from '@famlin/ui/table'
 import { Badge } from '@famlin/ui/badge'
 import { AdminModal } from './AdminModal'
+import { DialogActions } from '@famlin/ui/dialog'
 import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -114,14 +115,14 @@ function EditPostDialog({
             {error}
           </StateMessage>
         )}
-        <div className="modal-actions">
+        <DialogActions>
           <Button variant="secondary" type="button" className="secondary" onClick={onClose} disabled={saving}>
             {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={saving || !content.trim()}>
             {t('common.save')}
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </AdminModal>
   )
@@ -384,7 +385,7 @@ export function ContentPage() {
         ) : (
           <div className={`content-table${fetching ? ' refreshing' : ''}`}>
             {tab === 'posts' ? (
-              <Table>
+              <Table stacked>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('content.table.author')}</TableHead>
@@ -401,18 +402,18 @@ export function ContentPage() {
                       <TableCell>
                         <AuthorCell name={post.author.name} avatarUrl={post.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell label={t('content.table.content')} className="cell-content">
                         {post.type === 'MILESTONE' && <Badge variant="milestone">{t('content.milestone')}</Badge>}
                         {post.content ? truncate(post.content) : <span className="muted">{t('content.noText')}</span>}
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {post.group.name}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.activity')}>
                         <span className="activity-counts">
                           <span title={t('content.commentsTooltip')}>
                             <Icon name="message-circle" size={13} />
@@ -424,10 +425,10 @@ export function ContentPage() {
                           </span>
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.date')}>
                         <DateCell iso={post.createdAt} />
                       </TableCell>
-                      <TableCell className="actions">
+                      <TableActionsCell className="actions">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -458,13 +459,13 @@ export function ContentPage() {
                         >
                           <Icon name="trash" size={15} />
                         </Button>
-                      </TableCell>
+                      </TableActionsCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : tab === 'stories' ? (
-              <Table>
+              <Table stacked>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('content.table.author')}</TableHead>
@@ -481,7 +482,7 @@ export function ContentPage() {
                       <TableCell>
                         <AuthorCell name={story.author.name} avatarUrl={story.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell label={t('content.table.content')} className="cell-content">
                         <span className="story-cell">
                           <StoryThumb imageUrl={story.imageUrl} />
                           {story.pinnedAt ? (
@@ -495,7 +496,7 @@ export function ContentPage() {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {story.group.name}
@@ -507,7 +508,7 @@ export function ContentPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.activity')}>
                         <span className="activity-counts">
                           <span title={t('content.viewsTooltip')}>
                             <Icon name="eye" size={13} />
@@ -519,10 +520,10 @@ export function ContentPage() {
                           </span>
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.date')}>
                         <DateCell iso={story.createdAt} />
                       </TableCell>
-                      <TableCell className="actions">
+                      <TableActionsCell className="actions">
                         <Button
                           variant="destructive"
                           size="icon"
@@ -533,13 +534,13 @@ export function ContentPage() {
                         >
                           <Icon name="trash" size={15} />
                         </Button>
-                      </TableCell>
+                      </TableActionsCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <Table>
+              <Table stacked>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('content.table.author')}</TableHead>
@@ -556,25 +557,27 @@ export function ContentPage() {
                       <TableCell>
                         <AuthorCell name={comment.author.name} avatarUrl={comment.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">{truncate(comment.content)}</TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell label={t('content.table.comment')} className="cell-content">
+                        {truncate(comment.content)}
+                      </TableCell>
+                      <TableCell label={t('content.table.onPost')} className="cell-content">
                         {comment.post.content ? (
                           <span className="cell-sub">{truncate(comment.post.content, 60)}</span>
                         ) : (
                           <span className="muted">{t('content.noText')}</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {comment.post.group.name}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell label={t('content.table.date')}>
                         <DateCell iso={comment.createdAt} />
                       </TableCell>
-                      <TableCell className="actions">
+                      <TableActionsCell className="actions">
                         <Button
                           variant="destructive"
                           size="icon"
@@ -585,7 +588,7 @@ export function ContentPage() {
                         >
                           <Icon name="trash" size={15} />
                         </Button>
-                      </TableCell>
+                      </TableActionsCell>
                     </TableRow>
                   ))}
                 </TableBody>

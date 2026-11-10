@@ -35,7 +35,9 @@
     "./common/select-field": "./src/common/select-field.tsx",
     "./common/user-avatar": "./src/common/user-avatar.tsx",
     "./common/form-row": "./src/common/form-row.tsx",
+    "./common/nav-shell": "./src/common/nav-shell.tsx",
     "./lib/utils": "./src/lib/utils.ts",
+    "./lib/use-compact-layout": "./src/lib/use-compact-layout.ts",
     "./styles.css": "./styles.css"
   },
   "sideEffects": [

@@ -20,5 +20,14 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', testMatch: 'smoke.spec.ts', use: { ...devices['Desktop Chrome'] } },
+    // Runs after the smoke suite, which creates the admin account it signs in with.
+    {
+      name: 'admin-mobile',
+      testMatch: 'admin-mobile.spec.ts',
+      dependencies: ['chromium'],
+      use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true },
+    },
+  ],
 })

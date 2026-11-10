@@ -72,6 +72,32 @@ keyboard activation and reduced motion when changing control behavior. DOM
 tests cover interaction contracts; use a browser to verify actual layout and
 animation when available.
 
+## Responsive patterns
+
+Every `@famlin/ui` component has to work on a 360px-wide phone; check that when
+you review a new or changed one. The compact layout applies below the
+`breakpoint.desktop` token (721 logical px, so ≤720px). The generator emits it
+as a Tailwind theme breakpoint, which gives the `desktop:` and `max-desktop:`
+variants; use those (or `@variant max-desktop { … }` in CSS) instead of a
+hard-coded `@media` width. In TypeScript, `useCompactLayout()` from
+`@famlin/ui/lib/use-compact-layout` matches the same width. Use it only where
+markup has to differ, and style with the variants otherwise.
+
+| Pattern | Use |
+| --- | --- |
+| `NavShell` (`@famlin/ui/common/nav-shell`) | The app frame. On desktop it renders the `sidebar` node in an `<aside>`. On compact screens it shows a top header (the `brand` node and a menu button) and opens the sidebar as a modal drawer: focus is trapped, and the drawer closes on Esc, a backdrop tap, its close button or a followed link. The app passes the translated `menuLabel`/`openMenuLabel`/`closeMenuLabel` and owns the sidebar's look through `sidebarClassName`. |
+| `<Table stacked>` | Shows each row as a card of label/value pairs on compact screens. Give every `TableCell` a `label` (normally its column header). Leave the label off the one cell that identifies the row, which becomes the card's title, and put row buttons in a `TableActionsCell`. The card styles live in `styles.css`. They are unlayered on purpose, so they override utilities a page sets on cells. |
+| `DialogContent` + `DialogHeader` / `DialogBody` / `DialogActions` | A centered dialog on desktop and a fullscreen sheet on compact screens. The header stays at the top, and `DialogActions` is a full-width bar fixed to the bottom of the screen. Put it last inside `DialogBody`, or inside a form in it, so the close button and primary action stay visible however long the content is. |
+
+Other compact-screen rules: every button size and switch/checkbox hit area is at
+least 44×44px, and inputs and selects use a 16px font so iOS doesn't zoom in on
+focus.
+
+Admin uses all three, and its 360px layout is tested in a browser by
+`e2e/tests/admin-mobile.spec.ts` (see the e2e section of the quick start). DOM
+tests for the drawer, stacked table and sheet live in
+`packages/ui/tests/responsive.test.tsx`.
+
 ## Add primitives
 
 Run the shadcn CLI from the shared package using its `components.json`:
