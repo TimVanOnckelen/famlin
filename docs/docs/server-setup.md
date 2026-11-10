@@ -422,10 +422,11 @@ gcloud artifacts repositories set-cleanup-policies ghcr --location="$REGION" --p
 ```bash
 gcloud iam service-accounts create famlin-demo-deployer --display-name="Famlin demo deployer"
 gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/run.developer --condition=None
+gcloud artifacts repositories add-iam-policy-binding ghcr --location="$REGION" --member="serviceAccount:$SA" --role=roles/artifactregistry.reader
 gcloud iam service-accounts add-iam-policy-binding "$PROJECT_NUMBER-compute@developer.gserviceaccount.com" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser
 ```
 
-The last line lets the deployer act as the service's runtime account. If your service runs as a different service account, use that one instead of the default compute account. Better still, give the demo its own runtime account with no roles at all (the demo only talks to its database): a deployer that may act as a broadly privileged account — the default compute account, or a Firebase admin account — could otherwise deploy code that runs with those rights.
+The deployer needs read access to the `ghcr` repository because Cloud Run checks that whoever deploys an image may read it. The last line lets the deployer act as the service's runtime account. If your service runs as a different service account, use that one instead of the default compute account. Better still, give the demo its own runtime account with no roles at all (the demo only talks to its database): a deployer that may act as a broadly privileged account — the default compute account, or a Firebase admin account — could otherwise deploy code that runs with those rights.
 
 :::warning The demo's admin account is public
 Everyone can sign in as `admin@example.com`, and read-only mode still lets them read every admin page, including server settings. Never configure SMTP, SSO client secrets, Immich or storage credentials on a demo instance. Keep `DATABASE_URL` out of anything visitors can reach — it is only an environment variable of the Cloud Run service; for extra care, store it in Secret Manager and reference it from the service instead.
