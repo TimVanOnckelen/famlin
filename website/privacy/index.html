@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy Policy — Famlin</title>
-<meta name="description" content="Famlin's privacy policy: what happens to your data on a self-hosted Famlin server, and on this website.">
+<meta name="description" content="Famlin's privacy policy: what happens to your data on a self-hosted Famlin server, on this website and on the public demo.">
 <link rel="icon" href="/favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
 <style>
@@ -36,15 +36,15 @@
   <main style="max-width:760px;margin:0 auto;padding:56px 24px 80px;">
     <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Legal</div>
     <h1 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 8px;">Privacy Policy</h1>
-    <p style="font-size:15px;color:#597784;margin:0 0 36px;">Last updated: July 2026</p>
+    <p style="font-size:15px;color:#597784;margin:0 0 36px;">Last updated: November 2026</p>
 
     <div style="background:#daf3fe;border-radius:16px;padding:22px 24px;margin-bottom:36px;">
-      <p style="font-size:16px;line-height:1.65;margin:0;color:#0f222a;"><strong>The short version:</strong> Famlin is self-hosted, open-source software. Your family's data lives on the server your admin runs — not on any server the Famlin project controls. There's no analytics or tracking built into the app, and nothing is sent back to the project's author.</p>
+      <p style="font-size:16px;line-height:1.65;margin:0;color:#0f222a;"><strong>The short version:</strong> Famlin is self-hosted, open-source software. Your family's data lives on the server your admin runs — not on any server the Famlin project controls. There's no analytics or tracking built into the app, and nothing is sent back to the project's author. This website and the public demo are run by the project itself; sections 2 and 3 explain what happens there.</p>
     </div>
 
     <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">1. Using a Famlin app or server</h2>
     <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">A Famlin server is deployed and operated by whoever set it up for their family — an "admin." That admin's server stores everything Famlin needs to work: account details (name, email, and either a password hash or your identity provider's subject ID), posts, photos, comments, likes, favorites, group membership, and mobile push notification tokens.</p>
-    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Famlin's author (Tim Van Onckelen) does not run, host, or have access to any Famlin server other than for his own family, and has no way to see data from other people's deployments. There is no central Famlin service that instances report back to.</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Famlin's author (Tim Van Onckelen) does not run, host, or have access to any Famlin server other than the one for his own family and the public demo described in section 3, and has no way to see data from other people's deployments. There is no central Famlin service that instances report back to.</p>
     <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">Depending on how your admin configured the server, the following third parties may be involved:</p>
     <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
       <li><strong>Your identity provider</strong> — if sign-in uses OIDC/SSO (Google, Microsoft, Authentik, or another provider your admin configured), that provider processes your login per its own privacy policy. Famlin never sees or stores your password in that case.</li>
@@ -55,17 +55,28 @@
     <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Deleting a post, a comment, or an account removes it permanently — the server erases the row and everything that hangs off it, and there is no restore. You can delete your own account from the app at any time (Profile → Delete account), which removes your profile and all the content you created on that server. Backups, log retention, and any other integrations are entirely up to whoever runs your instance; they're the right person to ask for specifics about your data.</p>
 
     <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">2. Visiting this website (famlin.app)</h2>
-    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">This marketing page has no accounts, forms, cookies, or analytics of its own. Two things happen automatically when you load it:</p>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">This marketing page has no accounts, forms or cookies. Four things happen automatically when you load it:</p>
     <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
       <li>Fonts (Nunito, JetBrains Mono) are loaded from Google Fonts. That means your browser makes a direct request to <code>fonts.googleapis.com</code>, and Google may process your IP address to serve them — see <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</li>
       <li>The site is hosted on GitHub Pages, which may log technical request data (like your IP address) to serve the page — see <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's privacy statement</a>.</li>
+      <li>Requests to famlin.app pass through Cloudflare, which sits in front of GitHub Pages to deliver the site and protect it from abuse. Cloudflare processes your IP address and other technical request data to do that — see <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's privacy policy</a>.</li>
+      <li>Visits are counted with Cloudflare Web Analytics. It uses no cookies or local storage and doesn't fingerprint visitors; the project only sees totals, such as page views, which pages are read, where visitors came from and from which countries.</li>
     </ul>
 
-    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">3. Changes to this policy</h2>
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">3. Trying the demo (demo.famlin.app)</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">The public demo is a Famlin server run by Famlin's author on Google Cloud Run, with Cloudflare in front of it. It's read-only and filled with a made-up sample family: you can look around, but nothing you do there is saved.</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li><strong>Signing in</strong> only works with the shared demo accounts (the login screen fills one in), so using the demo stores nothing about you.</li>
+      <li><strong>Visits</strong> are counted with the same cookie-free Cloudflare Web Analytics as this website; the project only sees totals.</li>
+      <li><strong>Request logs</strong> — Google Cloud and Cloudflare log technical request data such as your IP address, browser and the time of each request, to run and protect the service — see <a href="https://cloud.google.com/terms/cloud-privacy-notice" target="_blank" rel="noopener">Google Cloud's privacy notice</a> and <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's privacy policy</a>.</li>
+    </ul>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Because nothing can be written to the demo, the app can't register for push notifications or store anything else there.</p>
+
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">4. Changes to this policy</h2>
     <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is an evolving hobby project, so this page may change as features change. Meaningful updates will be reflected here with a new "last updated" date.</p>
 
-    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">4. Contact</h2>
-    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is a hobby project by Tim Van Onckelen, not a company — there's no dedicated privacy email. Questions about this policy or the project are best asked via <a href="https://github.com/TimVanOnckelen/famlin/discussions" target="_blank" rel="noopener">GitHub Discussions</a> or by <a href="https://github.com/TimVanOnckelen/famlin/issues" target="_blank" rel="noopener">opening an issue</a>. Questions about a specific Famlin instance and its data should go to that instance's admin.</p>
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">5. Contact</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0;">Famlin is a hobby project by Tim Van Onckelen, not a company — there's no dedicated privacy email. Questions about this policy, the website or the demo can go to <a href="mailto:tim@xeweb.be">tim@xeweb.be</a>, or be asked via <a href="https://github.com/TimVanOnckelen/famlin/discussions" target="_blank" rel="noopener">GitHub Discussions</a> or by <a href="https://github.com/TimVanOnckelen/famlin/issues" target="_blank" rel="noopener">opening an issue</a>. Questions about a specific Famlin instance and its data should go to that instance's admin.</p>
 
     <p style="margin-top:56px;"><a href="/support/">Support &amp; help</a> · <a href="/">← Back to famlin.app</a></p>
   </main>
