@@ -11,9 +11,6 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://famlin.app/assets/images/screenshots/feed.webp">
 <meta name="twitter:card" content="summary">
-<link rel="alternate" hreflang="en" href="https://famlin.app/">
-<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/">
-<link rel="alternate" hreflang="x-default" href="https://famlin.app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
@@ -48,10 +45,6 @@
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-links a { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; padding: 8px 12px; border-radius: 8px; }
   .nav-links a:hover { background: var(--tint); }
-  .lang { display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--muted); margin: 0 4px; }
-  .lang span, .lang a { padding: 6px 6px !important; }
-  .lang [aria-current] { color: var(--brand); }
-  .lang a { color: var(--muted) !important; }
 
   /* buttons */
   .btn { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 800; padding: 13px 22px; border-radius: 10px; text-decoration: none; border: 1.5px solid transparent; }
@@ -62,16 +55,24 @@
   .nav .btn { padding: 9px 16px; font-size: 15px; }
 
   /* hero */
-  .hero { padding: 64px 0 40px; }
-  .hero .wrap { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
+  .hero { padding: 64px 0 48px; overflow-x: clip; }
+  .hero .wrap { display: grid; grid-template-columns: 0.92fr 1.08fr; gap: 48px; align-items: center; }
   .hero h1 { font-size: 52px; font-weight: 900; letter-spacing: -1.8px; line-height: 1.05; }
   .hero h1 span { color: var(--brand); }
   .hero .lead { font-size: 20px; color: var(--text); margin-top: 20px; }
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .hero-meta { margin-top: 22px; font-size: 14px; color: var(--muted); }
   .hero-meta a { font-weight: 700; }
+  .hero-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+  .hero-langs li { background: var(--tint); color: var(--brand-dark); font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+  .hero-langs li:first-child { background: none; color: var(--muted); font-weight: 600; padding-left: 0; }
+  .hero-visual { position: relative; margin-right: -150px; padding: 40px 0 64px 76px; }
+  .hero-visual::before { content: ""; position: absolute; top: 0; bottom: 24px; left: 36px; right: -600px; border-radius: 32px 0 0 32px; background: linear-gradient(135deg, #fbf1e1 0%, #f6e3c8 100%); }
+  .hero-visual .browser { position: relative; margin-top: 0; box-shadow: 0 30px 70px rgba(70,45,10,0.18); }
   .phone { width: 280px; margin: 0 auto; border-radius: 40px; padding: 9px; background: #1b2d35; box-shadow: 0 24px 60px rgba(19,37,45,0.18); }
   .phone img { display: block; width: 100%; height: auto; border-radius: 31px; }
+  .hero-visual .phone { position: absolute; left: 0; bottom: 0; width: 158px; margin: 0; border-radius: 28px; padding: 6px; box-shadow: 0 26px 60px rgba(19,37,45,0.32); transform: rotate(-4deg); }
+  .hero-visual .phone img { border-radius: 22px; }
 
   /* principles */
   .principles { padding: 8px 0 0; }
@@ -162,6 +163,8 @@
     .hero .wrap, .admin .wrap, .install .wrap, .apps .box { grid-template-columns: 1fr; gap: 36px; }
     .hero { padding-top: 40px; }
     .hero h1 { font-size: 40px; letter-spacing: -1.2px; }
+    .hero-visual { margin-right: -24px; padding: 32px 0 52px 64px; }
+    .hero-visual .phone { width: 140px; }
     .principles ul { grid-template-columns: 1fr 1fr; }
     .principles li:nth-child(3) { padding-left: 0; border-left: 0; }
     .principles li:nth-child(n+3) { border-top: 1px solid var(--line); }
@@ -178,8 +181,10 @@
     .lead, .hero .lead { font-size: 17px; }
     .hero h1 { font-size: 34px; }
     .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
-    .phone { width: 230px; border-radius: 34px; }
-    .phone img { border-radius: 26px; }
+    .hero-visual { margin-right: -18px; padding: 20px 0 36px 40px; }
+    .hero-visual::before { left: 20px; border-radius: 22px 0 0 22px; }
+    .hero-visual .phone { width: 92px; border-radius: 18px; padding: 4px; }
+    .hero-visual .phone img { border-radius: 14px; }
     .principles ul { grid-template-columns: 1fr; }
     .principles li, .principles li + li { padding: 14px 0; border-left: 0; }
     .principles li + li { border-top: 1px solid var(--line); }
@@ -219,9 +224,6 @@
       <a href="#install" class="hide-sm">Self-host</a>
       <a href="/docs/">Docs</a>
       <a href="/support/" class="hide-sm">Support</a>
-      <span class="lang" aria-label="Language">
-        <span aria-current="true">EN</span><span aria-hidden="true">·</span><a href="/nl/" hreflang="nl" lang="nl">NL</a>
-      </span>
       <a href="#install" class="btn btn-primary">Install</a>
     </div>
   </div>
@@ -232,7 +234,7 @@
   <!-- Hero -->
   <header class="hero" id="top">
     <div class="wrap">
-      <div>
+      <div class="hero-copy">
         <h1>A private place for your family, <span>on a server you own.</span></h1>
         <p class="lead">Famlin is an open-source family app you host yourself. Share photos, milestones, trips and the small everyday stuff with the people who actually care, in plain chronological order. No ads, no recommendations, no company in between.</p>
         <div class="hero-actions">
@@ -240,9 +242,23 @@
           <a href="/docs/" class="btn btn-ghost">Read the docs</a>
         </div>
         <p class="hero-meta">Free and MIT-licensed · iOS, Android and web · <a href="https://github.com/TimVanOnckelen/famlin">Source on GitHub</a></p>
+        <ul class="hero-langs" aria-label="App languages">
+          <li>The apps speak</li>
+          <li lang="en">English</li>
+          <li lang="nl">Nederlands</li>
+          <li lang="fr">Français</li>
+          <li lang="pt-PT">Português</li>
+          <li lang="zh-Hans">中文</li>
+        </ul>
       </div>
-      <div class="phone">
-        <img src="/assets/images/screenshots/feed.webp" alt="The Famlin feed on a phone: a birthday milestone post and a photo post, with a filter for each family" width="640" height="1392" fetchpriority="high">
+      <div class="hero-visual">
+        <div class="browser">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>famlin.yourfamily.example</span></div>
+          <img src="/assets/images/screenshots/web-feed.webp" alt="The Famlin web app in a browser, showing stories, a gift list and a poll in one family's feed" width="1800" height="1125" fetchpriority="high">
+        </div>
+        <div class="phone">
+          <img src="/assets/images/screenshots/feed.webp" alt="The Famlin feed on a phone: a birthday milestone post and a photo post, with a filter for each family" width="640" height="1392">
+        </div>
       </div>
     </div>
   </header>
@@ -263,13 +279,6 @@
     <div class="wrap">
       <h2>What your family gets</h2>
       <p class="lead">One app for several families. Grandma can follow both sides of the family in one feed, and still see which family each post came from.</p>
-      <figure style="margin:0;">
-        <div class="browser">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>famlin.yourfamily.example</span></div>
-          <img src="/assets/images/screenshots/web-feed.webp" alt="The Famlin web app in a browser, showing stories, a gift list and a poll in one family's feed" width="1800" height="1125" loading="lazy">
-        </div>
-        <figcaption class="browser-caption">The web app on a laptop: stories at the top, the family list on the side, and the same feed as on your phone.</figcaption>
-      </figure>
 
       <div class="rows">
         <div class="row">
@@ -327,7 +336,7 @@
         <div><h3>Photos, done properly</h3><p>HEIC from iPhones works everywhere, big photos are resized for viewing, and the original is kept on your server.</p></div>
         <div><h3>Notifications you control</h3><p>Push and email, with a switch per type: new posts, comments, reactions, chat, stories, gift lists.</p></div>
         <div><h3>Your own copy</h3><p>Any member can download everything they can see as a zip: posts, comments and the photos that go with them.</p></div>
-        <div><h3>Five languages</h3><p>English, Dutch, Simplified Chinese, European Portuguese and French. Each person picks their own.</p></div>
+        <div><h3>Five languages</h3><p>The apps, the web app and the admin panel come in English, Dutch, French, European Portuguese and Simplified Chinese. Each person picks their own.</p></div>
       </div>
     </div>
   </section>

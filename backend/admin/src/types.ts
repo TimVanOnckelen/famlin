@@ -328,6 +328,7 @@ export interface ServerInfo {
   version: string
   appStoreUrl?: string | null
   playStoreUrl?: string | null
+  readOnly?: boolean
 }
 
 // Per-family branding (issue #164). The palette is derived server-side; the

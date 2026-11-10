@@ -5,6 +5,8 @@ import { requestPathname } from '../utils/requestPath.js'
 
 // HTTP methods that write or delete data. OPTIONS is deliberately excluded —
 // @fastify/cors handles CORS preflight before this hook runs.
+export const READ_ONLY_ERROR_CODE = 'READ_ONLY'
+
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 // Endpoints that must stay writable in read-only mode so visitors can still
@@ -46,7 +48,9 @@ export default fp(async function readOnlyPlugin(fastify: FastifyInstance) {
     if (isAllowedMutatingRequest(url)) return
 
     const t = getT(request)
-    return reply.status(403).send({ error: t('errors.readOnly') })
+    // `code` lets clients recognize a demo block and explain it, instead of
+    // treating it as a generic failure (web shows a notice for it).
+    return reply.status(403).send({ error: t('errors.readOnly'), code: READ_ONLY_ERROR_CODE })
   })
 
   fastify.log.info('Read-only mode enabled: mutating requests are blocked')

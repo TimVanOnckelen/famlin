@@ -45,7 +45,8 @@
     "logout": "Log out",
     "language": "Language",
     "version": "Version {{version}}",
-    "systemStatus": "System status"
+    "systemStatus": "System status",
+    "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved."
   },
   "devices": {
     "title": "Mobile devices",
@@ -78,7 +79,11 @@
     "loginButton": "Log in",
     "loginWithSso": "Continue with {{name}}",
     "ssoLoginFailed": "SSO login failed.",
-    "loginFailed": "Login failed."
+    "loginFailed": "Login failed.",
+    "demoTitle": "Demo",
+    "demoText": "This is the read-only demo's admin panel. You can look around, but settings can't be changed.",
+    "demoCredentials": "Sign in with:",
+    "useDemoLogin": "Fill in demo login"
   },
   "setup": {
     "title": "Welcome to Famlin",

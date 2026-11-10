@@ -2,7 +2,7 @@ import { ReactElement } from 'react'
 import { render } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
-import { Post, PostPoll, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client'
+import { Post, PostPoll, PostEvent, Comment, TripEnrichment, AlbumEnrichment, User } from '@famlin/api-client'
 
 export function makePost(overrides: Partial<Post> = {}): Post {
   return {
@@ -41,6 +41,27 @@ export function makePoll(overrides: Partial<PostPoll> = {}): PostPoll {
     myVoteOptionId: null,
     closesAt: null,
     closed: false,
+    ...overrides,
+  }
+}
+
+export function makeEvent(overrides: Partial<PostEvent> = {}): PostEvent {
+  return {
+    startsAt: '2026-12-24T18:00:00.000Z',
+    endsAt: null,
+    location: "Grandma's garden",
+    rsvpDeadline: null,
+    closed: false,
+    myRsvp: null,
+    counts: { yes: 2, maybe: 1, no: 0 },
+    responses: {
+      yes: [
+        { id: 'user-2', name: 'Sophie', avatarUrl: null },
+        { id: 'user-3', name: 'Emma', avatarUrl: null },
+      ],
+      maybe: [{ id: 'user-4', name: 'Lucas', avatarUrl: null }],
+      no: [],
+    },
     ...overrides,
   }
 }

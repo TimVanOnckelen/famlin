@@ -4158,6 +4158,13 @@ components:
         error:
           type: string
           description: Human-readable, translated via the `Accept-Language` header (`en`/`nl`).
+        code:
+          type: string
+          description: >-
+            Optional machine-readable error code. `READ_ONLY` marks a `403`
+            for a write blocked because the server runs in read-only/demo
+            mode (see `readOnly` on `/api/auth/server-info`).
+          example: READ_ONLY
       required: [error]
 
     Success:

@@ -22,11 +22,11 @@ export interface PostPerson {
   userAvatarUrl: string | null
 }
 
-// An open string discriminator — 'UPDATE'/'MILESTONE'/'POLL'/'TRIP' are the
+// An open string discriminator — 'UPDATE'/'MILESTONE'/'POLL'/'EVENT'/… are the
 // types the server ships today, but the `(string & {})` branch keeps this
 // widen-able (custom types added server-side) without TS narrowing string
 // literals away.
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | (string & {})
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | 'EVENT' | (string & {})
 
 export interface PollOptionResult {
   id: string
@@ -47,6 +47,35 @@ export interface PostPoll {
 export interface PollCreateData {
   options: { text: string }[]
   closesAt?: string
+}
+
+export const RSVP_RESPONSES = ['yes', 'maybe', 'no'] as const
+export type RsvpResponse = (typeof RSVP_RESPONSES)[number]
+
+// The shape a client sends as `typeData` when creating an EVENT post. The
+// event's title goes in the post's `content`, not here. Datetimes are ISO 8601
+// with an offset (the server stores them in UTC); the RSVP deadline, when set,
+// must not be after the start.
+export interface EventCreateData {
+  startsAt: string
+  endsAt?: string
+  location?: string
+  rsvpDeadline?: string
+}
+
+// The aggregated, per-viewer event view. RSVPs close at the deadline, or when
+// the event starts if there is none (`closed`). `responses` lists who answered
+// what, oldest answer first; on a cross-posted event it only includes people
+// this viewer is allowed to see, so counts can differ between families.
+export interface PostEvent {
+  startsAt: string
+  endsAt: string | null
+  location: string | null
+  rsvpDeadline: string | null
+  closed: boolean
+  myRsvp: RsvpResponse | null
+  counts: Record<RsvpResponse, number>
+  responses: Record<RsvpResponse, { id: string; name: string; avatarUrl: string | null }[]>
 }
 
 // The shape a client sends as `typeData` when creating a TRIP post. Dates are
@@ -286,6 +315,8 @@ export interface Post {
   poll?: PostPoll
   // Present only when type === 'TRIP' — see TripEnrichment.
   trip?: TripEnrichment
+  // Present only when type === 'EVENT' — see PostEvent.
+  event?: PostEvent
   // Present only when type === 'ALBUM' — see AlbumEnrichment.
   album?: AlbumEnrichment
   // Present only when type === 'GIFT_LIST' — see GiftListEnrichment.

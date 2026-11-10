@@ -15,7 +15,7 @@ export interface PostPerson {
     userName: string | null;
     userAvatarUrl: string | null;
 }
-export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | (string & {});
+export type PostType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST' | 'EVENT' | (string & {});
 export interface PollOptionResult {
     id: string;
     text: string;
@@ -38,6 +38,28 @@ export interface PollCreateData {
         text: string;
     }[];
     closesAt?: string;
+}
+export declare const RSVP_RESPONSES: readonly ['yes', 'maybe', 'no'];
+export type RsvpResponse = (typeof RSVP_RESPONSES)[number];
+export interface EventCreateData {
+    startsAt: string;
+    endsAt?: string;
+    location?: string;
+    rsvpDeadline?: string;
+}
+export interface PostEvent {
+    startsAt: string;
+    endsAt: string | null;
+    location: string | null;
+    rsvpDeadline: string | null;
+    closed: boolean;
+    myRsvp: RsvpResponse | null;
+    counts: Record<RsvpResponse, number>;
+    responses: Record<RsvpResponse, {
+        id: string;
+        name: string;
+        avatarUrl: string | null;
+    }[]>;
 }
 export interface TripTypeData {
     title: string;
@@ -197,6 +219,7 @@ export interface Post {
     typeData?: unknown;
     poll?: PostPoll;
     trip?: TripEnrichment;
+    event?: PostEvent;
     album?: AlbumEnrichment;
     giftList?: GiftListEnrichment;
     circleId?: string | null;

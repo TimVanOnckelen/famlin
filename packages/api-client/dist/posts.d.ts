@@ -1,4 +1,4 @@
-import { AlbumTypeData, GiftListTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, TripTypeData } from './types';
+import { AlbumTypeData, EventCreateData, GiftListTypeData, Post, PollCreateData, PostReactor, PostType, ReactionType, RsvpResponse, TripTypeData } from './types';
 export interface FetchPostsParams {
     groupIds?: string[];
     cursor?: string;
@@ -28,7 +28,7 @@ export interface CreatePostBody {
     groupIds?: string[];
     content?: string;
     type: PostType;
-    typeData?: PollCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>;
+    typeData?: PollCreateData | EventCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>;
     milestoneTag?: string;
     uploadedAssetUrls: string[];
     circleId?: string | null;
@@ -58,6 +58,7 @@ export declare function toggleFavoritePost(postId: string): Promise<{
 }>;
 export declare function interactWithPost(postId: string, key: string, value?: unknown): Promise<Post>;
 export declare function votePoll(postId: string, optionId: string): Promise<Post>;
+export declare function rsvpEvent(postId: string, response: RsvpResponse): Promise<Post>;
 export interface CheckInTripBody {
     place: string;
     text?: string;

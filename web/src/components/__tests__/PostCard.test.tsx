@@ -2,14 +2,15 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { PostCard } from '@/components/PostCard'
-import { makePost, makePoll, makeTrip, makeAlbum, renderWithQueryClient } from '@/test/fixtures'
-import { Post, reactToPost, toggleFavoritePost, votePoll } from '@famlin/api-client'
+import { makePost, makePoll, makeEvent, makeTrip, makeAlbum, renderWithQueryClient } from '@/test/fixtures'
+import { Post, reactToPost, rsvpEvent, toggleFavoritePost, votePoll } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   reactToPost: vi.fn().mockResolvedValue({ myReaction: 'LIKE', counts: { LIKE: 1 } }),
   toggleFavoritePost: vi.fn().mockResolvedValue({ favorited: true }),
   votePoll: vi.fn(),
+  rsvpEvent: vi.fn(),
 }))
 
 beforeEach(() => {
@@ -215,6 +216,76 @@ describe('PostCard', () => {
       expect(screen.getByText('Poll closed')).toBeInTheDocument()
       expect(screen.getByText('Pizza').closest('button')).toBeDisabled()
       expect(screen.getByText('Sushi').closest('button')).toBeDisabled()
+    })
+  })
+
+  describe('event posts', () => {
+    it('renders the title, when, where, answer counts and guest list', () => {
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'EVENT', content: 'Christmas dinner', event: makeEvent() })} />
+      )
+      expect(screen.getByText('Christmas dinner')).toBeInTheDocument()
+      expect(screen.getByText("Grandma's garden")).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Going\s*2/ })).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByRole('button', { name: /Maybe\s*1/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Can't go\s*0/ })).toBeInTheDocument()
+      expect(screen.getByText('Sophie, Emma')).toBeInTheDocument()
+      expect(screen.getByText('Lucas')).toBeInTheDocument()
+    })
+
+    it('answers and re-renders from the returned post', async () => {
+      vi.mocked(rsvpEvent).mockResolvedValue(
+        makePost({
+          type: 'EVENT',
+          content: 'Christmas dinner',
+          event: makeEvent({ myRsvp: 'maybe', counts: { yes: 2, maybe: 2, no: 0 } }),
+        })
+      )
+      const user = userEvent.setup()
+      renderWithQueryClient(
+        <PollFeedHarness initialPost={makePost({ type: 'EVENT', content: 'Christmas dinner', event: makeEvent() })} />
+      )
+      await user.click(screen.getByRole('button', { name: /Maybe/ }))
+      expect(rsvpEvent).toHaveBeenCalledWith('post-1', 'maybe')
+      expect(await screen.findByRole('button', { name: /Maybe\s*2/ })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('shows the deadline while replies are open', () => {
+      renderWithQueryClient(
+        <PostCard
+          post={makePost({
+            type: 'EVENT',
+            content: 'Christmas dinner',
+            event: makeEvent({ rsvpDeadline: '2026-12-20T12:00:00.000Z' }),
+          })}
+        />
+      )
+      expect(screen.getByText(/^Reply by /)).toBeInTheDocument()
+    })
+
+    it('disables the answers and hides the deadline once replies close', () => {
+      renderWithQueryClient(
+        <PostCard
+          post={makePost({
+            type: 'EVENT',
+            content: 'Christmas dinner',
+            event: makeEvent({ closed: true, rsvpDeadline: '2026-12-20T12:00:00.000Z' }),
+          })}
+        />
+      )
+      expect(screen.getByText('Replies closed')).toBeInTheDocument()
+      expect(screen.queryByText(/^Reply by /)).not.toBeInTheDocument()
+      for (const name of [/Going/, /Maybe/, /Can't go/]) expect(screen.getByRole('button', { name })).toBeDisabled()
+    })
+
+    it('says so when an answer fails', async () => {
+      vi.mocked(rsvpEvent).mockRejectedValue(new Error('errors.eventClosed'))
+      const user = userEvent.setup()
+      renderWithQueryClient(
+        <PostCard post={makePost({ type: 'EVENT', content: 'Christmas dinner', event: makeEvent() })} />
+      )
+      await user.click(screen.getByRole('button', { name: /Going/ }))
+      expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't save your reply. Try again.")
     })
   })
 

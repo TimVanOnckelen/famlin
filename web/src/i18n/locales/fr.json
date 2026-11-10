@@ -121,6 +121,7 @@
       "UPDATE": "Partage les nouvelles du quotidien, des photos et des vidéos.",
       "MILESTONE": "Célèbre un anniversaire, une réussite ou un moment spécial.",
       "POLL": "Pose une question et laisse ta famille voter.",
+      "EVENT": "Organise une rencontre et vois qui vient.",
       "TRIP": "Prépare un voyage et partage des nouvelles en chemin.",
       "ALBUM": "Rassemblez vos photos dans un album partagé.",
       "GIFT_LIST": "Partage des listes d'envies et, si tu veux, tire au sort les Pères Noël secrets."
@@ -128,6 +129,7 @@
     "typeUpdate": "Nouvelle",
     "typeMilestone": "Grand moment",
     "typePoll": "Sondage",
+    "typeEvent": "Événement",
     "typeTrip": "Voyage",
     "trip": {
       "helper": "Ajoute des étapes depuis la page du voyage pour tenir ta famille au courant.",
@@ -155,6 +157,15 @@
     "placeholder": "Partage une nouvelle avec ta famille…",
     "milestonePlaceholder": "Quel est le grand moment ? (ex. : Emma a 5 ans ! 🎉)",
     "pollPlaceholder": "Pose une question…",
+    "eventPlaceholder": "Quelle est l'occasion ?",
+    "event": {
+      "startsAtLabel": "Début",
+      "endsAtLabel": "Fin",
+      "locationLabel": "Lieu",
+      "locationPlaceholder": "Ex. : le jardin de mamie",
+      "rsvpDeadlineLabel": "Répondre avant le",
+      "rsvpDeadlineHint": "Facultatif. Si tu laisses ce champ vide, les réponses se ferment au début de l'événement."
+    },
     "albumTitlePlaceholder": "Titre de l'album (ex. : L'été au lac)",
     "albumDescriptionPlaceholder": "Décris l'album… (facultatif)",
     "pollOptionPlaceholder": "Option {{number}}",
@@ -304,6 +315,15 @@
     "closed": "Sondage clos",
     "yourVote": "Ton vote"
   },
+  "event": {
+    "rsvpLabel": "Tu viens ?",
+    "yes": "Je viens",
+    "maybe": "Peut-être",
+    "no": "Je ne peux pas",
+    "rsvpBy": "Réponds avant le {{date}}",
+    "closed": "Réponses fermées",
+    "rsvpFailed": "Impossible d'enregistrer ta réponse. Réessaie."
+  },
   "chat": {
     "title": "Discussion",
     "groupListLabel": "Discussions",
@@ -333,7 +353,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Mode démo en lecture seule. Tu peux parcourir, mais pas publier ni commenter."
+    "readOnlyBanner": "Mode démo en lecture seule. Tu peux parcourir, mais pas publier ni commenter.",
+    "demoTitle": "Démo",
+    "demoText": "Ceci est une démo en lecture seule avec une famille d'exemple. Parcours librement : publier, commenter et toute autre modification sont désactivés.",
+    "demoCredentials": "Connecte-toi avec :",
+    "useDemoLogin": "Remplir la connexion démo",
+    "blockedAction": "Ceci est une démo : les modifications sont désactivées. Tu peux parcourir, mais pas publier, commenter ni modifier."
   },
   "trip": {
     "detail": {

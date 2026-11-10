@@ -121,6 +121,7 @@
       "UPDATE": "Deel dagelijks nieuws, foto’s en video’s.",
       "MILESTONE": "Vier een verjaardag, prestatie of bijzonder moment.",
       "POLL": "Stel een vraag en laat je familie stemmen.",
+      "EVENT": "Plan een bijeenkomst en vraag wie aanwezig zal zijn.",
       "TRIP": "Plan een reis en deel onderweg updates.",
       "ALBUM": "Verzamel samen foto’s in een gedeeld album.",
       "GIFT_LIST": "Deel verlanglijstjes en trek eventueel lootjes."
@@ -128,6 +129,7 @@
     "typeUpdate": "Update",
     "typeMilestone": "Mijlpaal",
     "typePoll": "Peiling",
+    "typeEvent": "Evenement",
     "typeTrip": "Reis",
     "trip": {
       "helper": "Voeg check-ins toe op de reispagina om je familie op de hoogte te houden.",
@@ -155,6 +157,15 @@
     "placeholder": "Deel een update met je familie…",
     "milestonePlaceholder": "Wat is de mijlpaal? (bijv. Emma wordt 5! 🎉)",
     "pollPlaceholder": "Stel een vraag…",
+    "eventPlaceholder": "Wat is de gelegenheid?",
+    "event": {
+      "startsAtLabel": "Begint",
+      "endsAtLabel": "Eindigt",
+      "locationLabel": "Locatie",
+      "locationPlaceholder": "Bijv. de tuin van oma",
+      "rsvpDeadlineLabel": "Reageren vóór",
+      "rsvpDeadlineHint": "Optioneel. Laat je dit leeg, dan sluiten de reacties wanneer het evenement begint."
+    },
     "albumTitlePlaceholder": "Albumtitel (bijv. Zomer aan het meer)",
     "albumDescriptionPlaceholder": "Beschrijf het album… (optioneel)",
     "pollOptionPlaceholder": "Optie {{number}}",
@@ -304,6 +315,15 @@
     "closed": "Peiling gesloten",
     "yourVote": "Jouw stem"
   },
+  "event": {
+    "rsvpLabel": "Kom je?",
+    "yes": "Ik kom",
+    "maybe": "Misschien",
+    "no": "Kan niet",
+    "rsvpBy": "Reageer vóór {{date}}",
+    "closed": "Reacties gesloten",
+    "rsvpFailed": "Je reactie kon niet worden opgeslagen. Probeer het opnieuw."
+  },
   "chat": {
     "title": "Groepschat",
     "groupListLabel": "Chats",
@@ -333,7 +353,12 @@
     "wiki": "Wiki"
   },
   "demo": {
-    "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld."
+    "readOnlyBanner": "Demo-modus — alleen-lezen. Je kunt rondkijken, maar berichten plaatsen en reageren is uitgeschakeld.",
+    "demoTitle": "Demo",
+    "demoText": "Dit is een alleen-lezen demo met een voorbeeldfamilie. Kijk gerust rond — berichten plaatsen, reageren en andere wijzigingen zijn uitgeschakeld.",
+    "demoCredentials": "Log in met:",
+    "useDemoLogin": "Demo-login invullen",
+    "blockedAction": "Dit is een demo — wijzigingen zijn uitgeschakeld. Je kunt rondkijken, maar niets plaatsen, reageren of aanpassen."
   },
   "trip": {
     "detail": {

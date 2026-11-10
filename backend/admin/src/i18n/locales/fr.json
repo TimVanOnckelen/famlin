@@ -44,7 +44,8 @@
     "logout": "Se déconnecter",
     "language": "Langue",
     "version": "Version {{version}}",
-    "systemStatus": "État du système"
+    "systemStatus": "État du système",
+    "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées."
   },
   "devices": {
     "title": "Appareils mobiles",
@@ -77,7 +78,11 @@
     "loginButton": "Se connecter",
     "loginWithSso": "Continuer avec {{name}}",
     "ssoLoginFailed": "La connexion SSO a échoué.",
-    "loginFailed": "La connexion a échoué."
+    "loginFailed": "La connexion a échoué.",
+    "demoTitle": "Démo",
+    "demoText": "Ceci est le panneau d'administration de la démo en lecture seule. Tu peux explorer, mais les réglages ne peuvent pas être modifiés.",
+    "demoCredentials": "Connecte-toi avec :",
+    "useDemoLogin": "Remplir la connexion démo"
   },
   "setup": {
     "title": "Bienvenue sur Famlin",
@@ -474,7 +479,8 @@
     "POLL": "Sondage",
     "TRIP": "Voyage",
     "ALBUM": "Album",
-    "GIFT_LIST": "Liste de cadeaux"
+    "GIFT_LIST": "Liste de cadeaux",
+    "EVENT": "Événement"
   },
   "circles": {
     "edit": "Modifier le cercle",

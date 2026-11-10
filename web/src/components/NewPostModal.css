@@ -341,3 +341,24 @@ select.field-input {
     grid-template-columns: 1fr;
   }
 }
+.event-composer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.event-composer-times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.event-composer-times .field,
+.event-composer-times input {
+  min-width: 0;
+  width: 100%;
+}
+/* datetime-local inputs need more room than the trip's plain dates. */
+@media (max-width: 520px) {
+  .event-composer-times {
+    grid-template-columns: 1fr;
+  }
+}

@@ -7,13 +7,15 @@ import {
   startBrowserOidcLogin,
   completeBrowserOidcLogin,
   clearBrowserOidcLogin,
+  fetchServerInfo,
 } from '@famlin/api-client'
 import { BrandIcon } from '@/components/Logo'
 import { useBranding } from '@/hooks/useBranding'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { useAuthStore } from '@/stores/authStore'
 import { rememberReturnPath, takeReturnPath, inviteTokenFromReturnPath, paths } from '@/utils/routes'
+import { DEMO_LOGIN } from '@/utils/demo'
 import { SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '@/i18n'
 import './LoginPage.css'
 
@@ -54,6 +56,8 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSsoLoading, setIsSsoLoading] = useState(false)
   const [oidcConfig, setOidcConfig] = useState<OidcConfig | null>(null)
+  // Same query key as ReadOnlyBanner, so signing in reuses the response.
+  const { data: serverInfo } = useQuery({ queryKey: ['server-info'], queryFn: fetchServerInfo })
 
   useEffect(() => {
     fetchOidcConfig()
@@ -148,6 +152,28 @@ export function LoginPage() {
           <h1 className="login-wordmark">{branding?.name ?? t('common.appName')}</h1>
           <p className="login-subtitle">{t('login.subtitle')}</p>
         </div>
+
+        {serverInfo?.readOnly && (
+          <section className="login-demo" aria-labelledby="login-demo-title">
+            <h2 id="login-demo-title" className="login-demo-title">
+              {t('demo.demoTitle')}
+            </h2>
+            <p>{t('demo.demoText')}</p>
+            <p className="login-demo-credentials">
+              {t('demo.demoCredentials')} <code>{DEMO_LOGIN.email}</code> / <code>{DEMO_LOGIN.password}</code>
+            </p>
+            <button
+              className="btn btn-secondary login-demo-fill"
+              type="button"
+              onClick={() => {
+                setEmail(DEMO_LOGIN.email)
+                setPassword(DEMO_LOGIN.password)
+              }}
+            >
+              {t('demo.useDemoLogin')}
+            </button>
+          </section>
+        )}
 
         <div className="login-card">
           <form onSubmit={handlePasswordLogin} className="login-form">

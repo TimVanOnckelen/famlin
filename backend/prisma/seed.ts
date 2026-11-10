@@ -2,6 +2,9 @@ import 'dotenv/config'
 import { PrismaClient, type ReactionType } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcryptjs'
+import path from 'node:path'
+import { writeDemoPhotos } from './demoPhotos.js'
+import { DEMO_SCENES, photoUrl, seedDemoContent } from './demoContent.js'
 
 // Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
 // rather than importing src/config.ts, so the Dockerfile's standalone
@@ -15,7 +18,18 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl }),
 })
 
+// Where the generated demo photos go: the same directory the server serves
+// /uploads/ from (UPLOADS_DIR, else <cwd>/uploads — see src/config.ts; not
+// imported here so this script stays self-contained for the image's
+// standalone compile). Only the local storage driver reads from it.
+const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads')
+
+const HOUR = 60 * 60 * 1000
+const ago = (ms: number) => new Date(Date.now() - ms)
+
 async function main() {
+  await writeDemoPhotos(uploadsDir, DEMO_SCENES)
+
   const testPasswordHash = await bcrypt.hash('test123456', 12)
 
   // Users: one admin + one regular test account, plus a fictional family.
@@ -35,29 +49,29 @@ async function main() {
       update: {},
       create: {
         email: 'test@example.com',
-        name: 'Test Gebruiker',
+        name: 'Test User',
         passwordHash: testPasswordHash,
       },
     }),
     prisma.user.upsert({
       where: { email: 'opa@example.com' },
       update: {},
-      create: { email: 'opa@example.com', name: 'Opa Jan' },
+      create: { email: 'opa@example.com', name: 'Grandpa John' },
     }),
     prisma.user.upsert({
       where: { email: 'oma@example.com' },
       update: {},
-      create: { email: 'oma@example.com', name: 'Oma Riet' },
+      create: { email: 'oma@example.com', name: 'Grandma Rose' },
     }),
     prisma.user.upsert({
       where: { email: 'mama@example.com' },
       update: {},
-      create: { email: 'mama@example.com', name: 'Mama' },
+      create: { email: 'mama@example.com', name: 'Mom' },
     }),
     prisma.user.upsert({
       where: { email: 'papa@example.com' },
       update: {},
-      create: { email: 'papa@example.com', name: 'Papa' },
+      create: { email: 'papa@example.com', name: 'Dad' },
     }),
     prisma.user.upsert({
       where: { email: 'sophie@example.com' },
@@ -79,8 +93,8 @@ async function main() {
     update: {},
     create: {
       id: 'seed-family-group',
-      name: 'Familie de Vries',
-      description: 'Onze familiegroep',
+      name: 'The Miller Family',
+      description: 'Our family group',
     },
   })
 
@@ -89,8 +103,8 @@ async function main() {
     update: {},
     create: {
       id: 'seed-weekend-group',
-      name: 'Weekendje Ardennen',
-      description: 'Plannen en foto’s van ons weekendje weg',
+      name: 'Ardennes Weekend',
+      description: 'Plans and photos from our weekend away',
     },
   })
 
@@ -121,9 +135,11 @@ async function main() {
       id: 'seed-post-1',
       authorId: sophie.id,
       groupId: familyGroup.id,
-      content: 'Emma is 5 jaar! 🎉 Onze kleine meid is vandaag jarig. Wat vliegt de tijd!',
+      content: 'Emma turns 5! 🎉 Our little girl has her birthday today. Time flies!',
       type: 'MILESTONE',
-      milestoneTag: '🎂 Verjaardag',
+      milestoneTag: '🎂 Birthday',
+      uploadedAssetUrls: [photoUrl('birthday')],
+      createdAt: ago(48 * HOUR),
     },
   })
 
@@ -134,8 +150,10 @@ async function main() {
       id: 'seed-post-2',
       authorId: opa.id,
       groupId: familyGroup.id,
-      content: 'Vandaag lekker in de tuin gewerkt. De tomaten staan er prachtig bij dit jaar! 🍅',
+      content: 'Spent a lovely day working in the garden. The tomatoes are looking great this year! 🍅',
       type: 'UPDATE',
+      uploadedAssetUrls: [photoUrl('garden')],
+      createdAt: ago(8 * HOUR),
     },
   })
 
@@ -146,8 +164,10 @@ async function main() {
       id: 'seed-post-3',
       authorId: mama.id,
       groupId: familyGroup.id,
-      content: "Zondag zo'n heerlijk familiediner gehad. Iedereen aanwezig — zo fijn! 💛",
+      content: 'Such a wonderful family dinner on Sunday. Everyone was there — so nice! 💛',
       type: 'UPDATE',
+      uploadedAssetUrls: [photoUrl('dinner')],
+      createdAt: ago(3 * 24 * HOUR),
     },
   })
 
@@ -158,12 +178,13 @@ async function main() {
       id: 'seed-post-poll',
       authorId: papa.id,
       groupId: familyGroup.id,
-      content: "Waar gaan we volgende maand met z'n allen eten?",
+      content: 'Where should we all go for dinner next month?',
       type: 'POLL',
+      createdAt: ago(36 * HOUR),
       typeData: {
         options: [
-          { id: 'opt-1', text: 'Italiaans 🍝' },
-          { id: 'opt-2', text: 'Grieks 🥙' },
+          { id: 'opt-1', text: 'Italian 🍝' },
+          { id: 'opt-2', text: 'Greek 🥙' },
           { id: 'opt-3', text: 'Burgers 🍔' },
         ],
         closesAt: null,
@@ -187,20 +208,20 @@ async function main() {
     id: 'seed-comment-1',
     postId: 'seed-post-1',
     authorId: oma.id,
-    content: 'Gefeliciteerd lieve Emma! 🎈 Opa en ik komen zondag langs.',
+    content: 'Happy birthday, sweet Emma! 🎈 Grandpa and I will stop by on Sunday.',
   })
   await seedComment({
     id: 'seed-comment-2',
     postId: 'seed-post-1',
     authorId: mama.id,
-    content: 'Dankjewel mam, tot zondag!',
+    content: 'Thanks Mom, see you Sunday!',
     parentId: 'seed-comment-1',
   })
   await seedComment({
     id: 'seed-comment-3',
     postId: 'seed-post-2',
     authorId: papa.id,
-    content: 'Die tomaten zien er inderdaad goed uit, opa!',
+    content: 'Those tomatoes really do look good, Grandpa!',
   })
 
   // Trip post for the weekend group.
@@ -217,14 +238,14 @@ async function main() {
       id: 'seed-post-trip',
       authorId: papa.id,
       groupId: weekendGroup.id,
-      content: "Met z'n zessen naar de Ardennen! 🌲",
+      content: 'Off to the Ardennes, all six of us! 🌲',
       type: 'TRIP',
       typeData: {
-        title: 'Weekendje Ardennen',
+        title: 'Ardennes Weekend',
         destination: 'La Roche-en-Ardenne',
         startDate: startDate.toISOString().slice(0, 10),
         endDate: endDate.toISOString().slice(0, 10),
-        coverPhotoUrl: null,
+        coverPhotoUrl: photoUrl('sunset'),
         travelerUserIds: [mama.id, sophie.id, emma.id],
         closedAt: null,
         closedByUserId: null,
@@ -237,22 +258,30 @@ async function main() {
     id: 'seed-checkin-1',
     postId: tripPost.id,
     authorId: papa.id,
-    text: 'Aangekomen! Het huisje is perfect.',
+    text: 'We made it! The cabin is perfect.',
     place: 'La Roche-en-Ardenne',
     checkinId: 'checkin-a',
+    photoUrls: [photoUrl('cabin')],
   })
   await seedTripCheckin({
     id: 'seed-checkin-2',
     postId: tripPost.id,
     authorId: mama.id,
-    text: 'Lekker gewandeld vandaag.',
+    text: 'Had a great hike today.',
     place: 'Bois de La Roche',
     checkinId: 'checkin-b',
+    photoUrls: [photoUrl('forest')],
   })
 
   // Favorites.
   await seedFavorite({ postId: 'seed-post-1', userId: oma.id })
   await seedFavorite({ postId: 'seed-post-trip', userId: sophie.id })
+
+  await seedDemoContent(
+    prisma,
+    { admin, testUser, opa, oma, mama, papa, sophie, emma },
+    { family: familyGroup, weekend: weekendGroup }
+  )
 
   console.log('✅ Seed data created')
   console.log(`   Groups: ${familyGroup.name}, ${weekendGroup.name}`)
@@ -310,6 +339,7 @@ async function seedTripCheckin({
   text,
   place,
   checkinId,
+  photoUrls = [],
 }: {
   id: string
   postId: string
@@ -317,6 +347,7 @@ async function seedTripCheckin({
   text: string
   place: string
   checkinId: string
+  photoUrls?: string[]
 }) {
   await prisma.comment.upsert({
     where: { id },
@@ -326,7 +357,7 @@ async function seedTripCheckin({
       postId,
       authorId,
       content: text,
-      metadata: { kind: 'trip_checkin', checkinId, place, photoUrls: [] },
+      metadata: { kind: 'trip_checkin', checkinId, place, photoUrls },
     },
   })
 }
