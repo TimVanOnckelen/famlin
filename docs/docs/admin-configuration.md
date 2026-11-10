@@ -166,7 +166,7 @@ You can give your Famlin server your family's own look: a **family name** ("The 
 
 The login screen gets a soft gradient background derived from your color. It deliberately never shows a photo: everything before login is visible to anyone.
 
-:::caution Public by design
+:::caution[Public by design]
 The logo and family name are visible to anyone who opens your server's address — the login page has to show them before anyone has signed in. Don't put anything in them you wouldn't put on a doorbell.
 :::
 

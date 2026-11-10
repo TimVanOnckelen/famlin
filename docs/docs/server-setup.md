@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Server setup
 
-:::tip New to self-hosting?
+:::tip[New to self-hosting?]
 [Choose your installation](./choose-installation.md) points you to the easiest option for what you have. On a Synology NAS, you can also follow the dedicated [Container Manager guide](./install-synology.md) without using SSH.
 :::
 

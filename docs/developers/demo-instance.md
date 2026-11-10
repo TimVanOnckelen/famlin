@@ -21,7 +21,7 @@ The sample data is in English and covers every feature: posts with photos, a mil
 
 While read-only mode is on, both login screens identify the server as a demo and show a demo account—`test@example.com` on the web app and `admin@example.com` on `/admin`—with a button that fills it in. After signing in, a banner explains that it's a demo, and any blocked action shows a notice instead of failing silently. Blocked writes return a `403` whose body contains `"code": "READ_ONLY"`.
 
-:::warning Don't hand the demo instance to an app store reviewer
+:::warning[Don't hand the demo instance to an app store reviewer]
 Read-only mode blocks every mutation except the login endpoints, account deletion (`DELETE /api/auth/me`) included. A reviewer therefore can't post, comment, or delete their account. Give App Review a normal, writable instance and a **non-admin** account; `admin@example.com` is the seed's only admin, and the last remaining admin deliberately can't delete itself.
 :::
 

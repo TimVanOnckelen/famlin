@@ -6,7 +6,7 @@ sidebar_position: 3
 
 If you already run Home Assistant OS or a Supervised install, you can run Famlin as an add-on. It includes its own database, so there is nothing else to set up.
 
-:::note Coming soon to the official add-on store
+:::note[Coming soon to the official add-on store]
 Famlin is not in Home Assistant's default add-on store. Add Famlin's add-on repository as described below.
 :::
 

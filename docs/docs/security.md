@@ -109,7 +109,7 @@ Uploaded media is not served as public files. Each request uses either the membe
 
 Access rules apply to files attached **after** the release that introduced each rule. Older files remain reachable by any signed-in user who has their URL until a future backfill changes that behavior.
 
-:::warning Linked albums have a wider audience
+:::warning[Linked albums have a wider audience]
 A photo uploaded to a circle post is circle-private, but a photo in a **linked Immich or local album** is already available to every member of that album's family through the album browser. Adding it to a circle post does not make it private. Upload the photo directly to the post when it must be circle-private.
 :::
 
