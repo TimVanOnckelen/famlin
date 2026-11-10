@@ -6,7 +6,7 @@ sidebar_position: 2
 
 If you run a home server with Umbrel, CasaOS or ZimaOS, you can install Famlin from its app store with a few clicks. No terminal and no configuration files are needed: the database and secrets are set up for you.
 
-:::note Coming soon to the official stores
+:::note[Coming soon to the official stores]
 Famlin is not in the official Umbrel and CasaOS app stores yet. Until it is, add Famlin's own store as described below. It works the same way and gets the same updates.
 :::
 

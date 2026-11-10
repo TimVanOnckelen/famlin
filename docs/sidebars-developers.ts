@@ -7,6 +7,7 @@ const sidebars: SidebarsConfig = {
   developersSidebar: [
     'quick-start',
     'architecture',
+    'backend-reference',
     'shared-ui',
     'api',
     {
@@ -16,6 +17,7 @@ const sidebars: SidebarsConfig = {
       items: apiReferenceSidebar,
     },
     'contributing',
+    'demo-instance',
     'ios-app-review',
     'project-brief',
   ],

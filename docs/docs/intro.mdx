@@ -32,36 +32,11 @@ The official apps are free, and both ask for your server's address on first laun
 
 Family members who'd rather not install anything can open your server's address in a browser instead — every Famlin server also serves a full web app at `/`.
 
-### Sharing from your phone's photo app
-
-Looking at a photo in Photos, Google Photos, Files, WhatsApp or any other app? Tap **Share → Famlin**: the app opens a new post with that photo or video already attached, and you pick the family, write a caption and post as usual. On iPhone, Famlin appears in the share sheet as **Famlin Share** — if you don't see it, scroll the row of apps to the end, tap **More**, and switch it on.
-
-- Several photos and videos shared together all go into one post. A post holds at most **10**; anything beyond that is skipped, and the app tells you how many.
-- The same limits apply as when you pick photos inside the app: videos can be at most **2 minutes** long, and only photos and videos can be shared (not documents or links).
-- If you're not signed in, Famlin asks you to log in first and then opens the new post with your photos still attached.
-- If you're already writing a post, the shared photos are added to it.
-- Photos go to the server the app is currently signed in to.
-
-## Get started
+## Next steps
 
 - **Already have a Famlin account?** Start with the [Using Famlin guide](./features.mdx) for an overview of the feed, posts, stories, photos, chat, and more.
-- **Want to self-host Famlin for your family?** Start with [Server setup](./server-setup.md) — Docker Compose, reverse proxies, and a Synology Container Manager walkthrough — then [Admin configuration](./admin-configuration.md) to log in, set a login method, and invite your family.
+- **Want to self-host Famlin for your family?** Start with [Choose your installation](./choose-installation.md), then follow [Admin configuration](./admin-configuration.md) to set a login method and invite your family.
 - **Want to work on Famlin's code?** Head to the [Developers](/developers/quick-start) tab for a local Docker dev environment, architecture notes, and contribution guidelines.
-
-## Project structure
-
-```
-famlin/
-  backend/                       Fastify API, Prisma schema, Docker image
-    admin/                       React + Vite admin UI
-  mobile/                        Expo React Native app
-  web/                           React + Vite member-facing web app (served at /)
-  packages/api-client/           shared API/data layer for mobile + web
-  docs/                          Docusaurus documentation site
-  website/                       static marketing landing page (famlin.app)
-  docker-compose.yml             production/standard backend stack
-  docker-compose.override.yml    local development with hot reload
-```
 
 ## Learn more
 

@@ -26,7 +26,7 @@ For every uploaded photo, Famlin keeps three copies inside its media storage:
 
 Videos are stored as uploaded, plus a poster image. Old HEIC photos get a browser-friendly copy under `derived/` the first time someone opens them. Plan for **media storage of about 1.5× the size of what your family uploads**.
 
-:::info Not the same as "Media integrations"
+:::info[Not the same as "Media integrations"]
 **Immich** and **Local folders** under Server settings → Media are *sources* that members can pick photos from. Famlin only reads from them and never stores its own uploads there. See [Media integrations](./admin-configuration.md#media-integrations). This page is about where Famlin keeps the files that members upload *to Famlin*.
 :::
 
@@ -86,7 +86,7 @@ Then:
 
 Leave `UPLOADS_DIR` unset: changing the mount is enough. `UPLOADS_DIR` only matters if you mount the folder somewhere else than `/app/uploads` inside the container.
 
-:::tip Network shares (NFS/SMB)
+:::tip[Network shares (NFS/SMB)]
 A share mounted on the host works the same way. Make sure uid 1000 can write to it (on SMB, mount it with `uid=1000,gid=1000`). Also make sure the share is mounted *before* Docker starts, or the container writes to the empty mount point underneath. Expect photos to load a bit slower than from a local disk.
 :::
 
@@ -264,7 +264,7 @@ docker compose -f docker-compose.yml up -d
 
 Keep the `famlin-uploads` volume mounted, even with S3. Your branding logo always stays there, and `/app/uploads` is the fallback source when you migrate. Also make sure the container has some free temporary space (the container's `/tmp`): each upload, up to 200 MB, is processed there before it goes to the bucket.
 
-:::note Tested providers
+:::note[Tested providers]
 Famlin's S3 driver is tested against MinIO. Other services that implement the S3 API, such as AWS S3, Hetzner Object Storage, Garage, Backblaze B2, Cloudflare R2 and Wasabi, are expected to work, but aren't tested automatically. If you run into a provider-specific issue, please [open an issue](https://github.com/TimVanOnckelen/famlin/issues).
 :::
 

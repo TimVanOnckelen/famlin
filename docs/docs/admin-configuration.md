@@ -80,7 +80,7 @@ Google's OAuth clients always require a client secret for the token exchange, an
    - **Scopes**: `openid email profile`
    - **Display name**: e.g. `Google`
 
-Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
+Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Backend reference: OIDC / client-secret providers](/docs/developers/backend-reference#oidc--client-secret-providers) for how that works under the hood.
 
 ### Sign in with Apple
 
@@ -166,7 +166,7 @@ You can give your Famlin server your family's own look: a **family name** ("The 
 
 The login screen gets a soft gradient background derived from your color. It deliberately never shows a photo: everything before login is visible to anyone.
 
-:::caution Public by design
+:::caution[Public by design]
 The logo and family name are visible to anyone who opens your server's address — the login page has to show them before anyone has signed in. Don't put anything in them you wouldn't put on a doorbell.
 :::
 
