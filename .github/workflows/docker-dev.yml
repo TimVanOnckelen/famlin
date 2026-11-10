@@ -27,3 +27,43 @@ jobs:
     uses: ./.github/workflows/docker-publish.yml
     with:
       development: true
+
+  # Roll the read-only demo on Google Cloud Run forward to the image just
+  # published. Opt-in: skipped unless the DEMO_* repository variables are set
+  # (see docs/docs/server-setup.md#auto-deploy-to-cloud-run), so forks and
+  # deployments without a demo never run it. Keyless: GitHub's OIDC token is
+  # exchanged through Workload Identity Federation for a service account that
+  # can only update the demo service.
+  deploy-demo:
+    needs: publish-dev
+    if: ${{ vars.DEMO_CLOUD_RUN_SERVICE != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.DEMO_GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.DEMO_GCP_SERVICE_ACCOUNT }}
+
+      # DEMO_IMAGE_REPOSITORY is an Artifact Registry remote repository that
+      # proxies ghcr.io (Cloud Run can't pull from ghcr.io directly). Deploying
+      # by digest pins exactly the build this run published, not whatever
+      # `dev` points at by the time Cloud Run pulls. Only the image changes:
+      # the service keeps its env vars, command and scaling settings.
+      # The proxied path is the ghcr.io one minus the host, already lowercased
+      # by docker-publish.yml (registry paths must be lowercase).
+      - id: image
+        env:
+          REPOSITORY: ${{ vars.DEMO_IMAGE_REPOSITORY }}
+          IMAGE: ${{ needs.publish-dev.outputs.image }}
+          DIGEST: ${{ needs.publish-dev.outputs.digest }}
+        run: echo "ref=${REPOSITORY%/}/${IMAGE#ghcr.io/}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
+        with:
+          project_id: ${{ vars.DEMO_GCP_PROJECT }}
+          region: ${{ vars.DEMO_GCP_REGION }}
+          service: ${{ vars.DEMO_CLOUD_RUN_SERVICE }}
+          image: ${{ steps.image.outputs.ref }}

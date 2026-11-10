@@ -376,16 +376,83 @@ The cheapest always-free option is a Compute Engine `e2-micro` instance in `us-c
 4. Open firewall port `3000` (or put a reverse proxy in front).
 5. Run `docker compose -f docker-compose.demo.yml up -d`.
 
-### CI-deployed demo
+### Deploy on Google Cloud Run (free tier)
 
-The `.github/workflows/demo.yml` workflow pushes a `ghcr.io/timvanonckelen/famlin:demo` image on every push to `main` and can SSH into a demo server to redeploy it. Configure these repository secrets to enable it:
+A read-only demo fits Cloud Run's free tier: it scales to zero between visits and gets an HTTPS `*.run.app` address. Cloud Run has no database of its own, so pair it with a free hosted Postgres such as [Neon](https://neon.tech) (use the direct connection string, not the `-pooler` one, with `?sslmode=require`). Create the service from the Famlin image with:
 
-- `DEMO_HOST` — hostname or IP of the demo server
-- `DEMO_USER` — SSH user
-- `DEMO_SSH_KEY` — SSH private key
-- `DEMO_JWT_SECRET` — JWT secret for the demo instance
-- `DEMO_DB_PASSWORD` — Postgres password for the demo instance
-- `DEMO_TRUST_PROXY` — set to `true` only if the demo sits behind a reverse proxy
+- **Container port** `3000`, **memory** `1 GiB`, **billing** request-based, **scaling** min `0` / max `1`, **authentication** public (read-only mode keeps it closed).
+- **Command** `sh` with the two arguments `-c` and `npx prisma migrate deploy && node dist/prisma/seed.js && exec node dist/server.js`, so every start migrates and seeds before serving. Set these with `gcloud run services update <service> --command=sh --args="-c,<that line>"` — the console's argument field doesn't pass `-c` through reliably.
+- **Variables** `DATABASE_URL`, `JWT_SECRET` (set it explicitly — a generated one would change on every cold start and sign everyone out), `READ_ONLY=true` and `TRUST_PROXY=true`.
+
+Cloud Run can't pull from `ghcr.io` directly; the setup below adds an Artifact Registry remote repository that proxies it.
+
+### Auto-deploy to Cloud Run
+
+The `deploy-demo` job in `.github/workflows/docker-dev.yml` rolls a Cloud Run demo forward to every new `dev` image, right after it's published on a merge to `main`. It deploys by digest, so the demo runs exactly the build that run produced, and it only changes the image — the service keeps its variables, command and scaling. It's opt-in: without the repository variables below the job is skipped.
+
+GitHub signs in to Google through Workload Identity Federation, so no key or password is stored anywhere; the federation only accepts runs of this repository's `main` branch. Everything involved stays within free tiers. The one thing that can cost money is image storage beyond Artifact Registry's free 0.5 GB, which the cleanup policy below prevents by keeping only the two newest images.
+
+One-time setup in Cloud Shell. Replace the first three values with your own; the remaining commands use them as they are.
+
+```bash
+PROJECT=famlin REGION=europe-west1 SERVICE=famlin-demo
+GITHUB_REPO=TimVanOnckelen/famlin
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
+SA="famlin-demo-deployer@$PROJECT.iam.gserviceaccount.com"
+```
+
+```bash
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com iamcredentials.googleapis.com sts.googleapis.com
+```
+
+```bash
+gcloud artifacts repositories create ghcr --location="$REGION" --repository-format=docker --mode=remote-repository --remote-docker-repo=https://ghcr.io
+```
+
+```bash
+cat > cleanup.json <<'EOF'
+[
+  {"name": "keep-newest", "action": {"type": "Keep"}, "mostRecentVersions": {"keepCount": 2}},
+  {"name": "delete-older", "action": {"type": "Delete"}, "condition": {"tagState": "ANY"}}
+]
+EOF
+gcloud artifacts repositories set-cleanup-policies ghcr --location="$REGION" --policy=cleanup.json --no-dry-run
+```
+
+```bash
+gcloud iam service-accounts create famlin-demo-deployer --display-name="Famlin demo deployer"
+gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/run.developer --condition=None
+gcloud iam service-accounts add-iam-policy-binding "$PROJECT_NUMBER-compute@developer.gserviceaccount.com" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser
+```
+
+The last line lets the deployer act as the service's runtime account. If your service runs as a different service account, use that one instead of the default compute account.
+
+```bash
+gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc famlin --location=global --workload-identity-pool=github \
+  --issuer-uri=https://token.actions.githubusercontent.com \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+  --attribute-condition="assertion.repository=='$GITHUB_REPO' && assertion.ref=='refs/heads/main'"
+gcloud iam service-accounts add-iam-policy-binding "$SA" --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$GITHUB_REPO"
+```
+
+Print the values for GitHub:
+
+```bash
+cat <<EOF
+DEMO_CLOUD_RUN_SERVICE=$SERVICE
+DEMO_GCP_PROJECT=$PROJECT
+DEMO_GCP_REGION=$REGION
+DEMO_GCP_SERVICE_ACCOUNT=$SA
+DEMO_GCP_WIF_PROVIDER=projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/famlin
+DEMO_IMAGE_REPOSITORY=$REGION-docker.pkg.dev/$PROJECT/ghcr
+EOF
+```
+
+Add each line as a repository **variable** (not a secret — none of them is sensitive) under **Settings → Secrets and variables → Actions → Variables**. The next merge to `main` deploys the demo; the job's log shows the image it rolled out. To stop auto-deploying, delete `DEMO_CLOUD_RUN_SERVICE`.
+
+A newer image doesn't rewrite the demo's database: the seed only adds rows that are missing. To reset the demo to the current sample data, empty the database and start a new revision.
 
 ## Next steps
 
