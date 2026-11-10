@@ -2,6 +2,9 @@ import 'dotenv/config'
 import { PrismaClient, type ReactionType } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcryptjs'
+import path from 'node:path'
+import { writeDemoPhotos } from './demoPhotos.js'
+import { DEMO_SCENES, photoUrl, seedDemoContent } from './demoContent.js'
 
 // Prisma 7 needs a driver adapter (see src/db.ts). Read DATABASE_URL directly
 // rather than importing src/config.ts, so the Dockerfile's standalone
@@ -15,7 +18,18 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl }),
 })
 
+// Where the generated demo photos go: the same directory the server serves
+// /uploads/ from (UPLOADS_DIR, else <cwd>/uploads — see src/config.ts; not
+// imported here so this script stays self-contained for the image's
+// standalone compile). Only the local storage driver reads from it.
+const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads')
+
+const HOUR = 60 * 60 * 1000
+const ago = (ms: number) => new Date(Date.now() - ms)
+
 async function main() {
+  await writeDemoPhotos(uploadsDir, DEMO_SCENES)
+
   const testPasswordHash = await bcrypt.hash('test123456', 12)
 
   // Users: one admin + one regular test account, plus a fictional family.
@@ -124,6 +138,8 @@ async function main() {
       content: 'Emma turns 5! 🎉 Our little girl has her birthday today. Time flies!',
       type: 'MILESTONE',
       milestoneTag: '🎂 Birthday',
+      uploadedAssetUrls: [photoUrl('birthday')],
+      createdAt: ago(48 * HOUR),
     },
   })
 
@@ -136,6 +152,8 @@ async function main() {
       groupId: familyGroup.id,
       content: 'Spent a lovely day working in the garden. The tomatoes are looking great this year! 🍅',
       type: 'UPDATE',
+      uploadedAssetUrls: [photoUrl('garden')],
+      createdAt: ago(8 * HOUR),
     },
   })
 
@@ -148,6 +166,8 @@ async function main() {
       groupId: familyGroup.id,
       content: 'Such a wonderful family dinner on Sunday. Everyone was there — so nice! 💛',
       type: 'UPDATE',
+      uploadedAssetUrls: [photoUrl('dinner')],
+      createdAt: ago(3 * 24 * HOUR),
     },
   })
 
@@ -160,6 +180,7 @@ async function main() {
       groupId: familyGroup.id,
       content: 'Where should we all go for dinner next month?',
       type: 'POLL',
+      createdAt: ago(36 * HOUR),
       typeData: {
         options: [
           { id: 'opt-1', text: 'Italian 🍝' },
@@ -224,7 +245,7 @@ async function main() {
         destination: 'La Roche-en-Ardenne',
         startDate: startDate.toISOString().slice(0, 10),
         endDate: endDate.toISOString().slice(0, 10),
-        coverPhotoUrl: null,
+        coverPhotoUrl: photoUrl('sunset'),
         travelerUserIds: [mama.id, sophie.id, emma.id],
         closedAt: null,
         closedByUserId: null,
@@ -240,6 +261,7 @@ async function main() {
     text: 'We made it! The cabin is perfect.',
     place: 'La Roche-en-Ardenne',
     checkinId: 'checkin-a',
+    photoUrls: [photoUrl('cabin')],
   })
   await seedTripCheckin({
     id: 'seed-checkin-2',
@@ -248,11 +270,18 @@ async function main() {
     text: 'Had a great hike today.',
     place: 'Bois de La Roche',
     checkinId: 'checkin-b',
+    photoUrls: [photoUrl('forest')],
   })
 
   // Favorites.
   await seedFavorite({ postId: 'seed-post-1', userId: oma.id })
   await seedFavorite({ postId: 'seed-post-trip', userId: sophie.id })
+
+  await seedDemoContent(
+    prisma,
+    { admin, testUser, opa, oma, mama, papa, sophie, emma },
+    { family: familyGroup, weekend: weekendGroup }
+  )
 
   console.log('✅ Seed data created')
   console.log(`   Groups: ${familyGroup.name}, ${weekendGroup.name}`)
@@ -310,6 +339,7 @@ async function seedTripCheckin({
   text,
   place,
   checkinId,
+  photoUrls = [],
 }: {
   id: string
   postId: string
@@ -317,6 +347,7 @@ async function seedTripCheckin({
   text: string
   place: string
   checkinId: string
+  photoUrls?: string[]
 }) {
   await prisma.comment.upsert({
     where: { id },
@@ -326,7 +357,7 @@ async function seedTripCheckin({
       postId,
       authorId,
       content: text,
-      metadata: { kind: 'trip_checkin', checkinId, place, photoUrls: [] },
+      metadata: { kind: 'trip_checkin', checkinId, place, photoUrls },
     },
   })
 }
