@@ -121,6 +121,7 @@
       "UPDATE": "Share everyday news, photos and videos.",
       "MILESTONE": "Celebrate a birthday, achievement or special moment.",
       "POLL": "Ask a question and let your family vote.",
+      "EVENT": "Plan a get-together and see who's coming.",
       "TRIP": "Plan a trip and share updates along the way.",
       "ALBUM": "Collect photos together in a shared album.",
       "GIFT_LIST": "Share wishlists and optionally draw Secret Santa names."
@@ -128,6 +129,7 @@
     "typeUpdate": "Update",
     "typeMilestone": "Milestone",
     "typePoll": "Poll",
+    "typeEvent": "Event",
     "typeTrip": "Trip",
     "trip": {
       "helper": "Add check-ins from the trip detail page to keep your family up to date.",
@@ -155,6 +157,15 @@
     "placeholder": "Share an update with your family…",
     "milestonePlaceholder": "What's the milestone? (e.g. Emma turns 5! 🎉)",
     "pollPlaceholder": "Ask a question…",
+    "eventPlaceholder": "What's the occasion?",
+    "event": {
+      "startsAtLabel": "Starts",
+      "endsAtLabel": "Ends",
+      "locationLabel": "Location",
+      "locationPlaceholder": "E.g. Grandma's garden",
+      "rsvpDeadlineLabel": "Reply by",
+      "rsvpDeadlineHint": "Optional. If you leave it empty, replies close when the event starts."
+    },
     "albumTitlePlaceholder": "Album title (e.g. Summer at the lake)",
     "albumDescriptionPlaceholder": "Describe the album… (optional)",
     "pollOptionPlaceholder": "Option {{number}}",
@@ -303,6 +314,15 @@
     "totalVotes_other": "{{count}} votes total",
     "closed": "Poll closed",
     "yourVote": "Your vote"
+  },
+  "event": {
+    "rsvpLabel": "Are you coming?",
+    "yes": "Going",
+    "maybe": "Maybe",
+    "no": "Can't go",
+    "rsvpBy": "Reply by {{date}}",
+    "closed": "Replies closed",
+    "rsvpFailed": "Couldn't save your reply. Try again."
   },
   "chat": {
     "title": "Chitchat",

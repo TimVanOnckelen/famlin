@@ -544,6 +544,80 @@ describe('NewPostModal', () => {
     })
   })
 
+  describe('event composer', () => {
+    async function openEventComposer() {
+      vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
+      const user = userEvent.setup()
+      renderWithQueryClient(<NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />)
+      await user.click(screen.getByRole('combobox', { name: 'What do you want to share?' }))
+      await user.click(screen.getByRole('option', { name: 'Event' }))
+      return user
+    }
+
+    it('needs a title and a start before Post is enabled', async () => {
+      const user = await openEventComposer()
+      const postButton = screen.getByRole('button', { name: 'Post' })
+      await user.type(await screen.findByPlaceholderText("What's the occasion?"), 'Christmas dinner')
+      expect(postButton).toBeDisabled()
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-24T18:00' } })
+      expect(postButton).toBeEnabled()
+    })
+
+    it('submits the times as ISO instants, with optional fields left out when empty', async () => {
+      const user = await openEventComposer()
+      await user.type(await screen.findByPlaceholderText("What's the occasion?"), 'Christmas dinner')
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-24T18:00' } })
+      await user.click(screen.getByRole('button', { name: 'Post' }))
+      expect(createPost).toHaveBeenCalledWith({
+        groupId: 'group-1',
+        groupIds: undefined,
+        content: 'Christmas dinner',
+        type: 'EVENT',
+        typeData: {
+          startsAt: new Date('2026-12-24T18:00').toISOString(),
+          endsAt: undefined,
+          location: undefined,
+          rsvpDeadline: undefined,
+        },
+        uploadedAssetUrls: [],
+      })
+    })
+
+    it('submits every field when filled in', async () => {
+      const user = await openEventComposer()
+      await user.type(await screen.findByPlaceholderText("What's the occasion?"), 'Christmas dinner')
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-24T18:00' } })
+      fireEvent.change(screen.getByLabelText(/Ends/), { target: { value: '2026-12-24T23:00' } })
+      fireEvent.change(screen.getByLabelText(/Reply by/), { target: { value: '2026-12-20T12:00' } })
+      await user.type(screen.getByLabelText('Location'), "  Grandma's garden ")
+      await user.click(screen.getByRole('button', { name: 'Post' }))
+      expect(createPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          typeData: {
+            startsAt: new Date('2026-12-24T18:00').toISOString(),
+            endsAt: new Date('2026-12-24T23:00').toISOString(),
+            location: "Grandma's garden",
+            rsvpDeadline: new Date('2026-12-20T12:00').toISOString(),
+          },
+        })
+      )
+    })
+
+    it('clears an end or deadline that the new start contradicts', async () => {
+      const user = await openEventComposer()
+      await user.type(await screen.findByPlaceholderText("What's the occasion?"), 'Christmas dinner')
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-24T18:00' } })
+      fireEvent.change(screen.getByLabelText(/Ends/), { target: { value: '2026-12-24T23:00' } })
+      fireEvent.change(screen.getByLabelText(/Reply by/), { target: { value: '2026-12-20T12:00' } })
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-25T00:00' } })
+      expect(screen.getByLabelText(/Ends/)).toHaveValue('')
+      expect(screen.getByLabelText(/Reply by/)).toHaveValue('2026-12-20T12:00')
+      fireEvent.change(screen.getByLabelText(/Starts/), { target: { value: '2026-12-19T18:00' } })
+      expect(screen.getByLabelText(/Reply by/)).toHaveValue('')
+      expect(screen.getByRole('button', { name: 'Post' })).toBeEnabled()
+    })
+  })
+
   describe('album composer', () => {
     it('disables Post until an album title is entered, then submits type ALBUM with the title', async () => {
       vi.mocked(getGroupMediaAlbums).mockResolvedValue([])

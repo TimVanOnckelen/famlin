@@ -1,6 +1,7 @@
 import { ComponentType } from 'react'
 import { Post } from '@famlin/api-client'
 import { PollCardBody } from './PollCardBody'
+import { EventCardBody } from './EventCardBody'
 
 export interface PostTypeCardBodyProps {
   post: Post
@@ -20,4 +21,5 @@ export interface PostTypeRenderer {
 // forward-compat story for custom types older clients don't know about.
 export const postTypeRenderers: Record<string, PostTypeRenderer> = {
   POLL: { CardBody: PollCardBody },
+  EVENT: { CardBody: EventCardBody },
 }

@@ -60,6 +60,23 @@ describe('posts', () => {
     })
   })
 
+  describe('rsvpEvent', () => {
+    it('delegates to interactWithPost with key "rsvp" and the plain answer', async () => {
+      const client = await import('../client.js')
+      const fakePost = { id: 'post-5', type: 'EVENT' }
+      ;(client.api.post as any).mockResolvedValue({ data: fakePost })
+
+      const { rsvpEvent } = await import('../posts.js')
+      const result = await rsvpEvent('post-5', 'maybe')
+
+      expect(client.api.post).toHaveBeenCalledWith('/posts/post-5/interactions', {
+        key: 'rsvp',
+        value: 'maybe',
+      })
+      expect(result).toBe(fakePost)
+    })
+  })
+
   describe('checkInTrip', () => {
     it('delegates to interactWithPost with key "checkin" and the check-in body', async () => {
       const client = await import('../client.js')

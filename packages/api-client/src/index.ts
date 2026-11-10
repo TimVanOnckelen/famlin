@@ -97,6 +97,9 @@ export type {
   PollOptionResult,
   PostPoll,
   PollCreateData,
+  RsvpResponse,
+  EventCreateData,
+  PostEvent,
   TripTypeData,
   TripTraveler,
   TripLatestCheckin,
@@ -114,7 +117,7 @@ export type {
   Comment,
   Notification,
 } from './types'
-export { REACTION_TYPES } from './types'
+export { REACTION_TYPES, RSVP_RESPONSES } from './types'
 
 export { patchPostInCaches } from './postCache'
 
@@ -146,6 +149,7 @@ export {
   toggleFavoritePost,
   interactWithPost,
   votePoll,
+  rsvpEvent,
   checkInTrip,
   closeTrip,
   setTripTravelers,
