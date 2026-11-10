@@ -43,7 +43,7 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
   const scrolling = useSharedValue(false)
   const frameCallback = useFrameCallback((frame) => {
     const elapsed = frame.timeSincePreviousFrame
-    if (!scrolling.value || elapsed === null) return
+    if (!scrolling.get() || elapsed === null) return
     uiFrames.modify((frames) => {
       'worklet'
       if (frames.length < MAX_RECORDED_FRAMES) frames.push(elapsed)
@@ -55,10 +55,10 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
   useEffect(() => () => void stopScrollRecording(), [])
 
   function start() {
-    uiFrames.value = []
+    uiFrames.set([])
     setReport(null)
     startScrollRecording((isScrolling) => {
-      scrolling.value = isScrolling
+      scrolling.set(isScrolling)
     })
     frameCallback.setActive(true)
     setRecording(true)
@@ -70,7 +70,7 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
     setRecording(false)
     if (!result) return
 
-    const uiDurations = uiFrames.value
+    const uiDurations = uiFrames.get()
     const frameIntervalMs = estimateFrameIntervalMs(uiDurations)
     const seen = new Set(result.seenPostIds)
     setReport({
