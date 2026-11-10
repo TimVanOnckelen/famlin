@@ -11,9 +11,6 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://famlin.app/assets/images/screenshots/feed.webp">
 <meta name="twitter:card" content="summary">
-<link rel="alternate" hreflang="en" href="https://famlin.app/">
-<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/">
-<link rel="alternate" hreflang="x-default" href="https://famlin.app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
@@ -48,10 +45,6 @@
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-links a { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; padding: 8px 12px; border-radius: 8px; }
   .nav-links a:hover { background: var(--tint); }
-  .lang { display: flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--muted); margin: 0 4px; }
-  .lang span, .lang a { padding: 6px 6px !important; }
-  .lang [aria-current] { color: var(--brand); }
-  .lang a { color: var(--muted) !important; }
 
   /* buttons */
   .btn { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 800; padding: 13px 22px; border-radius: 10px; text-decoration: none; border: 1.5px solid transparent; }
@@ -70,6 +63,9 @@
   .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .hero-meta { margin-top: 22px; font-size: 14px; color: var(--muted); }
   .hero-meta a { font-weight: 700; }
+  .hero-langs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+  .hero-langs li { background: var(--tint); color: var(--brand-dark); font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+  .hero-langs li:first-child { background: none; color: var(--muted); font-weight: 600; padding-left: 0; }
   .hero-visual { position: relative; margin-right: -150px; padding: 40px 0 64px 76px; }
   .hero-visual::before { content: ""; position: absolute; top: 0; bottom: 24px; left: 36px; right: -600px; border-radius: 32px 0 0 32px; background: linear-gradient(135deg, #fbf1e1 0%, #f6e3c8 100%); }
   .hero-visual .browser { position: relative; margin-top: 0; box-shadow: 0 30px 70px rgba(70,45,10,0.18); }
@@ -228,9 +224,6 @@
       <a href="#install" class="hide-sm">Self-host</a>
       <a href="/docs/">Docs</a>
       <a href="/support/" class="hide-sm">Support</a>
-      <span class="lang" aria-label="Language">
-        <span aria-current="true">EN</span><span aria-hidden="true">·</span><a href="/nl/" hreflang="nl" lang="nl">NL</a>
-      </span>
       <a href="#install" class="btn btn-primary">Install</a>
     </div>
   </div>
@@ -249,6 +242,14 @@
           <a href="/docs/" class="btn btn-ghost">Read the docs</a>
         </div>
         <p class="hero-meta">Free and MIT-licensed · iOS, Android and web · <a href="https://github.com/TimVanOnckelen/famlin">Source on GitHub</a></p>
+        <ul class="hero-langs" aria-label="App languages">
+          <li>The apps speak</li>
+          <li lang="en">English</li>
+          <li lang="nl">Nederlands</li>
+          <li lang="fr">Français</li>
+          <li lang="pt-PT">Português</li>
+          <li lang="zh-Hans">中文</li>
+        </ul>
       </div>
       <div class="hero-visual">
         <div class="browser">
@@ -335,7 +336,7 @@
         <div><h3>Photos, done properly</h3><p>HEIC from iPhones works everywhere, big photos are resized for viewing, and the original is kept on your server.</p></div>
         <div><h3>Notifications you control</h3><p>Push and email, with a switch per type: new posts, comments, reactions, chat, stories, gift lists.</p></div>
         <div><h3>Your own copy</h3><p>Any member can download everything they can see as a zip: posts, comments and the photos that go with them.</p></div>
-        <div><h3>Five languages</h3><p>English, Dutch, Simplified Chinese, European Portuguese and French. Each person picks their own.</p></div>
+        <div><h3>Five languages</h3><p>The apps, the web app and the admin panel come in English, Dutch, French, European Portuguese and Simplified Chinese. Each person picks their own.</p></div>
       </div>
     </div>
   </section>
