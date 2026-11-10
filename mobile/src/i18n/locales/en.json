@@ -742,5 +742,16 @@
     "saveFailed": "Couldn't save the page.",
     "save": "Save",
     "saving": "Saving…"
+  },
+  "scrollDiagnostics": {
+    "title": "Scroll diagnostics",
+    "enabled": "Scroll diagnostics on",
+    "hint": "Press Start, then scroll the feed.",
+    "recording": "Recording… scroll the feed, then press Stop.",
+    "uiResult": "Screen: {{hitches}} ms/s stutter, {{dropped}} dropped frames",
+    "jsResult": "App: {{hitches}} ms/s stutter, {{dropped}} dropped frames",
+    "start": "Start",
+    "stop": "Stop",
+    "share": "Share"
   }
 }

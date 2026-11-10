@@ -13,6 +13,9 @@ import { PostCard } from '@/components/PostCard'
 import { EmptyState } from '@/components/EmptyState'
 import { StoryTray } from '@/components/StoryTray'
 import { OldServerBanner } from '@/components/OldServerBanner'
+import { ScrollDiagnosticsBar } from '@/components/ScrollDiagnosticsBar'
+import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
+import { scrollRecorderListProps } from '@/utils/scrollRecorder'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
@@ -38,6 +41,8 @@ export function FeedScreen() {
   // state from selectedGroupIds because the two mean opposite things: groups
   // widen the pool, circles narrow it.
   const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([])
+  // Hidden tester tool, switched on from the profile screen (issue #357).
+  const scrollDiagnostics = useScrollDiagnosticsStore((s) => s.enabled)
 
   const { data: groups } = useQuery({
     queryKey: ['groups'],
@@ -262,7 +267,14 @@ export function FeedScreen() {
         </View>
       )}
 
+      {scrollDiagnostics && <ScrollDiagnosticsBar posts={posts} />}
+
       <FlatList
+        // Remounted when the diagnostics toggle flips: FlatList can't take a
+        // new onViewableItemsChanged on the fly, and outside a diagnostics
+        // session the list should carry none of the recorder's handlers.
+        key={scrollDiagnostics ? 'feed-diagnostics' : 'feed'}
+        {...(scrollDiagnostics ? scrollRecorderListProps : undefined)}
         data={hasGroups ? posts : []}
         keyExtractor={postKeyExtractor}
         contentContainerStyle={styles.feedList}

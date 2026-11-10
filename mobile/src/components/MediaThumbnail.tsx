@@ -10,6 +10,8 @@ import { getUploadUrl } from '@famlin/api-client'
 
 import { Icon } from '@/components/Icon'
 import { isVideoUrl, getVideoPosterUrl } from '@/utils/media'
+import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
+import { recordImageLoad } from '@/utils/scrollRecorder'
 
 interface MediaThumbnailProps {
   url: string
@@ -53,6 +55,10 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
   const { t } = useTranslation()
   const [fellBack, setFellBack] = useState(false)
   const [posterFailed, setPosterFailed] = useState(false)
+  // Scroll diagnostics (issue #357) count where each image came from. Read
+  // without subscribing, and no listener at all while they're off, so a
+  // normal feed pays nothing for it.
+  const onLoad = useScrollDiagnosticsStore.getState().enabled ? recordImageLoad : undefined
 
   // Failed video jobs remain playable through the backend’s original-file fallback.
   if (state.pending || (state.failed && !isVideoUrl(url))) {
@@ -90,6 +96,7 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
           cachePolicy="memory-disk"
           transition={100}
           recyclingKey={posterCacheKey}
+          onLoad={onLoad}
           onError={() => setPosterFailed(true)}
         />
         <PlayBadge />
@@ -111,6 +118,7 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
       cachePolicy="memory-disk"
       transition={100}
       recyclingKey={cacheKey}
+      onLoad={onLoad}
       onError={() => {
         if (fallbackUrl && effectiveUrl !== fallbackUrl) setFellBack(true)
       }}

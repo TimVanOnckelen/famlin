@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
     'contributing',
     'demo-instance',
     'ios-app-review',
+    'mobile-performance',
     'project-brief',
   ],
 };
