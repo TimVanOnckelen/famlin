@@ -109,38 +109,81 @@ RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+
     && pg_dump --version
 
 COPY backend/package.json backend/package-lock.json* backend/.npmrc ./
-# vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
-# camera format) — sharp's own prebuilt binaries deliberately ship without it
-# (patent-encumbered HEVC decoder), so sharp is compiled against the system
-# libvips here instead.
+# libvips is compiled from source here, at a pinned version, and sharp is then
+# compiled against it. Two reasons it is neither sharp's prebuilt binary nor
+# Alpine's `vips` package:
 #
-# sharp's install script builds from source on its own when it finds a
-# globally-installed libvips at least as new as its `config.libvips` minimum —
-# which is why backend/package.json pins sharp to 0.34.5 (needs libvips
-# >= 8.17.3): 0.35.x needs 8.18.7+, newer than Alpine 3.24's 8.18.2, and then
-# silently falls back to the no-HEIC prebuilt. Unpin once the Alpine release
-# under node:22-alpine ships a libvips that satisfies the newer sharp.
+# - HEIC/HEIF (the default iPhone camera format): sharp's prebuilt binaries
+#   deliberately ship without the patent-encumbered HEVC decoder, so they
+#   can't read .heic at all.
+# - Security updates: libvips decodes every photo a member uploads. Alpine's
+#   package lags upstream (3.24 ships 8.18.2), which kept sharp pinned to an
+#   old release and the image on a libvips with known CVEs
+#   (GHSA-f88m-g3jw-g9cj). Owning the version means a fix is a one-line bump.
 #
-# The source build needs node-addon-api and node-gyp, installed into a
-# throwaway prefix (not the app's dependency tree) and exposed via
-# NODE_PATH/PATH. The prebuilt @img/sharp-* packages are then removed, so a
-# compile that didn't happen fails loudly — at the check below and in CI's
-# smoke test — instead of silently falling back to the no-HEIC binary again.
-# The compiled addon dynamically links against libvips-cpp (vips-cpp) as well
-# as vips/vips-heif — vips-cpp must be installed explicitly as a runtime
-# package, or `apk del .build-deps` removes it along with vips-dev, which only
-# pulls it in as a dependency. Deleting just the .build-deps virtual group
-# keeps compilers out of the final image. The HEIC check runs after that
-# cleanup on purpose, so it also catches a runtime library going missing.
-RUN apk add --no-cache vips vips-cpp vips-heif
-RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-dev \
+# To update libvips: change VIPS_VERSION and VIPS_SHA256 (sha256sum of the
+# vips-<version>.tar.xz release asset on github.com/libvips/libvips). It must
+# satisfy the `config.libvips` range in sharp's package.json — the sharp build
+# below fails with a clear message when it doesn't, so a sharp bump that needs
+# a newer libvips can't silently fall back to the no-HEIC prebuilt.
+#
+# Only the loaders Famlin uses are built (JPEG, PNG, WebP, HEIC/AVIF via
+# libheif, GIF via the built-in nsgif) plus ICC/EXIF handling and SIMD.
+# Everything else stays off on purpose (--auto-features=disabled): SVG, PDF,
+# TIFF, ImageMagick and friends are parsers this server never needs, and each
+# is attack surface for a crafted upload.
+ARG VIPS_VERSION=8.18.7
+ARG VIPS_SHA256=5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94
+# Headers of the libraries libvips links against. Needed again when sharp is
+# compiled: pkg-config resolves vips-cpp's private requirements too.
+ARG VIPS_DEV_DEPS="glib-dev expat-dev libjpeg-turbo-dev libpng-dev libwebp-dev libheif-dev lcms2-dev libexif-dev highway-dev zlib-dev"
+
+# The runtime libraries are not listed by hand: scanelf reads which shared
+# objects the freshly built libvips actually needs, and those are installed as
+# the .vips-rundeps group so `apk del .vips-build-deps` can't take them along.
+RUN apk add --no-cache --virtual .vips-build-deps build-base meson pkgconf $VIPS_DEV_DEPS \
+    && wget -q -O /tmp/vips.tar.xz \
+       "https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz" \
+    && echo "${VIPS_SHA256}  /tmp/vips.tar.xz" | sha256sum -c - \
+    && mkdir /tmp/vips && tar -xJf /tmp/vips.tar.xz -C /tmp/vips --strip-components=1 \
+    && cd /tmp/vips \
+    && meson setup build --prefix=/usr/local --libdir=lib --buildtype=release \
+       --auto-features=disabled \
+       -Dexamples=false -Dcpp-docs=false -Ddocs=false \
+       -Djpeg=enabled -Dpng=enabled -Dwebp=enabled -Dheif=enabled \
+       -Dlcms=enabled -Dexif=enabled -Dzlib=enabled -Dhighway=enabled \
+    && meson compile -C build \
+    && meson install -C build \
+    && cd / && rm -rf /tmp/vips /tmp/vips.tar.xz \
+    && apk add --no-cache --virtual .vips-rundeps $( \
+         scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/lib \
+           | tr ',' '\n' | sort -u \
+           | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+       ) \
+    && apk del .vips-build-deps
+
+# sharp >= 0.35 has no install script any more, so `npm ci` only fetches the
+# prebuilt binary; the from-source build is the explicit build.js step. It
+# needs node-addon-api and node-gyp, installed into a throwaway prefix (not
+# the app's dependency tree) and exposed via NODE_PATH/PATH.
+#
+# Guards against a silent fallback to the no-HEIC prebuilt, in order: the
+# libvips version check before compiling, removing the prebuilt @img/sharp-*
+# packages afterwards (sharp then has nothing else to load), and the HEIC
+# check, which runs after the build tools are gone so it also catches a
+# runtime library going missing.
+RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconf $VIPS_DEV_DEPS \
     && npm install --prefix /tmp/sharp-build --no-save --no-audit --no-fund node-addon-api node-gyp \
-    && NODE_PATH=/tmp/sharp-build/node_modules PATH="/tmp/sharp-build/node_modules/.bin:$PATH" \
-       npm ci --omit=dev \
+    && export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
+    && npm ci --omit=dev \
+    && node -e "const l=require('./node_modules/sharp/dist/libvips.cjs'); if(!l.useGlobalLibvips()){console.error('libvips '+(l.globalLibvipsVersion()||'(not found)')+' does not satisfy sharp, which needs '+l.minimumLibvipsVersion+' or newer: bump VIPS_VERSION in backend/Dockerfile');process.exit(1)}" \
+    && (cd node_modules/sharp \
+        && NODE_PATH=/tmp/sharp-build/node_modules PATH="/tmp/sharp-build/node_modules/.bin:$PATH" \
+           node install/build.js) \
     && rm -rf node_modules/@img/sharp-linux* node_modules/@img/sharp-libvips-linux* \
               node_modules/sharp/src/build/Release/obj.target /tmp/sharp-build /root/.cache/node-gyp \
     && apk del .build-deps
-RUN node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }"
+RUN node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); } console.log('sharp', s.versions.sharp, 'libvips', s.versions.vips);"
 
 COPY --from=base /repo/backend/node_modules/.prisma ./node_modules/.prisma
 COPY --from=base /repo/backend/dist ./dist
