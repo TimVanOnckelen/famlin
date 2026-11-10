@@ -80,7 +80,7 @@ Google's OAuth clients always require a client secret for the token exchange, an
    - **Scopes**: `openid email profile`
    - **Display name**: e.g. `Google`
 
-Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
+Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Backend reference: OIDC / client-secret providers](/docs/developers/backend-reference#oidc--client-secret-providers) for how that works under the hood.
 
 ### Sign in with Apple
 
