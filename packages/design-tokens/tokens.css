@@ -1,0 +1,33 @@
+/* Generated from src/tokens.json. Run npm run generate. */
+:root {
+  --fam-primary: #006e94;
+  --fam-primary-dark: #005480;
+  --fam-primary-light: #318ea2;
+  --fam-primary-tint: #daf3fe;
+  --fam-accent: #ed835e;
+  --fam-milestone: #eeb154;
+  --fam-bg: #edf7fb;
+  --fam-surface: #ffffff;
+  --fam-border: #d9e3e7;
+  --fam-text-muted: #597784;
+  --fam-text-body: #233036;
+  --fam-text-title: #0f222a;
+  --fam-primary-mid: #187191;
+  --fam-muted: #e7f0f3;
+  --fam-destructive: #c94a3e;
+  --fam-success: #1c7c3b;
+  --fam-warning: #8a5b0f;
+  --fam-white: #ffffff;
+  --fam-font-family: 'Nunito';
+  --radius: 18px;
+  --fam-grad: linear-gradient(150deg, #318ea2, #005480);
+  --shadow: 0 2px 12px rgb(0 0 0 / 7%);
+  --shadow-sm: 0 1px 4px rgb(0 0 0 / 6%);
+  --shadow-primary: 0 4px 14px rgb(0 110 148 / 32%);
+  --fam-space-1: 0.25rem;
+  --fam-space-2: 0.5rem;
+  --fam-space-3: 0.75rem;
+  --fam-space-4: 1rem;
+  --fam-space-6: 1.5rem;
+  --fam-space-8: 2rem;
+}

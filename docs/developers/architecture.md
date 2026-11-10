@@ -10,8 +10,23 @@ Famlin is a monorepo with these parts:
 - **`backend/admin/`** — React + Vite admin UI, built into `backend/dist/admin/` and served by the backend at `/admin`.
 - **`web/`** — desktop-focused React + Vite member-facing web app, built into `backend/dist/web/` and served by the backend at `/` (same single-container pattern as the admin UI). An npm-workspace member at the repo root together with `packages/api-client`. Routed client-side with `react-router` (`web/src/utils/routes.ts`): `/`, `/photos`, `/chat`, `/profile`, `/trips/:postId`, `/albums/:postId` and `/posts/:postId` (a single post's permalink — the post card's timestamp links to it); the backend's SPA fallback means any of them can be refreshed, bookmarked or shared, and a link opened while logged out lands on its page after login (including through the SSO round trip).
 - **`packages/api-client/`** — `@famlin/api-client`, the shared axios/data layer (auth, posts, comments, groups, notifications, media albums (provider-generic `media.ts` plus the legacy Immich-only `immich.ts`), invites, uploads, domain types, and the browser OIDC PKCE login flow used by `web/`'s login page) consumed by both `mobile/` (via a `file:` dependency) and `web/` (via the npm workspace). A storage-adapter seam (`setStorageAdapter`) lets each consumer plug in its own token persistence (SecureStore/AsyncStorage on mobile, `localStorage` on web).
+- **`packages/design-tokens/`** — shared JSON values, typed TS exports and generated CSS, independent of React and browser APIs.
+- **`packages/ui/`** — shared browser primitives and compositions (Base UI/shadcn + Tailwind), exported as TS/TSX subpaths and a separate stylesheet. Admin is its first consumer through the root npm workspace; web and mobile retain their existing UI.
 - **`mobile/`** — Expo / React Native app for iOS and Android.
 - **`docs/`** — Docusaurus documentation site (this website).
+
+## Shared UI and design tokens
+
+See [Shared design tokens and browser UI](./shared-ui.md) for installation,
+component exports, token generation, tests and future web integration.
+The root workspace installs `packages/*`, web and admin together from one lockfile. UI contains
+presentation only: translated labels, callbacks and logos come from consumers.
+Admin retains API/auth, protected avatar downloads and caching, page layout,
+navigation and workflows. Global reset/body styles also stay in the app.
+
+Docker's `webbuild` stage builds both frontends with the repository structure
+intact. Production serves `dist/admin` at `/admin/` and `dist/web` at `/`.
+The development `base` stage retains the `/repo` workspace layout and runs the backend from `/repo/backend`; compose mounts the repository for watch-builds. Runtime data volumes remain under `/app`.
 
 ## Architecture overview
 

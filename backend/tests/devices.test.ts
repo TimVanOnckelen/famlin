@@ -176,6 +176,7 @@ describe('mobile device diagnostics', () => {
   it('provides aggregate and per-member details to admins and supports manual removal', async () => {
     const admin = await createUser({ isAdmin: true })
     const member = await createUser({ name: 'Device Owner' })
+    await prisma.user.update({ where: { id: member.id }, data: { avatarUrl: '/uploads/device-owner.jpg' } })
     const installId = randomUUID()
     await app.inject({
       method: 'PUT',
@@ -194,7 +195,7 @@ describe('mobile device diagnostics', () => {
       expect.objectContaining({
         installId,
         pushPermission: 'denied',
-        user: { id: member.id, name: member.name, email: member.email },
+        user: { id: member.id, name: member.name, email: member.email, avatarUrl: '/uploads/device-owner.jpg' },
       })
     )
 

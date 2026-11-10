@@ -1,4 +1,12 @@
-import { CheckboxField } from './CheckboxField'
+import { SaveBar } from '@famlin/ui/common/save-bar'
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { Badge } from '@famlin/ui/badge'
+import { Button } from '@famlin/ui/button'
+import { SelectField } from '@famlin/ui/common/select-field'
+import { Input } from '@famlin/ui/input'
+import { SettingToggle } from '@famlin/ui/common/setting-toggle'
+import { SectionCard } from '@famlin/ui/common/section-card'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -22,19 +30,9 @@ interface SettingsCardProps {
 
 function SettingsCard({ icon, title, desc, badge, children }: SettingsCardProps) {
   return (
-    <section className="card">
-      <div className="settings-card-header">
-        <span className="settings-card-icon">
-          <Icon name={icon} size={17} />
-        </span>
-        <div className="settings-card-heading">
-          <h3>{title}</h3>
-          {desc && <p className="settings-card-desc">{desc}</p>}
-        </div>
-        {badge}
-      </div>
-      <div className="settings-fields">{children}</div>
-    </section>
+    <SectionCard title={title} icon={<Icon name={icon} size={20} />} description={desc} badge={badge}>
+      {children}
+    </SectionCard>
   )
 }
 
@@ -46,7 +44,7 @@ interface ToggleRowProps {
 }
 
 function ToggleRow({ title, hint, checked, onChange }: ToggleRowProps) {
-  return <CheckboxField label={title} hint={hint} checked={checked} onChange={onChange} />
+  return <SettingToggle title={title} hint={hint} checked={checked} onCheckedChange={onChange} />
 }
 
 export function ServerSettingsPage() {
@@ -194,8 +192,18 @@ export function ServerSettingsPage() {
     }
   }
 
-  if (loading) return <div className="loading">{t('common.loading')}</div>
-  if (error && !settings) return <div className="error">{error}</div>
+  if (loading)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
+  if (error && !settings)
+    return (
+      <StateMessage variant="error" className="error">
+        {error}
+      </StateMessage>
+    )
 
   const oidcConfigured = Boolean(form.oidcIssuer && form.oidcClientId)
   const immichConfigured = Boolean(form.immichServerUrl && form.immichApiKey)
@@ -204,14 +212,14 @@ export function ServerSettingsPage() {
   const languageName = LANGUAGE_NAMES[form.defaultLanguage as SupportedLanguage] ?? form.defaultLanguage
 
   const configuredBadge = (ok: boolean) => (
-    <span className={`badge ${ok ? 'ok' : 'off'}`}>
+    <Badge variant={ok ? 'success' : 'outline'}>
       {ok ? t('serverSettings.statusConfigured') : t('serverSettings.statusNotConfigured')}
-    </span>
+    </Badge>
   )
   const enabledBadge = (ok: boolean) => (
-    <span className={`badge ${ok ? 'ok' : 'off'}`}>
+    <Badge variant={ok ? 'success' : 'outline'}>
       {ok ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled')}
-    </span>
+    </Badge>
   )
 
   const sections: {
@@ -275,17 +283,16 @@ export function ServerSettingsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <h2>{t('serverSettings.title')}</h2>
-      </div>
+      <PageHeader title={t('serverSettings.title')} />
 
       <div className="settings-layout">
-        <nav className="card settings-nav" aria-label={t('serverSettings.title')}>
+        <nav className="settings-nav" aria-label={t('serverSettings.title')}>
           {sections.map((section) => (
-            <button
+            <Button
+              variant="ghost"
               key={section.id}
               type="button"
-              className={`settings-nav-item${activeSection === section.id ? ' active' : ''}`}
+              className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 settings-nav-item${activeSection === section.id ? ' active' : ''}`}
               onClick={() => setActiveSection(section.id)}
             >
               <span className="settings-nav-icon">
@@ -300,7 +307,7 @@ export function ServerSettingsPage() {
                   {section.status.label}
                 </span>
               </span>
-            </button>
+            </Button>
           ))}
         </nav>
 
@@ -319,18 +326,18 @@ export function ServerSettingsPage() {
               <SettingsCard icon="globe" title={t('serverSettings.general')} desc={t('serverSettings.generalDesc')}>
                 <label>
                   {t('serverSettings.defaultLanguage')}
-                  <select value={form.defaultLanguage} onChange={(e) => updateField('defaultLanguage', e.target.value)}>
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <option key={lang} value={lang}>
-                        {LANGUAGE_NAMES[lang]}
-                      </option>
-                    ))}
-                  </select>
+                  <SelectField
+                    value={form.defaultLanguage}
+                    onValueChange={(value) => updateField('defaultLanguage', value)}
+                    items={[
+                      ...SUPPORTED_LANGUAGES.map((lang) => ({ value: lang, label: <>{LANGUAGE_NAMES[lang]}</> })),
+                    ]}
+                  />
                 </label>
                 <p className="hint">{t('serverSettings.defaultLanguageHint')}</p>
                 <label>
                   {t('serverSettings.publicUrl')}
-                  <input
+                  <Input
                     type="url"
                     value={form.publicUrl}
                     onChange={(e) => updateField('publicUrl', e.target.value)}
@@ -339,20 +346,21 @@ export function ServerSettingsPage() {
                 </label>
                 {form.publicUrl !== window.location.origin && (
                   <div className="settings-test-row">
-                    <button
+                    <Button
+                      variant="secondary"
                       type="button"
                       className="secondary"
                       onClick={() => updateField('publicUrl', window.location.origin)}
                     >
                       {t('serverSettings.publicUrlUseCurrent', { url: window.location.origin })}
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <p className="hint">{t('serverSettings.publicUrlHint')}</p>
                 <div className="row">
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.appStoreUrl')}
-                    <input
+                    <Input
                       type="url"
                       value={form.appStoreUrl}
                       onChange={(e) => updateField('appStoreUrl', e.target.value)}
@@ -361,7 +369,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.playStoreUrl')}
-                    <input
+                    <Input
                       type="url"
                       value={form.playStoreUrl}
                       onChange={(e) => updateField('playStoreUrl', e.target.value)}
@@ -397,9 +405,15 @@ export function ServerSettingsPage() {
                     checked={exportIncludeMedia}
                     onChange={setExportIncludeMedia}
                   />
-                  <button type="button" className="secondary" onClick={handleExport} disabled={exporting}>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    className="secondary"
+                    onClick={handleExport}
+                    disabled={exporting}
+                  >
                     {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}
-                  </button>
+                  </Button>
                 </div>
                 {exportStarted && <p className="hint">{t('serverSettings.dataExportStarted')}</p>}
                 {exportError && <p className="test-err">{exportError}</p>}
@@ -416,7 +430,7 @@ export function ServerSettingsPage() {
                 >
                   <label>
                     {t('serverSettings.oidcName')}
-                    <input
+                    <Input
                       type="text"
                       value={form.oidcName}
                       onChange={(e) => updateField('oidcName', e.target.value)}
@@ -425,7 +439,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.oidcIssuer')}
-                    <input
+                    <Input
                       type="text"
                       value={form.oidcIssuer}
                       onChange={(e) => updateField('oidcIssuer', e.target.value)}
@@ -434,7 +448,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.oidcClientId')}
-                    <input
+                    <Input
                       type="text"
                       value={form.oidcClientId}
                       onChange={(e) => updateField('oidcClientId', e.target.value)}
@@ -442,7 +456,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.oidcClientSecret')}
-                    <input
+                    <Input
                       type="password"
                       value={form.oidcClientSecret}
                       onChange={(e) => updateField('oidcClientSecret', e.target.value)}
@@ -451,7 +465,7 @@ export function ServerSettingsPage() {
                   <p className="hint">{t('serverSettings.oidcClientSecretHint')}</p>
                   <label>
                     {t('serverSettings.oidcScopes')}
-                    <input
+                    <Input
                       type="text"
                       value={form.oidcScopes}
                       onChange={(e) => updateField('oidcScopes', e.target.value)}
@@ -460,7 +474,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.appleBundleIds')}
-                    <input
+                    <Input
                       type="text"
                       value={form.appleBundleIds}
                       onChange={(e) => updateField('appleBundleIds', e.target.value)}
@@ -473,7 +487,7 @@ export function ServerSettingsPage() {
                 <SettingsCard icon="shield" title={t('serverSettings.accessControl')}>
                   <label>
                     {t('serverSettings.allowedEmails')}
-                    <input
+                    <Input
                       type="text"
                       value={form.allowedEmails.join(', ')}
                       onChange={(e) => updateField('allowedEmails', parseList(e.target.value))}
@@ -514,7 +528,7 @@ export function ServerSettingsPage() {
                   <div className="row">
                     <label style={{ flex: 2 }}>
                       {t('serverSettings.smtpHost')}
-                      <input
+                      <Input
                         type="text"
                         value={form.smtpHost}
                         onChange={(e) => updateField('smtpHost', e.target.value)}
@@ -523,7 +537,7 @@ export function ServerSettingsPage() {
                     </label>
                     <label style={{ flex: 1 }}>
                       {t('serverSettings.port')}
-                      <input
+                      <Input
                         type="number"
                         value={form.smtpPort}
                         onChange={(e) => updateField('smtpPort', parseInt(e.target.value, 10) || 0)}
@@ -533,7 +547,7 @@ export function ServerSettingsPage() {
                   <div className="row">
                     <label style={{ flex: 1 }}>
                       {t('serverSettings.smtpUsername')}
-                      <input
+                      <Input
                         type="text"
                         value={form.smtpUser}
                         onChange={(e) => updateField('smtpUser', e.target.value)}
@@ -541,7 +555,7 @@ export function ServerSettingsPage() {
                     </label>
                     <label style={{ flex: 1 }}>
                       {t('serverSettings.smtpPassword')}
-                      <input
+                      <Input
                         type="password"
                         value={form.smtpPass}
                         onChange={(e) => updateField('smtpPass', e.target.value)}
@@ -550,7 +564,7 @@ export function ServerSettingsPage() {
                   </div>
                   <label>
                     {t('serverSettings.senderAddress')}
-                    <input
+                    <Input
                       type="email"
                       value={form.smtpFrom}
                       onChange={(e) => updateField('smtpFrom', e.target.value)}
@@ -573,7 +587,7 @@ export function ServerSettingsPage() {
                 >
                   <label>
                     {t('serverSettings.immichServerUrl')}
-                    <input
+                    <Input
                       type="url"
                       value={form.immichServerUrl}
                       onChange={(e) => {
@@ -585,7 +599,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.immichApiKey')}
-                    <input
+                    <Input
                       type="password"
                       value={form.immichApiKey}
                       onChange={(e) => {
@@ -595,14 +609,15 @@ export function ServerSettingsPage() {
                     />
                   </label>
                   <div className="settings-test-row">
-                    <button
+                    <Button
+                      variant="secondary"
                       type="button"
                       className="secondary"
                       onClick={handleTestImmich}
                       disabled={testingImmich || !form.immichServerUrl || !form.immichApiKey}
                     >
                       {testingImmich ? t('serverSettings.immichTesting') : t('serverSettings.immichTestConnection')}
-                    </button>
+                    </Button>
                     {immichTestResult === 'ok' && (
                       <span className="test-ok">
                         <Icon name="check" size={14} /> {t('serverSettings.immichTestOk')}
@@ -628,7 +643,7 @@ export function ServerSettingsPage() {
                 >
                   <label>
                     {t('serverSettings.localMediaPath')}
-                    <input
+                    <Input
                       type="text"
                       value={form.localMediaPath}
                       onChange={(e) => {
@@ -639,14 +654,15 @@ export function ServerSettingsPage() {
                     />
                   </label>
                   <div className="settings-test-row">
-                    <button
+                    <Button
+                      variant="secondary"
                       type="button"
                       className="secondary"
                       onClick={handleTestLocalMedia}
                       disabled={testingLocalMedia || !form.localMediaPath}
                     >
                       {testingLocalMedia ? t('serverSettings.localMediaTesting') : t('serverSettings.localMediaTest')}
-                    </button>
+                    </Button>
                     {localMediaTestResult === 'ok' && (
                       <span className="test-ok">
                         <Icon name="check" size={14} /> {t('serverSettings.localMediaTestOk')}
@@ -691,29 +707,33 @@ export function ServerSettingsPage() {
                 <div className="row">
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.backupSchedule')}
-                    <select
+                    <SelectField
                       value={form.backupSchedule}
-                      onChange={(e) =>
-                        updateField('backupSchedule', e.target.value as ServerSettings['backupSchedule'])
+                      onValueChange={(value) =>
+                        updateField('backupSchedule', value as ServerSettings['backupSchedule'])
                       }
-                    >
-                      <option value="daily">{t('serverSettings.backupScheduleDaily')}</option>
-                      <option value="weekly">{t('serverSettings.backupScheduleWeekly')}</option>
-                    </select>
+                      items={[
+                        { value: 'daily', label: <>{t('serverSettings.backupScheduleDaily')}</> },
+                        { value: 'weekly', label: <>{t('serverSettings.backupScheduleWeekly')}</> },
+                      ]}
+                    />
                   </label>
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.backupHour')}
-                    <select value={form.backupHour} onChange={(e) => updateField('backupHour', Number(e.target.value))}>
-                      {Array.from({ length: 24 }, (_, hour) => (
-                        <option key={hour} value={hour}>
-                          {`${String(hour).padStart(2, '0')}:00`}
-                        </option>
-                      ))}
-                    </select>
+                    <SelectField
+                      value={form.backupHour}
+                      onValueChange={(value) => updateField('backupHour', Number(value))}
+                      items={[
+                        ...Array.from({ length: 24 }, (_, hour) => ({
+                          value: hour,
+                          label: <>{`${String(hour).padStart(2, '0')}:00`}</>,
+                        })),
+                      ]}
+                    />
                   </label>
                   <label style={{ flex: 1 }}>
                     {t('serverSettings.backupRetention')}
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       max={365}
@@ -730,7 +750,26 @@ export function ServerSettingsPage() {
             )}
 
             {(dirty || success || error) && (
-              <div className="save-bar">
+              <SaveBar
+                actions={
+                  <>
+                    {dirty && (
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        className="secondary"
+                        onClick={handleDiscard}
+                        disabled={saving}
+                      >
+                        {t('serverSettings.discard')}
+                      </Button>
+                    )}
+                    <Button type="submit" disabled={saving || !dirty}>
+                      {saving ? t('serverSettings.saving') : t('serverSettings.saveSettings')}
+                    </Button>
+                  </>
+                }
+              >
                 <span className={`save-bar-msg${error ? ' err' : success ? ' ok' : ''}`}>
                   {error ? (
                     error
@@ -742,17 +781,7 @@ export function ServerSettingsPage() {
                     t('serverSettings.unsavedChanges')
                   )}
                 </span>
-                <div className="save-bar-actions">
-                  {dirty && (
-                    <button type="button" className="secondary" onClick={handleDiscard} disabled={saving}>
-                      {t('serverSettings.discard')}
-                    </button>
-                  )}
-                  <button type="submit" disabled={saving || !dirty}>
-                    {saving ? t('serverSettings.saving') : t('serverSettings.saveSettings')}
-                  </button>
-                </div>
-              </div>
+              </SaveBar>
             )}
           </form>
         </div>

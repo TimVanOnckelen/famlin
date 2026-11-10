@@ -1,3 +1,5 @@
+import { InitialAvatar } from './common/InitialAvatar'
+import { Button } from '@famlin/ui/button'
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
@@ -55,9 +57,10 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/users">{t('layout.users')}</NavLink>
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
-          <button
+          <Button
+            variant="ghost"
             type="button"
-            className={`sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
+            className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
             aria-expanded={operationsOpen}
             aria-controls="sidebar-operations-links"
             onClick={() => setOperationsOpen((open) => !open)}
@@ -66,7 +69,7 @@ export function Layout({ user, children }: LayoutProps) {
             <span className={operationsOpen ? 'sidebar-nav-chevron expanded' : 'sidebar-nav-chevron'}>
               <Icon name="chevron-down" size={16} />
             </span>
-          </button>
+          </Button>
           <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
             <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
             <NavLink to="/devices">{t('layout.devices')}</NavLink>
@@ -76,12 +79,17 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>
         <div className="user">
-          <div>{user.name}</div>
-          <div style={{ fontSize: '0.75rem' }}>{user.email}</div>
+          <div className="flex items-center gap-3">
+            <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
+            <div className="min-w-0">
+              <div className="truncate font-bold">{user.name}</div>
+              <div className="truncate text-xs">{user.email}</div>
+            </div>
+          </div>
           <LanguageSelector className="sidebar-language" />
-          <button className="secondary" onClick={handleLogout}>
+          <Button variant="secondary" className="secondary" onClick={handleLogout}>
             {t('layout.logout')}
-          </button>
+          </Button>
           {version && (
             <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>{t('layout.version', { version })}</div>
           )}

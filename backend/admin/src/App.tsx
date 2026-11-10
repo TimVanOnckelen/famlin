@@ -15,6 +15,7 @@ import { ServerSettingsPage } from './components/ServerSettingsPage'
 import { SystemStatusPage } from './components/SystemStatusPage'
 import { DevicesPage } from './components/DevicesPage'
 import { api, User } from './api/client'
+import { StateMessage } from '@famlin/ui/common/state-message'
 
 function App() {
   const { t } = useTranslation()
@@ -53,7 +54,7 @@ function App() {
   }, [])
 
   if (loading) {
-    return <div className="loading">{t('common.loading')}</div>
+    return <StateMessage variant="loading">{t('common.loading')}</StateMessage>
   }
 
   if (needsSetup) {

@@ -17,7 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@famlin/ui": ["../../packages/ui/src"],
+      "@famlin/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["src"],

@@ -32,7 +32,7 @@ Feature suggestions are welcome. Please open an issue and describe:
 5. Ensure the project still builds and runs correctly.
 6. Open a pull request with a clear description of what changed and why.
 
-Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly. All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in both `en` and `nl` locales for any UI string changes.
+Every pull request runs through CI (GitHub Actions): typecheck and build for the backend, admin UI, mobile app, and docs site, plus a Postgres-backed check that Prisma migrations apply cleanly. All checks must pass before a PR can be merged. The PR template also asks you to confirm `npx tsc --noEmit` passes in every package you touched and that i18n keys were added in the `en`, `nl` and `zh` locales for any UI string changes.
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, ...) for commit and PR titles — [release-please](https://github.com/googleapis/release-please) reads them to generate the changelog and version bump automatically, so a clear prefix helps your change show up correctly in the next release.
 
@@ -49,6 +49,10 @@ cp .env.example .env
 # Edit .env and set JWT_SECRET
 docker compose up --build
 ```
+
+For admin and shared-component work, see the [shared UI guide](docs/developers/shared-ui.md)
+and the [developer contribution guide](docs/developers/contributing.md). Shared UI
+and token checks run in CI alongside admin checks.
 
 ## Code style
 

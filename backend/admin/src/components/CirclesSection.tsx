@@ -1,3 +1,8 @@
+import { StateMessage } from '@famlin/ui/common/state-message'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+import { Button } from '@famlin/ui/button'
+import { Input } from '@famlin/ui/input'
+import { Textarea } from '@famlin/ui/textarea'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, type Circle, type GroupMember } from '../api/client'
@@ -6,7 +11,6 @@ import { AdminModal } from './AdminModal'
 import { AddMembersModal } from './AddMembersModal'
 import { MemberCards } from './MemberCards'
 import { Icon } from './Icon'
-import { avatarColor, initials } from '../avatar'
 
 /**
  * Admin management for a group's Family Circles.
@@ -150,7 +154,8 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
     <>
       <div className="md-section-header">
         <h4>{t('circles.heading', { count: circles.length })}</h4>
-        <button
+        <Button
+          variant="link"
           type="button"
           className="link-button"
           disabled={busy}
@@ -163,21 +168,25 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
           }}
         >
           {t('circles.create')}
-        </button>
+        </Button>
       </div>
       <p className="md-hint">{t('circles.hint')}</p>
       {loadError && (
-        <div className="error" role="alert">
+        <StateMessage variant="error" className="error" role="alert">
           {loadError}
-          <button type="button" className="link-button" onClick={() => void load()}>
+          <Button variant="link" type="button" className="link-button" onClick={() => void load()}>
             {t('common.retry')}
-          </button>
-        </div>
+          </Button>
+        </StateMessage>
       )}
       {loading ? (
-        <div className="loading">{t('common.loading')}</div>
+        <StateMessage variant="loading" className="loading">
+          {t('common.loading')}
+        </StateMessage>
       ) : !loadError && circles.length === 0 ? (
-        <div className="empty">{t('circles.none')}</div>
+        <StateMessage variant="empty" className="empty">
+          {t('circles.none')}
+        </StateMessage>
       ) : (
         <ul className="member-cards">
           {circles.map((circle) => {
@@ -185,9 +194,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
             return (
               <li key={circle.id} className="member-card md-circle-card">
                 <div className="md-circle-row">
-                  <span className="avatar" style={{ background: avatarColor(circle.name) }}>
-                    {initials(circle.name)}
-                  </span>
+                  <InitialAvatar name={circle.name} />
                   <span className="member-card-info">
                     <span className="member-card-name">{circle.name}</span>
                     <span className="member-card-sub">
@@ -196,7 +203,9 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                       {circle.description ? ` · ${circle.description}` : ''}
                     </span>
                   </span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
                     className="icon-button"
                     title={t('circles.manageMembers')}
@@ -206,8 +215,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                     onClick={() => setExpandedId(expanded ? null : circle.id)}
                   >
                     <Icon name={expanded ? 'chevron-down' : 'chevron-right'} size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
                     className="icon-button"
                     title={t('circles.addMember')}
@@ -216,8 +227,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                     onClick={() => setAddingToId(circle.id)}
                   >
                     <Icon name="user-plus" size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
                     className="icon-button"
                     title={t('circles.edit')}
@@ -232,8 +245,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                     }}
                   >
                     <Icon name="edit" size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
                     type="button"
                     className="icon-button danger"
                     title={t('common.delete')}
@@ -242,12 +257,14 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                     onClick={() => void handleDelete(circle)}
                   >
                     <Icon name="trash" size={14} />
-                  </button>
+                  </Button>
                 </div>
                 {expanded && (
                   <div id={`circle-members-${circle.id}`} className="md-circle-members">
                     {!(circle.members ?? []).length ? (
-                      <div className="empty">{t('circles.noMembers')}</div>
+                      <StateMessage variant="empty" className="empty">
+                        {t('circles.noMembers')}
+                      </StateMessage>
                     ) : (
                       <MemberCards
                         members={circle.members ?? []}
@@ -274,7 +291,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
           <form onSubmit={handleSave}>
             <label>
               {t('common.name')}
-              <input
+              <Input
                 type="text"
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
@@ -286,7 +303,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
             </label>
             <label>
               {t('common.description')}
-              <textarea
+              <Textarea
                 value={newDescription}
                 onChange={(event) => setNewDescription(event.target.value)}
                 placeholder={t('circles.descriptionPlaceholder')}
@@ -295,12 +312,13 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
               />
             </label>
             {formError && (
-              <div className="error" role="alert">
+              <StateMessage variant="error" className="error" role="alert">
                 {formError}
-              </div>
+              </StateMessage>
             )}
             <div className="modal-actions">
-              <button
+              <Button
+                variant="secondary"
                 type="button"
                 className="secondary"
                 onClick={() => {
@@ -310,10 +328,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
                 disabled={busy}
               >
                 {t('common.cancel')}
-              </button>
-              <button type="submit" disabled={busy || !newName.trim()}>
+              </Button>
+              <Button type="submit" disabled={busy || !newName.trim()}>
                 {t(busy ? 'common.loading' : 'common.save')}
-              </button>
+              </Button>
             </div>
           </form>
         </AdminModal>

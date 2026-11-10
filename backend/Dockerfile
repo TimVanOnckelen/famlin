@@ -2,81 +2,9 @@
 # app (web/) and its shared package (packages/api-client) live outside
 # backend/ but are bundled into this same image, so the context must span the
 # whole repo. Build with:  docker build -f backend/Dockerfile .
-FROM node:22-alpine AS base
-
-WORKDIR /app
-
-# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
-# (services/uploadVariants.ts) — needed here too because the dev overlay
-# (docker-compose.override.yml) runs this `base` stage.
-RUN apk add --no-cache openssl ffmpeg exiftool
-
-# pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
-# postgresqlNN-client Alpine ships rather than one pinned to the compose
-# file's postgres:16 — a newer pg_dump can dump older servers, which also
-# covers self-hosters on an external Postgres 17+. `apk search` output differs
-# between apk-tools 2 and 3 (name vs name-version), so only the name prefix is
-# kept. The build fails here if no client got installed.
-RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+-client' | sort -uV | tail -n1) \
-    && test -n "$PG_CLIENT" \
-    && apk add --no-cache "$PG_CLIENT" \
-    && pg_dump --version
-
-# Install dependencies
-COPY backend/package.json backend/package-lock.json* ./
-RUN npm ci
-
-# Generate Prisma client
-COPY backend/prisma ./prisma
-# Prisma 7 reads the datasource connection string (and the schema path) from
-# prisma.config.ts rather than from the schema's datasource block, so the CLI
-# needs it here for `generate` and in the production stage for the
-# `migrate deploy` this image runs at container start.
-COPY backend/prisma.config.ts ./
-RUN npx prisma generate
-
-# The admin UI depends on the shared api-client via file:../../packages/api-client
-# (see backend/admin/package.json). /app holds backend/, so that path resolves to
-# /packages/api-client — copy it there for the `npm ci` that `npm run build` runs
-# inside admin/. Its committed dist/ is used as-is (same pattern as mobile's
-# file: dependency; no build step needed).
-#
-# /packages/api-client has no lockfile of its own (it normally relies on the
-# root workspace's), and sits outside admin's node_modules tree entirely, so
-# without its own node_modules here, admin's `vite build` can't resolve the
-# runtime deps its compiled dist/*.js files `require()` (axios, at least) —
-# Rollup silently leaves those as unresolved external imports instead of
-# failing the build, which breaks the shipped bundle at runtime in the
-# browser ("Failed to resolve module specifier axios") rather than at build
-# time. Give it its own node_modules so those resolve locally.
-#
-# --legacy-peer-deps is load-bearing, not cargo cult: with no lockfile this
-# install re-resolves from the registry every build, and --omit=dev only omits
-# dev dependencies from *installation* — arborist still builds them into the
-# ideal tree and walks their peer graphs. vitest 4.1.11's peers crash npm
-# 10.9.x there ("Cannot read properties of null (reading 'edgesOut')"), which
-# turned a previously-green build red with no code change. Skipping peer
-# resolution is the right semantics anyway: this stage only needs the runtime
-# deps admin's Vite build resolves against, and the package's peerDependencies
-# already duplicate its dependencies.
-COPY packages /packages
-RUN cd /packages/api-client && npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
-
-# Copy source and build (backend + admin UI -> dist/, dist/admin)
-COPY backend/ ./
-RUN npm run build
-
-# Compile the Prisma seed script so the production image can run it without
-# tsx (which is a devDependency). Used by docker-compose.demo.yml to populate
-# the demo instance on first start.
-RUN npx tsc prisma/seed.ts --outDir dist/prisma \
-    --module NodeNext --moduleResolution NodeNext --target ES2022 \
-    --esModuleInterop --strict --skipLibCheck --resolveJsonModule
-
-# Build the member-facing web app in its own stage: it's an npm-workspace
-# member at the repo root together with packages/api-client, so it installs
-# from the root lockfile, not backend's. Its vite outDir is
-# ../backend/dist/web, which lands at /repo/backend/dist/web here.
+# Build both frontends with the shared workspace packages and root lockfile.
+# Admin, web and shared packages install together from the root workspace lockfile.
+# Vite outputs land in /repo/backend/dist/{web,admin}.
 FROM node:22-alpine AS webbuild
 
 WORKDIR /repo
@@ -84,6 +12,7 @@ WORKDIR /repo
 COPY package.json package-lock.json* ./
 COPY packages ./packages
 COPY web ./web
+COPY backend/admin ./backend/admin
 # --ignore-scripts is deliberate, for two reasons:
 #
 # 1. Reliability. npm 10's lifecycle-script runner has a race that intermittently
@@ -107,6 +36,55 @@ COPY web ./web
 RUN npm ci --ignore-scripts
 RUN npm run build --workspace=packages/api-client
 RUN npm run build --workspace=web
+RUN npm run build --workspace=famlin-admin
+
+FROM node:22-alpine AS base
+
+WORKDIR /repo/backend
+
+# OpenSSL for Prisma; ffmpeg for video poster-frame extraction
+# (services/uploadVariants.ts) — needed here too because the dev overlay
+# (docker-compose.override.yml) runs this `base` stage.
+RUN apk add --no-cache openssl ffmpeg exiftool
+
+# pg_dump for scheduled backups (services/backup/dbDump.ts). The newest
+# postgresqlNN-client Alpine ships rather than one pinned to the compose
+# file's postgres:16 — a newer pg_dump can dump older servers, which also
+# covers self-hosters on an external Postgres 17+. `apk search` output differs
+# between apk-tools 2 and 3 (name vs name-version), so only the name prefix is
+# kept. The build fails here if no client got installed.
+RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+-client' | sort -uV | tail -n1) \
+    && test -n "$PG_CLIENT" \
+    && apk add --no-cache "$PG_CLIENT" \
+    && pg_dump --version
+
+# Install dependencies
+COPY backend/package.json backend/package-lock.json* backend/.npmrc ./
+RUN npm ci
+
+# Generate Prisma client
+COPY backend/prisma ./prisma
+# Prisma 7 reads the datasource connection string (and the schema path) from
+# prisma.config.ts rather than from the schema's datasource block, so the CLI
+# needs it here for `generate` and in the production stage for the
+# `migrate deploy` this image runs at container start.
+COPY backend/prisma.config.ts ./
+RUN npx prisma generate
+
+# Compile the backend independently; frontend assets come from webbuild below.
+COPY backend/ ./
+RUN npx tsc
+
+# Compile the Prisma seed script so the production image can run it without
+# tsx (which is a devDependency). Used by docker-compose.demo.yml to populate
+# the demo instance on first start.
+RUN npx tsc prisma/seed.ts --outDir dist/prisma \
+    --module NodeNext --moduleResolution NodeNext --target ES2022 \
+    --esModuleInterop --strict --skipLibCheck --resolveJsonModule
+
+# Retain the workspace layout for the development target's admin watch-build.
+# Copy after backend compilation so frontend changes keep backend layers cached.
+COPY --from=webbuild /repo /repo
 
 # Production image
 FROM node:22-alpine AS production
@@ -130,7 +108,7 @@ RUN PG_CLIENT=$(apk search -q 'postgresql*-client' | grep -oE '^postgresql[0-9]+
     && apk add --no-cache "$PG_CLIENT" \
     && pg_dump --version
 
-COPY backend/package.json backend/package-lock.json* ./
+COPY backend/package.json backend/package-lock.json* backend/.npmrc ./
 # vips/vips-heif give sharp real HEIC/HEIF decode support (the default iPhone
 # camera format) — sharp's own prebuilt binaries deliberately ship without it
 # (patent-encumbered HEVC decoder), so sharp is compiled against the system
@@ -164,12 +142,13 @@ RUN apk add --no-cache --virtual .build-deps build-base python3 pkgconfig vips-d
     && apk del .build-deps
 RUN node -e "const s=require('sharp'); if(!(s.format.heif.input.fileSuffix||[]).includes('.heic')) { console.error('sharp built without HEIC support'); process.exit(1); }"
 
-COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=base /app/dist ./dist
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/prisma.config.ts ./
-COPY --from=base /app/dist/prisma ./dist/prisma
+COPY --from=base /repo/backend/node_modules/.prisma ./node_modules/.prisma
+COPY --from=base /repo/backend/dist ./dist
+COPY --from=base /repo/backend/prisma ./prisma
+COPY --from=base /repo/backend/prisma.config.ts ./
+COPY --from=base /repo/backend/dist/prisma ./dist/prisma
 COPY --from=webbuild /repo/backend/dist/web ./dist/web
+COPY --from=webbuild /repo/backend/dist/admin ./dist/admin
 
 # Create the uploads, backups and data directories with proper permissions and
 # run as the unprivileged `node` user rather than root. All are volume mount

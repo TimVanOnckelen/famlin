@@ -1,35 +1,17 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Folder, KeyRound, Layers, RotateCcw, Trash2 } from 'lucide-react'
 import { api, type StorageStatus, type StorageLocationStatus } from '../api/client'
-import { Icon, type IconName } from './Icon'
+import { Badge } from '@famlin/ui/badge'
+import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
+import { Input } from '@famlin/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@famlin/ui/table'
+import { FormField } from '@famlin/ui/common/form-field'
+import { PageHeader } from '@famlin/ui/common/page-header'
+import { SectionCard } from '@famlin/ui/common/section-card'
+import { StateMessage } from '@famlin/ui/common/state-message'
 import { formatBytes } from './SystemStatusPage'
-
-function StorageCard({
-  title,
-  icon,
-  badge,
-  children,
-}: {
-  title: string
-  icon: IconName
-  badge?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="card">
-      <div className="settings-card-header">
-        <span className="settings-card-icon">
-          <Icon name={icon} size={17} />
-        </span>
-        <div className="settings-card-heading">
-          <h3>{title}</h3>
-        </div>
-        {badge}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 function StorageLocation({
   location,
@@ -50,48 +32,50 @@ function StorageLocation({
       ]
     : []
   return (
-    <StorageCard
+    <SectionCard
       title={t(fallback ? 'storage.fallback' : 'storage.primary')}
-      icon={fallback ? 'folder' : 'layers'}
+      icon={fallback ? <Folder className="size-5" /> : <Layers className="size-5" />}
       badge={
-        <span className={`badge ${!location ? 'off' : location.available ? 'ok' : 'err'}`}>
+        <Badge variant={!location ? 'outline' : location.available ? 'secondary' : 'destructive'}>
           {t(!location ? 'storage.notConfigured' : location.available ? 'storage.available' : 'storage.unavailable')}
-        </span>
+        </Badge>
       }
     >
       {location ? (
         <>
-          <div className="storage-metrics">
-            <div>
-              <span>{t('storage.files')}</span>
-              <strong>{location.files?.toLocaleString() ?? '—'}</strong>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg bg-muted/50 p-4">
+              <span className="block text-xs font-semibold text-muted-foreground">{t('storage.files')}</span>
+              <strong className="mt-1 block text-2xl">{location.files?.toLocaleString() ?? '—'}</strong>
             </div>
-            <div>
-              <span>{t('storage.size')}</span>
-              <strong>{location.bytes === null ? '—' : formatBytes(location.bytes)}</strong>
+            <div className="rounded-lg bg-muted/50 p-4">
+              <span className="block text-xs font-semibold text-muted-foreground">{t('storage.size')}</span>
+              <strong className="mt-1 block text-2xl">
+                {location.bytes === null ? '—' : formatBytes(location.bytes)}
+              </strong>
             </div>
           </div>
-          <dl className="storage-details">
+          <dl className="flex flex-col gap-3">
             {fields
               .filter(([, value]) => value !== undefined)
               .map(([label, value]) => (
-                <div className="status-row" key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
+                <div className="flex flex-wrap items-start justify-between gap-2 text-sm" key={label}>
+                  <dt className="font-semibold">{label}</dt>
+                  <dd className="min-w-0 break-all text-right text-muted-foreground">{value}</dd>
                 </div>
               ))}
           </dl>
           {fallback && (
-            <details className="status-details storage-fingerprint">
-              <summary>{t('storage.confirmSource')}</summary>
-              <code>{location.fingerprint}</code>
+            <details className="rounded-lg bg-muted/50 p-3 text-sm">
+              <summary className="cursor-pointer font-semibold">{t('storage.confirmSource')}</summary>
+              <code className="mt-3 block break-all">{location.fingerprint}</code>
             </details>
           )}
         </>
       ) : (
-        <p className="hint storage-empty">{t('storage.notConfigured')}</p>
+        <p className="py-4 text-sm text-muted-foreground">{t('storage.notConfigured')}</p>
       )}
-    </StorageCard>
+    </SectionCard>
   )
 }
 
@@ -147,141 +131,143 @@ export function StoragePage() {
     ['verified', 'cleanup_failed', 'cleaned'].includes(status.migration?.status ?? '')
   return (
     <>
-      <div className="page-header">
-        <h2>{t('storage.title')}</h2>
-      </div>
-      {error && (
-        <div role="alert" className="error">
-          {error}
-        </div>
-      )}
-      {status?.usingFallback && (
-        <div role="alert" className="error">
-          {t('storage.usingFallback')}
-        </div>
-      )}
+      <PageHeader title={t('storage.title')} />
+      {error && <StateMessage variant="error">{error}</StateMessage>}
+      {status?.usingFallback && <StateMessage variant="error">{t('storage.usingFallback')}</StateMessage>}
       {!status ? (
-        <div className="status-grid storage-grid" aria-busy="true">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2" aria-busy="true">
           {[0, 1, 2].map((key) => (
-            <div className="card storage-loading" key={key}>
-              {t('common.loading')}
-            </div>
+            <Card key={key}>
+              <StateMessage variant="loading">{t('common.loading')}</StateMessage>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="status-grid storage-grid">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <StorageLocation location={status.primary} />
           <StorageLocation location={status.fallback} fallback />
-          <StorageCard
+          <SectionCard
             title={t('storage.migrationTitle')}
-            icon="rotate-ccw"
+            icon={<RotateCcw className="size-5" />}
             badge={
               !cleaning && (
-                <span
-                  className={`badge ${status.migration?.status === 'failed' || conflicts ? 'err' : status.migration?.status === 'verified' ? 'ok' : ''}`}
+                <Badge
+                  variant={
+                    status.migration?.status === 'failed' || conflicts
+                      ? 'destructive'
+                      : status.migration?.status === 'verified'
+                        ? 'secondary'
+                        : 'outline'
+                  }
                 >
                   {status.migration ? stateLabel(status.migration.status) : t('storage.idle')}
-                </span>
+                </Badge>
               )
             }
           >
-            <p className="hint storage-direction">
+            <p className="text-sm text-muted-foreground">
               {t('storage.fallback')} <span aria-hidden="true">→</span> {t('storage.primary')}
             </p>
             {status.migration?.error && (
-              <p role="alert" className="status-job-error">
+              <p role="alert" className="text-sm break-words text-destructive">
                 {status.migration.error}
               </p>
             )}
             {status.progress.length > 0 ? (
-              <div className="content-table storage-progress-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{t('storage.state')}</th>
-                      <th>{t('storage.files')}</th>
-                      <th>{t('storage.size')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {status.progress.map((row) => (
-                      <tr key={row.status}>
-                        <td>{stateLabel(row.status)}</td>
-                        <td>{row.files.toLocaleString()}</td>
-                        <td>{formatBytes(row.bytes)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('storage.state')}</TableHead>
+                    <TableHead>{t('storage.files')}</TableHead>
+                    <TableHead>{t('storage.size')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {status.progress.map((row) => (
+                    <TableRow key={row.status}>
+                      <TableCell>{stateLabel(row.status)}</TableCell>
+                      <TableCell>{row.files.toLocaleString()}</TableCell>
+                      <TableCell>{formatBytes(row.bytes)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <p className="storage-empty hint">{t('storage.idle')}</p>
+              <p className="py-4 text-sm text-muted-foreground">{t('storage.idle')}</p>
             )}
             {status.errors.length > 0 && (
-              <details className="status-details">
-                <summary>{t('storage.errors', { count: status.errors.length })}</summary>
-                <ul>
+              <details className="rounded-lg bg-muted/50 p-3 text-sm">
+                <summary className="cursor-pointer font-semibold">
+                  {t('storage.errors', { count: status.errors.length })}
+                </summary>
+                <ul className="mt-3 flex flex-col gap-2">
                   {status.errors.map((row) => (
                     <li key={row.key}>
-                      <code>{row.key}</code>
-                      <span className="status-job-error"> {row.error}</span>
+                      <code className="break-all">{row.key}</code>
+                      <span className="block text-destructive">{row.error}</span>
                     </li>
                   ))}
                 </ul>
               </details>
             )}
-            <div className="storage-actions">
-              <button
+            <div>
+              <Button
                 disabled={busy || !status.fallback || status.usingFallback || running}
                 onClick={() => void run(false)}
               >
                 {t('storage.migrate')}
-              </button>
+              </Button>
             </div>
-          </StorageCard>
+          </SectionCard>
           {status.fallback && (
-            <div className="status-wide">
-              <StorageCard
-                title={t('storage.cleanup')}
-                icon="trash"
-                badge={
-                  status.migration && ['cleaning', 'cleaned', 'cleanup_failed'].includes(status.migration.status) ? (
-                    <span className={`badge ${cleaning ? '' : status.migration.status === 'cleaned' ? 'ok' : 'err'}`}>
-                      {stateLabel(status.migration.status)}
-                    </span>
-                  ) : undefined
-                }
-              >
-                <p className="hint">{t('storage.cleanupHint')}</p>
-                {!canClean && <p className="hint">{t('storage.cleanupLocked')}</p>}
-                <div className="storage-cleanup-form">
-                  <label htmlFor="storage-source-fingerprint">
-                    {t('storage.confirmSource')}
-                    <input
-                      id="storage-source-fingerprint"
-                      type="text"
-                      value={confirmation}
-                      disabled={!canClean}
-                      onChange={(event) => setConfirmation(event.target.value)}
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder={t('storage.confirmPlaceholder')}
-                    />
-                  </label>
-                  <button
-                    className="danger"
-                    disabled={!canClean || confirmation !== status.fallback.fingerprint}
-                    onClick={() => void run(true)}
+            <SectionCard
+              className="xl:col-span-2"
+              title={t('storage.cleanup')}
+              icon={<Trash2 className="size-5" />}
+              badge={
+                status.migration && ['cleaning', 'cleaned', 'cleanup_failed'].includes(status.migration.status) ? (
+                  <Badge
+                    variant={cleaning ? 'outline' : status.migration.status === 'cleaned' ? 'secondary' : 'destructive'}
                   >
-                    {t('storage.cleanup')}
-                  </button>
-                </div>
-                <p className="hint storage-cleanup-note">{t('storage.removeFallback')}</p>
-              </StorageCard>
-            </div>
+                    {stateLabel(status.migration.status)}
+                  </Badge>
+                ) : undefined
+              }
+            >
+              <p className="text-sm text-muted-foreground">{t('storage.cleanupHint')}</p>
+              {!canClean && <p className="text-sm text-muted-foreground">{t('storage.cleanupLocked')}</p>}
+              <form
+                className="flex flex-col gap-4 sm:flex-row sm:items-end"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  if (canClean && confirmation === status.fallback?.fingerprint) void run(true)
+                }}
+              >
+                <FormField label={t('storage.confirmSource')} htmlFor="storage-source-fingerprint" className="flex-1">
+                  <Input
+                    id="storage-source-fingerprint"
+                    type="text"
+                    value={confirmation}
+                    disabled={!canClean}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={t('storage.confirmPlaceholder')}
+                  />
+                </FormField>
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  disabled={!canClean || confirmation !== status.fallback.fingerprint}
+                >
+                  {t('storage.cleanup')}
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground">{t('storage.removeFallback')}</p>
+            </SectionCard>
           )}
-          <p className="hint status-wide storage-config-note">
-            <Icon name="key" size={15} />
+          <p className="flex items-start gap-2 text-sm text-muted-foreground xl:col-span-2">
+            <KeyRound className="mt-0.5 size-4 shrink-0" />
             {t('storage.description')}
           </p>
         </div>

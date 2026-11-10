@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc && npm run build:admin",
-    "build:admin": "cd admin && npm ci && npm run build",
+    "build:admin": "npm run build --workspace=famlin-admin --prefix ..",
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -57,6 +57,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^26.6.5",
     "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
     "@types/yauzl": "^3.4.0",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",

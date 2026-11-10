@@ -1,6 +1,8 @@
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+import { Badge } from '@famlin/ui/badge'
+import { Button } from '@famlin/ui/button'
 import { useTranslation } from 'react-i18next'
 import type { GroupMember } from '../api/client'
-import { avatarColor, initials } from '../avatar'
 import { Icon } from './Icon'
 
 export function MemberCards({
@@ -17,21 +19,21 @@ export function MemberCards({
     <ul className="member-cards">
       {members.map((member) => (
         <li key={member.id} className="member-card">
-          <span className="avatar" style={{ background: avatarColor(member.name) }}>
-            {initials(member.name)}
-          </span>
+          <InitialAvatar name={member.name} avatarUrl={member.avatarUrl} />
           <span className="member-card-info">
             <span className="member-card-name">
               {member.name}
-              {member.isAdmin && <span className="badge admin">{t('common.admin')}</span>}
-              {!member.hasPassword && <span className="badge sso">{t('users.table.sso')}</span>}
+              {member.isAdmin && <Badge variant="default">{t('common.admin')}</Badge>}
+              {!member.hasPassword && <Badge variant="accent">{t('users.table.sso')}</Badge>}
             </span>
             <span className="member-card-sub">
               {member.email} ·{' '}
               {t('groups.joinedOn', { date: new Date(member.joinedAt).toLocaleDateString(i18n.language) })}
             </span>
           </span>
-          <button
+          <Button
+            variant="destructive"
+            size="icon"
             type="button"
             className="icon-button danger"
             aria-label={t('members.removeNamed', { name: member.name })}
@@ -40,7 +42,7 @@ export function MemberCards({
             onClick={() => onRemove(member)}
           >
             <Icon name="x" size={14} />
-          </button>
+          </Button>
         </li>
       ))}
     </ul>
