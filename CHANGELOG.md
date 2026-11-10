@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.9.1](https://github.com/TimVanOnckelen/famlin/compare/v0.9.0...v0.9.1) (2026-11-10)
+
+
+### Features
+
+* **backup:** restore a scheduled-backup dump from the setup screen ([5142c44](https://github.com/TimVanOnckelen/famlin/commit/5142c4489478b9b9597e0d8bb620a955648d073e))
+* **ci:** auto-deploy the Cloud Run demo after each dev image build ([84b7ed9](https://github.com/TimVanOnckelen/famlin/commit/84b7ed90c6951eefcbaf07d5e81b09c1e1264eb4))
+* explain the read-only demo on login screens and blocked actions ([1e8103b](https://github.com/TimVanOnckelen/famlin/commit/1e8103b5ce9a8087eb5797f2950f72f14e83f6a3))
+* gift-list wishlists for people without an account ([71d0908](https://github.com/TimVanOnckelen/famlin/commit/71d0908c79b96d51b1530c898f662dce2625b11d))
+* make the read-only demo explain itself (login notices, blocked actions, English sample data) ([c4baada](https://github.com/TimVanOnckelen/famlin/commit/c4baada117353158d39beb3a25b53c7eef480dd6))
+* richer demo data with photos, and auto-deploy the Cloud Run demo ([00b95b0](https://github.com/TimVanOnckelen/famlin/commit/00b95b0fffca6a56acdbb9462408c83fa53bed71))
+* seed the demo with content for every feature, including photos ([b47ed43](https://github.com/TimVanOnckelen/famlin/commit/b47ed435f318e426f73d2cd2551cc081eec35c67))
+* seed the demo with English sample content ([cedbe6d](https://github.com/TimVanOnckelen/famlin/commit/cedbe6d777bc0d5484bd20c26ccfa2dd14101929))
+* **web:** create and RSVP to event posts ([9ec9287](https://github.com/TimVanOnckelen/famlin/commit/9ec9287a46061c550540a7209c76223b327ce4ab))
+* **web:** create and RSVP to event posts ([41d28a9](https://github.com/TimVanOnckelen/famlin/commit/41d28a9282aa7df2bfc724351766d966d3aaf41e))
+
+
+### Bug Fixes
+
+* **backup:** restore dumps only from the server's backups volume ([fe2934b](https://github.com/TimVanOnckelen/famlin/commit/fe2934b0aeb9133c3c758539b3f2e27b99fd03eb))
+* **deps:** align workspace TanStack Query versions with mobile ([fad6a44](https://github.com/TimVanOnckelen/famlin/commit/fad6a449a79d4b17fbe1bb793a6f7999ac7ccaf2))
+* **export:** don't crash on missing media and close streams on any disconnect ([96336e6](https://github.com/TimVanOnckelen/famlin/commit/96336e63cd86fc3a9ec79f88cd763b9dcc989f70))
+* **export:** stream the data export as a native browser download ([d2492dc](https://github.com/TimVanOnckelen/famlin/commit/d2492dc3dadd9e58a6ab72a9a57c508ae387cedb))
+* **i18n:** add the French event strings missing from the backend and admin ([985b8ce](https://github.com/TimVanOnckelen/famlin/commit/985b8ce50768b0e326c9619f1426ea3b07be6420))
+* **i18n:** use Tim's Dutch wording for the event type description ([84228a5](https://github.com/TimVanOnckelen/famlin/commit/84228a57054e846e867c07f8e5c5cc3d49b8094f))
+* updated architecure docs to be less clumsy and over detailed ([9750cc8](https://github.com/TimVanOnckelen/famlin/commit/9750cc89f5b52a08cece33fd46a53922da4db175))
+* warnings and tips now render correctly ([40325b0](https://github.com/TimVanOnckelen/famlin/commit/40325b004d3fc0b5336bca91352a914519bcb7ac))
+
 ## [0.9.0](https://github.com/TimVanOnckelen/famlin/compare/v0.8.7...v0.9.0) (2026-11-08)
 
 
