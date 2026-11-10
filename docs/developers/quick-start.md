@@ -38,7 +38,7 @@ In a second terminal:
 docker compose exec famlin-backend npx prisma db seed
 ```
 
-This creates two groups, "The Miller Family" and "Ardennes Weekend", with sample users and posts (in English).
+This creates two groups, "The Miller Family" and "Ardennes Weekend", with sample users and content for every feature (posts with generated photos, an album, an event, a circle, a gift list, chat, wiki pages, stories and notifications), in English. The seed lives in `backend/prisma/seed.ts` and `backend/prisma/demoContent.ts`; the photos are painted by `backend/prisma/demoPhotos.ts`.
 
 ## 4. Run backend tests
 
