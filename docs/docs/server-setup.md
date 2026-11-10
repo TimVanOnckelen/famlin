@@ -390,7 +390,7 @@ Cloud Run can't pull from `ghcr.io` directly; the setup below adds an Artifact R
 
 The `deploy-demo` job in `.github/workflows/docker-dev.yml` rolls a Cloud Run demo forward to every new `dev` image, right after it's published on a merge to `main`. It deploys by digest, so the demo runs exactly the build that run produced, and it only changes the image — the service keeps its variables, command and scaling. It's opt-in: without the repository variables below the job is skipped.
 
-GitHub signs in to Google through Workload Identity Federation, so no key or password is stored anywhere; the federation only accepts runs of this repository's `main` branch. Everything involved stays within free tiers. The one thing that can cost money is image storage beyond Artifact Registry's free 0.5 GB, which the cleanup policy below prevents by keeping only the two newest images.
+GitHub signs in to Google through Workload Identity Federation, so no key or password is stored anywhere. The federation only accepts `docker-dev.yml` itself, run by a push to this repository's `main` branch — not pull requests (forks included), not other workflows. Everything involved stays within free tiers. The one thing that can cost money is image storage beyond Artifact Registry's free 0.5 GB, which the cleanup policy below prevents by keeping only the two newest images.
 
 One-time setup in Cloud Shell. Replace the first three values with your own; the remaining commands use them as they are.
 
@@ -425,14 +425,18 @@ gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" 
 gcloud iam service-accounts add-iam-policy-binding "$PROJECT_NUMBER-compute@developer.gserviceaccount.com" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountUser
 ```
 
-The last line lets the deployer act as the service's runtime account. If your service runs as a different service account, use that one instead of the default compute account.
+The last line lets the deployer act as the service's runtime account. If your service runs as a different service account, use that one instead of the default compute account. Better still, give the demo its own runtime account with no roles at all (the demo only talks to its database): a deployer that may act as a broadly privileged account — the default compute account, or a Firebase admin account — could otherwise deploy code that runs with those rights.
+
+:::warning The demo's admin account is public
+Everyone can sign in as `admin@example.com`, and read-only mode still lets them read every admin page, including server settings. Never configure SMTP, SSO client secrets, Immich or storage credentials on a demo instance. Keep `DATABASE_URL` out of anything visitors can reach — it is only an environment variable of the Cloud Run service; for extra care, store it in Secret Manager and reference it from the service instead.
+:::
 
 ```bash
 gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"
 gcloud iam workload-identity-pools providers create-oidc famlin --location=global --workload-identity-pool=github \
   --issuer-uri=https://token.actions.githubusercontent.com \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
-  --attribute-condition="assertion.repository=='$GITHUB_REPO' && assertion.ref=='refs/heads/main'"
+  --attribute-condition="assertion.repository=='$GITHUB_REPO' && assertion.ref=='refs/heads/main' && assertion.event_name=='push' && assertion.workflow_ref.startsWith('$GITHUB_REPO/.github/workflows/docker-dev.yml@')"
 gcloud iam service-accounts add-iam-policy-binding "$SA" --role=roles/iam.workloadIdentityUser \
   --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$GITHUB_REPO"
 ```
