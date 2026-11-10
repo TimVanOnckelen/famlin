@@ -95,7 +95,8 @@ export interface CreatePostBody {
   // UPDATE/MILESTONE. TRIP posts cross-post like every other type (groupIds
   // 1–20), with each travelerUserId required to be a member of every target
   // group.
-  typeData?: PollCreateData | EventCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>
+  typeData?:
+    PollCreateData | EventCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>
   milestoneTag?: string
   uploadedAssetUrls: string[]
   // Narrows the audience from the whole group to one Circle within it.
