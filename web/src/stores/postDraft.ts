@@ -2,7 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { randomUUID } from '@/utils/uuid'
 import type { MediaAsset, UploadSessionMedia } from '@famlin/api-client'
 
-export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'TRIP' | 'ALBUM' | 'GIFT_LIST'
+export type PostDraftType = 'UPDATE' | 'MILESTONE' | 'POLL' | 'EVENT' | 'TRIP' | 'ALBUM' | 'GIFT_LIST'
 export interface DraftTrip {
   title: string
   destination: string
@@ -10,6 +10,13 @@ export interface DraftTrip {
   endDate: string
   cover: File | null
   travelerIds: string[]
+}
+// Times are <input type="datetime-local"> values, in the browser's local time.
+export interface DraftEvent {
+  startsAt: string
+  endsAt: string
+  location: string
+  rsvpDeadline: string
 }
 export interface DraftAttachment {
   id: number
@@ -26,6 +33,7 @@ export interface PostDraftState {
   type: PostDraftType
   content: string
   pollOptions: string[]
+  event: DraftEvent
   albumTitle: string
   trip: DraftTrip
   giftTitle: string
@@ -59,7 +67,7 @@ const drafts = new Map<string, PostDraftController>()
 export function clearAllPostDrafts() {
   drafts.clear()
 }
-const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST']
+const draftTypes = ['UPDATE', 'MILESTONE', 'POLL', 'EVENT', 'TRIP', 'ALBUM', 'GIFT_LIST']
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const uploadUrl = (value: unknown): value is string => typeof value === 'string' && /^\/uploads\/[^/?#]+$/.test(value)
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -135,6 +143,12 @@ function restore(key: string | null, initial: PostDraftState): PostDraftState {
         endDate: typeof saved.tripEndDate === 'string' ? saved.tripEndDate.slice(0, 10) : '',
         travelerIds: strings(saved.tripTravelerIds) ? saved.tripTravelerIds : [],
       },
+      event: {
+        startsAt: typeof saved.eventStartsAt === 'string' ? saved.eventStartsAt.slice(0, 16) : '',
+        endsAt: typeof saved.eventEndsAt === 'string' ? saved.eventEndsAt.slice(0, 16) : '',
+        location: typeof saved.eventLocation === 'string' ? saved.eventLocation.slice(0, 200) : '',
+        rsvpDeadline: typeof saved.eventRsvpDeadline === 'string' ? saved.eventRsvpDeadline.slice(0, 16) : '',
+      },
       giftTitle: typeof saved.giftTitle === 'string' ? saved.giftTitle.slice(0, 120) : '',
       giftDate: typeof saved.giftDate === 'string' ? saved.giftDate.slice(0, 10) : '',
       giftParticipants: strings(saved.giftParticipants) ? saved.giftParticipants : [],
@@ -190,6 +204,10 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
           type: draft.type,
           content: draft.content,
           pollOptions: draft.pollOptions,
+          eventStartsAt: draft.event.startsAt,
+          eventEndsAt: draft.event.endsAt,
+          eventLocation: draft.event.location,
+          eventRsvpDeadline: draft.event.rsvpDeadline,
           albumTitle: draft.albumTitle,
           tripTitle: draft.trip.title,
           tripDestination: draft.trip.destination,
@@ -262,6 +280,8 @@ export function getPostDraft(key: string | null, initial: PostDraftState): PostD
     state.mediaAssets.length ||
     state.albumTitle ||
     state.giftTitle ||
+    state.event.startsAt ||
+    state.event.location ||
     state.pollOptions.some(Boolean)
   )
     persist(state)

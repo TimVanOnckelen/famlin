@@ -121,6 +121,7 @@
       "UPDATE": "Partilha novidades do dia a dia, fotografias e vídeos.",
       "MILESTONE": "Celebra um aniversário, uma conquista ou um momento especial.",
       "POLL": "Faz uma pergunta e deixa a tua família votar.",
+      "EVENT": "Organiza um encontro e vê quem vem.",
       "TRIP": "Planeia uma viagem e vai partilhando novidades pelo caminho.",
       "ALBUM": "Juntem fotografias num álbum partilhado.",
       "GIFT_LIST": "Partilha listas de desejos e, se quiseres, sorteia o Amigo Secreto."
@@ -128,6 +129,7 @@
     "typeUpdate": "Update",
     "typeMilestone": "Momento marcante",
     "typePoll": "Sondagem",
+    "typeEvent": "Evento",
     "typeTrip": "Viagem",
     "trip": {
       "helper": "Adiciona check-ins a partir da página da viagem para manteres a tua família a par.",
@@ -155,6 +157,15 @@
     "placeholder": "Partilha uma novidade com a tua família…",
     "milestonePlaceholder": "Qual é o momento marcante? (ex.: A Emma faz 5 anos! 🎉)",
     "pollPlaceholder": "Faz uma pergunta…",
+    "eventPlaceholder": "Qual é a ocasião?",
+    "event": {
+      "startsAtLabel": "Começa",
+      "endsAtLabel": "Termina",
+      "locationLabel": "Local",
+      "locationPlaceholder": "Ex.: o jardim da avó",
+      "rsvpDeadlineLabel": "Responder até",
+      "rsvpDeadlineHint": "Opcional. Se deixares em branco, as respostas fecham quando o evento começar."
+    },
     "albumTitlePlaceholder": "Título do álbum (ex.: Verão no lago)",
     "albumDescriptionPlaceholder": "Descreve o álbum… (opcional)",
     "pollOptionPlaceholder": "Opção {{number}}",
@@ -303,6 +314,15 @@
     "totalVotes_other": "{{count}} votos no total",
     "closed": "Sondagem encerrada",
     "yourVote": "O teu voto"
+  },
+  "event": {
+    "rsvpLabel": "Vens?",
+    "yes": "Vou",
+    "maybe": "Talvez",
+    "no": "Não posso",
+    "rsvpBy": "Responde até {{date}}",
+    "closed": "Respostas encerradas",
+    "rsvpFailed": "Não foi possível guardar a tua resposta. Tenta novamente."
   },
   "chat": {
     "title": "Conversa",

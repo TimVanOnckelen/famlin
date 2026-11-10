@@ -4,6 +4,8 @@ import { getPostDraft, postDraftStorageKey, type DraftAttachment, type PostDraft
 import { groupLivePhotoFiles } from '@/utils/livePhotos'
 import { ComposerUploadPreview } from './ComposerUploadPreview'
 import { TripComposerFields, validTripDate } from './TripComposerFields'
+import { EventComposerFields, validEventDraft } from './EventComposerFields'
+import { localInputToIso } from '@/utils/event'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 import { CustomSelect } from './CustomSelect'
 import { Switch } from './Switch'
@@ -32,7 +34,7 @@ import { useModalFocus } from '@/hooks/useModalFocus'
 import './NewPostModal.css'
 
 // The post types this composer knows how to build, in chip order.
-const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
+const COMPOSER_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'EVENT', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
 type Attachment = DraftAttachment
 
 export function NewPostModal({
@@ -57,6 +59,7 @@ export function NewPostModal({
       type: 'UPDATE',
       content: '',
       pollOptions: ['', ''],
+      event: { startsAt: '', endsAt: '', location: '', rsvpDeadline: '' },
       albumTitle: '',
       trip: { title: '', destination: '', startDate: '', endDate: '', cover: null, travelerIds: [] },
       giftTitle: '',
@@ -95,6 +98,7 @@ export function NewPostModal({
     type,
     content,
     pollOptions,
+    event,
     albumTitle,
     trip,
     giftTitle,
@@ -119,6 +123,7 @@ export function NewPostModal({
   const setType = field('type')
   const setContent = field('content')
   const setPollOptions = field('pollOptions')
+  const setEvent = field('event')
   const setAlbumTitle = field('albumTitle')
   const setTrip = field('trip')
   const setGiftTitle = field('giftTitle')
@@ -326,7 +331,17 @@ export function NewPostModal({
         content: content.trim() || undefined,
         type,
         // Poll options only — no closesAt UI in v1 (API-only, backend default).
-        typeData: type === 'POLL' ? { options: nonEmptyPollOptions.map((text) => ({ text })) } : undefined,
+        typeData:
+          type === 'POLL'
+            ? { options: nonEmptyPollOptions.map((text) => ({ text })) }
+            : type === 'EVENT'
+              ? {
+                  startsAt: localInputToIso(event.startsAt),
+                  endsAt: event.endsAt ? localInputToIso(event.endsAt) : undefined,
+                  location: event.location.trim() || undefined,
+                  rsvpDeadline: event.rsvpDeadline ? localInputToIso(event.rsvpDeadline) : undefined,
+                }
+              : undefined,
         uploadedAssetUrls: [...uploadedUrls, ...mediaUrls],
       })
     },
@@ -465,11 +480,13 @@ export function NewPostModal({
       : !uploading &&
         (type === 'POLL'
           ? content.trim().length > 0 && nonEmptyPollOptions.length >= 2
-          : type === 'ALBUM'
-            ? albumTitle.trim().length > 0
-            : type === 'GIFT_LIST'
-              ? giftTitle.trim().length > 0
-              : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0))
+          : type === 'EVENT'
+            ? content.trim().length > 0 && validEventDraft(event)
+            : type === 'ALBUM'
+              ? albumTitle.trim().length > 0
+              : type === 'GIFT_LIST'
+                ? giftTitle.trim().length > 0
+                : content.trim().length > 0 || files.length > 0 || mediaAssets.length > 0))
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
@@ -542,7 +559,7 @@ export function NewPostModal({
             options={offeredTypes.map((value) => ({
               value,
               label: t(
-                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', TRIP: 'Trip', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
+                `newPost.type${{ UPDATE: 'Update', MILESTONE: 'Milestone', POLL: 'Poll', EVENT: 'Event', TRIP: 'Trip', ALBUM: 'Album', GIFT_LIST: 'GiftList' }[value]}`
               ),
               description: t(`newPost.typeDescriptions.${value}`),
               icon: (
@@ -553,6 +570,7 @@ export function NewPostModal({
                         UPDATE: 'edit-3',
                         MILESTONE: 'gift',
                         POLL: 'bar-chart-2',
+                        EVENT: 'calendar',
                         TRIP: 'briefcase',
                         ALBUM: 'image',
                         GIFT_LIST: 'gift',
@@ -669,16 +687,22 @@ export function NewPostModal({
                 ? t('newPost.milestonePlaceholder')
                 : type === 'POLL'
                   ? t('newPost.pollPlaceholder')
-                  : type === 'ALBUM'
-                    ? t('newPost.albumDescriptionPlaceholder')
-                    : type === 'GIFT_LIST'
-                      ? t('newPost.giftListDescriptionPlaceholder')
-                      : t('newPost.placeholder')
+                  : type === 'EVENT'
+                    ? t('newPost.eventPlaceholder')
+                    : type === 'ALBUM'
+                      ? t('newPost.albumDescriptionPlaceholder')
+                      : type === 'GIFT_LIST'
+                        ? t('newPost.giftListDescriptionPlaceholder')
+                        : t('newPost.placeholder')
             }
             rows={type === 'UPDATE' ? 5 : 2}
             maxLength={5000}
             autoFocus={type !== 'ALBUM' && type !== 'GIFT_LIST'}
           />
+        )}
+
+        {type === 'EVENT' && offeredTypes.includes('EVENT') && (
+          <EventComposerFields event={event} setEvent={setEvent} />
         )}
 
         {type === 'POLL' && offeredTypes.includes('POLL') && (

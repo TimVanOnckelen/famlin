@@ -465,6 +465,119 @@ a.post-time:focus-visible {
   font-weight: 700;
 }
 
+/* ── Event card body (postTypes/EventCardBody) ─────────────────────────── */
+
+.event-body {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+  overflow-wrap: anywhere;
+}
+
+.event-detail svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--fam-primary);
+}
+
+.event-detail-muted {
+  font-weight: 600;
+  color: var(--fam-text-muted);
+}
+
+.event-rsvp {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.event-rsvp-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  border: 1.5px solid var(--fam-border);
+  border-radius: var(--r-sm);
+  background: var(--fam-bg);
+  padding: 9px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fam-text-title);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.event-rsvp-option:hover:not(:disabled) {
+  border-color: var(--fam-primary);
+}
+
+.event-rsvp-option:disabled {
+  cursor: default;
+}
+
+.event-rsvp-option-mine {
+  border-color: var(--fam-primary);
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary-dark);
+}
+
+.event-rsvp-count {
+  font-size: 13px;
+  color: var(--fam-text-muted);
+}
+
+.event-guests {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-guest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.event-guest-label {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: var(--fam-text-title);
+}
+
+.event-guest-names {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fam-text-muted);
+  font-weight: 600;
+}
+
+.event-error {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-danger);
+}
+
 /* ── Actions ────────────────────────────────────────────────────────────── */
 
 .post-actions {

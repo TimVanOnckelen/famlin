@@ -14,6 +14,7 @@ exports.fetchPostReactions = fetchPostReactions;
 exports.toggleFavoritePost = toggleFavoritePost;
 exports.interactWithPost = interactWithPost;
 exports.votePoll = votePoll;
+exports.rsvpEvent = rsvpEvent;
 exports.checkInTrip = checkInTrip;
 exports.closeTrip = closeTrip;
 exports.setTripTravelers = setTripTravelers;
@@ -91,6 +92,12 @@ async function interactWithPost(postId, key, value) {
 // mirrors reaction semantics. See PostTypeHandler.interact on the backend.
 async function votePoll(postId, optionId) {
     return interactWithPost(postId, 'vote', { optionId });
+}
+// Answering the same again clears the RSVP, a different answer switches it —
+// same toggle semantics as votePoll. Server errors: errors.eventClosed once the
+// deadline (or, without one, the start) has passed.
+async function rsvpEvent(postId, response) {
+    return interactWithPost(postId, 'rsvp', response);
 }
 // Adds a check-in to an active trip. Allowed for the post author or any
 // designated co-traveler (see setTripTravelers below); the server rejects

@@ -1,12 +1,14 @@
 import { api } from './client'
 import {
   AlbumTypeData,
+  EventCreateData,
   GiftListTypeData,
   Post,
   PollCreateData,
   PostReactor,
   PostType,
   ReactionType,
+  RsvpResponse,
   TripTypeData,
 } from './types'
 
@@ -93,7 +95,7 @@ export interface CreatePostBody {
   // UPDATE/MILESTONE. TRIP posts cross-post like every other type (groupIds
   // 1–20), with each travelerUserId required to be a member of every target
   // group.
-  typeData?: PollCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>
+  typeData?: PollCreateData | EventCreateData | TripTypeData | AlbumTypeData | GiftListTypeData | Record<string, unknown>
   milestoneTag?: string
   uploadedAssetUrls: string[]
   // Narrows the audience from the whole group to one Circle within it.
@@ -170,6 +172,13 @@ export async function interactWithPost(postId: string, key: string, value?: unkn
 // mirrors reaction semantics. See PostTypeHandler.interact on the backend.
 export async function votePoll(postId: string, optionId: string): Promise<Post> {
   return interactWithPost(postId, 'vote', { optionId })
+}
+
+// Answering the same again clears the RSVP, a different answer switches it —
+// same toggle semantics as votePoll. Server errors: errors.eventClosed once the
+// deadline (or, without one, the start) has passed.
+export async function rsvpEvent(postId: string, response: RsvpResponse): Promise<Post> {
+  return interactWithPost(postId, 'rsvp', response)
 }
 
 export interface CheckInTripBody {

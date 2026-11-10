@@ -121,6 +121,7 @@
       "UPDATE": "分享日常近况、照片和视频。",
       "MILESTONE": "庆祝生日、成就或特别时刻。",
       "POLL": "提出问题，让家人投票。",
+      "EVENT": "组织一次聚会，看看谁会来。",
       "TRIP": "规划旅行并分享沿途动态。",
       "ALBUM": "一起在共享相册中收集照片。",
       "GIFT_LIST": "分享愿望清单，并可选择抽取神秘圣诞老人名单。"
@@ -128,6 +129,7 @@
     "typeUpdate": "日常动态",
     "typeMilestone": "成长时刻",
     "typePoll": "投票",
+    "typeEvent": "活动",
     "typeTrip": "旅行",
     "trip": {
       "helper": "在旅行详情页添加旅途打卡，让家人了解最新动态。",
@@ -155,6 +157,15 @@
     "placeholder": "和家人分享新鲜事…",
     "milestonePlaceholder": "记录重要时刻，例如宝宝满周岁了！🎉",
     "pollPlaceholder": "提出一个问题…",
+    "eventPlaceholder": "是什么活动？",
+    "event": {
+      "startsAtLabel": "开始",
+      "endsAtLabel": "结束",
+      "locationLabel": "地点",
+      "locationPlaceholder": "例如：奶奶家的花园",
+      "rsvpDeadlineLabel": "回复截止",
+      "rsvpDeadlineHint": "可选。留空则在活动开始时停止回复。"
+    },
     "albumTitlePlaceholder": "相册名称，例如暑期旅行",
     "albumDescriptionPlaceholder": "相册简介（可选）",
     "pollOptionPlaceholder": "选项 {{number}}",
@@ -303,6 +314,15 @@
     "totalVotes_other": "共 {{count}} 票",
     "closed": "投票已结束",
     "yourVote": "你的选择"
+  },
+  "event": {
+    "rsvpLabel": "你会来吗？",
+    "yes": "参加",
+    "maybe": "可能",
+    "no": "不参加",
+    "rsvpBy": "请在 {{date}} 前回复",
+    "closed": "已停止回复",
+    "rsvpFailed": "无法保存你的回复，请重试。"
   },
   "chat": {
     "title": "聊天",
