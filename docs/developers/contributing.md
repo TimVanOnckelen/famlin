@@ -49,7 +49,7 @@ What "documented" means depends on who notices the feature:
 - **Members** (something new in the app or web app): explain it in the Docs tab (`docs/docs/`), under *Using Famlin* if it needs a page of its own.
 - **Admins / self-hosters** (a setting, an admin page, an env var, a deploy step): update the matching page in `docs/docs/`. For a new admin screen or settings section, add a **screenshot** under `docs/docs/img/`. Describe every setting: what it does, its default, and when you'd change it.
 - **Developers / API users** (an endpoint, a field, an architectural pattern): update `docs/openapi/famlin.yaml` (and regenerate the API reference) and `docs/developers/architecture.md`.
-- **Marketing claims** (a headline feature): consider `website/index.html` too.
+- **Marketing claims** (a headline feature): consider the landing page too. Its pages are templates in `website/src/` with the text per language in `website/locales/`; see `website/README.md`.
 
 The [Documentation table in AGENTS.md](https://github.com/TimVanOnckelen/famlin/blob/main/AGENTS.md#documentation) maps each kind of change to the page to update.
 

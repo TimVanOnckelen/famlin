@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{t:support.support_famlin}}</title>
+<meta name="description" content="{{t:support.get_help_with_the_famlin}}">
+<link rel="icon" href="/favicon.ico">
+{{alternates}}
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #edf7fb; font-family: 'Nunito', system-ui, sans-serif; color: #233036; }
+  * { box-sizing: border-box; }
+  a { text-decoration: none; color: #006e94; font-weight: 700; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div style="overflow-x:hidden;">
+
+  <!-- ═══════ NAV ═══════ -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(237,247,251,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #d9e3e7;">
+    <div style="max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <a href="{{root}}" style="display:flex;align-items:center;gap:11px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(150deg,#318ea2,#005480);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,110,148,0.3);">
+          <svg width="19" height="19" viewBox="0 0 48 48" fill="none">
+            <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" style="fill:white;"/>
+            <circle cx="24" cy="20.5" r="2.6" style="fill:#006e94;"/>
+            <path d="M18.5 42 L18.5 31 Q18.5 26 24 26 Q29.5 26 29.5 31 L29.5 42 Z" style="fill:#006e94;"/>
+          </svg>
+        </div>
+        <span style="font-size:20px;font-weight:900;color:#006e94;letter-spacing:-1px;">Famlin</span>
+      </a>
+      <span style="display:flex;align-items:center;gap:2px;font-size:13px;font-weight:800;color:#597784;">
+        {{langswitch:inline}}
+      </span>
+    </div>
+  </nav>
+
+  <main style="max-width:760px;margin:0 auto;padding:56px 24px 80px;">
+    <div style="font-size:13px;font-weight:800;color:#006e94;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">{{t:support.help}}</div>
+    <h1 style="font-size:40px;font-weight:900;color:#0f222a;letter-spacing:-1.5px;margin:0 0 8px;">{{t:support.support}}</h1>
+    <p style="font-size:15px;color:#597784;margin:0 0 36px;">{{t:support.questions_about_the_famlin_app}}</p>
+
+    <!-- ═══════ CONTACT ═══════ -->
+    <div style="background:#daf3fe;border-radius:16px;padding:22px 24px;margin-bottom:16px;">
+      <h2 style="font-size:20px;font-weight:800;color:#0f222a;margin:0 0 10px;">{{t:support.ask_a_question}}</h2>
+      <p style="font-size:16px;line-height:1.65;margin:0 0 14px;color:#0f222a;">{{t:support.famlin_is_an_open_source}}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <a href="mailto:tim@xeweb.be?subject=Famlin%20support" style="display:inline-block;background:#006e94;color:white;padding:12px 22px;border-radius:100px;font-size:15px;font-weight:800;">{{t:support.email_tim_xeweb_be}}</a>
+        <a href="https://github.com/TimVanOnckelen/famlin/discussions/new?category=q-a" target="_blank" rel="noopener" style="display:inline-block;background:white;color:#006e94;border:1.5px solid #006e94;padding:12px 22px;border-radius:100px;font-size:15px;font-weight:800;">{{t:support.ask_on_github}}</a>
+        <a href="https://github.com/TimVanOnckelen/famlin/issues/new" target="_blank" rel="noopener" style="display:inline-block;background:white;color:#006e94;border:1.5px solid #006e94;padding:12px 22px;border-radius:100px;font-size:15px;font-weight:800;">{{t:support.report_a_bug}}</a>
+      </div>
+    </div>
+    <p style="font-size:15px;line-height:1.7;color:#597784;margin:0 0 40px;">{{t:support.the_two_github_links_need}}</p>
+
+    <!-- ═══════ WHO TO ASK ═══════ -->
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">{{t:support.who_can_help_with_what}}</h2>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.famlin_is_self_hosted_the}}</p>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li>{{t:support.your_family_s_admin_whoever}}</li>
+      <li>{{t:support.the_famlin_project_the_links}}</li>
+    </ul>
+
+    <!-- ═══════ FAQ ═══════ -->
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">{{t:support.common_questions}}</h2>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.the_app_asks_for_a}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.famlin_has_no_central_sign}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.how_do_i_join_my}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.your_admin_sends_you_an}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.how_do_i_sign_in}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.depending_on_how_your_admin}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.i_forgot_my_password}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.ask_your_family_s_admin}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.how_do_i_delete_my}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.in_the_app_open_profile}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.i_m_not_getting_notifications}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.check_profile_notifications_in_the}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.photos_won_t_upload_or}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.this_is_almost_always_the}}</p>
+
+    <h3 style="font-size:18px;font-weight:800;color:#0f222a;margin:26px 0 8px;">{{t:support.where_does_my_data_live}}</h3>
+    <p style="font-size:16px;line-height:1.7;color:#3f5560;margin:0 0 14px;">{{t:support.everything_stays_on_your_family}}</p>
+
+    <!-- ═══════ DOCS ═══════ -->
+    <h2 style="font-size:24px;font-weight:800;color:#0f222a;letter-spacing:-0.5px;margin:40px 0 12px;">{{t:support.documentation}}</h2>
+    <ul style="font-size:16px;line-height:1.8;color:#3f5560;margin:0 0 14px;padding-left:22px;">
+      <li>{{t:support.getting_started_what_famlin_is}}</li>
+      <li>{{t:support.self_hosting_running_your_own}}</li>
+      <li>{{t:support.admin_configuration_sign_in_email}}</li>
+      <li>{{t:support.inviting_your_family_invite_links}}</li>
+      <li>{{t:support.managing_users_and_content_accounts}}</li>
+      <li>{{t:support.security_how_accounts_and_photos}}</li>
+    </ul>
+
+    <p style="margin-top:56px;"><a href="{{root}}">{{t:support.back_to_famlin_app}}</a></p>
+  </main>
+
+</div>
+</body>
+</html>

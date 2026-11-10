@@ -62,7 +62,7 @@ Since the 5.1.1(v) rejection, App Review asks for a screen recording of the dele
 
 - **Support URL**: `https://famlin.app/support/` (or your own equivalent if you distribute your own build — it must be a real support page, not a landing page).
 - **Privacy Policy URL**: `https://famlin.app/privacy/`.
-- Both pages are static HTML under `website/` and deploy with the marketing site; see the deploy section of [Contributing](./contributing.md).
+- Both pages are built from templates under `website/` (`website/build.mjs`) and deploy with the marketing site; see the deploy section of [Contributing](./contributing.md).
 
 ## Version bumps
 

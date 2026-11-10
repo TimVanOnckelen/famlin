@@ -1,19 +1,17 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="{{lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Famlin · Een privé familie-app die je zelf host</title>
-<meta name="description" content="Famlin is een open-source familie-app die je op je eigen server draait: een chronologische feed met foto's, mijlpalen, stories, reizen, peilingen en verlanglijstjes, met apps voor iOS, Android en de browser.">
+<title>{{t:home.famlin_a_private_family_app}}</title>
+<meta name="description" content="{{t:home.famlin_is_an_open_source_2}}">
 <link rel="icon" href="/favicon.ico">
-<meta property="og:title" content="Famlin · A private family app you host yourself">
-<meta property="og:description" content="Een open-source familie-app die je op je eigen server draait. Foto's, mijlpalen, stories, reizen, peilingen en verlanglijstjes, voor iOS, Android en de browser.">
+<meta property="og:title" content="{{t:home.famlin_a_private_family_app_2}}">
+<meta property="og:description" content="{{t:home.an_open_source_family_app}}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://famlin.app/assets/images/screenshots/feed.webp">
 <meta name="twitter:card" content="summary">
-<link rel="alternate" hreflang="en" href="https://famlin.app/">
-<link rel="alternate" hreflang="nl" href="https://famlin.app/nl/">
-<link rel="alternate" hreflang="x-default" href="https://famlin.app/">
+{{alternates}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
@@ -209,11 +207,11 @@
 </head>
 <body>
 
-<div class="project-note">✨ Famlin is jong en volop in ontwikkeling — open source, self-hosted, en gevormd door de families die het gebruiken. Maak back-ups van je server, zoals van elke dienst die je thuis draait.</div>
+<div class="project-note">{{t:home.famlin_is_young_and_actively}}</div>
 
-<nav class="nav" aria-label="Main">
+<nav class="nav" aria-label="{{t:home.main}}">
   <div class="wrap">
-    <a href="/nl/" class="brand" aria-label="Famlin startpagina">
+    <a href="{{root}}" class="brand" aria-label="{{t:home.famlin_home}}">
       <span class="brand-mark">
         <svg width="20" height="20" viewBox="0 0 48 48" fill="none" aria-hidden="true">
           <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" fill="#fff"/>
@@ -224,14 +222,14 @@
       <span class="brand-name">Famlin</span>
     </a>
     <div class="nav-links">
-      <a href="#features" class="hide-sm">Functies</a>
-      <a href="#install" class="hide-sm">Zelf hosten</a>
-      <a href="/docs/">Docs</a>
-      <a href="/nl/support/" class="hide-sm">Support</a>
-      <span class="lang" aria-label="Taal">
-        <a href="/" hreflang="en" lang="en">EN</a><span aria-hidden="true">·</span><span aria-current="true">NL</span>
+      <a href="#features" class="hide-sm">{{t:home.features}}</a>
+      <a href="#install" class="hide-sm">{{t:home.self_host}}</a>
+      <a href="/docs/">{{t:home.docs}}</a>
+      <a href="{{root}}support/" class="hide-sm">{{t:home.support}}</a>
+      <span class="lang" aria-label="{{t:home.language}}">
+        {{langswitch:compact}}
       </span>
-      <a href="#install" class="btn btn-primary">Installeren</a>
+      <a href="#install" class="btn btn-primary">{{t:home.install}}</a>
     </div>
   </div>
 </nav>
@@ -242,21 +240,21 @@
   <header class="hero" id="top">
     <div class="wrap">
       <div class="hero-copy">
-        <h1>Een privéplek voor je familie, <span>op een server die van jou is.</span></h1>
-        <p class="lead">Famlin is een open-source familie-app die je zelf host. Deel foto's, mijlpalen, reizen en de kleine dagelijkse dingen met de mensen die het echt interesseert, gewoon in chronologische volgorde. Geen reclame, geen aanbevelingen, geen bedrijf ertussen.</p>
+        <h1>{{t:home.a_private_place_for_your}}</h1>
+        <p class="lead">{{t:home.famlin_is_an_open_source}}</p>
         <div class="hero-actions">
-          <a href="#install" class="btn btn-primary">Zet je server op</a>
-          <a href="/docs/" class="btn btn-ghost">Lees de docs</a>
+          <a href="#install" class="btn btn-primary">{{t:home.set_up_your_server}}</a>
+          <a href="/docs/" class="btn btn-ghost">{{t:home.read_the_docs}}</a>
         </div>
-        <p class="hero-meta">Gratis en MIT-gelicenseerd · iOS, Android en web · <a href="https://github.com/TimVanOnckelen/famlin">Broncode op GitHub</a></p>
+        <p class="hero-meta">{{t:home.free_and_mit_licensed_ios}}</p>
       </div>
       <div class="hero-visual">
         <div class="browser">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>famlin.yourfamily.example</span></div>
-          <img src="/assets/images/screenshots/web-feed.webp" alt="De Famlin-webapp in een browser, met stories, een verlanglijst en een peiling in de feed van één familie" width="1800" height="1125" fetchpriority="high">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>{{t:home.famlin_yourfamily_example}}</span></div>
+          <img src="/assets/images/screenshots/web-feed.webp" alt="{{t:home.the_famlin_web_app_in}}" width="1800" height="1125" fetchpriority="high">
         </div>
         <div class="phone">
-          <img src="/assets/images/screenshots/feed.webp" alt="De Famlin-feed op een telefoon: een mijlpaalbericht over een verjaardag en een fotobericht, met een filter per familie" width="640" height="1392">
+          <img src="/assets/images/screenshots/feed.webp" alt="{{t:home.the_famlin_feed_on_a}}" width="640" height="1392">
         </div>
       </div>
     </div>
@@ -265,10 +263,10 @@
   <div class="principles">
     <div class="wrap">
       <ul>
-        <li><strong>Jouw server, jouw data</strong>Een thuisserver, een NAS of een kleine VPS. Foto's blijven op je eigen schijf of in je eigen S3-bucket.</li>
-        <li><strong>Alleen op uitnodiging</strong>Niemand vindt je via zoeken. Mensen komen erbij via een link die jij hen stuurt.</li>
-        <li><strong>Nieuwste eerst, meer niet</strong>De feed staat in volgorde van plaatsing. Niets wordt gepusht of weggestopt.</li>
-        <li><strong>Voor elke generatie</strong>Eenvoudige schermen, en een webversie voor wie geen app wil installeren.</li>
+        <li>{{t:home.your_server_your_data_a}}</li>
+        <li>{{t:home.invite_only_nobody_finds_you}}</li>
+        <li>{{t:home.newest_first_that_s_it}}</li>
+        <li>{{t:home.works_for_every_generation_simple}}</li>
       </ul>
     </div>
   </div>
@@ -276,47 +274,47 @@
   <!-- Main features -->
   <section id="features">
     <div class="wrap">
-      <h2>Wat je familie krijgt</h2>
-      <p class="lead">Eén app voor meerdere families. Oma kan beide kanten van de familie in één feed volgen en toch zien uit welke familie elk bericht komt.</p>
+      <h2>{{t:home.what_your_family_gets}}</h2>
+      <p class="lead">{{t:home.one_app_for_several_families}}</p>
 
       <div class="rows">
         <div class="row">
           <div>
-            <h3>Een gedeelde feed</h3>
-            <p>Plaats tekst, foto's en video's in één familie of in meerdere tegelijk. Iedereen kan reageren, commentaar geven (ook met eigen foto's) en iemand @vermelden zodat die een melding krijgt. Grote momenten zoals een verjaardag of de eerste schooldag kun je als mijlpaal plaatsen, zodat ze opvallen.</p>
-            <p>Bewaar berichten bij je favorieten, zoek in oudere berichten en krijg een herinnering "Op deze dag" aan wat je in vorige jaren deelde.</p>
-            <p><a href="/docs/sharing-updates">Hoe de feed werkt →</a></p>
+            <h3>{{t:home.a_shared_feed}}</h3>
+            <p>{{t:home.post_text_photos_and_videos}}</p>
+            <p>{{t:home.save_posts_to_your_favorites}}</p>
+            <p><a href="/docs/sharing-updates">{{t:home.how_the_feed_works}}</a></p>
           </div>
-          <div class="shot"><img src="/assets/images/screenshots/post.webp" alt="Een Famlin-bericht met twee barbecuefoto's, likes en reacties van de familie" width="640" height="1386" loading="lazy"></div>
+          <div class="shot"><img src="/assets/images/screenshots/post.webp" alt="{{t:home.a_famlin_post_with_two}}" width="640" height="1386" loading="lazy"></div>
         </div>
 
         <div class="row">
           <div>
-            <h3>Reizen, samen geschreven</h3>
-            <p>Start een reis met een bestemming, data en de mensen die meegaan. Onderweg kan iedereen van de reis bij elke stop inchecken met een plaatsnaam, een notitie en foto's. Thuis ziet de familie één reisverslag met een dagenteller en een tijdlijn, in plaats van dertig losse berichten.</p>
-            <p><a href="/docs/trips">Hoe reizen werken →</a></p>
+            <h3>{{t:home.trips_written_together}}</h3>
+            <p>{{t:home.start_a_trip_with_a}}</p>
+            <p><a href="/docs/trips">{{t:home.how_trips_work}}</a></p>
           </div>
-          <div class="shot"><img src="/assets/images/screenshots/trips.webp" alt="Een Famlin-reisverslag met check-ins en een dagenteller" width="640" height="1392" loading="lazy"></div>
+          <div class="shot"><img src="/assets/images/screenshots/trips.webp" alt="{{t:home.a_famlin_trip_journal_with}}" width="640" height="1392" loading="lazy"></div>
         </div>
 
         <div class="row">
           <div>
-            <h3>Peilingen en verlanglijstjes</h3>
-            <p>Stel de familie een vraag en zie de stemmen binnenkomen: welk weekend, welk restaurant, welke naam voor de hond.</p>
-            <p>Start voor de feestdagen een verlanglijst. Iedereen voegt wensen toe met een link of een foto, en Famlin kan een geheime loting doen (met uitzonderingen, zodat partners elkaar niet trekken). Je ziet altijd alleen voor wie <em>jij</em> iets koopt.</p>
-            <p><a href="/docs/gift-lists">Hoe verlanglijsten werken →</a></p>
+            <h3>{{t:home.polls_and_gift_lists}}</h3>
+            <p>{{t:home.ask_the_family_a_question}}</p>
+            <p>{{t:home.for_the_holidays_start_a}}</p>
+            <p><a href="/docs/gift-lists">{{t:home.how_gift_lists_work}}</a></p>
           </div>
-          <div class="shot"><img src="/assets/images/screenshots/gift-list.webp" alt="Een Famlin-verlanglijst die toont voor wie je koopt en je eigen wensen" width="640" height="1386" loading="lazy"></div>
+          <div class="shot"><img src="/assets/images/screenshots/gift-list.webp" alt="{{t:home.a_famlin_gift_list_showing}}" width="640" height="1386" loading="lazy"></div>
         </div>
 
         <div class="row">
           <div>
-            <h3>Stories en familiechat</h3>
-            <p>Deel snel een foto als story die na 24 uur verdwijnt, of maak er een highlight van om hem te bewaren. Kijkers kunnen reageren of je een privébericht sturen.</p>
-            <p>Elke familie kan ook een eigen groepschat krijgen voor het snelle heen-en-weer dat geen bericht hoeft te zijn. Een beheerder zet dat per familie aan.</p>
-            <p><a href="/docs/stories">Hoe stories werken →</a> · <a href="/docs/chat">Familiechat →</a></p>
+            <h3>{{t:home.stories_and_family_chat}}</h3>
+            <p>{{t:home.share_a_quick_photo_as}}</p>
+            <p>{{t:home.each_family_can_also_get}}</p>
+            <p>{{t:home.how_stories_work_family_chat}}</p>
           </div>
-          <div class="shot"><img src="/assets/images/screenshots/story.webp" alt="Een Famlin-story: een verjaardagsfoto met reactieknoppen en een veld om privé te antwoorden" width="640" height="1386" loading="lazy"></div>
+          <div class="shot"><img src="/assets/images/screenshots/story.webp" alt="{{t:home.a_famlin_story_a_birthday}}" width="640" height="1386" loading="lazy"></div>
         </div>
       </div>
     </div>
@@ -325,17 +323,17 @@
   <!-- More features -->
   <section class="more" aria-labelledby="more-title">
     <div class="wrap">
-      <h2 id="more-title">En de rest</h2>
+      <h2 id="more-title">{{t:home.and_the_rest}}</h2>
       <div class="grid-list">
-        <div><h3>Kringen</h3><p>Een kleinere groep binnen een familie, zoals alleen de grootouders, voor berichten die niet voor iedereen zijn. Leden kunnen altijd zien wie er in een kring zit.</p></div>
-        <div><h3>Gedeelde albums</h3><p>Eén album waar de hele familie foto's aan toevoegt, voor een bruiloft, een familiedag of een zomer in het buitenhuisje.</p></div>
-        <div><h3>Je bestaande fotobibliotheek</h3><p>Koppel albums uit Immich of een map op je server, en filter ze op persoon zodra een beheerder gezichten aan familieleden heeft gekoppeld.</p></div>
-        <div><h3>Delen vanuit elke app</h3><p>Tik op je telefoon in Foto's, Google Foto's of WhatsApp op Delen → Famlin en de foto komt in een nieuw bericht.</p></div>
-        <div><h3>Een echte webapp</h3><p>Alles in de browser op een laptop, met sneltoetsen. Je hoeft niets te installeren, dus je kunt aan iedereen een link sturen.</p></div>
-        <div><h3>Foto's, zoals het hoort</h3><p>HEIC van iPhones werkt overal, grote foto's worden verkleind om te bekijken, en het origineel blijft op je server bewaard.</p></div>
-        <div><h3>Meldingen onder jouw controle</h3><p>Push en e-mail, met een schakelaar per soort: nieuwe berichten, commentaar, reacties, chat, stories, verlanglijstjes.</p></div>
-        <div><h3>Je eigen kopie</h3><p>Elk lid kan alles wat hij of zij kan zien downloaden als zip: berichten, reacties en de bijbehorende foto's.</p></div>
-        <div><h3>Vijf talen</h3><p>Engels, Nederlands, vereenvoudigd Chinees, Europees Portugees en Frans. Iedereen kiest zijn eigen taal.</p></div>
+        <div><h3>{{t:home.circles}}</h3><p>{{t:home.a_smaller_group_inside_a}}</p></div>
+        <div><h3>{{t:home.shared_albums}}</h3><p>{{t:home.one_album_the_whole_family}}</p></div>
+        <div><h3>{{t:home.your_existing_photo_library}}</h3><p>{{t:home.link_albums_from_immich_or}}</p></div>
+        <div><h3>{{t:home.share_from_any_app}}</h3><p>{{t:home.on_your_phone_tap_share}}</p></div>
+        <div><h3>{{t:home.a_real_web_app}}</h3><p>{{t:home.everything_in_the_browser_on}}</p></div>
+        <div><h3>{{t:home.photos_done_properly}}</h3><p>{{t:home.heic_from_iphones_works_everywhere}}</p></div>
+        <div><h3>{{t:home.notifications_you_control}}</h3><p>{{t:home.push_and_email_with_a}}</p></div>
+        <div><h3>{{t:home.your_own_copy}}</h3><p>{{t:home.any_member_can_download_everything}}</p></div>
+        <div><h3>{{t:home.five_languages}}</h3><p>{{t:home.english_dutch_simplified_chinese_european}}</p></div>
       </div>
     </div>
   </section>
@@ -344,20 +342,20 @@
   <section class="admin" aria-labelledby="admin-title">
     <div class="wrap">
       <div>
-        <h2 id="admin-title">Voor wie de server beheert</h2>
-        <p class="lead">Famlin voor je familie draaien kost een avond om op te zetten en daarna een paar minuten per maand. Alles beheer je via een webpaneel; na de eerste start hoef je geen configuratiebestanden meer aan te passen.</p>
+        <h2 id="admin-title">{{t:home.for_whoever_runs_the_server}}</h2>
+        <p class="lead">{{t:home.running_famlin_for_your_family}}</p>
         <div class="admin-shot">
-          <img src="/assets/images/screenshots/admin-status.webp" width="1200" height="1266" alt="De systeemstatuspagina van het Famlin-beheerpaneel met back-ups, schijfruimte en taken" loading="lazy">
+          <img src="/assets/images/screenshots/admin-status.webp" width="1200" height="1266" alt="{{t:home.the_famlin_admin_panel_s}}" loading="lazy">
         </div>
       </div>
       <ul class="checks">
-        <li><strong>Aanmelden zoals jij wilt.</strong> E-mail en wachtwoord, Sign in with Apple, of elke OpenID Connect-provider: Google, Microsoft, Authentik, Keycloak en andere.</li>
-        <li><strong>Families en uitnodigingen.</strong> Maak families aan, stuur uitnodigingslinks en bepaal welke soorten berichten elke familie kan gebruiken.</li>
-        <li><strong>Jouw naam en kleuren.</strong> Geef de app de naam, het logo en de kleur van je familie. De webapp en de telefoonapps nemen dat over.</li>
-        <li><strong>Geplande back-ups.</strong> Dagelijkse of wekelijkse database-dumps plus een kopie van alle foto's, met een e-mail als een back-up mislukt of de schijf bijna vol raakt.</li>
-        <li><strong>Opslag waar je wilt.</strong> Een Docker-volume, een NAS-share of een willekeurige S3-compatibele bucket.</li>
-        <li><strong>Verhuizen of herstellen in één keer.</strong> Exporteer alles als één zip en herstel die op een nieuwe server.</li>
-        <li><strong>Moderatie.</strong> Bewerk of verwijder berichten en reacties, en stuur een melding opnieuw die niet is aangekomen.</li>
+        <li>{{t:home.sign_in_your_way_email}}</li>
+        <li>{{t:home.families_and_invites_create_families}}</li>
+        <li>{{t:home.your_name_and_colours_give}}</li>
+        <li>{{t:home.scheduled_backups_daily_or_weekly}}</li>
+        <li>{{t:home.storage_where_you_want_it}}</li>
+        <li>{{t:home.move_or_restore_in_one}}</li>
+        <li>{{t:home.moderation_edit_or_remove_posts}}</li>
       </ul>
     </div>
   </section>
@@ -366,30 +364,23 @@
   <section class="install" id="install">
     <div class="wrap">
       <div>
-        <h2>Installeren</h2>
-        <p class="lead">Famlin is één Docker-container plus Postgres. Het draait op amd64 en arm64, dus een Raspberry Pi 4 of 5, een Synology NAS of een goedkope VPS werken allemaal.</p>
+        <h2>{{t:home.install_2}}</h2>
+        <p class="lead">{{t:home.famlin_is_one_docker_container}}</p>
         <ol>
-          <li><strong>Start de server</strong> met de commando's rechts en zet er een reverse proxy voor voor HTTPS.</li>
-          <li><strong>Open <code>/admin</code></strong> en maak het eerste beheerdersaccount aan. Kies daarna hoe mensen zich aanmelden.</li>
-          <li><strong>Nodig je familie uit.</strong> Ze installeren de app en vullen het adres van je server in, of openen het gewoon in een browser.</li>
+          <li>{{t:home.run_the_installer_on_a}}</li>
+          <li>{{t:home.open_admin_and_create_the}}</li>
+          <li>{{t:home.invite_your_family_they_install}}</li>
         </ol>
       </div>
       <div>
-        <div class="terminal" role="region" aria-label="Installatiecommando's"><span class="c"># download het compose-bestand</span>
-<span class="p">$ </span>mkdir famlin &amp;&amp; cd famlin
-<span class="p">$ </span>curl -O https://raw.githubusercontent.com/TimVanOnckelen/famlin/main/docker-compose.yml
-
-<span class="c"># stel twee geheimen in</span>
-<span class="p">$ </span>echo "JWT_SECRET=$(openssl rand -base64 48)" &gt; .env
-<span class="p">$ </span>echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)" &gt;&gt; .env
-
-<span class="c"># start het</span>
-<span class="p">$ </span>docker compose -f docker-compose.yml up -d</div>
+        <div class="terminal" role="region" aria-label="{{t:home.install_commands}}">{{t:home.on_a_fresh_debian_ubuntu}}</div>
         <div class="install-links">
-          <a href="/docs/server-setup">Volledige installatiegids</a>
-          <a href="/docs/server-setup#example-synology-nas-with-container-manager-no-ssh-required">Synology zonder SSH</a>
-          <a href="/docs/admin-configuration">Na de eerste start</a>
-          <a href="/docs/maintenance">Updates &amp; back-ups</a>
+          <a href="/docs/choose-installation">{{t:home.choose_your_installation}}</a>
+          <a href="/docs/install-vps">{{t:home.10_minute_server_guide}}</a>
+          <a href="/docs/server-setup">{{t:home.manual_setup}}</a>
+          <a href="/docs/server-setup#example-synology-nas-with-container-manager-no-ssh-required">{{t:home.synology_without_ssh}}</a>
+          <a href="/docs/admin-configuration">{{t:home.after_the_first_start}}</a>
+          <a href="/docs/maintenance">{{t:home.updates_backups}}</a>
         </div>
       </div>
     </div>
@@ -398,47 +389,47 @@
   <!-- Docs -->
   <section id="docs" aria-labelledby="docs-title">
     <div class="wrap">
-      <h2 id="docs-title">Documentatie</h2>
-      <p class="lead">Alles staat beschreven: hoe je een server installeert en draait, hoe de functies werken voor je familie, en hoe de code in elkaar zit als je die wilt aanpassen.</p>
+      <h2 id="docs-title">{{t:home.documentation}}</h2>
+      <p class="lead">{{t:home.everything_is_written_down_how}}</p>
       <div class="docs-grid">
         <div class="doc-col">
-          <h3>Famlin gebruiken</h3>
-          <p>Voor iedereen in de familie.</p>
+          <h3>{{t:home.using_famlin}}</h3>
+          <p>{{t:home.for_everyone_in_the_family}}</p>
           <ul>
-            <li><a href="/docs/">Aan de slag &amp; de apps</a></li>
-            <li><a href="/docs/sharing-updates">Feed &amp; berichten</a></li>
-            <li><a href="/docs/stories">Stories</a></li>
-            <li><a href="/docs/photos-and-albums">Foto's &amp; albums</a></li>
-            <li><a href="/docs/chat">Familiechat</a></li>
-            <li><a href="/docs/search-and-favorites">Zoeken &amp; favorieten</a></li>
-            <li><a href="/docs/notifications-and-profile">Meldingen &amp; profiel</a></li>
-            <li><a href="/docs/trips">Reizen</a></li>
-            <li><a href="/docs/gift-lists">Verlanglijstjes &amp; de loting</a></li>
-            <li><a href="/nl/support/">Support &amp; veelgestelde vragen</a></li>
+            <li><a href="/docs/">{{t:home.getting_started_the_apps}}</a></li>
+            <li><a href="/docs/sharing-updates">{{t:home.feed_updates}}</a></li>
+            <li><a href="/docs/stories">{{t:home.stories}}</a></li>
+            <li><a href="/docs/photos-and-albums">{{t:home.photos_albums}}</a></li>
+            <li><a href="/docs/chat">{{t:home.family_chat}}</a></li>
+            <li><a href="/docs/search-and-favorites">{{t:home.search_favorites}}</a></li>
+            <li><a href="/docs/notifications-and-profile">{{t:home.notifications_profile}}</a></li>
+            <li><a href="/docs/trips">{{t:home.trips}}</a></li>
+            <li><a href="/docs/gift-lists">{{t:home.gift_lists_the_draw}}</a></li>
+            <li><a href="{{root}}support/">{{t:home.support_common_questions}}</a></li>
           </ul>
         </div>
         <div class="doc-col">
-          <h3>Zelf hosten</h3>
-          <p>Voor wie de server beheert.</p>
+          <h3>{{t:home.self_hosting}}</h3>
+          <p>{{t:home.for_the_person_running_the}}</p>
           <ul>
-            <li><a href="/docs/server-setup">Server opzetten</a></li>
-            <li><a href="/docs/admin-configuration">Beheerconfiguratie</a></li>
-            <li><a href="/docs/inviting-family">Familie uitnodigen</a></li>
-            <li><a href="/docs/managing-users-and-content">Gebruikers, families &amp; inhoud</a></li>
-            <li><a href="/docs/storage">Opslag &amp; S3</a></li>
-            <li><a href="/docs/maintenance">Updates, back-ups &amp; herstel</a></li>
-            <li><a href="/docs/security">Beveiliging</a></li>
+            <li><a href="/docs/server-setup">{{t:home.server_setup}}</a></li>
+            <li><a href="/docs/admin-configuration">{{t:home.admin_configuration}}</a></li>
+            <li><a href="/docs/inviting-family">{{t:home.inviting_family}}</a></li>
+            <li><a href="/docs/managing-users-and-content">{{t:home.users_families_content}}</a></li>
+            <li><a href="/docs/storage">{{t:home.storage_s3}}</a></li>
+            <li><a href="/docs/maintenance">{{t:home.updates_backups_restore}}</a></li>
+            <li><a href="/docs/security">{{t:home.security}}</a></li>
           </ul>
         </div>
         <div class="doc-col">
-          <h3>Ontwikkelaars</h3>
-          <p>Voor bijdragers en je eigen scripts.</p>
+          <h3>{{t:home.developers}}</h3>
+          <p>{{t:home.for_contributors_and_your_own}}</p>
           <ul>
-            <li><a href="/docs/developers/quick-start">Lokaal ontwikkelen</a></li>
-            <li><a href="/docs/developers/architecture">Architectuur</a></li>
-            <li><a href="/docs/developers/api">De API gebruiken</a></li>
-            <li><a href="/docs/developers/api-reference/famlin-api">API-referentie</a></li>
-            <li><a href="/docs/developers/contributing">Bijdragen</a></li>
+            <li><a href="/docs/developers/quick-start">{{t:home.local_development}}</a></li>
+            <li><a href="/docs/developers/architecture">{{t:home.architecture}}</a></li>
+            <li><a href="/docs/developers/api">{{t:home.using_the_api}}</a></li>
+            <li><a href="/docs/developers/api-reference/famlin-api">{{t:home.api_reference}}</a></li>
+            <li><a href="/docs/developers/contributing">{{t:home.contributing}}</a></li>
           </ul>
         </div>
       </div>
@@ -450,13 +441,13 @@
     <div class="wrap">
       <div class="box">
         <div>
-          <h2 id="apps-title">Download de app</h2>
-          <p class="lead">De apps zijn gratis. Bij de eerste start vragen ze naar het adres van je server, zodat dezelfde download voor elke familie werkt. Liever de browser? Elke Famlin-server serveert ook de volledige webapp op zijn eigen adres.</p>
+          <h2 id="apps-title">{{t:home.get_the_app}}</h2>
+          <p class="lead">{{t:home.the_apps_are_free_on}}</p>
         </div>
         <div class="actions">
-          <a href="https://apps.apple.com/us/app/famlin/id6786783660" class="btn btn-primary">App Store (iPhone, iPad)</a>
-          <a href="https://play.google.com/store/apps/details?id=be.xeweb.famlin" class="btn btn-primary">Google Play (Android)</a>
-          <a href="https://github.com/TimVanOnckelen/famlin/releases/latest" class="btn btn-ghost">Android-APK zonder Google Play</a>
+          <a href="https://apps.apple.com/us/app/famlin/id6786783660" class="btn btn-primary">{{t:home.app_store_iphone_ipad}}</a>
+          <a href="https://play.google.com/store/apps/details?id=be.xeweb.famlin" class="btn btn-primary">{{t:home.google_play_android}}</a>
+          <a href="https://github.com/TimVanOnckelen/famlin/releases/latest" class="btn btn-ghost">{{t:home.android_apk_without_google_play}}</a>
         </div>
       </div>
     </div>
@@ -467,7 +458,7 @@
 <footer>
   <div class="wrap">
     <div class="about">
-      <a href="/nl/" class="brand" style="padding:0;margin-bottom:12px;">
+      <a href="{{root}}" class="brand" style="padding:0;margin-bottom:12px;">
         <span class="brand-mark">
           <svg width="20" height="20" viewBox="0 0 48 48" fill="none" aria-hidden="true">
             <path d="M24 6 Q25.6 6 26.9 6.95 L40.4 17.4 Q42 18.65 42 20.7 L42 38 Q42 42 38 42 L10 42 Q6 42 6 38 L6 20.7 Q6 18.65 7.6 17.4 L21.1 6.95 Q22.4 6 24 6 Z" fill="#fff"/>
@@ -477,33 +468,33 @@
         </span>
         <span class="brand-name">Famlin</span>
       </a>
-      <p style="max-width:300px;">Een open-source hobbyproject van Tim Van Onckelen. Een privéplek voor je familie, zonder bedrijf ertussen.</p>
+      <p style="max-width:300px;">{{t:home.an_open_source_hobby_project}}</p>
     </div>
     <div>
-      <h4>Product</h4>
-      <a href="#features">Functies</a>
-      <a href="#install">Installeren</a>
-      <a href="#download">Download de app</a>
-      <a href="https://github.com/TimVanOnckelen/famlin/releases">Releases</a>
+      <h4>{{t:home.product}}</h4>
+      <a href="#features">{{t:home.features_2}}</a>
+      <a href="#install">{{t:home.install_3}}</a>
+      <a href="#download">{{t:home.get_the_app_2}}</a>
+      <a href="https://github.com/TimVanOnckelen/famlin/releases">{{t:home.releases}}</a>
     </div>
     <div>
-      <h4>Hulp</h4>
-      <a href="/docs/">Documentatie</a>
-      <a href="/nl/support/">Support</a>
-      <a href="https://github.com/TimVanOnckelen/famlin/discussions">Discussies</a>
-      <a href="https://github.com/TimVanOnckelen/famlin/issues">Meld een bug</a>
+      <h4>{{t:home.help}}</h4>
+      <a href="/docs/">{{t:home.documentation_2}}</a>
+      <a href="{{root}}support/">{{t:home.support_2}}</a>
+      <a href="https://github.com/TimVanOnckelen/famlin/discussions">{{t:home.discussions}}</a>
+      <a href="https://github.com/TimVanOnckelen/famlin/issues">{{t:home.report_a_bug}}</a>
     </div>
     <div>
-      <h4>Juridisch</h4>
-      <a href="/nl/privacy/">Privacy</a>
-      <a href="/docs/security">Beveiliging</a>
-      <a href="https://github.com/TimVanOnckelen/famlin/blob/main/LICENSE">MIT-licentie</a>
+      <h4>{{t:home.legal}}</h4>
+      <a href="{{root}}privacy/">{{t:home.privacy}}</a>
+      <a href="/docs/security">{{t:home.security_2}}</a>
+      <a href="https://github.com/TimVanOnckelen/famlin/blob/main/LICENSE">{{t:home.mit_license}}</a>
     </div>
   </div>
   <div class="bottom">
     <div class="wrap">
-      <span>© 2026 Tim Van Onckelen</span>
-      <span>Open source · MIT-licentie</span>
+      <span>{{t:home.2026_tim_van_onckelen}}</span>
+      <span>{{t:home.open_source_mit_license}}</span>
     </div>
   </div>
 </footer>

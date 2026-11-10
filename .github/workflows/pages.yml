@@ -37,8 +37,8 @@ jobs:
         run: npm run build
       - name: Assemble site
         run: |
-          mkdir -p _site
-          cp -r website/. _site/
+          # Renders the landing page in every language (website/build.mjs).
+          node website/build.mjs _site
           # Served as `curl -fsSL https://famlin.app/install.sh | sh`.
           cp scripts/install.sh _site/install.sh
           mkdir -p _site/docs

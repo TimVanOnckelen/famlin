@@ -348,6 +348,10 @@ jobs:
       - name: Build
         working-directory: docs
         run: npm run build
+      # The landing page (famlin.app) is rendered from website/src + website/locales;
+      # this fails on a template key with no English text or a leftover placeholder.
+      - name: Build landing page
+        run: node website/build.mjs
 
   # Guardrail for unmarked breaking changes: when a PR changes the OpenAPI
   # spec in a way oasdiff classifies as breaking, at least one commit in the
