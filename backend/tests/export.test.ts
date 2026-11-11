@@ -169,7 +169,9 @@ describe('export download tokens', () => {
       method: 'POST',
       url: '/api/api-tokens',
       headers: authHeader(admin),
-      payload: { name: 'script' },
+      // With admin access, so the 403 below is the session-only rule and not
+      // just a token that isn't allowed near /api/admin at all.
+      payload: { name: 'script', adminAccess: true },
     })
     expect(pat.statusCode).toBe(201)
     const res = await app.inject({

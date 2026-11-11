@@ -62,10 +62,15 @@ Personal API tokens for scripts and integrations are deliberately **not** revoke
 - Are stored only as a SHA-256 hash; the secret is shown once
 - Can have an expiry date and can be revoked individually with immediate effect
 - Have no more permissions than the account that created them
+- Do not carry admin rights unless an admin chose **Allow admin access** when creating the token. A token without it acts as an ordinary member, so a leaked script token cannot change server settings, manage users or export everything. Tokens that already existed when this option was added keep their admin rights; revoke and recreate them to narrow that.
 - Cannot be used to create more tokens
 - Are deleted together with their user
 
 Treat every token like a password. See [Using the API](/developers/api).
+
+### Secrets in server settings
+
+The OIDC client secret, the SMTP password and the Immich API key are write-only. The admin UI and the admin API report only whether each one is set, so an admin session or admin token that leaks cannot be used to read them. Changing the server a secret is sent to (issuer URL, SMTP host, Immich URL) without entering the secret again removes it, which stops a stolen session from redirecting a saved secret to another host. They are stored unencrypted in the database, so keep database backups as private as the database itself. See [Saved secrets](./admin-configuration.md#saved-secrets).
 
 ### SSO and Sign in with Apple
 

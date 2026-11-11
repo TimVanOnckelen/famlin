@@ -18,6 +18,7 @@ import { BrandingSection } from './BrandingSection'
 
 const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
 
+type SecretKey = 'oidcClientSecret' | 'smtpPass' | 'immichApiKey'
 type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
 
 interface SettingsCardProps {
@@ -67,17 +68,20 @@ export function ServerSettingsPage() {
     oidcIssuer: '',
     oidcClientId: '',
     oidcClientSecret: '',
+    oidcClientSecretSet: false,
     oidcScopes: '',
     appleBundleIds: '',
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
     smtpPass: '',
+    smtpPassSet: false,
     smtpFrom: '',
     pushNotificationsEnabled: true,
     emailNotificationsEnabled: true,
     immichServerUrl: '',
     immichApiKey: '',
+    immichApiKeySet: false,
     localMediaPath: '',
     updateCheckEnabled: true,
     backupIncludeMedia: true,
@@ -132,7 +136,7 @@ export function ServerSettingsPage() {
     setTestingImmich(true)
     setImmichTestResult(null)
     try {
-      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey)
+      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey ?? '')
       setImmichTestResult(result.ok ? 'ok' : result.error)
     } catch {
       setImmichTestResult('unreachable')
@@ -206,10 +210,62 @@ export function ServerSettingsPage() {
     )
 
   const oidcConfigured = Boolean(form.oidcIssuer && form.oidcClientId)
-  const immichConfigured = Boolean(form.immichServerUrl && form.immichApiKey)
+  // A saved secret never comes back from the server, so "has a value" is
+  // either something typed now or a saved one that isn't marked for removal.
+  const hasSecret = (key: SecretKey) => Boolean(form[key]) || (form[key] !== null && form[`${key}Set`])
+  const immichConfigured = Boolean(form.immichServerUrl && hasSecret('immichApiKey'))
   const localConfigured = Boolean(form.localMediaPath)
   const anyChannelEnabled = form.pushNotificationsEnabled || form.emailNotificationsEnabled
   const languageName = LANGUAGE_NAMES[form.defaultLanguage as SupportedLanguage] ?? form.defaultLanguage
+
+  // Password input for a write-only secret: shows that a value is saved
+  // without ever holding it, lets the admin replace or remove it, and warns
+  // when changing the server it belongs to will drop it (the backend does
+  // that so a saved secret can't be redirected to another host).
+  const secretInput = (
+    key: SecretKey,
+    destination: 'oidcIssuer' | 'smtpHost' | 'immichServerUrl',
+    onEdit?: () => void
+  ) => {
+    const saved = form[`${key}Set`]
+    const removing = form[key] === null
+    const moved = saved && !form[key] && !removing && settings !== null && form[destination] !== settings[destination]
+    return (
+      <>
+        <Input
+          type="password"
+          autoComplete="new-password"
+          value={form[key] ?? ''}
+          placeholder={saved && !removing ? t('serverSettings.secretSaved') : undefined}
+          onChange={(e) => {
+            updateField(key, e.target.value)
+            onEdit?.()
+          }}
+        />
+        {saved && removing && (
+          <span className="hint">
+            {t('serverSettings.secretWillBeRemoved')}{' '}
+            <Button variant="link" type="button" onClick={() => updateField(key, '')}>
+              {t('serverSettings.secretKeep')}
+            </Button>
+          </span>
+        )}
+        {saved && !removing && !form[key] && (
+          <Button
+            variant="link"
+            type="button"
+            onClick={() => {
+              updateField(key, null)
+              onEdit?.()
+            }}
+          >
+            {t('serverSettings.secretRemove')}
+          </Button>
+        )}
+        {moved && <span className="hint">{t('serverSettings.secretReenter')}</span>}
+      </>
+    )
+  }
 
   const configuredBadge = (ok: boolean) => (
     <Badge variant={ok ? 'success' : 'outline'}>
@@ -456,11 +512,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.oidcClientSecret')}
-                    <Input
-                      type="password"
-                      value={form.oidcClientSecret}
-                      onChange={(e) => updateField('oidcClientSecret', e.target.value)}
-                    />
+                    {secretInput('oidcClientSecret', 'oidcIssuer')}
                   </label>
                   <p className="hint">{t('serverSettings.oidcClientSecretHint')}</p>
                   <label>
@@ -544,7 +596,7 @@ export function ServerSettingsPage() {
                       />
                     </label>
                   </div>
-                  <div className="row">
+                  <div className="row" style={{ alignItems: 'flex-start' }}>
                     <label style={{ flex: 1 }}>
                       {t('serverSettings.smtpUsername')}
                       <Input
@@ -555,11 +607,7 @@ export function ServerSettingsPage() {
                     </label>
                     <label style={{ flex: 1 }}>
                       {t('serverSettings.smtpPassword')}
-                      <Input
-                        type="password"
-                        value={form.smtpPass}
-                        onChange={(e) => updateField('smtpPass', e.target.value)}
-                      />
+                      {secretInput('smtpPass', 'smtpHost')}
                     </label>
                   </div>
                   <label>
@@ -599,14 +647,7 @@ export function ServerSettingsPage() {
                   </label>
                   <label>
                     {t('serverSettings.immichApiKey')}
-                    <Input
-                      type="password"
-                      value={form.immichApiKey}
-                      onChange={(e) => {
-                        updateField('immichApiKey', e.target.value)
-                        setImmichTestResult(null)
-                      }}
-                    />
+                    {secretInput('immichApiKey', 'immichServerUrl', () => setImmichTestResult(null))}
                   </label>
                   <div className="settings-test-row">
                     <Button
@@ -614,7 +655,7 @@ export function ServerSettingsPage() {
                       type="button"
                       className="secondary"
                       onClick={handleTestImmich}
-                      disabled={testingImmich || !form.immichServerUrl || !form.immichApiKey}
+                      disabled={testingImmich || !form.immichServerUrl || !hasSecret('immichApiKey')}
                     >
                       {testingImmich ? t('serverSettings.immichTesting') : t('serverSettings.immichTestConnection')}
                     </Button>

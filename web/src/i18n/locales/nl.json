@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "API-tokens",
     "title": "API-tokens",
-    "intro": "Met persoonlijke toegangstokens gebruik je de Famlin-API vanuit je eigen scripts en integraties. Een token kan alles wat jouw account kan, dus behandel het als een wachtwoord.",
+    "intro": "Met persoonlijke toegangstokens gebruik je de Famlin-API vanuit je eigen scripts en integraties. Een token werkt met de toegang van je account tot je families, dus behandel het als een wachtwoord. Beheerdersrechten kan het alleen gebruiken als dat bij het aanmaken is toegestaan.",
     "docsLink": "Lees de API-documentatie",
+    "adminAccessLabel": "Beheerderstoegang toestaan",
+    "adminAccessHint": "Hiermee kan dit token serverinstellingen wijzigen, gebruikers beheren en alles exporteren. Laat dit uit, tenzij een script het echt nodig heeft.",
+    "adminAccessBadge": "Beheerder",
     "nameLabel": "Naam",
     "namePlaceholder": "bijv. Fotolijst-script",
     "expiryLabel": "Verloopt",

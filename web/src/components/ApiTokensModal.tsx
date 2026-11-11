@@ -9,11 +9,14 @@ import './ApiTokensModal.css'
 // mobile app has no equivalent screen): creating credentials is a
 // sit-down-at-a-desk task, and the API reference this pairs with lives on
 // the docs site.
-export function ApiTokensModal({ onClose }: { onClose: () => void }) {
+export function ApiTokensModal({ onClose, isAdmin = false }: { onClose: () => void; isAdmin?: boolean }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [expiresInDays, setExpiresInDays] = useState<number | undefined>(undefined)
+  // Admin rights are opt-in per token: a script that only reads the feed
+  // shouldn't be able to change server settings if its token leaks.
+  const [adminAccess, setAdminAccess] = useState(false)
   // The secret of the token created in this modal session — the only time
   // it's ever visible, so it stays on screen until the modal closes.
   const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null)
@@ -24,11 +27,13 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
   const tokensQuery = useQuery({ queryKey: ['api-tokens'], queryFn: fetchApiTokens })
 
   const createMutation = useMutation({
-    mutationFn: () => createApiToken({ name: name.trim(), expiresInDays }),
+    mutationFn: () =>
+      createApiToken({ name: name.trim(), expiresInDays, ...(isAdmin && adminAccess ? { adminAccess: true } : {}) }),
     onSuccess: (token) => {
       setCreatedToken(token)
       setCopied(false)
       setName('')
+      setAdminAccess(false)
       queryClient.invalidateQueries({ queryKey: ['api-tokens'] })
     },
   })
@@ -105,6 +110,15 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
               <option value="365">{t('apiTokens.expiryDays', { count: 365 })}</option>
             </select>
           </label>
+          {isAdmin && (
+            <label className="api-token-admin-field">
+              <input type="checkbox" checked={adminAccess} onChange={(e) => setAdminAccess(e.target.checked)} />
+              <span>
+                <span className="api-token-admin-label">{t('apiTokens.adminAccessLabel')}</span>
+                <span className="api-token-admin-hint">{t('apiTokens.adminAccessHint')}</span>
+              </span>
+            </label>
+          )}
           <button type="submit" className="btn btn-primary" disabled={!name.trim() || createMutation.isPending}>
             {createMutation.isPending ? t('common.loading') : t('apiTokens.create')}
           </button>
@@ -121,6 +135,9 @@ export function ApiTokensModal({ onClose }: { onClose: () => void }) {
               <li key={token.id} className="api-token-item">
                 <div className="api-token-item-main">
                   <span className="api-token-item-name">{token.name}</span>
+                  {token.adminAccess && (
+                    <span className="api-token-admin-badge">{t('apiTokens.adminAccessBadge')}</span>
+                  )}
                   <code className="api-token-item-preview">famlin_pat_{token.tokenPreview}…</code>
                 </div>
                 <div className="api-token-item-meta">

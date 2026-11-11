@@ -236,6 +236,103 @@ describe('admin routes', () => {
       const setting = await prisma.setting.findUnique({ where: { key: 'oidcName' } })
       expect(setting).toBeNull()
     })
+
+    // The settings API is write-only for credentials: a stolen admin session
+    // must not also yield the SMTP password, OIDC secret or Immich key.
+    describe('secret settings', () => {
+      const stored = async (key: string) => (await prisma.setting.findUnique({ where: { key } }))?.value
+      const patch = (admin: Awaited<ReturnType<typeof createUser>>, payload: Record<string, unknown>) =>
+        app.inject({ method: 'PATCH', url: '/api/admin/settings', headers: authHeader(admin), payload })
+
+      it('never returns a secret, only whether one is set', async () => {
+        const admin = await createUser({ isAdmin: true })
+        const saved = await patch(admin, {
+          smtpHost: 'smtp.example.com',
+          smtpPass: 'hunter2-smtp',
+          oidcIssuer: 'https://id.example.com',
+          oidcClientSecret: 'hunter2-oidc',
+          immichServerUrl: 'https://immich.example.com',
+          immichApiKey: 'hunter2-immich',
+        })
+        expect(saved.statusCode).toBe(200)
+
+        const read = await app.inject({ method: 'GET', url: '/api/admin/settings', headers: authHeader(admin) })
+        for (const res of [saved, read]) {
+          expect(res.body).not.toContain('hunter2')
+          expect(res.json()).toMatchObject({
+            smtpPass: '',
+            smtpPassSet: true,
+            oidcClientSecret: '',
+            oidcClientSecretSet: true,
+            immichApiKey: '',
+            immichApiKeySet: true,
+          })
+        }
+        expect(await stored('smtpPass')).toBe('hunter2-smtp')
+      })
+
+      it('keeps a secret when it is sent back empty, and removes it on null', async () => {
+        const admin = await createUser({ isAdmin: true })
+        await patch(admin, { smtpHost: 'smtp.example.com', smtpPass: 'hunter2-smtp' })
+
+        // What the admin UI does: it posts back the redacted form.
+        await patch(admin, { smtpHost: 'smtp.example.com', smtpPass: '', smtpUser: 'mailer' })
+        expect(await stored('smtpPass')).toBe('hunter2-smtp')
+
+        const cleared = await patch(admin, { smtpPass: null })
+        expect(cleared.json().smtpPassSet).toBe(false)
+        expect(await stored('smtpPass')).toBe('')
+      })
+
+      it('drops a secret when the server it is sent to changes without a new one', async () => {
+        const admin = await createUser({ isAdmin: true })
+        await patch(admin, {
+          smtpHost: 'smtp.example.com',
+          smtpPass: 'hunter2-smtp',
+          immichServerUrl: 'https://immich.example.com',
+          immichApiKey: 'hunter2-immich',
+        })
+
+        const moved = await patch(admin, {
+          smtpHost: 'smtp.attacker.example',
+          immichServerUrl: 'https://immich.example.com/',
+        })
+        expect(moved.json()).toMatchObject({ smtpPassSet: false, immichApiKeySet: true })
+        expect(await stored('smtpPass')).toBe('')
+
+        const rekeyed = await patch(admin, { smtpHost: 'smtp.other.example', smtpPass: 'new-pass' })
+        expect(rekeyed.json().smtpPassSet).toBe(true)
+        expect(await stored('smtpPass')).toBe('new-pass')
+      })
+
+      it('tests Immich with the saved key only against the saved server', async () => {
+        const admin = await createUser({ isAdmin: true })
+        await patch(admin, { immichServerUrl: 'https://immich.example.com', immichApiKey: 'hunter2-immich' })
+
+        const calls: { url: string; key: string | null }[] = []
+        const realFetch = globalThis.fetch
+        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+          calls.push({ url: String(input), key: new Headers(init?.headers).get('x-api-key') })
+          return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } })
+        }) as typeof fetch
+        try {
+          const test = (serverUrl: string) =>
+            app.inject({
+              method: 'POST',
+              url: '/api/admin/immich/test',
+              headers: authHeader(admin),
+              payload: { serverUrl },
+            })
+          expect((await test('https://immich.example.com')).json()).toEqual({ ok: true })
+          expect((await test('https://attacker.example')).json()).toEqual({ ok: false, error: 'unauthorized' })
+        } finally {
+          globalThis.fetch = realFetch
+        }
+        expect(calls.length).toBeGreaterThan(0)
+        expect(calls.every((c) => c.url.startsWith('https://immich.example.com/'))).toBe(true)
+        expect(calls.every((c) => c.key === 'hunter2-immich')).toBe(true)
+      })
+    })
   })
 
   describe('user management', () => {

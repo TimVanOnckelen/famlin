@@ -94,6 +94,17 @@ The one setting that exists, **Extra Apple bundle IDs** (`/admin` → Server set
 
 Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC or Sign in with Apple if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid login — unless it arrives through a valid invite link, which is its own authorization and deliberately bypasses the allow-list.
 
+## Saved secrets
+
+Three settings are credentials for other systems: the OIDC **Client secret**, the **SMTP password** and the Immich **API key**. Famlin stores them but never shows them again, not in the admin UI and not through the API. A stolen admin session therefore does not also hand over your mail account, your sign-in provider or your photo library.
+
+![A saved SMTP password shown as "Saved. Type to replace it" with a "Remove saved value" link](./img/admin-saved-secret.png)
+
+- A saved secret shows as **Saved. Type to replace it**. Leave the field empty to keep it.
+- **Remove saved value** deletes it when you save.
+- Changing the address a secret belongs to (the OIDC issuer URL, the SMTP host or the Immich server URL) removes the saved secret unless you enter it again in the same save. Otherwise someone with admin access could point Famlin at a server of their own and collect the secret there.
+- **Test connection** for Immich uses the saved key only against the saved server URL. To test a different address, type the key.
+
 ## Media integrations
 
 Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. These sources are read-only: Famlin never writes to them, and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.

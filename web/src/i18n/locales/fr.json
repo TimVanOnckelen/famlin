@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "Jetons d'API",
     "title": "Jetons d'API",
-    "intro": "Les jetons d'accès personnels permettent d'utiliser l'API Famlin depuis tes propres scripts et intégrations. Un jeton peut faire tout ce que ton compte peut faire : traite-le comme un mot de passe.",
+    "intro": "Les jetons d'accès personnels permettent d'utiliser l'API Famlin depuis tes propres scripts et intégrations. Un jeton agit avec l'accès de ton compte à tes familles : traite-le comme un mot de passe. Il ne peut utiliser des droits d'administrateur que si cela a été autorisé à sa création.",
     "docsLink": "Lire la documentation de l'API",
+    "adminAccessLabel": "Autoriser l'accès administrateur",
+    "adminAccessHint": "Permet à ce jeton de modifier les réglages du serveur, de gérer les utilisateurs et de tout exporter. Laisse cette option désactivée sauf si un script en a vraiment besoin.",
+    "adminAccessBadge": "Admin",
     "nameLabel": "Nom",
     "namePlaceholder": "ex. : Script du cadre photo",
     "expiryLabel": "Expiration",

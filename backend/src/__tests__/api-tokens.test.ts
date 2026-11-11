@@ -187,3 +187,73 @@ describe('revoking API tokens', () => {
     expect(stillWorks.statusCode).toBe(200)
   })
 })
+
+describe('admin access', () => {
+  let admin: { id: string; email: string; name: string; tokenVersion: number }
+  let adminSession: string
+
+  beforeAll(async () => {
+    admin = await prisma.user.create({
+      data: { email: `pat-admin-${runId}@test.local`, name: 'PAT Admin', isAdmin: true },
+    })
+    adminSession = createUserToken({
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      isAdmin: true,
+      tokenVersion: admin.tokenVersion,
+    })
+  })
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { id: admin.id } })
+  })
+
+  const adminSettings = (token: string) =>
+    app.inject({ method: 'GET', url: '/api/admin/settings', headers: { authorization: `Bearer ${token}` } })
+
+  it("gives an admin's token no admin rights unless it was created with them", async () => {
+    const plain = await createPat(adminSession, { name: 'photo frame' })
+    expect(plain.statusCode).toBe(201)
+    expect(plain.json().adminAccess).toBe(false)
+    expect((await adminSettings(plain.json().token)).statusCode).toBe(403)
+
+    // Still a working member token.
+    const me = await app.inject({
+      method: 'GET',
+      url: '/api/groups',
+      headers: { authorization: `Bearer ${plain.json().token}` },
+    })
+    expect(me.statusCode).toBe(200)
+
+    const scoped = await createPat(adminSession, { name: 'backup script', adminAccess: true })
+    expect(scoped.statusCode).toBe(201)
+    expect(scoped.json().adminAccess).toBe(true)
+    expect((await adminSettings(scoped.json().token)).statusCode).toBe(200)
+  })
+
+  it('refuses admin access to a non-admin, and lists the flag', async () => {
+    const res = await createPat(sessionToken, { name: 'wishful', adminAccess: true })
+    expect(res.statusCode).toBe(403)
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/api-tokens',
+      headers: { authorization: `Bearer ${adminSession}` },
+    })
+    const byName = Object.fromEntries(
+      (list.json().items as { name: string; adminAccess: boolean }[]).map((t) => [t.name, t.adminAccess])
+    )
+    expect(byName).toMatchObject({ 'photo frame': false, 'backup script': true })
+  })
+
+  it('loses admin rights when its owner is demoted', async () => {
+    const scoped = await createPat(adminSession, { name: 'demoted', adminAccess: true })
+    await prisma.user.update({ where: { id: admin.id }, data: { isAdmin: false } })
+    try {
+      expect((await adminSettings(scoped.json().token)).statusCode).toBe(403)
+    } finally {
+      await prisma.user.update({ where: { id: admin.id }, data: { isAdmin: true } })
+    }
+  })
+})
