@@ -1,0 +1,75 @@
+name: Expo dependency sync
+
+# Dependabot deliberately ignores the Expo/React Native surface of mobile/
+# (see .github/dependabot.yml): those packages must match the exact versions
+# in expo/bundledNativeModules.json, and only `npx expo install` knows them.
+# So whenever Expo ships patch releases for the current SDK, CI's
+# `expo install --check` starts failing until someone runs
+# `npx expo install --fix` by hand. This job does that on a schedule and keeps
+# one PR open with the result. It never changes the SDK version itself — an
+# SDK upgrade (`npx expo install expo@^NN --fix`) stays a manual job.
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: expo-deps
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Align Expo packages with the SDK
+        working-directory: mobile
+        run: |
+          npx expo install --fix
+          npx expo install --check
+
+      - name: Open or update the pull request
+        env:
+          # PRs opened with GITHUB_TOKEN don't trigger CI. Set an optional
+          # DEPS_PR_TOKEN secret (fine-grained PAT: contents + pull requests
+          # write on this repo) to get CI on these PRs automatically.
+          GH_TOKEN: ${{ secrets.DEPS_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH: chore/expo-deps
+        run: |
+          if git diff --quiet -- mobile/package.json mobile/package-lock.json; then
+            echo "Expo packages already match the SDK."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git checkout -B "$BRANCH"
+          git add mobile/package.json mobile/package-lock.json
+          changes=$(git diff --cached -U0 mobile/package.json | grep -E '^\+\s+"' | sed -E 's/^\+\s+/- /; s/,$//')
+          git commit -m "chore(mobile): align Expo packages with the SDK"
+          git push --force origin "$BRANCH"
+          body=$(printf 'Ran `npx expo install --fix` in `mobile/` so the Expo packages match `expo/bundledNativeModules.json` for the current SDK (what CI'"'"'s `expo install --check` enforces).\n\n%s\n\nOpened automatically by the *Expo dependency sync* workflow. Without a `DEPS_PR_TOKEN` secret CI does not run on this PR by itself; close and reopen it to start CI before merging.' "$changes")
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr edit "$BRANCH" --body "$body"
+            echo "Updated the open Expo dependency pull request."
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(mobile): align Expo packages with the SDK" \
+              --label dependencies --label mobile \
+              --body "$body"
+          fi
