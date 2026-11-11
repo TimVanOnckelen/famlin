@@ -91,7 +91,27 @@ export interface VolumeBackup {
   serverVersion: string | null
   mediaLocation: 'archive' | 'storage' | 'mirror' | null
   credentials: boolean
+  // Taken automatically right before a restore.
+  safety?: boolean
   valid: boolean
+}
+
+export interface RestoreStatus {
+  running: boolean
+  file: string | null
+  startedAt: string | null
+  finishedAt: string | null
+  ok: boolean | null
+  error: string | null
+  safetyBackup: string | null
+}
+
+export interface BackupsOverview {
+  backups: VolumeBackup[]
+  backupRunning: boolean
+  restore: RestoreStatus
+  // What to type to confirm a restore: the family's name.
+  confirmName: string
 }
 
 export class ApiError extends Error {
@@ -536,6 +556,41 @@ export const api = {
   // A real browser navigation rather than fetch + blob, so the browser streams
   // a multi-GB zip straight to disk with its own progress UI. Navigation can't
   // send the Authorization header, hence the one-time download token.
+  // The admin Backups page.
+  getBackups: () => request<BackupsOverview>('/api/admin/backups'),
+
+  // A plain navigation with a one-time token, like downloadExport.
+  downloadBackup: async (file: string): Promise<void> => {
+    const { token } = await request<{ token: string }>('/api/admin/export/token', { method: 'POST' })
+    const link = document.createElement('a')
+    link.href = `/api/admin/backups/${encodeURIComponent(file)}/download?downloadToken=${encodeURIComponent(token)}`
+    link.download = ''
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  },
+
+  deleteBackup: async (file: string): Promise<void> => {
+    const token = getToken()
+    const res = await fetch(`/api/admin/backups/${encodeURIComponent(file)}`, {
+      method: 'DELETE',
+      headers: { 'Accept-Language': currentLanguage(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
+      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
+    }
+  },
+
+  restoreBackupOnServer: (file: string, confirm: string) =>
+    request<{ started: true }>(`/api/admin/backups/${encodeURIComponent(file)}/restore`, {
+      method: 'POST',
+      body: { confirm },
+    }),
+
+  // Public: the restore signs everyone out, the admin who started it too.
+  getRestoreStatus: () => request<RestoreStatus>('/api/auth/restore-status'),
+
   downloadExport: async (includeMedia = true): Promise<void> => {
     const { token } = await request<{ token: string }>('/api/admin/export/token', { method: 'POST' })
     const params = new URLSearchParams({ includeMedia: String(includeMedia), downloadToken: token })

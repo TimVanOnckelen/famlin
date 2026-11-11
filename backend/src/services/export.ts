@@ -76,7 +76,8 @@ export type MediaLocation = 'archive' | 'storage' | 'mirror'
 export async function buildExportArchive(
   includeMedia: boolean,
   onError: (err: Error) => void,
-  options: { mediaLocation?: Exclude<MediaLocation, 'archive'> } = {}
+  // `trigger`: what made a scheduled-job archive ('scheduled', 'manual', 'safety').
+  options: { mediaLocation?: Exclude<MediaLocation, 'archive'>; trigger?: string } = {}
 ): Promise<Archiver> {
   const [
     users,
@@ -189,6 +190,7 @@ export async function buildExportArchive(
     // The users file carries password hashes: no admin account needs to be
     // created on restore.
     credentials: true,
+    ...(options.trigger ? { trigger: options.trigger } : {}),
     includeMedia,
     mediaLocation: (includeMedia ? 'archive' : (options.mediaLocation ?? 'storage')) satisfies MediaLocation,
     requiredMedia,

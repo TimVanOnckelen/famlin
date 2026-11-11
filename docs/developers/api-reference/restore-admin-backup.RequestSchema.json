@@ -1,0 +1,1 @@
+{"title":"Body","body":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["confirm"],"properties":{"confirm":{"type":"string","description":"`confirmName` from GET /api/admin/backups, case-insensitive"}}}}}}}

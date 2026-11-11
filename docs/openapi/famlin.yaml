@@ -3780,6 +3780,179 @@ paths:
                   token: { type: string }
         '401': { description: Authentication required }
         '403': { description: Administrator required, or called with an API token }
+  /api/admin/backups:
+    get:
+      operationId: listAdminBackups
+      tags: [Storage administration]
+      summary: List the backups in the backups volume
+      description: |
+        Admin only. Every backup in the backups volume — Famlin backup zips and,
+        until 1.0.0, legacy dumps — newest first, as `GET /api/auth/setup/backups`
+        lists them (plus `safety`), together with whether a backup is running,
+        the last restore's status, and `confirmName`: what to type to confirm a
+        restore (the family's brand name, or `Famlin`).
+      responses:
+        '200':
+          description: The backups page's data
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [backups, backupRunning, restore, confirmName]
+                properties:
+                  backups:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, type, size, createdAt, serverVersion, mediaLocation, credentials, safety, valid]
+                      properties:
+                        name: { type: string }
+                        type: { type: string, enum: [archive, dump] }
+                        size: { type: integer }
+                        createdAt: { type: string, format: date-time }
+                        serverVersion: { type: string, nullable: true }
+                        mediaLocation: { type: string, nullable: true, enum: [archive, storage, mirror] }
+                        credentials: { type: boolean }
+                        safety: { type: boolean, description: Taken automatically right before a restore }
+                        valid: { type: boolean }
+                  backupRunning: { type: boolean }
+                  restore: { $ref: '#/components/schemas/RestoreStatus' }
+                  confirmName: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required (restore and delete: a signed-in admin, not an API token)' }
+  /api/admin/backups/{file}/download:
+    get:
+      operationId: downloadAdminBackup
+      tags: [Storage administration]
+      summary: Download a backup from the backups volume
+      description: |
+        Admin only. Streams the file. Like `GET /api/admin/export`, it accepts a
+        one-time `?downloadToken=` from `POST /api/admin/export/token` instead
+        of an Authorization header, for plain browser downloads.
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema: { type: string }
+          description: A backup file name from GET /api/admin/backups (`famlin-backup-<timestamp>.zip` or `famlin-<timestamp>.dump`)
+        - name: downloadToken
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: The backup file
+          content:
+            application/zip: { schema: { type: string, format: binary } }
+            application/octet-stream: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required (restore and delete: a signed-in admin, not an API token)' }
+        '404':
+          description: No such backup in the volume
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/admin/backups/{file}:
+    delete:
+      operationId: deleteAdminBackup
+      tags: [Storage administration]
+      summary: Delete a backup from the backups volume
+      description: Signed-in admin only (an API token gets `403`). The shared media mirror is left alone.
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema: { type: string }
+          description: A backup file name from GET /api/admin/backups (`famlin-backup-<timestamp>.zip` or `famlin-<timestamp>.dump`)
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required (restore and delete: a signed-in admin, not an API token)' }
+        '404':
+          description: No such backup in the volume
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: A backup or restore is running
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/admin/backups/{file}/restore:
+    post:
+      operationId: restoreAdminBackup
+      tags: [Storage administration]
+      summary: Restore a backup onto this running server
+      description: |
+        Signed-in admin only — an API token gets `403`, even with admin access.
+        Replaces everything (every row; media the backup needs that storage
+        lacks come from the backups mirror) with the backup. Runs in the
+        background: first a safety backup of the current state (if it fails,
+        nothing is restored), then the restore. Meanwhile every other API
+        request gets `503` with `code: RESTORE_IN_PROGRESS`. Afterwards every
+        session has ended, the caller's included; poll
+        `GET /api/auth/restore-status` for the outcome. Credential settings
+        are kept unless the restored settings change their destination.
+        Rate-limited to 3 requests per hour per IP.
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema: { type: string }
+          description: A backup file name from GET /api/admin/backups (`famlin-backup-<timestamp>.zip` or `famlin-<timestamp>.dump`)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm: { type: string, description: '`confirmName` from GET /api/admin/backups, case-insensitive' }
+      responses:
+        '202':
+          description: Started
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [started]
+                properties:
+                  started: { type: boolean, enum: [true] }
+        '400':
+          description: The confirmation doesn't match
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required (restore and delete: a signed-in admin, not an API token)' }
+        '404':
+          description: No such backup in the volume
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: A backup or another restore is running
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+  /api/auth/restore-status:
+    get:
+      operationId: getRestoreStatus
+      tags: [Storage administration]
+      summary: Progress of a restore onto this running server
+      description: |
+        Public: a restore signs out the admin who started it, so the admin UI
+        polls this. Reachable while a restore runs (every other API request
+        gets `503`). Reports a state and an error code only.
+      security: []
+      responses:
+        '200':
+          description: The current or last restore since the server started
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestoreStatus' }
   /api/admin/export:
     get:
       operationId: exportAdminData
@@ -4334,6 +4507,21 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    RestoreStatus:
+      type: object
+      required: [running, file, startedAt, finishedAt, ok, error, safetyBackup]
+      properties:
+        running: { type: boolean }
+        file: { type: string, nullable: true, description: The backup being (or last) restored }
+        startedAt: { type: string, format: date-time, nullable: true }
+        finishedAt: { type: string, format: date-time, nullable: true }
+        ok: { type: boolean, nullable: true, description: '`null` until a restore has finished since the server started' }
+        error:
+          type: string
+          nullable: true
+          enum: [unknownBackup, busy, safetyBackupFailed, archiveTooNew, invalidArchive, missingMedia, adminRequired, restoreFailed, null]
+          description: A code only, never a message
+        safetyBackup: { type: string, nullable: true, description: File name of the safety backup taken before the restore }
     Device:
       type: object
       description: Latest mobile diagnostics for one install; contains no timestamps or activity history.
