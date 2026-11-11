@@ -654,6 +654,18 @@ const sidebar: SidebarsConfig = {
           label: "Restore a scheduled-backup dump on a fresh server",
           className: "api-method post",
         },
+        {
+          type: "doc",
+          id: "api-reference/list-setup-backups",
+          label: "List every backup in the backups volume on a fresh server",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/restore-setup-backup",
+          label: "Restore a backup from the backups volume on a fresh server",
+          className: "api-method post",
+        },
       ],
     },
     {

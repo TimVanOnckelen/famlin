@@ -54,7 +54,7 @@ export interface ServerSettings {
   backupSchedule: BackupSchedule
   // Server-local hour (0–23) the backup runs at; weekly backups run Sundays.
   backupHour: number
-  // How many DB dumps to keep.
+  // How many backups (zips, and dumps until v1.0.0) to keep.
   backupRetention: number
   // Per-family branding (services/branding/). Deliberately not writable via
   // PATCH /api/admin/settings — only the validated /api/admin/branding routes
@@ -238,6 +238,13 @@ export async function updateSettings(partial: Partial<ServerSettings>) {
 // empty string plus a `<key>Set` flag instead; see redactSettings().
 export const SECRET_SETTING_KEYS = ['oidcClientSecret', 'smtpPass', 'immichApiKey'] as const
 export type SecretSettingKey = (typeof SECRET_SETTING_KEYS)[number]
+
+// Settings a Famlin backup carries (services/export.ts) and a restore writes
+// back (services/import.ts): everything except credentials, which an admin
+// re-enters after a restore, and branding, which travels in its own file.
+export const RESTORABLE_SETTING_KEYS: readonly (keyof ServerSettings)[] = SETTING_KEYS.filter(
+  (key) => !(SECRET_SETTING_KEYS as readonly string[]).includes(key) && !key.startsWith('brand')
+)
 
 export type RedactedServerSettings = ServerSettings & Record<`${SecretSettingKey}Set`, boolean>
 

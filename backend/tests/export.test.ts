@@ -116,8 +116,17 @@ describe('GET /api/admin/export', () => {
     }
   })
 
-  it('never includes password hashes', async () => {
+  it('includes password hashes and non-secret settings, never credential settings', async () => {
     const admin = await createUser({ isAdmin: true, password: 'super-secret-pw' })
+    await prisma.setting.createMany({
+      data: [
+        { key: 'defaultLanguage', value: 'nl' },
+        { key: 'smtpHost', value: 'smtp.example.com' },
+        { key: 'smtpPass', value: 'distinctive-smtp-secret' },
+        { key: 'oidcClientSecret', value: 'distinctive-oidc-secret' },
+        { key: 'immichApiKey', value: 'distinctive-immich-key' },
+      ],
+    })
     const stored = await prisma.user.findUniqueOrThrow({
       where: { id: admin.id },
       select: { passwordHash: true },
@@ -133,8 +142,18 @@ describe('GET /api/admin/export', () => {
     expect(res.statusCode).toBe(200)
     const body = res.rawPayload.toString('latin1')
 
-    expect(body).not.toContain('passwordHash')
-    expect(body).not.toContain(stored.passwordHash as string)
+    // A backup restores everyone's sign-in (issue #461)...
+    expect(body).toContain(stored.passwordHash as string)
+    expect(body).toContain('"format": 2')
+    expect(body).toContain('"credentials": true')
+    expect(body).toContain('"key": "smtpHost"')
+    // ...but never a third-party credential.
+    expect(body).not.toContain('distinctive-smtp-secret')
+    expect(body).not.toContain('distinctive-oidc-secret')
+    expect(body).not.toContain('distinctive-immich-key')
+    await prisma.setting.deleteMany({
+      where: { key: { in: ['defaultLanguage', 'smtpHost', 'smtpPass', 'oidcClientSecret', 'immichApiKey'] } },
+    })
   })
 })
 

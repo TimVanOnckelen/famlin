@@ -1,5 +1,5 @@
 import { isRecordNotFound, isUniqueConstraintViolation } from '../utils/prismaErrors.js'
-import { FastifyInstance } from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import fs from 'fs'
@@ -31,7 +31,9 @@ import { buildMemberExportArchive } from '../services/memberExport.js'
 import { deleteStoriesWithMedia } from '../services/stories.js'
 import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../services/import.js'
 import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
-import { BACKUP_DB_DIR } from '../services/backup/index.js'
+import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
+import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
+import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
   appleLoginBodySchema,
@@ -42,6 +44,7 @@ import {
   registerBodySchema,
   setupBodySchema,
   restoreDumpBodySchema,
+  restoreBackupBodySchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -236,20 +239,133 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // Public, and like /setup only usable on a fresh install: restores an
-  // archive from GET /api/admin/export (services/import.ts) and provisions
-  // the restoring person's admin login in the same step. It lives here
+  // Shared by the three restore routes below.
+  function sendRestoreError(request: FastifyRequest, reply: FastifyReply, err: RestoreError) {
+    const t = getT(request)
+    request.log.warn({ err }, 'restore refused')
+    switch (err.code) {
+      case 'notEmpty':
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+      case 'busy':
+        return reply.status(409).send({ error: t('errors.setupInProgress') })
+      case 'missingMedia':
+        return reply.status(400).send({ error: t('errors.restoreMediaMissing'), missingMedia: err.missingKeys })
+      case 'archiveTooNew':
+        return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
+      case 'adminRequired':
+        // The client asks for account fields and retries.
+        return reply.status(400).send({ error: t('errors.restoreAdminRequired'), code: 'restoreAdminRequired' })
+      default:
+        return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') })
+    }
+  }
+
+  function sendDumpError(request: FastifyRequest, reply: FastifyReply, err: RestoreDumpError) {
+    const t = getT(request)
+    // pg_restore's stderr stays in the server log, never the response.
+    if (err.code === 'migrateFailed') {
+      request.log.error({ err }, 'dump restored, but prisma migrate deploy failed: restart the server')
+    } else {
+      request.log.warn({ err }, 'dump restore refused or failed')
+    }
+    switch (err.code) {
+      case 'notEmpty':
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+      case 'busy':
+        return reply.status(409).send({ error: t('errors.setupInProgress') })
+      case 'unknownDump':
+        return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
+      case 'invalidDump':
+        return reply.status(400).send({ error: t('errors.restoreDumpInvalid') })
+      case 'dumpTooNew':
+        return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
+      case 'noPrivilege':
+        return reply.status(500).send({ error: t('errors.restoreDumpNoPrivilege') })
+      case 'migrateFailed':
+        return reply.status(500).send({ error: t('errors.restoreDumpMigrateFailed') })
+      default:
+        return reply.status(500).send({ error: t('errors.restoreDumpFailed') })
+    }
+  }
+
+  // Runs an archive restore and builds the response: a session for the
+  // restoring admin when account fields were given, otherwise just the
+  // counts — everyone signs in with their restored account.
+  async function restoreArchiveAndRespond(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    zipPath: string,
+    workDir: string,
+    admin: { email: string; name: string; password: string } | undefined
+  ) {
+    let result
+    try {
+      result = await restoreArchive({
+        zipPath,
+        workDir,
+        admin: admin && {
+          email: admin.email.toLowerCase().trim(),
+          name: admin.name,
+          passwordHash: await hashPassword(admin.password),
+        },
+        lockKey: SETUP_ADVISORY_LOCK_KEY,
+      })
+    } catch (err) {
+      if (!(err instanceof RestoreError)) throw err
+      return sendRestoreError(request, reply, err)
+    }
+
+    // New install (restored or not): backups on by default, unless the
+    // archive itself carried an explicit choice.
+    if (!(await prisma.setting.findUnique({ where: { key: 'backupEnabled' } }))) {
+      try {
+        await updateSettings({ backupEnabled: true })
+      } catch (err) {
+        request.log.warn({ err }, 'could not enable scheduled backups by default')
+      }
+    }
+
+    if (!result.adminUserId) return { restored: true, counts: result.counts }
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })
+    const token = createUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      tokenVersion: user.tokenVersion,
+    })
+    return { restored: true, token, user: sanitizeUser(user), counts: result.counts }
+  }
+
+  // After a dump restore: the dump has no list of the files it needs, so put
+  // back everything the media mirror has that storage lacks. Best effort —
+  // the database is already restored, so a failure here is reported, not
+  // rolled back.
+  async function restoreDumpMedia(request: FastifyRequest) {
+    try {
+      const media = await restoreAllMediaFromMirror()
+      return { restored: media.restored, restoredBytes: media.restoredBytes }
+    } catch (err) {
+      request.log.error({ err }, 'dump restored, but copying media from the backups mirror failed')
+      return null
+    }
+  }
+
+  // Public, and like /setup only usable on a fresh install: restores a
+  // Famlin backup or export zip (services/import.ts), uploaded. It lives here
   // rather than under /api/admin because an empty instance has no admin to
   // authenticate as — the "zero users" check under SETUP_ADVISORY_LOCK_KEY is
   // its authorization, exactly as it is for /setup (whoever reaches a fresh
   // server first can already make themselves its admin).
   //
-  // multipart/form-data: an `archive` file plus the `email`, `name`,
-  // `password` fields /setup takes. If the backup has an account with that
-  // email, it's promoted to admin and given the password; otherwise a new
-  // admin account is created alongside the restored ones. Every other
-  // restored account has no password — members sign back in via SSO once
-  // it's reconfigured, or after an admin resets their password.
+  // multipart/form-data: an `archive` file, plus optionally the `email`,
+  // `name`, `password` fields /setup takes. A Famlin backup (format 2+)
+  // restores every account with its password, so they're not needed; an
+  // older export carries no credentials and 400s `restoreAdminRequired`
+  // without them. When given: if the backup has an account with that email,
+  // it's promoted to admin and given the password; otherwise a new admin
+  // account is created alongside the restored ones, and a session is issued.
   fastify.post(
     '/setup/restore',
     { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
@@ -291,67 +407,70 @@ export default async function authRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({ error: t('errors.restoreArchiveMissing') })
         }
 
-        const { email, name, password } = setupBodySchema.parse(fields)
-        const passwordHash = await hashPassword(password)
-
-        let result
-        try {
-          result = await restoreArchive({
-            zipPath,
-            workDir,
-            admin: { email: email.toLowerCase().trim(), name, passwordHash },
-            lockKey: SETUP_ADVISORY_LOCK_KEY,
-          })
-        } catch (err) {
-          if (!(err instanceof RestoreError)) throw err
-          request.log.warn({ err }, 'restore refused')
-          if (err.code === 'notEmpty') {
-            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
-          }
-          if (err.code === 'busy') {
-            return reply.status(409).send({ error: t('errors.setupInProgress') })
-          }
-          if (err.code === 'missingMedia') {
-            return reply.status(400).send({ error: t('errors.restoreMediaMissing'), missingMedia: err.missingKeys })
-          }
-          if (err.code === 'archiveTooNew') {
-            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
-          }
-          return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') })
-        }
-
-        // New install (restored or not): backups on by default, unless the
-        // archive itself carried an explicit choice.
-        if (!(await prisma.setting.findUnique({ where: { key: 'backupEnabled' } }))) {
-          try {
-            await updateSettings({ backupEnabled: true })
-          } catch (err) {
-            request.log.warn({ err }, 'could not enable scheduled backups by default')
-          }
-        }
-
-        const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })
-        const token = createUserToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.isAdmin,
-          tokenVersion: user.tokenVersion,
-        })
-
-        return {
-          token,
-          user: sanitizeUser(user),
-          counts: result.counts,
-        }
+        const hasAdminFields = ['email', 'name', 'password'].some((k) => fields[k])
+        const admin = hasAdminFields ? setupBodySchema.parse(fields) : undefined
+        return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
       } finally {
         await fsp.rm(workDir, { recursive: true, force: true })
       }
     }
   )
 
-  // Public, zero-users only, like /setup/restore: the scheduled-backup dumps
-  // already in the backups volume's db/ folder, for the setup screen to offer.
+  // Public, zero-users only, like /setup/restore: every backup already in
+  // the backups volume — Famlin backup zips and legacy .dump files — for the
+  // setup screen to offer.
+  fastify.get(
+    '/setup/backups',
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
+      }
+      return listBackups(BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR)
+    }
+  )
+
+  // Restores one of those backups. A zip goes through the same import as an
+  // upload (media the zip lacks come from the backups volume's mirror); a
+  // .dump goes through pg_restore (services/backup/restoreDump.ts — only ever
+  // from the volume, never uploaded, since its SQL runs as the database
+  // role), followed by copying the mirror's media back.
+  fastify.post(
+    '/setup/restore-backup',
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request)
+      const { file, admin } = restoreBackupBodySchema.parse(request.body)
+      if ((await prisma.user.count()) > 0) {
+        return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
+      }
+
+      if (parseBackupArchiveFileName(file)) {
+        const zipPath = path.join(BACKUP_ARCHIVE_DIR, file)
+        const stat = await fsp.lstat(zipPath).catch(() => null)
+        if (!stat?.isFile()) return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
+        const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
+        await fsp.mkdir(workDir, { recursive: true })
+        try {
+          return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
+        } finally {
+          await fsp.rm(workDir, { recursive: true, force: true })
+        }
+      }
+
+      try {
+        await restoreDump(BACKUP_DB_DIR, file, SETUP_ADVISORY_LOCK_KEY)
+      } catch (err) {
+        if (!(err instanceof RestoreDumpError)) throw err
+        if (err.code === 'unknownDump') return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
+        return sendDumpError(request, reply, err)
+      }
+      return { restored: true, media: await restoreDumpMedia(request) }
+    }
+  )
+
+  // Legacy (kept for API compatibility; GET /setup/backups lists these too):
+  // the scheduled-backup dumps in the backups volume's db/ folder.
   fastify.get(
     '/setup/dumps',
     { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
@@ -363,10 +482,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   )
 
-  // Restores one of those dumps over the whole database
-  // (services/backup/restoreDump.ts). Deliberately no upload: pg_restore runs
-  // the dump's SQL as the database role, so only a file someone with access
-  // to the server's backups volume put there is ever restored. The old
+  // Legacy (kept for API compatibility; POST /setup/restore-backup does the
+  // same): restores one of those dumps over the whole database. The old
   // accounts, passwords and settings come back, so no session is issued —
   // the person signs in with their existing account afterwards.
   fastify.post(
@@ -383,33 +500,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
         await restoreDump(BACKUP_DB_DIR, name, SETUP_ADVISORY_LOCK_KEY)
       } catch (err) {
         if (!(err instanceof RestoreDumpError)) throw err
-        // pg_restore's stderr stays in the server log, never the response.
-        if (err.code === 'migrateFailed') {
-          request.log.error({ err }, 'dump restored, but prisma migrate deploy failed: restart the server')
-        } else {
-          request.log.warn({ err }, 'dump restore refused or failed')
-        }
-        switch (err.code) {
-          case 'notEmpty':
-            return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
-          case 'busy':
-            return reply.status(409).send({ error: t('errors.setupInProgress') })
-          case 'unknownDump':
-            return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
-          case 'invalidDump':
-            return reply.status(400).send({ error: t('errors.restoreDumpInvalid') })
-          case 'dumpTooNew':
-            return reply.status(400).send({ error: t('errors.restoreArchiveTooNew') })
-          case 'noPrivilege':
-            return reply.status(500).send({ error: t('errors.restoreDumpNoPrivilege') })
-          case 'migrateFailed':
-            return reply.status(500).send({ error: t('errors.restoreDumpMigrateFailed') })
-          default:
-            return reply.status(500).send({ error: t('errors.restoreDumpFailed') })
-        }
+        return sendDumpError(request, reply, err)
       }
 
-      return { restored: true }
+      return { restored: true, media: await restoreDumpMedia(request) }
     }
   )
 

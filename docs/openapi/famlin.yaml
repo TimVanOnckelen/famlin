@@ -3873,6 +3873,14 @@ paths:
                 required: [restored]
                 properties:
                   restored: { type: boolean, enum: [true] }
+                  media:
+                    description: Media copied back from the backups volume's mirror, or `null` when copying failed (the database is restored either way; see the server log)
+                    nullable: true
+                    type: object
+                    required: [restored, restoredBytes]
+                    properties:
+                      restored: { type: integer, description: Files copied into media storage }
+                      restoredBytes: { type: integer }
         '400':
           description: Not a dump in the backups folder, not a Famlin pg custom-format dump, or made by a newer Famlin version
           content:
@@ -3886,6 +3894,140 @@ paths:
         '429': { description: Rate limit exceeded }
         '500':
           description: The database role can't recreate the schema (nothing changed), pg_restore failed, or the migrations failed after the restore (details only in the server log)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/auth/setup/backups:
+    get:
+      operationId: listSetupBackups
+      tags: [Storage administration]
+      summary: List every backup in the backups volume on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Lists Famlin backups (`famlin-backup-<timestamp>.zip`, the
+        export format written by scheduled backups) in the backups volume and,
+        until Famlin 1.0.0, legacy scheduled-backup dumps
+        (`db/famlin-<timestamp>.dump`), newest first. A zip whose manifest
+        can't be read is listed with `valid: false`. Rate-limited to 30
+        requests per 15 minutes per IP.
+      security: []
+      responses:
+        '200':
+          description: The backups, newest first (empty when there are none)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, type, size, createdAt, serverVersion, mediaLocation, credentials, valid]
+                  properties:
+                    name: { type: string, example: famlin-backup-2026-10-20T03-00-00-000Z.zip }
+                    type:
+                      type: string
+                      enum: [archive, dump]
+                      description: '`archive` = a Famlin backup zip; `dump` = a legacy pg_dump (until 1.0.0)'
+                    size: { type: integer, description: Size in bytes }
+                    createdAt: { type: string, format: date-time, description: When the backup was taken, from its file name }
+                    serverVersion: { type: string, nullable: true, description: Famlin version that made it (archives only) }
+                    mediaLocation:
+                      type: string
+                      nullable: true
+                      enum: [archive, storage, mirror]
+                      description: Where a restore finds the photos — in the zip, in media storage, or in the backups volume's mirror
+                    credentials: { type: boolean, description: Accounts come back with their passwords, so no admin account fields are needed }
+                    valid: { type: boolean }
+        '409':
+          description: The server already has accounts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+  /api/auth/setup/restore-backup:
+    post:
+      operationId: restoreSetupBackup
+      tags: [Storage administration]
+      summary: Restore a backup from the backups volume on a fresh server
+      description: |
+        First-run only: public, and refused with `409` once the server has any
+        account. Restores one of the backups listed by
+        `GET /api/auth/setup/backups`, chosen by file name.
+
+        A **zip** is restored like an uploaded export: every row with its
+        original id, settings minus credentials, and media — files the zip
+        doesn't contain are taken from media storage, or else copied from the
+        backups volume's mirror (including its `.deleted/` folders); if any is
+        missing from both, `400` with `missingMedia` and nothing is written. A
+        Famlin backup (format 2) restores every account with its password, so
+        `admin` is optional and without it no session is issued. An older
+        export without credentials, or a backup without any admin account,
+        needs `admin` (`400` with `code: restoreAdminRequired` otherwise).
+
+        A **dump** replaces the whole database through pg_restore (as
+        `POST /api/auth/setup/restore-dump`), then every file in the mirror
+        that media storage lacks is copied back. Sessions issued before any
+        restore no longer work. Rate-limited to 5 requests per 15 minutes per IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, description: A backup file name from GET /api/auth/setup/backups }
+                admin:
+                  type: object
+                  description: The restoring admin's login. If the backup has an account with this email, it's made admin and given this password; otherwise a new admin account is created.
+                  required: [email, name, password]
+                  properties:
+                    email: { type: string, format: email }
+                    name: { type: string, minLength: 1, maxLength: 100 }
+                    password: { type: string, minLength: 8, maxLength: 100 }
+      responses:
+        '200':
+          description: Restored. `token`/`user` only when `admin` was given for a zip; `counts` for a zip, `media` for a dump.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [restored]
+                properties:
+                  restored: { type: boolean, enum: [true] }
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+                  counts:
+                    type: object
+                    additionalProperties: { type: integer }
+                    description: Restored rows per table, plus `files` (from the zip) and `mirroredFiles` (copied from the mirror)
+                  media:
+                    description: Media copied back from the backups volume's mirror, or `null` when copying failed (the database is restored either way; see the server log)
+                    nullable: true
+                    type: object
+                    required: [restored, restoredBytes]
+                    properties:
+                      restored: { type: integer, description: Files copied into media storage }
+                      restoredBytes: { type: integer }
+        '400':
+          description: 'Not a backup in the volume, not a valid Famlin backup, made by a newer Famlin version, media missing (`missingMedia`), or account fields required (`code` is `restoreAdminRequired`)'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Error'
+                  - type: object
+                    properties:
+                      code: { type: string, enum: [restoreAdminRequired] }
+                      missingMedia: { type: array, items: { type: string } }
+        '409':
+          description: The server already has accounts, or setup or another restore is in progress
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Rate limit exceeded }
+        '500':
+          description: A dump restore failed (details only in the server log)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
