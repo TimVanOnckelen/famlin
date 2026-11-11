@@ -119,11 +119,11 @@ The **Server settings** page's general section has a **Data export** card with a
 
 **Include media in export** (on by default) decides whether photos and videos go into the zip. Switch it off for a small export of just the content, for example when your media lives in S3 and is backed up there: such an export can only be restored onto a server that already has the same media in its storage. See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3).
 
-It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, device diagnostics, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
+It also includes every account's password (as a hash, never readable) and your server settings, so everyone signs in as before after a restore. It deliberately does **not** include the OIDC client secret, the SMTP password, the Immich API key, invite links, push tokens, device diagnostics, or API tokens — enter those secrets again after restoring. Keep the zip as private as the database itself.
 
-It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance.md#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
+It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring a backup](./maintenance.md#restoring-a-backup) for the steps and what you'll need to set up again afterwards.
 
-The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
+The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they write the same zip without photos, plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 
 ### Members can export their own data
 

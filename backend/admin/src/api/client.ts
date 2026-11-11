@@ -68,6 +68,32 @@ export type {
   DeviceSummary,
 }
 
+export interface SetupAdmin {
+  email: string
+  name: string
+  password: string
+}
+
+// A session is only issued when account fields were sent; otherwise everyone
+// signs in with their restored account.
+export interface RestoreResult {
+  restored: true
+  token?: string
+  user?: User
+  counts?: Record<string, number>
+}
+
+export interface VolumeBackup {
+  name: string
+  type: 'archive' | 'dump'
+  size: number
+  createdAt: string
+  serverVersion: string | null
+  mediaLocation: 'archive' | 'storage' | 'mirror' | null
+  credentials: boolean
+  valid: boolean
+}
+
 export class ApiError extends Error {
   // Machine-readable error code, when the backend sends one (e.g. a media
   // source's `not_configured`/`unreachable`/`unauthorized` — see
@@ -140,7 +166,12 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({ error: i18n.t('common.error') }))
-    throw new ApiError(res.status, data.error || `HTTP ${res.status}`, data.code)
+    throw new ApiError(
+      res.status,
+      data.error || `HTTP ${res.status}`,
+      data.code,
+      Array.isArray(data.missingMedia) ? data.missingMedia.filter((key: unknown) => typeof key === 'string') : undefined
+    )
   }
 
   return res.json()
@@ -183,11 +214,15 @@ export const api = {
 
   // Multipart rather than JSON, so it can't go through request(): the
   // browser must set the multipart Content-Type (with its boundary) itself.
-  restoreBackup: async (archive: File, data: { email: string; name: string; password: string }) => {
+  // `admin` is only needed for an older export without accounts' passwords
+  // (the server answers ApiError code 'restoreAdminRequired' without it).
+  restoreBackup: async (archive: File, admin?: SetupAdmin) => {
     const form = new FormData()
-    form.append('email', data.email)
-    form.append('name', data.name)
-    form.append('password', data.password)
+    if (admin) {
+      form.append('email', admin.email)
+      form.append('name', admin.name)
+      form.append('password', admin.password)
+    }
     // Fields before the file, so the server has them without buffering it.
     form.append('archive', archive)
 
@@ -207,16 +242,18 @@ export const api = {
           : undefined
       )
     }
-    return res.json() as Promise<{ token: string; user: User; counts: Record<string, number> }>
+    return res.json() as Promise<RestoreResult>
   },
 
-  // Scheduled-backup dumps already in the server's backups volume (db/).
-  listSetupDumps: () => request<{ name: string; size: number; createdAt: string }[]>('/api/auth/setup/dumps'),
+  // Every backup already in the server's backups volume: Famlin backup zips
+  // and legacy pg_dump files.
+  listSetupBackups: () => request<VolumeBackup[]>('/api/auth/setup/backups'),
 
-  // Replaces the whole database with one of them: the old accounts come
-  // back, so no session is issued.
-  restoreDump: (name: string) =>
-    request<{ restored: true }>('/api/auth/setup/restore-dump', { method: 'POST', body: { name } }),
+  restoreVolumeBackup: (file: string, admin?: SetupAdmin) =>
+    request<RestoreResult>('/api/auth/setup/restore-backup', {
+      method: 'POST',
+      body: admin ? { file, admin } : { file },
+    }),
 
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
 

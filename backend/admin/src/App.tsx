@@ -74,8 +74,8 @@ function App() {
             navigate('/getting-started', { replace: true })
           }
         }}
-        onDumpRestored={() => {
-          // The dump brought back the old accounts: sign in with one of them.
+        onRestoredWithAccounts={() => {
+          // The backup brought back the old accounts: sign in with one of them.
           setNeedsSetup(false)
           setLoginNotice(t('setup.dumpRestored'))
         }}

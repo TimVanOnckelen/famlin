@@ -29,18 +29,21 @@ docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 
 ### Scheduled backups
 
-Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 dumps; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off under **Server settings → Backups** in `/admin`:
+Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 backups; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off under **Server settings → Backups** in `/admin`:
 
 - **Schedule**: daily, or weekly on Sundays.
 - **Time**: the hour it runs, in the server's time zone. The suggested default is 03:00.
-- **Database dumps to keep**: how many database dumps to keep (default 7). Older ones are deleted after each run.
+- **Backups to keep**: how many backups to keep (default 7). Older ones are deleted after each run.
 
 Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the container:
 
-- `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database in custom format (compressed, restored with `pg_restore`). Only the newest *N* are kept.
-- `uploads/`: **one** mirror of the uploads volume, updated incrementally. Uploaded files never change once written, so each run only copies new files. A file that disappears from Famlin (a deleted post, an expired story) is moved to `uploads/.deleted/<date>/` and kept there for **30 days** before it's removed for good. That covers accidental deletes without the mirror growing forever.
+- `famlin-backup-<timestamp>.zip`: a **Famlin backup** — the same format as the [Data export](#the-data-export-download) download, without the photos. It holds every account (with its password), family, post, comment, chat message and server setting. Only the newest *N* are kept.
+- `uploads/`: **one** mirror of the uploads volume, updated incrementally. These are the backups' photos and videos: uploaded files never change once written, so each run only copies new files, and seven backups don't cost seven copies of your media library. A file that disappears from Famlin (a deleted post, an expired story) is moved to `uploads/.deleted/<date>/` and kept there for **30 days** before it's removed for good. That covers accidental deletes without the mirror growing forever. With **Include media** turned off (media in S3 with its own backups), the mirror isn't updated and a restore expects the photos to still be in your media storage.
+- `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database, kept as a safety net next to the zip until Famlin 1.0.0 (same retention). Famlin 1.0.0 will stop writing these.
 
-Backups are deliberately not data-export zips: an export holds a full copy of every photo, so keeping seven of them would cost seven times your media library.
+:::note[What a backup leaves out]
+A Famlin backup never contains the **OIDC client secret**, the **SMTP password** or the **Immich API key**: enter them again under Server settings after a restore. It also leaves out invite links, API tokens (a token revoked after a leak must not come back), push tokens, devices and notification history. Because it contains every account's password hash, **keep backup files as private as the database itself** — see [Security](./security.md#backups-and-restores).
+:::
 
 **System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content.md#system-status).
 
@@ -64,37 +67,33 @@ The container runs as the unprivileged `node` user (uid 1000), so that folder mu
 `famlin-backups` was added to `docker-compose.yml` together with scheduled backups. If your copy of the compose file predates it, backups are written inside the container and **lost when the container is recreated** (for example on every update). System status warns about this. Add the volume as shown in the repository's [`docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml).
 :::
 
-### Restoring from a scheduled backup
+### Restoring a backup
 
-A scheduled backup is two things in the `famlin-backups` volume: a database dump `db/famlin-<timestamp>.dump` and a mirror of your photos in `uploads/`.
+Restoring happens on the **first-run setup screen** of a server with no accounts: a new server, another machine, or this one after its database was lost. It never merges into a server that's in use, and it's refused once anyone has signed up. Restoring onto a server that's already running from `/admin` is coming in a later release.
 
-**Onto a fresh server (or another machine): use the setup screen.** This is the easy path when the server you're restoring onto has no accounts yet. The setup screen only restores dumps that are already in the new server's `famlin-backups` volume: it doesn't take an upload, because restoring a dump runs the SQL inside it with full database rights.
+1. Start the server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the backup. A backup from a newer version is refused before anything is changed.
+2. Open `/admin`. The setup screen appears; choose **Restore a backup**.
 
-1. Get the dump onto the new server. If it's the same machine and the `famlin-backups` volume survived, there's nothing to do. Otherwise copy it out of the old server (`docker compose cp famlin-backend:/app/backups/db/famlin-<timestamp>.dump .`), move it to the new machine, and from the new server's compose folder put it in place — keep the file name as it is:
+   ![The setup screen's Restore a backup option: backups found on the server, or upload a file](./img/setup-restore-backup.png)
 
-   ```bash
-   docker compose exec famlin-backend mkdir -p /app/backups/db
-   docker compose cp famlin-<timestamp>.dump famlin-backend:/app/backups/db/
-   docker compose exec -u root famlin-backend chown node:node /app/backups/db/famlin-<timestamp>.dump
-   ```
+3. Pick a backup:
+   - **Backups on this server** lists every backup in the `famlin-backups` volume, newest first: Famlin backups (`.zip`) and, until Famlin 1.0.0, database dumps (`.dump`, marked *legacy*). Choose one and press **Restore selected backup**. If the volume survived (same machine, or you mounted the old backups folder), there's nothing to copy.
+   - **Or upload a backup file**: a `.zip` downloaded from **Data export** on the old server. Database dumps can't be uploaded, because restoring one runs the SQL inside it with full database rights.
+4. Sign in with your existing account. Accounts come back with their passwords, so everyone signs in as before; every session from before the restore is signed out.
 
-   If you mounted a host folder at `/app/backups` instead, just copy the file into its `db/` folder, readable by uid 1000.
+**Photos come back automatically.** A backup without photos inside the zip (every scheduled backup) gets them from the media mirror in the same `famlin-backups` volume, including photos deleted from Famlin in the 30 days after the backup was taken. Famlin checks that every photo the backup needs is either still in your media storage or in the mirror before it changes anything; if some are missing, the restore is refused and lists them. A legacy `.dump` restore copies back everything in the mirror that the media storage lacks.
 
-2. Copy the photos into the new server's uploads volume. With the backup's `uploads/` folder copied over to the new server's compose folder (for example with `rsync` or `scp`) as `./backup-uploads`:
+**Moving to another machine.** Copy the whole `famlin-backups` folder (the zips, `db/` and `uploads/`) into the new server's `famlin-backups` volume before opening `/admin` — for example with `rsync` to a host folder bind-mounted at `/app/backups`, owned by uid 1000. Or, without shell access, download a **Data export** with **Include media** on and upload it on the setup screen.
 
-   ```bash
-   docker compose cp ./backup-uploads/. famlin-backend:/app/uploads/
-   docker compose exec -u root famlin-backend sh -c 'rm -rf /app/uploads/.deleted && chown -R node:node /app/uploads'
-   ```
+**After restoring:**
 
-   If the new server already has the `famlin-backups` volume (same machine), use the `cp -a` command from step 4 of the command-line steps below instead.
+- Enter the **OIDC client secret**, **SMTP password** and **Immich API key** again under Server settings, if you use them. Every other setting is restored.
+- Create new invite links as needed; the apps re-register for push on next sign-in; members recreate their [API tokens](/developers/api).
+- The restore is point-in-time: if a password was changed since the backup because it leaked, reset it again.
 
-3. Make sure the new server runs the **same or a newer** Famlin version, and open `/admin`. On the first-run setup screen choose **Restore a backup**, pick the dump under **Restore a scheduled backup** and press **Restore scheduled backup**. No account fields are needed. If the dump doesn't show up, check its location and name, then reload the page.
-4. Sign in with your existing account. The dump is the whole database, so accounts, passwords and server settings all come back; if it came from an older Famlin version, pending migrations are applied right after the restore. A dump from a newer version is refused before anything is changed.
+**Older exports.** A data export from before Famlin's backup format (issue #461) has no passwords and no settings. When you restore one, the setup screen asks for a name, email and password for your admin login: if the export has an account with that email, it becomes an admin with this password; otherwise a new admin account is created. Other members then sign in once OIDC is set up again (matched by email), or after you reset their password on the **Users** page.
 
-The restore is point-in-time. Everyone is signed out of the apps and signs in again, but passwords and [API tokens](/developers/api) are as they were when the dump was taken. If an account's password or a token was changed or revoked since then because it leaked, reset or revoke it again.
-
-**On the same server, from the command line.** Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
+**Restoring a dump from the command line.** Until Famlin 1.0.0 you can also restore a `.dump` by hand, on the same server. Run these from the folder that holds your `docker-compose.yml`, with `famlin-db` running.
 
 1. List the dumps and pick one:
 
@@ -124,157 +123,13 @@ The restore is point-in-time. Everyone is signed out of the apps and signs in ag
      'cp -a /app/backups/uploads/. /app/uploads/ && rm -rf /app/uploads/.deleted'
    ```
 
-   Photos of posts deleted in the last 30 days are in `/app/backups/uploads/.deleted/<date>/`. Copy them back the same way if you're restoring a dump from before the delete.
+5. Start Famlin again with `docker compose up -d`. Pending migrations are applied on startup as usual.
 
-5. Start Famlin again with `docker compose up -d`. If the dump came from an older Famlin version, pending migrations are applied on startup as usual. Your settings, accounts and passwords all come back, because the dump is the whole database.
+### The data export download
 
-### Restoring from a data export
+**Server settings → General → Data export** downloads a Famlin backup zip on demand — the same format the scheduled backups write. Leave **Include media in export** on to put every photo and video in the zip, so it can be restored on another machine without shell access (step 3 above). Without media it's small, but restoring it needs the photos in the media storage or the backups mirror.
 
-The admin UI's **Data export** is a second, independent kind of backup. You download it on the old server under **Server settings → General → Data export** (leave **Include media in export** on to bring the photos along); scheduled backups never produce a zip. It's one zip holding every family's content and every uploaded photo/video, which you can restore onto a **new, empty** Famlin server — handy when moving hosts (NAS to VPS, off a dying machine) or when the database volume itself is what got corrupted. It doesn't need the old server to still be running, and it doesn't need shell access on either end.
-
-1. Start the new server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the export — an export from a newer version is refused.
-2. Open `/admin`. A fresh server shows the first-run setup screen; choose **Restore a backup**.
-3. Pick the export `.zip` and enter the email, name and password for your admin login. If the backup already has an account with that email, that account becomes an admin and gets this password (so it stays linked to everything you posted); otherwise a new admin account is created next to the restored ones.
-4. Wait for the upload and restore to finish — for a large photo library this takes a while.
-
-Restoring only works while the server has **no accounts at all**: it never merges into a server that's already in use, and it's refused once anyone has signed up.
-
-**What a restore does not bring back.** The export deliberately leaves out credentials and server configuration, so after restoring:
-
-- **Nobody else can sign in yet.** Passwords are never exported. Reconfigure OIDC/SSO under Server settings (members then sign in exactly as before, matched by email), and/or reset password-login members' passwords from the **Users** page.
-- **Server settings are blank** — OIDC, allowed emails, SMTP, Immich/local media connections, store links. Set them up again. Linked albums and people mappings *are* restored, and start working again once the media source is reconfigured with the same albums.
-- **Invite links, push tokens and API tokens are gone.** Create new invites as needed; the apps re-register for push on next sign-in; members recreate their API tokens.
-- **Every previous session is signed out**, including on devices that were logged in to the old server.
-- Notification history and the push delivery log start empty.
-
-**Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN. Or move servers without the zip: restore a scheduled backup's `.dump` and copy its `uploads/` mirror, as described above.
-
-Treat the export as a complement to the volume backups above, not a replacement: volumes restore *everything*, including settings and passwords; the export is the one you can restore without them.
-
-## Updating
-
-```bash
-docker compose -f docker-compose.yml pull
-docker compose -f docker-compose.yml up -d
-```
-
-The backend container re-runs `prisma migrate deploy` on every start, so pending schema migrations are applied automatically — there's no separate migration step to remember. Before migrating, it checks that the database wasn't already upgraded by a *newer* Famlin version, and refuses to start if it was (see [Troubleshooting](#troubleshooting)).
-
-When stopped or updated, the backend finishes requests already in progress (an upload mid-write, say) for up to 30 seconds (`stop_grace_period` in `docker-compose.yml`) before it exits.
-
-**Keep your `docker-compose.yml` up to date too.** `pull` only updates the image, not your copy of the compose file. Releases occasionally improve the compose file itself (for example the backend healthcheck, log rotation and shutdown grace period). Compare yours against the [repository's `docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml), or the one attached to each release, after updating.
-
-If you pinned `FAMLIN_VERSION` in `.env` (see below), bump it before pulling so you get the version you expect rather than a moved `latest` tag.
-
-If you're [building from source](#building-from-source-instead) instead of running the pre-built image, update with `git pull && docker compose up -d --build` instead.
-
-## Staying up to date
-
-Once a day (and shortly after the server starts), the server asks the [GitHub releases page](https://github.com/timvanonckelen/famlin/releases) for the latest release. When it is newer than the version you're running, every admin page shows a dismissible banner: "Famlin X.Y.Z is available", with links to the release notes and to this page. A release whose notes contain breaking changes gets a more prominent banner telling you to read them before updating. Dismissing the banner hides it for that version only; a still newer release brings it back.
-
-Only a plain request for the latest release is made; nothing about your instance is sent. Turn it off with **Check for new versions** under **Server settings → General → Updates**. The check is fail-soft: if GitHub is unreachable you see no notice, and the failure is recorded under **Update check** in the [system status](./managing-users-and-content.md#system-status) job list.
-
-If you'd rather be notified outside the admin UI, "Watch" the repository's releases on GitHub (**Watch → Custom → Releases** on the [repo page](https://github.com/timvanonckelen/famlin)) to get an email/notification per release.
-
-### Automating updates with Watchtower
-
-For a fully hands-off setup, [Watchtower](https://containrrr.dev/watchtower/) can pull and restart `famlin-backend` whenever a new image is published. Scope it to just that container so your database and other services aren't touched:
-
-```yaml title="docker-compose.yml"
-watchtower:
-  image: containrrr/watchtower
-  volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-  command: --interval 3600 famlin-backend
-  restart: unless-stopped
-```
-
-Since schema migrations run automatically on start (see above), an unattended update also means unattended migrations. That's usually fine, but a breaking change would apply itself before you've had a chance to read the release notes — if you'd rather review [breaking changes](https://github.com/timvanonckelen/famlin/releases) first, stick to the manual `pull`/`up -d` flow above, or pin `FAMLIN_VERSION` and bump it deliberately instead of running Watchtower against `latest`.
-
-## App and server versions
-
-The mobile apps update through the app stores, so they're often newer than your server. Each app release supports servers up to **three minor versions older** than itself: app 0.8.x works with servers 0.5.0 and newer, app 0.11.x with servers 0.8.0 and newer.
-
-Within that window, a new app feature your server doesn't have yet is hidden: the app asks the server which features it supports and hides the ones it reports as missing. Servers too old to report their features at all get a best-effort fallback — the app tries the feature and hides it, or explains it isn't available, when the server turns out not to have it. Update the server to get it.
-
-When your server is older than the window, the app shows a warning banner at the top of the feed. It's a soft warning: the app keeps working, but some things may not. Members are asked to contact their admin; admins see the minimum server version and a link to this page. The banner can be dismissed, once per server version — it comes back if the server changes to another version that's still too old.
-
-If you're an admin and see it, [update your server](#updating). The minimum server version is only raised in an app release marked as a breaking change, so it's called out in the release notes.
-
-## Pinning a version
-
-`docker-compose.yml` runs the pre-built image published to `ghcr.io/timvanonckelen/famlin` on every tagged release (e.g. `ghcr.io/timvanonckelen/famlin:1.2.0`, plus a rolling `latest`). By default it tracks `latest`; set `FAMLIN_VERSION` in `.env` to pin a specific version instead, so updates are a deliberate, reviewed step:
-
-```bash title=".env"
-FAMLIN_VERSION=1.2.0
-```
-
-Bump it and run `docker compose pull && docker compose up -d` when you're ready to update.
-
-**Pinning can't be used to roll back.** Once a newer version has started, it has migrated the database schema, and older versions don't know how to run against it. If you set `FAMLIN_VERSION` to an older version than the one that last ran, Famlin refuses to start rather than risk corrupting your data (see [Troubleshooting](#troubleshooting)). To genuinely go back, restore a database backup taken before the upgrade, along with the older version.
-
-To try the current development build from `main`, set `FAMLIN_VERSION=dev`
-in `.env`, then run the same `pull` and `up -d` commands above. The rolling
-`dev` image is published after pushes or PR merges into `main` that change
-files relevant to the image, for both `linux/amd64` and `linux/arm64`.
-Docs-only, website-only, mobile-only, and Markdown-only changes are skipped,
-as are release PR merges (the release workflow builds those commits).
-
-:::warning[Use dev on a test instance only]
-
-The container runs `prisma migrate deploy` on startup. A `dev` image may apply
-database migrations that are not included in any release yet. An older
-release then refuses to start against that database (see
-[Troubleshooting](#troubleshooting)). Stay on `dev` until a release containing
-those migrations ships and then pin to it, or restore a backup taken before
-switching to `dev`.
-
-:::
-
-## Building from source instead
-
-If you'd rather build the backend image yourself (e.g. you're running a fork, or testing an unreleased change) instead of pulling from `ghcr.io`, replace the `image:` line for `famlin-backend` in your compose file with a `build:` block:
-
-```yaml title="docker-compose.yml"
-famlin-backend:
-  build:
-    context: .
-    dockerfile: backend/Dockerfile
-  # remove the `image:` line
-```
-
-The build context must be the **repository root**, not `backend/` — the image also bundles the member-facing web app (`web/` and `packages/`), which live outside `backend/`. You'll need a full checkout of the repository alongside your compose file for this. Update with `git pull && docker compose up -d --build`.
-
-## Using an external database
-
-If you'd rather run Postgres outside of Compose (a managed database, an existing Postgres instance on the NAS, etc.), remove the `famlin-db` service from your compose file (or override it to a no-op) and point `DATABASE_URL` in `.env` at your instance:
-
-```bash
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/famlin?schema=public
-```
-
-Make sure the database and user already exist — Famlin does not create the database itself, only the schema inside it (via `prisma migrate deploy` on startup).
-
-## Troubleshooting
-
-**Containers won't start / authentication failed for the database** — `JWT_SECRET` and the database password are generated automatically when no `.env` is present. If you previously started the stack with a different `POSTGRES_PASSWORD`, the database keeps its original password; set `POSTGRES_PASSWORD` back to that value (or remove the `famlin-db-data` and `famlin-db-secret` volumes on a throwaway install). Confirm `.env`, if you use one, is in the same directory you run `docker compose` from.
-
-**`famlin-backend` shows as `unhealthy`** — its healthcheck calls `GET /health`, which returns `503` when the database is unreachable or Famlin can't write to its media storage (the uploads volume, or the S3 bucket — see [Storage](./storage.md#troubleshooting)). The reason is logged: run `docker compose logs famlin-backend` and look for `health check failed`. Check that `famlin-db` is running and healthy, and that the disk holding the `famlin-uploads` volume isn't full or mounted read-only.
-
-**Famlin refuses to start: database is newer than this version** — `famlin-backend` keeps restarting and its log says `Refusing to start: the database was upgraded by a newer Famlin version than this one`, naming one or more migrations. An older Famlin image was started against a database that a newer release already upgraded — usually because `FAMLIN_VERSION` was pinned to an older version, an updater pulled a stale tag, or volumes were restored from the wrong backup. Famlin checks this before touching the database, so nothing was changed. Fix it in one of two ways:
-
-- Set `FAMLIN_VERSION` in `.env` back to the version that upgraded the database (or any newer one), then `docker compose pull && docker compose up -d`.
-- Or, if you really need the older version, restore a database backup taken *before* that upgrade (see [Backups](#backups)), then start the older version.
-
-**Migrations fail on startup** — check `docker compose logs famlin-backend`. This usually means the `famlin-db` container isn't reachable yet or `DATABASE_URL` doesn't match its credentials.
-
-**Uploaded photos disappear after a redeploy** — this means the `famlin-uploads` volume isn't being reused, usually because the compose project name changed (e.g. running from a different directory) or `-v` / `down -v` was used, which removes volumes. Avoid `docker compose down -v` in production; use plain `down` (or just `up -d --build` for updates, no `down` needed at all).
-
-**Family members get "Network Error" when posting photos or videos** — the upload was cut off before it finished. If nothing about the upload appears in `docker compose logs famlin-backend`, the request never reached Famlin, so the reverse proxy rejected it: raise its request body limit (Nginx's default is 1 MB) and its read/send timeouts — see [Your own reverse proxy](./server-setup.md#option-c-your-own-reverse-proxy). Famlin's own per-file limit is 200 MB, and a file over it answers with a clear "file too large" message instead.
-
-**Can't reach `/admin` through the reverse proxy but the container works on `localhost:3000`** — check that the proxy forwards the full path (not just `/`) and doesn't strip the `/admin` prefix.
-
-See also the [Security policy](./security.md) page for hardening recommendations.
+**Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN, or copy the `famlin-backups` folder as described above.
 
 ## Moving media between local and S3 storage
 

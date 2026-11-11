@@ -3,7 +3,9 @@ import type { FastifyInstance } from 'fastify'
 import fsp from 'fs/promises'
 import path from 'path'
 import { prisma } from '../src/db.js'
-import { BACKUP_DB_DIR } from '../src/services/backup/index.js'
+import { randomUUID } from 'crypto'
+import { BACKUP_DB_DIR, BACKUP_UPLOADS_DIR } from '../src/services/backup/index.js'
+import { uploadsDir } from '../src/config.js'
 import { PgToolNotInstalledError, runPgTool } from '../src/services/backup/dbDump.js'
 import { parseDumpMigrations, restoreDumpDeps, RestoreDumpError } from '../src/services/backup/restoreDump.js'
 import { MigrateDeployError, readLocalMigrations } from '../src/services/migrationGuard.js'
@@ -140,6 +142,13 @@ describe('setup dump restore', () => {
   describe('POST /api/auth/setup/restore-dump', () => {
     it('restores the dump, applies pending migrations, ends old sessions and invalidates the settings cache', async () => {
       await putDump(NEWER)
+      // The media mirror holds a photo storage lost, and one deleted before the backup.
+      const photo = `${randomUUID()}.jpg`
+      const gone = `${randomUUID()}.jpg`
+      await fsp.rm(BACKUP_UPLOADS_DIR, { recursive: true, force: true })
+      await fsp.mkdir(path.join(BACKUP_UPLOADS_DIR, '.deleted', '2026-01-01'), { recursive: true })
+      await fsp.writeFile(path.join(BACKUP_UPLOADS_DIR, photo), 'mirrored-photo')
+      await fsp.writeFile(path.join(BACKUP_UPLOADS_DIR, '.deleted', '2026-01-01', gone), 'deleted-photo')
       // The "restored" database carries a different setting than the cached one.
       await updateSettings({ defaultLanguage: 'en' })
       expect((await getAllSettings()).defaultLanguage).toBe('en')
@@ -151,7 +160,12 @@ describe('setup dump restore', () => {
       const res = await restore(NEWER)
 
       expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual({ restored: true })
+      expect(res.json()).toEqual({ restored: true, media: { restored: 1, restoredBytes: 14 } })
+      expect(await fsp.readFile(path.join(uploadsDir, photo), 'utf8')).toBe('mirrored-photo')
+      expect(await fsp.readFile(path.join(BACKUP_UPLOADS_DIR, photo), 'utf8')).toBe('mirrored-photo')
+      await expect(fsp.access(path.join(uploadsDir, gone))).rejects.toThrow()
+      await fsp.rm(path.join(uploadsDir, photo), { force: true })
+      await fsp.rm(BACKUP_UPLOADS_DIR, { recursive: true, force: true })
       expect(restoreDumpDeps.replaceDatabase).toHaveBeenCalledTimes(1)
       expect(restoreDumpDeps.migrateDeploy).toHaveBeenCalledTimes(1)
       const replaceOrder = vi.mocked(restoreDumpDeps.replaceDatabase).mock.invocationCallOrder[0]

@@ -1,20 +1,27 @@
 import { getStorage } from '../storage/registry.js'
 import { LocalStorageBackend } from '../storage/local.js'
 import type { StorageBackend } from '../storage/types.js'
-import path from 'path'
-import { backupsDir, uploadsDir } from '../../config.js'
+import { uploadsDir } from '../../config.js'
 import { prisma } from '../../db.js'
 import { getAllSettings, type ServerSettings } from '../settings.js'
 import { recordJobRun } from '../jobRuns.js'
 import { dumpDatabase, pruneDbDumps } from './dbDump.js'
 import { mirrorUploads, type MirrorResult } from './mirror.js'
+import { pruneBackupArchives, writeBackupArchive } from './archive.js'
+import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR, BACKUP_UPLOADS_DIR } from './paths.js'
 
-// Scheduled backups (issue #228): rotating `pg_dump -Fc` files in
-// <backupsDir>/db/ plus one incremental mirror of uploads/ in
-// <backupsDir>/uploads/. Deliberately not export zips — the export stores
-// every photo again, so N copies would cost N× the media library.
-export const BACKUP_DB_DIR = path.join(backupsDir, 'db')
-export const BACKUP_UPLOADS_DIR = path.join(backupsDir, 'uploads')
+// Scheduled backups (issues #228, #461), each run writing:
+//  1. a Famlin backup zip (the export.ts format, data only) into
+//     <backupsDir>/, rotated to `backupRetention`;
+//  2. one incremental mirror of uploads/ in <backupsDir>/uploads/ — the
+//     zips' media, so N backups don't store every photo N times;
+//  3. a `pg_dump -Fc` in <backupsDir>/db/, rotated to the same retention.
+//
+// TODO(v1.0.0): step 3 is a safety net for the switch to zips only. Remove
+// pg_dump production (and dump restore, services/backup/restoreDump.ts) in
+// v1.0.0 as a BREAKING CHANGE (`feat!:`), with an upgrade note telling admins
+// to take one Famlin backup first. Tracked in issue #461.
+export { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR, BACKUP_UPLOADS_DIR }
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
@@ -23,6 +30,9 @@ export type BackupTrigger = 'scheduled' | 'manual'
 
 export interface BackupResult {
   trigger: BackupTrigger
+  archiveFile: string
+  archiveBytes: number
+  prunedArchives: number
   dumpFile: string
   dumpBytes: number
   prunedDumps: number
@@ -38,7 +48,7 @@ export class BackupInProgressError extends Error {
 
 // Indirection so tests can stub the pg_dump call (CI's Postgres runs in a
 // service container whose server version needn't match the runner's client).
-export const backupDeps = { dumpDatabase, mirrorUploads }
+export const backupDeps = { dumpDatabase, mirrorUploads, writeBackupArchive }
 
 let running: Promise<BackupResult> | null = null
 
@@ -74,8 +84,14 @@ export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<Bac
     'backup',
     async () => {
       const settings = await getAllSettings()
-      const dump = await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
-      const pruned = await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
+      // Without media mirroring (media on S3 with its own backups), the
+      // restore expects them to still be in storage.
+      const archive = await backupDeps.writeBackupArchive(
+        BACKUP_ARCHIVE_DIR,
+        now,
+        settings.backupIncludeMedia ? 'mirror' : 'storage'
+      )
+      const prunedArchives = await pruneBackupArchives(BACKUP_ARCHIVE_DIR, settings.backupRetention)
       const local = new LocalStorageBackend(uploadsDir)
       const media = getStorage()
       const source: StorageBackend = {
@@ -98,7 +114,21 @@ export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<Bac
         undefined,
         !settings.backupIncludeMedia
       )
-      return { trigger, dumpFile: dump.file, dumpBytes: dump.bytes, prunedDumps: pruned.length, mirror }
+      // Last, so a failing pg_dump (e.g. a client older than the server)
+      // still leaves a complete zip + mirror — but fails the run, so the
+      // admin is told.
+      const dump = await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
+      const pruned = await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
+      return {
+        trigger,
+        archiveFile: archive.file,
+        archiveBytes: archive.bytes,
+        prunedArchives: prunedArchives.length,
+        dumpFile: dump.file,
+        dumpBytes: dump.bytes,
+        prunedDumps: pruned.length,
+        mirror,
+      }
     },
     (result) => ({ ...result, mirror: { ...result.mirror } })
   ).finally(() => {

@@ -45,9 +45,13 @@ Without a `.env`, Famlin generates:
 
 If you set `JWT_SECRET` or `POSTGRES_PASSWORD` yourself, keep both long, random, and private.
 
-### Restoring a backup on an unconfigured server
+### Backups and restores
 
-The first-run screen can restore a scheduled backup only while the server has zero accounts, under the same protection as initial setup. It reads a named dump already present in the backup volume's `db/` folder; it deliberately does **not** accept a dump upload. Restoring runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
+A Famlin backup (the scheduled `.zip` files and the admin **Data export**) contains every account's **password hash** and the server settings, so a restore signs everyone in as before. Treat backup files like the database itself: whoever has one can try to crack the hashes offline and learns your configuration. Backups never contain the OIDC client secret, the SMTP password, the Immich API key, invite links or API tokens, so a leaked backup file doesn't hand out a working third-party credential, and a token revoked after a leak can't come back through a restore. A restore invalidates every session issued before it.
+
+Restoring a backup brings back passwords as they were when it was taken. Anyone with a backup file who can restore it can therefore reset everyone's credentials to that point in time — which is why restore is limited to the setup screen of a server with zero accounts (and, in a later release, to admins).
+
+The first-run screen can restore a backup only while the server has zero accounts, under the same protection as initial setup. It accepts an uploaded `.zip` — never executed, only parsed: rows are validated against Famlin's schema, file paths are checked against path traversal, and credential settings in an archive are refused. A legacy database dump (`.dump`) is only read from the backup volume's `db/` folder; it deliberately can't be uploaded. Restoring a dump runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
 
 ### Sessions and account removal
 
@@ -99,7 +103,7 @@ Consequently, content in a circle the admin hasn't joined cannot be moderated di
 
 There are two deliberate boundaries to this protection:
 
-- The **admin backup export** includes all family content, including every circle. Omitting private content would make the backup incomplete. A restore preserves the circles and their media access rules.
+- The **admin backup export** (and the scheduled backups) include all family content, including every circle. Omitting private content would make the backup incomplete. A restore preserves the circles and their media access rules.
 - Anyone with **direct database or filesystem access** can read everything. Circles separate family members; they don't protect content from the server operator.
 
 ### Photos and videos
