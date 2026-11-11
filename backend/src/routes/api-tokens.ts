@@ -14,7 +14,15 @@ export default async function apiTokenRoutes(fastify: FastifyInstance) {
     const items = await prisma.apiToken.findMany({
       where: { userId: request.user!.id },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, tokenPreview: true, lastUsedAt: true, expiresAt: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        tokenPreview: true,
+        adminAccess: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+      },
     })
     return { items }
   })
@@ -27,6 +35,10 @@ export default async function apiTokenRoutes(fastify: FastifyInstance) {
     }
 
     const body = createApiTokenBodySchema.parse(request.body)
+    // Admin access is opt-in per token, and only an admin has it to give.
+    if (body.adminAccess && !request.user!.isAdmin) {
+      return reply.status(403).send({ error: getT(request)('errors.adminRequired') })
+    }
     const { token, tokenHash, tokenPreview } = generateApiToken()
 
     const created = await prisma.apiToken.create({
@@ -35,6 +47,7 @@ export default async function apiTokenRoutes(fastify: FastifyInstance) {
         name: body.name,
         tokenHash,
         tokenPreview,
+        adminAccess: body.adminAccess ?? false,
         expiresAt: body.expiresInDays ? new Date(Date.now() + body.expiresInDays * 24 * 60 * 60 * 1000) : null,
       },
     })
@@ -45,6 +58,7 @@ export default async function apiTokenRoutes(fastify: FastifyInstance) {
       name: created.name,
       token,
       tokenPreview: created.tokenPreview,
+      adminAccess: created.adminAccess,
       expiresAt: created.expiresAt,
       createdAt: created.createdAt,
     })

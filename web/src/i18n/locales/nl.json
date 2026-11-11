@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "API-tokens",
     "title": "API-tokens",
-    "intro": "Met persoonlijke toegangstokens gebruik je de Famlin-API vanuit je eigen scripts en integraties. Een token kan alles wat jouw account kan, dus behandel het als een wachtwoord.",
+    "intro": "Met persoonlijke toegangstokens gebruik je de Famlin-API vanuit je eigen scripts en integraties. Een token werkt met de toegang van je account tot je families, dus behandel het als een wachtwoord. Beheerdersrechten kan het alleen gebruiken als dat bij het aanmaken is toegestaan.",
     "docsLink": "Lees de API-documentatie",
+    "adminAccessLabel": "Beheerderstoegang toestaan",
+    "adminAccessHint": "Hiermee kan dit token serverinstellingen wijzigen, gebruikers beheren en alles exporteren. Laat dit uit, tenzij een script het echt nodig heeft.",
+    "adminAccessBadge": "Beheerder",
     "nameLabel": "Naam",
     "namePlaceholder": "bijv. Fotolijst-script",
     "expiryLabel": "Verloopt",
@@ -615,7 +618,18 @@
     "exclusionPerson": "Persoon {{number}}",
     "addExclusion": "Uitsluiting toevoegen",
     "saveSettings": "Instellingen opslaan",
-    "photoUploadFailed": "De foto kon niet worden geüpload. Probeer een andere."
+    "photoUploadFailed": "De foto kon niet worden geüpload. Probeer een andere.",
+    "addGuest": "Lijstje toevoegen voor iemand zonder account",
+    "addGuestSubmit": "Lijstje toevoegen",
+    "guestNamePlaceholder": "Naam, bv. een kind",
+    "guestHint": "Voor kinderen of iemand die niet op Famlin zit. Jij houdt hun lijstje bij; ze doen niet mee aan de lottrekking.",
+    "guestBadge": "Geen account",
+    "guestManagedBy": "Bijgehouden door {{name}}",
+    "guestManagedByYou": "Bijgehouden door jou",
+    "renameGuest": "Naam wijzigen",
+    "renameGuestPrompt": "Nieuwe naam",
+    "removeGuest": "Lijstje verwijderen",
+    "removeGuestConfirm": "Het lijstje van {{name}} en alle wensen erop verwijderen?"
   },
   "wiki": {
     "title": "Familiewiki",

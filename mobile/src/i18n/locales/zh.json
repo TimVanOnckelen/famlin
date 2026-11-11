@@ -654,7 +654,18 @@
     "saveSettings": "保存设置",
     "exclusionsHintMobile": "先点一个人，再点另一个人，让他们不会抽到对方（例如伴侣）。",
     "continue": "继续",
-    "notAvailable": "这个礼物清单不可用。"
+    "notAvailable": "这个礼物清单不可用。",
+    "addGuest": "为没有账户的人添加愿望清单",
+    "addGuestSubmit": "添加清单",
+    "guestNamePlaceholder": "名字，例如孩子",
+    "guestHint": "适用于孩子或不在 Famlin 上的人。由你维护他们的清单；他们不参与抽签。",
+    "guestBadge": "无账户",
+    "guestManagedBy": "由 {{name}} 维护",
+    "guestManagedByYou": "由你维护",
+    "renameGuest": "重命名",
+    "renameGuestPrompt": "新名字",
+    "removeGuest": "删除清单",
+    "removeGuestConfirm": "删除 {{name}} 的清单及其所有愿望？"
   },
   "serverVersion": {
     "title": "你的服务器版本过旧",

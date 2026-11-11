@@ -123,7 +123,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   const chatGroupIds = groups.filter((g) => g.chitchatEnabled).map((g) => g.id)
   const otherUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))].filter((id) => id !== userId)
 
-  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftDrawAssignments, wikiPages] =
+  const [comments, favorites, chatMessages, otherUsers, giftListItems, giftListGuests, giftDrawAssignments, wikiPages] =
     await Promise.all([
       prisma.comment.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
       prisma.favorite.findMany({ where: { userId, postId: { in: postIds } } }),
@@ -139,6 +139,8 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
       // Every wishlist on the gift lists the caller can see (posts above are
       // already narrowed to their hidden circles) — as in the app.
       prisma.giftListItem.findMany({ where: { postId: { in: postIds } }, orderBy: { position: 'asc' } }),
+      // ...and the wishlists kept there for people without an account.
+      prisma.giftListGuest.findMany({ where: { postId: { in: postIds } }, orderBy: { createdAt: 'asc' } }),
       // Secret Santa: ONLY the caller's own assignment, never anyone else's.
       prisma.giftDrawAssignment.findMany({ where: { giverId: userId, postId: { in: postIds } } }),
       // Family Wiki pages the caller can read in the app — same circle rule.
@@ -165,6 +167,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
     favorites,
     chatMessages: visibleChat,
     giftListItems,
+    giftListGuests,
     giftDrawAssignments,
     wikiPages,
   }
@@ -221,6 +224,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
       favorites: favorites.length,
       chatMessages: visibleChat.length,
       giftListItems: giftListItems.length,
+      giftListGuests: giftListGuests.length,
       giftDrawAssignments: giftDrawAssignments.length,
       wikiPages: wikiPages.length,
       uploadFiles: uploadFiles.length,
@@ -238,6 +242,7 @@ export async function buildMemberExportArchive(userId: string, onError: (err: Er
   archive.append(serialized.favorites, { name: 'data/favorites.json' })
   archive.append(serialized.chatMessages, { name: 'data/chat-messages.json' })
   archive.append(serialized.giftListItems, { name: 'data/gift-list-items.json' })
+  archive.append(serialized.giftListGuests, { name: 'data/gift-list-guests.json' })
   archive.append(serialized.giftDrawAssignments, { name: 'data/gift-draw-assignments.json' })
   archive.append(serialized.wikiPages, { name: 'data/wiki-pages.json' })
 

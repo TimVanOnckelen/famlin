@@ -13,6 +13,7 @@ import { giftListSettingsFields } from '../services/postTypes/giftList.js'
 import {
   GIFT_LIST_POST_TYPE,
   MAX_GIFT_LIST_PARTICIPANTS,
+  MAX_GUESTS_PER_LIST,
   MAX_ITEMS_PER_WISHLIST,
   MIN_DRAW_PARTICIPANTS,
   computeDraw,
@@ -55,9 +56,18 @@ const createItemBodySchema = z.object({
   photoUrl: uploadPathSchema.nullable().optional(),
 })
 
+// guestId: add the wish to a guest's wishlist you manage instead of your own.
+const createWishBodySchema = createItemBodySchema.extend({ guestId: z.string().min(1).nullable().optional() })
+
 const updateItemBodySchema = createItemBodySchema.partial()
 
-const reorderBodySchema = z.object({ itemIds: z.array(z.string().min(1)).max(MAX_ITEMS_PER_WISHLIST) })
+const reorderBodySchema = z.object({
+  itemIds: z.array(z.string().min(1)).max(MAX_ITEMS_PER_WISHLIST),
+  // Reorders that guest's wishlist (one you manage) instead of your own.
+  guestId: z.string().min(1).nullable().optional(),
+})
+
+const guestBodySchema = z.object({ name: z.string().trim().min(1).max(80) })
 
 const updateSettingsBodySchema = z.object({
   title: giftListSettingsFields.title.optional(),
@@ -198,7 +208,8 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
 
   fastify.post('/:postId/items', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const userId = request.user!.id
-    const body = createItemBodySchema.parse(request.body)
+    const body = createWishBodySchema.parse(request.body)
+    const guestId = body.guestId ?? null
     const list = await loadGiftList(request, reply)
     if (!list) return
 
@@ -207,8 +218,14 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     let item!: Awaited<ReturnType<typeof prisma.giftListItem.create>>
     const ok = await inLockedTransaction(request, reply, list.id, async (tx) => {
       if (!(await getParticipantIds(list, tx)).includes(userId)) throw new GiftListError('giftListNotFound', 404)
+      if (
+        guestId &&
+        !(await tx.giftListGuest.findFirst({ where: { id: guestId, postId: list.id, managedById: userId } }))
+      ) {
+        throw new GiftListError('giftListGuestNotFound', 404)
+      }
       const existing = await tx.giftListItem.aggregate({
-        where: { postId: list.id, ownerId: userId },
+        where: { postId: list.id, ownerId: userId, guestId },
         _count: true,
         _max: { position: true },
       })
@@ -222,6 +239,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
           note: body.note || null,
           url: body.url || null,
           photoUrl: body.photoUrl ?? null,
+          guestId,
           position: (existing._max.position ?? -1) + 1,
         },
       })
@@ -230,7 +248,10 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     // Readable by the list's participants only, like the list itself.
     await bindAssetsToScope([item.photoUrl], { groupIds: [list.groupId], circleId: list.circleId }, userId)
 
-    emitDomainEvent('giftList.itemAdded', { postId: list.id, ownerId: userId, ownerName: request.user!.name })
+    // A guest has no Secret Santa giver to tell.
+    if (!guestId) {
+      emitDomainEvent('giftList.itemAdded', { postId: list.id, ownerId: userId, ownerName: request.user!.name })
+    }
     return item
   })
 
@@ -241,7 +262,8 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     const list = await loadGiftList(request, reply)
     if (!list) return
 
-    // Only your own wishes — anyone else's is "not found" for editing.
+    // Only your own wishes (and those of guests you manage, which carry your
+    // ownerId) — anyone else's is "not found" for editing.
     const item = await prisma.giftListItem.findFirst({ where: { id: itemId, postId: list.id, ownerId: userId } })
     if (!item) return reply.status(404).send({ error: getT(request)('errors.giftListItemNotFound') })
 
@@ -274,16 +296,17 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     return { success: true }
   })
 
-  // Reorders the caller's own wishlist: `itemIds` must be exactly their
-  // items, in the new order.
+  // Reorders the caller's own wishlist (or, with guestId, that of a guest
+  // they manage): `itemIds` must be exactly its items, in the new order.
   fastify.put('/:postId/items/order', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const userId = request.user!.id
-    const { itemIds } = reorderBodySchema.parse(request.body)
+    const { itemIds, guestId: rawGuestId } = reorderBodySchema.parse(request.body)
+    const guestId = rawGuestId ?? null
     const list = await loadGiftList(request, reply)
     if (!list) return
 
     const own = await prisma.giftListItem.findMany({
-      where: { postId: list.id, ownerId: userId },
+      where: { postId: list.id, ownerId: userId, guestId },
       select: { id: true },
     })
     const ownIds = new Set(own.map((i) => i.id))
@@ -299,10 +322,59 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
       itemIds.map((id, position) => prisma.giftListItem.update({ where: { id }, data: { position } }))
     )
     const items = await prisma.giftListItem.findMany({
-      where: { postId: list.id, ownerId: userId },
+      where: { postId: list.id, ownerId: userId, guestId },
       orderBy: { position: 'asc' },
     })
     return { items }
+  })
+
+  // Wishlists for people without an account (a young child, a grandparent
+  // without a phone). Any participant can add one and becomes its manager:
+  // the only one who fills it, through the item routes above with guestId.
+  // Guests never take part in the draw.
+  fastify.post('/:postId/guests', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const userId = request.user!.id
+    const { name } = guestBodySchema.parse(request.body)
+    const list = await loadGiftList(request, reply)
+    if (!list) return
+
+    const ok = await inLockedTransaction(request, reply, list.id, async (tx) => {
+      if (!(await getParticipantIds(list, tx)).includes(userId)) throw new GiftListError('giftListNotFound', 404)
+      if ((await tx.giftListGuest.count({ where: { postId: list.id } })) >= MAX_GUESTS_PER_LIST) {
+        throw new GiftListError('giftListTooManyGuests')
+      }
+      await tx.giftListGuest.create({ data: { postId: list.id, name, managedById: userId } })
+    })
+    if (!ok) return
+    return shapedGiftList(list.id, userId)
+  })
+
+  // Renaming and removing a guest: its manager, or the list's starter.
+  fastify.patch('/:postId/guests/:guestId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { name } = guestBodySchema.parse(request.body)
+    const list = await loadGiftList(request, reply)
+    if (!list) return
+    const guest = await findManageableGuest(request, list)
+    if (!guest) return reply.status(404).send({ error: getT(request)('errors.giftListGuestNotFound') })
+
+    await prisma.giftListGuest.update({ where: { id: guest.id }, data: { name } })
+    return shapedGiftList(list.id, request.user!.id)
+  })
+
+  fastify.delete('/:postId/guests/:guestId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const list = await loadGiftList(request, reply)
+    if (!list) return
+    const guest = await findManageableGuest(request, list)
+    if (!guest) return reply.status(404).send({ error: getT(request)('errors.giftListGuestNotFound') })
+
+    const photos = await prisma.giftListItem.findMany({
+      where: { guestId: guest.id, photoUrl: { not: null } },
+      select: { photoUrl: true },
+    })
+    // Its wishes cascade with it.
+    await prisma.giftListGuest.delete({ where: { id: guest.id } })
+    await deleteUnusedWishPhotos(photos.map((p) => p.photoUrl))
+    return shapedGiftList(list.id, request.user!.id)
   })
 
   // Starter-only settings. Turning the draw off or changing exclusions after
@@ -382,7 +454,9 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
       if (removed.length > 0) {
         await tx.circleMember.deleteMany({ where: { circleId: list.circleId, userId: { in: removed } } })
         removedPhotos = await wishPhotosOf(tx, list.id, removed)
+        // Their wishes, including those on guests' lists they kept up.
         await tx.giftListItem.deleteMany({ where: { postId: list.id, ownerId: { in: removed } } })
+        await tx.giftListGuest.deleteMany({ where: { postId: list.id, managedById: { in: removed } } })
       }
       if (added.length > 0) {
         await tx.circleMember.createMany({
@@ -446,6 +520,7 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
       await tx.circleMember.deleteMany({ where: { circleId: list.circleId, userId } })
       leftPhotos = await wishPhotosOf(tx, list.id, [userId])
       await tx.giftListItem.deleteMany({ where: { postId: list.id, ownerId: userId } })
+      await tx.giftListGuest.deleteMany({ where: { postId: list.id, managedById: userId } })
       redrawn = (await saveGiftList(tx, list.id, list, locked.typeData)) === 'drawn'
     })
     if (!ok) return
@@ -453,6 +528,21 @@ export default async function giftListRoutes(fastify: FastifyInstance) {
     await deleteUnusedWishPhotos(leftPhotos)
     if (redrawn) emitDomainEvent('giftList.drawn', { postId: list.id, actorId: userId })
     return { success: true }
+  })
+}
+
+// A guest on this list the caller may rename/remove: one they manage, or any
+// guest when they started the list. Only while its manager is a participant.
+async function findManageableGuest(request: FastifyRequest, list: GiftListPost) {
+  const userId = request.user!.id
+  const { guestId } = request.params as { guestId: string }
+  return prisma.giftListGuest.findFirst({
+    where: {
+      id: guestId,
+      postId: list.id,
+      managedById: list.authorId === userId ? { in: await getParticipantIds(list) } : userId,
+    },
+    select: { id: true },
   })
 }
 

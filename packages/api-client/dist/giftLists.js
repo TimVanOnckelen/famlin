@@ -6,6 +6,9 @@ exports.createGiftListItem = createGiftListItem;
 exports.updateGiftListItem = updateGiftListItem;
 exports.deleteGiftListItem = deleteGiftListItem;
 exports.reorderGiftListItems = reorderGiftListItems;
+exports.addGiftListGuest = addGiftListGuest;
+exports.renameGiftListGuest = renameGiftListGuest;
+exports.removeGiftListGuest = removeGiftListGuest;
 exports.updateGiftListSettings = updateGiftListSettings;
 exports.setGiftListParticipants = setGiftListParticipants;
 exports.drawGiftList = drawGiftList;
@@ -41,11 +44,32 @@ async function deleteGiftListItem(postId, itemId) {
     // requires-feature: giftLists
     await client_1.api.delete(`/gift-lists/${postId}/items/${itemId}`);
 }
-// `itemIds` must be every one of your own wishes, in the new order.
-async function reorderGiftListItems(postId, itemIds) {
+// `itemIds` must be every one of your own wishes (or, with guestId, of that
+// guest's wishlist you manage), in the new order.
+async function reorderGiftListItems(postId, itemIds, guestId) {
     // requires-feature: giftLists
-    const response = await client_1.api.put(`/gift-lists/${postId}/items/order`, { itemIds });
+    const response = await client_1.api.put(`/gift-lists/${postId}/items/order`, {
+        itemIds,
+        ...(guestId ? { guestId } : {}),
+    });
     return response.data.items;
+}
+// Wishlists for people without an account. Any participant adds one and is
+// its only editor; the starter can also rename or remove it.
+async function addGiftListGuest(postId, name) {
+    // requires-feature: giftListGuests
+    const response = await client_1.api.post(`/gift-lists/${postId}/guests`, { name });
+    return response.data;
+}
+async function renameGiftListGuest(postId, guestId, name) {
+    // requires-feature: giftListGuests
+    const response = await client_1.api.patch(`/gift-lists/${postId}/guests/${guestId}`, { name });
+    return response.data;
+}
+async function removeGiftListGuest(postId, guestId) {
+    // requires-feature: giftListGuests
+    const response = await client_1.api.delete(`/gift-lists/${postId}/guests/${guestId}`);
+    return response.data;
 }
 // Starter only.
 async function updateGiftListSettings(postId, body) {

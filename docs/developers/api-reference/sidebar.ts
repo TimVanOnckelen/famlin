@@ -488,6 +488,24 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/add-gift-list-guest",
+          label: "Add a wishlist for someone without an account",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/rename-gift-list-guest",
+          label: "Rename a guest wishlist",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "api-reference/remove-gift-list-guest",
+          label: "Remove a guest wishlist and its wishes",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
           id: "api-reference/update-gift-list-item",
           label: "Edit one of your wishes",
           className: "api-method patch",

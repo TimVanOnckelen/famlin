@@ -80,7 +80,7 @@ Google's OAuth clients always require a client secret for the token exchange, an
    - **Scopes**: `openid email profile`
    - **Display name**: e.g. `Google`
 
-Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Architecture: OIDC / client-secret providers](/docs/developers/architecture#oidc--client-secret-providers) for how that works under the hood.
+Setting a **Client secret** makes Famlin do the authorization code exchange on the backend instead of in the browser/app, which is what lets a normal Web application client work for the web app, the admin UI, and the mobile app — see [Backend reference: OIDC / client-secret providers](/docs/developers/backend-reference#oidc--client-secret-providers) for how that works under the hood.
 
 ### Sign in with Apple
 
@@ -93,6 +93,17 @@ The one setting that exists, **Extra Apple bundle IDs** (`/admin` → Server set
 ### Access control
 
 Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC or Sign in with Apple if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid login — unless it arrives through a valid invite link, which is its own authorization and deliberately bypasses the allow-list.
+
+## Saved secrets
+
+Three settings are credentials for other systems: the OIDC **Client secret**, the **SMTP password** and the Immich **API key**. Famlin stores them but never shows them again, not in the admin UI and not through the API. A stolen admin session therefore does not also hand over your mail account, your sign-in provider or your photo library.
+
+![A saved SMTP password shown as "Saved. Type to replace it" with a "Remove saved value" link](./img/admin-saved-secret.png)
+
+- A saved secret shows as **Saved. Type to replace it**. Leave the field empty to keep it.
+- **Remove saved value** deletes it when you save.
+- Changing the address a secret belongs to (the OIDC issuer URL, the SMTP host or the Immich server URL) removes the saved secret unless you enter it again in the same save. Otherwise someone with admin access could point Famlin at a server of their own and collect the secret there.
+- **Test connection** for Immich uses the saved key only against the saved server URL. To test a different address, type the key.
 
 ## Media integrations
 
@@ -166,7 +177,7 @@ You can give your Famlin server your family's own look: a **family name** ("The 
 
 The login screen gets a soft gradient background derived from your color. It deliberately never shows a photo: everything before login is visible to anyone.
 
-:::caution Public by design
+:::caution[Public by design]
 The logo and family name are visible to anyone who opens your server's address — the login page has to show them before anyone has signed in. Don't put anything in them you wouldn't put on a doorbell.
 :::
 

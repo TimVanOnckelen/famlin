@@ -12,7 +12,7 @@ Famlin runs on a computer you control, so the first question is simple: **what d
 | --- | --- |
 | An **Umbrel** or **CasaOS / ZimaOS** home server | [Install on Umbrel or CasaOS](./install-umbrel-casaos.md) |
 | **Home Assistant** (OS or Supervised) | [Install as a Home Assistant add-on](./install-home-assistant.md) |
-| A **Synology NAS** | [Synology with Container Manager](./server-setup.md#example-synology-nas-with-container-manager-no-ssh-required) (no command line needed) |
+| A **Synology NAS** | [Synology with Container Manager](./install-synology.md) (no command line needed) |
 | **Nothing yet**, and you're happy to rent a small server | [Famlin on a small server in 10 minutes](./install-vps.md) |
 | A server or PC and you're **comfortable with Docker** | [Server setup](./server-setup.md) (Docker Compose) |
 

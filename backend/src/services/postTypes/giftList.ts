@@ -97,13 +97,22 @@ export const giftListHandler: PostTypeHandler = {
   async enrichPosts(posts, viewerId) {
     const circleIds = [...new Set(posts.map((p) => p.circleId).filter((id): id is string => typeof id === 'string'))]
     const postIds = posts.map((p) => p.id)
-    const [members, itemCounts, myAssignments] = await Promise.all([
+    const [members, itemCounts, guests, myAssignments] = await Promise.all([
       prisma.circleMember.findMany({
         where: { circleId: { in: circleIds } },
         select: { circleId: true, user: { select: { id: true, name: true, avatarUrl: true } } },
         orderBy: { joinedAt: 'asc' },
       }),
-      prisma.giftListItem.groupBy({ by: ['postId', 'ownerId'], where: { postId: { in: postIds } }, _count: true }),
+      prisma.giftListItem.groupBy({
+        by: ['postId', 'ownerId', 'guestId'],
+        where: { postId: { in: postIds } },
+        _count: true,
+      }),
+      prisma.giftListGuest.findMany({
+        where: { postId: { in: postIds } },
+        select: { id: true, postId: true, name: true, managedById: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
       prisma.giftDrawAssignment.findMany({
         where: { postId: { in: postIds }, giverId: viewerId },
         select: { postId: true, recipient: { select: { id: true, name: true, avatarUrl: true } } },
@@ -116,7 +125,9 @@ export const giftListHandler: PostTypeHandler = {
       const managerId = post.authorId as string
       const participants = members.filter((m) => m.circleId === post.circleId).map((m) => m.user)
       const participantIds = new Set(participants.map((p) => p.id))
+      // A guest's wishes count once their manager is still a participant.
       const counts = itemCounts.filter((c) => c.postId === post.id && participantIds.has(c.ownerId))
+      const listGuests = guests.filter((g) => g.postId === post.id && participantIds.has(g.managedById))
       const isManager = managerId === viewerId
       const drawn = !!typeData.drawnAt
 
@@ -131,7 +142,14 @@ export const giftListHandler: PostTypeHandler = {
         isManager,
         participants: participants.map((p) => ({
           ...p,
-          itemCount: counts.find((c) => c.ownerId === p.id)?._count ?? 0,
+          itemCount: counts.find((c) => c.ownerId === p.id && c.guestId === null)?._count ?? 0,
+        })),
+        // Wishlists for people without an account — never part of the draw.
+        guests: listGuests.map((g) => ({
+          id: g.id,
+          name: g.name,
+          managedById: g.managedById,
+          itemCount: counts.find((c) => c.guestId === g.id)?._count ?? 0,
         })),
         itemCount: counts.reduce((n, c) => n + c._count, 0),
         exclusions: isManager ? typeData.exclusions : null,

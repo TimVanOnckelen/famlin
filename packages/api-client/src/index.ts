@@ -112,6 +112,7 @@ export type {
   AlbumPhotoMetadata,
   GiftListTypeData,
   GiftListParticipant,
+  GiftListGuest,
   GiftListEnrichment,
   GiftListItem,
   Comment,
@@ -157,7 +158,7 @@ export {
   closeAlbum,
 } from './posts'
 
-export type { GiftListItemBody, GiftListSettingsBody } from './giftLists'
+export type { GiftListItemBody, CreateGiftListItemBody, GiftListSettingsBody } from './giftLists'
 export {
   fetchMyGiftLists,
   fetchGiftListItems,
@@ -165,6 +166,9 @@ export {
   updateGiftListItem,
   deleteGiftListItem,
   reorderGiftListItems,
+  addGiftListGuest,
+  renameGiftListGuest,
+  removeGiftListGuest,
   updateGiftListSettings,
   setGiftListParticipants,
   drawGiftList,

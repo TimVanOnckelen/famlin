@@ -49,7 +49,7 @@ async function waitForProcessing(
 // but unreachable. GIFs stay unchanged; undecodable uploads report failure.
 // Uses a real JPEG (universally decodable by any sharp build) rather than a
 // real HEIC fixture, since HEIC decode support depends on the Docker image's
-// Alpine vips-heif package (see backend/Dockerfile) — not guaranteed in the
+// from-source libvips build (see backend/Dockerfile) — not guaranteed in the
 // environment `npm test` runs in.
 describe('POST /api/uploads — compression', () => {
   let app: FastifyInstance
@@ -333,7 +333,7 @@ describe('POST /api/uploads — compression', () => {
 // HEIC files: sharp sniffs content instead of trusting the extension, so this
 // exercises the whole plan/generate/serve path while staying decodable in an
 // environment whose sharp build has no HEIF support (see backend/Dockerfile —
-// only the production image compiles against vips-heif).
+// only the production image compiles against a libvips with libheif).
 describe('GET /uploads/<uuid>.heic — legacy HEIC renditions', () => {
   let app: FastifyInstance
   const writtenUuids: string[] = []

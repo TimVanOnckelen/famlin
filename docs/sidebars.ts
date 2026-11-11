@@ -3,7 +3,6 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   docsSidebar: [
     'intro',
-    'choose-installation',
     {
       type: 'category',
       label: 'Using Famlin',
@@ -25,19 +24,43 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Self-hosting',
+      link: {type: 'doc', id: 'choose-installation'},
       collapsible: true,
       collapsed: false,
       items: [
-        'install-vps',
-        'server-setup',
-        'install-umbrel-casaos',
-        'install-home-assistant',
-        'storage',
-        'admin-configuration',
-        'inviting-family',
-        'managing-users-and-content',
-        'maintenance',
-        'security',
+        {
+          type: 'category',
+          label: 'Installation',
+          collapsible: true,
+          collapsed: false,
+          items: [
+            'install-vps',
+            'server-setup',
+            'install-synology',
+            'install-umbrel-casaos',
+            'install-home-assistant',
+            'cloudflare-tunnel',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Administration',
+          collapsible: true,
+          collapsed: true,
+          items: [
+            'admin-configuration',
+            'storage',
+            'inviting-family',
+            'managing-users-and-content',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Operations',
+          collapsible: true,
+          collapsed: true,
+          items: ['maintenance', 'security'],
+        },
       ],
     },
   ],

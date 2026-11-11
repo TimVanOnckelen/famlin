@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "API tokens",
     "title": "API tokens",
-    "intro": "Personal access tokens let you use the Famlin API from your own scripts and integrations. A token can do everything your account can do, so treat it like a password.",
+    "intro": "Personal access tokens let you use the Famlin API from your own scripts and integrations. A token acts with your account's access to your families, so treat it like a password. It can't use admin rights unless that was allowed when it was created.",
     "docsLink": "Read the API documentation",
+    "adminAccessLabel": "Allow admin access",
+    "adminAccessHint": "Lets this token change server settings, manage users and export everything. Leave it off unless a script really needs it.",
+    "adminAccessBadge": "Admin",
     "nameLabel": "Name",
     "namePlaceholder": "e.g. Photo frame script",
     "expiryLabel": "Expires",
@@ -615,7 +618,18 @@
     "exclusionPerson": "Person {{number}}",
     "addExclusion": "Add exclusion",
     "saveSettings": "Save settings",
-    "photoUploadFailed": "The photo couldn't be uploaded. Try another one."
+    "photoUploadFailed": "The photo couldn't be uploaded. Try another one.",
+    "addGuest": "Add a wishlist for someone without an account",
+    "addGuestSubmit": "Add wishlist",
+    "guestNamePlaceholder": "Name, e.g. a child",
+    "guestHint": "For children or anyone not on Famlin. You keep their wishlist up; they're not part of the draw.",
+    "guestBadge": "No account",
+    "guestManagedBy": "Kept up by {{name}}",
+    "guestManagedByYou": "Kept up by you",
+    "renameGuest": "Rename",
+    "renameGuestPrompt": "New name",
+    "removeGuest": "Remove wishlist",
+    "removeGuestConfirm": "Remove {{name}}'s wishlist and all its wishes?"
   },
   "wiki": {
     "title": "Family Wiki",

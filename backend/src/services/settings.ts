@@ -232,6 +232,55 @@ export async function updateSettings(partial: Partial<ServerSettings>) {
   return getAllSettings()
 }
 
+// Credentials for other systems. The admin API never returns their values:
+// a stolen admin session or token would otherwise also hand over the SMTP
+// account, the OIDC client secret and the Immich API key. Responses carry an
+// empty string plus a `<key>Set` flag instead; see redactSettings().
+export const SECRET_SETTING_KEYS = ['oidcClientSecret', 'smtpPass', 'immichApiKey'] as const
+export type SecretSettingKey = (typeof SECRET_SETTING_KEYS)[number]
+
+export type RedactedServerSettings = ServerSettings & Record<`${SecretSettingKey}Set`, boolean>
+
+export function redactSettings(settings: ServerSettings): RedactedServerSettings {
+  const redacted = { ...settings } as RedactedServerSettings
+  for (const key of SECRET_SETTING_KEYS) {
+    redacted[`${key}Set`] = settings[key] !== ''
+    redacted[key] = ''
+  }
+  return redacted
+}
+
+// Where each secret is sent. Changing one of these without supplying the
+// secret again removes the stored secret: otherwise whoever holds an admin
+// session could point the SMTP host, OIDC issuer or Immich URL at a server of
+// their own and have Famlin deliver the secret it refuses to show them.
+const SECRET_DESTINATION_KEYS = {
+  oidcClientSecret: 'oidcIssuer',
+  smtpPass: 'smtpHost',
+  immichApiKey: 'immichServerUrl',
+} as const satisfies Record<SecretSettingKey, keyof ServerSettings>
+
+const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
+
+// The write side of redactSettings(). A client that read the redacted
+// settings sends the secrets back as empty strings, so empty (or omitted)
+// means "keep the stored value" and `null` is the explicit "remove it".
+export function applySecretWriteRules<
+  T extends Partial<Record<SecretSettingKey, string | null>> & Partial<Omit<ServerSettings, SecretSettingKey>>,
+>(body: T, current: ServerSettings): Omit<T, SecretSettingKey> & Partial<Record<SecretSettingKey, string>> {
+  const { oidcClientSecret, smtpPass, immichApiKey, ...rest } = body
+  const secrets: Partial<Record<SecretSettingKey, string>> = {}
+  for (const [name, value] of Object.entries({ oidcClientSecret, smtpPass, immichApiKey })) {
+    const key = name as SecretSettingKey
+    const destination = SECRET_DESTINATION_KEYS[key]
+    const next = body[destination]
+    if (value === null) secrets[key] = ''
+    else if (value) secrets[key] = value
+    else if (typeof next === 'string' && !sameDestination(next, current[destination])) secrets[key] = ''
+  }
+  return { ...rest, ...secrets }
+}
+
 // For writers that bypass updateSettings() (the archive restore in
 // services/import.ts writes branding rows inside its own transaction).
 export function invalidateSettingsCache() {

@@ -126,6 +126,8 @@
     "giftListItemNotFound": "Wish not found.",
     "giftListTooManyItems": "A wishlist can hold at most 100 wishes.",
     "giftListInvalidOrder": "The new order must list each of your wishes exactly once.",
+    "giftListGuestNotFound": "Wishlist not found.",
+    "giftListTooManyGuests": "A gift list can have at most 30 wishlists for people without an account.",
     "giftDrawDisabled": "The Secret Santa draw isn't turned on for this gift list.",
     "giftDrawTooFewParticipants": "A Secret Santa draw needs at least 3 participants.",
     "giftDrawImpossible": "No draw is possible with these exclusions. Remove some exclusions and try again.",

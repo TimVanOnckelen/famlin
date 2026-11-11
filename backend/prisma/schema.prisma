@@ -55,6 +55,7 @@ model User {
   giftListItems     GiftListItem[]
   giftsToGive       GiftDrawAssignment[] @relation("GiftDrawGiver")
   giftsToReceive    GiftDrawAssignment[] @relation("GiftDrawRecipient")
+  giftListGuests    GiftListGuest[]
   stories           Story[]
   storyViews        StoryView[]
   storyReactions    StoryReaction[]
@@ -81,6 +82,11 @@ model ApiToken {
   tokenPreview String
   lastUsedAt   DateTime?
   expiresAt    DateTime?
+  // Whether the token may use its owner's admin rights. Without it the token
+  // acts as an ordinary member even when its owner is an admin (see
+  // verifyApiToken), so a leaked script token can't reach /api/admin or
+  // moderate content. Only an admin can create a token with it.
+  adminAccess  Boolean   @default(false)
   createdAt    DateTime  @default(now())
 
   @@index([userId])
@@ -177,6 +183,7 @@ model Post {
   notifications     Notification[]
   giftListItems     GiftListItem[]
   giftDrawAssignments GiftDrawAssignment[]
+  giftListGuests    GiftListGuest[]
   // System chat messages (kind: SYSTEM_MILESTONE) that deep-link back to this
   // post — see ChatMessage.refPostId below.
   chatMessages      ChatMessage[]
@@ -806,11 +813,36 @@ model GiftListItem {
   // An /uploads/ path, bound to the gift list's hidden circle.
   photoUrl  String?
   position  Int
+  // Set when this wish is on a guest's wishlist (someone without an account,
+  // e.g. a child); ownerId is then the participant who manages that guest.
+  guestId   String?
+  guest     GiftListGuest? @relation(fields: [guestId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([postId, ownerId, position])
   @@index([ownerId])
+  @@index([guestId])
+}
+
+// A wishlist on a gift list for someone who has no Famlin account (a young
+// child, a grandparent without a phone). Added and kept up by one
+// participant — the manager — whose wishes on it are GiftListItem rows with
+// guestId set and ownerId = managedById, so every "this participant left"
+// cleanup that deletes by ownerId takes the guest's wishes along. Guests
+// never take part in the Secret Santa draw.
+model GiftListGuest {
+  id          String         @id @default(cuid())
+  postId      String
+  post        Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  name        String
+  managedById String
+  managedBy   User           @relation(fields: [managedById], references: [id], onDelete: Cascade)
+  items       GiftListItem[]
+  createdAt   DateTime       @default(now())
+
+  @@index([postId])
+  @@index([managedById])
 }
 
 // One Secret Santa pairing. SECRET: only ever returned to its own giver

@@ -2,56 +2,166 @@
 sidebar_position: 7
 ---
 
-# Security policy
+# Security
+
+Famlin keeps family content on your own server and checks access on the server, not just in the apps. This page explains the security model, the privacy boundaries, and the settings that matter when you self-host.
+
+## Security checklist
+
+For a typical installation:
+
+- **Use HTTPS.** Put Famlin behind the bundled Caddy setup, a Cloudflare Tunnel, or your own reverse proxy. Set `TRUST_PROXY=true` only when a reverse proxy is actually in front of Famlin. See [Server setup](./server-setup.md#4-set-up-https).
+- **Keep everything updated.** Update Famlin, Docker images, dependencies, and the host OS.
+- **Limit administrator access.** Give admin rights only to trusted people. Famlin prevents removing or demoting the last admin, but a compromised admin account still compromises the app.
+- **Protect your secrets.** Famlin generates the login and database secrets automatically. If you provide them yourself, use long, random, private values.
+- **Treat invite links like passwords.** Share them only with the intended recipient, set an expiry or email restriction when possible, and revoke unused links.
+- **Keep S3 buckets private.** Famlin performs media access checks; the bucket itself should never allow public reads.
 
 ## Supported versions
 
-Only the latest commit on the `main` branch is actively supported with security updates. Because Famlin is currently pre-1.0, we do not maintain separate release branches.
+Only the latest commit on the `main` branch is actively supported with security updates. While Famlin is pre-1.0, separate release branches are not maintained.
 
 ## Reporting a vulnerability
 
-If you discover a security vulnerability in Famlin, please report it privately rather than opening a public issue.
-
-Send details to the project maintainers. Include:
+Report security vulnerabilities privately to the project maintainers rather than opening a public issue. Include:
 
 - A description of the vulnerability
 - Steps to reproduce it
-- Possible impact
-- Suggested mitigation or fix if you have one
+- The possible impact
+- A suggested mitigation or fix, if you have one
 
-We will acknowledge receipt as soon as possible and work with you to address the issue responsibly.
+The maintainers will acknowledge receipt as soon as possible and work with you to address the issue responsibly.
 
-## Security practices
+## Accounts and sign-in
 
-- There is no default or seeded admin account. A fresh install has no users at all; the admin UI shows a one-time setup screen to create the first account (which becomes the first admin) the moment you first open `/admin` — that endpoint (`POST /api/auth/setup`) refuses to run again once any account exists. Don't rely on `prisma/seed.ts` (a dev/test-only fixture script with a hardcoded password) for a real deployment.
-- The same setup screen can restore a scheduled backup's `.dump` file (`POST /api/auth/setup/restore-dump`), on the same zero-accounts-only terms and under the same lock as `/setup`. It only reads dump files already in the server's backups volume (`db/` folder) and picks them by name — uploading a dump is deliberately not offered, because `pg_restore` runs the dump's SQL as Famlin's database role (a superuser in the default compose setup), which would hand anyone who reaches an unconfigured server code execution on the database. Putting a file in that volume needs access to the server itself.
-- Without a `.env`, Famlin generates a random `JWT_SECRET` (stored mode `0600` in the `famlin-data` volume) and database password (the `famlin-db-secret` volume) for you. If you set them yourself, keep `JWT_SECRET` and `POSTGRES_PASSWORD` long, random, and private.
-- With the [Cloudflare Tunnel](./cloudflare-tunnel.md) option, Cloudflare terminates TLS, so Cloudflare technically can read the traffic between your family and the server (posts, photos, and the session tokens). Its tunnel needs no open ports, which shrinks your attack surface, but if you don't want a third party in that path, use the Caddy option or your own reverse proxy instead.
-- Run Famlin behind a reverse proxy with HTTPS in production, and set `TRUST_PROXY=true` once you do (see [Server setup](./server-setup.md#option-c-your-own-reverse-proxy)).
-- Keep Docker images, dependencies, and the host OS up to date.
-- Restrict admin access (`isAdmin = true`) to trusted users only. Famlin refuses to let the last remaining admin be demoted or removed, so you can't accidentally lock yourself out — but a compromised admin account is still a compromised app, so treat it accordingly.
-- **SSO logins require a verified email.** Famlin matches an SSO login to an account by email address, so a login is refused when the identity provider explicitly reports the address as unverified (`email_verified: false`). If your provider lets people self-register or change their email, keep email verification switched on there — otherwise the unverified accounts can't sign in to Famlin.
-- **Sign in with Apple is bound to your server.** Every Famlin server accepts Apple sign-ins from the same official app, so the iPhone app ties each Apple sign-in to the server address it is talking to (through the token's `nonce`), and a server rejects a sign-in made for a different address. That stops another Famlin server you sign in to — or one a malicious invite link points the app at — from replaying your Apple sign-in on your family's server. Famlin compares the address with the [public address](./admin-configuration.md) setting, or while that's empty, with the `Host` header the request arrived with (never `X-Forwarded-Host`, which a client can forge). **Set the public address** for the strongest protection: without it, a server reachable directly (not only through a reverse proxy that routes by domain) trusts whatever `Host` a request claims. App builds from before this check don't send a nonce yet and are still accepted, so update the app.
-- The mobile app only sends your session to the server you signed in to. An invite link naming a different server shows that server's address and asks you to sign in there separately; it never hands it your existing session.
-- **Mobile device diagnostics stay on your own server.** The mobile app reports a random install ID, platform, OS version, app version/build, and push permission to the Famlin server that account signed in to. The app sends no device model, locale, IP, or activity data; there are no timestamps or last-seen field, and an unchanged report is not written again. Nothing is sent to the Famlin maintainer, Expo, or another third party. You can see the reported fields in your profile, and your admin can see current device state in the Devices page. The web app does not report devices.
-- Invite links (generated from the admin UI's Groups page) are single-use and bypass the `allowedEmails` allow-list by design — treat a generated link like a password and only share it with the intended recipient. Set an expiry and/or restrict it to a specific email address when possible, and revoke unused links you no longer need.
-- A password change/reset immediately invalidates any other session already logged into that account, and removing/deactivating a user does the same — you don't need to worry about a stolen or shared token outliving either action.
-- Personal **API tokens** (created from the web app's avatar menu, for scripts and integrations — see [Using the API](/developers/api)) are the one deliberate exception: a password reset does **not** revoke them, so integrations keep running. They're stored only as a SHA-256 hash (the secret is shown once at creation), can carry an expiry date, can be revoked individually at any time with immediate effect, can never do more than the account that created them, and can't be used to create further tokens. Deleting a user deletes their tokens with them. Treat a token like a password.
-- Removing a user from the admin UI deactivates the account rather than deleting it — their existing posts, photos, and comments stay visible to the rest of the family, matching how removing someone from just one group already works. An admin can reactivate a deactivated account from the same page.
-- **Family Circles** are enforced on the server, not just hidden in the apps. A post shared with a circle is invisible to everyone outside it — in the feed, in search, in the on-this-day list, in the photo timeline, in notifications, in comments and reactions, and through a direct media URL. There is no "hidden placeholder": an outsider gets a `404`, the same answer they'd get for a post that doesn't exist, so a circle's existence can't be probed. Circles are also undiscoverable: a group member outside a circle can't see its name, its members, or that it exists at all.
-- Removing someone from a family group removes them from every circle inside it at the same moment, so their access to circle posts and circle photos ends with their membership — there's no window where a former member keeps reading a circle through a stale membership.
-- **Circle privacy applies to admins too, with two deliberate exceptions worth knowing about.** An admin who isn't a member of a circle cannot read its content, including through the admin content-moderation screens. An admin *can* add themselves to a circle to gain access — but not quietly: every circle member can open its member list from any post in it and see who is in the circle and the date each person joined. The guarantee is that nobody reads a circle silently, not that nobody can ever get in. That means content inside a circle you're not in is effectively unmoderatable — the only admin action that reaches it is deleting the whole circle, which **permanently deletes its posts** (there is no restore) and tells you how many there are before you confirm. The exceptions: `GET /api/admin/export` is a full backup of all family content and is *not* bounded by circle privacy, because a backup that silently omitted content wouldn't be a backup (a restore brings the circles and their media bindings back intact, so circle-private content stays circle-private on the restored server); and anyone with direct database or filesystem access to the server can of course read everything. Circles protect family members from each other, not the server operator from themselves.
-- **The admin export's download link is single-use.** The admin UI downloads the export by plain browser navigation, so the URL carries a random download token instead of your session: it works once, expires after 60 seconds, can only be requested from a signed-in admin session (not an API token), and is re-checked against the account's current admin status when used.
-- **Members can export what they can see.** Any member can download a zip of their groups' content from their profile (`GET /api/auth/me/export`). It contains nothing the member couldn't already read in the app — other groups, circles they're not in, other members' favorites and settings, credentials, invites and tokens are all excluded — but it does contain other members' posts and photos from their shared groups, since that's what a family keepsake is. It's rate-limited to 5 exports per user per hour.
-- **Scroll diagnostic reports only leave the phone when the member sends them, and only to their own server.** A member who measures feed scrolling (Profile → Advanced) can send the report to the server's admins or share it themselves. It holds the phone model, OS and app version and frame/post counts — no content, names or server address — is rate-limited to 10 per member per hour, deleted after 30 days, and never forwarded anywhere by the server.
-- A member export includes that member's own latest device diagnostics and diagnostic reports. The admin backup/export and its restore deliberately exclude devices and push tokens; after a restore, mobile apps report their current state again.
-- **A photo in a circle post is protected, but a photo in a linked media album isn't.** Files uploaded to Famlin (`/uploads/...`) are checked per request against the audience of whatever they're attached to, so a circle photo returns `404` for a group member outside the circle even if they have the exact URL. A photo that lives in a **linked Immich/local album** is a different matter: that album is linked to the *group*, so every group member can already reach it through the album browser regardless of any post. Putting such a photo in a circle post does not make it private. If a photo needs to be circle-private, upload it to the post rather than linking it from an album.
-- **Media in S3 stays behind Famlin's access checks.** With [S3 storage](./storage.md#option-c-s3-or-an-s3-compatible-service), photos are still served through Famlin, which checks for every request who may see them. Keep the bucket **private** (never public or with public-read objects), give Famlin a key limited to that bucket where your provider allows it, and treat `S3_SECRET_ACCESS_KEY` like `JWT_SECRET`: keep it in `.env`, never in the repository. Deleted photos are removed from the bucket too, so if you turn on bucket versioning, old versions remain until your lifecycle rules remove them.
-- **Uploaded photos are scoped to their group.** A photo or video attached to a post, comment, chat message or story is only served to members of the group(s) it was shared in — someone in another family on the same server gets a `404` even with the exact URL, and a member removed from a group loses access to its photos along with its posts. Profile pictures are the exception: they're visible to every signed-in user, since they appear in every group their owner belongs to.
-- Enforcement of these upload rules applies to files attached **after** upgrading to the version that introduced each rule. Files from before that keep their previous behaviour (reachable by any signed-in user who has the URL) until a future release backfills them.
-- **Stories really disappear.** A story that its author didn't keep as a Highlight is permanently deleted after 24 hours — the database rows *and* every copy of the photo on disk (the served image, its thumbnail and the original upload) — by a job that runs every 10 minutes; members stop seeing it the moment the 24 hours are up. A story's photo must be a fresh upload of the author's own, so deleting it can never remove a file some other post relies on. Stories follow the same group and circle rules as posts, including for direct `/uploads/...` links. **Private replies to a story** are readable only by the person who sent them and the story's author: no API, admin screen, push log or data export exposes them to anyone else (anyone with direct database access can, as with all content). Only the author sees who viewed their story.
-- Uploaded photos/videos aren't served as plain public files: the app fetches them using either your normal session or a separate, narrower media token, both of which expire — a leaked `/uploads/...` link on its own isn't enough to view family photos once that token has expired. The media token in a photo link only ever unlocks photos — it is refused everywhere else in the API, so a copied or logged photo link can't be used to act as the person it was issued to.
-- A photo's audience is fixed the first time its own uploader attaches it (to a post, comment, chat message, story, or avatar). Reusing someone else's photo link elsewhere — or reusing a circle photo somewhere more public — never changes who can see it, so knowing a photo's URL isn't enough to widen or narrow its audience.
-- **Branding is public.** The family name and logo set under Server settings → Branding are readable by anyone who can reach the server, without signing in (the login page shows them). The logo is served from its own public `/branding/...` path, never through the protected `/uploads/...` path, and is re-encoded from pixels on upload — SVG is rejected because it can carry script. The login background is always a color gradient, never a photo, for the same reason.
-- Login, password-change, password-reset, and invite (preview and registration) endpoints are rate-limited to slow down credential-stuffing/brute-force and token-guessing attempts; this is automatic and needs no configuration.
-- Reading photos and videos through `GET`/`HEAD /uploads/*` is exempt from rate limiting so large galleries can load without exhausting the shared API budget. Authentication and media access checks still apply. Uploading new files through `POST /api/uploads` remains limited to 60 requests per 10 minutes per IP.
+### First account and automatic secrets
+
+A fresh installation has **no default or seeded admin account**. Opening `/admin` shows a one-time setup screen for the first account, which becomes an administrator. Once any account exists, the setup endpoint refuses to run again. The seed script is a development and test fixture with hardcoded passwords—never use it for a real deployment.
+
+Without a `.env`, Famlin generates:
+
+- A random `JWT_SECRET`, stored with mode `0600` in the `famlin-data` volume
+- A random database password, stored in the `famlin-db-secret` volume
+
+If you set `JWT_SECRET` or `POSTGRES_PASSWORD` yourself, keep both long, random, and private.
+
+### Restoring a backup on an unconfigured server
+
+The first-run screen can restore a scheduled backup only while the server has zero accounts, under the same protection as initial setup. It reads a named dump already present in the backup volume's `db/` folder; it deliberately does **not** accept a dump upload. Restoring runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
+
+### Sessions and account removal
+
+Changing or resetting a password immediately invalidates the account's existing sessions. Deactivating an account does the same, so a stolen session token doesn't outlive either action.
+
+Removing a user in the admin UI **deactivates** rather than deletes the account. Their existing posts, photos, and comments remain visible to the family, just as they do when someone leaves one group. An admin can reactivate the account later.
+
+### API tokens
+
+Personal API tokens for scripts and integrations are deliberately **not** revoked by a password reset, so integrations keep running. They:
+
+- Are stored only as a SHA-256 hash; the secret is shown once
+- Can have an expiry date and can be revoked individually with immediate effect
+- Have no more permissions than the account that created them
+- Do not carry admin rights unless an admin chose **Allow admin access** when creating the token. A token without it acts as an ordinary member, so a leaked script token cannot change server settings, manage users or export everything. Tokens that already existed when this option was added keep their admin rights; revoke and recreate them to narrow that.
+- Cannot be used to create more tokens
+- Are deleted together with their user
+
+Treat every token like a password. See [Using the API](/developers/api).
+
+### Secrets in server settings
+
+The OIDC client secret, the SMTP password and the Immich API key are write-only. The admin UI and the admin API report only whether each one is set, so an admin session or admin token that leaks cannot be used to read them. Changing the server a secret is sent to (issuer URL, SMTP host, Immich URL) without entering the secret again removes it, which stops a stolen session from redirecting a saved secret to another host. They are stored unencrypted in the database, so keep database backups as private as the database itself. See [Saved secrets](./admin-configuration.md#saved-secrets).
+
+### SSO and Sign in with Apple
+
+**SSO requires a verified email.** Famlin matches SSO accounts by email and rejects a login when the identity provider explicitly reports `email_verified: false`. Keep email verification enabled at providers that allow self-registration or user-editable email addresses.
+
+**Apple sign-ins are bound to your server.** The iPhone app includes the server address in the sign-in nonce, and your server rejects a token created for another address. This prevents one Famlin server from replaying your Apple sign-in against another. Set the [public address](./admin-configuration.md) for the strongest check. While it is empty, Famlin uses the request's `Host` header, never the client-spoofable `X-Forwarded-Host`; a directly reachable server therefore trusts the requested host. Older app builds without nonce support are still accepted, so keep the app updated.
+
+The mobile app sends your session only to the server you signed in to. An invite for another server shows its address and requires a separate sign-in; it never receives your existing session.
+
+## Family privacy
+
+### Families and circles
+
+Family membership is the main access boundary. **Family Circles** narrow that audience further and are enforced on the server:
+
+- Circle posts are excluded from feeds, search, memories, photo timelines, notifications, comments, reactions, and direct media requests for non-members.
+- Outsiders receive a `404`, with no hidden placeholder, so they cannot distinguish a private post from one that doesn't exist.
+- People outside a circle cannot discover its name, members, or existence.
+- Removing someone from a family also removes them from every circle in it immediately, ending access to its posts and photos.
+
+#### What administrators can see
+
+Circle privacy applies to admins too. An admin outside a circle cannot read its content, including in moderation screens. They can add themselves to the circle, but every member can see the member list and when each person joined—nobody can enter and read silently.
+
+Consequently, content in a circle the admin hasn't joined cannot be moderated directly. Deleting the whole circle is the only available admin action; it permanently deletes its posts after showing the count and asking for confirmation.
+
+There are two deliberate boundaries to this protection:
+
+- The **admin backup export** includes all family content, including every circle. Omitting private content would make the backup incomplete. A restore preserves the circles and their media access rules.
+- Anyone with **direct database or filesystem access** can read everything. Circles separate family members; they don't protect content from the server operator.
+
+### Photos and videos
+
+Uploaded media is not served as public files. Each request uses either the member's session or a narrower, expiring media token, and Famlin checks the audience again:
+
+- A post, comment, chat, or story attachment is available only to members of the families it was shared with. Someone from another family receives a `404`, even with the exact URL.
+- Removing a member from a family also revokes access to its protected media.
+- Profile pictures are visible to every signed-in user because they appear across that person's families.
+- A media token unlocks media only; it cannot be used elsewhere in the API or to act as its owner.
+- A photo's audience is fixed when its uploader first attaches it. Reusing the URL elsewhere, or reusing someone else's photo, cannot widen or narrow access.
+
+Access rules apply to files attached **after** the release that introduced each rule. Older files remain reachable by any signed-in user who has their URL until a future backfill changes that behavior.
+
+:::warning[Linked albums have a wider audience]
+A photo uploaded to a circle post is circle-private, but a photo in a **linked Immich or local album** is already available to every member of that album's family through the album browser. Adding it to a circle post does not make it private. Upload the photo directly to the post when it must be circle-private.
+:::
+
+### Stories
+
+An unhighlighted story stops being visible after 24 hours and is permanently deleted by a job running every 10 minutes. Deletion covers its database rows, served image, thumbnail, and original upload. Story photos must be fresh uploads owned by their author, so deletion cannot remove media used by another post.
+
+Stories follow the same family and circle rules as posts, including direct media URLs. Only the author sees the viewer list. A private reply is readable only by its sender and the story's author; no API, admin screen, push log, or export exposes it to anyone else except someone with direct database access.
+
+### Exports
+
+**Admin exports** contain all family content. Their browser download links use a random token instead of the admin's session. The token works once, expires after 60 seconds, can only be created by a signed-in admin session—not an API token—and is checked against the account's current admin status when used.
+
+**Member exports** contain what that member can already see in their families, including other members' posts and photos from shared groups. They exclude other families and circles, other people's favorites and settings, credentials, invites, and tokens. Members can start an export from their profile, rate-limited to five exports per user per hour.
+
+A member export includes that member's own latest device diagnostics and the diagnostic reports they sent. Admin backups and restores exclude devices and push tokens; mobile apps report their current state again after a restore.
+
+### Public branding
+
+The family name and logo configured under **Server settings → Branding** are public to anyone who can reach the server because the login page displays them. Logos use the public `/branding/...` path, never protected `/uploads/...` URLs. Uploaded logos are re-encoded from pixels; SVG is rejected because it can contain script. Login backgrounds are color gradients rather than photos for the same reason.
+
+## Network, storage, and diagnostics
+
+### HTTPS and Cloudflare
+
+Use a reverse proxy with HTTPS in production and set `TRUST_PROXY=true` only behind that proxy. The proxy must set the forwarded host and protocol headers correctly; see [Server setup](./server-setup.md#option-c-your-own-reverse-proxy).
+
+With [Cloudflare Tunnel](./cloudflare-tunnel.md), Cloudflare terminates TLS and can technically read traffic between your family and the server, including posts, photos, and session tokens. The tunnel avoids open ports and reduces that part of your attack surface. If you don't want a third party in the traffic path, use Caddy or your own reverse proxy instead.
+
+### S3-compatible storage
+
+With [S3 storage](./storage.md#option-c-s3-or-an-s3-compatible-service), Famlin still serves photos through its own access checks. Keep the bucket private, restrict Famlin's key to that bucket when possible, and protect `S3_SECRET_ACCESS_KEY` like `JWT_SECRET`—in `.env`, never in the repository.
+
+Deleted photos are removed from the bucket too. If bucket versioning is enabled, old versions remain until your lifecycle rules remove them.
+
+### Mobile device diagnostics
+
+The mobile app reports only a random install ID, platform, OS version, app version/build, and push permission to the Famlin server used by that account. It sends no device model, locale, IP address, activity data, timestamps, or last-seen field, and doesn't rewrite an unchanged report. Nothing is sent to the Famlin maintainer, Expo, or another third party.
+
+Members can see these fields in their profile; admins see current device state on the Devices page. The web app reports no device diagnostics.
+
+### Scroll diagnostic reports
+
+A member who measures feed scrolling (Profile → Advanced) can send the report to the server's admins or share it themselves; nothing leaves the phone until they do. A report holds the phone model, OS and app version and frame/post counts — no content, names or server address. Reports are rate-limited to 10 per member per hour, deleted after 30 days, and never forwarded anywhere by the server.
+
+### Rate limits
+
+Login, password change, password reset, and invite preview/registration endpoints are rate-limited automatically to slow credential-stuffing, brute-force, and token-guessing attempts.
+
+Reading media through `GET` or `HEAD /uploads/*` is exempt so large galleries don't exhaust the shared API budget; authentication and media access checks still apply. Uploading through `POST /api/uploads` remains limited to 60 requests per 10 minutes per IP address.

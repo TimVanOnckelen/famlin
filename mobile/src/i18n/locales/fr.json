@@ -654,7 +654,18 @@
     "saveSettings": "Enregistrer les réglages",
     "exclusionsHintMobile": "Touche une personne, puis une autre, pour qu'elles ne se tirent pas mutuellement (par ex. un couple).",
     "continue": "Continuer",
-    "notAvailable": "Cette liste de cadeaux n'est pas disponible."
+    "notAvailable": "Cette liste de cadeaux n'est pas disponible.",
+    "addGuest": "Ajouter une liste pour quelqu'un sans compte",
+    "addGuestSubmit": "Ajouter la liste",
+    "guestNamePlaceholder": "Nom, p. ex. un enfant",
+    "guestHint": "Pour les enfants ou toute personne absente de Famlin. Vous tenez sa liste à jour ; elle ne participe pas au tirage.",
+    "guestBadge": "Sans compte",
+    "guestManagedBy": "Tenue par {{name}}",
+    "guestManagedByYou": "Tenue par vous",
+    "renameGuest": "Renommer",
+    "renameGuestPrompt": "Nouveau nom",
+    "removeGuest": "Supprimer la liste",
+    "removeGuestConfirm": "Supprimer la liste de {{name}} et tous ses souhaits ?"
   },
   "serverVersion": {
     "title": "Ton serveur n'est pas à jour",

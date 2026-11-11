@@ -654,7 +654,18 @@
     "saveSettings": "Instellingen opslaan",
     "exclusionsHintMobile": "Tik op een persoon en daarna op een andere, zodat ze elkaar niet kunnen trekken (bv. partners).",
     "continue": "Doorgaan",
-    "notAvailable": "Deze cadeaulijst is niet beschikbaar."
+    "notAvailable": "Deze cadeaulijst is niet beschikbaar.",
+    "addGuest": "Lijstje toevoegen voor iemand zonder account",
+    "addGuestSubmit": "Lijstje toevoegen",
+    "guestNamePlaceholder": "Naam, bv. een kind",
+    "guestHint": "Voor kinderen of iemand die niet op Famlin zit. Jij houdt hun lijstje bij; ze doen niet mee aan de lottrekking.",
+    "guestBadge": "Geen account",
+    "guestManagedBy": "Bijgehouden door {{name}}",
+    "guestManagedByYou": "Bijgehouden door jou",
+    "renameGuest": "Naam wijzigen",
+    "renameGuestPrompt": "Nieuwe naam",
+    "removeGuest": "Lijstje verwijderen",
+    "removeGuestConfirm": "Het lijstje van {{name}} en alle wensen erop verwijderen?"
   },
   "serverVersion": {
     "title": "Je server is verouderd",

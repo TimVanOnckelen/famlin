@@ -74,6 +74,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
     highlights,
     liveStories,
     giftListItems,
+    giftListGuests,
     giftDrawAssignments,
     wikiPages,
   ] = await Promise.all([
@@ -133,6 +134,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
     }),
     prisma.story.findMany({ where: { pinnedAt: null }, select: { imageUrl: true } }),
     prisma.giftListItem.findMany(),
+    prisma.giftListGuest.findMany(),
     // Secret Santa pairings: a backup must restore a gift list exactly, so
     // they're in the archive — the one place the full set leaves the
     // database (an admin-only download, never a member-facing response).
@@ -173,6 +175,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
       uploads: uploads.length,
       highlights: highlights.length,
       giftListItems: giftListItems.length,
+      giftListGuests: giftListGuests.length,
       giftDrawAssignments: giftDrawAssignments.length,
       wikiPages: wikiPages.length,
       branding: branding.length,
@@ -193,6 +196,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
   archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
   archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
+  archive.append(JSON.stringify(giftListGuests, null, 2), { name: 'data/gift-list-guests.json' })
   archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
   archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })
   archive.append(JSON.stringify(wikiPages, null, 2), { name: 'data/wiki-pages.json' })

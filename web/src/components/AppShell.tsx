@@ -312,7 +312,7 @@ export function AppShell({
         onNewPost={onNewPost}
       />
 
-      {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
+      {apiTokensOpen && <ApiTokensModal isAdmin={user.isAdmin} onClose={() => setApiTokensOpen(false)} />}
       {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
     </div>
   )

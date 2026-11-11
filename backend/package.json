@@ -1,6 +1,6 @@
 {
   "name": "famlin-backend",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "type": "module",
   "description": "Fastify backend for Famlin",
@@ -47,7 +47,7 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^10.2.1",
     "pg": "^8.23.0",
-    "sharp": "0.34.5",
+    "sharp": "0.35.5",
     "yauzl": "^3.4.0",
     "zod": "^4.6.7"
   },

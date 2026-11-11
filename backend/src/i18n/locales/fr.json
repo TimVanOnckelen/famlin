@@ -126,6 +126,8 @@
     "giftListItemNotFound": "Souhait introuvable.",
     "giftListTooManyItems": "Une liste d'envies peut contenir 100 souhaits au maximum.",
     "giftListInvalidOrder": "Le nouvel ordre doit reprendre chacun de tes souhaits exactement une fois.",
+    "giftListGuestNotFound": "Liste de souhaits introuvable.",
+    "giftListTooManyGuests": "Une liste de cadeaux peut contenir au maximum 30 listes pour des personnes sans compte.",
     "giftDrawDisabled": "Le tirage au sort du Père Noël secret n'est pas activé pour cette liste.",
     "giftDrawTooFewParticipants": "Le tirage au sort du Père Noël secret demande au moins 3 participants.",
     "giftDrawImpossible": "Aucun tirage n'est possible avec ces exclusions. Retire-en quelques-unes et réessaie.",

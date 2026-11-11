@@ -568,8 +568,9 @@ paths:
                       /api/uploads/status/{assetKey}`), `livePhotos` (0.8.7),
                       `deviceDiagnostics` (`/api/devices`), `wiki`
                       (`/api/wiki`), `diagnosticReports` (`POST
-                      /api/diagnostics/reports`).
-                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports]
+                      /api/diagnostics/reports`), `giftListGuests` (guest
+                      wishlists on gift lists).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests]
 
   /branding/{file}:
     get:
@@ -668,6 +669,13 @@ paths:
                   minimum: 1
                   maximum: 3650
                   description: Omit for a token that never expires.
+                adminAccess:
+                  type: boolean
+                  default: false
+                  description: |
+                    Let the token use its owner's admin rights. Only an admin
+                    may set this (`403` otherwise). Without it the token acts
+                    as an ordinary member, even when its owner is an admin.
       responses:
         '201':
           description: The created token, including its secret (shown only here)
@@ -3227,7 +3235,9 @@ paths:
       description: |
         Appended at the end of your list (at most 100 wishes). While a draw is
         active, the person buying for you gets a `gift_list_updated`
-        notification (same-day additions are bundled).
+        notification (same-day additions are bundled). With `guestId`, the
+        wish goes on that guest's wishlist instead — only one you manage
+        (`404` otherwise), and nobody is notified.
       requestBody:
         required: true
         content:
@@ -3240,6 +3250,10 @@ paths:
                 note: { type: string, nullable: true, maxLength: 1000 }
                 url: { type: string, nullable: true, description: An `http(s)` link. }
                 photoUrl: { type: string, nullable: true, description: An `/uploads/...` path. }
+                guestId:
+                  type: string
+                  nullable: true
+                  description: A guest wishlist you manage (server feature `giftListGuests`).
       responses:
         '200':
           description: The new wish
@@ -3259,7 +3273,10 @@ paths:
       operationId: reorderGiftListItems
       tags: [Gift lists]
       summary: Reorder your wishes
-      description: '`itemIds` must list each of your own wishes exactly once, in the new order.'
+      description: |
+        `itemIds` must list each of your own wishes exactly once, in the new
+        order — or, with `guestId`, each wish on that guest's wishlist (one
+        you manage).
       parameters:
         - name: postId
           in: path
@@ -3276,6 +3293,10 @@ paths:
                 itemIds:
                   type: array
                   items: { type: string }
+                guestId:
+                  type: string
+                  nullable: true
+                  description: Reorder this guest's wishlist (server feature `giftListGuests`).
       responses:
         '200':
           description: Your wishes in their new order
@@ -3290,6 +3311,100 @@ paths:
                       $ref: '#/components/schemas/GiftListItem'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/gift-lists/{postId}/guests:
+    post:
+      operationId: addGiftListGuest
+      tags: [Gift lists]
+      summary: Add a wishlist for someone without an account
+      description: |
+        For a young child or anyone else who isn't on Famlin. Any participant
+        may add one (at most 30 per list) and becomes its manager — the only
+        one who adds, edits and reorders its wishes, via the item endpoints
+        with `guestId`. Guests never take part in the Secret Santa draw. When
+        the manager leaves or is removed, the guest's wishlist goes too.
+        Server feature `giftListGuests`.
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        '200':
+          description: The updated gift list post (see `giftList.guests`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/gift-lists/{postId}/guests/{guestId}:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: guestId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      operationId: renameGiftListGuest
+      tags: [Gift lists]
+      summary: Rename a guest wishlist
+      description: Its manager or the list's starter; `404` for anyone else.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        '200':
+          description: The updated gift list post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: removeGiftListGuest
+      tags: [Gift lists]
+      summary: Remove a guest wishlist and its wishes
+      description: Its manager or the list's starter; `404` for anyone else.
+      responses:
+        '200':
+          description: The updated gift list post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -5021,7 +5136,22 @@ components:
               - $ref: '#/components/schemas/UserSummary'
               - type: object
                 properties:
-                  itemCount: { type: integer }
+                  itemCount:
+                    type: integer
+                    description: Wishes on their own wishlist (not those of guests they manage).
+        guests:
+          type: array
+          description: |
+            Wishlists for people without an account, each kept up by one
+            participant (`managedById`). Never part of the draw. Missing on
+            servers without the `giftListGuests` feature.
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              managedById: { type: string }
+              itemCount: { type: integer }
         itemCount: { type: integer }
         exclusions:
           type: array
@@ -5054,6 +5184,10 @@ components:
           nullable: true
           description: An `/uploads/...` path, readable by the list's participants only.
         position: { type: integer }
+        guestId:
+          type: string
+          nullable: true
+          description: Set when the wish is on a guest's wishlist; `ownerId` is then the guest's manager.
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     Story:
@@ -5166,6 +5300,11 @@ components:
           type: string
           description: First characters of the secret, for telling tokens apart.
           example: Zx9kQ2aB
+        adminAccess:
+          type: boolean
+          description: |
+            Whether the token may use its owner's admin rights. `false` means
+            it acts as an ordinary member, even when its owner is an admin.
         lastUsedAt:
           type: string
           format: date-time

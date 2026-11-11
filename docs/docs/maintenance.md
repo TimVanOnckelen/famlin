@@ -48,7 +48,7 @@ Backups are deliberately not data-export zips: an export holds a full copy of ev
 
 Backups on the same disk protect you from mistakes (a deleted post, a bad upgrade) and database corruption, but not from the disk or machine failing. Copy `famlin-backups` somewhere else as well: `rsync` the volume's folder to another machine on a cron job (`rsync -a /var/lib/docker/volumes/famlin_famlin-backups/_data/ backup-host:/srv/famlin-backups/`), point your NAS backup job (Hyper Backup and similar) at it, or bind-mount a NAS folder as described below.
 
-:::tip Keep backups off the machine they protect
+:::tip[Keep backups off the machine they protect]
 `famlin-backups` is a separate volume, but by default it's on the same disk as everything else. For real protection, bind-mount a folder on another disk or a NAS share instead:
 
 ```yaml
@@ -60,7 +60,7 @@ Backups on the same disk protect you from mistakes (a deleted post, a bad upgrad
 The container runs as the unprivileged `node` user (uid 1000), so that folder must be writable by uid 1000. You can also keep backing up the `famlin-backups` volume itself with your existing tools.
 :::
 
-:::warning Older compose files
+:::warning[Older compose files]
 `famlin-backups` was added to `docker-compose.yml` together with scheduled backups. If your copy of the compose file predates it, backups are written inside the container and **lost when the container is recreated** (for example on every update). System status warns about this. Add the volume as shown in the repository's [`docker-compose.yml`](https://github.com/TimVanOnckelen/famlin/blob/main/docker-compose.yml).
 :::
 
@@ -220,7 +220,7 @@ files relevant to the image, for both `linux/amd64` and `linux/arm64`.
 Docs-only, website-only, mobile-only, and Markdown-only changes are skipped,
 as are release PR merges (the release workflow builds those commits).
 
-:::warning Use dev on a test instance only
+:::warning[Use dev on a test instance only]
 
 The container runs `prisma migrate deploy` on startup. A `dev` image may apply
 database migrations that are not included in any release yet. An older

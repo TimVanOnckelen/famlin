@@ -654,7 +654,18 @@
     "saveSettings": "Save settings",
     "exclusionsHintMobile": "Tap one person, then another, to keep them from drawing each other (e.g. partners).",
     "continue": "Continue",
-    "notAvailable": "This gift list is not available."
+    "notAvailable": "This gift list is not available.",
+    "addGuest": "Add a wishlist for someone without an account",
+    "addGuestSubmit": "Add wishlist",
+    "guestNamePlaceholder": "Name, e.g. a child",
+    "guestHint": "For children or anyone not on Famlin. You keep their wishlist up; they're not part of the draw.",
+    "guestBadge": "No account",
+    "guestManagedBy": "Kept up by {{name}}",
+    "guestManagedByYou": "Kept up by you",
+    "renameGuest": "Rename",
+    "renameGuestPrompt": "New name",
+    "removeGuest": "Remove wishlist",
+    "removeGuestConfirm": "Remove {{name}}'s wishlist and all its wishes?"
   },
   "serverVersion": {
     "title": "Your server is out of date",
