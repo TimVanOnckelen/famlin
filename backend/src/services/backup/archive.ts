@@ -38,7 +38,8 @@ export function parseBackupArchiveFileName(name: string): Date | null {
 export async function writeBackupArchive(
   dir: string,
   now: Date,
-  mediaLocation: Exclude<MediaLocation, 'archive'>
+  mediaLocation: Exclude<MediaLocation, 'archive'>,
+  trigger?: string
 ): Promise<{ file: string; bytes: number }> {
   await fsp.mkdir(dir, { recursive: true })
   const finalPath = path.join(dir, backupArchiveFileName(now))
@@ -50,7 +51,7 @@ export async function writeBackupArchive(
       (err) => {
         failure = err
       },
-      { mediaLocation }
+      { mediaLocation, trigger }
     )
     const out = fs.createWriteStream(partialPath)
     archive.pipe(out)
@@ -101,6 +102,8 @@ export interface BackupListing {
   mediaLocation: MediaLocation | null
   // Format 2+: accounts come back with their passwords.
   credentials: boolean
+  // Taken automatically right before a restore on a running server.
+  safety: boolean
   valid: boolean
 }
 
@@ -123,6 +126,7 @@ export async function listBackups(archiveDir: string, dumpDir: string): Promise<
       serverVersion: manifest?.serverVersion ?? null,
       mediaLocation: manifest ? (manifest.mediaLocation ?? (manifest.includeMedia ? 'archive' : 'storage')) : null,
       credentials: !!manifest && manifest.format >= 2 && manifest.credentials,
+      safety: manifest?.trigger === 'safety',
       valid: !!manifest,
     })
   }
@@ -133,6 +137,7 @@ export async function listBackups(archiveDir: string, dumpDir: string): Promise<
       serverVersion: null,
       mediaLocation: 'mirror',
       credentials: true,
+      safety: false,
       valid: true,
     })
   }

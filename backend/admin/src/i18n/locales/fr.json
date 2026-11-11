@@ -45,7 +45,8 @@
     "language": "Langue",
     "version": "Version {{version}}",
     "systemStatus": "État du système",
-    "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées."
+    "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées.",
+    "backups": "Sauvegardes"
   },
   "devices": {
     "title": "Appareils mobiles",
@@ -433,7 +434,7 @@
     "backups": "Sauvegardes",
     "backupsDesc": "Sauvegardes planifiées de la base de données et de chaque photo et vidéo envoyée, écrites dans le volume de sauvegarde de ce serveur.",
     "backupEnabled": "Sauvegardes planifiées",
-    "backupEnabledHint": "Chaque passage fait un dump de la base et met à jour une copie incrémentale des envois. Activé par défaut sur les nouvelles installations.",
+    "backupEnabledHint": "Chaque passage écrit une sauvegarde Famlin et met à jour une copie incrémentale des envois. Activé par défaut sur les nouvelles installations.",
     "backupOffsiteHint": "Des sauvegardes sur le même disque protègent contre les erreurs et la corruption, pas contre une panne de disque. Copie aussi le volume famlin-backups sur une autre machine ou un NAS.",
     "backupOffsiteLink": "Comment copier les sauvegardes hors de cette machine",
     "backupSchedule": "Fréquence",
@@ -757,5 +758,55 @@
     "backupsOn": "Active les sauvegardes",
     "continue": "Ouvrir le guide de configuration",
     "dismiss": "Masquer"
+  },
+  "backups": {
+    "title": "Sauvegardes",
+    "backUpNow": "Sauvegarder maintenant",
+    "running": "Sauvegarde en cours…",
+    "listTitle": "Sauvegardes sur ce serveur",
+    "listDesc": "Toutes les sauvegardes du dossier de sauvegardes du serveur, de la plus récente à la plus ancienne : planifiées, faites avec Sauvegarder maintenant, et sauvegardes de sécurité prises juste avant une restauration.",
+    "empty": "Pas encore de sauvegarde. Active les sauvegardes planifiées ci-dessous ou clique sur Sauvegarder maintenant.",
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "size": "Taille",
+      "photos": "Photos",
+      "version": "Version",
+      "actions": "Actions"
+    },
+    "safetyBadge": "Avant restauration",
+    "download": "Télécharger",
+    "restore": "Restaurer",
+    "delete": "Supprimer",
+    "olderExportHint": "Un ancien export sans mots de passe : restaure-le depuis l'écran d'installation d'un nouveau serveur.",
+    "deleteTitle": "Supprimer cette sauvegarde ?",
+    "deleteBody": "{{name}} est définitivement supprimé du dossier de sauvegardes. Les photos de la copie des médias partagée restent.",
+    "restoreTitle": "Restaurer cette sauvegarde ?",
+    "restoreIntro": "Le serveur entier revient à son état du {{date}} :",
+    "restorePointSafety": "D'abord, Famlin fait une sauvegarde de sécurité de tout ce qui existe maintenant, pour pouvoir revenir en arrière.",
+    "restorePointReplace": "Ensuite, toutes les familles, publications, photos, comptes, mots de passe et paramètres sont remplacés par ceux de la sauvegarde. Tout ce qui a été ajouté depuis disparaît.",
+    "restorePointSignOut": "Tout le monde est déconnecté, toi aussi, et se reconnecte avec le mot de passe de l'époque.",
+    "restorePointSecrets": "Les identifiants enregistrés (secret client OIDC, mot de passe SMTP, clé API Immich) sont conservés, sauf si la sauvegarde les fait pointer vers un autre serveur.",
+    "restoreConfirmLabel": "Saisis {{name}} pour confirmer",
+    "restoreButton": "Restaurer et déconnecter tout le monde",
+    "restoringTitle": "Restauration de la sauvegarde…",
+    "restoringBody": "Famlin est indisponible jusqu'à la fin, ce qui peut prendre quelques minutes pour une grande famille. Garde cette page ouverte : tu seras ensuite redirigé vers l'écran de connexion.",
+    "restoreDoneNotice": "La sauvegarde a été restaurée. Connecte-toi avec le mot de passe que tu avais au moment où elle a été faite.",
+    "restoreError": {
+      "unknownBackup": "Cette sauvegarde n'est plus dans le dossier de sauvegardes.",
+      "busy": "Une sauvegarde ou une autre restauration est en cours. Réessaie quand elle est terminée.",
+      "safetyBackupFailed": "La sauvegarde de sécurité a échoué, rien n'a donc été restauré. Consulte l'état du système et le journal du serveur.",
+      "archiveTooNew": "Cette sauvegarde vient d'une version plus récente de Famlin. Mets d'abord ce serveur à jour.",
+      "invalidArchive": "Ce fichier n'est pas une sauvegarde Famlin valide. Rien n'a été restauré.",
+      "missingMedia": "Certaines photos nécessaires à cette sauvegarde ne sont ni dans le stockage des médias ni dans le dossier de sauvegardes. Rien n'a été restauré.",
+      "adminRequired": "Cette sauvegarde n'a aucun compte administrateur avec mot de passe. Restaure-la depuis l'écran d'installation d'un nouveau serveur.",
+      "restoreFailed": "La restauration a échoué. Pour une sauvegarde Famlin, rien n'a été modifié ; consulte le journal du serveur."
+    },
+    "scheduleTitle": "Planification",
+    "scheduleSaved": "Enregistré.",
+    "exportDesc": "Télécharge une sauvegarde Famlin maintenant, au même format que les sauvegardes planifiées. Avec les photos, elle peut être restaurée depuis l'écran d'installation d'un autre serveur, sans accès shell.",
+    "showDumps": "Afficher les dumps de base ({{count}})",
+    "hideDumps": "Masquer les dumps de base",
+    "dumpsNote": "Jusqu'à Famlin 1.0.0, chaque passage écrit aussi un dump de la base par sécurité. Restaure la sauvegarde Famlin, sauf raison particulière."
   }
 }

@@ -71,6 +71,7 @@ import {
 import { getUpdateNotice } from '../services/updateCheck.js'
 import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAlerts.js'
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
+import adminBackupRoutes from './adminBackups.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -1136,6 +1137,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       .catch((err) => request.log.error(err, 'system alerts check failed'))
     return reply.status(202).send({ started: true })
   })
+
+  // List/download/delete/restore backups (the admin Backups page).
+  await fastify.register(adminBackupRoutes)
 
   // Per-family branding (issue #164, services/branding/). One brand per
   // server; the palette is derived server-side so mobile and web can't drift.

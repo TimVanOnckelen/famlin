@@ -59,6 +59,8 @@
     "restoreArchiveInvalid": "This file isn't a valid Famlin export",
     "restoreArchiveTooNew": "This backup was made by a newer version of Famlin. Update this server first, then restore it",
     "restoreAdminRequired": "This is an older Famlin export without accounts' passwords. Fill in your name, email and a password to create the admin account you'll sign in with",
+    "restoreInProgress": "Famlin is restoring a backup. Try again in a few minutes.",
+    "restoreConfirmMismatch": "Type {{name}} exactly to confirm the restore.",
     "restoreDumpInvalid": "This file isn't a Famlin scheduled backup (.dump)",
     "restoreDumpFailed": "The backup couldn't be restored. Check the server log for details",
     "restoreDumpUnknown": "That backup isn't in this server's backups folder",

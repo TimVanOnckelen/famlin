@@ -45,7 +45,8 @@
     "language": "Language",
     "version": "Version {{version}}",
     "systemStatus": "System status",
-    "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved."
+    "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved.",
+    "backups": "Backups"
   },
   "devices": {
     "title": "Mobile devices",
@@ -433,7 +434,7 @@
     "backups": "Backups",
     "backupsDesc": "Scheduled backups of the database and every uploaded photo and video, written to the backups volume on this server.",
     "backupEnabled": "Scheduled backups",
-    "backupEnabledHint": "Each run makes a database dump and updates one incremental copy of the uploads. Enabled by default on new installs.",
+    "backupEnabledHint": "Each run writes a Famlin backup and updates one incremental copy of the uploads. Enabled by default on new installs.",
     "backupOffsiteHint": "Backups on the same disk protect against mistakes and corruption, not against a failed disk. Copy the famlin-backups volume to another machine or a NAS too.",
     "backupOffsiteLink": "How to copy backups off this machine",
     "backupSchedule": "Schedule",
@@ -757,5 +758,55 @@
     "backupsOn": "Turn on backups",
     "continue": "Open setup guide",
     "dismiss": "Dismiss"
+  },
+  "backups": {
+    "title": "Backups",
+    "backUpNow": "Back up now",
+    "running": "Backing up…",
+    "listTitle": "Backups on this server",
+    "listDesc": "Every backup in the server's backups folder, newest first: scheduled backups, ones made with Back up now, and safety backups taken right before a restore.",
+    "empty": "No backups yet. Turn on scheduled backups below, or press Back up now.",
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "size": "Size",
+      "photos": "Photos",
+      "version": "Version",
+      "actions": "Actions"
+    },
+    "safetyBadge": "Before restore",
+    "download": "Download",
+    "restore": "Restore",
+    "delete": "Delete",
+    "olderExportHint": "An older export without passwords: restore it on a new server's setup screen.",
+    "deleteTitle": "Delete this backup?",
+    "deleteBody": "{{name}} is removed from the backups folder for good. Photos in the shared media copy stay.",
+    "restoreTitle": "Restore this backup?",
+    "restoreIntro": "This puts the whole server back to how it was on {{date}}:",
+    "restorePointSafety": "First, Famlin makes a safety backup of everything as it is now, so you can go back.",
+    "restorePointReplace": "Then every family, post, photo, account, password and setting is replaced by the backup's. Anything added since is gone.",
+    "restorePointSignOut": "Everyone is signed out, you included, and signs in again with the password they had then.",
+    "restorePointSecrets": "Saved credentials (OIDC client secret, SMTP password, Immich API key) are kept, unless the backup points them at a different server.",
+    "restoreConfirmLabel": "Type {{name}} to confirm",
+    "restoreButton": "Restore and sign everyone out",
+    "restoringTitle": "Restoring the backup…",
+    "restoringBody": "Famlin is unavailable until this finishes, which can take a few minutes for a large family. Keep this page open: you'll be taken to the sign-in screen afterwards.",
+    "restoreDoneNotice": "The backup was restored. Sign in with the password you had when it was made.",
+    "restoreError": {
+      "unknownBackup": "That backup is no longer in the backups folder.",
+      "busy": "A backup or another restore is running. Try again when it's done.",
+      "safetyBackupFailed": "The safety backup failed, so nothing was restored. Check System status and the server log.",
+      "archiveTooNew": "This backup was made by a newer version of Famlin. Update this server first.",
+      "invalidArchive": "This file isn't a valid Famlin backup. Nothing was restored.",
+      "missingMedia": "Some photos this backup needs are neither in media storage nor in the backups folder. Nothing was restored.",
+      "adminRequired": "This backup has no admin account with a password. Restore it on a new server's setup screen.",
+      "restoreFailed": "The restore failed. Nothing was changed if it was a Famlin backup; check the server log."
+    },
+    "scheduleTitle": "Schedule",
+    "scheduleSaved": "Saved.",
+    "exportDesc": "Download a Famlin backup right now — the same format as the scheduled ones. With photos included, it can be restored on another server's setup screen without shell access.",
+    "showDumps": "Show database dumps ({{count}})",
+    "hideDumps": "Hide database dumps",
+    "dumpsNote": "Until Famlin 1.0.0 each run also writes a database dump as a safety net. Restore the Famlin backup unless you have a reason not to."
   }
 }

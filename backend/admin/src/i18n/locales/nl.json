@@ -45,7 +45,8 @@
     "language": "Taal",
     "version": "Versie {{version}}",
     "systemStatus": "Systeemstatus",
-    "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen."
+    "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen.",
+    "backups": "Back-ups"
   },
   "devices": {
     "title": "Mobiele apparaten",
@@ -433,7 +434,7 @@
     "backups": "Back-ups",
     "backupsDesc": "Geplande back-ups van de database en alle geüploade foto's en video's, weggeschreven naar het back-upvolume op deze server.",
     "backupEnabled": "Geplande back-ups",
-    "backupEnabledHint": "Elke run maakt een databasedump en werkt één incrementele kopie van de uploads bij. Standaard ingeschakeld bij nieuwe installaties.",
+    "backupEnabledHint": "Elke run schrijft een Famlin-back-up en werkt één incrementele kopie van de uploads bij. Standaard ingeschakeld bij nieuwe installaties.",
     "backupOffsiteHint": "Back-ups op dezelfde schijf beschermen tegen vergissingen en corruptie, niet tegen een defecte schijf. Kopieer het volume famlin-backups ook naar een andere machine of NAS.",
     "backupOffsiteLink": "Hoe je back-ups van deze machine kopieert",
     "backupSchedule": "Planning",
@@ -757,5 +758,55 @@
     "backupsOn": "Zet back-ups aan",
     "continue": "Open de installatiegids",
     "dismiss": "Verbergen"
+  },
+  "backups": {
+    "title": "Back-ups",
+    "backUpNow": "Nu back-up maken",
+    "running": "Back-up wordt gemaakt…",
+    "listTitle": "Back-ups op deze server",
+    "listDesc": "Alle back-ups in de back-upmap van de server, nieuwste eerst: geplande back-ups, back-ups via Nu back-up maken en veiligheidsback-ups vlak voor het terugzetten.",
+    "empty": "Nog geen back-ups. Zet hieronder geplande back-ups aan of klik op Nu back-up maken.",
+    "table": {
+      "date": "Datum",
+      "type": "Type",
+      "size": "Grootte",
+      "photos": "Foto's",
+      "version": "Versie",
+      "actions": "Acties"
+    },
+    "safetyBadge": "Voor terugzetten",
+    "download": "Downloaden",
+    "restore": "Terugzetten",
+    "delete": "Verwijderen",
+    "olderExportHint": "Een oudere export zonder wachtwoorden: zet die terug via het installatiescherm van een nieuwe server.",
+    "deleteTitle": "Deze back-up verwijderen?",
+    "deleteBody": "{{name}} wordt definitief uit de back-upmap verwijderd. Foto's in de gedeelde mediakopie blijven bewaard.",
+    "restoreTitle": "Deze back-up terugzetten?",
+    "restoreIntro": "Hiermee zet je de hele server terug naar hoe die was op {{date}}:",
+    "restorePointSafety": "Eerst maakt Famlin een veiligheidsback-up van alles zoals het nu is, zodat je terug kunt.",
+    "restorePointReplace": "Daarna worden alle families, berichten, foto's, accounts, wachtwoorden en instellingen vervangen door die van de back-up. Alles wat sindsdien is toegevoegd, verdwijnt.",
+    "restorePointSignOut": "Iedereen wordt uitgelogd, jij ook, en logt opnieuw in met het wachtwoord van toen.",
+    "restorePointSecrets": "Opgeslagen inloggegevens (OIDC-clientgeheim, SMTP-wachtwoord, Immich-API-sleutel) blijven bewaard, tenzij de back-up ze naar een andere server laat wijzen.",
+    "restoreConfirmLabel": "Typ {{name}} om te bevestigen",
+    "restoreButton": "Terugzetten en iedereen uitloggen",
+    "restoringTitle": "Back-up wordt teruggezet…",
+    "restoringBody": "Famlin is onbereikbaar tot dit klaar is; bij een grote familie kan dat een paar minuten duren. Laat deze pagina open: daarna ga je naar het inlogscherm.",
+    "restoreDoneNotice": "De back-up is teruggezet. Log in met het wachtwoord dat je had toen die gemaakt werd.",
+    "restoreError": {
+      "unknownBackup": "Die back-up staat niet meer in de back-upmap.",
+      "busy": "Er loopt een back-up of een andere terugzetactie. Probeer het opnieuw als die klaar is.",
+      "safetyBackupFailed": "De veiligheidsback-up is mislukt, dus er is niets teruggezet. Bekijk Systeemstatus en het serverlog.",
+      "archiveTooNew": "Deze back-up is gemaakt met een nieuwere versie van Famlin. Werk deze server eerst bij.",
+      "invalidArchive": "Dit bestand is geen geldige Famlin-back-up. Er is niets teruggezet.",
+      "missingMedia": "Sommige foto's die deze back-up nodig heeft, staan niet in de mediaopslag en niet in de back-upmap. Er is niets teruggezet.",
+      "adminRequired": "Deze back-up heeft geen beheerdersaccount met wachtwoord. Zet hem terug via het installatiescherm van een nieuwe server.",
+      "restoreFailed": "Het terugzetten is mislukt. Bij een Famlin-back-up is er niets veranderd; bekijk het serverlog."
+    },
+    "scheduleTitle": "Planning",
+    "scheduleSaved": "Opgeslagen.",
+    "exportDesc": "Download nu een Famlin-back-up, in hetzelfde formaat als de geplande. Met foto's erbij kun je hem zonder shell-toegang terugzetten via het installatiescherm van een andere server.",
+    "showDumps": "Databasedumps tonen ({{count}})",
+    "hideDumps": "Databasedumps verbergen",
+    "dumpsNote": "Tot Famlin 1.0.0 schrijft elke run ook een databasedump als vangnet. Zet de Famlin-back-up terug, tenzij je een reden hebt om dat niet te doen."
   }
 }

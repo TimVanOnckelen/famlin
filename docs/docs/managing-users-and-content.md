@@ -106,9 +106,39 @@ The **System status** page gives you one place to check that the server is healt
 
 **Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Server settings → Notifications); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
 
+## Backups
+
+The **Backups** page in the admin menu has everything backup-related in one place.
+
+![The Backups page: backups on this server, the schedule, and the data export](./img/admin-backups.png)
+
+- **Backups on this server** lists every backup in the server's backups folder, newest first: date, size, where its photos are, and the Famlin version that made it. Backups marked **Before restore** are safety backups Famlin took automatically right before a restore. Until Famlin 1.0.0 every run also writes a database dump; those are hidden behind **Show database dumps** and can be restored too.
+  - **Download** saves the file to your computer (keep a copy off the server).
+  - **Delete** removes it from the backups folder for good. The shared copy of the photos stays.
+  - **Restore** puts the whole server back to that backup — see below.
+- **Back up now** (top right) starts a backup straight away, whatever the schedule.
+- **Schedule**: turn scheduled backups on or off, choose daily or weekly, the hour, how many backups to keep, and whether photos are copied too. See [Scheduled backups](./maintenance.md#scheduled-backups).
+- **Data export**: download a backup on demand, optionally with every photo inside (see [Data export](#data-export) below).
+
+### Restoring a backup on a running server
+
+**Restore** replaces *everything* on the server — every family, post, photo, account, password and setting — with the backup's. Only a signed-in admin can do it, not an API token.
+
+![Restoring a backup: what happens, and typing the family's name to confirm](./img/admin-backups-restore.png)
+
+1. Press **Restore** next to the backup. The dialog lists what will happen.
+2. Type your family's name (as set under [Branding](./admin-configuration.md#branding); **Famlin** if you never set one) and press **Restore and sign everyone out**.
+3. Famlin first makes a **safety backup** of the server as it is now. If that fails, nothing is restored.
+4. While it restores, Famlin is unavailable for everyone (the apps show an error for a few moments). This takes seconds for a small family and a few minutes for a large one.
+5. Afterwards **everyone is signed out**, you included, and signs in again with the password they had when the backup was made.
+
+Saved credentials (OIDC client secret, SMTP password, Immich API key) are kept, because backups never contain them — unless the backup points that credential at a different server (another SMTP host, say); then enter it again. Changed your mind? Restore the **Before restore** backup the same way.
+
+An older data export without passwords can't be restored here; restore it on a new server's setup screen instead (see [Restoring a backup](./maintenance.md#restoring-a-backup)).
+
 ## Data export
 
-The **Server settings** page's general section has a **Data export** card with a **Download export** button. It downloads a zip containing:
+The **Backups** page has a **Data export** card with a **Download export** button. It downloads a zip containing:
 
 - All posts, comments, reactions, and favorites, across every group — **including posts shared with circles you're not a member of**. This is the one place circle privacy doesn't apply, because a backup that silently left content out wouldn't be a usable backup. Treat the export file accordingly.
 - All chat messages.

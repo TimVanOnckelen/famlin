@@ -59,6 +59,8 @@
     "restoreArchiveInvalid": "Dit bestand is geen geldige Famlin-export",
     "restoreArchiveTooNew": "Deze back-up is gemaakt met een nieuwere versie van Famlin. Werk deze server eerst bij en zet de back-up daarna terug",
     "restoreAdminRequired": "Dit is een oudere Famlin-export zonder de wachtwoorden van accounts. Vul je naam, e-mailadres en een wachtwoord in om het beheerdersaccount aan te maken waarmee je inlogt",
+    "restoreInProgress": "Famlin zet een back-up terug. Probeer het over een paar minuten opnieuw.",
+    "restoreConfirmMismatch": "Typ {{name}} precies om het terugzetten te bevestigen.",
     "restoreDumpInvalid": "Dit bestand is geen geplande Famlin-back-up (.dump)",
     "restoreDumpFailed": "De back-up kon niet worden teruggezet. Bekijk het serverlogboek voor details",
     "restoreDumpUnknown": "Die back-up staat niet in de back-upmap van deze server",
