@@ -33,6 +33,8 @@ import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../service
 import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
 import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
+import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
+import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
 import {
@@ -54,11 +56,6 @@ import {
 // pays the cost of a bcrypt.compare, instead of returning immediately, so
 // timing doesn't reveal whether the email exists.
 const DUMMY_PASSWORD_HASH = await hashPassword(crypto.randomUUID())
-
-// Arbitrary fixed key for a Postgres advisory lock — only used to serialize
-// concurrent POST /setup calls against each other (see below), unrelated to
-// any other lock in the app.
-const SETUP_ADVISORY_LOCK_KEY = 4_827_193n
 
 // The oldest mobile app version this server still supports. Mobile clients
 // compare their own build version against this and show a blocking
@@ -238,6 +235,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
       user: sanitizeUser(user),
     }
   })
+
+  // Public: progress of a restore onto this running server (admin Backups
+  // page). Public because the restore ends the session of the admin who
+  // started it; it reports only a state and an error code.
+  fastify.get('/restore-status', async () => getRestoreStatus())
 
   // Shared by the three restore routes below.
   function sendRestoreError(request: FastifyRequest, reply: FastifyReply, err: RestoreError) {

@@ -59,6 +59,8 @@
     "restoreArchiveInvalid": "Ce fichier n'est pas un export Famlin valide",
     "restoreArchiveTooNew": "Cette sauvegarde vient d'une version plus récente de Famlin. Mets d'abord ce serveur à jour, puis restaure-la",
     "restoreAdminRequired": "Ceci est un ancien export Famlin sans les mots de passe des comptes. Saisis ton nom, ton e-mail et un mot de passe pour créer le compte administrateur avec lequel tu te connecteras",
+    "restoreInProgress": "Famlin restaure une sauvegarde. Réessaie dans quelques minutes.",
+    "restoreConfirmMismatch": "Saisis exactement {{name}} pour confirmer la restauration.",
     "restoreDumpInvalid": "Ce fichier n'est pas une sauvegarde planifiée Famlin (.dump)",
     "restoreDumpFailed": "La sauvegarde n'a pas pu être restaurée. Consulte le journal du serveur pour plus de détails",
     "restoreDumpUnknown": "Cette sauvegarde n'est pas dans le dossier de sauvegardes de ce serveur",

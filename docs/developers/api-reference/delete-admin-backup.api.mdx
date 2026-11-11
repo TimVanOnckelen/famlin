@@ -1,0 +1,69 @@
+---
+id: delete-admin-backup
+title: "Delete a backup from the backups volume"
+description: "Signed-in admin only (an API token gets `403`). The shared media mirror is left alone."
+sidebar_label: "Delete a backup from the backups volume"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV81uGzcQfpUBL5WM9SptcukiCKAgausijQ3bQRBYQna0O9Iy5pIMyZWtCAv0IfqEfZJiyJXtRGl7ag9BTtLyZ+abmW9+uBPGksMgjT6pRSFqUhRoWrdSP8fqurMiEwHXXhRX4iIYh2sC5F3pQ7omFpmoyVdO2vhZiAu51lQfS51OgtFqCyPUMD07gWCuScOagofyyaPH5TiHy4bAN+iohpZqidBK54wD6UHRKgAqoykXmbDosKVAjuHshMaWRCFWUpHIhGTVFkMjMuHoQycd1aIIrqNM+KqhFkWxE2Fr+Y4PTuq16D+HPoVltBpYKLACWDnTws+zS5iglZNo0SQd8jAqV9gqqY/TwvHTIFvyAVv7LP8obQnGwf7Iw726a205Fv2CoXprtCfP6H549IR/PsX0IoakZrBPHn1/uP+b9F7qdQZSb1DJOgO6tWx9xuodbcw11VA5qkkHiUpkojI6kA4sC61VsoqRnLz3LHB36C6zfE9V4Ag4pkuQCS5xmA69+rlTf+la1MeOsMalogyCQ+0VBqphIxFCQ1BOq4psOH6Jet3hmkpoCGtyMCpJl5NSq3KcswcqU9O/azyNf1BBi1UjNd0phwgZWEoO5fls+uLd6auXb0to0V17wMRJWBkHCDdOBoKlMhU7cEkVdp4iXE9uQw5cpz1IDSz9mFk+qak10JqaYOSJoOSdU622JRgNZWJQF5pJEnAs9cqwYZmgW2ytYpPuQIm+f8jkq8Hdi0wEGeLRWVzo+z5S4/EhNab3mRqpkGTByJEPxhGgriFlfAEI/tO8zUCbAA/Tdpw4+AWOvjLgu6rZZ4/U0U0bo7qWvvHt6+Tbj1/g254AkW2JY9Izbp3c9o0IXxkR+ky0FBpzPzvEPh0aUYjDhjnZcV/tRSYSjtTHO6dEIZoQrC8mk9Qu8wFXXpn2wMtvTefA3Gj4KZ6Fmqwy25aJxS3VU9U5GbZR+JLQkZt2jOhq8XD7gsmW+PTw0F2IGZAYZgf+TocOwEzBkvMx6FhV5P0w4uxng3cWw7s8z8uMe3Ak31Aeb2gJaO0YjJtrBE/eS6Ph1zeXaegoz04v9mMHx06ZtdRlDs9NaAAds0GHRAseVG5wW8x1yVYYJz/GzCrgeUQNTyOoZ2U+1zG8TIBo6xDRwZPTsxORCY5MMq7qnGO3fm70bENuu3f/QEq6tcaTh9BID+ezi8vYODrN2RQZWMKfv/9xjze2lYbm2qxWspKcNGbJYxd3pcE3HjpPObyRbDFcfdHTi9Gkpg0pLhCe9Yznems6qFDDspOqhu2eL1IHWqex1QOuUWof0u4KW6m23/nBmHyu53qqFAwFi6uYr4zldNzC0dHamc5CS+2SnG+kPToqYK8zjrucf8kQzuW5vpOjId71MIoqJflxvLkkZfQagsnitdBQqp3acGABneniMoa5tuSS6TlcEMHVa57/omOnZyeH7khVpQsNz3+p4mYR0YYXjPZJ5Y1xXG6GxPORKZmwxocWY3Ue5u00jwLejcrMVVa+n4rv2v4nnNndF///7oUwpG6g2zCxCmU0IdaX3VCVrgRaKTIRFYtMDKBFJor4kFhkojE+8MHdbomeXjvV97z8oSPHNWWRiQ06yVU9Vphaev5fi2KFytM/mD06H4rqGP7fh8bfOGZYRL3lpEfV8ZfIxDVt9++qftFnIrXEaGzaSk3zwaWDZs6F9q4xvJi9nF3ORN//BcvqBOE=
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Delete a backup from the backups volume"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/admin/backups/{file}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Signed-in admin only (an API token gets `403`). The shared media mirror is left alone.
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./delete-admin-backup.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./delete-admin-backup.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./delete-admin-backup.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

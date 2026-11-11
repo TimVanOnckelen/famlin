@@ -39,7 +39,13 @@ import { pipeline } from 'stream/promises'
 import yauzl from 'yauzl'
 import { prisma } from '../db.js'
 import { uploadsDir } from '../config.js'
-import { invalidateSettingsCache, RESTORABLE_SETTING_KEYS } from './settings.js'
+import {
+  invalidateSettingsCache,
+  RESTORABLE_SETTING_KEYS,
+  SECRET_DESTINATION_KEYS,
+  SECRET_SETTING_KEYS,
+  sameDestination,
+} from './settings.js'
 import { restoreRequiredMedia } from './backup/mediaRestore.js'
 import { BACKUP_UPLOADS_DIR } from './backup/paths.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
@@ -69,8 +75,45 @@ export class RestoreError extends Error {
 // after an earlier restore die too.
 export const RESTORED_TOKEN_VERSION = 1_000_000
 
-export function restoredTokenVersion(archived: number | undefined): number {
-  return Math.max(RESTORED_TOKEN_VERSION, (archived ?? 0) + 1)
+// `min`: on a running server, one above every tokenVersion in use before the
+// restore, so no session issued before it survives.
+export function restoredTokenVersion(archived: number | undefined, min = 0): number {
+  return Math.max(RESTORED_TOKEN_VERSION, (archived ?? 0) + 1, min)
+}
+
+// Tables a restore onto a running server leaves alone: Prisma's migration
+// history and operational job/alert state. Settings are handled separately
+// (wipeForRestore) so this server's own credentials survive.
+const KEPT_TABLES = new Set(['_prisma_migrations', 'JobStatus', 'SystemAlert', 'Setting'])
+
+// Empties every content table inside the restore's transaction — a failed
+// restore rolls this back too. Users go, and with them (by cascade) devices,
+// push tokens, API tokens, invites and notifications, none of which a backup
+// carries. Of the settings, only the restorable and branding ones are
+// replaced; credentials and internal rows (update check) stay.
+async function wipeForRestore(tx: Prisma.TransactionClient): Promise<void> {
+  const tables = await tx.$queryRaw<{ tablename: string }[]>`
+    SELECT tablename FROM pg_tables WHERE schemaname = current_schema()
+  `
+  const names = tables.map((t) => t.tablename).filter((n) => !KEPT_TABLES.has(n))
+  if (names.length > 0) {
+    await tx.$executeRawUnsafe(`TRUNCATE TABLE ${names.map((n) => `"${n.replace(/"/g, '""')}"`).join(', ')} CASCADE`)
+  }
+  await tx.setting.deleteMany({
+    where: { key: { in: [...RESTORABLE_SETTING_KEYS, ...BRANDING_SETTING_KEYS] } },
+  })
+}
+
+// A kept credential must not follow a restored setting to another server:
+// the same rule applySecretWriteRules() enforces on a settings PATCH.
+async function dropRedirectedSecrets(tx: Prisma.TransactionClient, before: Map<string, string>): Promise<void> {
+  for (const secret of SECRET_SETTING_KEYS) {
+    const destination = SECRET_DESTINATION_KEYS[secret]
+    const now = await tx.setting.findUnique({ where: { key: destination } })
+    if (!sameDestination(before.get(destination) ?? '', now?.value ?? '')) {
+      await tx.setting.deleteMany({ where: { key: secret } })
+    }
+  }
 }
 
 // Prefix of the per-request working directory, created INSIDE uploadsDir so
@@ -332,6 +375,7 @@ const manifestSchema = z.object({
   credentials: z.boolean().default(false),
   includeMedia: z.boolean().default(true),
   mediaLocation: z.enum(['archive', 'storage', 'mirror']).optional(),
+  trigger: z.string().max(40).optional(),
   exportedAt: z.string().optional(),
   requiredMedia: z.array(z.object({ key: z.string(), size: z.number().int().nonnegative() })).default([]),
 })
@@ -582,7 +626,8 @@ async function insertAll(
   tx: Prisma.TransactionClient,
   data: ArchiveData,
   admin: RestoreAdmin | undefined,
-  withCredentials: boolean
+  withCredentials: boolean,
+  minTokenVersion = 0
 ): Promise<{ adminUserId: string | null }> {
   const groupMembers = data.groups.flatMap((g) => g.members)
   const circleMembers = data.circles.flatMap((c) => c.members)
@@ -595,7 +640,7 @@ async function insertAll(
       email: u.email.toLowerCase().trim(),
       // A format-1 archive has no credentials; ignore a hand-added hash in one.
       passwordHash: withCredentials ? (passwordHash ?? null) : null,
-      tokenVersion: restoredTokenVersion(tokenVersion),
+      tokenVersion: restoredTokenVersion(tokenVersion, minTokenVersion),
     })),
   })
 
@@ -721,6 +766,11 @@ export interface RestoreOptions {
   lockKey: bigint
   // Where to look for media the archive doesn't contain (tests override it).
   mirrorDir?: string
+  // Restore onto a running server (admin Backups page): replace everything
+  // instead of requiring zero accounts. The caller has taken a safety backup.
+  replaceExisting?: boolean
+  // With replaceExisting: the lowest tokenVersion any restored user may get.
+  minTokenVersion?: number
 }
 
 export interface RestoreResult {
@@ -756,7 +806,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
     }
     // Cheap early refusal before copying media into a server that isn't
     // empty; repeated under the lock below.
-    if ((await prisma.user.count()) > 0) throw new RestoreError('notEmpty')
+    if (!opts.replaceExisting && (await prisma.user.count()) > 0) throw new RestoreError('notEmpty')
     // Whatever storage still holds is used as is; the rest comes from the
     // backups volume's mirror. Nothing is copied unless everything is there.
     const media = await restoreRequiredMedia(manifest.requiredMedia, opts.mirrorDir ?? BACKUP_UPLOADS_DIR)
@@ -774,8 +824,18 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
           SELECT pg_try_advisory_xact_lock(${opts.lockKey}) AS locked
         `
         if (!locked) throw new RestoreError('busy')
-        if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty')
-        const result = await insertAll(tx, data, opts.admin, withCredentials)
+        let destinations: Map<string, string> | null = null
+        if (opts.replaceExisting) {
+          const rows = await tx.setting.findMany({
+            where: { key: { in: Object.values(SECRET_DESTINATION_KEYS) } },
+          })
+          destinations = new Map(rows.map((r) => [r.key, r.value]))
+          await wipeForRestore(tx)
+        } else if ((await tx.user.count()) > 0) {
+          throw new RestoreError('notEmpty')
+        }
+        const result = await insertAll(tx, data, opts.admin, withCredentials, opts.minTokenVersion)
+        if (destinations) await dropRedirectedSecrets(tx, destinations)
         await installFiles(filesDir, uploadsDir)
         return result
       },
@@ -794,7 +854,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
   }
 
   // Media installation succeeded before committing the restored rows.
-  if (data.branding.length > 0 || data.settings.length > 0) invalidateSettingsCache()
+  if (opts.replaceExisting || data.branding.length > 0 || data.settings.length > 0) invalidateSettingsCache()
 
   const counts: RestoreCounts = {
     users: data.users.length,

@@ -45,7 +45,8 @@
     "language": "语言",
     "version": "版本 {{version}}",
     "systemStatus": "系统状态",
-    "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。"
+    "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。",
+    "backups": "备份"
   },
   "devices": {
     "title": "移动设备",
@@ -433,7 +434,7 @@
     "backups": "备份",
     "backupsDesc": "定期备份数据库以及所有上传的照片和视频，写入此服务器上的备份卷。",
     "backupEnabled": "定时备份",
-    "backupEnabledHint": "每次运行会生成一份数据库转储，并更新一份上传文件的增量副本。新安装默认开启。",
+    "backupEnabledHint": "每次运行会写入一份 Famlin 备份，并更新一份上传文件的增量副本。新安装默认开启。",
     "backupOffsiteHint": "位于同一块磁盘上的备份可以防止误操作和数据损坏，但无法应对磁盘故障。请同时将 famlin-backups 卷复制到另一台机器或 NAS。",
     "backupOffsiteLink": "如何将备份复制到本机之外",
     "backupSchedule": "计划",
@@ -757,5 +758,55 @@
     "backupsOn": "开启备份",
     "continue": "打开设置向导",
     "dismiss": "关闭"
+  },
+  "backups": {
+    "title": "备份",
+    "backUpNow": "立即备份",
+    "running": "正在备份…",
+    "listTitle": "此服务器上的备份",
+    "listDesc": "服务器备份文件夹中的所有备份，按时间从新到旧排列：定时备份、通过“立即备份”创建的备份，以及恢复前自动创建的安全备份。",
+    "empty": "还没有备份。在下方开启定时备份，或点击“立即备份”。",
+    "table": {
+      "date": "日期",
+      "type": "类型",
+      "size": "大小",
+      "photos": "照片",
+      "version": "版本",
+      "actions": "操作"
+    },
+    "safetyBadge": "恢复前",
+    "download": "下载",
+    "restore": "恢复",
+    "delete": "删除",
+    "olderExportHint": "不含密码的旧版导出：请在新服务器的设置界面中恢复。",
+    "deleteTitle": "删除此备份？",
+    "deleteBody": "{{name}} 将从备份文件夹中永久删除。共享媒体镜像中的照片会保留。",
+    "restoreTitle": "恢复此备份？",
+    "restoreIntro": "这会把整个服务器恢复到 {{date}} 时的状态：",
+    "restorePointSafety": "Famlin 会先为当前的一切创建安全备份，方便你回退。",
+    "restorePointReplace": "然后所有家庭、帖子、照片、账户、密码和设置都会被备份中的内容替换。此后新增的内容都会消失。",
+    "restorePointSignOut": "所有人都会被登出（包括你），之后使用当时的密码重新登录。",
+    "restorePointSecrets": "已保存的凭据（OIDC 客户端密钥、SMTP 密码、Immich API 密钥）会保留，除非备份让它们指向其他服务器。",
+    "restoreConfirmLabel": "输入 {{name}} 以确认",
+    "restoreButton": "恢复并登出所有人",
+    "restoringTitle": "正在恢复备份…",
+    "restoringBody": "恢复完成前 Famlin 无法使用，大家庭可能需要几分钟。请保持此页面打开，完成后会跳转到登录界面。",
+    "restoreDoneNotice": "备份已恢复。请使用创建备份时的密码登录。",
+    "restoreError": {
+      "unknownBackup": "该备份已不在备份文件夹中。",
+      "busy": "有备份或其他恢复正在进行，请在完成后重试。",
+      "safetyBackupFailed": "安全备份失败，因此未恢复任何内容。请查看系统状态和服务器日志。",
+      "archiveTooNew": "此备份由更新版本的 Famlin 创建，请先升级此服务器。",
+      "invalidArchive": "此文件不是有效的 Famlin 备份，未恢复任何内容。",
+      "missingMedia": "此备份需要的部分照片既不在媒体存储中，也不在备份文件夹中，未恢复任何内容。",
+      "adminRequired": "此备份没有带密码的管理员账户，请在新服务器的设置界面中恢复。",
+      "restoreFailed": "恢复失败。如果是 Famlin 备份，则没有任何更改；请查看服务器日志。"
+    },
+    "scheduleTitle": "计划",
+    "scheduleSaved": "已保存。",
+    "exportDesc": "立即下载一份 Famlin 备份，格式与定时备份相同。包含照片时，无需 shell 访问即可在另一台服务器的设置界面中恢复。",
+    "showDumps": "显示数据库转储（{{count}}）",
+    "hideDumps": "隐藏数据库转储",
+    "dumpsNote": "在 Famlin 1.0.0 之前，每次运行还会额外写入一份数据库转储作为保险。除非有特殊原因，请恢复 Famlin 备份。"
   }
 }

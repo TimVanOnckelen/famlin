@@ -179,7 +179,15 @@ export const restoreDumpDeps = {
   migrateDeploy: runMigrateDeploy,
 }
 
-export async function restoreDump(dir: string, name: string, lockKey: bigint): Promise<void> {
+// `replaceExisting`: restore onto a running server (admin Backups page) rather
+// than one with zero accounts; `minTokenVersion` then lifts every restored
+// account's tokenVersion above every session issued before the restore.
+export async function restoreDump(
+  dir: string,
+  name: string,
+  lockKey: bigint,
+  options: { replaceExisting?: boolean; minTokenVersion?: number } = {}
+): Promise<void> {
   if (!parseDumpFileName(name)) throw new RestoreDumpError('unknownDump', 'Not a dump file name')
   const file = path.join(dir, name)
   const stat = await fsp.stat(file).catch(() => null)
@@ -202,7 +210,7 @@ export async function restoreDump(dir: string, name: string, lockKey: bigint): P
   let touched = false
   try {
     // Authoritative: /setup can't create an account while the lock is held.
-    if ((await prisma.user.count()) > 0) throw new RestoreDumpError('notEmpty')
+    if (!options.replaceExisting && (await prisma.user.count()) > 0) throw new RestoreDumpError('notEmpty')
     await restoreDumpDeps.assertCanReplaceSchema()
 
     touched = true
@@ -215,7 +223,10 @@ export async function restoreDump(dir: string, name: string, lockKey: bigint): P
       throw new RestoreDumpError('restoreFailed', (err as Error).message)
     }
     // Sessions issued before the dump was taken would otherwise work again.
-    await prisma.$executeRawUnsafe(`UPDATE ${quotedSchema()}."User" SET "tokenVersion" = "tokenVersion" + 1`)
+    await prisma.$executeRawUnsafe(
+      `UPDATE ${quotedSchema()}."User" SET "tokenVersion" = GREATEST("tokenVersion" + 1, $1)`,
+      options.minTokenVersion ?? 0
+    )
     // A dump from an older version: bring it up to this one.
     try {
       await restoreDumpDeps.migrateDeploy()

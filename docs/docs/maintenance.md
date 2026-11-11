@@ -29,7 +29,7 @@ docker compose exec famlin-db pg_dump -U famlin famlin > famlin-backup.sql
 
 ### Scheduled backups
 
-Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 backups; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off under **Server settings → Backups** in `/admin`:
+Famlin can back itself up on a schedule. It's **on by default for new installs** (daily at 03:00, keeping 7 backups; the first-run setup, including a restore, turns it on). Servers that were set up before this default existed keep their existing choice, which is off unless you enabled it. Change or turn it off on the **Backups** page in `/admin`:
 
 - **Schedule**: daily, or weekly on Sundays.
 - **Time**: the hour it runs, in the server's time zone. The suggested default is 03:00.
@@ -69,7 +69,10 @@ The container runs as the unprivileged `node` user (uid 1000), so that folder mu
 
 ### Restoring a backup
 
-Restoring happens on the **first-run setup screen** of a server with no accounts: a new server, another machine, or this one after its database was lost. It never merges into a server that's in use, and it's refused once anyone has signed up. Restoring onto a server that's already running from `/admin` is coming in a later release.
+There are two places to restore from:
+
+- **A running server**: the **Backups** page in `/admin` lists every backup on the server and restores one in place, after taking a safety backup of the current state. See [Restoring a backup on a running server](./managing-users-and-content.md#restoring-a-backup-on-a-running-server).
+- **A server with no accounts** — a new server, another machine, or this one after its database was lost: the **first-run setup screen**, described below. It never merges into a server that's in use, and it's refused once anyone has signed up.
 
 1. Start the server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the backup. A backup from a newer version is refused before anything is changed.
 2. Open `/admin`. The setup screen appears; choose **Restore a backup**.
@@ -127,7 +130,7 @@ Restoring happens on the **first-run setup screen** of a server with no accounts
 
 ### The data export download
 
-**Server settings → General → Data export** downloads a Famlin backup zip on demand — the same format the scheduled backups write. Leave **Include media in export** on to put every photo and video in the zip, so it can be restored on another machine without shell access (step 3 above). Without media it's small, but restoring it needs the photos in the media storage or the backups mirror.
+**Backups → Data export** in `/admin` downloads a Famlin backup zip on demand — the same format the scheduled backups write. Leave **Include media in export** on to put every photo and video in the zip, so it can be restored on another machine without shell access (step 3 above). Without media it's small, but restoring it needs the photos in the media storage or the backups mirror.
 
 **Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN, or copy the `famlin-backups` folder as described above.
 
@@ -137,4 +140,4 @@ Famlin can move all uploaded media between the local uploads volume and an S3-co
 
 ### Exports and backups with external media
 
-See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3). In short: **Include media** (on both the data export and Server settings → Backups) decides whether photos and videos are copied into the export or backup, and S3 is not a backup on its own.
+See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3). In short: **Include media** (on both the data export and the backup schedule, on the **Backups** page) decides whether photos and videos are copied into the export or backup, and S3 is not a backup on its own.

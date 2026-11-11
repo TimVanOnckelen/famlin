@@ -59,6 +59,8 @@
     "restoreArchiveInvalid": "这不是有效的 Famlin 导出文件",
     "restoreArchiveTooNew": "此备份由更新版本的 Famlin 创建，请先升级服务器再恢复",
     "restoreAdminRequired": "这是不含账户密码的旧版 Famlin 导出文件。请填写你的姓名、邮箱和密码，以创建用于登录的管理员账户",
+    "restoreInProgress": "Famlin 正在恢复备份，请几分钟后再试。",
+    "restoreConfirmMismatch": "请准确输入 {{name}} 以确认恢复。",
     "restoreDumpInvalid": "此文件不是 Famlin 计划备份（.dump）",
     "restoreDumpFailed": "无法恢复备份，请查看服务器日志了解详情",
     "restoreDumpUnknown": "该备份不在此服务器的备份文件夹中",

@@ -8,7 +8,6 @@ import { Input } from '@famlin/ui/input'
 import { SettingToggle } from '@famlin/ui/common/setting-toggle'
 import { SectionCard } from '@famlin/ui/common/section-card'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ServerSettings, User } from '../api/client'
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
@@ -16,10 +15,8 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
-const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
-
 type SecretKey = 'oidcClientSecret' | 'smtpPass' | 'immichApiKey'
-type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media' | 'backups'
+type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media'
 
 interface SettingsCardProps {
   icon: IconName
@@ -96,11 +93,6 @@ export function ServerSettingsPage() {
   const [testingLocalMedia, setTestingLocalMedia] = useState(false)
   const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null)
 
-  const [exporting, setExporting] = useState(false)
-  const [exportIncludeMedia, setExportIncludeMedia] = useState(true)
-  const [exportError, setExportError] = useState<string | null>(null)
-  const [exportStarted, setExportStarted] = useState(false)
-
   useEffect(() => {
     Promise.all([
       api.getSettings().then((s) => {
@@ -155,20 +147,6 @@ export function ServerSettingsPage() {
       setLocalMediaTestResult('not_found')
     } finally {
       setTestingLocalMedia(false)
-    }
-  }
-
-  const handleExport = async () => {
-    setExporting(true)
-    setExportError(null)
-    setExportStarted(false)
-    try {
-      await api.downloadExport(exportIncludeMedia)
-      setExportStarted(true)
-    } catch (err: any) {
-      setExportError(err.message)
-    } finally {
-      setExporting(false)
     }
   }
 
@@ -326,15 +304,6 @@ export function ServerSettingsPage() {
             : t('serverSettings.statusNotConfigured'),
       },
     },
-    {
-      id: 'backups',
-      icon: 'clock',
-      label: t('serverSettings.backups'),
-      status: {
-        ok: form.backupEnabled,
-        label: form.backupEnabled ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled'),
-      },
-    },
   ]
 
   return (
@@ -445,34 +414,6 @@ export function ServerSettingsPage() {
                   checked={form.updateCheckEnabled}
                   onChange={(checked) => updateField('updateCheckEnabled', checked)}
                 />
-              </SettingsCard>
-            )}
-
-            {activeSection === 'general' && (
-              <SettingsCard
-                icon="download"
-                title={t('serverSettings.dataExport')}
-                desc={t('serverSettings.dataExportDesc')}
-              >
-                <div className="settings-test-row">
-                  <ToggleRow
-                    title={t('serverSettings.exportIncludeMedia')}
-                    hint={t('serverSettings.exportIncludeMediaHint')}
-                    checked={exportIncludeMedia}
-                    onChange={setExportIncludeMedia}
-                  />
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    className="secondary"
-                    onClick={handleExport}
-                    disabled={exporting}
-                  >
-                    {exporting ? t('serverSettings.dataExportDownloading') : t('serverSettings.dataExportDownload')}
-                  </Button>
-                </div>
-                {exportStarted && <p className="hint">{t('serverSettings.dataExportStarted')}</p>}
-                {exportError && <p className="test-err">{exportError}</p>}
               </SettingsCard>
             )}
 
@@ -718,76 +659,6 @@ export function ServerSettingsPage() {
                   </div>
                 </SettingsCard>
               </>
-            )}
-
-            {activeSection === 'backups' && (
-              <SettingsCard
-                icon="clock"
-                title={t('serverSettings.backups')}
-                desc={t('serverSettings.backupsDesc')}
-                badge={enabledBadge(form.backupEnabled)}
-              >
-                <ToggleRow
-                  title={t('serverSettings.backupEnabled')}
-                  hint={t('serverSettings.backupEnabledHint')}
-                  checked={form.backupEnabled}
-                  onChange={(checked) => updateField('backupEnabled', checked)}
-                />
-                <p className="muted">
-                  {t('serverSettings.backupOffsiteHint')}{' '}
-                  <a href={BACKUP_DOCS_URL} target="_blank" rel="noreferrer">
-                    {t('serverSettings.backupOffsiteLink')}
-                  </a>
-                </p>
-                <ToggleRow
-                  title={t('serverSettings.backupIncludeMedia')}
-                  hint={t('serverSettings.backupIncludeMediaHint')}
-                  checked={form.backupIncludeMedia}
-                  onChange={(checked) => updateField('backupIncludeMedia', checked)}
-                />
-                <div className="row">
-                  <label style={{ flex: 1 }}>
-                    {t('serverSettings.backupSchedule')}
-                    <SelectField
-                      value={form.backupSchedule}
-                      onValueChange={(value) =>
-                        updateField('backupSchedule', value as ServerSettings['backupSchedule'])
-                      }
-                      items={[
-                        { value: 'daily', label: <>{t('serverSettings.backupScheduleDaily')}</> },
-                        { value: 'weekly', label: <>{t('serverSettings.backupScheduleWeekly')}</> },
-                      ]}
-                    />
-                  </label>
-                  <label style={{ flex: 1 }}>
-                    {t('serverSettings.backupHour')}
-                    <SelectField
-                      value={form.backupHour}
-                      onValueChange={(value) => updateField('backupHour', Number(value))}
-                      items={[
-                        ...Array.from({ length: 24 }, (_, hour) => ({
-                          value: hour,
-                          label: <>{`${String(hour).padStart(2, '0')}:00`}</>,
-                        })),
-                      ]}
-                    />
-                  </label>
-                  <label style={{ flex: 1 }}>
-                    {t('serverSettings.backupRetention')}
-                    <Input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={form.backupRetention}
-                      onChange={(e) => updateField('backupRetention', Math.max(1, Number(e.target.value) || 1))}
-                    />
-                  </label>
-                </div>
-                <p className="hint">{t('serverSettings.backupHint')}</p>
-                <p className="hint">
-                  <Link to="/status">{t('serverSettings.backupStatusLink')}</Link>
-                </p>
-              </SettingsCard>
             )}
 
             {(dirty || success || error) && (

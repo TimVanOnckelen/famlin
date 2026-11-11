@@ -26,7 +26,8 @@ export { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR, BACKUP_UPLOADS_DIR }
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 
-export type BackupTrigger = 'scheduled' | 'manual'
+// 'safety': taken automatically right before a restore on a running server.
+export type BackupTrigger = 'scheduled' | 'manual' | 'safety'
 
 export interface BackupResult {
   trigger: BackupTrigger
@@ -51,9 +52,28 @@ export class BackupInProgressError extends Error {
 export const backupDeps = { dumpDatabase, mirrorUploads, writeBackupArchive }
 
 let running: Promise<BackupResult> | null = null
+// Set for the whole of a restore on a running server (restoreRunning.ts): no
+// scheduled or manual backup may start meanwhile — only the restore's own
+// safety backup.
+let restoreInProgress = false
 
 export function isBackupRunning(): boolean {
   return running !== null
+}
+
+export function isRestoreRunning(): boolean {
+  return restoreInProgress
+}
+
+/** Claims the restore slot; false when a backup or another restore is running. */
+export function beginRestore(): boolean {
+  if (restoreInProgress || running) return false
+  restoreInProgress = true
+  return true
+}
+
+export function endRestore(): void {
+  restoreInProgress = false
 }
 
 export function backupIntervalMs(schedule: ServerSettings['backupSchedule']): number {
@@ -77,8 +97,15 @@ export function isBackupDue(
 
 // Runs one backup and records it as the `backup` job. Only one at a time:
 // a second call while one is running throws BackupInProgressError.
-export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<BackupResult> {
-  if (running) return Promise.reject(new BackupInProgressError())
+// `prune: false` keeps every older backup — a safety backup must never rotate
+// away the backup that is about to be restored.
+export function runBackup(
+  trigger: BackupTrigger,
+  now = new Date(),
+  options: { prune?: boolean } = {}
+): Promise<BackupResult> {
+  if (running || (restoreInProgress && trigger !== 'safety')) return Promise.reject(new BackupInProgressError())
+  const prune = options.prune ?? true
 
   running = recordJobRun(
     'backup',
@@ -89,9 +116,10 @@ export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<Bac
       const archive = await backupDeps.writeBackupArchive(
         BACKUP_ARCHIVE_DIR,
         now,
-        settings.backupIncludeMedia ? 'mirror' : 'storage'
+        settings.backupIncludeMedia ? 'mirror' : 'storage',
+        trigger
       )
-      const prunedArchives = await pruneBackupArchives(BACKUP_ARCHIVE_DIR, settings.backupRetention)
+      const prunedArchives = prune ? await pruneBackupArchives(BACKUP_ARCHIVE_DIR, settings.backupRetention) : []
       const local = new LocalStorageBackend(uploadsDir)
       const media = getStorage()
       const source: StorageBackend = {
@@ -118,7 +146,7 @@ export function runBackup(trigger: BackupTrigger, now = new Date()): Promise<Bac
       // still leaves a complete zip + mirror — but fails the run, so the
       // admin is told.
       const dump = await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
-      const pruned = await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
+      const pruned = prune ? await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention) : []
       return {
         trigger,
         archiveFile: archive.file,

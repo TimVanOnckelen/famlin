@@ -261,13 +261,13 @@ export function redactSettings(settings: ServerSettings): RedactedServerSettings
 // secret again removes the stored secret: otherwise whoever holds an admin
 // session could point the SMTP host, OIDC issuer or Immich URL at a server of
 // their own and have Famlin deliver the secret it refuses to show them.
-const SECRET_DESTINATION_KEYS = {
+export const SECRET_DESTINATION_KEYS = {
   oidcClientSecret: 'oidcIssuer',
   smtpPass: 'smtpHost',
   immichApiKey: 'immichServerUrl',
 } as const satisfies Record<SecretSettingKey, keyof ServerSettings>
 
-const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
+export const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
 
 // The write side of redactSettings(). A client that read the redacted
 // settings sends the secrets back as empty strings, so empty (or omitted)
