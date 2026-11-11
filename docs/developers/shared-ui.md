@@ -59,8 +59,50 @@ Shadows and gradients are structured design data, not complete React Native styl
 platform adapters choose supported shadow/gradient APIs. Font loading and browser
 fallbacks also belong to platform layers. Numeric dimensions map to CSS pixels;
 spacing maps to rem using a 16px reference and stays numeric in the native export.
-Browser semantic aliases for shadcn live in `packages/ui/styles.css`, while shared
+Viewport breakpoints stay numeric in the native export and map to CSS pixels in
+`tokens.css` (today: `breakpoint.mobile: 720`). Browser semantic aliases for shadcn
+live in `packages/ui/styles.css`, while shared
 brand values are generated into `tokens.css`. Generated files must not be edited manually.
+
+## Responsive behavior
+
+The mobile/desktop cut-over is 720px everywhere (`breakpoint.mobile`). Tailwind
+cannot use CSS variables inside `@media`, so `packages/ui/styles.css` pins
+`--breakpoint-md: 45.0625rem` (721px, the first desktop pixel) — keep it
+in sync with the token.
+
+- `Sheet` (`@famlin/ui/sheet`) and `Drawer` (`@famlin/ui/drawer`) are the
+  shadcn base-nova components (sources mirrored from the shadcn registry, Base
+  UI Dialog / Base UI Drawer under the hood). `Sheet` is a side drawer for
+  navigation (`side="left|right|top|bottom"`); `Drawer` is a swipeable sheet
+  (`swipeDirection`, snap points, swipe handle) — on mobile dialogs and for
+  bottom sheets.
+- `ResponsiveDialog` (`@famlin/ui/common/responsive-dialog`) is the packaged
+  [shadcn responsive-dialog pattern](https://ui.shadcn.com/docs/components/base/drawer#responsive):
+  it renders a `Dialog` on desktop and a `Drawer` bottom sheet on mobile, so
+  consumers write one self-adapting tree — the media switch (720px, from
+  `@famlin/design-tokens` via `useMediaQuery`, `@famlin/ui/hooks/use-media-query`)
+  lives inside the component. Admin's `AdminModal` is the reference consumer.
+  `Dialog` itself stays the classic centered box at every width.
+- Drive the root's `open` state instead of mounting it already
+  open: Base UI only runs entrance/exit transitions on real open changes, so a
+  popup that mounts open never animates in and one whose parent unmounts on
+  close never animates out (`onOpenChangeComplete(false)` is the moment to
+  unmount). The mobile branch of `ResponsiveDialog` handles this choreography
+  internally.
+- `Drawer` consumers need `body { position: relative }` (iOS Safari overlay) —
+  admin's stylesheet sets it.
+- `Table` adapts at the cut-over: give each `TableCell` a `data-label`. At widths
+  ≤720px the header remains available to screen readers and every row renders
+  as a stacked card — label/value
+  pairs (`data-label` shown via a `::before`), with a label-less cell becoming
+  the row actions grouped at the bottom of the card. The first field spans the
+  card width; other fields use a two-column grid with wrapping values and
+  subtle separators. Values share one wrapper so mixed text and badges stay
+  together. Cells with `colSpan` remain ordinary full-width content.
+- Esc, backdrop press and focus trapping come from Base UI; closing a sheet on
+  in-drawer navigation is the consumer's job (`onClick` on the nav items), as
+  admin's `Layout` does.
 
 ## Checks and ownership
 

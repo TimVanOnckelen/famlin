@@ -213,3 +213,53 @@ test('the member can download their own data export', async ({ request }) => {
   expect(text).toContain(POST_TEXT)
   expect(text).toContain(COMMENT_TEXT)
 })
+
+// Reuses the fresh instance created above; this file already runs in CI's Docker job.
+test('every admin route fits a 360px phone and the navigation drawer works', async ({ page, request }) => {
+  const { headers } = await apiLogin(request, ADMIN.email, ADMIN.password)
+  await page.addInitScript((token) => localStorage.setItem('famlin_admin_token', token), headers.Authorization.slice(7))
+  await page.setViewportSize({ width: 360, height: 800 })
+
+  for (const route of [
+    '',
+    'users',
+    'groups',
+    'content',
+    'push-log',
+    'devices',
+    'storage',
+    'status',
+    'settings',
+    'getting-started',
+  ]) {
+    await test.step(`/admin/${route}`, async () => {
+      await page.goto(`/admin/${route}`)
+      await expect(page.locator('main')).toBeVisible()
+      await page.waitForLoadState('networkidle')
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      ).toBe(0)
+      const menu = page.locator('header button[aria-controls]')
+      await menu.click()
+      await expect(menu).toHaveAttribute('aria-expanded', 'true')
+      await expect(page.getByRole('dialog')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(menu).toHaveAttribute('aria-expanded', 'false')
+      await expect(page.getByRole('dialog')).toBeHidden()
+    })
+  }
+
+  await page.goto('/admin/users')
+  const row = page.locator('tbody tr').first()
+  await expect(row).toBeVisible()
+  await expect(row).toHaveCSS('display', 'block')
+  const cells = row.locator('td[data-label]')
+  for (const cell of await cells.all()) {
+    const box = await cell.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(360)
+  }
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await expect(row).toHaveCSS('display', 'table-row')
+})

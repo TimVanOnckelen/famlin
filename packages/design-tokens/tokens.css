@@ -30,4 +30,5 @@
   --fam-space-4: 1rem;
   --fam-space-6: 1.5rem;
   --fam-space-8: 2rem;
+  --fam-breakpoint-mobile: 720px;
 }

@@ -208,7 +208,7 @@ export function UsersPage() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>
+                  <TableCell data-label={t('users.table.name')}>
                     <div className="flex items-center gap-3">
                       <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
                       <div className="min-w-0">
@@ -221,7 +221,7 @@ export function UsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell data-label={t('users.table.groups')}>
                     <div className="group-badges">
                       {user.groups && user.groups.length > 0 ? (
                         user.groups.map((g) => (
@@ -234,7 +234,7 @@ export function UsersPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell data-label={t('users.table.admin')}>
                     <Button
                       variant="ghost"
                       type="button"
@@ -247,7 +247,7 @@ export function UsersPage() {
                       <Icon name="shield" size={14} />
                     </Button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell data-label={t('users.table.notifications')}>
                     <div className="toggle-group">
                       <Button
                         type="button"
@@ -275,7 +275,9 @@ export function UsersPage() {
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString(i18n.language)}</TableCell>
+                  <TableCell data-label={t('users.table.memberSince')}>
+                    {new Date(user.createdAt).toLocaleDateString(i18n.language)}
+                  </TableCell>
                   <TableCell className="actions">
                     <Button
                       variant="ghost"

@@ -45,6 +45,9 @@
     "language": "Langue",
     "version": "Version {{version}}",
     "systemStatus": "État du système",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
     "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées."
   },
   "devices": {

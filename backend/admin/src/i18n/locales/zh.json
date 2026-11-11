@@ -46,6 +46,9 @@
     "language": "语言",
     "version": "版本 {{version}}",
     "systemStatus": "系统状态",
+    "menu": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
     "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。"
   },
   "devices": {

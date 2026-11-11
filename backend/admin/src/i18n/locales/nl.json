@@ -46,6 +46,9 @@
     "language": "Taal",
     "version": "Versie {{version}}",
     "systemStatus": "Systeemstatus",
+    "menu": "Menu",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten",
     "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen."
   },
   "devices": {
