@@ -181,6 +181,7 @@
       "update": "Update",
       "milestone": "Milestone",
       "poll": "Poll",
+      "event": "Event",
       "trip": "Trip",
       "album": "Album",
       "gift_list": "Gift list"
@@ -189,6 +190,7 @@
       "update": "Share a moment, photo or video",
       "milestone": "Birthday, birth, anniversary",
       "poll": "Ask the family a question",
+      "event": "Plan a get-together and see who's coming",
       "trip": "Track a journey with check-ins",
       "album": "A photo album the whole family adds to",
       "gift_list": "Wishlists, with an optional Secret Santa draw"
@@ -244,6 +246,19 @@
       "travelersSelected_one": "{{count}} travel companion",
       "travelersSelected_other": "{{count}} travel companions"
     },
+    "event": {
+      "titlePlaceholder": "What's the occasion?",
+      "startsAtLabel": "Starts",
+      "endsAtLabel": "Ends",
+      "locationLabel": "Location",
+      "locationPlaceholder": "E.g. Grandma's garden",
+      "rsvpDeadlineLabel": "Reply by",
+      "rsvpDeadlineHint": "Optional. If you leave it empty, replies close when the event starts.",
+      "datePlaceholder": "Pick a date and time",
+      "optional": "optional",
+      "clearEndsAt": "Clear end time",
+      "clearRsvpDeadline": "Clear reply-by date"
+    },
     "audience": "Who can see this?",
     "audienceHint": "Circles let you share with part of the family. Only people in the circle will see this post.",
     "audienceEveryone": "Everyone",
@@ -272,6 +287,15 @@
     "totalVotes_one": "{{count}} vote total",
     "totalVotes_other": "{{count}} votes total",
     "closed": "Poll closed"
+  },
+  "event": {
+    "rsvpLabel": "Are you coming?",
+    "yes": "Going",
+    "maybe": "Maybe",
+    "no": "Can't go",
+    "rsvpBy": "Reply by {{date}}",
+    "closed": "Replies closed",
+    "rsvpFailed": "Couldn't save your reply. Try again."
   },
   "mediaPicker": {
     "title": "Choose photos",

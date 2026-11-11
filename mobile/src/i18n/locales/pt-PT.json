@@ -181,6 +181,7 @@
       "update": "Update",
       "milestone": "Momento marcante",
       "poll": "Sondagem",
+      "event": "Evento",
       "trip": "Viagem",
       "album": "Álbum",
       "gift_list": "Lista de presentes"
@@ -189,6 +190,7 @@
       "update": "Partilha um momento, uma fotografia ou um vídeo",
       "milestone": "Aniversário, nascimento, aniversário de casamento",
       "poll": "Faz uma pergunta à família",
+      "event": "Organiza um encontro e vê quem vem",
       "trip": "Acompanha uma viagem com check-ins",
       "album": "Um álbum de fotografias para toda a família",
       "gift_list": "Listas de desejos, com sorteio de Amigo Secreto opcional"
@@ -244,6 +246,19 @@
       "travelersSelected_one": "{{count}} companheiro de viagem",
       "travelersSelected_other": "{{count}} companheiros de viagem"
     },
+    "event": {
+      "titlePlaceholder": "Qual é a ocasião?",
+      "startsAtLabel": "Começa",
+      "endsAtLabel": "Termina",
+      "locationLabel": "Local",
+      "locationPlaceholder": "Ex.: o jardim da avó",
+      "rsvpDeadlineLabel": "Responder até",
+      "rsvpDeadlineHint": "Opcional. Se deixares em branco, as respostas fecham quando o evento começar.",
+      "datePlaceholder": "Escolhe a data e a hora",
+      "optional": "opcional",
+      "clearEndsAt": "Limpar hora de fim",
+      "clearRsvpDeadline": "Limpar data de resposta"
+    },
     "audience": "Quem pode ver isto?",
     "audienceHint": "Os círculos permitem-te partilhar só com parte da família. Só as pessoas do círculo vão ver esta publicação.",
     "audienceEveryone": "Todos",
@@ -272,6 +287,15 @@
     "totalVotes_one": "{{count}} voto no total",
     "totalVotes_other": "{{count}} votos no total",
     "closed": "Sondagem encerrada"
+  },
+  "event": {
+    "rsvpLabel": "Vens?",
+    "yes": "Vou",
+    "maybe": "Talvez",
+    "no": "Não posso",
+    "rsvpBy": "Responde até {{date}}",
+    "closed": "Respostas encerradas",
+    "rsvpFailed": "Não foi possível guardar a tua resposta. Tenta novamente."
   },
   "mediaPicker": {
     "title": "Escolher fotografias",

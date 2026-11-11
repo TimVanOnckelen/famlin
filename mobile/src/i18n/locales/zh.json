@@ -181,6 +181,7 @@
       "update": "日常动态",
       "milestone": "成长时刻",
       "poll": "投票",
+      "event": "活动",
       "trip": "旅程",
       "album": "相册",
       "gift_list": "礼物清单"
@@ -189,6 +190,7 @@
       "update": "分享瞬间、照片或视频",
       "milestone": "生日、出生、纪念日",
       "poll": "问家人一个问题",
+      "event": "组织一次聚会，看看谁会来",
       "trip": "通过打卡记录旅程",
       "album": "全家人一起添加照片的相册",
       "gift_list": "愿望清单，可选神秘圣诞老人抽签"
@@ -244,6 +246,19 @@
       "travelersSelected_one": "{{count}} 位同行者",
       "travelersSelected_other": "{{count}} 位同行者"
     },
+    "event": {
+      "titlePlaceholder": "是什么活动？",
+      "startsAtLabel": "开始",
+      "endsAtLabel": "结束",
+      "locationLabel": "地点",
+      "locationPlaceholder": "例如：奶奶家的花园",
+      "rsvpDeadlineLabel": "回复截止",
+      "rsvpDeadlineHint": "可选。留空则在活动开始时停止回复。",
+      "datePlaceholder": "选择日期和时间",
+      "optional": "可选",
+      "clearEndsAt": "清除结束时间",
+      "clearRsvpDeadline": "清除回复截止时间"
+    },
     "audience": "谁可以看到？",
     "audienceHint": "可仅与部分家人分享，只有圈内成员能看到这条动态。",
     "audienceEveryone": "所有成员",
@@ -272,6 +287,15 @@
     "totalVotes_one": "共 {{count}} 票",
     "totalVotes_other": "共 {{count}} 票",
     "closed": "投票已结束"
+  },
+  "event": {
+    "rsvpLabel": "你会来吗？",
+    "yes": "参加",
+    "maybe": "可能",
+    "no": "不参加",
+    "rsvpBy": "请在 {{date}} 前回复",
+    "closed": "已停止回复",
+    "rsvpFailed": "无法保存你的回复，请重试。"
   },
   "mediaPicker": {
     "title": "选择照片",
