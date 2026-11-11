@@ -181,6 +181,7 @@
       "update": "Nouvelle",
       "milestone": "Grand moment",
       "poll": "Sondage",
+      "event": "Événement",
       "trip": "Voyage",
       "album": "Album",
       "gift_list": "Liste de cadeaux"
@@ -189,6 +190,7 @@
       "update": "Partage un moment, une photo ou une vidéo",
       "milestone": "Anniversaire, naissance, fête",
       "poll": "Pose une question à la famille",
+      "event": "Organise une rencontre et vois qui vient",
       "trip": "Suis un voyage étape par étape",
       "album": "Un album photo que toute la famille complète",
       "gift_list": "Des listes d'envies, avec tirage au sort du Père Noël secret en option"
@@ -244,6 +246,19 @@
       "travelersSelected_one": "{{count}} compagnon de voyage",
       "travelersSelected_other": "{{count}} compagnons de voyage"
     },
+    "event": {
+      "titlePlaceholder": "Quelle est l'occasion ?",
+      "startsAtLabel": "Début",
+      "endsAtLabel": "Fin",
+      "locationLabel": "Lieu",
+      "locationPlaceholder": "Ex. : le jardin de mamie",
+      "rsvpDeadlineLabel": "Répondre avant le",
+      "rsvpDeadlineHint": "Facultatif. Si tu laisses ce champ vide, les réponses se ferment au début de l'événement.",
+      "datePlaceholder": "Choisis la date et l'heure",
+      "optional": "facultatif",
+      "clearEndsAt": "Effacer l'heure de fin",
+      "clearRsvpDeadline": "Effacer la date limite de réponse"
+    },
     "audience": "Qui peut voir ça ?",
     "audienceHint": "Les cercles permettent de partager avec une partie de la famille. Seules les personnes du cercle verront cette publication.",
     "audienceEveryone": "Tout le monde",
@@ -272,6 +287,15 @@
     "totalVotes_one": "{{count}} vote au total",
     "totalVotes_other": "{{count}} votes au total",
     "closed": "Sondage clos"
+  },
+  "event": {
+    "rsvpLabel": "Tu viens ?",
+    "yes": "Je viens",
+    "maybe": "Peut-être",
+    "no": "Je ne peux pas",
+    "rsvpBy": "Réponds avant le {{date}}",
+    "closed": "Réponses fermées",
+    "rsvpFailed": "Impossible d'enregistrer ta réponse. Réessaie."
   },
   "mediaPicker": {
     "title": "Choisir des photos",
