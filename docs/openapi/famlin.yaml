@@ -663,6 +663,13 @@ paths:
                   minimum: 1
                   maximum: 3650
                   description: Omit for a token that never expires.
+                adminAccess:
+                  type: boolean
+                  default: false
+                  description: |
+                    Let the token use its owner's admin rights. Only an admin
+                    may set this (`403` otherwise). Without it the token acts
+                    as an ordinary member, even when its owner is an admin.
       responses:
         '201':
           description: The created token, including its secret (shown only here)
@@ -5187,6 +5194,11 @@ components:
           type: string
           description: First characters of the secret, for telling tokens apart.
           example: Zx9kQ2aB
+        adminAccess:
+          type: boolean
+          description: |
+            Whether the token may use its owner's admin rights. `false` means
+            it acts as an ordinary member, even when its owner is an admin.
         lastUsedAt:
           type: string
           format: date-time

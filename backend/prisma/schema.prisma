@@ -81,6 +81,11 @@ model ApiToken {
   tokenPreview String
   lastUsedAt   DateTime?
   expiresAt    DateTime?
+  // Whether the token may use its owner's admin rights. Without it the token
+  // acts as an ordinary member even when its owner is an admin (see
+  // verifyApiToken), so a leaked script token can't reach /api/admin or
+  // moderate content. Only an admin can create a token with it.
+  adminAccess  Boolean   @default(false)
   createdAt    DateTime  @default(now())
 
   @@index([userId])

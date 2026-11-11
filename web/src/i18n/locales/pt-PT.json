@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "Tokens de API",
     "title": "Tokens de API",
-    "intro": "Os tokens de acesso pessoais permitem-te usar a API do Famlin nos teus próprios scripts e integrações. Um token pode fazer tudo o que a tua conta faz, por isso trata-o como uma palavra-passe.",
+    "intro": "Os tokens de acesso pessoais permitem-te usar a API do Famlin nos teus próprios scripts e integrações. Um token atua com o acesso da tua conta às tuas famílias, por isso trata-o como uma palavra-passe. Só pode usar direitos de administrador se isso tiver sido permitido ao criá-lo.",
     "docsLink": "Ler a documentação da API",
+    "adminAccessLabel": "Permitir acesso de administrador",
+    "adminAccessHint": "Permite que este token altere as definições do servidor, gira utilizadores e exporte tudo. Deixa desativado, a menos que um script precise mesmo disto.",
+    "adminAccessBadge": "Admin",
     "nameLabel": "Nome",
     "namePlaceholder": "ex.: Script da moldura digital",
     "expiryLabel": "Expira",

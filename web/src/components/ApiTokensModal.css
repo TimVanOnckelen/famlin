@@ -68,6 +68,40 @@
   min-width: 180px;
 }
 
+.api-token-admin-field {
+  flex-basis: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.api-token-admin-field input {
+  margin-top: 3px;
+}
+
+.api-token-admin-label {
+  display: block;
+  font-weight: 700;
+  color: var(--fam-text-title);
+}
+
+.api-token-admin-hint {
+  display: block;
+  font-size: 14px;
+  color: var(--fam-text-muted);
+  line-height: 1.4;
+}
+
+.api-token-admin-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--fam-accent);
+  border: 1.5px solid currentColor;
+  border-radius: 100px;
+  padding: 1px 8px;
+}
+
 /* ── Existing tokens ────────────────────────────────────────────────────── */
 
 .api-token-list {

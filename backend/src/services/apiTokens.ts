@@ -31,6 +31,12 @@ export function generateApiToken() {
 // unknown, expired, or revoked (deleted). No tokenVersion check on purpose:
 // a password reset invalidates sessions but deliberately keeps a developer's
 // integrations running — revoking a PAT is deleting its row.
+//
+// `isAdmin` on the returned user is the token's effective right, not the
+// owner's: it is true only when the owner is an admin AND the token was
+// created with adminAccess. Every admin check in the app reads
+// request.user.isAdmin, so a token without it is an ordinary member
+// everywhere — /api/admin and the moderation paths in member routes alike.
 export async function verifyApiToken(token: string) {
   if (!token.startsWith(API_TOKEN_PREFIX)) return null
 
@@ -46,5 +52,5 @@ export async function verifyApiToken(token: string) {
     prisma.apiToken.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } }).catch(() => {})
   }
 
-  return record.user
+  return { ...record.user, isAdmin: record.user.isAdmin && record.adminAccess }
 }

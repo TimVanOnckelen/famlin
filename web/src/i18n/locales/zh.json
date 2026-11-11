@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "API 令牌",
     "title": "API 令牌",
-    "intro": "个人访问令牌可供脚本和集成调用 Famlin API。它拥有与你账号相同的权限，请像密码一样妥善保管。",
+    "intro": "个人访问令牌可供脚本和集成调用 Famlin API。它以你的账号对家庭的访问权限行事，请像密码一样妥善保管。除非创建时允许，否则它无法使用管理员权限。",
     "docsLink": "阅读 API 文档",
+    "adminAccessLabel": "允许管理员访问",
+    "adminAccessHint": "允许此令牌更改服务器设置、管理用户并导出全部内容。除非脚本确实需要，否则请保持关闭。",
+    "adminAccessBadge": "管理员",
     "nameLabel": "名称",
     "namePlaceholder": "例如数码相框脚本",
     "expiryLabel": "有效期",

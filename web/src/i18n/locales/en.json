@@ -256,8 +256,11 @@
   "apiTokens": {
     "menuItem": "API tokens",
     "title": "API tokens",
-    "intro": "Personal access tokens let you use the Famlin API from your own scripts and integrations. A token can do everything your account can do, so treat it like a password.",
+    "intro": "Personal access tokens let you use the Famlin API from your own scripts and integrations. A token acts with your account's access to your families, so treat it like a password. It can't use admin rights unless that was allowed when it was created.",
     "docsLink": "Read the API documentation",
+    "adminAccessLabel": "Allow admin access",
+    "adminAccessHint": "Lets this token change server settings, manage users and export everything. Leave it off unless a script really needs it.",
+    "adminAccessBadge": "Admin",
     "nameLabel": "Name",
     "namePlaceholder": "e.g. Photo frame script",
     "expiryLabel": "Expires",

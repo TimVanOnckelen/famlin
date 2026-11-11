@@ -295,6 +295,9 @@ export const createApiTokenBodySchema = z.object({
   // Omitted = the token never expires (revocable any time); capped at ten
   // years so a typo can't create an effectively-immortal "temporary" token.
   expiresInDays: z.number().int().positive().max(3650).optional(),
+  // Lets the token use its owner's admin rights. Off by default, and only an
+  // admin may turn it on — see ApiToken.adminAccess in schema.prisma.
+  adminAccess: z.boolean().optional(),
 })
 
 export const updateNotificationBodySchema = z.object({
@@ -409,7 +412,9 @@ export const updateServerSettingsBodySchema = z.object({
   oidcName: z.string().max(50).optional(),
   oidcIssuer: z.string().optional(),
   oidcClientId: z.string().optional(),
-  oidcClientSecret: z.string().optional(),
+  // The three credentials below are write-only: '' or omitted keeps the stored
+  // value, null removes it (see applySecretWriteRules in services/settings.ts).
+  oidcClientSecret: z.string().nullable().optional(),
   oidcScopes: z.string().optional(),
   // Comma-separated extra iOS bundle identifiers accepted as the audience of
   // a Sign in with Apple identity token, for self-hosters shipping their own
@@ -418,13 +423,13 @@ export const updateServerSettingsBodySchema = z.object({
   smtpHost: z.string().optional(),
   smtpPort: z.number().optional(),
   smtpUser: z.string().optional(),
-  smtpPass: z.string().optional(),
+  smtpPass: z.string().nullable().optional(),
   // Allows both a bare address and the "Name <email>" display-name format.
   smtpFrom: z.string().max(200).optional(),
   pushNotificationsEnabled: z.boolean().optional(),
   emailNotificationsEnabled: z.boolean().optional(),
   immichServerUrl: z.union([z.literal(''), z.string().url()]).optional(),
-  immichApiKey: z.string().optional(),
+  immichApiKey: z.string().nullable().optional(),
   // Absolute container-side path for the local-folder media source; empty
   // string = not configured.
   localMediaPath: z.union([z.literal(''), z.string().regex(/^\//, 'Must be an absolute path').max(500)]).optional(),
@@ -456,7 +461,9 @@ export const updateBrandingBodySchema = brandingPaletteBodySchema
 
 export const testImmichConnectionBodySchema = z.object({
   serverUrl: z.string().url(),
-  apiKey: z.string().min(1),
+  // Omitted or empty = test with the saved key, which the admin UI can no
+  // longer read back (GET /settings redacts it).
+  apiKey: z.string().optional(),
 })
 
 export const linkMediaAlbumBodySchema = z.object({

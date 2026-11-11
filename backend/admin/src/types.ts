@@ -59,18 +59,23 @@ export interface ServerSettings {
   oidcName: string
   oidcIssuer: string
   oidcClientId: string
-  oidcClientSecret: string
+  // The three secrets are write-only: the server always returns '' plus a
+  // `…Set` flag. On save, '' keeps the stored value and null removes it.
+  oidcClientSecret: string | null
+  oidcClientSecretSet: boolean
   oidcScopes: string
   appleBundleIds: string
   smtpHost: string
   smtpPort: number
   smtpUser: string
-  smtpPass: string
+  smtpPass: string | null
+  smtpPassSet: boolean
   smtpFrom: string
   pushNotificationsEnabled: boolean
   emailNotificationsEnabled: boolean
   immichServerUrl: string
-  immichApiKey: string
+  immichApiKey: string | null
+  immichApiKeySet: boolean
   localMediaPath: string
   updateCheckEnabled: boolean
   backupIncludeMedia: boolean

@@ -30,6 +30,7 @@ curl -H "Authorization: Bearer $FAMLIN_TOKEN" "$FAMLIN_URL/api/auth/me"
 Things to know:
 
 - A token **acts as you**: it can read and write exactly what your account can (your groups, your posts, your favorites). Treat it like a password.
+- A token has **no admin rights by default**, even when you are an admin: it then acts as an ordinary member, so `/api/admin` returns `403` and it cannot moderate other people's content. An admin can tick **Allow admin access** when creating a token (`adminAccess: true`) for a script that really needs it, such as a scheduled export. Tokens created before this option existed keep the rights they had.
 - Tokens are **revocable at any time** from the same web UI (or [`DELETE /api/api-tokens/:id`](./api-reference/revoke-api-token)); revocation takes effect immediately.
 - An optional expiry (set at creation) makes the token stop working after that date.
 - Changing your password does **not** invalidate personal access tokens — it signs out app sessions but deliberately keeps integrations running. Revoke tokens explicitly.

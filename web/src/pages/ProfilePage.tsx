@@ -516,7 +516,7 @@ export function ProfilePage({
           }}
         />
       )}
-      {apiTokensOpen && <ApiTokensModal onClose={() => setApiTokensOpen(false)} />}
+      {apiTokensOpen && <ApiTokensModal isAdmin={user.isAdmin} onClose={() => setApiTokensOpen(false)} />}
     </AppShell>
   )
 }

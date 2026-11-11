@@ -3,7 +3,13 @@ import { storageStatus, startStorageMigration, StorageMigrationError } from '../
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../db.js'
 import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js'
-import { getAllSettings, updateSettings } from '../services/settings.js'
+import {
+  applySecretWriteRules,
+  getAllSettings,
+  getImmichSettings,
+  redactSettings,
+  updateSettings,
+} from '../services/settings.js'
 import { generateInviteToken, sendInviteEmail } from '../services/invites.js'
 import { resendPostPush, PushNotificationError } from '../services/notifications.js'
 import { paginationArgs, paginate } from '../services/pagination.js'
@@ -1052,14 +1058,14 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // Server settings (stored in DB, editable by admin)
   fastify.get('/settings', async (request, reply) => {
     if (requireAdmin(request, reply)) return
-    return getAllSettings()
+    return redactSettings(await getAllSettings())
   })
 
   fastify.patch('/settings', async (request, reply) => {
     if (requireAdmin(request, reply)) return
 
     const body = updateServerSettingsBodySchema.parse(request.body)
-    return updateSettings(body)
+    return redactSettings(await updateSettings(applySecretWriteRules(body, await getAllSettings())))
   })
 
   // System status panel (issue #228): backups + disk, jobs + migrations,
@@ -1202,7 +1208,14 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return
 
     const body = testImmichConnectionBodySchema.parse(request.body)
-    return testImmichConnection(body.serverUrl, body.apiKey)
+    // The saved key is only ever sent to the saved server: testing another
+    // address needs the key typed in, or this route would hand the stored key
+    // to any URL the caller names.
+    const saved = await getImmichSettings()
+    const sameServer = body.serverUrl.trim().replace(/\/+$/, '') === saved.serverUrl
+    const apiKey = body.apiKey || (sameServer ? saved.apiKey : '')
+    if (!apiKey) return { ok: false, error: 'unauthorized' }
+    return testImmichConnection(body.serverUrl, apiKey)
   })
 
   // Validates a local-media root path before the admin saves it — the
