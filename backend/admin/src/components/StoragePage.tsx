@@ -185,9 +185,9 @@ export function StoragePage() {
                 <TableBody>
                   {status.progress.map((row) => (
                     <TableRow key={row.status}>
-                      <TableCell>{stateLabel(row.status)}</TableCell>
-                      <TableCell>{row.files.toLocaleString()}</TableCell>
-                      <TableCell>{formatBytes(row.bytes)}</TableCell>
+                      <TableCell data-label={t('storage.state')}>{stateLabel(row.status)}</TableCell>
+                      <TableCell data-label={t('storage.files')}>{row.files.toLocaleString()}</TableCell>
+                      <TableCell data-label={t('storage.size')}>{formatBytes(row.bytes)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

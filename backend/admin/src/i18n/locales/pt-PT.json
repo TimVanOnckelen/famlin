@@ -45,6 +45,9 @@
     "language": "Idioma",
     "version": "Versão {{version}}",
     "systemStatus": "Estado do sistema",
+    "menu": "Menu",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
     "demoBanner": "Modo de demonstração — este painel de administração é só de leitura. Podes explorar, mas as alterações não são guardadas."
   },
   "devices": {

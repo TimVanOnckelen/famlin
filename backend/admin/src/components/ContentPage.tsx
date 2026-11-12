@@ -398,21 +398,21 @@ export function ContentPage() {
                 <TableBody>
                   {posts.map((post) => (
                     <TableRow key={post.id}>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.author')}>
                         <AuthorCell name={post.author.name} avatarUrl={post.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell className="cell-content" data-label={t('content.table.content')}>
                         {post.type === 'MILESTONE' && <Badge variant="milestone">{t('content.milestone')}</Badge>}
                         {post.content ? truncate(post.content) : <span className="muted">{t('content.noText')}</span>}
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {post.group.name}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.activity')}>
                         <span className="activity-counts">
                           <span title={t('content.commentsTooltip')}>
                             <Icon name="message-circle" size={13} />
@@ -424,7 +424,7 @@ export function ContentPage() {
                           </span>
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.date')}>
                         <DateCell iso={post.createdAt} />
                       </TableCell>
                       <TableCell className="actions">
@@ -478,10 +478,10 @@ export function ContentPage() {
                 <TableBody>
                   {stories.map((story) => (
                     <TableRow key={story.id}>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.author')}>
                         <AuthorCell name={story.author.name} avatarUrl={story.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell className="cell-content" data-label={t('content.table.content')}>
                         <span className="story-cell">
                           <StoryThumb imageUrl={story.imageUrl} />
                           {story.pinnedAt ? (
@@ -495,7 +495,7 @@ export function ContentPage() {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {story.group.name}
@@ -507,7 +507,7 @@ export function ContentPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.activity')}>
                         <span className="activity-counts">
                           <span title={t('content.viewsTooltip')}>
                             <Icon name="eye" size={13} />
@@ -519,7 +519,7 @@ export function ContentPage() {
                           </span>
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.date')}>
                         <DateCell iso={story.createdAt} />
                       </TableCell>
                       <TableCell className="actions">
@@ -553,25 +553,27 @@ export function ContentPage() {
                 <TableBody>
                   {comments.map((comment) => (
                     <TableRow key={comment.id}>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.author')}>
                         <AuthorCell name={comment.author.name} avatarUrl={comment.author.avatarUrl} />
                       </TableCell>
-                      <TableCell className="cell-content">{truncate(comment.content)}</TableCell>
-                      <TableCell className="cell-content">
+                      <TableCell className="cell-content" data-label={t('content.table.comment')}>
+                        {truncate(comment.content)}
+                      </TableCell>
+                      <TableCell className="cell-content" data-label={t('content.table.onPost')}>
                         {comment.post.content ? (
                           <span className="cell-sub">{truncate(comment.post.content, 60)}</span>
                         ) : (
                           <span className="muted">{t('content.noText')}</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.group')}>
                         <div className="group-badges">
                           <Badge variant="secondary" className="badge">
                             {comment.post.group.name}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell data-label={t('content.table.date')}>
                         <DateCell iso={comment.createdAt} />
                       </TableCell>
                       <TableCell className="actions">

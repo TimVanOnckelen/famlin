@@ -42,6 +42,9 @@ export function renderCss(tokens) {
   // Browser spacing uses rem (16px reference); native exports retain logical units.
   for (const [name, value] of Object.entries(tokens.spacing))
     declarations.push([`fam-space-${name}`, `${value / 16}rem`])
+  // Viewport cut-overs are browser-only (px); native exports retain logical units.
+  for (const [name, value] of Object.entries(tokens.breakpoint ?? {}))
+    declarations.push([`fam-breakpoint-${name}`, `${value}px`])
   return (
     '/* Generated from src/tokens.json. Run npm run generate. */\n:root {\n' +
     declarations.map(([key, value]) => `  --${key}: ${value};`).join('\n') +

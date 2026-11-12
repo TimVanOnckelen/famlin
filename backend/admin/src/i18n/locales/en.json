@@ -46,6 +46,9 @@
     "language": "Language",
     "version": "Version {{version}}",
     "systemStatus": "System status",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
     "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved."
   },
   "devices": {

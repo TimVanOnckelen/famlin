@@ -19,6 +19,8 @@
     @apply bg-background text-foreground;
     margin: 0;
     line-height: 1.55;
+    /* Drawer overlay is absolutely positioned on iOS Safari (Base UI). */
+    position: relative;
   }
 
   button,
@@ -200,7 +202,6 @@
     padding: 2rem;
     max-width: calc(100% - var(--sidebar-width));
   }
-
   .page-header {
     display: flex;
     align-items: center;
@@ -562,9 +563,13 @@
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--muted-foreground);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+
+  @media (max-width: 719px) {
+    /* Fit the whole second line (group · date) instead of ellipsizing it. */
+    .member-card-sub {
+      overflow-wrap: anywhere;
+    }
   }
 
   @media (max-width: 900px) {
@@ -790,6 +795,9 @@
   @media (max-width: 900px) {
     .dashboard-columns {
       flex-direction: column;
+      /* Without stretch the columns size to their content (flex-start), and a
+         wide card (e.g. Recent activity) overflows the page horizontally. */
+      align-items: stretch;
     }
   }
   .settings-layout {
@@ -1712,26 +1720,29 @@
     min-height: 44px;
   }
 }
-@media (max-width: 767px) {
+@media (width < 45.0625rem) {
   .app-layout {
     flex-direction: column;
   }
-  .sidebar {
+  /* Scoped to the desktop sidebar (a direct child of .app-layout): the mobile
+     drawer reuses the .sidebar markup but is portaled elsewhere, where the
+     nav must stay a single column. */
+  .app-layout > .sidebar {
     position: static;
     width: 100%;
     padding: 1rem;
   }
-  .sidebar-brand {
+  .app-layout > .sidebar .sidebar-brand {
     margin-bottom: 1rem;
   }
-  .sidebar nav {
+  .app-layout > .sidebar nav {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .sidebar-subnav {
+  .app-layout > .sidebar .sidebar-subnav {
     grid-column: 1 / -1;
   }
-  .sidebar .user {
+  .app-layout > .sidebar .user {
     margin-top: 1rem;
   }
   .main {
@@ -1782,7 +1793,7 @@
     width: 100%;
   }
 }
-@media (max-width: 767px) {
+@media (width < 45.0625rem) {
   .md-detail-header {
     flex-wrap: wrap;
   }

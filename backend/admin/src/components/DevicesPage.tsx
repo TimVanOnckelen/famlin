@@ -133,7 +133,7 @@ export function DevicesPage() {
               <TableBody>
                 {devices.map((device) => (
                   <TableRow key={device.id}>
-                    <TableCell>
+                    <TableCell data-label={t('devices.member')}>
                       <div className="flex items-center gap-3">
                         <InitialAvatar name={device.user.name} avatarUrl={device.user.avatarUrl} />
                         <div className="min-w-0">
@@ -143,12 +143,14 @@ export function DevicesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="device-install-id">{device.installId}</TableCell>
-                    <TableCell>{device.platform}</TableCell>
-                    <TableCell>{device.osVersion}</TableCell>
-                    <TableCell>{device.appVersion}</TableCell>
-                    <TableCell>{device.appBuild}</TableCell>
-                    <TableCell>
+                    <TableCell className="device-install-id" data-label={t('devices.installId')}>
+                      {device.installId}
+                    </TableCell>
+                    <TableCell data-label={t('devices.platform')}>{device.platform}</TableCell>
+                    <TableCell data-label={t('devices.osVersion')}>{device.osVersion}</TableCell>
+                    <TableCell data-label={t('devices.appVersion')}>{device.appVersion}</TableCell>
+                    <TableCell data-label={t('devices.appBuild')}>{device.appBuild}</TableCell>
+                    <TableCell data-label={t('devices.pushPermission')}>
                       <Badge
                         variant={
                           device.pushPermission === 'denied'

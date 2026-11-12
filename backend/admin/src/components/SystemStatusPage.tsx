@@ -124,15 +124,19 @@ function JobsTable({ jobs }: { jobs: JobStatus[] }) {
         <TableBody>
           {jobs.map((job) => (
             <TableRow key={job.job}>
-              <TableCell>
+              <TableCell data-label={t('systemStatus.jobs.job')}>
                 {t(`systemStatus.jobs.names.${job.job}`)}
                 {job.lastError && job.lastOk === false && <div className="status-job-error">{job.lastError}</div>}
               </TableCell>
-              <TableCell className="muted">{formatDate(job.lastStartedAt) ?? '—'}</TableCell>
-              <TableCell>
+              <TableCell className="muted" data-label={t('systemStatus.jobs.lastRun')}>
+                {formatDate(job.lastStartedAt) ?? '—'}
+              </TableCell>
+              <TableCell data-label={t('systemStatus.jobs.result')}>
                 <ResultBadge ok={job.lastOk} running={job.running} />
               </TableCell>
-              <TableCell className="muted">{formatDate(job.lastSuccessAt) ?? '—'}</TableCell>
+              <TableCell className="muted" data-label={t('systemStatus.jobs.lastSuccess')}>
+                {formatDate(job.lastSuccessAt) ?? '—'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
