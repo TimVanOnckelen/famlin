@@ -33,6 +33,7 @@ export const SERVER_FEATURES = [
   'livePhotos', // 0.8.7 — Live Photo pairing (`kind: 'livePhoto'`, `videoUrl`)
   'deviceDiagnostics', // unreleased after 0.8.7 — /api/devices
   'wiki', // unreleased after 0.8.7 — Family Wiki (/api/wiki)
+  'diagnosticReports', // unreleased after 0.8.7 — POST /api/diagnostics/reports
   'giftListGuests', // unreleased after 0.8.7 — gift-list wishlists for people without an account
 ] as const
 

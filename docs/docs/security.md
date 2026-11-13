@@ -134,7 +134,7 @@ Stories follow the same family and circle rules as posts, including direct media
 
 **Member exports** contain what that member can already see in their families, including other members' posts and photos from shared groups. They exclude other families and circles, other people's favorites and settings, credentials, invites, and tokens. Members can start an export from their profile, rate-limited to five exports per user per hour.
 
-A member export includes that member's own latest device diagnostics. Admin backups and restores exclude devices and push tokens; mobile apps report their current state again after a restore.
+A member export includes that member's own latest device diagnostics and the diagnostic reports they sent. Admin backups and restores exclude devices and push tokens; mobile apps report their current state again after a restore.
 
 ### Public branding
 
@@ -159,6 +159,10 @@ Deleted photos are removed from the bucket too. If bucket versioning is enabled,
 The mobile app reports only a random install ID, platform, OS version, app version/build, and push permission to the Famlin server used by that account. It sends no device model, locale, IP address, activity data, timestamps, or last-seen field, and doesn't rewrite an unchanged report. Nothing is sent to the Famlin maintainer, Expo, or another third party.
 
 Members can see these fields in their profile; admins see current device state on the Devices page. The web app reports no device diagnostics.
+
+### Scroll diagnostic reports
+
+A member who measures feed scrolling (Profile → Advanced) can send the report to the server's admins or share it themselves; nothing leaves the phone until they do. A report holds the phone model, OS and app version and frame/post counts — no content, names or server address. Reports are rate-limited to 10 per member per hour, deleted after 30 days, and never forwarded anywhere by the server.
 
 ### Rate limits
 

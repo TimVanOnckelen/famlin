@@ -99,7 +99,7 @@ The main model groups are:
 - **Identity and audiences:** `User`, `Group`, `GroupMember`, `Circle`, and `CircleMember`
 - **Family content:** `Post`, `Comment`, `Like`, `Favorite`, `Story`, `ChatMessage`, `WikiPage`, and gift-list models
 - **Media:** `Upload`, `MediaAlbumLink`, and `MediaPersonLink`
-- **Runtime state:** `Setting`, `Notification`, `PushToken`, `ApiToken`, and backup/job status models
+- **Runtime state:** `Setting`, `Notification`, `PushToken`, `ApiToken`, `Device`, `DiagnosticReport` (scroll performance reports members chose to send to their admins, pruned after 30 days — see [Mobile scroll diagnostics](./mobile-performance.md)), and backup/job status models
 
 A post belongs to one family and can optionally belong to one circle. Its open `type` plus handler-owned `typeData` supports updates, milestones, polls, events, trips, albums, and gift lists. Cross-posting creates linked sibling posts in multiple families while preserving each family's access boundary.
 

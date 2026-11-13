@@ -27,6 +27,7 @@
     "failedToRegisterPushToken": "Impossible d'enregistrer le jeton de notification",
     "deviceLimitReached": "Ce compte a atteint la limite de 20 appareils",
     "deviceNotFound": "Appareil introuvable",
+    "diagnosticReportNotFound": "Rapport de diagnostic introuvable",
     "pushNotificationsDisabled": "Les notifications push sont désactivées sur ce serveur",
     "cannotDeleteYourself": "Tu ne peux pas supprimer ton propre compte ici",
     "oidcNotConfigured": "La connexion OIDC n'est pas configurée",

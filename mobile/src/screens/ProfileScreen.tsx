@@ -496,6 +496,26 @@ export function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.advanced')}</Text>
+          {/* Feed scroll diagnostics (issue #357): a visible, explained
+              setting in every build rather than a hidden tester gesture. */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingTextWrap}>
+              <Text style={styles.settingLabel}>{t('scrollDiagnostics.settingLabel')}</Text>
+              <Text style={styles.settingDescription}>{t('scrollDiagnostics.settingDescription')}</Text>
+            </View>
+            <Switch
+              testID="scroll-diagnostics-switch"
+              accessibilityLabel={t('scrollDiagnostics.settingLabel')}
+              value={scrollDiagnostics}
+              onValueChange={setScrollDiagnostics}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
@@ -883,6 +903,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
+  },
+  settingTextWrap: {
+    flex: 1,
+    marginRight: 12,
   },
   settingItemBorder: {
     borderTopWidth: 1,

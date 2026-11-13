@@ -27,6 +27,7 @@
     "failedToRegisterPushToken": "Não foi possível registar o token de notificações push",
     "deviceLimitReached": "Esta conta atingiu o limite de 20 dispositivos",
     "deviceNotFound": "Dispositivo não encontrado",
+    "diagnosticReportNotFound": "Relatório de diagnóstico não encontrado",
     "pushNotificationsDisabled": "As notificações push estão desativadas neste servidor",
     "cannotDeleteYourself": "Não podes eliminar a tua própria conta",
     "oidcNotConfigured": "O início de sessão por OIDC não está configurado",

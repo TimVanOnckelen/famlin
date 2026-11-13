@@ -168,16 +168,16 @@ it('explains a 404 from account deletion on a server too old to say', async () =
   expect(deleteAccount).toHaveBeenCalledTimes(1)
 })
 
-it('switches the hidden scroll diagnostics on and off with a long press on the version row', async () => {
+it('switches the feed scroll diagnostics on and off from the Advanced section', async () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useScrollDiagnosticsStore } = require('@/stores/scrollDiagnosticsStore')
   await renderProfile({ features: ALL })
-  expect(screen.queryByText('scrollDiagnostics.enabled')).toBeNull()
+  expect(screen.getByText('profile.advanced')).toBeTruthy()
+  expect(screen.getByText('scrollDiagnostics.settingDescription')).toBeTruthy()
 
-  await fireEvent(screen.getByTestId('app-version-row'), 'longPress')
+  await fireEvent(screen.getByTestId('scroll-diagnostics-switch'), 'valueChange', true)
   expect(useScrollDiagnosticsStore.getState().enabled).toBe(true)
-  expect(screen.getByText('scrollDiagnostics.enabled')).toBeTruthy()
 
-  await fireEvent(screen.getByTestId('app-version-row'), 'longPress')
+  await fireEvent(screen.getByTestId('scroll-diagnostics-switch'), 'valueChange', false)
   expect(useScrollDiagnosticsStore.getState().enabled).toBe(false)
 })

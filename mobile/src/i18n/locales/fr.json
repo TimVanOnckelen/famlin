@@ -376,6 +376,7 @@
     "server": "Serveur",
     "connectedTo": "Connecté à",
     "serverVersion": "Version du serveur {{version}}",
+    "advanced": "Avancé",
     "app": "App",
     "version": "Version {{version}}",
     "logout": "Se déconnecter",
@@ -745,13 +746,19 @@
   },
   "scrollDiagnostics": {
     "title": "Diagnostic de défilement",
-    "enabled": "Diagnostic de défilement activé",
     "hint": "Appuyez sur Démarrer, puis faites défiler le fil.",
     "recording": "Enregistrement… faites défiler le fil, puis appuyez sur Arrêter.",
     "uiResult": "Écran : {{hitches}} ms/s de saccades, {{dropped}} images perdues",
     "jsResult": "App : {{hitches}} ms/s de saccades, {{dropped}} images perdues",
     "start": "Démarrer",
     "stop": "Arrêter",
-    "share": "Partager"
+    "share": "Partager",
+    "settingLabel": "Signaler les performances de défilement",
+    "settingDescription": "Affiche une barre au-dessus du fil qui mesure la fluidité du défilement. Vous pouvez envoyer le résultat à l'administrateur de votre serveur ou le partager vous-même ; rien n'est envoyé automatiquement. Se désactive à la fermeture de l'app.",
+    "sendToAdmin": "Envoyer à l'admin",
+    "sending": "Envoi…",
+    "sent": "Envoyé à l'admin",
+    "sendFailed": "Non envoyé, réessayez",
+    "close": "Fermer le diagnostic de défilement"
   }
 }

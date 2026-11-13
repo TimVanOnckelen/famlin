@@ -32,6 +32,8 @@
 //    restore; members create new ones.
 //  - `Device`/`PushToken`: device diagnostics and push tokens are
 //    operational state that the apps re-register on their own.
+//  - `DiagnosticReport`: performance reports members sent to the admin —
+//    short-lived support data (pruned after 30 days), not family content.
 //  - `Notification`/`PushDeliveryLog`: internal delivery/telemetry history,
 //    not something a family needs in a portable export.
 //  - Live (unpinned) stories, story views and private story replies: a live

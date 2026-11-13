@@ -376,6 +376,7 @@
     "server": "服务器",
     "connectedTo": "已连接至",
     "serverVersion": "服务器版本 {{version}}",
+    "advanced": "高级",
     "app": "应用",
     "version": "版本 {{version}}",
     "logout": "退出登录",
@@ -745,13 +746,19 @@
   },
   "scrollDiagnostics": {
     "title": "滚动诊断",
-    "enabled": "滚动诊断已开启",
     "hint": "点击“开始”，然后滚动动态。",
     "recording": "正在记录…滚动动态，然后点击“停止”。",
     "uiResult": "屏幕：卡顿 {{hitches}} 毫秒/秒，丢帧 {{dropped}}",
     "jsResult": "应用：卡顿 {{hitches}} 毫秒/秒，丢帧 {{dropped}}",
     "start": "开始",
     "stop": "停止",
-    "share": "分享"
+    "share": "分享",
+    "settingLabel": "报告滚动性能",
+    "settingDescription": "在动态上方显示一个栏，用于测量滚动是否流畅。你可以把结果发送给服务器管理员，或自行分享；不会自动发送任何内容。关闭应用后自动关闭。",
+    "sendToAdmin": "发送给管理员",
+    "sending": "正在发送…",
+    "sent": "已发送给管理员",
+    "sendFailed": "未发送，请重试",
+    "close": "关闭滚动诊断"
   }
 }

@@ -32,6 +32,7 @@ import {
   JobStatus,
   AdminDevice,
   DeviceSummary,
+  DiagnosticReport,
 } from '../types'
 
 export type {
@@ -66,6 +67,7 @@ export type {
   JobStatus,
   AdminDevice,
   DeviceSummary,
+  DiagnosticReport,
 }
 
 export interface SetupAdmin {
@@ -307,6 +309,15 @@ export const api = {
   },
 
   deleteDevice: (id: string) => request<void>(`/api/admin/devices/${id}`, { method: 'DELETE' }),
+
+  getDiagnosticReports: (params: { cursor?: string } = {}) => {
+    const query = new URLSearchParams()
+    if (params.cursor) query.set('cursor', params.cursor)
+    const qs = query.toString()
+    return request<{ retentionDays: number } & Page<DiagnosticReport>>(`/api/admin/diagnostics${qs ? `?${qs}` : ''}`)
+  },
+
+  deleteDiagnosticReport: (id: string) => request<void>(`/api/admin/diagnostics/${id}`, { method: 'DELETE' }),
 
   // Public endpoint (no auth required) — used by the dashboard's
   // update-available notice.

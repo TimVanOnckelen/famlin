@@ -46,6 +46,7 @@
     "version": "版本 {{version}}",
     "systemStatus": "系统状态",
     "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。",
+    "diagnostics": "诊断",
     "backups": "备份"
   },
   "devices": {
@@ -70,6 +71,30 @@
       "granted": "已允许",
       "denied": "已拒绝",
       "undetermined": "未选择"
+    }
+  },
+  "diagnostics": {
+    "title": "诊断报告",
+    "description": "成员从移动应用发送的性能报告（个人资料 → 高级）。报告保存在此服务器上，{{days}} 天后删除。不会发送给 Famlin 开发者；如需报告问题，请将报告复制到以下位置的 issue：",
+    "issuesLink": "GitHub。",
+    "empty": "暂无报告。",
+    "app": "应用 {{version}}",
+    "uiThread": "UI",
+    "jsThread": "JS",
+    "hitches": "{{thread}} {{value}} ms/s",
+    "copy": "复制",
+    "copied": "已复制",
+    "copyError": "无法复制报告。",
+    "remove": "删除",
+    "removeConfirm": "删除 {{name}} 的这份报告？",
+    "removeError": "无法删除报告：{{error}}",
+    "ratings": {
+      "good": "良好",
+      "warning": "可察觉",
+      "critical": "较差"
+    },
+    "kinds": {
+      "feed_scroll": "动态滚动"
     }
   },
   "login": {
@@ -638,7 +663,8 @@
         "expireStories": "清理过期限时动态",
         "backup": "备份",
         "systemAlerts": "告警检查",
-        "updateCheck": "更新检查"
+        "updateCheck": "更新检查",
+        "pruneDiagnosticReports": "清理诊断报告"
       }
     },
     "migrations": {

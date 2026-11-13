@@ -26,6 +26,7 @@ model User {
   pushOnNewLike     Boolean           @default(true)
   pushTokens        PushToken[]
   devices           Device[]
+  diagnosticReports DiagnosticReport[]
   groupMemberships  GroupMember[]
   posts             Post[]
   comments          Comment[]
@@ -374,6 +375,31 @@ model Device {
   pushPermission String
   pushTokens     PushToken[]
 
+  @@index([userId])
+}
+
+// A performance report a member chose to send to their own server's admin
+// from the mobile app (Profile → Advanced; issue #357). Operational data, not
+// family content: never in the admin export/restore, only in the sender's own
+// member export, and deleted after DIAGNOSTIC_REPORT_RETENTION_DAYS by the
+// pruneDiagnosticReports job (services/diagnosticReports.ts). The admin
+// decides whether to pass one on (e.g. into a GitHub issue); the server never
+// sends it anywhere.
+model DiagnosticReport {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Open discriminator, like Post.type: 'feed_scroll' today.
+  kind       String
+  platform   String
+  appVersion String
+  // The plain-text report exactly as the app shows and shares it.
+  text       String
+  // The same report, structured (kind-specific shape, validated on receipt).
+  data       Json
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
   @@index([userId])
 }
 

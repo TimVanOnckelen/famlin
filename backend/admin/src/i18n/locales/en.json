@@ -46,6 +46,7 @@
     "version": "Version {{version}}",
     "systemStatus": "System status",
     "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved.",
+    "diagnostics": "Diagnostics",
     "backups": "Backups"
   },
   "devices": {
@@ -70,6 +71,30 @@
       "granted": "Allowed",
       "denied": "Denied",
       "undetermined": "Not decided"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnostic reports",
+    "description": "Performance reports members sent from the mobile app (Profile → Advanced). They stay on this server and are deleted after {{days}} days. Nothing is sent to the Famlin developers; to report a problem, copy a report into an issue on",
+    "issuesLink": "GitHub.",
+    "empty": "No reports yet.",
+    "app": "app {{version}}",
+    "uiThread": "UI",
+    "jsThread": "JS",
+    "hitches": "{{thread}} {{value}} ms/s",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyError": "Could not copy the report.",
+    "remove": "Delete",
+    "removeConfirm": "Delete this report from {{name}}?",
+    "removeError": "Could not delete report: {{error}}",
+    "ratings": {
+      "good": "good",
+      "warning": "noticeable",
+      "critical": "poor"
+    },
+    "kinds": {
+      "feed_scroll": "Feed scrolling"
     }
   },
   "login": {
@@ -638,7 +663,8 @@
         "expireStories": "Expire stories",
         "backup": "Backup",
         "systemAlerts": "Alert check",
-        "updateCheck": "Update check"
+        "updateCheck": "Update check",
+        "pruneDiagnosticReports": "Prune diagnostic reports"
       }
     },
     "migrations": {

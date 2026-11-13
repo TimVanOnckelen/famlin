@@ -225,6 +225,13 @@ export { registerPushToken, unregisterPushToken } from './pushTokens'
 
 export type { DevicePlatform, PushPermission, DevicePayload, MemberDevice } from './devices'
 export { reportDevice, unregisterDevice, fetchMyDevices } from './devices'
+export type {
+  DiagnosticFrameStats,
+  FeedScrollReportData,
+  FeedScrollDiagnosticReport,
+  DiagnosticReportPayload,
+} from './diagnostics'
+export { sendDiagnosticReport } from './diagnostics'
 
 export type { ApiToken, CreatedApiToken } from './apiTokens'
 export { fetchApiTokens, createApiToken, revokeApiToken } from './apiTokens'

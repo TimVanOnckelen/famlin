@@ -5,32 +5,26 @@ title: Mobile scroll diagnostics
 
 # Mobile scroll diagnostics
 
-The mobile app can measure how smoothly its own feed scrolls and hand the result back as text. It exists so a change to the feed can be judged with numbers from real phones, without Xcode, Instruments or a collection of test devices ([issue #357](https://github.com/TimVanOnckelen/famlin/issues/357)).
+The mobile app can measure how smoothly its own feed scrolls and send the result to the server's admin or share it as text. It exists so a change to the feed can be judged with numbers from real phones, without Xcode, Instruments or a collection of test devices ([issue #357](https://github.com/TimVanOnckelen/famlin/issues/357)).
 
-## Which builds have it
+## Where it lives
 
-The diagnostics are compiled in only when the build is a development build or was made with `EXPO_PUBLIC_SCROLL_DIAGNOSTICS=1`. `mobile/eas.json` sets that variable per profile:
+It is in every build, store releases included, as a visible setting: **Profile → Advanced → Report scrolling performance**. It's an explained, opt-in option rather than a hidden tester gesture, because stutter depends on the phone and the feed, so the reports that matter come from members' own phones — and because App Store guideline 2.3.1 forbids hidden features. The switch is held in memory only (`stores/scrollDiagnosticsStore.ts`), so restarting the app turns it off.
 
-| EAS profile | Diagnostics | Used for |
-| --- | --- | --- |
-| `development` | yes | Dev client |
-| `preview` | yes | Internal distribution (registered devices) |
-| `diagnostics` | yes | A store-signed build for TestFlight or a Play internal testing track |
-| `production` | **no** | The App Store and Google Play release |
-| `apk` | **no** | The APK attached to each GitHub Release |
-
-In a build without the flag the long press below does nothing and the bar can never appear.
-
-The `diagnostics` profile is `production` plus the flag, so it can be uploaded to TestFlight for testers who are not registered devices. Build it from the **Mobile build** workflow (profile `diagnostics`) or with `eas build --profile diagnostics`, and submit it with `eas submit`. Never promote that build to the App Store or to a Play production track: release builds come from the `production` profile only.
+For App Review notes: *"Profile → Advanced → Report scrolling performance shows a bar above the feed that measures scroll smoothness. The member can send the result to their own Famlin server's administrator or share it via the share sheet; nothing is sent automatically, and nothing is sent to the developer."*
 
 ## Recording a scroll
 
-1. Open **Profile** and long-press the app version row for a second. "Scroll diagnostics on" appears under the version.
+1. Open **Profile**, scroll to **Advanced** and switch on **Report scrolling performance**.
 2. Go to the feed. A bar under the header offers **Start**.
 3. Press **Start**, scroll the feed the way you normally would for about 20 seconds (a slow scroll and a few fast flings), then press **Stop**.
-4. The bar shows the result for the screen (UI thread) and the app (JS thread). Press **Share** and paste the text into the issue.
+4. The bar shows the result for the screen (UI thread) and the app (JS thread), with two buttons:
+   - **Send to admin** posts the report to `POST /api/diagnostics/reports`. It shows up on the admin UI's **Diagnostics** page, where the admin can copy it into a GitHub issue. The button only appears when the server lists the `diagnosticReports` feature.
+   - **Share** opens the share sheet with the report text.
 
-Long-press the version row again, or restart the app, to switch the diagnostics off.
+The **✕** on the bar switches the diagnostics off (as does turning the setting off or restarting the app).
+
+Measure in a Release build: a debug build runs JavaScript in development mode and stutters for reasons users never see. Locally, build in Release configuration: `npx expo run:android --variant release` or `npx expo run:ios --configuration Release --device`.
 
 ## Reading the report
 
@@ -53,8 +47,15 @@ Images loaded while recording: 48 network, 20 disk, 3 memory
 
 Only frames produced while the list is moving are counted. The report contains no server address, account or post content.
 
+## On the server
+
+A sent report is a `DiagnosticReport` row (`kind: 'feed_scroll'`, the text above plus the same numbers structured in `data`, validated and bounded by `diagnosticReportBodySchema` in `backend/src/types.ts`). Members can send 10 per hour. Admins list and delete them via `GET`/`DELETE /api/admin/diagnostics`; the daily `pruneDiagnosticReports` job deletes reports older than 30 days. They are excluded from the admin export/restore, included in the sender's member export, and cascade with the user. The server never forwards a report anywhere.
+
+A new kind of report adds a member to the discriminated union in `diagnosticReportBodySchema` (and to `DiagnosticReportPayload` in `packages/api-client/src/diagnostics.ts`); the admin page shows any kind's text, and its UI/JS badges only when `data.ui`/`data.js` exist.
+
 ## Limits
 
 - It measures the app's own two threads. Stutter caused purely by GPU compositing in the system's render server does not show up, so a clean report next to a visibly stuttering feed is itself a finding: it points at compositing.
 - The frame counter runs only during a recording, and feed images report where they loaded from only while the diagnostics are on, so the normal feed is not affected by it.
+- Recording itself adds a little work on both threads (a frame callback on the UI thread, a `requestAnimationFrame` loop on the JS thread); on old phones that slightly inflates the numbers.
 - Compare reports from the same device and a similar feed. A before/after pair on one phone says more than two reports from different phones.

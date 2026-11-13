@@ -71,6 +71,7 @@ import {
 import { getUpdateNotice } from '../services/updateCheck.js'
 import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAlerts.js'
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
+import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.js'
 import adminBackupRoutes from './adminBackups.js'
 
 // Builds the invite link's origin from the request that reached us, since
@@ -208,6 +209,40 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string }
     const result = await prisma.device.deleteMany({ where: { id } })
     if (result.count === 0) return reply.status(404).send({ error: getT(request)('errors.deviceNotFound') })
+    return { success: true }
+  })
+
+  // Diagnostic reports members sent from the app (issue #357). Read-only for
+  // the admin apart from deleting; passing one on is up to them (copy the
+  // text into an issue), the server never sends it anywhere. Newest first.
+  fastify.get('/diagnostics', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+
+    const { cursor, take } = paginationQuerySchema.parse(request.query)
+    const reports = await prisma.diagnosticReport.findMany({
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...paginationArgs({ cursor, take }),
+      select: {
+        id: true,
+        kind: true,
+        platform: true,
+        appVersion: true,
+        text: true,
+        data: true,
+        createdAt: true,
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+    })
+    const { items, nextCursor } = paginate(reports, take)
+    return { items, nextCursor, retentionDays: DIAGNOSTIC_REPORT_RETENTION_DAYS }
+  })
+
+  fastify.delete('/diagnostics/:id', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+
+    const { id } = request.params as { id: string }
+    const result = await prisma.diagnosticReport.deleteMany({ where: { id } })
+    if (result.count === 0) return reply.status(404).send({ error: getT(request)('errors.diagnosticReportNotFound') })
     return { success: true }
   })
 
