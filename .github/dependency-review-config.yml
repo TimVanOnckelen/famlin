@@ -24,6 +24,7 @@ allow-licenses:
   - CC-BY-4.0 # data only (caniuse-lite)
   - Python-2.0 # argparse
   - Zlib
+  - OFL-1.1 # fonts only (Nunito); bundling an unmodified font puts no terms on Famlin's code
 
 # Reviewed exceptions: packages allowed even though their license is not in
 # the list above. Add one here only after confirming its license doesn't
@@ -66,8 +67,3 @@ allow-dependencies-licenses:
   # GitHub reports the public-domain part as a LicenseRef), pulled in by
   # Mermaid via d3-delaunay in the docs site only.
   - pkg:npm/robust-predicates
-  # @fontsource/nunito: OFL-1.1, the Nunito font files themselves, bundled
-  # unmodified into the web and admin builds. The OFL allows bundling fonts
-  # with any software and only governs the font (no terms on Famlin's code);
-  # the mobile app already ships the same font via @expo-google-fonts/nunito.
-  - pkg:npm/%40fontsource/nunito
