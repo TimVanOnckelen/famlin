@@ -55,8 +55,12 @@ export function PhotosPage({
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups })
   const groups = groupsQuery.data ?? []
 
-  // Default to first group if user has groups
-  const activeGroupId = selectedGroupId ?? groups[0]?.id ?? null
+  // The photo timeline, people and albums endpoints are all single-family, so
+  // the Photos tab always shows exactly one family: the picked one, else the
+  // first. There is deliberately no "All families" chip (mobile has none
+  // either) — it used to show here while still loading only the first family.
+  const activeGroupId =
+    (selectedGroupId && groups.some((g) => g.id === selectedGroupId) ? selectedGroupId : groups[0]?.id) ?? null
 
   const peopleQuery = useQuery({
     queryKey: ['media-people', activeGroupId],
@@ -174,18 +178,17 @@ export function PhotosPage({
       <div className="photos-column">
         {groups.length > 1 && (
           <div className="photos-filter" role="group" aria-label={t('photos.filterLabel')}>
-            <button
-              className={`filter-chip${selectedGroupId === null ? ' filter-chip-active' : ''}`}
-              onClick={() => setSelectedGroupId(null)}
-            >
-              {t('photos.allFamilies')}
-            </button>
             {groups.map((group) => (
               <button
                 key={group.id}
-                className={`filter-chip${selectedGroupId === group.id ? ' filter-chip-active' : ''}`}
-                onClick={() => setSelectedGroupId(group.id)}
-                aria-pressed={selectedGroupId === group.id}
+                className={`filter-chip${activeGroupId === group.id ? ' filter-chip-active' : ''}`}
+                onClick={() => {
+                  setSelectedGroupId(group.id)
+                  // Person ids are per family, so a filter from the previous
+                  // family would 404 the new family's timeline.
+                  setSelectedPersonId(null)
+                }}
+                aria-pressed={activeGroupId === group.id}
               >
                 {group.name}
               </button>

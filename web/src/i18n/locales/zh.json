@@ -300,7 +300,6 @@
   "photos": {
     "title": "照片",
     "filterLabel": "按家庭筛选",
-    "allFamilies": "全部家庭",
     "filterByPerson": "按人物筛选",
     "allPeople": "所有人物",
     "empty": "暂无照片",

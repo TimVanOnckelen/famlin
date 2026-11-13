@@ -300,7 +300,6 @@
   "photos": {
     "title": "Photos",
     "filterLabel": "Filter by family",
-    "allFamilies": "All families",
     "filterByPerson": "Filter by person",
     "allPeople": "All people",
     "empty": "No photos yet",
