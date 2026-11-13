@@ -4,6 +4,7 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 import * as Crypto from 'expo-crypto'
 
 import { LoginResponse, getCurrentServerUrl, loginWithApple } from '@/api/auth'
+import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
 
 export class AppleCancelledError extends Error {}
 
@@ -20,8 +21,10 @@ function formatFullName(fullName: AppleAuthentication.AppleAuthenticationFullNam
 // Sign in with Apple is iOS-only (the native sheet doesn't exist elsewhere)
 // and needs the device to actually support it — isAvailableAsync is false on
 // iOS simulators/versions without it, in which case the button is hidden.
+// A free-team build has no Sign in with Apple entitlement, but
+// isAvailableAsync can't tell, so the sheet would fail after a tap.
 export async function isAppleSignInAvailable(): Promise<boolean> {
-  if (Platform.OS !== 'ios') return false
+  if (Platform.OS !== 'ios' || isIosFreeTeamBuild()) return false
   try {
     return await AppleAuthentication.isAvailableAsync()
   } catch {
