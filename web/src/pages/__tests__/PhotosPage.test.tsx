@@ -47,7 +47,7 @@ beforeEach(() => {
 })
 
 describe('PhotosPage', () => {
-  it('shows every family by default (no group filter sent)', async () => {
+  it('shows the first family by default', async () => {
     vi.mocked(getGroupPhotoTimeline).mockResolvedValue({
       items: [
         {
@@ -75,6 +75,22 @@ describe('PhotosPage', () => {
       cursor: undefined,
       personId: undefined,
     })
+  })
+
+  it('highlights the family whose photos are shown, with no "All families" chip', async () => {
+    const user = userEvent.setup()
+    renderWithQueryClient(<PhotosPage user={makeUser()} onOpenProfile={() => {}} onLogout={() => {}} />)
+
+    const first = await screen.findByRole('button', { name: 'Familie de Vries' })
+    expect(first).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('button', { name: 'All families' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Neefjes' }))
+    expect(screen.getByRole('button', { name: 'Neefjes' })).toHaveAttribute('aria-pressed', 'true')
+    expect(first).toHaveAttribute('aria-pressed', 'false')
+    await waitFor(() =>
+      expect(getGroupPhotoTimeline).toHaveBeenCalledWith('group-2', { cursor: undefined, personId: undefined })
+    )
   })
 
   it('renders person filter chips when people are available', async () => {
