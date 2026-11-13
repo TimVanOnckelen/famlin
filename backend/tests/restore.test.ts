@@ -6,7 +6,8 @@ import fs from 'fs'
 import path from 'path'
 import { prisma } from '../src/db.js'
 import { uploadsDir } from '../src/config.js'
-import { RESTORED_TOKEN_VERSION, isNewerVersion } from '../src/services/import.js'
+import os from 'os'
+import { RESTORED_TOKEN_VERSION, isNewerVersion, restoreArchive } from '../src/services/import.js'
 import pkg from '../package.json' with { type: 'json' }
 import {
   buildTestApp,
@@ -330,6 +331,8 @@ describe('POST /api/auth/setup/restore', () => {
         { key: 'brandName', value: 'The Janssens' },
         { key: 'brandLogo', value: '0123456789abcdef' },
         { key: 'smtpPass', value: 'secret' },
+        { key: 'smtpHost', value: 'smtp.example.com' },
+        { key: 'defaultLanguage', value: 'nl' },
       ],
     })
     fs.mkdirSync(path.join(uploadsDir, 'branding'), { recursive: true })
@@ -409,6 +412,7 @@ describe('POST /api/auth/setup/restore', () => {
       uploads: 5,
       highlights: 1,
       branding: 3,
+      settings: 2,
       giftListGuests: 1,
       giftListItems: 2,
       giftDrawAssignments: 2,
@@ -416,7 +420,10 @@ describe('POST /api/auth/setup/restore', () => {
     })
 
     const after = await snapshot()
+    // Settings come back, credentials don't: the admin re-enters those.
     expect(await prisma.setting.findUnique({ where: { key: 'smtpPass' } })).toBeNull()
+    expect((await prisma.setting.findUniqueOrThrow({ where: { key: 'smtpHost' } })).value).toBe('smtp.example.com')
+    expect((await prisma.setting.findUniqueOrThrow({ where: { key: 'defaultLanguage' } })).value).toBe('nl')
     expect(fs.readFileSync(path.join(uploadsDir, 'branding', 'logo-0123456789abcdef.png'), 'utf8')).toBe('logo-bytes')
     fs.rmSync(path.join(uploadsDir, 'branding'), { recursive: true })
     expect(after).toEqual({
@@ -444,7 +451,7 @@ describe('POST /api/auth/setup/restore', () => {
     expect(fs.readdirSync(uploadsDir).filter((n) => n.startsWith('.restore-'))).toEqual([])
 
     // The restorer logs in with the password they just chose; the other
-    // restored member has no password at all.
+    // restored member keeps theirs.
     const login = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
@@ -452,8 +459,13 @@ describe('POST /api/auth/setup/restore', () => {
     })
     expect(login.statusCode).toBe(200)
     const restoredMember = await prisma.user.findUniqueOrThrow({ where: { id: member.id } })
-    expect(restoredMember.passwordHash).toBeNull()
     expect(restoredMember.tokenVersion).toBe(RESTORED_TOKEN_VERSION)
+    const memberLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'member@example.com', password: 'member-password' },
+    })
+    expect(memberLogin.statusCode).toBe(200)
 
     // A token issued before the restore no longer authenticates.
     const stale = await app.inject({ method: 'GET', url: '/api/auth/me', headers: authHeader(member) })
@@ -487,7 +499,137 @@ describe('POST /api/auth/setup/restore', () => {
     expect(await prisma.user.count()).toBe(2)
     const restored = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } })
     expect(restored.isAdmin).toBe(true)
-    expect(restored.passwordHash).toBeNull()
+  })
+
+  it('restores a Famlin backup without account fields: everyone signs in as before', async () => {
+    const admin = await createUser({ isAdmin: true, email: 'admin@example.com', password: 'admin-password-1' })
+    const member = await createUser({ email: 'member@example.com', password: 'member-password-1' })
+    const group = await createGroupWithMember(admin)
+    await addMember(group.id, member.id)
+    await prisma.user.update({ where: { id: member.id }, data: { tokenVersion: RESTORED_TOKEN_VERSION + 5 } })
+    const archive = (await app.inject({ method: 'GET', url: '/api/admin/export', headers: authHeader(admin) }))
+      .rawPayload
+    await truncateAll()
+
+    const res = await restore({}, archive)
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body).toMatchObject({ restored: true, counts: { users: 2, groups: 1 } })
+    expect(body.token).toBeUndefined()
+    expect(await prisma.user.count()).toBe(2)
+
+    for (const [email, password] of [
+      ['admin@example.com', 'admin-password-1'],
+      ['member@example.com', 'member-password-1'],
+    ]) {
+      const login = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { email, password } })
+      expect(login.statusCode).toBe(200)
+    }
+    // Sessions from before the restore die, even ones issued after an earlier restore.
+    const restoredMember = await prisma.user.findUniqueOrThrow({ where: { id: member.id } })
+    expect(restoredMember.tokenVersion).toBe(RESTORED_TOKEN_VERSION + 6)
+    const stale = await app.inject({
+      method: 'GET',
+      url: '/api/auth/me',
+      headers: authHeader({ ...member, tokenVersion: RESTORED_TOKEN_VERSION + 5 }),
+    })
+    expect(stale.statusCode).toBe(401)
+  })
+
+  it('asks for account fields when the archive is an older export without credentials', async () => {
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({ serverVersion: pkg.version }),
+      'data/users.json': JSON.stringify([
+        {
+          id: 'u1',
+          email: 'old@example.com',
+          name: 'Old',
+          isAdmin: true,
+          // Ignored: a format-1 archive carries no credentials.
+          passwordHash: '$2b$04$abcdefghijklmnopqrstuuJ0b1H8wqk3mTgWbE2DtJ3sJ5w8.0wqy',
+          createdAt: new Date().toISOString(),
+        },
+      ]),
+      'data/groups.json': '[]',
+    })
+    const res = await restore({}, archive)
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('restoreAdminRequired')
+    expect(await prisma.user.count()).toBe(0)
+
+    const withAdmin = await restore(adminFields, archive)
+    expect(withAdmin.statusCode).toBe(200)
+    expect(withAdmin.json().token).toBeTruthy()
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: 'u1' } })).passwordHash).toBeNull()
+  })
+
+  it('asks for account fields when a backup has no admin account', async () => {
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({ serverVersion: pkg.version, format: 2, credentials: true }),
+      'data/users.json': '[]',
+      'data/groups.json': '[]',
+    })
+    const res = await restore({}, archive)
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('restoreAdminRequired')
+  })
+
+  it('never writes a credential setting from an archive', async () => {
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({ serverVersion: pkg.version, format: 2, credentials: true }),
+      'data/users.json': '[]',
+      'data/groups.json': '[]',
+      'data/settings.json': JSON.stringify([{ key: 'smtpPass', value: 'planted' }]),
+    })
+    const res = await restore(adminFields, archive)
+    expect(res.statusCode).toBe(400)
+    expect(await prisma.setting.findUnique({ where: { key: 'smtpPass' } })).toBeNull()
+  })
+
+  it('copies media a backup lacks from the backups mirror, including files deleted since', async () => {
+    const mirror = fs.mkdtempSync(path.join(os.tmpdir(), 'famlin-mirror-'))
+    const live = `${crypto.randomUUID()}.jpg`
+    const deleted = `originals/${crypto.randomUUID()}.png`
+    fs.writeFileSync(path.join(mirror, live), 'live-bytes')
+    fs.mkdirSync(path.join(mirror, '.deleted', '2026-01-02', 'originals'), { recursive: true })
+    fs.writeFileSync(path.join(mirror, '.deleted', '2026-01-02', deleted), 'deleted-bytes')
+    const archive = await zipOf({
+      'manifest.json': JSON.stringify({
+        serverVersion: pkg.version,
+        format: 2,
+        credentials: true,
+        includeMedia: false,
+        mediaLocation: 'mirror',
+        requiredMedia: [
+          { key: live, size: 10 },
+          { key: deleted, size: 13 },
+        ],
+      }),
+      'data/users.json': '[]',
+      'data/groups.json': '[]',
+    })
+    const zip = path.join(mirror, 'archive.zip')
+    fs.writeFileSync(zip, archive)
+    const workDir = fs.mkdtempSync(path.join(uploadsDir, '.restore-test-'))
+    try {
+      const result = await restoreArchive({
+        zipPath: zip,
+        workDir,
+        admin: { ...adminFields, passwordHash: 'x' },
+        lockKey: 1n,
+        mirrorDir: mirror,
+      })
+      expect(result.counts.mirroredFiles).toBe(2)
+      expect(fs.readFileSync(path.join(uploadsDir, live), 'utf8')).toBe('live-bytes')
+      expect(fs.readFileSync(path.join(uploadsDir, deleted), 'utf8')).toBe('deleted-bytes')
+      // Copied, not moved: the mirror is still a complete backup.
+      expect(fs.existsSync(path.join(mirror, live))).toBe(true)
+    } finally {
+      fs.rmSync(mirror, { recursive: true, force: true })
+      fs.rmSync(workDir, { recursive: true, force: true })
+      fs.rmSync(path.join(uploadsDir, live), { force: true })
+      fs.rmSync(path.join(uploadsDir, deleted), { force: true })
+    }
   })
 
   it('enables scheduled backups on the restored new install', async () => {

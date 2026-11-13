@@ -214,6 +214,11 @@ export function invalidateSessionCache(userId: string) {
   sessionCache.delete(userId)
 }
 
+// After a restore on a running server every user's tokenVersion changed at once.
+export function clearSessionCache() {
+  sessionCache.clear()
+}
+
 // Confirms a decoded token still corresponds to an existing user at its
 // issued tokenVersion — the DB check that `verifyToken`/`verifyMediaToken`
 // (signature + expiry only) can't do on their own. Used by the /uploads auth

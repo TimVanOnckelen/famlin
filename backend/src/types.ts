@@ -414,6 +414,14 @@ export const restoreDumpBodySchema = z.object({
   name: z.string().min(1).max(200),
 })
 
+// A backup in the backups volume — a Famlin backup zip or a legacy .dump; the
+// exact name patterns are checked by the route. `admin` is only needed for an
+// archive without credentials (an export from before issue #461).
+export const restoreBackupBodySchema = z.object({
+  file: z.string().min(1).max(200),
+  admin: setupBodySchema.optional(),
+})
+
 export const changePasswordBodySchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8).max(100),

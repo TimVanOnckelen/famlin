@@ -1,0 +1,1 @@
+{"parameters":[{"name":"file","in":"path","required":true,"schema":{"type":"string"},"description":"A backup file name from GET /api/admin/backups (`famlin-backup-<timestamp>.zip` or `famlin-<timestamp>.dump`)"}]}

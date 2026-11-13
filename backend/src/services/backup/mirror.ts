@@ -14,7 +14,8 @@ export const DELETED_RETENTION_DAYS = 30
 // uploads/derived/ is a regenerable cache (HEIC renditions, see
 // uploadVariants.ts) — not worth mirroring.
 const SKIPPED_TOP_LEVEL = new Set(['derived', DELETED_DIR])
-const TMP_SUFFIX = '.famlin-tmp'
+export const MIRROR_TMP_SUFFIX = '.famlin-tmp'
+const TMP_SUFFIX = MIRROR_TMP_SUFFIX
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export interface MirrorResult {

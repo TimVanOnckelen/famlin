@@ -246,7 +246,7 @@ export function SystemStatusPage() {
               ) : (
                 <>
                   <Badge variant="outline">{t('serverSettings.statusDisabled')}</Badge>{' '}
-                  <Link to="/settings">{t('systemStatus.backups.enableInSettings')}</Link>
+                  <Link to="/backups">{t('systemStatus.backups.enableInSettings')}</Link>
                 </>
               )}
             </span>

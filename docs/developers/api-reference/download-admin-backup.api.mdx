@@ -1,0 +1,72 @@
+---
+id: download-admin-backup
+title: "Download a backup from the backups volume"
+description: "Admin only. Streams the file. Like `GET /api/admin/export`, it accepts a"
+sidebar_label: "Download a backup from the backups volume"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV9tuGzcQ/ZUBX2ob1Mpt8rRIUyiIm7pIYyN2EASWkR3tjrSMuSRLcmVvBAH9iH5hv6QY7kq2IztFXwq06JMkXuZyeObMaCWsI49RWXNciVxU9tpoi9WkapR5geVV64QUERdB5BfiLFqPCwLkXRVif1FcSlFRKL1y6Wcu0m2wRncZnEVP2ASINcFcacrgtboiKF4dncMYnRonY2O6cdbHQoKKgGVJLgbAqbGGRlE1BMUPm9DO7RWZ7wuYe9tAcXpy9oCdceRDBSgTImE1NXYOaGDSxtp69TmFDTVhRV7C3HpwGpWBmbfXgTxsXIVsaoQUDj02FMkzCCthsCGRC05GSKE4YYexFlJ4+rVVniqRR9+SFKGsqUGRr0TsHN8J0SuzEOsdwGCWsE4IATvo0/sCpP5QgL1ijo1WZtQvjJ4xRCFi455nn5UrwHrYHLm7V7WNK/bFWm6TuAfqJptfW/LdvXTmqMPX8llf8ungrAkUeP+7w0P+uJ/leU138xRSlNZEMpGPonNalellxp+V46XH3Ekxt77BKHIxUwZ9J9Zrec+ALSPFUUjU+7uW2NbTw293w/9FhaDMQoIyS9SqkkA3jvGRjLenpb2iCkpPFZmoUD+e36fABh8Iy84+URmZcp7rMqoeTfLe+oeivx/gT22DZuQJK5xpkhA9mqAxUgVLhakCi0mqrdFrNIsWF1QMVQB7BZliXBhd7GfMz9JW9NceT9IX1NBgWStDW+eQQga2kkHx9mjy8uPJm9cfCmjQXwVAKJ4ePilS6SFcexUJZtqWDOCMSmwDpXAD+SV58K0JoAyw9RHLyriixkJjK4K9QAQF75wY3RVgDRR9ybSxHvcGRsrMLScmBd1g4zSntA0qseeW6xcD3JdSRBXT0aO0sKHGk11qTG4FMVGhtwV7nkK0ngBNBRVpipQDQlALQ9VImV5IJRgbkzydHkMSLi5R8fTw6a6jNxZCW9abMlImwbS0um2+Uk//8+3fyre1FA3F2nJvXlB6KW41udjtCuMVi+p6vJF0IUUfTd+1Wq9FLuoYXcjH4745ZEN0WWmbHaw/2NaDvTbwYzoLFTltu4bpxXIfqGy9il0yPiP05Lm9ivzi8u72GVOuZ9XdQ9uH5oDE0Fn4d39oJ5gJOPIhPT1PByH0hbLthB8dxo9ZlhWSBThRcKiNa5oBOrcP1k8NQqAQuPn//P58d4LgF9R2oUyRwQsba0DPnDCxJwe35Wvs8qkp7k0SObxIUcOzFNTzgscGfjqmQcp1eNcBycnpsZCCX6ZPrmy9Z1i/TPpoSb7bwD9Qk+ebQDxOqQBvj87Ok2q0hmsq8bCAP377/TbepCk18QQ0V6Xi0rEzHjJYkgZsArSBMnivOGO4eBDpy71xRUvSLBOB/exPTWdbKNHArFW6gm7DF2UiLfrRMAAukIewfneOjdLdN2FIJpuaqZloDYNsgQoQSuu4KDs4OFh42zpoqJmRD7VyBwc5bHxyVab67BPhip6arR0D6W6AveRSUdhPN2ekrVlAtDJdizV5Yq/G8sMCetumZYxT48j3qWdwRgQX77j5J2Anp8e7cPTa0saam3+vuzJFtOQFa0Lv8tp6Fp2h8NKAuZbC2RAbTBo9DGYvhyoG3I5MzNa4HaHCrerfY83qtgn81+bwQTIi3cRxOsjQJV1bDbJ4IdApIUWKQUgxQCWkyIeJc6uOl1LUNkS+s1rNMNA7r9drXu7HX5a1SgVuLrcD8BV1DwzNS9QtB5Z0cYle8aWHDTz6VHtvh4awD//sn4FHYB0W0XR3E9wgkMBcX66l6B8vJdtv9Q3/zqUvB3sGadvTXh2di/X6TxAqFfI=
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Download a backup from the backups volume"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/admin/backups/{file}/download"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Admin only. Streams the file. Like `GET /api/admin/export`, it accepts a
+one-time `?downloadToken=` from `POST /api/admin/export/token` instead
+of an Authorization header, for plain browser downloads.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./download-admin-backup.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./download-admin-backup.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./download-admin-backup.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

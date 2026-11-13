@@ -1,12 +1,14 @@
-// Admin-only full data export: everything a family would consider "their
-// content" — users (safe fields only), groups/membership, circles and their
-// members, posts (with poll votes and other per-type interactions), gift
-// list wishes and Secret Santa pairings,
+// Admin-only full backup ("Famlin backup", issue #461): everything a family
+// needs to come back on a new server — users (with their password hashes),
+// groups/membership, circles and their members, posts (with poll votes and
+// other per-type interactions), gift list wishes and Secret Santa pairings,
 // comments, reactions, favorites, chat messages and read positions, linked
-// media albums and people mappings, the Upload access-index rows, and the
-// whole uploads directory (including originals) — bundled as a single zip
-// archive. services/import.ts is its inverse: restoring the archive into an
-// empty instance (POST /api/auth/setup/restore).
+// media albums and people mappings, the Upload access-index rows, server
+// settings minus credentials, branding, and (optionally) the whole uploads
+// directory — bundled as a single zip archive. The manual download
+// (GET /api/admin/export) and the scheduled backups (services/backup/)
+// produce this same format. services/import.ts is its inverse: restoring the
+// archive into an empty instance (POST /api/auth/setup/restore).
 //
 // Circles, Upload rows, and MediaAlbumLink rows are part of the archive for
 // correctness, not completeness: without Circle/CircleMember a restored
@@ -15,16 +17,21 @@
 // embedding a /api/media/assets/<linkId>/... URL breaks for good. Links carry
 // no credentials — the provider's connection details stay in `Setting`.
 //
+// Password hashes are in (format 2+) so members can sign in after a restore
+// exactly as before: a backup file is therefore as sensitive as the database
+// itself (docs/docs/security.md). `tokenVersion` is in so a restore can
+// invalidate every session issued before it (see RESTORED_TOKEN_VERSION).
+//
 // Deliberately EXCLUDED, and why:
-//  - `Setting` rows: contain SMTP credentials, OIDC client secret, and the
-//    Immich API key — server configuration, not family content.
-//  - `User.passwordHash`/`tokenVersion`: credentials/session-invalidation
-//    state, never safe to export.
+//  - Credential `Setting` rows (SECRET_SETTING_KEYS: OIDC client secret,
+//    SMTP password, Immich API key): re-entered by an admin after a restore,
+//    so a backup file never carries a working third-party credential.
 //  - `Invite`: a live, unexpired invite token grants access to the server;
 //    exporting it would hand out a working credential.
-//  - `Device`/`PushToken`/`ApiToken`: device diagnostics and push tokens are
-//    operational state; personal access token hashes are credentials, not
-//    family content.
+//  - `ApiToken`: a token revoked after a leak must not come back through a
+//    restore; members create new ones.
+//  - `Device`/`PushToken`: device diagnostics and push tokens are
+//    operational state that the apps re-register on their own.
 //  - `DiagnosticReport`: performance reports members sent to the admin —
 //    short-lived support data (pruned after 30 days), not family content.
 //  - `Notification`/`PushDeliveryLog`: internal delivery/telemetry history,
@@ -46,17 +53,34 @@ import { prisma } from '../db.js'
 import { uploadsDir } from '../config.js'
 import { uploadAssetKey } from './uploads.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
+import { RESTORABLE_SETTING_KEYS } from './settings.js'
 import pkg from '../../package.json' with { type: 'json' }
 import { getStorage } from './storage/registry.js'
 import { appendStoredObject } from './storage/archive.js'
 import path from 'node:path'
+
+// Format history: 1 (no `format` field) = the original export, without
+// credentials or settings; 2 = adds password hashes, tokenVersion, settings
+// and `mediaLocation`.
+export const BACKUP_FORMAT = 2
+
+// Where the restore finds the media of an archive built without them:
+// 'storage' = still in the server's media storage (S3, or a manual
+// export of a server whose uploads volume survives), 'mirror' = in the
+// backups volume's incremental mirror (scheduled backups).
+export type MediaLocation = 'archive' | 'storage' | 'mirror'
 
 // This function does NOT call archive.finalize() — the caller (the export
 // route) owns finalizing once it has attached the archive to the response
 // stream, so headers can be sent before/while archiver produces bytes.
 // `onError` is attached as soon as the archive exists: a media entry can fail
 // (and fail the archive) while the rest is still being built.
-export async function buildExportArchive(includeMedia: boolean, onError: (err: Error) => void): Promise<Archiver> {
+export async function buildExportArchive(
+  includeMedia: boolean,
+  onError: (err: Error) => void,
+  // `trigger`: what made a scheduled-job archive ('scheduled', 'manual', 'safety').
+  options: { mediaLocation?: Exclude<MediaLocation, 'archive'>; trigger?: string } = {}
+): Promise<Archiver> {
   const [
     users,
     groups,
@@ -84,6 +108,8 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
         email: true,
         name: true,
         avatarUrl: true,
+        passwordHash: true,
+        tokenVersion: true,
         isAdmin: true,
         createdAt: true,
         emailOnNewPost: true,
@@ -148,6 +174,13 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
     where: { key: { in: [...BRANDING_SETTING_KEYS] } },
     select: { key: true, value: true },
   })
+  // Server settings minus credentials (RESTORABLE_SETTING_KEYS). Only rows an
+  // admin actually saved: an unset one keeps following the default.
+  const settings = await prisma.setting.findMany({
+    where: { key: { in: [...RESTORABLE_SETTING_KEYS] } },
+    select: { key: true, value: true },
+    orderBy: { key: 'asc' },
+  })
 
   const archive: Archiver = new ZipArchive({ store: true })
   archive.on('error', onError)
@@ -155,7 +188,13 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
   const requiredMedia: { key: string; size: number }[] = []
 
   const manifest = {
+    format: BACKUP_FORMAT,
+    // The users file carries password hashes: no admin account needs to be
+    // created on restore.
+    credentials: true,
+    ...(options.trigger ? { trigger: options.trigger } : {}),
     includeMedia,
+    mediaLocation: (includeMedia ? 'archive' : (options.mediaLocation ?? 'storage')) satisfies MediaLocation,
     requiredMedia,
     exportedAt: new Date().toISOString(),
     serverVersion: pkg.version,
@@ -179,6 +218,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
       giftDrawAssignments: giftDrawAssignments.length,
       wikiPages: wikiPages.length,
       branding: branding.length,
+      settings: settings.length,
     },
   }
 
@@ -196,6 +236,7 @@ export async function buildExportArchive(includeMedia: boolean, onError: (err: E
   archive.append(JSON.stringify(mediaPersonLinks, null, 2), { name: 'data/media-person-links.json' })
   archive.append(JSON.stringify(highlights, null, 2), { name: 'data/highlights.json' })
   archive.append(JSON.stringify(branding, null, 2), { name: 'data/branding.json' })
+  archive.append(JSON.stringify(settings, null, 2), { name: 'data/settings.json' })
   archive.append(JSON.stringify(giftListGuests, null, 2), { name: 'data/gift-list-guests.json' })
   archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
   archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })

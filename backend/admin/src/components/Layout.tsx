@@ -82,6 +82,7 @@ export function Layout({ user, children }: LayoutProps) {
             <NavLink to="/storage">{t('storage.title')}</NavLink>
             <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
           </div>
+          <NavLink to="/backups">{t('layout.backups')}</NavLink>
           <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
         </nav>
         <div className="user">

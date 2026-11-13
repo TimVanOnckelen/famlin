@@ -15,6 +15,7 @@ import { ServerSettingsPage } from './components/ServerSettingsPage'
 import { SystemStatusPage } from './components/SystemStatusPage'
 import { DevicesPage } from './components/DevicesPage'
 import { DiagnosticsPage } from './components/DiagnosticsPage'
+import { BackupsPage, LOGIN_NOTICE_KEY } from './components/BackupsPage'
 import { api, User } from './api/client'
 import { StateMessage } from '@famlin/ui/common/state-message'
 
@@ -23,7 +24,16 @@ function App() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [needsSetup, setNeedsSetup] = useState(false)
-  const [loginNotice, setLoginNotice] = useState<string | undefined>()
+  // A restore on the Backups page signed everyone out and left a notice.
+  const [loginNotice, setLoginNotice] = useState<string | undefined>(() => {
+    try {
+      const notice = sessionStorage.getItem(LOGIN_NOTICE_KEY) ?? undefined
+      sessionStorage.removeItem(LOGIN_NOTICE_KEY)
+      return notice
+    } catch {
+      return undefined
+    }
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -75,8 +85,8 @@ function App() {
             navigate('/getting-started', { replace: true })
           }
         }}
-        onDumpRestored={() => {
-          // The dump brought back the old accounts: sign in with one of them.
+        onRestoredWithAccounts={() => {
+          // The backup brought back the old accounts: sign in with one of them.
           setNeedsSetup(false)
           setLoginNotice(t('setup.dumpRestored'))
         }}
@@ -102,6 +112,7 @@ function App() {
         <Route path="/settings" element={<ServerSettingsPage />} />
         <Route path="/storage" element={<StoragePage />} />
         <Route path="/status" element={<SystemStatusPage />} />
+        <Route path="/backups" element={<BackupsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

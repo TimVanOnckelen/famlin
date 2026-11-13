@@ -1,0 +1,62 @@
+---
+id: get-restore-status
+title: "Progress of a restore onto this running server"
+description: "Public: a restore signs out the admin who started it, so the admin UI"
+sidebar_label: "Progress of a restore onto this running server"
+hide_title: true
+hide_table_of_contents: true
+api: eJzdVttu40YM/RViXpoEWnvRoi9CUcAL7BYp0DZIslgUcbCmJFqaejTUzlD2qoaBfkS/sF9ScCTH2WSLXh7rF9tzIXkOycPZG+4ooFj2l5XJTU1yTVE40I2g9NFkRrCOJr8zN8IBawKsWuttlPGWuc9MRbEMtkt/c3PVF86WOSCE0RJEW/sI3AtIM92HXcMQBYNQBVYyiPxo8+3l0nfsXARpbJzBNWHZYOEIdo119Mh06H2EM9pSGICloQCLq0sI9KGnKEtfk0RYff3yq9W5Wuk4SARUx0KAvgL0QCFwgJIrAvZumC29yUyksg9WBpPf3WcmUOzYR4om35svX77Ur09B3zYEZR8CeQEO4DDKI/i+pIQuUthSOOI2mSnZC3lRe9h1zpaJ0/kvUY3uTSwbalF/ydCRyQ0Xv1ApRiP60NtAlSYm9N5bX5vMrK0jDX60v5C05G1spj+8MZlJePUUrkmGV1hu+k6z2AUtBbEjyqPRk++C2RF6c5j8nHaihNG/753TNJlcQk9PC0M5KpI7KMj6Gs4mps6PVFVq/BT9ZzysObQoJjcVCr0Q29Izt4dPQP9nG7z5DPa/g7jS7RX0Xqx7VKUNRjjG9NflcDjm5h8wS75vNfe933je+SmLmSn6ODzJ7Ru0LhUbhrKxW7pl/pF2JjPWb9HZajEum8y0Nkbr6x+osqjntRevj4WWukDRHO1pSM+af3FqpAy89iUgtBQj1pSS+7jo/nUFvdHm99gS8HpkMJk7VpXghjwUtFbOdXuK2BwOmREratZ8Km8H/WSmJWl40j+TmQ6lMbmZY2fn2Esznwy9iEdRHFOnurg3fXAmN41IF/P5fI2ts35GH7HtHM1Kbs1TGD9zH4B3Ht6ks1BR53hoVQgO9yftudHuH7uxIAwUFr2G9UCaetRQ0jEt0nTombcFdBQie3SAZUkxgrDydLYaQ33fobyfzWarDMpAmATZJ/p2VAB23TlwWHqESDFa9vD9u1tYB25hdfXTzS2cWHJcW7+awSuWBlCVT+VwzFNLsMMhX/qVouBgf01Sl8OrFDV8k4L6dqXyqxmxfs0J65S2iarF1aXJjFI/gps09xno12kiTJemPqOPHUcaZwpcv765TbOi9xUFWCmKFfzx2++neHVXGlp6Xq9tadFBy0UaP746chOhjzSDd1YRw91nmb4/m1e0JafyGtXP+dIP3EOJHoreugqGY0FYL1SPgzUC1mh9lHF3ja11wxdxAjNb+qVfOAfTBAEbIZbcUQXFABcXdeC+g5bagkJsbHdxkcPRpzYnBMJqBBKs0NI/2PGQ7kY4Sy4txfN0syDHvgbhLF3TWUvq1bMmFjBwn5ZRlr6jMEKfwQ0R3L1VWUnELq4un9MBaw6gFURephGYpYi2usA+ji53HDZUwdRZMVVKZjqO0mIal6oM+gAJXAdln9ePNJi98Jj6abRNTD4tnf1pKP8/njKTWgh9lHnn0CbWkmbtJ6G7M9hZFXzVlwedP4rdfWYajqLH9vsCI70N7nDQ5Q89hemFtMVgR92+uz9kpiGsKCR13NCgIlSW1GmbbtH1Gs6z544q34MMf/f61hwOfwIww731
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Progress of a restore onto this running server"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/auth/restore-status"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Public: a restore signs out the admin who started it, so the admin UI
+polls this. Reachable while a restore runs (every other API request
+gets `503`). Reports a state and an error code only.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./get-restore-status.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./get-restore-status.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

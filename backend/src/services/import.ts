@@ -13,12 +13,23 @@ import { assertValidStorageKey } from './storage/types.js'
 // typeData/metadata — preserving ids avoids all of that, and is only safe
 // because nothing can collide.
 //
-// What the archive cannot bring back (export.ts excludes it on purpose):
-// settings (OIDC/SMTP/media connections), password hashes, invites, push and
-// API tokens, notification history. So a restored instance's members cannot
-// log in until an admin reconfigures SSO or resets their passwords — the
-// person restoring gets an admin login out of the same request (see
-// `admin` below), which is what makes that possible at all.
+// Two generations of archive (manifest `format`, see export.ts):
+//  - format 2+ ("Famlin backup", issue #461) carries password hashes and the
+//    server settings minus credentials, so everyone signs in afterwards with
+//    their existing account. No admin account needs creating — `admin` is
+//    optional, and if given still sets that person's password.
+//  - format 1 (the original data export) carries neither, so a restored
+//    instance's members cannot log in until an admin reconfigures SSO or
+//    resets their passwords — the person restoring must get an admin login
+//    out of the same request (`admin`), which is what makes that possible.
+// Neither ever brings back credential settings (OIDC client secret, SMTP
+// password, Immich API key), invites, push or API tokens, or notification
+// history (export.ts excludes them on purpose).
+//
+// An archive without its media (a scheduled backup, or a download "without
+// media") lists the files it needs in the manifest; those already in storage
+// are used as they are, and the rest are copied from the backups volume's
+// media mirror (services/backup/mediaRestore.ts).
 import { Prisma, ReactionType, NewAssetMode } from '@prisma/client'
 import { z } from 'zod'
 import fs from 'fs'
@@ -28,11 +39,20 @@ import { pipeline } from 'stream/promises'
 import yauzl from 'yauzl'
 import { prisma } from '../db.js'
 import { uploadsDir } from '../config.js'
-import { invalidateSettingsCache } from './settings.js'
+import {
+  invalidateSettingsCache,
+  RESTORABLE_SETTING_KEYS,
+  SECRET_DESTINATION_KEYS,
+  SECRET_SETTING_KEYS,
+  sameDestination,
+} from './settings.js'
+import { restoreRequiredMedia } from './backup/mediaRestore.js'
+import { BACKUP_UPLOADS_DIR } from './backup/paths.js'
 import { BRANDING_SETTING_KEYS } from './branding/index.js'
 import pkg from '../../package.json' with { type: 'json' }
 
-export type RestoreErrorCode = 'invalidArchive' | 'archiveTooNew' | 'notEmpty' | 'busy' | 'missingMedia'
+export type RestoreErrorCode =
+  'invalidArchive' | 'archiveTooNew' | 'notEmpty' | 'busy' | 'missingMedia' | 'adminRequired'
 
 export class RestoreError extends Error {
   constructor(
@@ -46,12 +66,55 @@ export class RestoreError extends Error {
 }
 
 // Restored users get a tokenVersion no real deployment reaches by bumping
-// it one password change at a time. tokenVersion itself isn't in the archive
-// (export.ts), and resetting everyone to the default 0 would bring back
+// it one password change at a time. Format-1 archives don't carry
+// tokenVersion, and resetting everyone to the default 0 would bring back
 // every JWT a password reset had revoked, on a server restored with the
 // same JWT_SECRET. Starting above any plausible old value invalidates every
-// token issued before the restore instead.
+// token issued before the restore instead. A format-2 archive's own
+// tokenVersion is bumped past (restoredTokenVersion), so sessions issued
+// after an earlier restore die too.
 export const RESTORED_TOKEN_VERSION = 1_000_000
+
+// `min`: on a running server, one above every tokenVersion in use before the
+// restore, so no session issued before it survives.
+export function restoredTokenVersion(archived: number | undefined, min = 0): number {
+  return Math.max(RESTORED_TOKEN_VERSION, (archived ?? 0) + 1, min)
+}
+
+// Tables a restore onto a running server leaves alone: Prisma's migration
+// history and operational job/alert state. Settings are handled separately
+// (wipeForRestore) so this server's own credentials survive.
+const KEPT_TABLES = new Set(['_prisma_migrations', 'JobStatus', 'SystemAlert', 'Setting'])
+
+// Empties every content table inside the restore's transaction — a failed
+// restore rolls this back too. Users go, and with them (by cascade) devices,
+// push tokens, API tokens, invites and notifications, none of which a backup
+// carries. Of the settings, only the restorable and branding ones are
+// replaced; credentials and internal rows (update check) stay.
+async function wipeForRestore(tx: Prisma.TransactionClient): Promise<void> {
+  const tables = await tx.$queryRaw<{ tablename: string }[]>`
+    SELECT tablename FROM pg_tables WHERE schemaname = current_schema()
+  `
+  const names = tables.map((t) => t.tablename).filter((n) => !KEPT_TABLES.has(n))
+  if (names.length > 0) {
+    await tx.$executeRawUnsafe(`TRUNCATE TABLE ${names.map((n) => `"${n.replace(/"/g, '""')}"`).join(', ')} CASCADE`)
+  }
+  await tx.setting.deleteMany({
+    where: { key: { in: [...RESTORABLE_SETTING_KEYS, ...BRANDING_SETTING_KEYS] } },
+  })
+}
+
+// A kept credential must not follow a restored setting to another server:
+// the same rule applySecretWriteRules() enforces on a settings PATCH.
+async function dropRedirectedSecrets(tx: Prisma.TransactionClient, before: Map<string, string>): Promise<void> {
+  for (const secret of SECRET_SETTING_KEYS) {
+    const destination = SECRET_DESTINATION_KEYS[secret]
+    const now = await tx.setting.findUnique({ where: { key: destination } })
+    if (!sameDestination(before.get(destination) ?? '', now?.value ?? '')) {
+      await tx.setting.deleteMany({ where: { key: secret } })
+    }
+  }
+}
 
 // Prefix of the per-request working directory, created INSIDE uploadsDir so
 // the final move of each extracted file into place is a same-filesystem
@@ -63,7 +126,7 @@ export const RESTORE_WORKDIR_PREFIX = '.restore-'
 // ---------------------------------------------------------------------------
 // Archive row schemas. The archive is untrusted input, so every row is
 // validated and reduced to the columns Famlin actually has — an unknown key
-// (say, a hand-added `passwordHash`) is stripped rather than written. Fields
+// is stripped rather than written. Fields
 // added to the export after its first version are optional, so an older
 // archive restores with those columns at their schema defaults.
 // ---------------------------------------------------------------------------
@@ -84,6 +147,9 @@ const userRow = z.object({
   email: z.string().min(1),
   name: z.string(),
   avatarUrl: nullableString,
+  // Format 2+. A bcrypt hash; anything longer isn't one.
+  passwordHash: z.string().max(200).nullable().optional(),
+  tokenVersion: z.number().int().nonnegative().optional(),
   isAdmin: z.boolean(),
   createdAt: date,
   emailOnNewPost: optionalBool,
@@ -296,9 +362,21 @@ const brandingRow = z.object({
   value: z.string().max(200),
 })
 
+// Server settings (format 2+): only keys a backup may carry — never a
+// credential, whatever the archive says.
+const settingRow = z.object({
+  key: z.enum(RESTORABLE_SETTING_KEYS as [string, ...string[]]),
+  value: z.string().max(100_000),
+})
+
 const manifestSchema = z.object({
   serverVersion: z.string(),
+  format: z.number().int().positive().default(1),
+  credentials: z.boolean().default(false),
   includeMedia: z.boolean().default(true),
+  mediaLocation: z.enum(['archive', 'storage', 'mirror']).optional(),
+  trigger: z.string().max(40).optional(),
+  exportedAt: z.string().optional(),
   requiredMedia: z.array(z.object({ key: z.string(), size: z.number().int().nonnegative() })).default([]),
 })
 
@@ -321,6 +399,7 @@ const DATA_FILES = {
   uploads: { file: 'data/uploads.json', schema: z.array(uploadRow), required: false },
   highlights: { file: 'data/highlights.json', schema: z.array(highlightRow), required: false },
   branding: { file: 'data/branding.json', schema: z.array(brandingRow), required: false },
+  settings: { file: 'data/settings.json', schema: z.array(settingRow), required: false },
   giftListGuests: { file: 'data/gift-list-guests.json', schema: z.array(giftListGuestRow), required: false },
   giftListItems: { file: 'data/gift-list-items.json', schema: z.array(giftListItemRow), required: false },
   giftDrawAssignments: {
@@ -333,7 +412,8 @@ const DATA_FILES = {
 
 type DataKey = keyof typeof DATA_FILES
 type ArchiveData = { [K in DataKey]: z.output<(typeof DATA_FILES)[K]['schema']> }
-export type RestoreCounts = Record<DataKey | 'groupMembers' | 'circleMembers' | 'files', number>
+export type RestoreCounts = Record<DataKey | 'groupMembers' | 'circleMembers' | 'files' | 'mirroredFiles', number>
+export type ArchiveManifest = z.output<typeof manifestSchema>
 
 // A single JSON entry is held in memory to parse it; anything this large is
 // not an export from a family server.
@@ -475,6 +555,30 @@ async function readArchive(zipPath: string, filesDir: string): Promise<ReadArchi
   return { manifest: manifest.data, rawData, fileCount }
 }
 
+// Just the manifest, for listing backups in the volume (services/backup/archive.ts).
+export async function readArchiveManifest(zipPath: string): Promise<ArchiveManifest> {
+  const zip = await openZip(zipPath)
+  try {
+    const text = await new Promise<string>((resolve, reject) => {
+      zip.on('error', (err) => reject(new RestoreError('invalidArchive', (err as Error).message)))
+      zip.on('end', () => reject(new RestoreError('invalidArchive', 'missing manifest.json')))
+      zip.on('entry', (entry: yauzl.Entry) => {
+        if (entry.fileName !== 'manifest.json') return zip.readEntry()
+        readEntryText(zip, entry).then(resolve, reject)
+      })
+      zip.readEntry()
+    })
+    const parsed = manifestSchema.safeParse(JSON.parse(text))
+    if (!parsed.success) throw new RestoreError('invalidArchive', 'invalid manifest.json')
+    return parsed.data
+  } catch (err) {
+    if (err instanceof RestoreError) throw err
+    throw new RestoreError('invalidArchive', (err as Error).message)
+  } finally {
+    zip.close()
+  }
+}
+
 function validateData(rawData: Partial<Record<DataKey, unknown>>): ArchiveData {
   const out = {} as Record<DataKey, unknown>
   for (const [key, spec] of Object.entries(DATA_FILES) as [DataKey, (typeof DATA_FILES)[DataKey]][]) {
@@ -521,32 +625,44 @@ function parentsFirst<T extends { id: string }>(rows: T[], parentOf: (row: T) =>
 async function insertAll(
   tx: Prisma.TransactionClient,
   data: ArchiveData,
-  admin: RestoreAdmin
-): Promise<{ adminUserId: string }> {
+  admin: RestoreAdmin | undefined,
+  withCredentials: boolean,
+  minTokenVersion = 0
+): Promise<{ adminUserId: string | null }> {
   const groupMembers = data.groups.flatMap((g) => g.members)
   const circleMembers = data.circles.flatMap((c) => c.members)
 
   // Insertion order follows the foreign keys: users and groups first, then
   // everything that references them.
   await tx.user.createMany({
-    data: data.users.map((u) => ({ ...u, email: u.email.toLowerCase().trim(), tokenVersion: RESTORED_TOKEN_VERSION })),
+    data: data.users.map(({ passwordHash, tokenVersion, ...u }) => ({
+      ...u,
+      email: u.email.toLowerCase().trim(),
+      // A format-1 archive has no credentials; ignore a hand-added hash in one.
+      passwordHash: withCredentials ? (passwordHash ?? null) : null,
+      tokenVersion: restoredTokenVersion(tokenVersion, minTokenVersion),
+    })),
   })
 
   // The person restoring becomes an admin with the password they just
   // chose. If the backup already has an account with their email, that
   // account is promoted — keeping it linked to everything they posted —
   // rather than a second, empty account being created next to it.
-  const existing = await tx.user.findUnique({ where: { email: admin.email }, select: { id: true } })
-  const adminUser = existing
-    ? await tx.user.update({
-        where: { id: existing.id },
-        data: { passwordHash: admin.passwordHash, isAdmin: true },
-        select: { id: true },
-      })
-    : await tx.user.create({
-        data: { email: admin.email, name: admin.name, passwordHash: admin.passwordHash, isAdmin: true },
-        select: { id: true },
-      })
+  let adminUserId: string | null = null
+  if (admin) {
+    const existing = await tx.user.findUnique({ where: { email: admin.email }, select: { id: true } })
+    const adminUser = existing
+      ? await tx.user.update({
+          where: { id: existing.id },
+          data: { passwordHash: admin.passwordHash, isAdmin: true },
+          select: { id: true },
+        })
+      : await tx.user.create({
+          data: { email: admin.email, name: admin.name, passwordHash: admin.passwordHash, isAdmin: true },
+          select: { id: true },
+        })
+    adminUserId = adminUser.id
+  }
 
   await tx.group.createMany({ data: data.groups.map(({ members: _members, ...g }) => g) })
   await tx.groupMember.createMany({ data: groupMembers })
@@ -591,11 +707,11 @@ async function insertAll(
   await tx.giftListItem.createMany({ data: data.giftListItems })
   await tx.giftDrawAssignment.createMany({ data: data.giftDrawAssignments })
   await tx.wikiPage.createMany({ data: data.wikiPages })
-  for (const row of data.branding) {
+  for (const row of [...data.branding, ...data.settings]) {
     await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row })
   }
 
-  return { adminUserId: adminUser.id }
+  return { adminUserId }
 }
 
 // ---------------------------------------------------------------------------
@@ -642,13 +758,30 @@ export interface RestoreOptions {
   // as uploadsDir (the caller creates it under uploadsDir with
   // RESTORE_WORKDIR_PREFIX) and is left for the caller to remove.
   workDir: string
-  admin: RestoreAdmin
+  // Required for a format-1 archive (no credentials), or one without any
+  // admin account; optional otherwise (RestoreError 'adminRequired').
+  admin?: RestoreAdmin
   // The advisory lock POST /api/auth/setup takes, so a restore and a setup
   // can't both see "no users yet".
   lockKey: bigint
+  // Where to look for media the archive doesn't contain (tests override it).
+  mirrorDir?: string
+  // Restore onto a running server (admin Backups page): replace everything
+  // instead of requiring zero accounts. The caller has taken a safety backup.
+  replaceExisting?: boolean
+  // With replaceExisting: the lowest tokenVersion any restored user may get.
+  minTokenVersion?: number
 }
 
-export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserId: string; counts: RestoreCounts }> {
+export interface RestoreResult {
+  // The restoring admin's account, when `admin` was given. null: everyone
+  // signs in with their restored account, so no session is issued.
+  adminUserId: string | null
+  counts: RestoreCounts
+  manifest: ArchiveManifest
+}
+
+export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResult> {
   const filesDir = path.join(opts.workDir, 'files')
   await fsp.mkdir(filesDir, { recursive: true })
 
@@ -657,23 +790,32 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     throw new RestoreError('archiveTooNew')
   }
   const data = validateData(rawData)
+  const withCredentials = manifest.format >= 2 && manifest.credentials
+  if (!opts.admin && !(withCredentials && data.users.some((u) => u.isAdmin))) {
+    throw new RestoreError('adminRequired')
+  }
 
+  let mirroredFiles = 0
   if (!manifest.includeMedia) {
-    const missing: string[] = []
     for (const object of manifest.requiredMedia) {
       try {
         assertValidStorageKey(object.key)
       } catch {
         throw new RestoreError('invalidArchive', 'Invalid media key')
       }
-      const info = await getStorage().stat(object.key)
-      if (!info || info.size !== object.size) missing.push(object.key)
     }
-    if (missing.length)
-      throw new RestoreError('missingMedia', 'Required media is missing or has a different size', missing)
+    // Cheap early refusal before copying media into a server that isn't
+    // empty; repeated under the lock below.
+    if (!opts.replaceExisting && (await prisma.user.count()) > 0) throw new RestoreError('notEmpty')
+    // Whatever storage still holds is used as is; the rest comes from the
+    // backups volume's mirror. Nothing is copied unless everything is there.
+    const media = await restoreRequiredMedia(manifest.requiredMedia, opts.mirrorDir ?? BACKUP_UPLOADS_DIR)
+    if (media.missing.length)
+      throw new RestoreError('missingMedia', 'Required media is missing or has a different size', media.missing)
+    mirroredFiles = media.restored
   }
 
-  let adminUserId: string
+  let adminUserId: string | null
   try {
     ;({ adminUserId } = await prisma.$transaction(
       async (tx) => {
@@ -682,8 +824,18 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
           SELECT pg_try_advisory_xact_lock(${opts.lockKey}) AS locked
         `
         if (!locked) throw new RestoreError('busy')
-        if ((await tx.user.count()) > 0) throw new RestoreError('notEmpty')
-        const result = await insertAll(tx, data, opts.admin)
+        let destinations: Map<string, string> | null = null
+        if (opts.replaceExisting) {
+          const rows = await tx.setting.findMany({
+            where: { key: { in: Object.values(SECRET_DESTINATION_KEYS) } },
+          })
+          destinations = new Map(rows.map((r) => [r.key, r.value]))
+          await wipeForRestore(tx)
+        } else if ((await tx.user.count()) > 0) {
+          throw new RestoreError('notEmpty')
+        }
+        const result = await insertAll(tx, data, opts.admin, withCredentials, opts.minTokenVersion)
+        if (destinations) await dropRedirectedSecrets(tx, destinations)
         await installFiles(filesDir, uploadsDir)
         return result
       },
@@ -702,7 +854,7 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
   }
 
   // Media installation succeeded before committing the restored rows.
-  if (data.branding.length > 0) invalidateSettingsCache()
+  if (opts.replaceExisting || data.branding.length > 0 || data.settings.length > 0) invalidateSettingsCache()
 
   const counts: RestoreCounts = {
     users: data.users.length,
@@ -722,12 +874,14 @@ export async function restoreArchive(opts: RestoreOptions): Promise<{ adminUserI
     uploads: data.uploads.length,
     highlights: data.highlights.length,
     branding: data.branding.length,
+    settings: data.settings.length,
     giftListGuests: data.giftListGuests.length,
     giftListItems: data.giftListItems.length,
     giftDrawAssignments: data.giftDrawAssignments.length,
     wikiPages: data.wikiPages.length,
     files: fileCount,
+    mirroredFiles,
   }
 
-  return { adminUserId, counts }
+  return { adminUserId, counts, manifest }
 }

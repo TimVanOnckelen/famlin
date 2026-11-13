@@ -638,6 +638,36 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/list-admin-backups",
+          label: "List the backups in the backups volume",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/download-admin-backup",
+          label: "Download a backup from the backups volume",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/delete-admin-backup",
+          label: "Delete a backup from the backups volume",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/restore-admin-backup",
+          label: "Restore a backup onto this running server",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/get-restore-status",
+          label: "Progress of a restore onto this running server",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/export-admin-data",
           label: "Portable family export (admin only)",
           className: "api-method get",
@@ -652,6 +682,18 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/restore-scheduled-backup-dump",
           label: "Restore a scheduled-backup dump on a fresh server",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-setup-backups",
+          label: "List every backup in the backups volume on a fresh server",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/restore-setup-backup",
+          label: "Restore a backup from the backups volume on a fresh server",
           className: "api-method post",
         },
       ],
@@ -862,6 +904,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/feedscrolldiagnosticreport",
           label: "FeedScrollDiagnosticReport",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/restorestatus",
+          label: "RestoreStatus",
           className: "schema",
         },
         {

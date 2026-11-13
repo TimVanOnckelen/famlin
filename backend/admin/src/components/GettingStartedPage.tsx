@@ -362,7 +362,7 @@ function BackupsStep({ onNext }: { onNext: () => void }) {
     <>
       <p>
         {enabled === null ? t('common.loading') : enabled ? t('wizard.backups.on') : t('wizard.backups.off')}{' '}
-        <Link to="/settings">{t('wizard.backups.settingsLink')}</Link>
+        <Link to="/backups">{t('wizard.backups.settingsLink')}</Link>
       </p>
       <p className="hint">
         {t('wizard.backups.offsite')}{' '}

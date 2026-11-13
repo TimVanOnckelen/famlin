@@ -19,6 +19,7 @@ import { BRANDING_DIR_NAME, BRANDING_FILE_RE, brandingDir, getBranding } from '.
 import { injectBrandingIntoHtml } from './services/branding/css.js'
 import authPlugin, { authenticateMediaRequest } from './plugins/auth.js'
 import readOnlyPlugin from './plugins/readOnly.js'
+import restoreMaintenancePlugin from './plugins/restoreMaintenance.js'
 import { requestPathname } from './utils/requestPath.js'
 import { config, uploadsDir } from './config.js'
 import { prisma } from './db.js'
@@ -366,6 +367,8 @@ export async function buildApp() {
   // all mutating requests (except the login/session allow-list) before they
   // reach their handlers.
   await fastify.register(readOnlyPlugin)
+  // While a backup is restored onto this running server, the API answers 503.
+  await fastify.register(restoreMaintenancePlugin)
 
   await fastify.register(authPlugin)
 

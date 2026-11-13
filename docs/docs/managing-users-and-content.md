@@ -116,9 +116,39 @@ The **System status** page gives you one place to check that the server is healt
 
 **Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Server settings → Notifications); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
 
+## Backups
+
+The **Backups** page in the admin menu has everything backup-related in one place.
+
+![The Backups page: backups on this server, the schedule, and the data export](./img/admin-backups.png)
+
+- **Backups on this server** lists every backup in the server's backups folder, newest first: date, size, where its photos are, and the Famlin version that made it. Backups marked **Before restore** are safety backups Famlin took automatically right before a restore. Until Famlin 1.0.0 every run also writes a database dump; those are hidden behind **Show database dumps** and can be restored too.
+  - **Download** saves the file to your computer (keep a copy off the server).
+  - **Delete** removes it from the backups folder for good. The shared copy of the photos stays.
+  - **Restore** puts the whole server back to that backup — see below.
+- **Back up now** (top right) starts a backup straight away, whatever the schedule.
+- **Schedule**: turn scheduled backups on or off, choose daily or weekly, the hour, how many backups to keep, and whether photos are copied too. See [Scheduled backups](./maintenance.md#scheduled-backups).
+- **Data export**: download a backup on demand, optionally with every photo inside (see [Data export](#data-export) below).
+
+### Restoring a backup on a running server
+
+**Restore** replaces *everything* on the server — every family, post, photo, account, password and setting — with the backup's. Only a signed-in admin can do it, not an API token.
+
+![Restoring a backup: what happens, and typing the family's name to confirm](./img/admin-backups-restore.png)
+
+1. Press **Restore** next to the backup. The dialog lists what will happen.
+2. Type your family's name (as set under [Branding](./admin-configuration.md#branding); **Famlin** if you never set one) and press **Restore and sign everyone out**.
+3. Famlin first makes a **safety backup** of the server as it is now. If that fails, nothing is restored.
+4. While it restores, Famlin is unavailable for everyone (the apps show an error for a few moments). This takes seconds for a small family and a few minutes for a large one.
+5. Afterwards **everyone is signed out**, you included, and signs in again with the password they had when the backup was made.
+
+Saved credentials (OIDC client secret, SMTP password, Immich API key) are kept, because backups never contain them — unless the backup points that credential at a different server (another SMTP host, say); then enter it again. Changed your mind? Restore the **Before restore** backup the same way.
+
+An older data export without passwords can't be restored here; restore it on a new server's setup screen instead (see [Restoring a backup](./maintenance.md#restoring-a-backup)).
+
 ## Data export
 
-The **Server settings** page's general section has a **Data export** card with a **Download export** button. It downloads a zip containing:
+The **Backups** page has a **Data export** card with a **Download export** button. It downloads a zip containing:
 
 - All posts, comments, reactions, and favorites, across every group — **including posts shared with circles you're not a member of**. This is the one place circle privacy doesn't apply, because a backup that silently left content out wouldn't be a usable backup. Treat the export file accordingly.
 - All chat messages.
@@ -129,11 +159,11 @@ The **Server settings** page's general section has a **Data export** card with a
 
 **Include media in export** (on by default) decides whether photos and videos go into the zip. Switch it off for a small export of just the content, for example when your media lives in S3 and is backed up there: such an export can only be restored onto a server that already has the same media in its storage. See [Backups and exports with S3](./storage.md#backups-and-exports-with-s3).
 
-It deliberately does **not** include server configuration or secrets — SMTP settings, OIDC client secret, the Immich API key, passwords, invite links, push tokens, device diagnostics, or API tokens. It's a portable copy of your family's content rather than a clone of the whole deployment.
+It also includes every account's password (as a hash, never readable) and your server settings, so everyone signs in as before after a restore. It deliberately does **not** include the OIDC client secret, the SMTP password, the Immich API key, invite links, push tokens, device diagnostics, or API tokens — enter those secrets again after restoring. Keep the zip as private as the database itself.
 
-It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring from a data export](./maintenance.md#restoring-from-a-data-export) for the steps and what you'll need to set up again afterwards (sign-in, SMTP, media connections).
+It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring a backup](./maintenance.md#restoring-a-backup) for the steps and what you'll need to set up again afterwards.
 
-The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they keep rotating database dumps plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
+The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they write the same zip without photos, plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 
 ### Members can export their own data
 

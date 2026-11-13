@@ -72,6 +72,8 @@ updates:
   # Jest all stay green — the react-native-worklets 0.10.2 incident. So the
   # whole Expo/React Native surface is ignored here and must move via
   # `npx expo install` instead (CI enforces this with `expo install --check`).
+  # Patch bumps within the current SDK are proposed weekly by
+  # .github/workflows/expo-deps.yml (`npx expo install --fix`) instead.
   # Dependabot is left to propose only the plain-JS dependencies.
   - package-ecosystem: npm
     directory: /mobile

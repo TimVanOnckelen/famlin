@@ -54,7 +54,7 @@ export interface ServerSettings {
   backupSchedule: BackupSchedule
   // Server-local hour (0–23) the backup runs at; weekly backups run Sundays.
   backupHour: number
-  // How many DB dumps to keep.
+  // How many backups (zips, and dumps until v1.0.0) to keep.
   backupRetention: number
   // Per-family branding (services/branding/). Deliberately not writable via
   // PATCH /api/admin/settings — only the validated /api/admin/branding routes
@@ -239,6 +239,13 @@ export async function updateSettings(partial: Partial<ServerSettings>) {
 export const SECRET_SETTING_KEYS = ['oidcClientSecret', 'smtpPass', 'immichApiKey'] as const
 export type SecretSettingKey = (typeof SECRET_SETTING_KEYS)[number]
 
+// Settings a Famlin backup carries (services/export.ts) and a restore writes
+// back (services/import.ts): everything except credentials, which an admin
+// re-enters after a restore, and branding, which travels in its own file.
+export const RESTORABLE_SETTING_KEYS: readonly (keyof ServerSettings)[] = SETTING_KEYS.filter(
+  (key) => !(SECRET_SETTING_KEYS as readonly string[]).includes(key) && !key.startsWith('brand')
+)
+
 export type RedactedServerSettings = ServerSettings & Record<`${SecretSettingKey}Set`, boolean>
 
 export function redactSettings(settings: ServerSettings): RedactedServerSettings {
@@ -254,13 +261,13 @@ export function redactSettings(settings: ServerSettings): RedactedServerSettings
 // secret again removes the stored secret: otherwise whoever holds an admin
 // session could point the SMTP host, OIDC issuer or Immich URL at a server of
 // their own and have Famlin deliver the secret it refuses to show them.
-const SECRET_DESTINATION_KEYS = {
+export const SECRET_DESTINATION_KEYS = {
   oidcClientSecret: 'oidcIssuer',
   smtpPass: 'smtpHost',
   immichApiKey: 'immichServerUrl',
 } as const satisfies Record<SecretSettingKey, keyof ServerSettings>
 
-const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
+export const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
 
 // The write side of redactSettings(). A client that read the redacted
 // settings sends the secrets back as empty strings, so empty (or omitted)

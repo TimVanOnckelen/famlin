@@ -15,7 +15,7 @@ are cleared automatically when the admin UI loads.
 
 Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the database yet) it shows a **one-time setup screen** instead of the login form — fill in your name, email, and a password to create the first account, which is automatically made an admin. There is no default or seeded account; if the setup screen doesn't appear, an admin account already exists and you should log in with it instead (an existing admin can reset another admin's password from the Users page; if every admin's password and access is lost, the only recovery path is connecting to the `famlin-db` container directly and clearing the affected row).
 
-From `/admin` → Server settings you can then configure everything below. The page has six sections, listed on the left: **General**, **Branding**, **Sign-in & access**, **Notifications**, **Media** and **Backups**. Each shows a status (configured / not set up, enabled / disabled) so you can see at a glance what still needs attention. Changes are saved together with the save bar that appears at the bottom; Branding has its own save button.
+From `/admin` → Server settings you can then configure everything below. The page has five sections, listed on the left: **General**, **Branding**, **Sign-in & access**, **Notifications** and **Media**. Backups — the schedule, the data export and restoring — have their own **Backups** page in the admin menu. Each shows a status (configured / not set up, enabled / disabled) so you can see at a glance what still needs attention. Changes are saved together with the save bar that appears at the bottom; Branding has its own save button.
 
 ![Server settings, General section](./img/admin-settings-general.png)
 
@@ -23,14 +23,13 @@ From `/admin` → Server settings you can then configure everything below. The p
 - **Public address** (General): the address your family opens Famlin at, for example `https://famlin.example.com` — just the scheme, host and (if it isn't 80/443) port, no path. When set, notification emails end with a link to the post in the web app (trips, albums and gift lists open their own page; new photos in a linked album open **Photos**). Someone who isn't signed in logs in first and then lands on that post, and the link still only works for people who are allowed to see it. Empty by default, in which case emails are sent without a link exactly as before. The **Use …** button fills in the address you're using the admin panel from; change it if that's an internal address (such as `http://192.168.1.10:3000`) your family can't reach from outside. Famlin needs this because emails are sent in the background, where there's no browser request to read the address from. **Sign in with Apple** also checks it: the iPhone app signs in for the address it uses, and Famlin only accepts that sign-in when it matches this address — or, while this is empty, the address the request reached the server as. Set it if Apple sign-in fails with a server-log warning about a different host, which happens when a reverse proxy rewrites the address.
 - **App Store / Google Play URLs** (General): optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps ([App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)), so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
 - **Check for new versions** (General → Updates): on by default. Once a day the server checks GitHub for a new Famlin release and shows an "update available" banner in the admin UI; nothing about your instance is sent. Turn it off to stop the check and hide the banner. See [Staying up to date](./maintenance.md#staying-up-to-date).
-- **Data export** (General): downloads a zip of all family content. **Include media in export** decides whether photos and videos go into the zip. See [Data export](./managing-users-and-content.md#data-export).
 - **Branding**: family name, color and logo. See [Branding](#branding) below.
 - **OIDC / SSO** (Sign-in & access): see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
 - **Allowed email addresses** (Sign-in & access): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
 - **Push notifications** (Notifications): turn push notifications on or off for the whole server. Members choose per event type in their own profile.
 - **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content.md#system-status) to admins, even when member email notifications are off.
 - **Media integrations** (Media: Immich, local folders): see [Media integrations](#media-integrations) below. Optional.
-- **Backups**: scheduled database and media backups. See [Scheduled backups](./maintenance.md#scheduled-backups).
+- **Backups** are on their own admin page: see [Backups](./managing-users-and-content.md#backups).
 
 Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or an S3 bucket) isn't a setting here. It's configured with environment variables, see [Storage](./storage.md), and shown on the **Storage** page in the admin menu.
 
@@ -41,7 +40,6 @@ Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or 
 
 ![Notifications](./img/admin-settings-notifications.png)
 
-![Backups](./img/admin-settings-backups.png)
 
 </details>
 
