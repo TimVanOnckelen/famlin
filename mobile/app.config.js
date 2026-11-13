@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs'
+import { withBaseMod } from 'expo/config-plugins'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -38,6 +39,44 @@ const CAMERA_PERMISSION =
 const IS_DEV_VARIANT = process.env.APP_VARIANT === 'development'
 const APP_ID = IS_DEV_VARIANT ? 'be.xeweb.famlin.dev' : 'be.xeweb.famlin'
 
+// Local iOS signing overrides for contributors, never used by EAS/CI. Apple
+// lets a bundle id belong to one developer team only, so a contributor can't
+// sign be.xeweb.famlin(.dev) with their own account. They put these in
+// mobile/.env.local (gitignored; Expo CLI loads it before evaluating this
+// file), see docs/developers/quick-start.md:
+//
+// - FAMLIN_IOS_BUNDLE_ID: their own bundle id (the dev variant appends ".dev"),
+//   which also moves the share extension's App Group to group.<id>.
+// - FAMLIN_IOS_TEAM_ID: their Apple team id, so Xcode signs without edits.
+// - FAMLIN_IOS_FREE_TEAM=1: for a free (personal team) Apple account, which
+//   can't sign push notifications, Sign in with Apple or App Groups. Leaves
+//   those three out of the iOS build (no push, no Apple login button, no
+//   "Share → Famlin"); everything else works.
+//
+// When you add an iOS capability, check whether a free account can sign it,
+// and add its entitlement to FREE_TEAM_UNSIGNABLE_ENTITLEMENTS below if not,
+// or this build breaks again.
+const IOS_BUNDLE_ID_OVERRIDE = process.env.FAMLIN_IOS_BUNDLE_ID?.trim() || undefined
+const IOS_TEAM_ID = process.env.FAMLIN_IOS_TEAM_ID?.trim() || undefined
+const IOS_FREE_TEAM = process.env.FAMLIN_IOS_FREE_TEAM === '1'
+
+if (process.env.EAS_BUILD && (IOS_BUNDLE_ID_OVERRIDE || IOS_TEAM_ID || IOS_FREE_TEAM)) {
+  // A store build without push, or under someone else's bundle id, must never
+  // ship by accident.
+  throw new Error('[app.config] FAMLIN_IOS_* are for local builds only and must not be set on EAS.')
+}
+if (IOS_BUNDLE_ID_OVERRIDE && !/^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(IOS_BUNDLE_ID_OVERRIDE)) {
+  throw new Error(
+    `[app.config] FAMLIN_IOS_BUNDLE_ID "${IOS_BUNDLE_ID_OVERRIDE}" is not a valid bundle id (e.g. com.yourname.famlin).`
+  )
+}
+
+const IOS_APP_ID = IOS_BUNDLE_ID_OVERRIDE
+  ? IS_DEV_VARIANT
+    ? `${IOS_BUNDLE_ID_OVERRIDE}.dev`
+    : IOS_BUNDLE_ID_OVERRIDE
+  : APP_ID
+
 /**
  * Gradle's google-services plugin fails the build when the file has no client
  * for the app's package. Until be.xeweb.famlin.dev is registered in Firebase
@@ -59,6 +98,30 @@ function googleServicesFileFor(file) {
   return undefined
 }
 
+// Strips every entitlement a free team can't sign from the app's final
+// entitlements plist. Expo applies expo-apple-authentication's plugin whenever
+// the package is installed (listed below or not), and entitlement mods run in
+// reverse registration order, so leaving plugins out or stripping in a plain
+// withEntitlementsPlist isn't reliable. This mod runs the rest of the chain
+// first and strips afterwards, so it wins wherever it's registered.
+const FREE_TEAM_UNSIGNABLE_ENTITLEMENTS = [
+  'aps-environment',
+  'com.apple.developer.applesignin',
+  'com.apple.security.application-groups',
+]
+function withoutFreeTeamUnsignableEntitlements(config) {
+  return withBaseMod(config, {
+    platform: 'ios',
+    mod: 'entitlements',
+    isProvider: false,
+    async action({ modRequest, ...rest }) {
+      const results = await modRequest.nextMod({ ...rest, modRequest })
+      for (const key of FREE_TEAM_UNSIGNABLE_ENTITLEMENTS) delete results.modResults[key]
+      return results
+    },
+  })
+}
+
 export default ({ config }) => ({
   ...config,
   name: IS_DEV_VARIANT ? 'Famlin (dev)' : 'Famlin',
@@ -72,7 +135,8 @@ export default ({ config }) => ({
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: APP_ID,
+    bundleIdentifier: IOS_APP_ID,
+    ...(IOS_TEAM_ID ? { appleTeamId: IOS_TEAM_ID } : {}),
     buildNumber: config.ios?.buildNumber,
     // Adds the Sign in with Apple entitlement — required alongside the
     // expo-apple-authentication plugin below for the login option App Store
@@ -109,6 +173,9 @@ export default ({ config }) => ({
     eas: {
       projectId: process.env.EAS_PROJECT_ID || '42c3e9a8-50e3-4f19-a670-e9cb2766f3c9',
     },
+    // Read at runtime (src/utils/iosFreeTeam.ts) to skip push registration and
+    // hide the Apple login button, both of which fail without the entitlement.
+    iosFreeTeam: IOS_FREE_TEAM,
   },
   plugins: [
     '@react-native-community/datetimepicker',
@@ -196,6 +263,8 @@ export default ({ config }) => ({
         iosShareExtensionName: 'Famlin Share',
         androidIntentFilters: ['image/*', 'video/*'],
         androidMultiIntentFilters: ['image/*', 'video/*'],
+        // A free team can't sign the share extension or its App Group.
+        disableIOS: IOS_FREE_TEAM,
       },
     ],
     'expo-apple-authentication',
@@ -207,5 +276,6 @@ export default ({ config }) => ({
     'expo-video',
     'expo-status-bar',
     'expo-image',
-  ],
+    IOS_FREE_TEAM ? withoutFreeTeamUnsignableEntitlements : undefined,
+  ].filter(Boolean),
 })

@@ -13,7 +13,9 @@
 // switching variants it would silently rebuild the previous app id. This
 // script reads the id out of the existing native project and runs
 // `expo prebuild --clean` first only when it doesn't match, keeping
-// incremental builds fast otherwise.
+// incremental builds fast otherwise. The expected id comes from app.config.js
+// itself, so a contributor's FAMLIN_IOS_BUNDLE_ID in .env.local is honoured,
+// and an iOS project is also regenerated when FAMLIN_IOS_FREE_TEAM changed.
 //
 // Never used by EAS or CI: those build from eas.json profiles, which don't set
 // APP_VARIANT.
@@ -35,14 +37,35 @@ const dev = args[0] === '--dev'
 if (dev) args.shift()
 if (args[0] === '--') args.shift()
 
-const appId = dev ? 'be.xeweb.famlin.dev' : 'be.xeweb.famlin'
-
 const env = { ...process.env }
 if (dev) {
   env.APP_VARIANT = 'development'
 } else {
   delete env.APP_VARIANT
 }
+
+/**
+ * The app id and free-team setting this run will build, as app.config.js
+ * resolves them — including a contributor's FAMLIN_IOS_* overrides from
+ * .env.local, which Expo CLI loads and this script would otherwise miss.
+ */
+function resolvedAppConfig() {
+  const result = spawnSync('npx', ['expo', 'config', '--json'], {
+    cwd: root,
+    env,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+    shell: process.platform === 'win32',
+  })
+  if (result.status !== 0) process.exit(result.status ?? 1)
+  const config = JSON.parse(result.stdout)
+  return {
+    appId: platform === 'android' ? config.android.package : config.ios.bundleIdentifier,
+    iosFreeTeam: config.extra?.iosFreeTeam === true,
+  }
+}
+
+const { appId, iosFreeTeam } = resolvedAppConfig()
 
 /** The app id(s) the existing native project was generated with, or null. */
 function nativeAppIds() {
@@ -74,9 +97,17 @@ function run(cmdArgs) {
 }
 
 const ids = nativeAppIds()
+// A free-team iOS build has no share extension target (app.config.js), so its
+// presence tells whether the existing project matches FAMLIN_IOS_FREE_TEAM.
+const hasShareExtension = ids !== null && ids.some((id) => id.endsWith('.share-extension'))
 if (ids !== null && !ids.includes(appId)) {
   console.log(
     `Native ${platform} project was generated for ${ids.join(', ') || 'another app id'}; regenerating it for ${appId}.`
+  )
+  run(['expo', 'prebuild', '--clean', '--platform', platform])
+} else if (platform === 'ios' && ids !== null && hasShareExtension === iosFreeTeam) {
+  console.log(
+    `Native ios project was generated ${iosFreeTeam ? 'with' : 'without'} the capabilities a free Apple team can't sign; regenerating it${iosFreeTeam ? ' without them' : ''}.`
   )
   run(['expo', 'prebuild', '--clean', '--platform', platform])
 }
