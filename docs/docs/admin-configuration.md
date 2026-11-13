@@ -27,7 +27,7 @@ From `/admin` → Server settings you can then configure everything below. The p
 - **OIDC / SSO** (Sign-in & access): see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
 - **Allowed email addresses** (Sign-in & access): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
 - **Push notifications** (Notifications): turn push notifications on or off for the whole server. Members choose per event type in their own profile.
-- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content.md#system-status) to admins, even when member email notifications are off.
+- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content.md#system-status) to admins, even when member email notifications are off. Famlin sends notification emails over at most three SMTP connections at a time, which stays within the connection limits of common mail providers (Gmail, Fastmail, Amazon SES and others) even in large families.
 - **Media integrations** (Media: Immich, local folders): see [Media integrations](#media-integrations) below. Optional.
 - **Backups** are on their own admin page: see [Backups](./managing-users-and-content.md#backups).
 

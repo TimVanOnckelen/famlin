@@ -4,6 +4,13 @@ import i18n from '../../i18n/index.js'
 import { getAllSettings } from '../settings.js'
 import type { NotificationChannel, NotifyType, Recipient } from './types.js'
 import { resolveBrandSettings } from '../branding/index.js'
+import { mapWithConcurrency } from '../../utils/concurrency.js'
+
+// Most SMTP providers (Gmail, Fastmail, SES, a typical Postfix) cap concurrent
+// connections per client at 3–10 and answer `421 Too many concurrent
+// connections` beyond that, so a notification fan-out never opens more than
+// this many at once (issue #134).
+export const EMAIL_MAX_CONNECTIONS = 3
 
 // Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
 // reuse the closest existing preference column, see the note there.
@@ -49,13 +56,20 @@ export function notificationLink(
   return `${base}/`
 }
 
-export async function createTransporter(settings?: Awaited<ReturnType<typeof getAllSettings>>) {
+// `pool` reuses up to EMAIL_MAX_CONNECTIONS SMTP connections across messages
+// instead of one connection per message; a pooled transporter holds sockets
+// open, so its caller must close() it when done.
+export async function createTransporter(
+  settings?: Awaited<ReturnType<typeof getAllSettings>>,
+  options: { pool?: boolean } = {}
+) {
   const resolved = settings ?? (await getAllSettings())
   if (!resolved.smtpHost || !resolved.smtpUser || !resolved.smtpPass) {
     return null
   }
 
   return nodemailer.createTransport({
+    ...(options.pool ? { pool: true, maxConnections: EMAIL_MAX_CONNECTIONS, maxMessages: 50 } : {}),
     host: resolved.smtpHost,
     port: resolved.smtpPort || 587,
     secure: (resolved.smtpPort || 587) === 465,
@@ -79,7 +93,7 @@ export const emailChannel: NotificationChannel = {
   },
 
   async send({ type, recipients, message, settings, postId }) {
-    const transporter = await createTransporter(settings)
+    const transporter = await createTransporter(settings, { pool: true })
     if (!transporter) return
 
     const t = i18n.getFixedT(settings.defaultLanguage)
@@ -98,9 +112,10 @@ export const emailChannel: NotificationChannel = {
       ? t('notifications.emailBodyWithLink', { message, link })
       : t('notifications.emailBody', { message })
 
-    // Send in parallel so one slow/hanging recipient doesn't serialize the rest.
-    await Promise.all(
-      recipients.map((recipient) =>
+    // Parallel so one slow/hanging recipient doesn't serialize the rest, but
+    // bounded so a large family doesn't open one SMTP connection per member.
+    try {
+      await mapWithConcurrency(recipients, EMAIL_MAX_CONNECTIONS, (recipient) =>
         transporter
           .sendMail({
             from: settings.smtpFrom || 'Famlin <noreply@famlin.app>',
@@ -110,6 +125,10 @@ export const emailChannel: NotificationChannel = {
           })
           .catch((err) => console.error('Failed to send email', err))
       )
-    )
+    } finally {
+      // Release the pool's sockets; a fresh pool is built per fan-out so a
+      // changed SMTP setting always takes effect on the next send.
+      transporter.close?.()
+    }
   },
 }
