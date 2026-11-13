@@ -6,6 +6,14 @@ import { setStorageAdapter, setApiBaseUrl, setLanguageResolver } from '@famlin/a
 import { webLocalStorageAdapter } from './storageAdapter'
 import App from './App'
 import i18n from './i18n'
+// Self-hosted Nunito (issue #132): bundled by Vite from @fontsource rather
+// than loaded from Google Fonts, so no member's browser contacts a third
+// party and air-gapped deployments render the right font.
+import '@fontsource/nunito/400.css'
+import '@fontsource/nunito/600.css'
+import '@fontsource/nunito/700.css'
+import '@fontsource/nunito/800.css'
+import '@fontsource/nunito/900.css'
 import './index.css'
 
 setStorageAdapter(webLocalStorageAdapter)

@@ -158,7 +158,9 @@ describe('branding resolution', () => {
       resolveBrandSettings({ brandPreset: 'plum', brandName: '<script>x</script>', brandLogo: 'abcdef0123456789' })
     )!
     const baseHtml =
-      '<html><head><title>Famlin</title><link rel="icon" type="image/x-icon" href="/favicon.ico" /></head><body></body></html>'
+      '<html><head><title>Famlin</title><meta name="theme-color" content="#006e94" />' +
+      '<meta name="apple-mobile-web-app-title" content="Famlin" />' +
+      '<link rel="icon" type="image/x-icon" href="/favicon.ico" /></head><body></body></html>'
     const html = injectBrandingIntoHtml(baseHtml, branding)
     expect(html).toContain('<title>&lt;script&gt;x&lt;/script&gt;</title>')
     expect(html).not.toContain('<script>x')
@@ -166,6 +168,9 @@ describe('branding resolution', () => {
     expect(html).toContain('href="/branding/favicon-abcdef0123456789.png"')
     expect(html).not.toContain('/favicon.ico')
     expect(html.match(/rel="icon"/g)).toHaveLength(1)
+    expect(html).toContain(`<meta name="theme-color" content="${branding.palette.primary}" />`)
+    expect(html).toContain('<meta name="apple-mobile-web-app-title" content="&lt;script&gt;x&lt;/script&gt;" />')
+    expect(html.match(/name="theme-color"/g)).toHaveLength(1)
     expect(injectBrandingIntoHtml(baseHtml, null)).toBe(baseHtml)
     expect(injectBrandingIntoHtml('<head></head>', null)).toBe('<head></head>')
   })

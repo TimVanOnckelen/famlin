@@ -24,6 +24,7 @@ allow-licenses:
   - CC-BY-4.0 # data only (caniuse-lite)
   - Python-2.0 # argparse
   - Zlib
+  - OFL-1.1 # fonts only (Nunito); bundling an unmodified font puts no terms on Famlin's code
 
 # Reviewed exceptions: packages allowed even though their license is not in
 # the list above. Add one here only after confirming its license doesn't
