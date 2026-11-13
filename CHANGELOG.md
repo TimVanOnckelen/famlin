@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.9.2](https://github.com/TimVanOnckelen/famlin/compare/v0.9.1...v0.9.2) (2026-11-13)
+
+
+### Features
+
+* **admin:** Backups page with restore onto a running server ([4190968](https://github.com/TimVanOnckelen/famlin/commit/41909683ec7f7ca5c4bfda519dc5a0ae5b5def7b))
+* **backup:** one Famlin backup format with restore from the setup screen ([9affbf4](https://github.com/TimVanOnckelen/famlin/commit/9affbf4af5e85bb506190ff5c63f4081a933b386))
+* **mobile:** add hidden feed scroll diagnostics for test builds ([7ebd332](https://github.com/TimVanOnckelen/famlin/commit/7ebd3328be39fbbe110a4f43e5e84796cf2b3c65))
+* **mobile:** local development app variant that installs next to the store app ([025c41d](https://github.com/TimVanOnckelen/famlin/commit/025c41de80dce333279c8d39b12d058899fa7d08)), closes [#352](https://github.com/TimVanOnckelen/famlin/issues/352)
+* send feed scroll diagnostics to the server admin from every build ([d395026](https://github.com/TimVanOnckelen/famlin/commit/d3950266809c7beea0ca64985b4143328d492ae1))
+* **web:** self-host Nunito and make the web app installable ([05076be](https://github.com/TimVanOnckelen/famlin/commit/05076be7e779c04a44547dbdcfdf5d3574901163))
+* **web:** self-host Nunito and make the web app installable ([ad92d4d](https://github.com/TimVanOnckelen/famlin/commit/ad92d4d1ec0413026ccc86f97336e9a44ad0fda1)), closes [#132](https://github.com/TimVanOnckelen/famlin/issues/132)
+
+
+### Bug Fixes
+
+* **backend:** bound the email notification fan-out ([7570ced](https://github.com/TimVanOnckelen/famlin/commit/7570ced71301e4dd02a703353033b44bd8727abb))
+* **backend:** bound the email notification fan-out ([9c43adf](https://github.com/TimVanOnckelen/famlin/commit/9c43adf52afd49cad59b8f8c61bc745fa1292af4)), closes [#134](https://github.com/TimVanOnckelen/famlin/issues/134)
+* build libvips from source so sharp can move to 0.35.5 ([07e120b](https://github.com/TimVanOnckelen/famlin/commit/07e120b7e71c4baa3aca95a768f6ff9f49aafef4))
+* make secret settings write-only and API tokens non-admin by default ([b67d155](https://github.com/TimVanOnckelen/famlin/commit/b67d155bd091573dfd08f51f22410942b97c2da0))
+* make secret settings write-only and API tokens non-admin by default ([f76fb66](https://github.com/TimVanOnckelen/famlin/commit/f76fb6691b5307e9ffe7aba152041be784e433d5))
+* **mobile:** align Expo packages with the SDK's expected versions ([9542b40](https://github.com/TimVanOnckelen/famlin/commit/9542b4052f549b8f72db352656c4436118e4b84c))
+* **mobile:** align Expo packages with the SDK's expected versions ([c77322a](https://github.com/TimVanOnckelen/famlin/commit/c77322a0d855867ca9619c3b1ebdf15e3d694f67))
+* **mobile:** align Expo packages with the SDK's expected versions ([20917cd](https://github.com/TimVanOnckelen/famlin/commit/20917cd29a160399fc7d2676735b563f9cceedf3))
+* **web:** add border to incoming chat bubbles ([b2902f2](https://github.com/TimVanOnckelen/famlin/commit/b2902f2cb18622238a3a12e444a596f7be16d490))
+* **web:** Photos tab 'All families' chip showed only the first family ([200ed5a](https://github.com/TimVanOnckelen/famlin/commit/200ed5ac794e2ee816444ce57dafc65ce987c7e7))
+* **web:** Photos tab 'All families' chip showed only the first family ([79e4d65](https://github.com/TimVanOnckelen/famlin/commit/79e4d65d2476dec3118e24c22b00ffa90dd6aa1b))
+
 ## [0.9.1](https://github.com/TimVanOnckelen/famlin/compare/v0.9.0...v0.9.1) (2026-11-10)
 
 
