@@ -66,3 +66,8 @@ allow-dependencies-licenses:
   # GitHub reports the public-domain part as a LicenseRef), pulled in by
   # Mermaid via d3-delaunay in the docs site only.
   - pkg:npm/robust-predicates
+  # @fontsource/nunito: OFL-1.1, the Nunito font files themselves, bundled
+  # unmodified into the web and admin builds. The OFL allows bundling fonts
+  # with any software and only governs the font (no terms on Famlin's code);
+  # the mobile app already ships the same font via @expo-google-fonts/nunito.
+  - pkg:npm/%40fontsource/nunito
