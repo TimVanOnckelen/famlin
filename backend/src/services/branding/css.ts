@@ -53,7 +53,8 @@ const escapeAttr = (v: string) =>
   v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 // Injects the brand into the web SPA's index.html: the token overrides, the
-// family name as <title> and the logo's favicon rendition. Values are either
+// family name as <title> (and iOS home-screen title), the brand color as
+// theme-color and the logo's favicon rendition. Values are either
 // server-derived hexes or escaped, so nothing admin-typed reaches the page
 // unescaped.
 export function injectBrandingIntoHtml(html: string, branding: PublicBranding | null): string {
@@ -71,6 +72,15 @@ export function injectBrandingIntoHtml(html: string, branding: PublicBranding | 
   if (branding.faviconUrl) out = out.replace(/<link\b[^>]*\brel=["']icon["'][^>]*>/gi, '')
   if (branding.name) {
     out = out.replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(branding.name)}</title>`)
+    // The label iOS puts under a home-screen icon when the web app is added.
+    out = out.replace(
+      /<meta\b[^>]*\bname=["']apple-mobile-web-app-title["'][^>]*>/i,
+      `<meta name="apple-mobile-web-app-title" content="${escapeAttr(branding.name)}" />`
+    )
   }
+  out = out.replace(
+    /<meta\b[^>]*\bname=["']theme-color["'][^>]*>/i,
+    `<meta name="theme-color" content="${escapeAttr(branding.palette.primary)}" />`
+  )
   return out.replace('</head>', `${head}</head>`)
 }

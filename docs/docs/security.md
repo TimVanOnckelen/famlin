@@ -148,6 +148,10 @@ Use a reverse proxy with HTTPS in production and set `TRUST_PROXY=true` only beh
 
 With [Cloudflare Tunnel](./cloudflare-tunnel.md), Cloudflare terminates TLS and can technically read traffic between your family and the server, including posts, photos, and session tokens. The tunnel avoids open ports and reduces that part of your attack surface. If you don't want a third party in the traffic path, use Caddy or your own reverse proxy instead.
 
+### No third-party requests from the browser
+
+The web app and the admin UI load everything, including the Nunito font, from your own Famlin server. A family member's browser doesn't contact Google Fonts or another CDN, so their IP address isn't shared with anyone, and the apps look the same on a LAN-only or firewalled server.
+
 ### S3-compatible storage
 
 With [S3 storage](./storage.md#option-c-s3-or-an-s3-compatible-service), Famlin still serves photos through its own access checks. Keep the bucket private, restrict Famlin's key to that bucket when possible, and protect `S3_SECRET_ACCESS_KEY` like `JWT_SECRET`—in `.env`, never in the repository.

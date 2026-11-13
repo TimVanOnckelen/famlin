@@ -8,6 +8,14 @@ import App from './App'
 import { AdminDialogProvider } from './components/AdminDialogs'
 import { TooltipProvider } from '@famlin/ui/tooltip'
 import { Toaster } from '@famlin/ui/sonner'
+// Self-hosted Nunito (issue #132): bundled by Vite from @fontsource rather
+// than loaded from Google Fonts, so no member's browser contacts a third
+// party and air-gapped deployments render the right font.
+import '@fontsource/nunito/400.css'
+import '@fontsource/nunito/600.css'
+import '@fontsource/nunito/700.css'
+import '@fontsource/nunito/800.css'
+import '@fontsource/nunito/900.css'
 import './index.css'
 
 // Required once at startup for the shared package's browser OIDC helpers
