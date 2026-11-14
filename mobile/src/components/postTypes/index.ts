@@ -2,6 +2,7 @@ import { ComponentType } from 'react'
 
 import { Post } from '@/types'
 import { PollBody } from '@/components/PollBody'
+import { EventBody } from '@/components/EventBody'
 
 export interface PostTypeCardBodyProps {
   post: Post
@@ -22,4 +23,5 @@ export interface PostTypeRenderer {
 // registry.
 export const postTypeRenderers: Record<string, PostTypeRenderer> = {
   POLL: { CardBody: PollBody },
+  EVENT: { CardBody: EventBody },
 }
