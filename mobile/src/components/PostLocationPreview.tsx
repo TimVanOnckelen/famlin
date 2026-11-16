@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native'
 
 import { colors } from '@/constants/colors'
 import { Icon } from '@/components/Icon'
-import { LeafletMap } from '@/components/LeafletMap'
+import { StaticMap } from '@/components/StaticMap'
 
 interface PostLocationPreviewProps {
   latitude: number
@@ -19,9 +19,7 @@ export function PostLocationPreview({ latitude, longitude, locationName, mapHeig
 
   return (
     <TouchableOpacity style={styles.container} activeOpacity={0.85} onPress={openInBrowser}>
-      <View style={[styles.map, { height: mapHeight }]} pointerEvents="none">
-        <LeafletMap latitude={latitude} longitude={longitude} style={styles.map} />
-      </View>
+      <StaticMap latitude={latitude} longitude={longitude} height={mapHeight} />
       <View style={styles.labelRow}>
         <Icon name="map-pin" size={14} color={colors.primary} />
         <Text style={styles.labelText} numberOfLines={1}>
@@ -39,9 +37,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  map: {
-    width: '100%',
   },
   labelRow: {
     flexDirection: 'row',

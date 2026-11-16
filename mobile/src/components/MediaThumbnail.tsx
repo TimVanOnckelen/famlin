@@ -1,6 +1,11 @@
 import { LivePhotoMedia } from './LivePhotoMedia'
-import { useUploadProcessing } from '@/hooks/useUploadProcessing'
-import React, { useState } from 'react'
+import {
+  UploadProcessingContext,
+  settledUploadProcessing,
+  useUploadProcessing,
+  type UploadProcessingState,
+} from '@/hooks/useUploadProcessing'
+import React, { useContext, useState } from 'react'
 import { View, Text, ActivityIndicator, StyleSheet, StyleProp, ViewStyle, ImageStyle } from 'react-native'
 import { Image } from 'expo-image'
 import { useVideoPlayer, VideoView } from 'expo-video'
@@ -50,9 +55,48 @@ function VideoThumbnail({ url, style }: MediaThumbnailProps) {
   )
 }
 
-export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps) {
-  const state = useUploadProcessing(url)
+function ProcessingPlaceholder({
+  state,
+  style,
+}: {
+  state: UploadProcessingState
+  style: MediaThumbnailProps['style']
+}) {
   const { t } = useTranslation()
+  return (
+    <View style={[style as StyleProp<ViewStyle>, styles.processing]}>
+      {state.thumbnailUrl && (
+        <Image
+          source={{ uri: getUploadUrl(state.thumbnailUrl) }}
+          style={[StyleSheet.absoluteFill, { opacity: 0.25 }]}
+          contentFit="cover"
+        />
+      )}
+      {!state.failed && <ActivityIndicator />}
+      <Text style={styles.processingText}>{t(state.failed ? 'media.processingFailed' : 'media.processing')}</Text>
+    </View>
+  )
+}
+
+// Asks the server for the upload's state — only mounted for an upload whose
+// state isn't known yet (still converting, or a post without upload metadata).
+function PolledMediaThumbnail(props: MediaThumbnailProps) {
+  return <MediaThumbnailView {...props} state={useUploadProcessing(props.url)} />
+}
+
+export function MediaThumbnail(props: MediaThumbnailProps) {
+  // Nearly every tile in a feed is a finished upload its post already
+  // describes, so it renders without subscribing to any query.
+  const settled = settledUploadProcessing(props.url, useContext(UploadProcessingContext))
+  return settled ? <MediaThumbnailView {...props} state={settled} /> : <PolledMediaThumbnail {...props} />
+}
+
+function MediaThumbnailView({
+  url,
+  fallbackUrl,
+  style,
+  state,
+}: MediaThumbnailProps & { state: UploadProcessingState }) {
   const [fellBack, setFellBack] = useState(false)
   const [posterFailed, setPosterFailed] = useState(false)
   // Scroll diagnostics (issue #357) count where each image came from. Read
@@ -62,19 +106,7 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
 
   // Failed video jobs remain playable through the backend’s original-file fallback.
   if (state.pending || (state.failed && !isVideoUrl(url))) {
-    return (
-      <View style={[style as StyleProp<ViewStyle>, styles.processing]}>
-        {state.thumbnailUrl && (
-          <Image
-            source={{ uri: getUploadUrl(state.thumbnailUrl) }}
-            style={[StyleSheet.absoluteFill, { opacity: 0.25 }]}
-            contentFit="cover"
-          />
-        )}
-        {!state.failed && <ActivityIndicator />}
-        <Text style={styles.processingText}>{t(state.failed ? 'media.processingFailed' : 'media.processing')}</Text>
-      </View>
-    )
+    return <ProcessingPlaceholder state={state} style={style} />
   }
 
   if (state.kind === 'livePhoto' && state.videoUrl) {

@@ -1,5 +1,18 @@
 import i18n from './index'
 
+// Building a date formatter is slow next to using one, and the feed formats
+// a date for every card it renders, so they're kept per language.
+const shortDateFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function formatShortDate(date: Date): string {
+  let formatter = shortDateFormatters.get(i18n.language)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short' })
+    shortDateFormatters.set(i18n.language, formatter)
+  }
+  return formatter.format(date)
+}
+
 export function formatRelativeDate(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
@@ -28,10 +41,7 @@ export function formatRelativeDate(dateString: string): string {
     return i18n.t('relativeTime.daysAgo', { count: diffDays })
   }
 
-  return date.toLocaleDateString(i18n.language, {
-    day: 'numeric',
-    month: 'short',
-  })
+  return formatShortDate(date)
 }
 
 export function formatDateTime(dateString: string): string {

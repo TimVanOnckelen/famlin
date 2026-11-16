@@ -11,7 +11,25 @@ const finished = (state?: UploadProcessing) => state?.status === 'ready' || stat
 // fall back to the original URL).
 const READY: UploadProcessing = { status: 'ready', url: null, thumbnailUrl: null }
 
-export function useUploadProcessing(url: string) {
+export type UploadProcessingState = Partial<UploadProcessing> & { pending: boolean; failed: boolean }
+
+// The state of an upload that needs no status request: a URL that isn't an
+// upload at all, or one whose post already says it's ready or failed. Returns
+// null when only the server can tell, which is when useUploadProcessing is
+// needed. Lets a feed tile skip that hook's two query subscriptions, which is
+// most of what a photo costs the JS thread as its card scrolls in.
+export function settledUploadProcessing(
+  url: string,
+  metadata: Record<string, UploadProcessing> | undefined
+): UploadProcessingState | null {
+  const key = uploadKey(url)
+  if (!key) return { pending: false, failed: false }
+  const initial = metadata?.[key]
+  if (!initial || !finished(initial)) return null
+  return { ...initial, pending: false, failed: initial.status === 'failed' }
+}
+
+export function useUploadProcessing(url: string): UploadProcessingState {
   const key = uploadKey(url)
   const metadata = useContext(UploadProcessingContext)
   const initial = key ? metadata?.[key] : undefined

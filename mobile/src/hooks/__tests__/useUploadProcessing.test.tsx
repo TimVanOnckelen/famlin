@@ -8,7 +8,7 @@ import {
   getCurrentServerUrl,
   type UploadProcessing,
 } from '@famlin/api-client'
-import { UploadProcessingContext, useUploadProcessing } from '../useUploadProcessing'
+import { UploadProcessingContext, settledUploadProcessing, useUploadProcessing } from '../useUploadProcessing'
 
 jest.mock('@famlin/api-client', () => ({
   ...jest.requireActual('@famlin/api-client'),
@@ -47,6 +47,13 @@ it.each(['ready', 'failed'] as const)('uses %s post metadata without a status re
   expect(result.current.status).toBe(status)
   expect(result.current.pending).toBe(false)
   expect(fetchUploadProcessing).not.toHaveBeenCalled()
+})
+
+it('knows a finished upload from post metadata alone, and nothing else', () => {
+  expect(settledUploadProcessing(url, { 'photo-key': ready })).toMatchObject({ pending: false, failed: false })
+  expect(settledUploadProcessing(url, { 'photo-key': { ...ready, status: 'failed' } })).toMatchObject({ failed: true })
+  expect(settledUploadProcessing(url, { 'photo-key': { ...ready, status: 'queued' } })).toBeNull()
+  expect(settledUploadProcessing(url, undefined)).toBeNull()
 })
 
 it('polls pending metadata and stops once ready', async () => {

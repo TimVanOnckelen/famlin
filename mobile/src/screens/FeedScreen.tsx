@@ -284,8 +284,8 @@ export function FeedScreen() {
         renderItem={renderPost}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        // Post cards are heavy (hero image, potentially a map WebView or a
-        // video player) — keep far fewer off-screen items mounted than the
+        // Post cards are heavy (hero image, potentially a map or a video
+        // player) — keep far fewer off-screen items mounted than the
         // default windowSize of 21 screens. Same tuning family as
         // PhotosScreen's grid.
         removeClippedSubviews

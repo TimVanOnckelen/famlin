@@ -194,6 +194,9 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
   const isMilestone = post.type === 'MILESTONE'
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false)
   const [reactionsModalOpen, setReactionsModalOpen] = useState(false)
+  // Mounted on first open and kept after, so closing still animates; until
+  // then a card carries neither the modal nor its query subscription.
+  const [reactionsModalMounted, setReactionsModalMounted] = useState(false)
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url))
   const fullscreenUrls = allPhotoUrls
@@ -418,7 +421,13 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         </TouchableOpacity>
         {reactors.length > 0 && (
           <View style={styles.reactorArea}>
-            <ReactorStack reactors={reactors} onPress={() => setReactionsModalOpen(true)} />
+            <ReactorStack
+              reactors={reactors}
+              onPress={() => {
+                setReactionsModalMounted(true)
+                setReactionsModalOpen(true)
+              }}
+            />
           </View>
         )}
       </View>
@@ -428,7 +437,9 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
         onSelect={selectReaction}
         onClose={() => setReactionPickerOpen(false)}
       />
-      <ReactionsModal postId={reactionsModalOpen ? post.id : null} onClose={() => setReactionsModalOpen(false)} />
+      {reactionsModalMounted && (
+        <ReactionsModal postId={reactionsModalOpen ? post.id : null} onClose={() => setReactionsModalOpen(false)} />
+      )}
     </View>
   )
 }

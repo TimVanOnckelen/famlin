@@ -15,6 +15,9 @@ import { CircleMembersModal } from './CircleMembersModal'
 // somewhere to look. Mirrors web's CircleBadge.
 export function CircleTag({ post }: { post: Post }) {
   const [membersOpen, setMembersOpen] = useState(false)
+  // Mounted on first open and kept after, so closing still animates; until
+  // then a feed card carries neither the modal nor its query subscription.
+  const [membersMounted, setMembersMounted] = useState(false)
 
   if (!post.circle) return null
 
@@ -22,18 +25,27 @@ export function CircleTag({ post }: { post: Post }) {
 
   return (
     <View style={styles.wrapper}>
-      <TouchableOpacity style={styles.circleTag} onPress={() => setMembersOpen(true)} accessibilityRole="button">
+      <TouchableOpacity
+        style={styles.circleTag}
+        onPress={() => {
+          setMembersMounted(true)
+          setMembersOpen(true)
+        }}
+        accessibilityRole="button"
+      >
         <Text style={styles.circleTagText} numberOfLines={1}>
           {circle.name}
         </Text>
       </TouchableOpacity>
 
-      <CircleMembersModal
-        visible={membersOpen}
-        circleId={circle.id}
-        circleName={circle.name}
-        onClose={() => setMembersOpen(false)}
-      />
+      {membersMounted && (
+        <CircleMembersModal
+          visible={membersOpen}
+          circleId={circle.id}
+          circleName={circle.name}
+          onClose={() => setMembersOpen(false)}
+        />
+      )}
     </View>
   )
 }
