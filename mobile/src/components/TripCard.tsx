@@ -9,6 +9,7 @@ import { Avatar } from '@/components/Avatar'
 import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { Post } from '@/types'
 import { getUploadUrl } from '@/api/uploads'
+import { mediaTileProps } from '@/utils/media'
 import { formatTripDateRange, formatTime } from '@/i18n/utils'
 import { useReactToPost } from '@/hooks/usePostMutations'
 import { CircleTag } from './CircleTag'
@@ -164,13 +165,13 @@ function ClosedCollage({ photoUrls, photoCount }: { photoUrls: string[]; photoCo
   return (
     <View style={styles.collageRow}>
       <View style={styles.collageMainTile}>
-        <MediaThumbnail url={getUploadUrl(photoUrls[0])} style={styles.collageImage} />
+        <MediaThumbnail {...mediaTileProps(photoUrls[0])} style={styles.collageImage} />
       </View>
       {stackUrls.length > 0 && (
         <View style={styles.collageStack}>
           {stackUrls.map((url, i) => (
             <View key={url} style={styles.collageStackTile}>
-              <MediaThumbnail url={getUploadUrl(url)} style={styles.collageImage} />
+              <MediaThumbnail {...mediaTileProps(url)} style={styles.collageImage} />
               {i === stackUrls.length - 1 && extraCount > 0 && (
                 <View style={styles.collageMoreOverlay} pointerEvents="none">
                   <Text style={styles.collageMoreText}>+{extraCount}</Text>

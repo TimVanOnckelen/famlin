@@ -1,4 +1,5 @@
-import { isVideoUrl, getVideoPosterUrl } from '@/utils/media'
+import { setApiBaseUrl, setMediaToken } from '@famlin/api-client'
+import { isVideoUrl, getVideoPosterUrl, mediaTileProps } from '@/utils/media'
 
 describe('isVideoUrl', () => {
   it.each([
@@ -54,5 +55,38 @@ describe('getVideoPosterUrl', () => {
 
   it('returns null for local picker URIs, which have no server-side poster', () => {
     expect(getVideoPosterUrl('file:///data/user/0/app/cache/picker/clip.mp4')).toBeNull()
+  })
+})
+
+describe('mediaTileProps', () => {
+  beforeAll(() => {
+    setApiBaseUrl('https://s.example')
+    setMediaToken('tok')
+  })
+
+  it('loads the thumbnail variant for a photo, with the display copy as fallback', () => {
+    expect(mediaTileProps('/uploads/abc.jpg')).toEqual({
+      url: 'https://s.example/uploads/abc-thumbnail.jpg?token=tok',
+      fallbackUrl: 'https://s.example/uploads/abc.jpg?token=tok',
+    })
+  })
+
+  it('keeps the plain URL for a video — MediaThumbnail already loads only its poster frame', () => {
+    expect(mediaTileProps('/uploads/clip.mp4')).toEqual({
+      url: 'https://s.example/uploads/clip.mp4?token=tok',
+    })
+  })
+
+  it('swaps the rendition segment for a media-proxy photo', () => {
+    expect(mediaTileProps('/api/media/assets/link1/asset2/preview.jpg')).toEqual({
+      url: 'https://s.example/api/media/assets/link1/asset2/thumbnail.jpg?token=tok',
+      fallbackUrl: 'https://s.example/api/media/assets/link1/asset2/preview.jpg?token=tok',
+    })
+  })
+
+  it('leaves an unrecognized shape alone (thumbnail URL equals the fallback)', () => {
+    const tile = mediaTileProps('/somewhere/else/photo.jpg')
+    expect(tile.url).toBe('https://s.example/somewhere/else/photo.jpg?token=tok')
+    expect(tile.fallbackUrl).toBe(tile.url)
   })
 })

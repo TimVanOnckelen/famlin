@@ -96,6 +96,7 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
           cachePolicy="memory-disk"
           transition={100}
           recyclingKey={posterCacheKey}
+          enforceEarlyResizing
           onLoad={onLoad}
           onError={() => setPosterFailed(true)}
         />
@@ -118,6 +119,13 @@ export function MediaThumbnail({ url, fallbackUrl, style }: MediaThumbnailProps)
       cachePolicy="memory-disk"
       transition={100}
       recyclingKey={cacheKey}
+      // iOS decodes the whole source bitmap by default — a 1920px display
+      // copy costs ~10MB per tile even when rendered at 240pt, and that
+      // memory pressure is a prime source of feed-scroll jank. Decode at the
+      // view's pixel size instead (no-op on Android, where Glide already
+      // downsamples). Tiles are fixed-size, so the dynamic-resize caveat in
+      // expo-image's docs doesn't apply.
+      enforceEarlyResizing
       onLoad={onLoad}
       onError={() => {
         if (fallbackUrl && effectiveUrl !== fallbackUrl) setFellBack(true)

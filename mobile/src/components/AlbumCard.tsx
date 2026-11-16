@@ -11,7 +11,7 @@ import { MediaThumbnail } from '@/components/MediaThumbnail'
 import { AddAlbumPhotosModal } from '@/components/AddAlbumPhotosModal'
 import { Post } from '@/types'
 import { addAlbumPhotos } from '@famlin/api-client'
-import { getUploadUrl } from '@/api/uploads'
+import { mediaTileProps } from '@/utils/media'
 import { patchPostInCaches } from '@/utils/postCache'
 import { useReactToPost } from '@/hooks/usePostMutations'
 import { CircleTag } from './CircleTag'
@@ -32,8 +32,11 @@ export function AlbumCard({ post, showGroup = false }: { post: Post; showGroup?:
   const contributeMutation = useMutation({
     mutationFn: (data: { photoUrls: string[]; caption?: string }) => addAlbumPhotos(post.id, data),
     onSuccess: (updatedPost) => {
+      // The response is the full shaped + enriched post — patching it into
+      // every cache covers the feed card completely. No ['posts']
+      // invalidation: that would refetch every mounted feed page (and
+      // re-render its cells) for a change this response already describes.
       patchPostInCaches(queryClient, post.id, () => updatedPost)
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
       queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
       setContributeOpen(false)
     },
@@ -168,13 +171,13 @@ function AlbumCollage({
   return (
     <View style={styles.collageRow}>
       <View style={styles.collageMainTile}>
-        <MediaThumbnail url={getUploadUrl(urls[0])} style={styles.collageImage} />
+        <MediaThumbnail {...mediaTileProps(urls[0])} style={styles.collageImage} />
       </View>
       {stackUrls.length > 0 && (
         <View style={styles.collageStack}>
           {stackUrls.map((url, i) => (
             <View key={url} style={styles.collageStackTile}>
-              <MediaThumbnail url={getUploadUrl(url)} style={styles.collageImage} />
+              <MediaThumbnail {...mediaTileProps(url)} style={styles.collageImage} />
               {i === stackUrls.length - 1 && extraCount > 0 && (
                 <View style={styles.collageMoreOverlay} pointerEvents="none">
                   <Text style={styles.collageMoreText}>+{extraCount}</Text>
