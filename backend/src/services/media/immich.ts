@@ -102,8 +102,36 @@ async function searchAlbumAssets(immichAlbumId: string) {
   return data.assets.items
 }
 
-const albumAssetIdsCache = new Map<string, { ids: Set<string>; expiresAt: number }>()
+// `videoIds` rides along on the same search result so streamAsset()/
+// readAsset() can tell a video from a photo without an extra Immich call —
+// see isVideoAsset() below.
+const albumAssetIdsCache = new Map<string, { ids: Set<string>; videoIds: Set<string>; expiresAt: number }>()
 const ALBUM_ASSETS_CACHE_TTL_MS = 60 * 1000
+
+async function getAlbumAssetIds(externalAlbumId: string) {
+  const cached = albumAssetIdsCache.get(externalAlbumId)
+  if (cached && cached.expiresAt > Date.now()) return cached
+
+  const items = await searchAlbumAssets(externalAlbumId)
+  const entry = {
+    ids: new Set(items.map((a) => a.id)),
+    videoIds: new Set(items.filter((a) => a.type === 'VIDEO').map((a) => a.id)),
+    expiresAt: Date.now() + ALBUM_ASSETS_CACHE_TTL_MS,
+  }
+  albumAssetIdsCache.set(externalAlbumId, entry)
+  return entry
+}
+
+// Normally a cache hit: the proxy routes and copyAsset.ts both call
+// isAssetInAlbum() right before streaming. A failed lookup just means "serve
+// the original file", which is what every asset got before issue #419.
+async function isVideoAsset(externalAlbumId: string, assetId: string): Promise<boolean> {
+  try {
+    return (await getAlbumAssetIds(externalAlbumId)).videoIds.has(assetId)
+  } catch {
+    return false
+  }
+}
 
 // Immich's GET /people is expected to return { people: PersonResponseDto[],
 // total, hidden } on current server versions — handled defensively in case
@@ -269,17 +297,35 @@ async function getAlbumAssetPeopleUncached(externalAlbumId: string): Promise<Map
 // streamAsset (native video players need 206/Content-Range, see its own
 // comment); readAsset always fetches the whole body since it's writing a
 // complete file to disk, not serving a player incrementally.
+//
+// A video's `original` is served from Immich's playback endpoint (issue
+// #419): the H.264/AAC mp4 Immich already transcoded for its own web viewer,
+// which every browser and phone can decode, instead of e.g. a 4K HEVC .mov
+// straight off an iPhone. Immich itself serves the source file there when it
+// made no transcode. If the endpoint fails anyway (an Immich without it, an
+// API key lacking `asset.view`), fall back to the original file.
 async function fetchAssetFromImmich(
+  externalAlbumId: string,
   assetId: string,
   variant: MediaAssetVariant,
   rangeHeader?: string
 ): Promise<Response> {
   const creds = await requireImmichSettings()
-  const path = variant === 'original' ? `/assets/${assetId}/original` : `/assets/${assetId}/thumbnail?size=${variant}`
   // Override the default JSON Accept header — this response is binary image
   // data, not a JSON payload.
   const headers: Record<string, string> = { Accept: '*/*' }
   if (rangeHeader) headers.Range = rangeHeader
+
+  if (variant === 'original' && (await isVideoAsset(externalAlbumId, assetId))) {
+    try {
+      const res = await immichFetch(`/assets/${assetId}/video/playback`, creds, { headers })
+      if (res.body) return res
+    } catch {
+      // Fall through to the original file below.
+    }
+  }
+
+  const path = variant === 'original' ? `/assets/${assetId}/original` : `/assets/${assetId}/thumbnail?size=${variant}`
   const res = await immichFetch(path, creds, { headers })
   if (!res.body) throw new MediaProviderError('immich', 'unreachable')
   return res
@@ -339,7 +385,9 @@ export const immichProvider: MediaProvider = {
       width: a.width,
       height: a.height,
       // thumbnail/preview always come back from Immich as a JPEG still (even
-      // for a video) — only the original rendition can be the real video file.
+      // for a video) — only the original rendition can be the real video
+      // file, which is served as Immich's transcoded mp4 (see
+      // fetchAssetFromImmich).
       originalExt: a.type === 'VIDEO' ? 'mp4' : 'jpg',
       // Prefer the Asset row's own `createdAt` (roughly "when Immich ingested
       // this file", i.e. actually added to the source) over `fileCreatedAt`
@@ -365,15 +413,7 @@ export const immichProvider: MediaProvider = {
   // discoveryCache), so an image grid doesn't trigger one Immich search per
   // tile.
   async isAssetInAlbum(externalAlbumId: string, assetId: string) {
-    const cached = albumAssetIdsCache.get(externalAlbumId)
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.ids.has(assetId)
-    }
-
-    const items = await searchAlbumAssets(externalAlbumId)
-    const ids = new Set(items.map((a) => a.id))
-    albumAssetIdsCache.set(externalAlbumId, { ids, expiresAt: Date.now() + ALBUM_ASSETS_CACHE_TTL_MS })
-    return ids.has(assetId)
+    return (await getAlbumAssetIds(externalAlbumId)).ids.has(assetId)
   },
 
   // Streams a rendition straight from Immich into the response — mirrors how
@@ -382,13 +422,13 @@ export const immichProvider: MediaProvider = {
   // displays, well short of the original's file size) both hit the same
   // endpoint with a different `size`; `original` is the true source file.
   async streamAsset(
-    _externalAlbumId: string,
+    externalAlbumId: string,
     assetId: string,
     variant: MediaAssetVariant,
     reply: FastifyReply,
     rangeHeader?: string
   ) {
-    const res = await fetchAssetFromImmich(assetId, variant, rangeHeader)
+    const res = await fetchAssetFromImmich(externalAlbumId, assetId, variant, rangeHeader)
 
     // Relay the status (206 for a satisfied Range) and range/caching headers
     // so a partial response stays partial for the player.
@@ -410,8 +450,8 @@ export const immichProvider: MediaProvider = {
 
   // Same bytes as streamAsset(), minus the reply/Range plumbing — see the
   // MediaProvider.readAsset doc comment for why this exists (copyAsset.ts).
-  async readAsset(_externalAlbumId: string, assetId: string, variant: MediaAssetVariant) {
-    const res = await fetchAssetFromImmich(assetId, variant)
+  async readAsset(externalAlbumId: string, assetId: string, variant: MediaAssetVariant) {
+    const res = await fetchAssetFromImmich(externalAlbumId, assetId, variant)
     return {
       stream: Readable.fromWeb(res.body as import('stream/web').ReadableStream),
       contentType: res.headers.get('content-type') || undefined,
