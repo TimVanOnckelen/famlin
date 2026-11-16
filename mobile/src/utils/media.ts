@@ -1,3 +1,5 @@
+import { getUploadUrl } from '@famlin/api-client'
+
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.m4v', '.webm']
 
 export function isVideoUrl(url: string): boolean {
@@ -32,4 +34,24 @@ export function getVideoPosterUrl(url: string): string | null {
   }
 
   return null
+}
+
+// MediaThumbnail props for one asset rendered as a small feed/list tile.
+export interface MediaTile {
+  url: string
+  fallbackUrl?: string
+}
+
+// Small tiles (collages, trip/album previews) load the 400px thumbnail
+// variant instead of the 1920px display copy — far fewer bytes over the
+// network and a much cheaper decode while scrolling — with the display copy
+// as the load-error fallback for uploads predating thumbnail generation (the
+// same pattern PostDetailScreen's gallery and Avatar use). Videos keep their
+// plain URL: MediaThumbnail already loads only their 400px poster frame, and
+// needs the video extension to recognize them as videos at all. Full-width
+// heroes deliberately keep the display copy for sharpness.
+export function mediaTileProps(path: string): MediaTile {
+  const url = getUploadUrl(path)
+  if (isVideoUrl(path)) return { url }
+  return { url: getUploadUrl(path, 'thumbnail'), fallbackUrl: url }
 }

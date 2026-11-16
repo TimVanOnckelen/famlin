@@ -20,6 +20,7 @@ import { AlbumCard } from '@/components/AlbumCard'
 import { Post, PostPerson, ReactionType } from '@/types'
 import { REACTION_EMOJI } from '@/constants/reactions'
 import { getUploadUrl } from '@/api/uploads'
+import { mediaTileProps, MediaTile } from '@/utils/media'
 import { formatRelativeDate } from '@/i18n/utils'
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
 import { CircleTag } from './CircleTag'
@@ -45,18 +46,18 @@ const COLLAGE_MAX_PHOTOS = 4
 // Multi-photo feed cards: one large tile + a stacked pair on the right (design 5a),
 // the stacked pair's second tile showing "+N" once more photos exist than fit.
 // Exactly two photos fall back to a plain 50/50 split since there's no third tile to stack.
-function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (index: number) => void }) {
-  if (urls.length === 2) {
+function PhotoCollage({ photos, onPressPhoto }: { photos: MediaTile[]; onPressPhoto: (index: number) => void }) {
+  if (photos.length === 2) {
     return (
       <View style={styles.collageRow}>
-        {urls.map((url, index) => (
+        {photos.map((photo, index) => (
           <TouchableOpacity
-            key={url}
+            key={photo.url}
             activeOpacity={0.95}
             style={styles.collageTileFlex}
             onPress={() => onPressPhoto(index)}
           >
-            <MediaThumbnail url={url} style={styles.collageImage} />
+            <MediaThumbnail {...photo} style={styles.collageImage} />
           </TouchableOpacity>
         ))}
       </View>
@@ -65,41 +66,41 @@ function PhotoCollage({ urls, onPressPhoto }: { urls: string[]; onPressPhoto: (i
 
   // More photos than the collage can show at once: scroll them sideways so
   // every one is reachable from the card instead of hiding behind a "+N".
-  if (urls.length > COLLAGE_MAX_PHOTOS) {
+  if (photos.length > COLLAGE_MAX_PHOTOS) {
     return (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.collageGallery}>
-        {urls.map((url, index) => (
+        {photos.map((photo, index) => (
           <TouchableOpacity
-            key={url}
+            key={photo.url}
             activeOpacity={0.95}
             style={styles.collageGalleryTile}
             onPress={() => onPressPhoto(index)}
           >
-            <MediaThumbnail url={url} style={styles.collageImage} />
+            <MediaThumbnail {...photo} style={styles.collageImage} />
           </TouchableOpacity>
         ))}
       </ScrollView>
     )
   }
 
-  const stackUrls = urls.slice(1, 3)
-  const extraCount = urls.length - 3
+  const stackPhotos = photos.slice(1, 3)
+  const extraCount = photos.length - 3
 
   return (
     <View style={styles.collageRow}>
       <TouchableOpacity activeOpacity={0.95} style={styles.collageMainTile} onPress={() => onPressPhoto(0)}>
-        <MediaThumbnail url={urls[0]} style={styles.collageImage} />
+        <MediaThumbnail {...photos[0]} style={styles.collageImage} />
       </TouchableOpacity>
       <View style={styles.collageStack}>
-        {stackUrls.map((url, i) => (
+        {stackPhotos.map((photo, i) => (
           <TouchableOpacity
-            key={url}
+            key={photo.url}
             activeOpacity={0.95}
             style={styles.collageStackTile}
             onPress={() => onPressPhoto(i + 1)}
           >
-            <MediaThumbnail url={url} style={styles.collageImage} />
-            {i === stackUrls.length - 1 && extraCount > 0 && (
+            <MediaThumbnail {...photo} style={styles.collageImage} />
+            {i === stackPhotos.length - 1 && extraCount > 0 && (
               <View style={styles.collageMoreOverlay} pointerEvents="none">
                 <Text style={styles.collageMoreText}>+{extraCount}</Text>
               </View>
@@ -196,6 +197,9 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
 
   const allPhotoUrls = post.uploadedAssetUrls.map((url) => getUploadUrl(url))
   const fullscreenUrls = allPhotoUrls
+  // Collage tiles load the 400px thumbnail variant (see mediaTileProps); the
+  // single-photo hero and the fullscreen viewer keep the display copy.
+  const tilePhotos = post.uploadedAssetUrls.map(mediaTileProps)
 
   const likeMutation = useReactToPost(post)
 
@@ -244,7 +248,7 @@ function DefaultPostCard({ post, showGroup = false }: { post: Post; showGroup?: 
       {hasPhotos && (
         <View>
           {allPhotoUrls.length > 1 ? (
-            <PhotoCollage urls={allPhotoUrls} onPressPhoto={openFullscreen} />
+            <PhotoCollage photos={tilePhotos} onPressPhoto={openFullscreen} />
           ) : (
             <TouchableOpacity activeOpacity={0.95} onPress={() => openFullscreen(0)}>
               <MediaThumbnail url={allPhotoUrls[0]} style={styles.heroImage} />

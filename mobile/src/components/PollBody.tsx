@@ -29,11 +29,10 @@ export function PollBody({ post }: { post: Post }) {
       // simplest correct thing is to just replace the cached post with it
       // (no optimistic patch: computing the new voter list/order client-side
       // isn't worth the duplicated aggregation logic the server already does).
+      // No invalidation afterwards: the patch already covers every cache
+      // holding this post, and a blanket ['posts'] refetch would re-render
+      // every mounted feed cell for a change fully described by the response.
       patchPostInCaches(queryClient, post.id, () => updatedPost)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
-      queryClient.invalidateQueries({ queryKey: ['post', post.id] })
     },
   })
 
