@@ -8,6 +8,7 @@ import { getPushToken, setPushToken } from '@/utils/storage'
 import { useAuthStore } from '@/stores/authStore'
 import { navigate } from '@/navigation/navigationRef'
 import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
+import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -76,6 +77,12 @@ async function registerPushTokenAsync(userId: string) {
 
   if (!Device.isDevice) {
     console.log('Push notifications require a physical device')
+    return
+  }
+
+  if (isIosFreeTeamBuild()) {
+    // No aps-environment entitlement: asking for a token can only fail.
+    console.log('Push notifications are not available in a free-team build')
     return
   }
 

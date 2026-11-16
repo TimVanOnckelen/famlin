@@ -4,6 +4,7 @@ import { useShareIntent } from 'expo-share-intent'
 import { navigate, navigationRef } from '@/navigation/navigationRef'
 import { usePendingShareStore } from '@/stores/pendingShareStore'
 import { receiveSharedFiles } from '@/utils/receiveShare'
+import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
 
 /**
  * Receives photos/videos shared into Famlin from the OS share sheet (issue
@@ -13,8 +14,12 @@ import { receiveSharedFiles } from '@/utils/receiveShare'
  */
 export function useReceiveShareIntents() {
   // resetOnBackground off: the share is reset by hand below once it's been
-  // copied, and must not vanish if the app is backgrounded mid-copy.
-  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent({ resetOnBackground: false })
+  // copied, and must not vanish if the app is backgrounded mid-copy. A
+  // free-team iOS build has no share extension (or App Group) to read from.
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent({
+    resetOnBackground: false,
+    disabled: isIosFreeTeamBuild(),
+  })
   const addShare = usePendingShareStore((state) => state.addShare)
 
   useEffect(() => {

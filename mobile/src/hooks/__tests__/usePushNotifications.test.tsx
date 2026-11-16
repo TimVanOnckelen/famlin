@@ -25,6 +25,10 @@ jest.mock('@/navigation/navigationRef', () => ({
   navigate: jest.fn(),
 }))
 
+jest.mock('@/utils/iosFreeTeam', () => ({
+  isIosFreeTeamBuild: jest.fn(() => false),
+}))
+
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useAuthStore } from '@/stores/authStore'
 import { fetchNotificationConfig, registerPushToken } from '@famlin/api-client'
@@ -32,6 +36,7 @@ import { setPushToken } from '@/utils/storage'
 import { navigate } from '@/navigation/navigationRef'
 import { getOrCreateDeviceInstallId, syncDeviceDiagnostics } from '@/utils/deviceDiagnostics'
 import * as Notifications from 'expo-notifications'
+import { isIosFreeTeamBuild } from '@/utils/iosFreeTeam'
 
 describe('usePushNotifications', () => {
   beforeEach(() => {
@@ -64,6 +69,20 @@ describe('usePushNotifications', () => {
     expect(fetchNotificationConfig).toHaveBeenCalledTimes(1)
     expect(registerPushToken).toHaveBeenCalledWith('test-expo-push-token', 'install-1')
     expect(setPushToken).toHaveBeenCalledWith('test-expo-push-token')
+  })
+
+  it('skips push registration in a free-team iOS build', async () => {
+    ;(useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ user: { id: 'u1' } }))
+    ;(fetchNotificationConfig as jest.Mock).mockResolvedValue({ pushEnabled: true })
+    ;(isIosFreeTeamBuild as jest.Mock).mockReturnValueOnce(true)
+    jest.spyOn(console, 'log').mockImplementation(() => {})
+
+    renderHook(() => usePushNotifications())
+
+    await waitFor(() => expect(syncDeviceDiagnostics).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled()
+    expect(registerPushToken).not.toHaveBeenCalled()
   })
 
   it('still registers the push token when device diagnostics fail', async () => {

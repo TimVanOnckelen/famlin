@@ -184,6 +184,36 @@ Things the variant does **not** separate, and what to know about them:
 - **Push notifications on iOS** need a physical device (the simulator has no APNs), an App ID for `be.xeweb.famlin.dev` with the Push Notifications capability in the Apple Developer account, and the APNs key assigned to that bundle id in `eas credentials`. Building on a device with Xcode's automatic signing registers the App IDs (`be.xeweb.famlin.dev`, `be.xeweb.famlin.dev.share-extension`) and the App Group `group.be.xeweb.famlin.dev` for you.
 - **Sign in with Apple** against your own server: the server only accepts `be.xeweb.famlin` as audience by default, so add `be.xeweb.famlin.dev` to **Extra Apple bundle IDs** (`/admin` → Server settings).
 
+### Running on your own iPhone
+
+The Famlin bundle ids (`be.xeweb.famlin`, `be.xeweb.famlin.dev`) belong to the project's Apple Developer team, and Apple lets a bundle id belong to one team only, so Xcode can't sign them with your account. Give the build your own ids instead, in `mobile/.env.local` (gitignored; Expo CLI loads it before evaluating `app.config.js`, and nothing in the repository changes):
+
+```bash
+# mobile/.env.local
+FAMLIN_IOS_BUNDLE_ID=com.yourname.famlin
+FAMLIN_IOS_TEAM_ID=ABCDE12345
+```
+
+| Variable | What it does |
+| --- | --- |
+| `FAMLIN_IOS_BUNDLE_ID` | Your bundle id. The development variant appends `.dev`, the share extension `.share-extension`, and its App Group becomes `group.<your id>`. |
+| `FAMLIN_IOS_TEAM_ID` | Your Apple team id (Xcode → Settings → Accounts, or developer.apple.com → Membership), so Xcode signs without editing the project. |
+| `FAMLIN_IOS_FREE_TEAM=1` | Only for a **free Apple account** (a "Personal Team"). Such an account can't sign push notifications, Sign in with Apple or App Groups, so this leaves the three out of the iOS build. |
+
+Then build to the connected phone as usual: `npm run ios -- --device` (or `npm run ios:dev -- --device`). `scripts/run-native.mjs` reads the resolved ids from `app.config.js`, so it regenerates `ios/` by itself when you add, change or remove these settings.
+
+With a **paid** account you get the full app. With `FAMLIN_IOS_FREE_TEAM=1` everything works except:
+
+- **Push notifications**: the app doesn't register for push (`src/utils/iosFreeTeam.ts`).
+- **Sign in with Apple**: the button is hidden. Log in with a password or SSO.
+- **Share → Famlin**: there's no share extension, so Famlin isn't in the iOS share sheet.
+
+Apple's limits for free accounts still apply: the installed app stops launching after 7 days (build it again), and a device takes at most 3 such apps.
+
+Sign in with Apple under your own bundle id (paid account) also needs that id in **Extra Apple bundle IDs** (`/admin` → Server settings) on the server you sign in to.
+
+These settings are for local builds only: `app.config.js` refuses to build when any `FAMLIN_IOS_*` variable is set on EAS, and Android ignores them. When you add an iOS capability to the app, check whether a free account can sign it; if not, add its entitlement to `FREE_TEAM_UNSIGNABLE_ENTITLEMENTS` in `app.config.js`, or this build breaks again.
+
 Then point the app at your local backend on the first launch screen:
 
 | Where the app runs | Server address to enter |
