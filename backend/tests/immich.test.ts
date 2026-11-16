@@ -12,7 +12,7 @@ import { immichProvider } from '../src/services/media/immich.js'
 // guard, group membership, cross-group isolation) rather than a live Immich
 // instance. isAssetInAlbum is spied too — see the dedicated 'asset proxy
 // authorization' tests below for what's actually covered. streamAsset is NOT
-// spied: the range-forwarding test mocks global fetch instead to exercise the
+// spied: the video-streaming tests mock global fetch instead to exercise the
 // real proxy.
 const getAlbumInfoMock = vi.spyOn(immichProvider, 'getAlbumInfo')
 const listAlbumAssetsMock = vi.spyOn(immichProvider, 'listAlbumAssets')
@@ -267,31 +267,77 @@ describe('immich integration', () => {
     })
   })
 
-  describe('asset proxy range forwarding', () => {
+  describe('asset proxy video streaming', () => {
+    const VIDEO_ID = '11111111-1111-4111-8111-111111111111'
+    const IMAGE_ID = '22222222-2222-4222-8222-222222222222'
+
+    // Routes Immich calls by URL: the album search that tells a video from a
+    // photo, the transcoded playback endpoint and the original file.
+    function mockImmich(playback: () => Response) {
+      return vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: unknown) => {
+        const path = String(url)
+        if (path.endsWith('/search/metadata')) {
+          return Response.json({
+            assets: {
+              items: [
+                { id: VIDEO_ID, type: 'VIDEO', width: 1, height: 1 },
+                { id: IMAGE_ID, type: 'IMAGE', width: 1, height: 1 },
+              ],
+            },
+          })
+        }
+        if (path.endsWith('/video/playback')) return playback()
+        if (path.endsWith('/original')) {
+          return new Response(new Uint8Array([9, 9, 9]), {
+            status: 200,
+            headers: { 'content-type': path.includes(VIDEO_ID) ? 'video/quicktime' : 'image/jpeg' },
+          })
+        }
+        return new Response('not found', { status: 404 })
+      })
+    }
+
+    function partialMp4() {
+      return new Response(new Uint8Array([0, 1]), {
+        status: 206,
+        headers: {
+          'content-type': 'video/mp4',
+          'content-range': 'bytes 0-1/12345',
+          'accept-ranges': 'bytes',
+        },
+      })
+    }
+
+    function requestedPaths(fetchMock: ReturnType<typeof mockImmich>) {
+      return fetchMock.mock.calls.map(([url]) => String(url).replace('http://immich.local/api', ''))
+    }
+
+    async function setup() {
+      const member = await createUser()
+      const group = await createGroupWithMember(member)
+      // A fresh album id per test, so the provider's per-album cache of
+      // asset types never carries over.
+      const link = await linkAlbum(group.id)
+      await updateSettings({ immichServerUrl: 'http://immich.local', immichApiKey: 'test-key' })
+      return { member, link }
+    }
+
+    async function teardown(fetchMock: ReturnType<typeof mockImmich>) {
+      fetchMock.mockRestore()
+      await updateSettings({ immichServerUrl: '', immichApiKey: '' })
+    }
+
     // Native video players (iOS AVPlayer, Android ExoPlayer) stream mp4s via
     // byte-range requests and refuse to play when the server ignores them —
     // the proxy must forward Range to Immich and relay the 206 back.
-    it('forwards the Range header to Immich and relays the partial response', async () => {
-      const member = await createUser()
-      const group = await createGroupWithMember(member)
-      const link = await linkAlbum(group.id)
-
-      await updateSettings({ immichServerUrl: 'http://immich.local', immichApiKey: 'test-key' })
-      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(new Uint8Array([0, 1]), {
-          status: 206,
-          headers: {
-            'content-type': 'video/mp4',
-            'content-range': 'bytes 0-1/12345',
-            'accept-ranges': 'bytes',
-          },
-        })
-      )
+    it("streams a video from Immich's transcoded playback, forwarding Range and relaying the 206", async () => {
+      const { member, link } = await setup()
+      const fetchMock = mockImmich(partialMp4)
 
       try {
         const res = await app.inject({
           method: 'GET',
-          url: `/api/immich/assets/${link.id}/11111111-1111-4111-8111-111111111111/original.mp4`,
+          url: `/api/immich/assets/${link.id}/${VIDEO_ID}/original.mp4`,
           headers: { ...authHeader(member), range: 'bytes=0-1' },
         })
 
@@ -300,11 +346,115 @@ describe('immich integration', () => {
         expect(res.headers['content-range']).toBe('bytes 0-1/12345')
         expect(res.headers['accept-ranges']).toBe('bytes')
 
-        const [, init] = fetchMock.mock.calls[0]!
-        expect((init!.headers as Record<string, string>).Range).toBe('bytes=0-1')
+        const paths = requestedPaths(fetchMock)
+        expect(paths).toContain(`/assets/${VIDEO_ID}/video/playback`)
+        expect(paths).not.toContain(`/assets/${VIDEO_ID}/original`)
+
+        const playbackCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/video/playback'))!
+        expect((playbackCall[1]!.headers as Record<string, string>).Range).toBe('bytes=0-1')
       } finally {
-        fetchMock.mockRestore()
-        await updateSettings({ immichServerUrl: '', immichApiKey: '' })
+        await teardown(fetchMock)
+      }
+    })
+
+    it('uses the same playback stream on the provider-generic /api/media route', async () => {
+      const { member, link } = await setup()
+      const fetchMock = mockImmich(partialMp4)
+
+      try {
+        const res = await app.inject({
+          method: 'GET',
+          url: `/api/media/assets/${link.id}/${VIDEO_ID}/original.mp4`,
+          headers: { ...authHeader(member), range: 'bytes=0-1' },
+        })
+
+        expect(res.statusCode).toBe(206)
+        expect(requestedPaths(fetchMock)).toContain(`/assets/${VIDEO_ID}/video/playback`)
+      } finally {
+        await teardown(fetchMock)
+      }
+    })
+
+    it('falls back to the original file when playback is not available', async () => {
+      const { member, link } = await setup()
+      const fetchMock = mockImmich(() => new Response('Not found', { status: 404 }))
+
+      try {
+        const res = await app.inject({
+          method: 'GET',
+          url: `/api/immich/assets/${link.id}/${VIDEO_ID}/original.mp4`,
+          headers: { ...authHeader(member), range: 'bytes=0-1' },
+        })
+
+        expect(res.statusCode).toBe(200)
+        expect(res.headers['content-type']).toBe('video/quicktime')
+        expect(res.rawPayload).toEqual(Buffer.from([9, 9, 9]))
+
+        const originalCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/original'))!
+        expect((originalCall[1]!.headers as Record<string, string>).Range).toBe('bytes=0-1')
+      } finally {
+        await teardown(fetchMock)
+      }
+    })
+
+    it('falls back to the original file when the API key may not use playback', async () => {
+      const { member, link } = await setup()
+      const fetchMock = mockImmich(() => new Response('Forbidden', { status: 403 }))
+
+      try {
+        const res = await app.inject({
+          method: 'GET',
+          url: `/api/immich/assets/${link.id}/${VIDEO_ID}/original.mp4`,
+          headers: authHeader(member),
+        })
+
+        expect(res.statusCode).toBe(200)
+        expect(res.headers['content-type']).toBe('video/quicktime')
+      } finally {
+        await teardown(fetchMock)
+      }
+    })
+
+    it("never asks for playback of a photo's original or of a video's still renditions", async () => {
+      const { member, link } = await setup()
+      const fetchMock = mockImmich(partialMp4)
+
+      try {
+        const original = await app.inject({
+          method: 'GET',
+          url: `/api/immich/assets/${link.id}/${IMAGE_ID}/original.jpg`,
+          headers: authHeader(member),
+        })
+        expect(original.statusCode).toBe(200)
+        expect(original.headers['content-type']).toBe('image/jpeg')
+
+        await app.inject({
+          method: 'GET',
+          url: `/api/immich/assets/${link.id}/${VIDEO_ID}/thumbnail.jpg`,
+          headers: authHeader(member),
+        })
+
+        const paths = requestedPaths(fetchMock)
+        expect(paths.some((p) => p.endsWith('/video/playback'))).toBe(false)
+        expect(paths).toContain(`/assets/${VIDEO_ID}/thumbnail?size=thumbnail`)
+      } finally {
+        await teardown(fetchMock)
+      }
+    })
+
+    it('copies the transcoded video when a cross-post reads the asset', async () => {
+      const { link } = await setup()
+      const fetchMock = mockImmich(
+        () => new Response(new Uint8Array([4, 2]), { status: 200, headers: { 'content-type': 'video/mp4' } })
+      )
+
+      try {
+        const asset = await immichProvider.readAsset(link.externalAlbumId, VIDEO_ID, 'original')
+        expect(asset.contentType).toBe('video/mp4')
+        expect(requestedPaths(fetchMock)).not.toContain(`/assets/${VIDEO_ID}/original`)
+        asset.stream.resume()
+      } finally {
+        await teardown(fetchMock)
       }
     })
   })

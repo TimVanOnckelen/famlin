@@ -124,6 +124,8 @@ If your family already runs [Immich](https://immich.app) for photo storage:
 
 Members never see an Immich login, token, or API key — the underlying image is streamed live from your Immich server through Famlin's own authenticated proxy.
 
+**Videos:** Famlin plays the browser-friendly version of a video that Immich has already made (H.264/AAC mp4), not the original file. A 4K HEVC clip from an iPhone therefore plays in every browser and on every phone, and uses far less data. Keep video transcoding enabled in Immich (Administration → Settings → Video Transcoding) and make sure the API key has the `asset.view` permission. If Immich has no converted version, or the key may not use it, Famlin streams the original file as before.
+
 ### Local folders
 
 Serve photos straight from a directory on the server — handy when your photos already live on the NAS Famlin runs on and are synced there by another tool (Syncthing, rsync, a phone upload app).
