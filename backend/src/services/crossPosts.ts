@@ -15,10 +15,7 @@ import { prisma } from '../db.js'
 // member of only one target group gets exactly that copy's activity and
 // learns nothing about the others (the cross-posting privacy rule). Circle
 // posts can't be cross-posted; the circleId filter is defensive.
-export async function visibleCrossPostSiblingIds(
-  crossPostIds: string[],
-  viewerId: string
-): Promise<Map<string, string[]>> {
+async function visibleCrossPostSiblingIds(crossPostIds: string[], viewerId: string): Promise<Map<string, string[]>> {
   const byCrossPostId = new Map<string, string[]>()
   if (crossPostIds.length === 0) return byCrossPostId
   const siblings = await prisma.post.findMany({

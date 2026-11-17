@@ -33,7 +33,7 @@ interface ChatUser {
   avatarUrl: string | null
 }
 
-export function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
+function shapeChatMessage(message: ChatMessageRow, readBy: ChatUser[]) {
   return {
     id: message.id,
     groupId: message.groupId,

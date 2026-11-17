@@ -9,7 +9,7 @@ import path from 'path'
 // story), kept DELETED_RETENTION_DAYS before being pruned for good — so an
 // accidental delete is recoverable without the mirror growing forever.
 export const DELETED_DIR = '.deleted'
-export const DELETED_RETENTION_DAYS = 30
+const DELETED_RETENTION_DAYS = 30
 
 // uploads/derived/ is a regenerable cache (HEIC renditions, see
 // uploadVariants.ts) — not worth mirroring.
@@ -138,7 +138,7 @@ export async function mirrorUploads(
 }
 
 // Removes `.deleted/<YYYY-MM-DD>` folders older than `retentionDays`. Anything not named like a date is left alone.
-export async function pruneDeleted(deletedRoot: string, now: Date, retentionDays: number): Promise<number> {
+async function pruneDeleted(deletedRoot: string, now: Date, retentionDays: number): Promise<number> {
   let names: string[]
   try {
     names = await fsp.readdir(deletedRoot)

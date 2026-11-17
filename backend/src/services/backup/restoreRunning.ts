@@ -103,7 +103,7 @@ function mapError(err: unknown): RunningRestoreErrorCode {
 
 // Indirection so tests can stub the safety backup's pg_dump through backupDeps
 // and still see the call order.
-export const restoreRunningDeps = { runBackup }
+const restoreRunningDeps = { runBackup }
 
 /**
  * Validates `file` and claims the restore slot synchronously, then runs the

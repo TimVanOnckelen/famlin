@@ -10,7 +10,7 @@ import { mapWithConcurrency } from '../../utils/concurrency.js'
 // connections per client at 3–10 and answer `421 Too many concurrent
 // connections` beyond that, so a notification fan-out never opens more than
 // this many at once (issue #134).
-export const EMAIL_MAX_CONNECTIONS = 3
+const EMAIL_MAX_CONNECTIONS = 3
 
 // Mirrors PUSH_PREF_FIELD in push.ts — mention/on_this_day/new_media_assets
 // reuse the closest existing preference column, see the note there.

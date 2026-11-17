@@ -15,10 +15,6 @@ export function getMediaProvider(id: string): MediaProvider | undefined {
   return providers.get(id)
 }
 
-export function listMediaProviders(): MediaProvider[] {
-  return [...providers.values()]
-}
-
 // Test-only escape hatch (mirrors __clearDomainEventHandlersForTests in
 // events.ts): lets a test register a fake MediaProvider — e.g. to exercise
 // src/jobs/newAssets.ts without hitting a real Immich/local source — and

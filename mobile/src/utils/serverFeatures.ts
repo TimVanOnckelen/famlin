@@ -21,7 +21,7 @@ function missingKey(feature: ServerFeature): string | null {
   return serverUrl ? `${serverUrl}\n${feature}` : null
 }
 
-export function markFeatureMissing(feature: ServerFeature) {
+function markFeatureMissing(feature: ServerFeature) {
   const key = missingKey(feature)
   if (key) missingFeatures.add(key)
 }

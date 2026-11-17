@@ -225,7 +225,7 @@ export const createChatMessageBodySchema = z
     path: ['content'],
   })
 
-export const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
+const reactionTypeSchema = z.enum(['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'CARE'])
 
 export const reactionBodySchema = z.object({
   type: reactionTypeSchema.default('LIKE'),
@@ -300,7 +300,7 @@ const diagnosticFrameStatsSchema = z.object({
   worstFrameMs: boundedMs,
   p95FrameMs: boundedMs,
 })
-export const feedScrollReportDataSchema = z.object({
+const feedScrollReportDataSchema = z.object({
   device: z.string().max(100),
   os: z.string().max(100),
   app: z.string().max(100),
@@ -349,7 +349,7 @@ export const updateNotificationBodySchema = z.object({
   read: z.boolean(),
 })
 
-export const notificationPrefsSchema = z.object({
+const notificationPrefsSchema = z.object({
   emailOnNewPost: z.boolean().optional(),
   emailOnNewComment: z.boolean().optional(),
   emailOnNewLike: z.boolean().optional(),
@@ -531,7 +531,7 @@ export const testLocalMediaBodySchema = z.object({
   rootPath: z.string().regex(/^\//, 'Must be an absolute path').max(500),
 })
 
-export const newAssetModeSchema = z.enum(['OFF', 'MANUAL', 'AUTO'])
+const newAssetModeSchema = z.enum(['OFF', 'MANUAL', 'AUTO'])
 
 export const updateMediaAlbumLinkBodySchema = z.object({
   newAssetMode: newAssetModeSchema,

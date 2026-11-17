@@ -141,7 +141,7 @@ export function areScreensLoaded() {
 // Fetches the brand for `serverUrl` (the API base URL must already point at
 // it), caches it for the next cold start, and — while no branded screen has
 // been loaded yet — applies it right away. Never throws.
-export async function refreshBranding(serverUrl: string): Promise<void> {
+async function refreshBranding(serverUrl: string): Promise<void> {
   try {
     const info = await fetchServerInfo()
     const branding = info.branding ?? null

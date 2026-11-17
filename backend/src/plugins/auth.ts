@@ -169,7 +169,7 @@ export function createUserToken(user: {
 // Session tokens carry no `scope` claim. Media tokens are signed with the same
 // secret, so without this check a 7-day media token lifted from any image URL
 // (copied link, proxy/access log) would pass as a full session credential.
-export function verifyToken(token: string) {
+function verifyToken(token: string) {
   const decoded = jwt.verify(token, config.JWT_SECRET) as AuthenticatedRequest['user'] & {
     tokenVersion: number
     scope?: unknown
@@ -190,7 +190,7 @@ export function createMediaToken(userId: string, tokenVersion: number) {
   return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' })
 }
 
-export function verifyMediaToken(token: string): { id: string; tokenVersion?: number } | null {
+function verifyMediaToken(token: string): { id: string; tokenVersion?: number } | null {
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET) as { id?: string; scope?: string; tokenVersion?: number }
     if (decoded.scope !== 'media' || !decoded.id) return null

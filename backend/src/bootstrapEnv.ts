@@ -12,7 +12,7 @@ import path from 'path'
 
 type Env = Record<string, string | undefined>
 
-export const JWT_SECRET_FILE = path.join('secrets', 'jwt_secret')
+const JWT_SECRET_FILE = path.join('secrets', 'jwt_secret')
 
 export function resolveDataDir(env: Env = process.env, cwd: string = process.cwd()): string {
   return path.resolve(env.DATA_DIR || path.join(cwd, 'data'))

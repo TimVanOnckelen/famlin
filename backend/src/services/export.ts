@@ -62,7 +62,7 @@ import path from 'node:path'
 // Format history: 1 (no `format` field) = the original export, without
 // credentials or settings; 2 = adds password hashes, tokenVersion, settings
 // and `mediaLocation`.
-export const BACKUP_FORMAT = 2
+const BACKUP_FORMAT = 2
 
 // Where the restore finds the media of an archive built without them:
 // 'storage' = still in the server's media storage (S3, or a manual

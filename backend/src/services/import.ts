@@ -77,7 +77,7 @@ export const RESTORED_TOKEN_VERSION = 1_000_000
 
 // `min`: on a running server, one above every tokenVersion in use before the
 // restore, so no session issued before it survives.
-export function restoredTokenVersion(archived: number | undefined, min = 0): number {
+function restoredTokenVersion(archived: number | undefined, min = 0): number {
   return Math.max(RESTORED_TOKEN_VERSION, (archived ?? 0) + 1, min)
 }
 

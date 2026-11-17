@@ -2,7 +2,7 @@ import { prisma } from '../db.js'
 import type { z } from 'zod'
 import type { devicePayloadSchema } from '../types.js'
 
-export const MAX_DEVICES_PER_USER = 20
+const MAX_DEVICES_PER_USER = 20
 export type DevicePayload = z.infer<typeof devicePayloadSchema>
 
 export class DeviceLimitError extends Error {

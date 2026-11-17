@@ -27,7 +27,7 @@ type TFn = (key: string) => string
 // Every media/immich provider call that fails throws MediaProviderError;
 // every route maps it to the same translated status/body. Anything else
 // rethrows to the global error handler, same as an unguarded call would.
-export function sendMediaProviderErrorResponse(err: unknown, reply: FastifyReply, t: TFn) {
+function sendMediaProviderErrorResponse(err: unknown, reply: FastifyReply, t: TFn) {
   if (err instanceof MediaProviderError) {
     return reply.status(mediaErrorStatus(err)).send({ error: t(mediaErrorKey(err)) })
   }
@@ -135,7 +135,7 @@ interface AssetListItem {
   originalUrl: string
 }
 
-export function assetToListItem(link: { id: string }, asset: MediaAssetSummary, urlPrefix: string): AssetListItem {
+function assetToListItem(link: { id: string }, asset: MediaAssetSummary, urlPrefix: string): AssetListItem {
   return {
     assetId: asset.id,
     type: asset.type,

@@ -53,7 +53,7 @@ function matchLanguage(tag: string): SupportedLanguage | undefined {
 
 // First supported language in the device's preference order, so e.g. a
 // phone set to "German, then Dutch" opens in Dutch rather than English.
-export function getDeviceLanguage(): SupportedLanguage {
+function getDeviceLanguage(): SupportedLanguage {
   for (const locale of Localization.getLocales()) {
     const match = matchLanguage(locale.languageTag)
     if (match) return match

@@ -26,8 +26,8 @@ const GIB = 1024 * 1024 * 1024
 
 // A volume counts as low on space below 1 GiB free or below 5% free,
 // whichever trips first.
-export const LOW_DISK_FREE_BYTES = GIB
-export const LOW_DISK_FREE_FRACTION = 0.05
+const LOW_DISK_FREE_BYTES = GIB
+const LOW_DISK_FREE_FRACTION = 0.05
 
 export interface DiskUsage {
   path: string
@@ -55,7 +55,7 @@ export async function getDiskUsage(dir: string): Promise<DiskUsage | null> {
 // Whether `dir` is its own mount point — i.e. a volume or bind mount rather
 // than the container's ephemeral filesystem, where a backup wouldn't survive
 // the container. null when it can't be told (not Linux, dir missing).
-export async function isMountPoint(dir: string): Promise<boolean | null> {
+async function isMountPoint(dir: string): Promise<boolean | null> {
   try {
     const [real, mountinfo] = await Promise.all([fsp.realpath(dir), fsp.readFile('/proc/self/mountinfo', 'utf8')])
     // Field 5 is the mount point, with spaces etc. octal-escaped.
@@ -154,7 +154,7 @@ export interface PushWindow {
 
 // Above this failure rate (with at least PUSH_MIN_SENDS tokens tried) push
 // delivery is flagged as unhealthy in the panel.
-export const PUSH_UNHEALTHY_RATE = 0.2
+const PUSH_UNHEALTHY_RATE = 0.2
 const PUSH_MIN_SENDS = 10
 
 async function pushWindow(since: Date): Promise<PushWindow> {

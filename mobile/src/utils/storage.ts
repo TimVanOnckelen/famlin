@@ -63,10 +63,6 @@ export async function setLanguage(value: string): Promise<void> {
   return setItem(LANGUAGE_KEY, value)
 }
 
-export async function deleteLanguage(): Promise<void> {
-  return deleteItem(LANGUAGE_KEY)
-}
-
 export async function getPushToken(): Promise<string | null> {
   return getItem(PUSH_TOKEN_KEY)
 }

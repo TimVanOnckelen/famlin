@@ -55,7 +55,7 @@ export async function listDumps(dir: string): Promise<DumpListing[]> {
 // Every pg_dump custom-format archive starts with these bytes.
 const PG_CUSTOM_MAGIC = Buffer.from('PGDMP')
 
-export async function isPgCustomDump(file: string): Promise<boolean> {
+async function isPgCustomDump(file: string): Promise<boolean> {
   const handle = await fsp.open(file, 'r')
   try {
     const buf = Buffer.alloc(PG_CUSTOM_MAGIC.length)

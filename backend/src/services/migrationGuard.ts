@@ -6,7 +6,7 @@ import type { PrismaClient } from '@prisma/client'
 
 // The image's own migrations — resolves to backend/prisma/migrations both
 // from src/services (tsx) and dist/services (the compiled image).
-export const MIGRATIONS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations')
+const MIGRATIONS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations')
 
 type RawQueryable = Pick<PrismaClient, '$queryRaw'>
 
@@ -40,7 +40,7 @@ export function findUnknownMigrations(applied: string[] | null, local: string[])
   return applied.filter((name) => !known.has(name)).sort()
 }
 
-export function downgradeErrorMessage(unknown: string[], version: string): string {
+function downgradeErrorMessage(unknown: string[], version: string): string {
   return (
     `Refusing to start: the database was upgraded by a newer Famlin version than this one (${version}). ` +
     `It has migration(s) this version doesn't know about: ${unknown.join(', ')}. ` +

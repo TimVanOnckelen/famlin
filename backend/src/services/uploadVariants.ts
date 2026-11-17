@@ -34,11 +34,7 @@ const THUMBNAIL_WIDTH = 400
 // returns and the route responds), so there's no concurrent reader to guard
 // against and no atomic tmp+rename dance is needed here, unlike the cached
 // renditions in services/media/local.ts.
-export async function generateUploadVariants(
-  originalPath: string,
-  displayPath: string,
-  thumbnailPath: string
-): Promise<void> {
+async function generateUploadVariants(originalPath: string, displayPath: string, thumbnailPath: string): Promise<void> {
   const image = sharp(originalPath).rotate()
 
   await image
@@ -52,39 +48,6 @@ export async function generateUploadVariants(
     .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_WIDTH, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toFile(thumbnailPath)
-}
-
-// Upload-route variant of the pair above: starts both resize pipelines from
-// the same decoded source, but only waits for the display copy — the one
-// URL the route actually returns to the client. The thumbnail's `.toFile()`
-// keeps running after this resolves; the returned promise lets the caller
-// observe/log its outcome without blocking the response on it. A failed or
-// still-pending thumbnail just means `getUploadUrl(path, 'thumbnail')` 404s
-// until it lands, which every client already falls back to the display copy
-// for (MediaThumbnail.tsx's `fallbackUrl` prop) — the same fallback that
-// already covers pre-thumbnail-feature uploads.
-export function generateDisplayVariant(
-  originalPath: string,
-  displayPath: string,
-  thumbnailPath: string
-): { display: Promise<void>; thumbnail: Promise<void> } {
-  const image = sharp(originalPath).rotate()
-
-  const thumbnail = image
-    .clone()
-    .resize({ width: THUMBNAIL_WIDTH, height: THUMBNAIL_WIDTH, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 80 })
-    .toFile(thumbnailPath)
-    .then(() => {})
-
-  const display = image
-    .clone()
-    .resize({ width: DISPLAY_WIDTH, height: DISPLAY_WIDTH, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 85 })
-    .toFile(displayPath)
-    .then(() => {})
-
-  return { display, thumbnail }
 }
 
 // Extracts a poster frame from an uploaded video into the same

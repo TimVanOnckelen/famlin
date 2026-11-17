@@ -20,7 +20,7 @@ export const CUSTOM_PRESET = 'custom'
 // The Setting rows that make up the brand — exported and restored with the
 // family's content (services/export.ts, services/import.ts).
 export const BRANDING_SETTING_KEYS = ['brandPreset', 'brandColor', 'brandName', 'brandLogo'] as const
-export const BRAND_NAME_MAX_LENGTH = 40
+const BRAND_NAME_MAX_LENGTH = 40
 
 // Logo renditions live inside uploadsDir so they ride the same persistent
 // volume (and the admin export) as every other upload, but they are NOT
@@ -90,7 +90,7 @@ export function seedFor(preset: string, color: string | null): string {
   return preset === CUSTOM_PRESET && color ? color : (BRAND_PRESETS[preset] ?? BRAND_PRESETS[DEFAULT_PRESET])
 }
 
-export function logoUrls(logo: string) {
+function logoUrls(logo: string) {
   return logo
     ? { logoUrl: `/branding/logo-${logo}.png`, faviconUrl: `/branding/favicon-${logo}.png` }
     : { logoUrl: null, faviconUrl: null }
@@ -113,11 +113,6 @@ export function buildPublicBranding(resolved: ResolvedBrandSettings): PublicBran
 
 export async function getBranding(): Promise<PublicBranding | null> {
   return buildPublicBranding(resolveBrandSettings(await getAllSettings()))
-}
-
-// The display name for "this family" — push/email titles, page titles.
-export async function getBrandName(): Promise<string | null> {
-  return resolveBrandSettings(await getAllSettings()).name || null
 }
 
 export interface AdminBrandingView {

@@ -72,7 +72,7 @@ interface AppleIdentityTokenPayload {
 // client rather than read from the token: Apple discloses the user's name
 // exactly once, in the authorization response of the very first sign-in, and
 // never in the token itself.
-export async function verifyAppleIdentityToken(
+async function verifyAppleIdentityToken(
   identityToken: string,
   fullName: string | undefined,
   binding: AppleNonceBinding,

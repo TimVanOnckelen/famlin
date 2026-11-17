@@ -26,7 +26,7 @@ const restoreBody = z.object({ confirm: z.string().max(200) })
 
 // What the admin types to confirm a restore: the family's name, or "Famlin"
 // for an unbranded server.
-export async function restoreConfirmName(): Promise<string> {
+async function restoreConfirmName(): Promise<string> {
   const { brandName } = await getAllSettings()
   return brandName.trim() || 'Famlin'
 }

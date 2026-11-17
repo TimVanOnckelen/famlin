@@ -66,7 +66,7 @@ export function compareVersions(a: string, b: string): number | null {
   return 0
 }
 
-export async function fetchLatestRelease(): Promise<Omit<StoredUpdateCheck, 'checkedAt'>> {
+async function fetchLatestRelease(): Promise<Omit<StoredUpdateCheck, 'checkedAt'>> {
   const res = await fetch(LATEST_RELEASE_URL, {
     headers: { 'User-Agent': 'famlin-server', Accept: 'application/vnd.github+json' },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

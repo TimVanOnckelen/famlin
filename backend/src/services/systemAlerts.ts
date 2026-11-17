@@ -20,7 +20,7 @@ export interface ActiveAlert {
 
 const DAY_MS = 24 * 60 * 60 * 1000
 // At most one email per condition per this window.
-export const ALERT_EMAIL_THROTTLE_MS = DAY_MS
+const ALERT_EMAIL_THROTTLE_MS = DAY_MS
 
 export interface BackupAlertInput {
   enabled: boolean

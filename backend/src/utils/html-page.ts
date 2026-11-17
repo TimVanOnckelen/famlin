@@ -7,7 +7,7 @@ export function escapeHtml(value: string): string {
 
 // Matches the app's Logo component (mobile/src/components/Logo.tsx): a
 // teal-gradient rounded square with a white house glyph.
-export const LOGO_SVG = `<svg width="56" height="56" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+const LOGO_SVG = `<svg width="56" height="56" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="famlinLogoGradient" x1="0%" y1="0%" x2="85%" y2="100%">
       <stop offset="0" stop-color="#318ea2" />

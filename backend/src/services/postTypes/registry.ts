@@ -58,16 +58,5 @@ export function resolveAllowedPostTypes(group: { allowedPostTypes: string[] }): 
   return group.allowedPostTypes.filter((id) => handlers.has(id))
 }
 
-// Test-only escape hatch (mirrors __registerMediaProviderForTests in
-// services/media/registry.ts): lets a test register a fake PostTypeHandler
-// and remove it afterwards so it can't leak into other test files.
-export function __registerPostTypeHandlerForTests(handler: PostTypeHandler): void {
-  handlers.set(handler.id, handler)
-}
-
-export function __unregisterPostTypeHandlerForTests(id: string): void {
-  handlers.delete(id)
-}
-
 export { PostTypeError } from './types.js'
 export type { PostTypeHandler } from './types.js'

@@ -4,7 +4,7 @@ import { getT } from '../i18n/index.js'
 import { requestPathname } from '../utils/requestPath.js'
 import { isRestoreRunning } from '../services/backup/index.js'
 
-export const RESTORE_IN_PROGRESS_CODE = 'RESTORE_IN_PROGRESS'
+const RESTORE_IN_PROGRESS_CODE = 'RESTORE_IN_PROGRESS'
 
 // Reachable while a restore runs: its own progress, and the health check.
 const ALLOWED = new Set(['/api/auth/restore-status', '/health'])

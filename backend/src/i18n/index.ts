@@ -39,7 +39,7 @@ function matchLanguage(tag: string): SupportedLanguage | undefined {
   )
 }
 
-export function parseAcceptLanguage(header?: string): SupportedLanguage {
+function parseAcceptLanguage(header?: string): SupportedLanguage {
   if (!header) return DEFAULT_LANGUAGE
 
   const parsed = header
@@ -60,7 +60,7 @@ export function parseAcceptLanguage(header?: string): SupportedLanguage {
   return parsed[0]?.language ?? DEFAULT_LANGUAGE
 }
 
-export function getLanguageFromRequest(request: FastifyRequest): SupportedLanguage {
+function getLanguageFromRequest(request: FastifyRequest): SupportedLanguage {
   const header = request.headers['accept-language']
   return parseAcceptLanguage(Array.isArray(header) ? header[0] : header)
 }

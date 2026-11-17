@@ -94,7 +94,7 @@ const SEMANTIC_FAMILIES: Record<SemanticFamily, { hue: number; altHue: number; t
 // Coral and gold are only ~35° apart, so a brand between them shifts both.
 export const COLLISION_HUE_DISTANCE = 25
 // Below this chroma a brand reads as gray and has no hue to collide with.
-export const COLLISION_MIN_CHROMA = 0.04
+const COLLISION_MIN_CHROMA = 0.04
 // WCAG AA for normal text: white button labels on `primary`.
 export const MIN_CONTRAST = 4.5
 

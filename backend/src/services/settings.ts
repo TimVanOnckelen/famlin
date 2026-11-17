@@ -16,7 +16,7 @@ const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/us/app/famlin/id6786783660
 // under a different bundle id adds theirs to the appleBundleIds setting.
 const DEFAULT_APPLE_BUNDLE_ID = 'be.xeweb.famlin'
 
-export const BACKUP_SCHEDULES = ['daily', 'weekly'] as const
+const BACKUP_SCHEDULES = ['daily', 'weekly'] as const
 export type BackupSchedule = (typeof BACKUP_SCHEDULES)[number]
 
 export interface ServerSettings {

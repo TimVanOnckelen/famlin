@@ -41,7 +41,7 @@ export function shouldShowOldServerBanner(
 
 // Dismissal is remembered per server URL, holding the server version it was
 // dismissed for.
-export function oldServerDismissalKey(serverUrl: string): string {
+function oldServerDismissalKey(serverUrl: string): string {
   return `famlin_old_server_dismissed:${serverUrl}`
 }
 
