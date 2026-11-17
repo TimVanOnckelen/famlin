@@ -37,6 +37,7 @@
     "users": "Users",
     "groups": "Groups",
     "content": "Content",
+    "integrations": "Integrations",
     "operations": "Operations",
     "pushLog": "Push notification log",
     "devices": "Devices",
@@ -47,8 +48,7 @@
     "systemStatus": "System status",
     "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved.",
     "diagnostics": "Diagnostics",
-    "backups": "Backups",
-    "integrations": "Integrations"
+    "backups": "Backups"
   },
   "devices": {
     "title": "Mobile devices",

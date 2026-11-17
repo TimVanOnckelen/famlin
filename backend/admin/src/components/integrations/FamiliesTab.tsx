@@ -65,13 +65,21 @@ export function FamiliesTab({
           <TableBody>
             {families.map((family) => (
               <TableRow key={family.groupId}>
-                <TableCell>
+                {/* data-label: the field name a phone shows when the shared Table
+                    renders each row as a card. The unlabeled last cell holds
+                    the row's actions. */}
+                <TableCell data-label={t('integrations.families.family')}>
                   <strong>{family.name}</strong>
                 </TableCell>
-                <TableCell className={family.albums.length ? '' : 'muted'}>
+                <TableCell
+                  className={family.albums.length ? '' : 'muted'}
+                  data-label={t('integrations.families.albums')}
+                >
                   {family.albums.length ? family.albums.join(', ') : '—'}
                 </TableCell>
-                {provider === 'immich' && <TableCell>{mirrorCell(family)}</TableCell>}
+                {provider === 'immich' && (
+                  <TableCell data-label={t('integrations.families.mirror')}>{mirrorCell(family)}</TableCell>
+                )}
                 <TableCell className="text-right">
                   <Button variant="secondary" size="sm" onClick={() => setEditing(family)}>
                     {family.albums.length || family.mirror ? t('common.edit') : t('integrations.setUp')}

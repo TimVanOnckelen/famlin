@@ -37,6 +37,7 @@
     "users": "Gebruikers",
     "groups": "Groepen",
     "content": "Inhoud",
+    "integrations": "Integraties",
     "operations": "Beheer",
     "pushLog": "Pushmeldingenlogboek",
     "devices": "Apparaten",
@@ -47,8 +48,7 @@
     "systemStatus": "Systeemstatus",
     "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen.",
     "diagnostics": "Diagnose",
-    "backups": "Back-ups",
-    "integrations": "Integraties"
+    "backups": "Back-ups"
   },
   "devices": {
     "title": "Mobiele apparaten",
