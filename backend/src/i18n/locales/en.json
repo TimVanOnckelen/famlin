@@ -145,7 +145,9 @@
     "mediaMirrorAlbumNotFound": "The Immich album was not found, or the upload key cannot access it",
     "mediaMirrorUnauthorized": "Immich rejected the upload key",
     "mediaMirrorAlbumRequired": "Choose an album to mirror into",
-    "mediaMirrorNotFound": "Mirroring is not set up for this family"
+    "mediaMirrorNotFound": "Mirroring is not set up for this family",
+    "mediaMirrorAlbumLinkedElsewhere": "This album is linked to another family. Mirroring into it would show this family's photos there — choose or create another album.",
+    "mediaAlbumMirroredElsewhere": "Another family mirrors its uploads into this album. Linking it here would show that family's photos — choose another album."
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",

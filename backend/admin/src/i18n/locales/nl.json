@@ -323,7 +323,7 @@
       "enableConfirm": "Wie het Immich-album kan zien, regel je in Immich, niet via het lidmaatschap van de familie: wie uit deze familie wordt verwijderd, blijft zien wat al gespiegeld is. Spiegelen aanzetten?",
       "on": "Aan",
       "paused": "Gepauzeerd",
-      "counts": "{{mirrored}} gespiegeld · {{pending}} wachtend · {{failed}} mislukt",
+      "counts": "{{mirrored}} gespiegeld · {{failed}} mislukt",
       "sinceValue": "sinds {{date}}",
       "lastSynced": "Laatst gesynchroniseerd {{date}}",
       "neverSynced": "Nog niet gesynchroniseerd — de spiegel draait elke 10 minuten.",
@@ -332,9 +332,9 @@
       "syncStarted": "Er is een synchronisatie gestart. Mislukte uploads krijgen opnieuw een reeks pogingen.",
       "pause": "Pauzeren",
       "resume": "Hervatten",
-      "stop": "Stoppen met spiegelen",
-      "stopConfirm": "Stoppen met spiegelen voor deze familie? Het Immich-album houdt wat het al heeft.",
-      "error": "Kan spiegelen niet bijwerken: {{error}}"
+      "error": "Kan spiegelen niet bijwerken: {{error}}",
+      "syncAlreadyRunning": "Er loopt al een synchronisatie. Mislukte uploads worden bij de volgende ronde opnieuw geprobeerd.",
+      "pauseHint": "Pauzeren stopt het toevoegen van foto's; Famlin haalt verwijderde berichten nog wel uit het album."
     }
   },
   "content": {

@@ -323,7 +323,7 @@
       "enableConfirm": "Who can see the Immich album is managed in Immich, not by family membership: someone removed from this family keeps seeing what was already mirrored. Turn on mirroring?",
       "on": "On",
       "paused": "Paused",
-      "counts": "{{mirrored}} mirrored · {{pending}} pending · {{failed}} failed",
+      "counts": "{{mirrored}} mirrored · {{failed}} failed",
       "sinceValue": "since {{date}}",
       "lastSynced": "Last synced {{date}}",
       "neverSynced": "Not synced yet — the mirror runs every 10 minutes.",
@@ -332,9 +332,9 @@
       "syncStarted": "A sync has started. Failed uploads get a fresh set of retries.",
       "pause": "Pause",
       "resume": "Resume",
-      "stop": "Stop mirroring",
-      "stopConfirm": "Stop mirroring this family? The Immich album keeps what it already has.",
-      "error": "Could not update mirroring: {{error}}"
+      "error": "Could not update mirroring: {{error}}",
+      "syncAlreadyRunning": "A sync is already running. Failed uploads will be retried on its next pass.",
+      "pauseHint": "Pause stops adding photos; Famlin still takes deleted posts back out of the album."
     }
   },
   "content": {

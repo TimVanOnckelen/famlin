@@ -73,7 +73,7 @@ import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAle
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
 import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.js'
 import adminBackupRoutes from './adminBackups.js'
-import adminMediaMirrorRoutes from './adminMediaMirror.js'
+import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -1311,6 +1311,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const provider = getMediaProvider(body.provider)!
     if (!provider.isValidAlbumId(body.externalAlbumId)) {
       return reply.status(400).send({ error: t('errors.validationFailed') })
+    }
+    // Another family's upload mirror album: linking it here would show that
+    // family's photos to this one (issue #420).
+    if (body.provider === 'immich' && (await isMirroredElsewhere(id, body.externalAlbumId))) {
+      return reply.status(409).send({ error: t('errors.mediaAlbumMirroredElsewhere') })
     }
 
     try {

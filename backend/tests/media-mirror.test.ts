@@ -16,12 +16,22 @@ class FakeImmich {
   albums = new Map<string, Set<string>>()
   assets = new Map<
     string,
-    { id: string; filename: string; bytes: string; livePhotoVideoId?: string; hidden: boolean }
+    {
+      id: string
+      filename: string
+      bytes: string
+      livePhotoVideoId?: string
+      hidden: boolean
+      deviceId?: string
+      deviceAssetId?: string
+    }
   >()
   byChecksum = new Map<string, string>()
   down = false
   failUploads = false
   permissions: string[] = ['all']
+  // Applies the next album add, then drops the connection before answering.
+  dropNextAddResponse = false
 
   async handle(url: string, init: RequestInit = {}): Promise<Response> {
     if (this.down) throw new TypeError('fetch failed')
@@ -30,12 +40,16 @@ class FakeImmich {
     const body = typeof init.body === 'string' ? JSON.parse(init.body) : undefined
     const ok = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status })
     let m: RegExpExecArray | null
-    if (pathname === '/api/server/about') return ok({ version: 'v2' })
+    if (pathname === '/api/server/ping') return ok({ res: 'pong' })
     if (pathname === '/api/api-keys/me') return ok({ permissions: this.permissions })
     if (pathname === '/api/albums' && method === 'POST') {
       const id = randomUUID()
       this.albums.set(id, new Set())
       return ok({ id, albumName: body.albumName }, 201)
+    }
+    if ((m = /^\/api\/assets\/([^/]+)$/.exec(pathname))) {
+      const asset = this.assets.get(m[1])
+      return asset ? ok(asset) : ok({ message: 'Not found' }, 400)
     }
     if ((m = /^\/api\/albums\/([^/]+)$/.exec(pathname))) {
       return this.albums.has(m[1]) ? ok({ id: m[1] }) : ok({ message: 'Not found' }, 400)
@@ -61,22 +75,28 @@ class FakeImmich {
         filename: String(form.get('filename')),
         livePhotoVideoId: (form.get('livePhotoVideoId') as string | null) ?? undefined,
         hidden: form.get('visibility') === 'hidden',
+        deviceId: String(form.get('deviceId')),
+        deviceAssetId: String(form.get('deviceAssetId')),
       })
       return ok({ id, status: 'created' }, 201)
     }
     if ((m = /^\/api\/albums\/([^/]+)\/assets$/.exec(pathname))) {
       const album = this.albums.get(m[1])
       if (!album) return ok({ message: 'Not found' }, 400)
-      return ok(
-        (body.ids as string[]).map((id) => {
-          if (method === 'PUT') {
-            if (album.has(id)) return { id, success: false, error: 'duplicate' }
-            album.add(id)
-            return { id, success: true }
-          }
-          return { id, success: album.delete(id) }
-        })
-      )
+      const results = (body.ids as string[]).map((id) => {
+        if (method === 'PUT') {
+          if (!this.assets.has(id)) return { id, success: false, error: 'not_found' }
+          if (album.has(id)) return { id, success: false, error: 'duplicate' }
+          album.add(id)
+          return { id, success: true }
+        }
+        return { id, success: album.delete(id) }
+      })
+      if (method === 'PUT' && this.dropNextAddResponse) {
+        this.dropNextAddResponse = false
+        throw new TypeError('socket hang up')
+      }
+      return ok(results)
     }
     return ok({ message: `unexpected ${method} ${pathname}` }, 500)
   }
@@ -352,16 +372,61 @@ describe('Immich upload mirror', () => {
     expect(await prisma.mediaMirror.count()).toBe(0)
   })
 
-  it('keeps the album as-is while mirroring is turned off', async () => {
+  it('while paused adds nothing new but still takes deleted posts out', async () => {
     const { member, group, albumId } = await setup()
-    const photo = await storeUpload(member.id, { groupIds: [group.id] })
-    const post = await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [photo.url] })
+    const kept = await storeUpload(member.id, { groupIds: [group.id] })
+    const deleted = await storeUpload(member.id, { groupIds: [group.id] })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [kept.url] })
+    const post = await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [deleted.url] })
     await runMediaMirrorJob()
     await prisma.mediaMirrorTarget.updateMany({ data: { enabled: false } })
     await prisma.post.delete({ where: { id: post.id } })
+    const added = await storeUpload(member.id, { groupIds: [group.id] })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [added.url] })
 
-    expect(await runMediaMirrorJob()).toMatchObject({ albums: 0, removed: 0 })
-    expect(immich.albumFiles(albumId)).toHaveLength(1)
+    expect(await runMediaMirrorJob()).toMatchObject({ uploaded: 0, removed: 1 })
+    expect(immich.albumFiles(albumId)).toEqual([kept.original])
+  })
+
+  it("switching albums takes Famlin's photos out of the old album", async () => {
+    const { member, group, albumId } = await setup()
+    const photo = await storeUpload(member.id, { groupIds: [group.id] })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [photo.url] })
+    await runMediaMirrorJob()
+    const newAlbum = randomUUID()
+    immich.albums.set(newAlbum, new Set())
+    await prisma.mediaMirrorTarget.updateMany({ data: { externalAlbumId: newAlbum } })
+
+    await runMediaMirrorJob()
+    expect(immich.albumFiles(albumId)).toEqual([])
+    expect(immich.albumFiles(newAlbum)).toEqual([photo.original])
+    expect(await prisma.mediaMirror.count({ where: { externalAlbumId: albumId } })).toBe(0)
+  })
+
+  it('keeps ownership when the album add answer is lost, so the photo still comes out later', async () => {
+    const { member, group, albumId } = await setup()
+    const photo = await storeUpload(member.id, { groupIds: [group.id] })
+    const post = await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [photo.url] })
+    immich.dropNextAddResponse = true
+    await expect(runMediaMirrorJob()).rejects.toThrow('could not be mirrored')
+    expect(immich.albumFiles(albumId)).toEqual([photo.original])
+
+    await runMediaMirrorJob()
+    expect(await prisma.mediaMirror.findFirstOrThrow({ where: { assetKey: photo.assetKey } })).toMatchObject({
+      status: 'mirrored',
+      addedByFamlin: true,
+    })
+    await prisma.post.delete({ where: { id: post.id } })
+    await runMediaMirrorJob()
+    expect(immich.albumFiles(albumId)).toEqual([])
+  })
+
+  it('does nothing without an upload key', async () => {
+    const { member, group } = await setup()
+    const photo = await storeUpload(member.id, { groupIds: [group.id] })
+    await createPost({ groupId: group.id, authorId: member.id, uploadedAssetUrls: [photo.url] })
+    await updateSettings({ immichMirrorApiKey: '' })
+    expect(await runMediaMirrorJob()).toEqual({ albums: 0, uploaded: 0, removed: 0, failed: 0 })
   })
 
   it('re-uploads an asset the album no longer has (e.g. after a restore onto another server)', async () => {
@@ -465,7 +530,7 @@ describe('Immich upload mirror', () => {
         url: `/api/admin/groups/${group.id}/media-mirror`,
         headers: authHeader(admin),
       })
-      expect(get.json()).toMatchObject({ configured: true, counts: { mirrored: 0, pending: 0, failed: 0 } })
+      expect(get.json()).toMatchObject({ configured: true, counts: { mirrored: 0, failed: 0 } })
     })
 
     it('requires an album the write key can see, and a configured key', async () => {
@@ -496,17 +561,32 @@ describe('Immich upload mirror', () => {
       expect(unconfigured.json().code).toBe('not_configured')
     })
 
-    it('is admin-only', async () => {
-      const member = await createUser()
-      const group = await createGroupWithMember(member)
+    it("refuses a mirror album linked to another family, and linking another family's mirror album", async () => {
+      const admin = await createUser({ isAdmin: true })
+      const a = await createGroupWithMember(admin)
+      const b = await createGroupWithMember(admin)
+      const linked = randomUUID()
+      immich.albums.set(linked, new Set())
+      await prisma.mediaAlbumLink.create({
+        data: { groupId: b.id, provider: 'immich', externalAlbumId: linked, albumName: 'B' },
+      })
       const res = await app.inject({
         method: 'PUT',
-        url: `/api/admin/groups/${group.id}/media-mirror`,
-        headers: authHeader(member),
-        payload: { enabled: true, album: { mode: 'create' } },
+        url: `/api/admin/groups/${a.id}/media-mirror`,
+        headers: authHeader(admin),
+        payload: { enabled: true, album: { mode: 'existing', externalAlbumId: linked, albumName: 'B' } },
       })
-      expect(res.statusCode).toBe(403)
-      expect(await prisma.mediaMirrorTarget.count()).toBe(0)
+      expect(res.statusCode).toBe(409)
+
+      const mirror = randomUUID()
+      await enableMirror(a.id, mirror)
+      const link = await app.inject({
+        method: 'POST',
+        url: `/api/admin/groups/${b.id}/media-albums`,
+        headers: authHeader(admin),
+        payload: { provider: 'immich', externalAlbumId: mirror, albumName: 'A' },
+      })
+      expect(link.statusCode).toBe(409)
     })
 
     it('the connection test reports missing scopes, and never sends the saved key elsewhere', async () => {

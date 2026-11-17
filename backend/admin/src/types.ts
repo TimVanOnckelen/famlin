@@ -255,7 +255,7 @@ export interface MediaMirrorOverview {
   configured: boolean
   maxAttempts: number
   target: MediaMirrorTarget | null
-  counts: { mirrored: number; pending: number; failed: number }
+  counts: { mirrored: number; failed: number }
   failures: { assetKey: string; attempts: number; lastError: string | null; updatedAt: string }[]
 }
 

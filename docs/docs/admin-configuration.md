@@ -148,7 +148,11 @@ A background job runs every 10 minutes. The section shows how many uploads are m
 
 **When a post is deleted or a photo is edited out**, Famlin removes it from the album. It never deletes the photo from Immich itself, and it only removes photos it added. If the album already held the same photo (because a phone backup put it there, say), Famlin leaves it alone.
 
-**Pause** stops syncing and leaves the album as it is. **Resume** picks up where it stopped. **Stop mirroring** forgets the album choice; the album keeps its photos.
+**Pause** stops adding new photos. Famlin still takes photos of deleted posts back out of the album while paused. **Resume** picks up where it stopped. If a family is switched to another album (through the admin API), Famlin takes the photos it added out of the old album.
+
+Removing a photo from the album never deletes it from Immich: it stays in the library of the Immich user the upload key belongs to. A mirrored photo that someone removes from the album by hand in Immich is added back on the next sync while its post exists.
+
+An album that is linked to a **different** family under **Linked albums** can't be chosen as a mirror album, and another family's mirror album can't be linked: either way, one family's photos would show up in the other's Photos tab. Two families can share one mirror album; a photo posted to both is uploaded once.
 
 :::warning Who can see the album is decided in Immich
 Anyone the Immich album is shared with sees every mirrored photo, whether or not they are in the family in Famlin. Someone removed from the family keeps access to what was already mirrored until you change the album's sharing in Immich. Famlin does not manage Immich sharing.

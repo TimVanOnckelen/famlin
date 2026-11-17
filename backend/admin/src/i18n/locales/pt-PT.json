@@ -323,7 +323,7 @@
       "enableConfirm": "Quem pode ver o álbum do Immich é gerido no Immich, não pela pertença à família: alguém removido desta família continua a ver o que já foi espelhado. Ativar espelhamento?",
       "on": "Ativo",
       "paused": "Em pausa",
-      "counts": "{{mirrored}} espelhados · {{pending}} pendentes · {{failed}} falhados",
+      "counts": "{{mirrored}} espelhados · {{failed}} falhados",
       "sinceValue": "desde {{date}}",
       "lastSynced": "Última sincronização {{date}}",
       "neverSynced": "Ainda não sincronizado — o espelho corre a cada 10 minutos.",
@@ -332,9 +332,9 @@
       "syncStarted": "Começou uma sincronização. Os envios falhados recebem novas tentativas.",
       "pause": "Pausar",
       "resume": "Retomar",
-      "stop": "Parar espelhamento",
-      "stopConfirm": "Parar o espelhamento desta família? O álbum do Immich mantém o que já tem.",
-      "error": "Não foi possível atualizar o espelhamento: {{error}}"
+      "error": "Não foi possível atualizar o espelhamento: {{error}}",
+      "syncAlreadyRunning": "Já está a decorrer uma sincronização. Os envios falhados serão repetidos na próxima passagem.",
+      "pauseHint": "Pausar deixa de adicionar fotos; o Famlin continua a retirar do álbum as publicações apagadas."
     }
   },
   "content": {

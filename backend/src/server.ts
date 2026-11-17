@@ -11,7 +11,7 @@ import { pruneDiagnosticReports } from './services/diagnosticReports.js'
 import { runScheduledBackupIfDue } from './services/backup/index.js'
 import { runSystemAlertsCheck } from './services/systemAlerts.js'
 import { runUpdateCheck } from './services/updateCheck.js'
-import { runMediaMirrorJob } from './services/mediaMirror.js'
+import { startMediaMirrorRun } from './services/mediaMirror.js'
 
 // Just under docker-compose.yml's stop_grace_period (30s).
 const SHUTDOWN_TIMEOUT_MS = 25_000
@@ -112,11 +112,7 @@ async function start() {
   // services/mediaMirror.ts). A run with nothing configured is a single
   // query.
   const mediaMirrorTask = cron.schedule('5-59/10 * * * *', () => {
-    recordJobRun(
-      'mediaMirror',
-      () => runMediaMirrorJob(),
-      (result) => ({ ...result })
-    ).catch((err) => fastify.log.warn({ err }, 'media mirror job failed'))
+    startMediaMirrorRun().catch((err) => fastify.log.warn({ err }, 'media mirror job failed'))
   })
 
   // `docker stop` sends SIGTERM, then SIGKILLs after the compose file's

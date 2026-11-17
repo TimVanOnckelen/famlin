@@ -323,7 +323,7 @@
       "enableConfirm": "谁能查看 Immich 相册由 Immich 管理，而不是由家庭成员身份决定：被移出此家庭的人仍能看到已同步的内容。确定开启同步？",
       "on": "已开启",
       "paused": "已暂停",
-      "counts": "已同步 {{mirrored}} · 等待中 {{pending}} · 失败 {{failed}}",
+      "counts": "已同步 {{mirrored}} · 失败 {{failed}}",
       "sinceValue": "自 {{date}} 起",
       "lastSynced": "上次同步：{{date}}",
       "neverSynced": "尚未同步 —— 同步每 10 分钟运行一次。",
@@ -332,9 +332,9 @@
       "syncStarted": "已开始同步。失败的上传将重新获得重试机会。",
       "pause": "暂停",
       "resume": "继续",
-      "stop": "停止同步",
-      "stopConfirm": "停止此家庭的同步？Immich 相册会保留已有内容。",
-      "error": "无法更新同步设置：{{error}}"
+      "error": "无法更新同步设置：{{error}}",
+      "syncAlreadyRunning": "同步已在进行中。失败的上传将在下一轮重试。",
+      "pauseHint": "暂停后不再添加照片；已删除帖子的照片仍会被 Famlin 从相册中移除。"
     }
   },
   "content": {

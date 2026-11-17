@@ -259,9 +259,9 @@ export async function isUnboundUploadOwnedBy(assetPath: string, userId: string):
   return !!row && row.uploaderId === userId && !row.bound
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // Every extension routes/uploads.ts can have written an original under.
-const ORIGINAL_EXTENSIONS = [
+export const ORIGINAL_EXTENSIONS = [
   '.jpg',
   '.jpeg',
   '.png',

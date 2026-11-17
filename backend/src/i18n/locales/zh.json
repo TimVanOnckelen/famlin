@@ -145,7 +145,9 @@
     "mediaMirrorAlbumNotFound": "未找到该 Immich 相册，或上传密钥无权访问它",
     "mediaMirrorUnauthorized": "Immich 拒绝了上传密钥",
     "mediaMirrorAlbumRequired": "请选择要同步到的相册",
-    "mediaMirrorNotFound": "此家庭尚未设置同步"
+    "mediaMirrorNotFound": "此家庭尚未设置同步",
+    "mediaMirrorAlbumLinkedElsewhere": "此相册已关联到另一个家庭。同步到此相册会让对方看到此家庭的照片——请选择或创建其他相册。",
+    "mediaAlbumMirroredElsewhere": "另一个家庭正将上传内容同步到此相册。在此关联会显示该家庭的照片——请选择其他相册。"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

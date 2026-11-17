@@ -145,7 +145,9 @@
     "mediaMirrorAlbumNotFound": "L'album Immich est introuvable, ou la clé d'envoi n'y a pas accès",
     "mediaMirrorUnauthorized": "Immich a refusé la clé d'envoi",
     "mediaMirrorAlbumRequired": "Choisissez un album vers lequel copier",
-    "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille"
+    "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille",
+    "mediaMirrorAlbumLinkedElsewhere": "Cet album est lié à une autre famille. Y copier les envois y montrerait les photos de cette famille — choisissez ou créez un autre album.",
+    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album."
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",

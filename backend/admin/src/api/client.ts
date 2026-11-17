@@ -548,11 +548,8 @@ export const api = {
     data: { enabled: boolean; album?: MediaMirrorAlbumChoice; mirrorSince?: string }
   ) => request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'PUT', body: data }),
 
-  removeMediaMirror: (groupId: string) =>
-    request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'DELETE' }),
-
   syncMediaMirror: (groupId: string) =>
-    request<{ started: true }>(`/api/admin/groups/${groupId}/media-mirror/sync`, { method: 'POST' }),
+    request<{ started: boolean }>(`/api/admin/groups/${groupId}/media-mirror/sync`, { method: 'POST' }),
 
   testLocalMediaPath: (rootPath: string) =>
     request<{ ok: true } | { ok: false; error: 'not_found' | 'not_a_directory' }>('/api/admin/media/local/test', {

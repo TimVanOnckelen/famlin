@@ -323,7 +323,7 @@
       "enableConfirm": "Qui peut voir l'album Immich se gère dans Immich, pas par l'appartenance à la famille : une personne retirée de cette famille continue de voir ce qui a déjà été copié. Activer la copie ?",
       "on": "Activée",
       "paused": "En pause",
-      "counts": "{{mirrored}} copiés · {{pending}} en attente · {{failed}} en échec",
+      "counts": "{{mirrored}} copiés · {{failed}} en échec",
       "sinceValue": "depuis le {{date}}",
       "lastSynced": "Dernière synchronisation {{date}}",
       "neverSynced": "Pas encore synchronisé — la copie s'exécute toutes les 10 minutes.",
@@ -332,9 +332,9 @@
       "syncStarted": "Une synchronisation a démarré. Les envois en échec ont droit à de nouvelles tentatives.",
       "pause": "Mettre en pause",
       "resume": "Reprendre",
-      "stop": "Arrêter la copie",
-      "stopConfirm": "Arrêter la copie pour cette famille ? L'album Immich garde ce qu'il contient déjà.",
-      "error": "Impossible de mettre à jour la copie : {{error}}"
+      "error": "Impossible de mettre à jour la copie : {{error}}",
+      "syncAlreadyRunning": "Une synchronisation est déjà en cours. Les envois en échec seront réessayés au prochain passage.",
+      "pauseHint": "La pause arrête l'ajout de photos ; Famlin retire toujours de l'album les publications supprimées."
     }
   },
   "content": {
