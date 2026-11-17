@@ -1,5 +1,6 @@
 import {
   estimateFrameIntervalMs,
+  estimateJsFrameIntervalMs,
   formatScrollReport,
   rateHitches,
   summarizeContent,
@@ -22,6 +23,33 @@ describe('estimateFrameIntervalMs', () => {
 
   it('assumes 60 Hz when nothing was recorded', () => {
     expect(estimateFrameIntervalMs([])).toBeCloseTo(FRAME_60)
+  })
+})
+
+describe('estimateJsFrameIntervalMs', () => {
+  it('judges a 60 Hz JS loop on a 120 Hz display against its own rate', () => {
+    // The first real report: rAF ticking at ~60 Hz next to a 120 Hz screen,
+    // no frame over 23 ms — every tick used to count as a dropped frame.
+    const js = [...Array(200).fill(16.7), ...Array(15).fill(17.2), 23]
+    const interval = estimateJsFrameIntervalMs(js, FRAME_120)
+    expect(interval).toBeCloseTo(FRAME_60)
+    const stats = summarizeFrames(js, interval)
+    expect(stats.droppedFrames).toBe(0)
+    expect(stats.hitchMsPerSecond).toBe(0)
+  })
+
+  it('still catches a long JS task', () => {
+    const js = [...Array(59).fill(FRAME_60), 100]
+    const stats = summarizeFrames(js, estimateJsFrameIntervalMs(js, FRAME_120))
+    expect(stats.droppedFrames).toBe(5)
+  })
+
+  it('never runs faster than the display', () => {
+    expect(estimateJsFrameIntervalMs(Array(60).fill(8.4), FRAME_60)).toBeCloseTo(FRAME_60)
+  })
+
+  it('falls back to the display rate when nothing was recorded', () => {
+    expect(estimateJsFrameIntervalMs([], FRAME_120)).toBeCloseTo(FRAME_120)
   })
 })
 
@@ -104,5 +132,22 @@ it('formats a report without anything identifying', () => {
   expect(text).toContain('Posts seen: 1 (UPDATE 1)')
   expect(text).toContain('Media: 2 items in 1 posts, 1 multi-photo posts, 0 videos')
   expect(text).toContain('Images loaded while recording: 2 network, 1 disk, 0 memory')
+  expect(text).not.toContain('Hz ticks')
   expect(text).not.toContain('/uploads/')
+})
+
+it('labels a JS loop that ticks slower than the display', () => {
+  const text = formatScrollReport({
+    device: 'iPhone 15 Pro Max',
+    os: 'iOS 27.3',
+    app: '0.9.3 (1)',
+    server: '0.9.3',
+    refreshHz: 120,
+    jsRefreshHz: 60,
+    ui: summarizeFrames(Array(120).fill(FRAME_120), FRAME_120),
+    js: summarizeFrames(Array(60).fill(FRAME_60), FRAME_60),
+    content: summarizeContent([]),
+    imageLoads: { network: 0, disk: 0, memory: 0 },
+  })
+  expect(text).toContain('JS thread (60 Hz ticks): 0.0 ms/s hitches (good)')
 })

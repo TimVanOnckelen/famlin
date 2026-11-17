@@ -47,6 +47,8 @@ export interface ScrollReport {
   app: string
   server: string
   refreshHz: number
+  /** The JS thread's frame-loop rate, when it differs from `refreshHz`. */
+  jsRefreshHz?: number
   ui: FrameStats
   js: FrameStats
   content: ContentStats
@@ -70,6 +72,20 @@ export function estimateFrameIntervalMs(durations: number[]): number {
   return REFRESH_INTERVALS_MS.reduce((best, candidate) =>
     Math.abs(candidate - fast) < Math.abs(best - fast) ? candidate : best
   )
+}
+
+/**
+ * The interval the JS thread's frame loop ticks at. React Native's
+ * `requestAnimationFrame` isn't tied to the display's rate: on a 120 Hz
+ * iPhone it ticks at 60 Hz while the UI thread runs at 120, so judging its
+ * frames against the display interval reports every tick as a dropped frame
+ * (issue #357's first report: 496 ms/s "hitches" with a p95 of 17 ms and no
+ * frame over 23 ms). Its own rate comes from its own on-time frames, never
+ * faster than the display's.
+ */
+export function estimateJsFrameIntervalMs(jsDurations: number[], displayIntervalMs: number): number {
+  if (jsDurations.length === 0) return displayIntervalMs
+  return Math.max(displayIntervalMs, estimateFrameIntervalMs(jsDurations))
 }
 
 export function summarizeFrames(durations: number[], frameIntervalMs: number): FrameStats {
@@ -146,7 +162,12 @@ export function formatScrollReport(report: ScrollReport): string {
     `App: ${report.app} · Server: ${report.server}`,
     `Scrolled: ${(report.ui.durationMs / 1000).toFixed(1)} s at ${report.refreshHz} Hz`,
     frameLine('UI thread', report.ui),
-    frameLine('JS thread', report.js),
+    frameLine(
+      report.jsRefreshHz && report.jsRefreshHz !== report.refreshHz
+        ? `JS thread (${report.jsRefreshHz} Hz ticks)`
+        : 'JS thread',
+      report.js
+    ),
     `Posts seen: ${content.posts} (${types || 'none'})`,
     `Media: ${content.mediaItems} items in ${content.postsWithMedia} posts, ` +
       `${content.multiMediaPosts} multi-photo posts, ${content.videos} videos`,

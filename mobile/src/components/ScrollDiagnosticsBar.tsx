@@ -13,6 +13,7 @@ import { useScrollDiagnosticsStore } from '@/stores/scrollDiagnosticsStore'
 import { Post } from '@/types'
 import {
   estimateFrameIntervalMs,
+  estimateJsFrameIntervalMs,
   formatScrollReport,
   rateHitches,
   summarizeContent,
@@ -83,6 +84,7 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
 
     const uiDurations = uiFrames.get()
     const frameIntervalMs = estimateFrameIntervalMs(uiDurations)
+    const jsFrameIntervalMs = estimateJsFrameIntervalMs(result.jsFrames, frameIntervalMs)
     const seen = new Set(result.seenPostIds)
     setReport({
       device: Device.modelName ?? t('common.unknown'),
@@ -90,8 +92,9 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
       app: `${Constants.expoConfig?.version ?? '?'} (${Constants.nativeBuildVersion ?? '?'})`,
       server: serverInfo?.version ?? '?',
       refreshHz: Math.round(1000 / frameIntervalMs),
+      jsRefreshHz: Math.round(1000 / jsFrameIntervalMs),
       ui: summarizeFrames(uiDurations, frameIntervalMs),
-      js: summarizeFrames(result.jsFrames, frameIntervalMs),
+      js: summarizeFrames(result.jsFrames, jsFrameIntervalMs),
       content: summarizeContent(posts.filter((post) => seen.has(post.id))),
       imageLoads: result.imageLoads,
     })
