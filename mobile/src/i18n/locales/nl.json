@@ -181,6 +181,7 @@
       "update": "Update",
       "milestone": "Mijlpaal",
       "poll": "Poll",
+      "event": "Evenement",
       "trip": "Reis",
       "album": "Album",
       "gift_list": "Cadeaulijst"
@@ -189,6 +190,7 @@
       "update": "Deel een moment, foto of video",
       "milestone": "Verjaardag, geboorte, jubileum",
       "poll": "Stel de familie een vraag",
+      "event": "Plan een bijeenkomst en vraag wie er komt",
       "trip": "Volg een reis met check-ins",
       "album": "Een fotoalbum waar de hele familie aan toevoegt",
       "gift_list": "Verlanglijstjes, eventueel met lootjes trekken"
@@ -244,6 +246,19 @@
       "travelersSelected_one": "{{count}} reisgenoot",
       "travelersSelected_other": "{{count}} reisgenoten"
     },
+    "event": {
+      "titlePlaceholder": "Wat is de gelegenheid?",
+      "startsAtLabel": "Begint",
+      "endsAtLabel": "Eindigt",
+      "locationLabel": "Locatie",
+      "locationPlaceholder": "Bijv. de tuin van oma",
+      "rsvpDeadlineLabel": "Reageren vóór",
+      "rsvpDeadlineHint": "Optioneel. Laat je dit leeg, dan sluiten de reacties wanneer het evenement begint.",
+      "datePlaceholder": "Kies datum en tijd",
+      "optional": "optioneel",
+      "clearEndsAt": "Eindtijd wissen",
+      "clearRsvpDeadline": "Reageerdatum wissen"
+    },
     "audience": "Wie kan dit zien?",
     "audienceHint": "Met kringen deel je met een deel van de familie. Alleen mensen in de kring zien dit bericht.",
     "audienceEveryone": "Iedereen",
@@ -272,6 +287,15 @@
     "totalVotes_one": "{{count}} stem in totaal",
     "totalVotes_other": "{{count}} stemmen in totaal",
     "closed": "Poll gesloten"
+  },
+  "event": {
+    "rsvpLabel": "Kom je?",
+    "yes": "Ik kom",
+    "maybe": "Misschien",
+    "no": "Kan niet",
+    "rsvpBy": "Reageer vóór {{date}}",
+    "closed": "Reacties gesloten",
+    "rsvpFailed": "Je reactie kon niet worden opgeslagen. Probeer het opnieuw."
   },
   "mediaPicker": {
     "title": "Foto's kiezen",

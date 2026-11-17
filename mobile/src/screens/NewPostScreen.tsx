@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { colors } from '@/constants/colors'
 import { Icon, IconName } from '@/components/Icon'
 import { DateField } from '@/components/DateField'
+import { DateTimeField } from '@/components/DateTimeField'
 import { Avatar } from '@/components/Avatar'
 import { Group, PostType } from '@/types'
 import { fetchGroups, fetchMyCircles, createPost, addAlbumPhotos, getGroupMediaAlbums } from '@famlin/api-client'
@@ -40,6 +41,7 @@ import {
   resolveOfferedPostTypes,
   reconcilePostTypeSelection,
 } from '@/utils/newPost'
+import { EMPTY_EVENT_DRAFT, EventDraft, buildEventTypeData, validEventDraft, withEventStart } from '@/utils/event'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
 import { useServerFeatureSupport } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
@@ -57,7 +59,7 @@ const MILESTONE_TAG_ICON: Record<string, IconName> = {
   graduation: 'award',
   custom: 'edit-3',
 }
-const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
+const POST_TYPES = ['UPDATE', 'MILESTONE', 'POLL', 'EVENT', 'TRIP', 'ALBUM', 'GIFT_LIST'] as const
 const MIN_POLL_OPTIONS = 2
 const MAX_POLL_OPTIONS = 10
 // 'YYYY-MM-DD' — matches the backend contract's typeData.startDate/endDate
@@ -71,6 +73,7 @@ const POST_TYPE_ICON: Record<string, IconName> = {
   UPDATE: 'edit-3',
   MILESTONE: 'gift',
   POLL: 'bar-chart-2',
+  EVENT: 'calendar',
   TRIP: 'briefcase',
   ALBUM: 'image',
   GIFT_LIST: 'gift',
@@ -79,6 +82,7 @@ const POST_TYPE_ICON_COLOR: Record<string, string> = {
   UPDATE: colors.accent,
   MILESTONE: colors.milestoneText,
   POLL: colors.primary,
+  EVENT: colors.primary,
   TRIP: colors.trip,
   ALBUM: colors.primary,
   GIFT_LIST: colors.primary,
@@ -87,6 +91,7 @@ const POST_TYPE_ICON_BG: Record<string, string> = {
   UPDATE: colors.updateBg,
   MILESTONE: colors.milestoneBg,
   POLL: colors.primaryTint,
+  EVENT: colors.primaryTint,
   TRIP: colors.tripTint,
   ALBUM: colors.primaryTint,
   GIFT_LIST: colors.primaryTint,
@@ -103,6 +108,7 @@ const POST_TYPE_CHIP_STYLE: Record<string, { bg: string; border: string; iconBg:
     text: colors.milestoneText,
   },
   POLL: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
+  EVENT: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   TRIP: { bg: colors.tripTint, border: colors.tripBorder, iconBg: colors.trip, text: colors.tripDark },
   ALBUM: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
   GIFT_LIST: { bg: colors.primaryTint, border: colors.primaryBorder, iconBg: colors.primary, text: colors.primaryDark },
@@ -132,6 +138,9 @@ export function NewPostScreen() {
   // Poll composer state: option text inputs, starting at the minimum of 2.
   // Only non-empty ones are sent (see createPostMutation below).
   const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
+  // Event composer state: the title is the post's content, the times are
+  // local wall-clock strings until the post is sent (see utils/event.ts).
+  const [eventDraft, setEventDraft] = useState<EventDraft>(EMPTY_EVENT_DRAFT)
   // Trip calendar dates use the API's YYYY-MM-DD format.
   const [tripTitle, setTripTitle] = useState('')
   const [tripDestination, setTripDestination] = useState('')
@@ -227,6 +236,7 @@ export function NewPostScreen() {
   const isTrip = postType === 'TRIP'
   const isAlbum = postType === 'ALBUM'
   const isGiftList = postType === 'GIFT_LIST'
+  const isEvent = postType === 'EVENT'
   // GIFT_LIST (issue #307): title + settings in typeData; content stays an
   // optional description.
   const [giftTitle, setGiftTitle] = useState('')
@@ -325,7 +335,9 @@ export function NewPostScreen() {
             }
           : postType === 'POLL'
             ? { options: nonEmptyPollOptions.map((text) => ({ text })) }
-            : undefined,
+            : isEvent
+              ? buildEventTypeData(eventDraft)
+              : undefined,
         uploadedAssetUrls: isTrip ? [] : uploadedAssetUrls,
         latitude: isTrip ? undefined : location?.latitude,
         longitude: isTrip ? undefined : location?.longitude,
@@ -354,7 +366,9 @@ export function NewPostScreen() {
           ? giftTitle.trim().length > 0 && giftDateValid
           : postType === 'POLL'
             ? content.trim().length > 0 && nonEmptyPollOptions.length >= MIN_POLL_OPTIONS
-            : content.trim().length > 0 || uploadedAssetUrls.length > 0)
+            : isEvent
+              ? content.trim().length > 0 && validEventDraft(eventDraft)
+              : content.trim().length > 0 || uploadedAssetUrls.length > 0)
 
   function addPollOption() {
     setPollOptions((prev) => (prev.length >= MAX_POLL_OPTIONS ? prev : [...prev, '']))
@@ -545,9 +559,11 @@ export function NewPostScreen() {
   const contentPlaceholder =
     postType === 'POLL'
       ? t('poll.questionPlaceholder')
-      : isMilestone
-        ? t('newPost.milestoneContentPlaceholder')
-        : t('newPost.contentPlaceholder')
+      : isEvent
+        ? t('newPost.event.titlePlaceholder')
+        : isMilestone
+          ? t('newPost.milestoneContentPlaceholder')
+          : t('newPost.contentPlaceholder')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -847,6 +863,54 @@ export function NewPostScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {isEvent && offeredPostTypes.includes('EVENT') && (
+          <View style={styles.tripFields}>
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.event.startsAtLabel')} *</Text>
+              <DateTimeField
+                label={t('newPost.event.startsAtLabel')}
+                placeholder={t('newPost.event.datePlaceholder')}
+                value={eventDraft.startsAt}
+                onChange={(startsAt) => setEventDraft((previous) => withEventStart(previous, startsAt))}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.event.endsAtLabel')}</Text>
+              <DateTimeField
+                label={t('newPost.event.endsAtLabel')}
+                placeholder={t('newPost.event.optional')}
+                clearLabel={t('newPost.event.clearEndsAt')}
+                value={eventDraft.endsAt}
+                minimum={eventDraft.startsAt || undefined}
+                onChange={(endsAt) => setEventDraft((previous) => ({ ...previous, endsAt }))}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.event.locationLabel')}</Text>
+              <TextInput
+                style={styles.tripInput}
+                placeholder={t('newPost.event.locationPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={eventDraft.location}
+                onChangeText={(location) => setEventDraft((previous) => ({ ...previous, location }))}
+                maxLength={200}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>{t('newPost.event.rsvpDeadlineLabel')}</Text>
+              <Text style={styles.tripHelperText}>{t('newPost.event.rsvpDeadlineHint')}</Text>
+              <DateTimeField
+                label={t('newPost.event.rsvpDeadlineLabel')}
+                placeholder={t('newPost.event.optional')}
+                clearLabel={t('newPost.event.clearRsvpDeadline')}
+                value={eventDraft.rsvpDeadline}
+                maximum={eventDraft.startsAt || undefined}
+                onChange={(rsvpDeadline) => setEventDraft((previous) => ({ ...previous, rsvpDeadline }))}
+              />
+            </View>
           </View>
         )}
 
