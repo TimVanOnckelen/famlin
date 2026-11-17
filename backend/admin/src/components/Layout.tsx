@@ -17,7 +17,7 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
-const OPERATIONS_ROUTES = ['/push-log', '/devices', '/diagnostics', '/storage', '/status']
+const OPERATIONS_ROUTES = ['/push-log', '/devices', '/diagnostics', '/status']
 
 export function Layout({ user, children }: LayoutProps) {
   const { t } = useTranslation()
@@ -62,6 +62,7 @@ export function Layout({ user, children }: LayoutProps) {
           <NavLink to="/users">{t('layout.users')}</NavLink>
           <NavLink to="/groups">{t('layout.groups')}</NavLink>
           <NavLink to="/content">{t('layout.content')}</NavLink>
+          <NavLink to="/integrations">{t('layout.integrations')}</NavLink>
           <Button
             variant="ghost"
             type="button"
@@ -79,7 +80,6 @@ export function Layout({ user, children }: LayoutProps) {
             <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
             <NavLink to="/devices">{t('layout.devices')}</NavLink>
             <NavLink to="/diagnostics">{t('layout.diagnostics')}</NavLink>
-            <NavLink to="/storage">{t('storage.title')}</NavLink>
             <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
           </div>
           <NavLink to="/backups">{t('layout.backups')}</NavLink>

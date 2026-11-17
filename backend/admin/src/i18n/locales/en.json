@@ -47,7 +47,8 @@
     "systemStatus": "System status",
     "demoBanner": "Demo mode — this admin panel is read-only. You can look around, but changes are not saved.",
     "diagnostics": "Diagnostics",
-    "backups": "Backups"
+    "backups": "Backups",
+    "integrations": "Integrations"
   },
   "devices": {
     "title": "Mobile devices",
@@ -335,6 +336,10 @@
       "error": "Could not update mirroring: {{error}}",
       "syncAlreadyRunning": "A sync is already running. Failed uploads will be retried on its next pass.",
       "pauseHint": "Pause stops adding photos; Famlin still takes deleted posts back out of the album."
+    },
+    "photos": {
+      "title": "Photos",
+      "moved": "Linked albums and the Immich upload mirror for this family are managed under Integrations:"
     }
   },
   "content": {
@@ -505,7 +510,11 @@
     "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included.",
     "updateCheck": "Check for new versions",
     "updateCheckHint": "Checks GitHub once a day for a new release; nothing about your instance is sent.",
-    "updates": "Updates"
+    "updates": "Updates",
+    "accessRestricted_one": "{{count}} allowed address",
+    "accessRestricted_other": "{{count}} allowed addresses",
+    "accessOpen": "Anyone with an account or invite",
+    "integrationsMoved": "Sign-in providers, email, push, photo sources and storage are under"
   },
   "media": {
     "peopleMapping": {
@@ -671,7 +680,9 @@
         "not_found": "Folder not found",
         "not_a_directory": "Not a folder",
         "invalid_response": "Invalid response"
-      }
+      },
+      "allOk": "Everything connected works",
+      "open": "Open Integrations"
     },
     "push": {
       "title": "Push notifications",
@@ -865,5 +876,112 @@
     "showDumps": "Show database dumps ({{count}})",
     "hideDumps": "Hide database dumps",
     "dumpsNote": "Until Famlin 1.0.0 each run also writes a database dump as a safety net. Restore the Famlin backup unless you have a reason not to."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Every service Famlin connects to: where your photos come from, how people sign in, how messages go out and where media is stored.",
+    "checkedAt": "Checked {{date}}",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "open": "Open",
+    "setUp": "Set up",
+    "checkSaved": "Check connection",
+    "checkOk": "Connected.",
+    "saveBeforeCheck": "Save your changes first: the check uses the saved settings.",
+    "groups": {
+      "photos": "Photos",
+      "signin": "Sign-in",
+      "messages": "Messages",
+      "storage": "Storage"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Local folders",
+      "sso": "Single sign-on",
+      "apple": "Sign in with Apple",
+      "email": "Email",
+      "push": "Push notifications",
+      "storage": "Media storage"
+    },
+    "state": {
+      "off": "Not set up",
+      "ok": "Connected",
+      "attention": "Needs attention",
+      "failing": "Failing"
+    },
+    "issues": {
+      "checkFailed": "The last connection check failed.",
+      "jobFailed": "A background job that uses it failed. See Activity.",
+      "mirrorFailures": "Some uploads could not be mirrored. See Families.",
+      "mirrorKeyMissing": "Mirroring is on for a family, but no upload key is saved.",
+      "publicUrlMissing": "No public address is set, so emails go out without links.",
+      "emailDisabled": "Email notifications are switched off. Invites and alerts are still sent.",
+      "pushUnhealthy": "Many push notifications failed to deliver in the last 24 hours.",
+      "storageFallback": "Primary storage is unavailable; media is served from the fallback."
+    },
+    "usage": {
+      "notSetUp": "Not set up yet",
+      "mirroring_one": "Mirroring uploads for {{count}} family",
+      "mirroring_other": "Mirroring uploads for {{count}} families",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Works with the official app, no setup needed",
+      "appleExtra_one": "Official app plus {{count}} own build",
+      "appleExtra_other": "Official app plus {{count}} own builds",
+      "email": "Sending through {{host}}",
+      "push": "{{devices}} devices · {{delivered}} delivered, {{failed}} failed in 7 days",
+      "pushOff": "Switched off",
+      "storageLocal": "Local disk",
+      "storageS3": "S3-compatible bucket",
+      "storageFallback": "With a fallback location",
+      "families_one": "{{count}} family",
+      "families_other": "{{count}} families",
+      "albums_one": "{{count}} linked album",
+      "albums_other": "{{count}} linked albums"
+    },
+    "tabs": {
+      "connection": "Connection",
+      "families": "Families",
+      "people": "People",
+      "activity": "Activity"
+    },
+    "immich": {
+      "server": "Server and read key",
+      "uploadKey": "Upload key",
+      "mirrorPerFamily": "Which album each family mirrors into is set on the Families tab."
+    },
+    "sso": {
+      "access": "Who may create an account is set under",
+      "accessLink": "Server settings › Access"
+    },
+    "apple": {
+      "desc": "Members can sign in with their Apple ID in the official iOS app without any setup. Add bundle ids only if you ship your own build."
+    },
+    "email": {
+      "desc": "Famlin sends invites, notifications and admin alerts through this mail server.",
+      "usedFor": "What email is used for",
+      "alwaysUsed": "Invites and admin alerts are always sent while SMTP is set up.",
+      "publicUrl": "Links in emails use the server's public address, set under",
+      "publicUrlLink": "Server settings › General"
+    },
+    "push": {
+      "desc": "Push notifications reach the Famlin app on members' phones through Expo's push service.",
+      "devices": "Registered devices"
+    },
+    "families": {
+      "none": "Create a family first.",
+      "family": "Family",
+      "albums": "Linked albums",
+      "mirror": "Upload mirror",
+      "mirrorOff": "Off",
+      "mirrorFailed_one": "{{count}} failed",
+      "mirrorFailed_other": "{{count}} failed",
+      "editTitle": "{{family}}"
+    },
+    "activity": {
+      "immich": "New-photo detection on linked albums, and the upload mirror.",
+      "local": "New-photo detection on linked folders.",
+      "email": "The hourly check that emails admins about problems.",
+      "push": "Push notifications are sent as things happen; there is no scheduled job."
+    }
   }
 }

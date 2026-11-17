@@ -7,7 +7,8 @@ import { Card } from '@famlin/ui/card'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError, DiskUsage, IntegrationStatus, IntegrationsStatus, JobStatus, SystemStatus } from '../api/client'
+import { api, ApiError, DiskUsage, IntegrationsOverview, JobStatus, SystemStatus } from '../api/client'
+import { StateChip } from './integrations/StateChip'
 import i18n from '../i18n'
 
 const BACKUP_DOCS_URL = 'https://famlin.app/docs/maintenance#keep-backups-off-the-machine'
@@ -80,35 +81,7 @@ function DiskRow({ label, disk }: { label: string; disk: DiskUsage | null }) {
   )
 }
 
-function IntegrationRow({ label, status }: { label: string; status: IntegrationStatus | undefined }) {
-  const { t } = useTranslation()
-  let badge
-  if (!status)
-    badge = (
-      <Badge variant="secondary" className="badge">
-        {t('common.loading')}
-      </Badge>
-    )
-  else if (!status.configured)
-    badge = (
-      <Badge variant="secondary" className="badge">
-        {t('systemStatus.integrations.notConfigured')}
-      </Badge>
-    )
-  else if (status.ok) badge = <Badge variant="success">{t('systemStatus.ok')}</Badge>
-  else
-    badge = (
-      <Badge variant="destructive">{t(`systemStatus.integrations.errors.${status.error ?? 'unreachable'}`)}</Badge>
-    )
-  return (
-    <div className="status-row">
-      <span>{label}</span>
-      {badge}
-    </div>
-  )
-}
-
-function JobsTable({ jobs }: { jobs: JobStatus[] }) {
+export function JobsTable({ jobs }: { jobs: JobStatus[] }) {
   const { t } = useTranslation()
   return (
     <div className="content-table">
@@ -144,7 +117,7 @@ function JobsTable({ jobs }: { jobs: JobStatus[] }) {
 export function SystemStatusPage() {
   const { t } = useTranslation()
   const [status, setStatus] = useState<SystemStatus | null>(null)
-  const [integrations, setIntegrations] = useState<IntegrationsStatus | null>(null)
+  const [integrations, setIntegrations] = useState<IntegrationsOverview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [backupError, setBackupError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
@@ -161,7 +134,7 @@ export function SystemStatusPage() {
 
   const loadIntegrations = useCallback(() => {
     api
-      .getIntegrationsStatus()
+      .getIntegrations()
       .then(setIntegrations)
       .catch(() => {})
   }, [])
@@ -205,11 +178,10 @@ export function SystemStatusPage() {
       </StateMessage>
     )
 
-  const { backups, disk, jobs, migrations, push } = status
+  const { backups, disk, jobs, migrations } = status
   const backupJob = jobs.find((j) => j.job === 'backup')
   const lastBackupBytes = backupJob?.lastOk ? Number(backupJob.lastDetails?.dumpBytes ?? 0) : null
   const mirror = backupJob?.lastOk ? (backupJob.lastDetails?.mirror as { totalBytes?: number } | undefined) : undefined
-  const rate = (r: number | null) => (r === null ? '—' : `${(r * 100).toFixed(1)}%`)
 
   return (
     <>
@@ -328,36 +300,18 @@ export function SystemStatusPage() {
 
         <Card className="p-6 gap-4">
           <h3>{t('systemStatus.integrations.title')}</h3>
-          <IntegrationRow label={t('systemStatus.integrations.smtp')} status={integrations?.smtp} />
-          <IntegrationRow label={t('systemStatus.integrations.oidc')} status={integrations?.oidc} />
-          <IntegrationRow label={t('systemStatus.integrations.immich')} status={integrations?.immich} />
-          <IntegrationRow label={t('systemStatus.integrations.localMedia')} status={integrations?.localMedia} />
-        </Card>
-
-        <Card className="p-6 gap-4">
-          <h3>{t('systemStatus.push.title')}</h3>
-          <div className="status-row">
-            <span>{t('systemStatus.push.last24h')}</span>
-            <span>
-              {t('systemStatus.push.summary', {
-                delivered: push.last24h.delivered,
-                failed: push.last24h.failed,
-                rate: rate(push.last24h.failureRate),
-              })}
-            </span>
-          </div>
-          <div className="status-row">
-            <span>{t('systemStatus.push.last7d')}</span>
-            <span>
-              {t('systemStatus.push.summary', {
-                delivered: push.last7d.delivered,
-                failed: push.last7d.failed,
-                rate: rate(push.last7d.failureRate),
-              })}
-            </span>
-          </div>
-          {push.unhealthy && <p className="test-err">{t('systemStatus.push.unhealthy')}</p>}
-          <Link to="/push-log">{t('systemStatus.push.viewLog')}</Link>
+          {(() => {
+            const needsLook = integrations?.integrations.filter((i) => i.state === 'failing' || i.state === 'attention')
+            if (!needsLook) return <span className="muted">{t('common.loading')}</span>
+            if (needsLook.length === 0) return <Badge variant="success">{t('systemStatus.integrations.allOk')}</Badge>
+            return needsLook.map((summary) => (
+              <div key={summary.id} className="status-row">
+                <span>{t(`integrations.names.${summary.id}`)}</span>
+                <StateChip state={summary.state} />
+              </div>
+            ))
+          })()}
+          <Link to="/integrations">{t('systemStatus.integrations.open')}</Link>
         </Card>
 
         <Card className="p-6 gap-4 status-wide">

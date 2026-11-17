@@ -1,128 +1,40 @@
-import { SaveBar } from '@famlin/ui/common/save-bar'
-import { StateMessage } from '@famlin/ui/common/state-message'
 import { PageHeader } from '@famlin/ui/common/page-header'
-import { Badge } from '@famlin/ui/badge'
+import { StateMessage } from '@famlin/ui/common/state-message'
 import { Button } from '@famlin/ui/button'
-import { SelectField } from '@famlin/ui/common/select-field'
 import { Input } from '@famlin/ui/input'
-import { SettingToggle } from '@famlin/ui/common/setting-toggle'
-import { SectionCard } from '@famlin/ui/common/section-card'
-import { useEffect, useMemo, useState } from 'react'
+import { SelectField } from '@famlin/ui/common/select-field'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { api, ServerSettings, User } from '../api/client'
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
-import { Icon, IconName } from './Icon'
-import { PeopleMappingSection } from './PeopleMappingSection'
+import { Icon, type IconName } from './Icon'
 import { BrandingSection } from './BrandingSection'
+import { SettingsCard, ToggleRow } from './settings/SettingsCard'
+import { SettingsSaveBar } from './settings/SettingsSaveBar'
+import { useSettingsForm } from './settings/useSettingsForm'
 
-type SecretKey = 'oidcClientSecret' | 'smtpPass' | 'immichApiKey' | 'immichMirrorApiKey'
-type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media'
+type SectionId = 'general' | 'branding' | 'access'
 
-interface SettingsCardProps {
-  icon: IconName
-  title: string
-  desc?: string
-  badge?: React.ReactNode
-  children: React.ReactNode
-}
-
-function SettingsCard({ icon, title, desc, badge, children }: SettingsCardProps) {
-  return (
-    <SectionCard title={title} icon={<Icon name={icon} size={20} />} description={desc} badge={badge}>
-      {children}
-    </SectionCard>
-  )
-}
-
-interface ToggleRowProps {
-  title: string
-  hint: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}
-
-function ToggleRow({ title, hint, checked, onChange }: ToggleRowProps) {
-  return <SettingToggle title={title} hint={hint} checked={checked} onCheckedChange={onChange} />
-}
-
+// Server-wide settings that aren't a connection to another service. Sign-in
+// providers, email, push, photo sources and storage live under Integrations.
 export function ServerSettingsPage() {
   const { t } = useTranslation()
-  const [settings, setSettings] = useState<ServerSettings | null>(null)
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const settingsForm = useSettingsForm()
+  const { form, loadError, updateField, save } = settingsForm
   const [activeSection, setActiveSection] = useState<SectionId>('general')
 
-  const [form, setForm] = useState<ServerSettings>({
-    defaultLanguage: 'en',
-    appStoreUrl: '',
-    playStoreUrl: '',
-    publicUrl: '',
-    allowedEmails: [],
-    oidcName: '',
-    oidcIssuer: '',
-    oidcClientId: '',
-    oidcClientSecret: '',
-    oidcClientSecretSet: false,
-    oidcScopes: '',
-    appleBundleIds: '',
-    smtpHost: '',
-    smtpPort: 587,
-    smtpUser: '',
-    smtpPass: '',
-    smtpPassSet: false,
-    smtpFrom: '',
-    pushNotificationsEnabled: true,
-    emailNotificationsEnabled: true,
-    immichServerUrl: '',
-    immichApiKey: '',
-    immichApiKeySet: false,
-    immichMirrorApiKey: '',
-    immichMirrorApiKeySet: false,
-    localMediaPath: '',
-    updateCheckEnabled: true,
-    backupIncludeMedia: true,
-    backupEnabled: false,
-    backupSchedule: 'daily',
-    backupHour: 3,
-    backupRetention: 7,
-  })
-
-  const [testingImmich, setTestingImmich] = useState(false)
-  const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null)
-  const [testingMirror, setTestingMirror] = useState(false)
-  const [mirrorTestResult, setMirrorTestResult] = useState<
-    { ok: true; missingScopes: string[] | null } | { ok: false; error: 'unreachable' | 'unauthorized' } | null
-  >(null)
-  const [testingLocalMedia, setTestingLocalMedia] = useState(false)
-  const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null)
-
-  useEffect(() => {
-    Promise.all([
-      api.getSettings().then((s) => {
-        setSettings(s)
-        setForm(s)
-      }),
-      api.getAllUsers().then(setUsers),
-    ])
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    if (!success) return
-    const timer = setTimeout(() => setSuccess(false), 4000)
-    return () => clearTimeout(timer)
-  }, [success])
-
-  const dirty = useMemo(() => settings !== null && JSON.stringify(form) !== JSON.stringify(settings), [form, settings])
-
-  const updateField = <K extends keyof ServerSettings>(key: K, value: ServerSettings[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
-    setSuccess(false)
-  }
+  if (loadError)
+    return (
+      <StateMessage variant="error" className="error">
+        {loadError}
+      </StateMessage>
+    )
+  if (!form)
+    return (
+      <StateMessage variant="loading" className="loading">
+        {t('common.loading')}
+      </StateMessage>
+    )
 
   const parseList = (value: string) =>
     value
@@ -130,197 +42,17 @@ export function ServerSettingsPage() {
       .map((s) => s.trim())
       .filter(Boolean)
 
-  const handleTestImmich = async () => {
-    setTestingImmich(true)
-    setImmichTestResult(null)
-    try {
-      const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey ?? '')
-      setImmichTestResult(result.ok ? 'ok' : result.error)
-    } catch {
-      setImmichTestResult('unreachable')
-    } finally {
-      setTestingImmich(false)
-    }
-  }
-
-  const handleTestMirror = async () => {
-    setTestingMirror(true)
-    setMirrorTestResult(null)
-    try {
-      setMirrorTestResult(await api.testImmichMirrorKey(form.immichServerUrl, form.immichMirrorApiKey ?? ''))
-    } catch {
-      setMirrorTestResult({ ok: false, error: 'unreachable' })
-    } finally {
-      setTestingMirror(false)
-    }
-  }
-
-  const handleTestLocalMedia = async () => {
-    setTestingLocalMedia(true)
-    setLocalMediaTestResult(null)
-    try {
-      const result = await api.testLocalMediaPath(form.localMediaPath)
-      setLocalMediaTestResult(result.ok ? 'ok' : result.error)
-    } catch {
-      setLocalMediaTestResult('not_found')
-    } finally {
-      setTestingLocalMedia(false)
-    }
-  }
-
-  const handleDiscard = () => {
-    if (settings) setForm(settings)
-    setError(null)
-    setSuccess(false)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setError(null)
-    setSuccess(false)
-
-    try {
-      const updated = await api.updateSettings(form)
-      setSettings(updated)
-      setForm(updated)
-      setSuccess(true)
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading)
-    return (
-      <StateMessage variant="loading" className="loading">
-        {t('common.loading')}
-      </StateMessage>
-    )
-  if (error && !settings)
-    return (
-      <StateMessage variant="error" className="error">
-        {error}
-      </StateMessage>
-    )
-
-  const oidcConfigured = Boolean(form.oidcIssuer && form.oidcClientId)
-  // A saved secret never comes back from the server, so "has a value" is
-  // either something typed now or a saved one that isn't marked for removal.
-  const hasSecret = (key: SecretKey) => Boolean(form[key]) || (form[key] !== null && form[`${key}Set`])
-  const immichConfigured = Boolean(form.immichServerUrl && hasSecret('immichApiKey'))
-  const localConfigured = Boolean(form.localMediaPath)
-  const anyChannelEnabled = form.pushNotificationsEnabled || form.emailNotificationsEnabled
   const languageName = LANGUAGE_NAMES[form.defaultLanguage as SupportedLanguage] ?? form.defaultLanguage
-
-  // Password input for a write-only secret: shows that a value is saved
-  // without ever holding it, lets the admin replace or remove it, and warns
-  // when changing the server it belongs to will drop it (the backend does
-  // that so a saved secret can't be redirected to another host).
-  const secretInput = (
-    key: SecretKey,
-    destination: 'oidcIssuer' | 'smtpHost' | 'immichServerUrl',
-    onEdit?: () => void
-  ) => {
-    const saved = form[`${key}Set`]
-    const removing = form[key] === null
-    const moved = saved && !form[key] && !removing && settings !== null && form[destination] !== settings[destination]
-    return (
-      <>
-        <Input
-          type="password"
-          autoComplete="new-password"
-          value={form[key] ?? ''}
-          placeholder={saved && !removing ? t('serverSettings.secretSaved') : undefined}
-          onChange={(e) => {
-            updateField(key, e.target.value)
-            onEdit?.()
-          }}
-        />
-        {saved && removing && (
-          <span className="hint">
-            {t('serverSettings.secretWillBeRemoved')}{' '}
-            <Button variant="link" type="button" onClick={() => updateField(key, '')}>
-              {t('serverSettings.secretKeep')}
-            </Button>
-          </span>
-        )}
-        {saved && !removing && !form[key] && (
-          <Button
-            variant="link"
-            type="button"
-            onClick={() => {
-              updateField(key, null)
-              onEdit?.()
-            }}
-          >
-            {t('serverSettings.secretRemove')}
-          </Button>
-        )}
-        {moved && <span className="hint">{t('serverSettings.secretReenter')}</span>}
-      </>
-    )
-  }
-
-  const configuredBadge = (ok: boolean) => (
-    <Badge variant={ok ? 'success' : 'outline'}>
-      {ok ? t('serverSettings.statusConfigured') : t('serverSettings.statusNotConfigured')}
-    </Badge>
-  )
-  const enabledBadge = (ok: boolean) => (
-    <Badge variant={ok ? 'success' : 'outline'}>
-      {ok ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled')}
-    </Badge>
-  )
-
-  const sections: {
-    id: SectionId
-    icon: IconName
-    label: string
-    status: { ok?: boolean; label: string }
-  }[] = [
+  const sections: { id: SectionId; icon: IconName; label: string; status: string }[] = [
+    { id: 'general', icon: 'globe', label: t('serverSettings.general'), status: languageName },
+    { id: 'branding', icon: 'palette', label: t('branding.title'), status: t('branding.navStatus') },
     {
-      id: 'general',
-      icon: 'globe',
-      label: t('serverSettings.general'),
-      status: { label: languageName },
-    },
-    {
-      id: 'branding',
-      icon: 'palette',
-      label: t('branding.title'),
-      status: { label: t('branding.navStatus') },
-    },
-    {
-      id: 'signin',
-      icon: 'key',
-      label: t('serverSettings.signInAccess'),
-      status: {
-        ok: oidcConfigured,
-        label: oidcConfigured ? t('serverSettings.statusConfigured') : t('serverSettings.statusNotConfigured'),
-      },
-    },
-    {
-      id: 'notifications',
-      icon: 'bell',
-      label: t('serverSettings.notifications'),
-      status: {
-        ok: anyChannelEnabled,
-        label: anyChannelEnabled ? t('serverSettings.statusEnabled') : t('serverSettings.statusDisabled'),
-      },
-    },
-    {
-      id: 'media',
-      icon: 'image',
-      label: t('serverSettings.media'),
-      status: {
-        ok: immichConfigured || localConfigured,
-        label:
-          immichConfigured || localConfigured
-            ? t('serverSettings.statusConfigured')
-            : t('serverSettings.statusNotConfigured'),
-      },
+      id: 'access',
+      icon: 'shield',
+      label: t('serverSettings.accessControl'),
+      status: form.allowedEmails.length
+        ? t('serverSettings.accessRestricted', { count: form.allowedEmails.length })
+        : t('serverSettings.accessOpen'),
     },
   ]
 
@@ -343,15 +75,13 @@ export function ServerSettingsPage() {
               </span>
               <span className="settings-nav-text">
                 <span className="settings-nav-label">{section.label}</span>
-                <span className="settings-nav-status">
-                  {section.status.ok !== undefined && (
-                    <span className={`status-dot ${section.status.ok ? 'ok' : 'off'}`} />
-                  )}
-                  {section.status.label}
-                </span>
+                <span className="settings-nav-status">{section.status}</span>
               </span>
             </Button>
           ))}
+          <p className="hint settings-nav-hint">
+            {t('serverSettings.integrationsMoved')} <Link to="/integrations">{t('layout.integrations')}</Link>
+          </p>
         </nav>
 
         <div className="settings-content">
@@ -364,7 +94,7 @@ export function ServerSettingsPage() {
               </SettingsCard>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="settings-form" hidden={activeSection === 'branding'}>
+          <form onSubmit={save} className="settings-form" hidden={activeSection === 'branding'}>
             {activeSection === 'general' && (
               <SettingsCard icon="globe" title={t('serverSettings.general')} desc={t('serverSettings.generalDesc')}>
                 <label>
@@ -435,325 +165,23 @@ export function ServerSettingsPage() {
               </SettingsCard>
             )}
 
-            {activeSection === 'signin' && (
-              <>
-                <SettingsCard
-                  icon="key"
-                  title={t('serverSettings.oidc')}
-                  desc={t('serverSettings.oidcHint')}
-                  badge={configuredBadge(oidcConfigured)}
-                >
-                  <label>
-                    {t('serverSettings.oidcName')}
-                    <Input
-                      type="text"
-                      value={form.oidcName}
-                      onChange={(e) => updateField('oidcName', e.target.value)}
-                      placeholder="Authentik"
-                    />
-                  </label>
-                  <label>
-                    {t('serverSettings.oidcIssuer')}
-                    <Input
-                      type="text"
-                      value={form.oidcIssuer}
-                      onChange={(e) => updateField('oidcIssuer', e.target.value)}
-                      placeholder="https://auth.example.com/application/o/famlin/"
-                    />
-                  </label>
-                  <label>
-                    {t('serverSettings.oidcClientId')}
-                    <Input
-                      type="text"
-                      value={form.oidcClientId}
-                      onChange={(e) => updateField('oidcClientId', e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    {t('serverSettings.oidcClientSecret')}
-                    {secretInput('oidcClientSecret', 'oidcIssuer')}
-                  </label>
-                  <p className="hint">{t('serverSettings.oidcClientSecretHint')}</p>
-                  <label>
-                    {t('serverSettings.oidcScopes')}
-                    <Input
-                      type="text"
-                      value={form.oidcScopes}
-                      onChange={(e) => updateField('oidcScopes', e.target.value)}
-                      placeholder="openid email profile"
-                    />
-                  </label>
-                  <label>
-                    {t('serverSettings.appleBundleIds')}
-                    <Input
-                      type="text"
-                      value={form.appleBundleIds}
-                      onChange={(e) => updateField('appleBundleIds', e.target.value)}
-                      placeholder="com.example.famlin"
-                    />
-                  </label>
-                  <p className="hint">{t('serverSettings.appleBundleIdsHint')}</p>
-                </SettingsCard>
-
-                <SettingsCard icon="shield" title={t('serverSettings.accessControl')}>
-                  <label>
-                    {t('serverSettings.allowedEmails')}
-                    <Input
-                      type="text"
-                      value={form.allowedEmails.join(', ')}
-                      onChange={(e) => updateField('allowedEmails', parseList(e.target.value))}
-                      placeholder="family@example.com"
-                    />
-                  </label>
-                  <p className="hint">{t('serverSettings.allowedEmailsHint')}</p>
-                </SettingsCard>
-              </>
-            )}
-
-            {activeSection === 'notifications' && (
-              <>
-                <SettingsCard
-                  icon="bell"
-                  title={t('serverSettings.push')}
-                  badge={enabledBadge(form.pushNotificationsEnabled)}
-                >
-                  <ToggleRow
-                    title={t('serverSettings.pushEnabled')}
-                    hint={t('serverSettings.pushHint')}
-                    checked={form.pushNotificationsEnabled}
-                    onChange={(checked) => updateField('pushNotificationsEnabled', checked)}
+            {activeSection === 'access' && (
+              <SettingsCard icon="shield" title={t('serverSettings.accessControl')}>
+                <label>
+                  {t('serverSettings.allowedEmails')}
+                  <Input
+                    id="allowedEmails"
+                    type="text"
+                    value={form.allowedEmails.join(', ')}
+                    onChange={(e) => updateField('allowedEmails', parseList(e.target.value))}
+                    placeholder="family@example.com"
                   />
-                </SettingsCard>
-
-                <SettingsCard
-                  icon="mail"
-                  title={t('serverSettings.emailSmtp')}
-                  badge={enabledBadge(form.emailNotificationsEnabled)}
-                >
-                  <ToggleRow
-                    title={t('serverSettings.emailEnabled')}
-                    hint={t('serverSettings.emailHint')}
-                    checked={form.emailNotificationsEnabled}
-                    onChange={(checked) => updateField('emailNotificationsEnabled', checked)}
-                  />
-                  <div className="row">
-                    <label style={{ flex: 2 }}>
-                      {t('serverSettings.smtpHost')}
-                      <Input
-                        type="text"
-                        value={form.smtpHost}
-                        onChange={(e) => updateField('smtpHost', e.target.value)}
-                        placeholder="smtp.example.com"
-                      />
-                    </label>
-                    <label style={{ flex: 1 }}>
-                      {t('serverSettings.port')}
-                      <Input
-                        type="number"
-                        value={form.smtpPort}
-                        onChange={(e) => updateField('smtpPort', parseInt(e.target.value, 10) || 0)}
-                      />
-                    </label>
-                  </div>
-                  <div className="row" style={{ alignItems: 'flex-start' }}>
-                    <label style={{ flex: 1 }}>
-                      {t('serverSettings.smtpUsername')}
-                      <Input
-                        type="text"
-                        value={form.smtpUser}
-                        onChange={(e) => updateField('smtpUser', e.target.value)}
-                      />
-                    </label>
-                    <label style={{ flex: 1 }}>
-                      {t('serverSettings.smtpPassword')}
-                      {secretInput('smtpPass', 'smtpHost')}
-                    </label>
-                  </div>
-                  <label>
-                    {t('serverSettings.senderAddress')}
-                    <Input
-                      type="email"
-                      value={form.smtpFrom}
-                      onChange={(e) => updateField('smtpFrom', e.target.value)}
-                      placeholder="Famlin <noreply@example.com>"
-                    />
-                  </label>
-                </SettingsCard>
-              </>
+                </label>
+                <p className="hint">{t('serverSettings.allowedEmailsHint')}</p>
+              </SettingsCard>
             )}
 
-            {activeSection === 'media' && (
-              <>
-                <p className="settings-intro">{t('serverSettings.integrationsHint')}</p>
-
-                <SettingsCard
-                  icon="image"
-                  title={t('serverSettings.immich')}
-                  desc={t('serverSettings.immichHint')}
-                  badge={configuredBadge(immichConfigured)}
-                >
-                  <label>
-                    {t('serverSettings.immichServerUrl')}
-                    <Input
-                      type="url"
-                      value={form.immichServerUrl}
-                      onChange={(e) => {
-                        updateField('immichServerUrl', e.target.value)
-                        setImmichTestResult(null)
-                        setMirrorTestResult(null)
-                      }}
-                      placeholder="https://immich.example.com"
-                    />
-                  </label>
-                  <label>
-                    {t('serverSettings.immichApiKey')}
-                    {secretInput('immichApiKey', 'immichServerUrl', () => setImmichTestResult(null))}
-                  </label>
-                  <div className="settings-test-row">
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      className="secondary"
-                      onClick={handleTestImmich}
-                      disabled={testingImmich || !form.immichServerUrl || !hasSecret('immichApiKey')}
-                    >
-                      {testingImmich ? t('serverSettings.immichTesting') : t('serverSettings.immichTestConnection')}
-                    </Button>
-                    {immichTestResult === 'ok' && (
-                      <span className="test-ok">
-                        <Icon name="check" size={14} /> {t('serverSettings.immichTestOk')}
-                      </span>
-                    )}
-                    {immichTestResult === 'unauthorized' && (
-                      <span className="test-err">{t('serverSettings.immichTestUnauthorized')}</span>
-                    )}
-                    {immichTestResult === 'unreachable' && (
-                      <span className="test-err">{t('serverSettings.immichTestUnreachable')}</span>
-                    )}
-                  </div>
-                  <label>
-                    {t('serverSettings.immichMirrorApiKey')}
-                    {secretInput('immichMirrorApiKey', 'immichServerUrl', () => setMirrorTestResult(null))}
-                    <span className="hint">{t('serverSettings.immichMirrorApiKeyHint')}</span>
-                  </label>
-                  <div className="settings-test-row">
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      className="secondary"
-                      onClick={handleTestMirror}
-                      disabled={testingMirror || !form.immichServerUrl || !hasSecret('immichMirrorApiKey')}
-                    >
-                      {testingMirror ? t('serverSettings.immichTesting') : t('serverSettings.immichMirrorTest')}
-                    </Button>
-                    {mirrorTestResult?.ok && mirrorTestResult.missingScopes?.length === 0 && (
-                      <span className="test-ok">
-                        <Icon name="check" size={14} /> {t('serverSettings.immichMirrorTestOk')}
-                      </span>
-                    )}
-                    {mirrorTestResult?.ok && mirrorTestResult.missingScopes === null && (
-                      <span className="test-ok">
-                        <Icon name="check" size={14} /> {t('serverSettings.immichMirrorTestScopesUnknown')}
-                      </span>
-                    )}
-                    {mirrorTestResult?.ok && !!mirrorTestResult.missingScopes?.length && (
-                      <span className="test-err">
-                        {t('serverSettings.immichMirrorTestMissingScopes', {
-                          scopes: mirrorTestResult.missingScopes.join(', '),
-                        })}
-                      </span>
-                    )}
-                    {mirrorTestResult?.ok === false && (
-                      <span className="test-err">
-                        {mirrorTestResult.error === 'unauthorized'
-                          ? t('serverSettings.immichTestUnauthorized')
-                          : t('serverSettings.immichTestUnreachable')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="settings-subsection">
-                    <PeopleMappingSection users={users} />
-                  </div>
-                </SettingsCard>
-
-                <SettingsCard
-                  icon="folder"
-                  title={t('serverSettings.localMedia')}
-                  desc={t('serverSettings.localMediaHint')}
-                  badge={configuredBadge(localConfigured)}
-                >
-                  <label>
-                    {t('serverSettings.localMediaPath')}
-                    <Input
-                      type="text"
-                      value={form.localMediaPath}
-                      onChange={(e) => {
-                        updateField('localMediaPath', e.target.value)
-                        setLocalMediaTestResult(null)
-                      }}
-                      placeholder="/media/family-photos"
-                    />
-                  </label>
-                  <div className="settings-test-row">
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      className="secondary"
-                      onClick={handleTestLocalMedia}
-                      disabled={testingLocalMedia || !form.localMediaPath}
-                    >
-                      {testingLocalMedia ? t('serverSettings.localMediaTesting') : t('serverSettings.localMediaTest')}
-                    </Button>
-                    {localMediaTestResult === 'ok' && (
-                      <span className="test-ok">
-                        <Icon name="check" size={14} /> {t('serverSettings.localMediaTestOk')}
-                      </span>
-                    )}
-                    {localMediaTestResult === 'not_found' && (
-                      <span className="test-err">{t('serverSettings.localMediaTestNotFound')}</span>
-                    )}
-                    {localMediaTestResult === 'not_a_directory' && (
-                      <span className="test-err">{t('serverSettings.localMediaTestNotADirectory')}</span>
-                    )}
-                  </div>
-                </SettingsCard>
-              </>
-            )}
-
-            {(dirty || success || error) && (
-              <SaveBar
-                actions={
-                  <>
-                    {dirty && (
-                      <Button
-                        variant="secondary"
-                        type="button"
-                        className="secondary"
-                        onClick={handleDiscard}
-                        disabled={saving}
-                      >
-                        {t('serverSettings.discard')}
-                      </Button>
-                    )}
-                    <Button type="submit" disabled={saving || !dirty}>
-                      {saving ? t('serverSettings.saving') : t('serverSettings.saveSettings')}
-                    </Button>
-                  </>
-                }
-              >
-                <span className={`save-bar-msg${error ? ' err' : success ? ' ok' : ''}`}>
-                  {error ? (
-                    error
-                  ) : success ? (
-                    <>
-                      <Icon name="check" size={15} /> {t('serverSettings.saved')}
-                    </>
-                  ) : (
-                    t('serverSettings.unsavedChanges')
-                  )}
-                </span>
-              </SaveBar>
-            )}
+            <SettingsSaveBar settingsForm={settingsForm} />
           </form>
         </div>
       </div>

@@ -13,6 +13,10 @@ import {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaMirrorOverview,
+  IntegrationsOverview,
+  IntegrationSummary,
+  IntegrationId,
+  IntegrationState,
   MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
@@ -51,6 +55,10 @@ export type {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaMirrorOverview,
+  IntegrationsOverview,
+  IntegrationSummary,
+  IntegrationId,
+  IntegrationState,
   MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
@@ -480,6 +488,9 @@ export const api = {
   getSettings: () => request<ServerSettings>('/api/admin/settings'),
 
   getSystemStatus: () => request<SystemStatus>('/api/admin/status'),
+
+  getIntegrations: (check = false) =>
+    request<IntegrationsOverview>(`/api/admin/integrations${check ? '?check=1' : ''}`),
 
   getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
 

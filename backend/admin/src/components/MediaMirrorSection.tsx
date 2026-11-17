@@ -100,7 +100,7 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
       {!target && !overview.configured && <p className="hint">{t('groups.mediaMirror.notConfigured')}</p>}
 
       {!target && overview.configured && (
-        <div className="md-add-member">
+        <div className="mirror-setup">
           <SelectField
             value={albumChoice}
             onValueChange={(value) => setAlbumChoice(value)}

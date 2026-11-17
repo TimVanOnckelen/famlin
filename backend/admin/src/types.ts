@@ -130,6 +130,34 @@ export interface JobStatus {
   running: boolean
 }
 
+// GET /api/admin/integrations (backend/src/services/integrations.ts).
+export type IntegrationId = 'immich' | 'local' | 'sso' | 'apple' | 'email' | 'push' | 'storage'
+export type IntegrationState = 'off' | 'ok' | 'attention' | 'failing'
+export type IntegrationIssue =
+  | 'checkFailed'
+  | 'jobFailed'
+  | 'mirrorFailures'
+  | 'mirrorKeyMissing'
+  | 'publicUrlMissing'
+  | 'emailDisabled'
+  | 'pushUnhealthy'
+  | 'storageFallback'
+
+export interface IntegrationSummary {
+  id: IntegrationId
+  state: IntegrationState
+  configured: boolean
+  issues: IntegrationIssue[]
+  check: (IntegrationStatus & { checkedAt: string }) | null
+  jobs: JobId[]
+  usage: Record<string, string | number | boolean | null>
+}
+
+export interface IntegrationsOverview {
+  checkedAt: string | null
+  integrations: IntegrationSummary[]
+}
+
 export interface AdminDevice {
   id: string
   installId: string

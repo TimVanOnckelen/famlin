@@ -74,6 +74,7 @@ import { BackupInProgressError, isBackupRunning, runBackup } from '../services/b
 import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.js'
 import adminBackupRoutes from './adminBackups.js'
 import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
+import { getIntegrationsOverview } from '../services/integrations.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -1143,6 +1144,14 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return reply.status(202).send({ started: true })
     })
   }
+
+  // The admin Integrations overview (services/integrations.ts). `?check=1`
+  // runs the connection checks now instead of serving the cached result.
+  fastify.get('/integrations', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    const { check } = request.query as { check?: string }
+    return getIntegrationsOverview({ check: check === '1' || check === 'true' })
+  })
 
   fastify.get('/status/integrations', async (request, reply) => {
     if (requireAdmin(request, reply)) return
