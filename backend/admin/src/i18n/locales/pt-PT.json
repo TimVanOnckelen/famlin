@@ -47,7 +47,8 @@
     "systemStatus": "Estado do sistema",
     "demoBanner": "Modo de demonstração — este painel de administração é só de leitura. Podes explorar, mas as alterações não são guardadas.",
     "diagnostics": "Diagnóstico",
-    "backups": "Cópias de segurança"
+    "backups": "Cópias de segurança",
+    "integrations": "Integrações"
   },
   "devices": {
     "title": "Dispositivos móveis",
@@ -330,6 +331,10 @@
       "error": "Não foi possível atualizar o espelhamento: {{error}}",
       "syncAlreadyRunning": "Já está a decorrer uma sincronização. Os envios falhados serão repetidos na próxima passagem.",
       "pauseHint": "Pausar deixa de adicionar fotos; o Famlin continua a retirar do álbum as publicações apagadas."
+    },
+    "photos": {
+      "title": "Fotos",
+      "moved": "Os álbuns associados e o espelhamento de envios para o Immich desta família são geridos em Integrações:"
     }
   },
   "content": {
@@ -490,7 +495,11 @@
     "exportIncludeMediaHint": "Quando desativado, o restauro exige que todos os ficheiros multimédia listados existam no armazenamento configurado. A identidade visual é sempre incluída.",
     "updateCheck": "Procurar novas versões",
     "updateCheckHint": "Verifica no GitHub uma vez por dia se há uma nova versão; não é enviada nenhuma informação sobre a tua instância.",
-    "updates": "Atualizações"
+    "updates": "Atualizações",
+    "accessRestricted_one": "{{count}} endereço permitido",
+    "accessRestricted_other": "{{count}} endereços permitidos",
+    "accessOpen": "Qualquer pessoa com conta ou convite",
+    "integrationsMoved": "Os fornecedores de início de sessão, o email, as notificações push, as fontes de fotos e o armazenamento estão em"
   },
   "media": {
     "peopleMapping": {
@@ -651,7 +660,9 @@
         "not_found": "Pasta não encontrada",
         "not_a_directory": "Não é uma pasta",
         "invalid_response": "Resposta inválida"
-      }
+      },
+      "allOk": "Todas as ligações funcionam",
+      "open": "Abrir Integrações"
     },
     "push": {
       "title": "Notificações push",
@@ -845,5 +856,112 @@
     "showDumps": "Mostrar dumps da base de dados ({{count}})",
     "hideDumps": "Ocultar dumps da base de dados",
     "dumpsNote": "Até ao Famlin 1.0.0, cada execução também escreve um dump da base de dados como rede de segurança. Restaura a cópia do Famlin, a menos que tenhas um motivo para não o fazer."
+  },
+  "integrations": {
+    "title": "Integrações",
+    "description": "Todos os serviços a que o Famlin se liga: de onde vêm as suas fotos, como as pessoas iniciam sessão, como as mensagens são enviadas e onde a multimédia é guardada.",
+    "checkedAt": "Verificado em {{date}}",
+    "checkNow": "Verificar agora",
+    "checking": "A verificar…",
+    "open": "Abrir",
+    "setUp": "Configurar",
+    "checkSaved": "Verificar ligação",
+    "checkOk": "Ligado.",
+    "saveBeforeCheck": "Guarde primeiro as alterações: a verificação usa as definições guardadas.",
+    "groups": {
+      "photos": "Fotos",
+      "signin": "Início de sessão",
+      "messages": "Mensagens",
+      "storage": "Armazenamento"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Pastas locais",
+      "sso": "Início de sessão único",
+      "apple": "Iniciar sessão com a Apple",
+      "email": "Email",
+      "push": "Notificações push",
+      "storage": "Armazenamento de multimédia"
+    },
+    "state": {
+      "off": "Não configurado",
+      "ok": "Ligado",
+      "attention": "Requer atenção",
+      "failing": "Com falhas"
+    },
+    "issues": {
+      "checkFailed": "A última verificação da ligação falhou.",
+      "jobFailed": "Uma tarefa em segundo plano que a usa falhou. Veja Atividade.",
+      "mirrorFailures": "Alguns envios não puderam ser espelhados. Veja Famílias.",
+      "mirrorKeyMissing": "O espelhamento está ativo para uma família, mas não há nenhuma chave de envio guardada.",
+      "publicUrlMissing": "Não está definido nenhum endereço público, por isso os emails são enviados sem ligações.",
+      "pushUnhealthy": "Muitas notificações push não foram entregues nas últimas 24 horas.",
+      "storageFallback": "O armazenamento principal está indisponível; a multimédia é servida a partir da localização alternativa."
+    },
+    "usage": {
+      "notSetUp": "Ainda não configurado",
+      "mirroring_one": "Espelha envios de {{count}} família",
+      "mirroring_other": "Espelha envios de {{count}} famílias",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Funciona com a app oficial, sem configuração",
+      "appleExtra_one": "App oficial e {{count}} versão própria",
+      "appleExtra_other": "App oficial e {{count}} versões próprias",
+      "email": "Envio através de {{host}}",
+      "pushOff": "Desativadas",
+      "storageLocal": "Disco local",
+      "storageS3": "Bucket compatível com S3",
+      "storageFallback": "Com uma localização alternativa",
+      "families_one": "{{count}} família",
+      "families_other": "{{count}} famílias",
+      "albums_one": "{{count}} álbum associado",
+      "albums_other": "{{count}} álbuns associados",
+      "push_one": "{{count}} dispositivo · {{delivered}} entregues, {{failed}} falhadas em 7 dias",
+      "push_other": "{{count}} dispositivos · {{delivered}} entregues, {{failed}} falhadas em 7 dias"
+    },
+    "tabs": {
+      "connection": "Ligação",
+      "families": "Famílias",
+      "people": "Pessoas",
+      "activity": "Atividade"
+    },
+    "immich": {
+      "server": "Servidor e chave de leitura",
+      "uploadKey": "Chave de envio",
+      "mirrorPerFamily": "O álbum para onde cada família espelha define-se no separador Famílias."
+    },
+    "sso": {
+      "access": "Quem pode criar uma conta define-se em",
+      "accessLink": "Definições do servidor › Controlo de acesso"
+    },
+    "apple": {
+      "desc": "Os membros podem iniciar sessão com o ID Apple na app oficial para iOS, sem configuração. Adicione identificadores de pacote apenas se distribuir a sua própria versão."
+    },
+    "email": {
+      "desc": "O Famlin envia convites, notificações e alertas de administração através deste servidor de email.",
+      "usedFor": "Para que é usado o email",
+      "alwaysUsed": "Os convites e os alertas de administração são sempre enviados enquanto o SMTP estiver configurado.",
+      "publicUrl": "As ligações nos emails usam o endereço público do servidor, definido em",
+      "publicUrlLink": "Definições do servidor › Geral"
+    },
+    "push": {
+      "desc": "As notificações push chegam à app Famlin nos telemóveis dos membros através do serviço push da Expo.",
+      "devices": "Dispositivos registados"
+    },
+    "families": {
+      "none": "Crie primeiro uma família.",
+      "family": "Família",
+      "albums": "Álbuns associados",
+      "mirror": "Espelhamento de envios",
+      "mirrorOff": "Desativado",
+      "mirrorFailed_one": "{{count}} falhado",
+      "mirrorFailed_other": "{{count}} falhados"
+    },
+    "activity": {
+      "immich": "Deteção de fotos novas nos álbuns associados, e o espelhamento de envios.",
+      "local": "Deteção de fotos novas nas pastas associadas.",
+      "email": "A verificação de hora a hora que envia email aos administradores sobre problemas."
+    },
+    "testing": "A testar…",
+    "testFailed": "Não foi possível executar o teste."
   }
 }

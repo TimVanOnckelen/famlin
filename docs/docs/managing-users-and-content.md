@@ -71,7 +71,7 @@ The group form (**New group** or **Edit**) holds the name, description, allowed 
   - **Circles are private, including from you.** Members outside a circle can't see that it exists. And *you* can only read a circle's content if you're a member of it — circle posts don't appear on the Content page unless you're in the circle. This is deliberate: an admin flag shouldn't be a key to every private conversation in the family. The trade-off is that you can't moderate content in a circle you're not in; if you need to, add yourself to the circle — and note that **its members will see you there**, because anyone in a circle can open its member list from a post and see who joined and when. Circle access is something you can take, not something you have silently.
   - **Deleting a circle permanently deletes its posts and its [Family Wiki](./family-wiki.md) pages**, along with their comments, photos and reactions. There is no restore, and no option to move the content back to the whole family — silently widening an audience is exactly what circles exist to prevent. The confirmation tells you how many posts and wiki pages will be destroyed; if you're not in the circle, that count is all you'll be able to see of them.
   - **Members can leave a circle themselves** from the app. Leaving a circle never removes them from the family group — they just stop seeing that circle's content. Only an admin can add them back.
-- **Linked albums**: at the bottom of the detail pane. Link albums from Immich or a local folder to the group, and choose per album whether new photos are announced. See [Media integrations](./admin-configuration.md#media-integrations).
+- **Photos**: at the bottom of the detail pane, links to the family's albums on the [Integrations](./admin-configuration.md#integrations) page. Linked albums and the Immich upload mirror are set per family on each photo source's **Families** tab.
 - **Invites** — further down the same page (status, copy link, revoke); see [Inviting family members](./inviting-family.md) for that flow.
 
 ## Content moderation
@@ -95,9 +95,9 @@ The **Push notification log** page lists every push-notification send attempt �
 
 ## Storage
 
-The **Storage** page shows where uploaded photos and videos are stored: the driver (local folder or S3 bucket), the folder or bucket, prefix, endpoint and region, how many files and bytes it holds, and whether it's reachable right now.
+**Integrations → Media storage** shows where uploaded photos and videos are stored: the driver (local folder or S3 bucket), the folder or bucket, prefix, endpoint and region, how many files and bytes it holds, and whether it's reachable right now.
 
-Storage itself is configured with environment variables, not on this page. While you're [moving media between local and S3](./storage.md#moving-an-existing-installation-between-local-and-s3) (or between two folders), the page also shows the old storage as **Fallback source**, the migration's progress, any conflicts and errors, and the **Clean up source** action.
+Storage itself is configured with environment variables, not in the admin UI. While you're [moving media between local and S3](./storage.md#moving-an-existing-installation-between-local-and-s3) (or between two folders), the page also shows the old storage as **Fallback source**, the migration's progress, any conflicts and errors, and the **Clean up source** action.
 
 ![The Storage page](./img/admin-storage.png)
 
@@ -109,12 +109,11 @@ The **System status** page gives you one place to check that the server is healt
 
 - **Backups**: whether [scheduled backups](./maintenance.md#scheduled-backups) are on, the last backup's time, result and size, the next scheduled run, the stored database dumps, and a **Run backup now** button. It warns you when the backups folder isn't a mounted volume, because backups there wouldn't survive the container being recreated.
 - **Disk space**: free space on the uploads volume and on the backups volume (shown once if they're the same disk). A volume counts as low below 1 GiB free or below 5% free.
-- **Integrations**: whether SMTP, OIDC sign-in, Immich and the local media folder are reachable right now. Each check is the same connection test Server settings uses; ones you haven't set up show "Not configured".
-- **Push notifications**: delivered and failed sends over the last 24 hours and 7 days. More than 20% failures over the last day is flagged; the [push notification log](#push-notification-log) has the details.
+- **Integrations**: only the integrations that need attention or are failing, with the time of the last connection check and a link to the [Integrations](./admin-configuration.md#integrations) page. Push delivery numbers (more than 20% failures over the last day is flagged) are on **Integrations → Push notifications → Activity**, and the [push notification log](#push-notification-log) has the details.
 - **Background jobs**: when each scheduled job (On this day notifications, new album photos, story expiry, backups, the alert check) last ran, whether it succeeded, and its error if it didn't.
 - **Database migrations**: the latest applied migration, and any that are pending or failed.
 
-**Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Server settings → Notifications); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
+**Alerts.** When a backup fails, no backup has succeeded for more than twice the schedule interval, or a volume is low on space, a red banner appears at the top of every admin page. Every admin also gets an email about it, at most one per problem per day for as long as it lasts. Emails need SMTP (Integrations → Email); they're sent even if member email notifications are switched off. Backup alerts only apply while scheduled backups are on.
 
 ## Backups
 

@@ -15,7 +15,12 @@ are cleared automatically when the admin UI loads.
 
 Open `https://famlin.yourdomain.com/admin`. On a fresh install (no users in the database yet) it shows a **one-time setup screen** instead of the login form — fill in your name, email, and a password to create the first account, which is automatically made an admin. There is no default or seeded account; if the setup screen doesn't appear, an admin account already exists and you should log in with it instead (an existing admin can reset another admin's password from the Users page; if every admin's password and access is lost, the only recovery path is connecting to the `famlin-db` container directly and clearing the affected row).
 
-From `/admin` → Server settings you can then configure everything below. The page has five sections, listed on the left: **General**, **Branding**, **Sign-in & access**, **Notifications** and **Media**. Backups — the schedule, the data export and restoring — have their own **Backups** page in the admin menu. Each shows a status (configured / not set up, enabled / disabled) so you can see at a glance what still needs attention. Changes are saved together with the save bar that appears at the bottom; Branding has its own save button.
+After that, two admin pages hold the configuration:
+
+- **Server settings** has three sections, listed on the left: **General**, **Branding** and **Access control**. Changes are saved with the save bar that appears at the bottom; Branding has its own save button.
+- **Integrations** holds every connection to another service: sign-in providers, email, push notifications, photo sources and media storage. See [Integrations](#integrations) below.
+
+Backups (the schedule, the data export and restoring) have their own **Backups** page in the admin menu.
 
 ![Server settings, General section](./img/admin-settings-general.png)
 
@@ -24,26 +29,41 @@ From `/admin` → Server settings you can then configure everything below. The p
 - **App Store / Google Play URLs** (General): optional. If set, the invite link page shows download buttons for people who don't have the app yet; leave blank to hide them. Both default to the official pre-built apps ([App Store](https://apps.apple.com/us/app/famlin/id6786783660) and [Google Play](https://play.google.com/store/apps/details?id=be.xeweb.famlin)), so a fresh deployment already has working download links. Override either one if you build and distribute your own app instead, or clear it to hide that button.
 - **Check for new versions** (General → Updates): on by default. Once a day the server checks GitHub for a new Famlin release and shows an "update available" banner in the admin UI; nothing about your instance is sent. Turn it off to stop the check and hide the banner. See [Staying up to date](./maintenance.md#staying-up-to-date).
 - **Branding**: family name, color and logo. See [Branding](#branding) below.
-- **OIDC / SSO** (Sign-in & access): see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
-- **Allowed email addresses** (Sign-in & access): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
-- **Push notifications** (Notifications): turn push notifications on or off for the whole server. Members choose per event type in their own profile.
-- **Email notifications** (Notifications): turn notification emails on or off for the whole server, and fill in the SMTP **host**, **port**, **username**, **password** and **sender address** used to send them. SMTP is also used for [system alert emails](./managing-users-and-content.md#system-status) to admins, even when member email notifications are off. Famlin sends notification emails over at most three SMTP connections at a time, which stays within the connection limits of common mail providers (Gmail, Fastmail, Amazon SES and others) even in large families.
-- **Media integrations** (Media: Immich, local folders): see [Media integrations](#media-integrations) below. Optional.
+- **Allowed email addresses** (Access control): restrict which emails may create an account. Leave empty to allow anyone who reaches the login page.
 - **Backups** are on their own admin page: see [Backups](./managing-users-and-content.md#backups).
 
-Where uploaded photos and videos are *stored* (a Docker volume, a NAS folder or an S3 bucket) isn't a setting here. It's configured with environment variables, see [Storage](./storage.md), and shown on the **Storage** page in the admin menu.
-
-<details>
-<summary>Screenshots of the other sections</summary>
-
-![Sign-in & access](./img/admin-settings-signin.png)
-
-![Notifications](./img/admin-settings-notifications.png)
-
-
-</details>
-
 All of this is stored in the database, so it survives redeploys of the backend image without any env var changes. (Storage is the exception: see [Storage](./storage.md).)
+
+## Integrations
+
+`/admin` → **Integrations** lists every service Famlin connects to, grouped by what it does: **Photos** (Immich, Local folders), **Sign-in** (Single sign-on, Sign in with Apple), **Messages** (Email, Push notifications) and **Storage** (Media storage).
+
+![The Integrations page](./img/admin-integrations.png)
+
+Each card shows one status:
+
+- **Connected**: set up, the last connection check passed, and the background jobs that use it succeeded.
+- **Needs attention**: it works, but something needs a look, such as an upload that couldn't be mirrored, a failed background job, or email without a [public address](#first-login) for its links.
+- **Failing**: the connection check fails (wrong address or password, server down), or media storage fell back to its fallback location.
+- **Not set up**: nothing to check yet. An integration that isn't set up never shows warnings.
+
+Connection checks contact other servers, so the page shows the result of the last check and its time. **Check now** runs them again; saving an integration's settings also refreshes its status.
+
+Open a card to configure it. Every integration page has the same tabs:
+
+- **Connection**: the address, keys and switches, with a test button. Saved passwords and keys are never shown again (see [Saved secrets](#saved-secrets)). Save with the save bar at the bottom.
+- **Families** (Immich, Local folders): every family and the albums it can pick photos from, plus, for Immich, where its uploads are mirrored. **Edit** on a row opens that family's album and mirror settings.
+- **People** (Immich): [mapping recognized people](#mapping-people-in-albums).
+- **Activity**: the background jobs that use the integration, and for push the delivery numbers.
+
+What each integration covers:
+
+- **Single sign-on**: see [OIDC / SSO login](#oidc--sso-login) below. Optional; email/password login always works.
+- **Sign in with Apple**: works without setup; see [Sign in with Apple](#sign-in-with-apple).
+- **Email**: the SMTP **host**, **port**, **username**, **password** and **sender address**, and **Enable email notifications** to turn notification emails on or off for the whole server. Invites and [system alert emails](./managing-users-and-content.md#system-status) to admins are sent whenever SMTP is set up, even with email notifications off. **Check connection** tests the saved settings, so save first. Famlin sends notification emails over at most three SMTP connections at a time, which stays within the connection limits of common mail providers (Gmail, Fastmail, Amazon SES and others) even in large families.
+- **Push notifications**: turn push notifications on or off for the whole server. Members choose per event type in their own profile. The Activity tab shows delivered and failed sends and links to the [push notification log](./managing-users-and-content.md#push-notification-log).
+- **Immich** and **Local folders**: see [Media integrations](#media-integrations) below.
+- **Media storage**: where uploaded photos and videos are stored (a Docker volume, a NAS folder or an S3 bucket). It's configured with environment variables, not here; see [Storage](./storage.md). The page shows the storage location and any migration in progress.
 
 ## OIDC / SSO login
 
@@ -58,7 +78,7 @@ Setup differs slightly depending on whether your provider supports a secretless 
    - Mobile app: `famlin://` (the app's URL scheme; see `mobile/app.config.js`)
    - Web app: `https://famlin.yourdomain.com/`
    - Admin UI: `https://famlin.yourdomain.com/admin/`
-3. In `/admin` → Server settings, fill in **Issuer URL**, **Client ID**, **Scopes** (defaults to `openid email profile`), and **Display name** (shown on the login button). Leave **Client secret** blank.
+3. In `/admin` → Integrations → **Single sign-on**, fill in **Issuer URL**, **Client ID**, **Scopes** (defaults to `openid email profile`), and **Display name** (shown on the login button). Leave **Client secret** blank.
 
 Famlin links an SSO login to an existing account by email, so it refuses any login whose ID token marks the email as unverified (`email_verified: false`). Keep email verification enabled at your provider if it allows self-registration or user-editable email addresses; providers that don't send the claim at all (such as Microsoft Entra ID) keep working.
 
@@ -72,7 +92,7 @@ Google's OAuth clients always require a client secret for the token exchange, an
    - `https://famlin.yourdomain.com/admin/` (admin UI)
    - `https://famlin.yourdomain.com/api/auth/oidc/mobile-callback` (mobile app)
 3. Copy the **Client ID** and **Client secret** Google generates.
-4. In `/admin` → Server settings, fill in:
+4. In `/admin` → Integrations → **Single sign-on**, fill in:
    - **Issuer URL**: `https://accounts.google.com`
    - **Client ID** and **Client secret** (Google is the main reason this field exists — most other providers don't need it)
    - **Scopes**: `openid email profile`
@@ -86,11 +106,11 @@ Nothing to configure. The mobile app offers **Sign in with Apple** on iOS in add
 
 It follows the same access rules as any other login: an account is only created for a new person if their email is on the allow-list (see below), or if they came in through a valid invite link. Note that Apple lets people hide their real address behind a `@privaterelay.appleid.com` relay address, which you can't put on an allow-list ahead of time — so in practice family members using Sign in with Apple should join through an invite link.
 
-The one setting that exists, **Extra Apple bundle IDs** (`/admin` → Server settings), is only for self-hosters who build and distribute their *own* iOS app instead of installing the official one: put your build's bundle identifier there (comma-separated for several) so this server accepts sign-ins issued to it. The official app's bundle ID is always accepted, so leave the field empty otherwise.
+The one setting that exists, **Extra Apple bundle IDs** (`/admin` → Integrations → **Sign in with Apple**), is only for self-hosters who build and distribute their *own* iOS app instead of installing the official one: put your build's bundle identifier there (comma-separated for several) so this server accepts sign-ins issued to it. The official app's bundle ID is always accepted, so leave the field empty otherwise.
 
 ### Access control
 
-Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings). New accounts are only auto-provisioned via OIDC or Sign in with Apple if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid login — unless it arrives through a valid invite link, which is its own authorization and deliberately bypasses the allow-list.
+Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Server settings → **Access control**). New accounts are only auto-provisioned via OIDC or Sign in with Apple if the email is allowed (empty allow-list = allow all). An unlisted email will be rejected even with a valid login — unless it arrives through a valid invite link, which is its own authorization and deliberately bypasses the allow-list.
 
 ## Saved secrets
 
@@ -105,9 +125,9 @@ Four settings are credentials for other systems: the OIDC **Client secret**, the
 
 ## Media integrations
 
-Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. Famlin only reads these sources (the one exception is the opt-in [Immich upload mirror](#mirroring-uploads-to-immich)), and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. Famlin only reads these sources (the one exception is the opt-in [Immich upload mirror](#mirroring-uploads-to-immich)), and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Integrations → **Immich** or **Local folders** → **Connection**); which albums each family can see is then set on that integration's **Families** tab. A family can have multiple linked albums across different sources.
 
-![Server settings, Media section](./img/admin-settings-media.png)
+![The Immich integration, Connection tab](./img/admin-integrations-immich.png)
 
 ### Immich
 
@@ -118,9 +138,9 @@ If your family already runs [Immich](https://immich.app) for photo storage:
 1. In Immich (as an admin), create a user account for Famlin (e.g. `famlin@home.local`).
 2. Have each family member share their albums with this Famlin user (in Immich, right-click an album → Share → add the Famlin user).
 3. Create an API key for the Famlin account (log in as the Famlin user, Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin only reads with this key. (The optional [upload mirror](#mirroring-uploads-to-immich) uses a second key.)
-4. In `/admin` → Server settings → **Media** → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
+4. In `/admin` → Integrations → **Immich** → **Connection**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
 5. Save settings.
-6. Go to `/admin` → Groups, select a group, and under **Linked albums** → **Immich** the dropdown now shows both the Famlin account's own albums and any shared with it. Pick the ones you want this group to see.
+6. Open the **Families** tab and click **Set up** (or **Edit**) on a family: under **Linked albums** the dropdown now shows both the Famlin account's own albums and any shared with it. Pick the ones you want this group to see.
 
 Members never see an Immich login, token, or API key — the underlying image is streamed live from your Immich server through Famlin's own authenticated proxy.
 
@@ -139,12 +159,12 @@ It is a mirror, not a storage location. Famlin keeps its own files and keeps dec
 **Setting it up:**
 
 1. In Immich, create a second API key for the Famlin user with these permissions: `asset.upload`, `asset.read`, `album.create`, `album.read`, `albumAsset.create` and `albumAsset.delete`. Keep the first key read-only.
-2. In `/admin` → Server settings → **Media** → **Immich**, paste it into **Upload key (optional)** and click **Test upload key**. The test lists any permission the key is missing. Save settings.
-3. Go to `/admin` → Groups, select a family and scroll to **Mirror uploads to Immich**. Choose **Create a new album "Famlin – &lt;family name&gt;"** or an existing album. Optionally pick a **Mirror posts since** date to also copy older posts (empty = from now on). Click **Turn on mirroring** and confirm.
+2. In `/admin` → Integrations → **Immich** → **Connection**, paste it into **Upload key (optional)** and click **Test upload key**. The test lists any permission the key is missing. Save settings.
+3. Open the **Families** tab, click **Edit** on the family, and find **Mirror uploads to Immich**. Choose **Create a new album "Famlin – &lt;family name&gt;"** or an existing album. Optionally pick a **Mirror posts since** date to also copy older posts (empty = from now on). Click **Turn on mirroring** and confirm.
 
-![The Mirror uploads to Immich section of a family in the admin Groups page](./img/admin-groups-media-mirror.png)
+![The Families tab of the Immich integration, with each family's linked albums and upload mirror](./img/admin-integrations-families.png)
 
-A background job runs every 10 minutes. The section shows how many uploads are mirrored, waiting or failed, and the last error of each failed upload. **Sync now** starts a run straight away and retries failed uploads. A post is never held up by Immich: if Immich is down, the job fails, shows up as failing under System status → Background jobs, and catches up on its next run.
+A background job runs every 10 minutes. The Families tab shows each family's mirror album and how many uploads are mirrored or failed; **Edit** shows the last error of each failed upload. **Sync now** starts a run straight away and retries failed uploads. A post is never held up by Immich: if Immich is down, the job fails, shows up on the Immich **Activity** tab (and under System status → Background jobs), and catches up on its next run.
 
 **When a post is deleted or a photo is edited out**, Famlin removes it from the album. It never deletes the photo from Immich itself, and it only removes photos it added. If the album already held the same photo (because a phone backup put it there, say), Famlin leaves it alone.
 
@@ -158,16 +178,16 @@ An album that is linked to a **different** family under **Linked albums** can't 
 Anyone the Immich album is shared with sees every mirrored photo, whether or not they are in the family in Famlin. Someone removed from the family keeps access to what was already mirrored until you change the album's sharing in Immich. Famlin does not manage Immich sharing.
 :::
 
-If you also link the mirror album to the same family under **Linked albums**, Famlin recognizes its own mirrored photos: they don't show up twice in the Photos tab, and [new asset detection](#new-asset-detection) doesn't turn them into new posts.
+If you also link the mirror album to the same family as a linked album, Famlin recognizes its own mirrored photos: they don't show up twice in the Photos tab, and [new asset detection](#new-asset-detection) doesn't turn them into new posts.
 
 ### Local folders
 
 Serve photos straight from a directory on the server — handy when your photos already live on the NAS Famlin runs on and are synced there by another tool (Syncthing, rsync, a phone upload app).
 
 1. Make the directory visible inside the Famlin container: add a bind mount to the `famlin-backend` service in your `docker-compose.yml`, e.g. `- /volume1/photos/famlin:/media/photos:ro` (read-only is enough — Famlin never writes to it).
-2. In `/admin` → Server settings → **Media** → **Local folders**, enter the *container-side* path (e.g. `/media/photos`) and click **Check path**.
+2. In `/admin` → Integrations → **Local folders** → **Connection**, enter the *container-side* path (e.g. `/media/photos`) and click **Check path**.
 3. Save settings.
-4. Every immediate subdirectory of that path is now a linkable album: go to `/admin` → Groups, select a group, and under **Linked albums** choose **Local folders** as the media source and pick a folder.
+4. Every immediate subdirectory of that path is now a linkable album: open the **Families** tab, click **Set up** (or **Edit**) on a family, and pick a folder under **Linked albums**.
 
 Only image files (`jpg`, `jpeg`, `png`, `gif`, `webp`, `avif`) directly inside the folder are listed — subfolders of an album and video files are ignored for now. Thumbnails are generated on the fly and cached inside the container.
 
@@ -179,7 +199,7 @@ Each linked album can be configured to surface newly-added assets to your family
 - **MANUAL** — send a notification when new assets appear. Members get a notification (as if a new post arrived) but Famlin doesn't auto-create a post — good for albums you want to stay aware of without flooding the feed.
 - **AUTO** — automatically create a post in the group with new assets. An hourly job checks linked albums; when it finds new photos/videos, it creates a real post (authored by an admin, preferring a group-member admin if one exists) that flows through Famlin's normal post pipeline with notifications — good for auto-import workflows (e.g., a Synology camera folder that fills hourly, a cloud-synced photo album).
 
-To set this, go to `/admin` → Groups → **Linked albums**, click an album, and choose a mode.
+To set this, open the integration's **Families** tab, click **Edit** on the family, and choose a mode next to the album.
 
 The hourly job runs at minute 15 of every hour (check the server logs to confirm it's running). On the first run for an album, it only initializes the watermark — it doesn't retroactively notify about pre-existing assets, only new ones added after that point.
 
@@ -187,7 +207,7 @@ The hourly job runs at minute 15 of every hour (check the server logs to confirm
 
 For Immich albums with face recognition data, you can map recognized people to display names and optionally link them to Famlin users. This lets members filter album views by person when composing a post (e.g., "show me photos of Alice") and keeps face data private — only admin-mapped people are visible to family.
 
-1. Go to `/admin` → Server settings → **Media** → **Immich** — the **People mapping** section sits inside the Immich card, since the recognized people come from Immich's face recognition.
+1. Go to `/admin` → Integrations → **Immich** → **People**. The recognized people come from Immich's face recognition.
 2. Under **Unmapped people**, search or browse the grid of recognized faces and click a person. The catalog includes people detected across your linked albums, including those in albums shared by other Immich users — these may not have thumbnails available if they're only recognized in shared albums you don't directly own.
 3. Fill in the **Display name** (a human-readable name shown to family, e.g. "Alice" or "Grandpa") and optionally a **Family member** (pick a Famlin user if this person is someone in the family; leave blank otherwise), then click **Save**. Mapped people now appear in member UI when they're picking photos for a post, scoped to each group's linked albums.
 

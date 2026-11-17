@@ -47,7 +47,8 @@
     "systemStatus": "系统状态",
     "demoBanner": "演示模式——此管理面板为只读。可以随意查看，但更改不会被保存。",
     "diagnostics": "诊断",
-    "backups": "备份"
+    "backups": "备份",
+    "integrations": "集成"
   },
   "devices": {
     "title": "移动设备",
@@ -330,6 +331,10 @@
       "error": "无法更新同步设置：{{error}}",
       "syncAlreadyRunning": "同步已在进行中。失败的上传将在下一轮重试。",
       "pauseHint": "暂停后不再添加照片；已删除帖子的照片仍会被 Famlin 从相册中移除。"
+    },
+    "photos": {
+      "title": "照片",
+      "moved": "此家庭的关联相册和 Immich 上传同步在“集成”中管理："
     }
   },
   "content": {
@@ -490,7 +495,11 @@
     "exportIncludeMediaHint": "关闭后，恢复时要求所有列出的媒体已存在于配置的存储中。品牌文件始终包含在内。",
     "updateCheck": "检查新版本",
     "updateCheckHint": "每天向 GitHub 检查一次是否有新版本；不会发送任何有关你的实例的信息。",
-    "updates": "更新"
+    "updates": "更新",
+    "accessRestricted_one": "{{count}} 个允许的地址",
+    "accessRestricted_other": "{{count}} 个允许的地址",
+    "accessOpen": "任何有账号或邀请的人",
+    "integrationsMoved": "登录方式、电子邮件、推送、照片来源和存储都在"
   },
   "media": {
     "peopleMapping": {
@@ -651,7 +660,9 @@
         "not_found": "找不到文件夹",
         "not_a_directory": "不是文件夹",
         "invalid_response": "响应无效"
-      }
+      },
+      "allOk": "所有连接均正常",
+      "open": "打开“集成”"
     },
     "push": {
       "title": "推送通知",
@@ -845,5 +856,112 @@
     "showDumps": "显示数据库转储（{{count}}）",
     "hideDumps": "隐藏数据库转储",
     "dumpsNote": "在 Famlin 1.0.0 之前，每次运行还会额外写入一份数据库转储作为保险。除非有特殊原因，请恢复 Famlin 备份。"
+  },
+  "integrations": {
+    "title": "集成",
+    "description": "Famlin 连接的所有服务：照片从哪里来、大家如何登录、消息如何发出，以及媒体存放在哪里。",
+    "checkedAt": "检查于 {{date}}",
+    "checkNow": "立即检查",
+    "checking": "正在检查…",
+    "open": "打开",
+    "setUp": "设置",
+    "checkSaved": "检查连接",
+    "checkOk": "已连接。",
+    "saveBeforeCheck": "请先保存更改：检查使用的是已保存的设置。",
+    "groups": {
+      "photos": "照片",
+      "signin": "登录",
+      "messages": "消息",
+      "storage": "存储"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "本地文件夹",
+      "sso": "单点登录",
+      "apple": "通过 Apple 登录",
+      "email": "电子邮件",
+      "push": "推送通知",
+      "storage": "媒体存储"
+    },
+    "state": {
+      "off": "未设置",
+      "ok": "已连接",
+      "attention": "需要关注",
+      "failing": "出错"
+    },
+    "issues": {
+      "checkFailed": "上一次连接检查失败。",
+      "jobFailed": "使用它的后台任务失败了。请查看“活动”。",
+      "mirrorFailures": "部分上传未能同步。请查看“家庭”。",
+      "mirrorKeyMissing": "有家庭开启了同步，但尚未保存上传密钥。",
+      "publicUrlMissing": "未设置公开地址，因此发出的邮件不含链接。",
+      "pushUnhealthy": "过去 24 小时内有大量推送通知未能送达。",
+      "storageFallback": "主存储不可用；媒体正从备用位置提供。"
+    },
+    "usage": {
+      "notSetUp": "尚未设置",
+      "mirroring_one": "正在为 {{count}} 个家庭同步上传内容",
+      "mirroring_other": "正在为 {{count}} 个家庭同步上传内容",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "适用于官方应用，无需设置",
+      "appleExtra_one": "官方应用以及 {{count}} 个自建版本",
+      "appleExtra_other": "官方应用以及 {{count}} 个自建版本",
+      "email": "通过 {{host}} 发送",
+      "pushOff": "已关闭",
+      "storageLocal": "本地磁盘",
+      "storageS3": "S3 兼容存储桶",
+      "storageFallback": "带备用位置",
+      "families_one": "{{count}} 个家庭",
+      "families_other": "{{count}} 个家庭",
+      "albums_one": "{{count}} 个关联相册",
+      "albums_other": "{{count}} 个关联相册",
+      "push_one": "{{count}} 台设备 · 7 天内送达 {{delivered}} 条，失败 {{failed}} 条",
+      "push_other": "{{count}} 台设备 · 7 天内送达 {{delivered}} 条，失败 {{failed}} 条"
+    },
+    "tabs": {
+      "connection": "连接",
+      "families": "家庭",
+      "people": "人物",
+      "activity": "活动"
+    },
+    "immich": {
+      "server": "服务器和只读密钥",
+      "uploadKey": "上传密钥",
+      "mirrorPerFamily": "每个家庭同步到哪个相册，请在“家庭”标签页中设置。"
+    },
+    "sso": {
+      "access": "谁可以创建账号，请在此设置：",
+      "accessLink": "服务器设置 › 访问控制"
+    },
+    "apple": {
+      "desc": "成员无需任何设置，即可在官方 iOS 应用中使用 Apple ID 登录。只有在发布自建版本时才需要添加 Bundle ID。"
+    },
+    "email": {
+      "desc": "Famlin 通过此邮件服务器发送邀请、通知和管理员提醒。",
+      "usedFor": "电子邮件的用途",
+      "alwaysUsed": "只要设置了 SMTP，邀请和管理员提醒就会始终发送。",
+      "publicUrl": "邮件中的链接使用服务器的公开地址，可在此设置：",
+      "publicUrlLink": "服务器设置 › 常规"
+    },
+    "push": {
+      "desc": "推送通知通过 Expo 的推送服务送达成员手机上的 Famlin 应用。",
+      "devices": "已注册的设备"
+    },
+    "families": {
+      "none": "请先创建一个家庭。",
+      "family": "家庭",
+      "albums": "关联相册",
+      "mirror": "上传同步",
+      "mirrorOff": "关闭",
+      "mirrorFailed_one": "{{count}} 个失败",
+      "mirrorFailed_other": "{{count}} 个失败"
+    },
+    "activity": {
+      "immich": "检测关联相册中的新照片，以及上传同步。",
+      "local": "检测关联文件夹中的新照片。",
+      "email": "每小时检查一次并通过邮件向管理员报告问题。"
+    },
+    "testing": "正在测试…",
+    "testFailed": "无法运行测试。"
   }
 }

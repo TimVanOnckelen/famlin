@@ -47,7 +47,8 @@
     "systemStatus": "Systeemstatus",
     "demoBanner": "Demo-modus — dit beheerpaneel is alleen-lezen. Je kunt rondkijken, maar wijzigingen worden niet opgeslagen.",
     "diagnostics": "Diagnose",
-    "backups": "Back-ups"
+    "backups": "Back-ups",
+    "integrations": "Integraties"
   },
   "devices": {
     "title": "Mobiele apparaten",
@@ -330,6 +331,10 @@
       "error": "Kan spiegelen niet bijwerken: {{error}}",
       "syncAlreadyRunning": "Er loopt al een synchronisatie. Mislukte uploads worden bij de volgende ronde opnieuw geprobeerd.",
       "pauseHint": "Pauzeren stopt het toevoegen van foto's; Famlin haalt verwijderde berichten nog wel uit het album."
+    },
+    "photos": {
+      "title": "Foto's",
+      "moved": "Gekoppelde albums en de Immich-uploadspiegel van deze familie beheer je onder Integraties:"
     }
   },
   "content": {
@@ -490,7 +495,11 @@
     "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen.",
     "updateCheck": "Controleren op nieuwe versies",
     "updateCheckHint": "Controleert één keer per dag op GitHub of er een nieuwe release is; er wordt niets over je instantie verzonden.",
-    "updates": "Updates"
+    "updates": "Updates",
+    "accessRestricted_one": "{{count}} toegestaan adres",
+    "accessRestricted_other": "{{count}} toegestane adressen",
+    "accessOpen": "Iedereen met een account of uitnodiging",
+    "integrationsMoved": "Aanmeldproviders, e-mail, push, fotobronnen en opslag staan onder"
   },
   "media": {
     "peopleMapping": {
@@ -651,7 +660,9 @@
         "not_found": "Map niet gevonden",
         "not_a_directory": "Geen map",
         "invalid_response": "Ongeldig antwoord"
-      }
+      },
+      "allOk": "Alle verbindingen werken",
+      "open": "Integraties openen"
     },
     "push": {
       "title": "Pushmeldingen",
@@ -845,5 +856,112 @@
     "showDumps": "Databasedumps tonen ({{count}})",
     "hideDumps": "Databasedumps verbergen",
     "dumpsNote": "Tot Famlin 1.0.0 schrijft elke run ook een databasedump als vangnet. Zet de Famlin-back-up terug, tenzij je een reden hebt om dat niet te doen."
+  },
+  "integrations": {
+    "title": "Integraties",
+    "description": "Elke dienst waarmee Famlin verbinding maakt: waar je foto's vandaan komen, hoe mensen zich aanmelden, hoe berichten verstuurd worden en waar media opgeslagen wordt.",
+    "checkedAt": "Gecontroleerd op {{date}}",
+    "checkNow": "Nu controleren",
+    "checking": "Bezig met controleren…",
+    "open": "Openen",
+    "setUp": "Instellen",
+    "checkSaved": "Verbinding controleren",
+    "checkOk": "Verbonden.",
+    "saveBeforeCheck": "Sla je wijzigingen eerst op: de controle gebruikt de opgeslagen instellingen.",
+    "groups": {
+      "photos": "Foto's",
+      "signin": "Aanmelden",
+      "messages": "Berichten",
+      "storage": "Opslag"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Lokale mappen",
+      "sso": "Single sign-on",
+      "apple": "Inloggen met Apple",
+      "email": "E-mail",
+      "push": "Pushmeldingen",
+      "storage": "Mediaopslag"
+    },
+    "state": {
+      "off": "Niet ingesteld",
+      "ok": "Verbonden",
+      "attention": "Vraagt aandacht",
+      "failing": "Werkt niet"
+    },
+    "issues": {
+      "checkFailed": "De laatste verbindingscontrole is mislukt.",
+      "jobFailed": "Een achtergrondtaak die deze integratie gebruikt, is mislukt. Zie Activiteit.",
+      "mirrorFailures": "Sommige uploads konden niet gespiegeld worden. Zie Families.",
+      "mirrorKeyMissing": "Spiegelen staat aan voor een familie, maar er is geen uploadsleutel opgeslagen.",
+      "publicUrlMissing": "Er is geen openbaar adres ingesteld, dus e-mails gaan zonder links de deur uit.",
+      "pushUnhealthy": "Veel pushmeldingen konden de afgelopen 24 uur niet bezorgd worden.",
+      "storageFallback": "De primaire opslag is niet beschikbaar; media komen uit de reservelocatie."
+    },
+    "usage": {
+      "notSetUp": "Nog niet ingesteld",
+      "mirroring_one": "Spiegelt uploads voor {{count}} familie",
+      "mirroring_other": "Spiegelt uploads voor {{count}} families",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Werkt met de officiële app, zonder instellingen",
+      "appleExtra_one": "Officiële app plus {{count}} eigen build",
+      "appleExtra_other": "Officiële app plus {{count}} eigen builds",
+      "email": "Verstuurt via {{host}}",
+      "pushOff": "Uitgeschakeld",
+      "storageLocal": "Lokale schijf",
+      "storageS3": "S3-compatibele bucket",
+      "storageFallback": "Met een reservelocatie",
+      "families_one": "{{count}} familie",
+      "families_other": "{{count}} families",
+      "albums_one": "{{count}} gekoppeld album",
+      "albums_other": "{{count}} gekoppelde albums",
+      "push_one": "{{count}} toestel · {{delivered}} bezorgd, {{failed}} mislukt in 7 dagen",
+      "push_other": "{{count}} toestellen · {{delivered}} bezorgd, {{failed}} mislukt in 7 dagen"
+    },
+    "tabs": {
+      "connection": "Verbinding",
+      "families": "Families",
+      "people": "Personen",
+      "activity": "Activiteit"
+    },
+    "immich": {
+      "server": "Server en leessleutel",
+      "uploadKey": "Uploadsleutel",
+      "mirrorPerFamily": "Naar welk album elke familie spiegelt, stel je in op het tabblad Families."
+    },
+    "sso": {
+      "access": "Wie een account mag aanmaken, stel je in onder",
+      "accessLink": "Serverinstellingen › Toegangsbeheer"
+    },
+    "apple": {
+      "desc": "Leden kunnen zonder instellingen inloggen met hun Apple ID in de officiële iOS-app. Voeg alleen bundle-id's toe als je een eigen build uitbrengt."
+    },
+    "email": {
+      "desc": "Famlin verstuurt uitnodigingen, meldingen en waarschuwingen voor beheerders via deze mailserver.",
+      "usedFor": "Waarvoor e-mail gebruikt wordt",
+      "alwaysUsed": "Uitnodigingen en waarschuwingen voor beheerders worden altijd verstuurd zolang SMTP is ingesteld.",
+      "publicUrl": "Links in e-mails gebruiken het openbare adres van de server, ingesteld onder",
+      "publicUrlLink": "Serverinstellingen › Algemeen"
+    },
+    "push": {
+      "desc": "Pushmeldingen bereiken de Famlin-app op de telefoons van leden via de pushdienst van Expo.",
+      "devices": "Geregistreerde toestellen"
+    },
+    "families": {
+      "none": "Maak eerst een familie aan.",
+      "family": "Familie",
+      "albums": "Gekoppelde albums",
+      "mirror": "Uploadspiegel",
+      "mirrorOff": "Uit",
+      "mirrorFailed_one": "{{count}} mislukt",
+      "mirrorFailed_other": "{{count}} mislukt"
+    },
+    "activity": {
+      "immich": "Detectie van nieuwe foto's in gekoppelde albums, en de uploadspiegel.",
+      "local": "Detectie van nieuwe foto's in gekoppelde mappen.",
+      "email": "De controle die beheerders elk uur mailt over problemen."
+    },
+    "testing": "Bezig met testen…",
+    "testFailed": "De test kon niet uitgevoerd worden."
   }
 }

@@ -24,7 +24,7 @@ If you edit a purpose string, keep it specific. "Famlin needs photo access" fail
 
 Sign in with Apple needs the entitlement on your App ID. `mobile/app.config.js` sets `ios.usesAppleSignIn: true` and registers the `expo-apple-authentication` plugin, so an EAS build with managed credentials enables the capability for you. If you manage credentials yourself, enable **Sign In with Apple** for your App ID in the Apple Developer portal before building.
 
-Your build also has its own bundle identifier, and Apple's identity tokens are issued to *that* identifier. Add it to **Extra Apple bundle IDs** in `/admin` → Server settings so your server accepts them — see [Sign in with Apple](/docs/admin-configuration#sign-in-with-apple).
+Your build also has its own bundle identifier, and Apple's identity tokens are issued to *that* identifier. Add it to **Extra Apple bundle IDs** in `/admin` → Integrations → Sign in with Apple so your server accepts them — see [Sign in with Apple](/docs/admin-configuration#sign-in-with-apple).
 
 ### Share extension and App Group
 

@@ -2114,8 +2114,11 @@
   }
 
   .integration-tabs {
+    max-width: 100%;
     margin-bottom: 1.25rem;
     border-bottom: 1px solid var(--border);
+    /* Four tabs don't fit a phone: scroll them instead of the page. */
+    overflow-x: auto;
   }
 
   .integration-tab-body {

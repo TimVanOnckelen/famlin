@@ -931,7 +931,7 @@
     },
     "sso": {
       "access": "Who may create an account is set under",
-      "accessLink": "Server settings › Access"
+      "accessLink": "Server settings › Access control"
     },
     "apple": {
       "desc": "Members can sign in with their Apple ID in the official iOS app without any setup. Add bundle ids only if you ship your own build."

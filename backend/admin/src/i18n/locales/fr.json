@@ -47,7 +47,8 @@
     "systemStatus": "État du système",
     "demoBanner": "Mode démo : ce panneau d'administration est en lecture seule. Tu peux explorer, mais les modifications ne sont pas enregistrées.",
     "diagnostics": "Diagnostics",
-    "backups": "Sauvegardes"
+    "backups": "Sauvegardes",
+    "integrations": "Intégrations"
   },
   "devices": {
     "title": "Appareils mobiles",
@@ -330,6 +331,10 @@
       "error": "Impossible de mettre à jour la copie : {{error}}",
       "syncAlreadyRunning": "Une synchronisation est déjà en cours. Les envois en échec seront réessayés au prochain passage.",
       "pauseHint": "La pause arrête l'ajout de photos ; Famlin retire toujours de l'album les publications supprimées."
+    },
+    "photos": {
+      "title": "Photos",
+      "moved": "Les albums liés et la copie des envois vers Immich de cette famille se gèrent dans Intégrations :"
     }
   },
   "content": {
@@ -490,7 +495,11 @@
     "exportIncludeMediaHint": "Si désactivé, la restauration exige que tous les médias listés soient présents dans le stockage configuré. L'identité visuelle est toujours incluse.",
     "updateCheck": "Rechercher les nouvelles versions",
     "updateCheckHint": "Interroge GitHub une fois par jour pour une nouvelle version ; rien sur ton serveur n'est envoyé.",
-    "updates": "Mises à jour"
+    "updates": "Mises à jour",
+    "accessRestricted_one": "{{count}} adresse autorisée",
+    "accessRestricted_other": "{{count}} adresses autorisées",
+    "accessOpen": "Toute personne avec un compte ou une invitation",
+    "integrationsMoved": "La connexion, l'e-mail, les notifications push, les sources de photos et le stockage se trouvent dans"
   },
   "media": {
     "peopleMapping": {
@@ -651,7 +660,9 @@
         "not_found": "Dossier introuvable",
         "not_a_directory": "Ce n'est pas un dossier",
         "invalid_response": "Réponse invalide"
-      }
+      },
+      "allOk": "Toutes les connexions fonctionnent",
+      "open": "Ouvrir les intégrations"
     },
     "push": {
       "title": "Notifications push",
@@ -845,5 +856,112 @@
     "showDumps": "Afficher les dumps de base ({{count}})",
     "hideDumps": "Masquer les dumps de base",
     "dumpsNote": "Jusqu'à Famlin 1.0.0, chaque passage écrit aussi un dump de la base par sécurité. Restaure la sauvegarde Famlin, sauf raison particulière."
+  },
+  "integrations": {
+    "title": "Intégrations",
+    "description": "Chaque service auquel Famlin se connecte : d'où viennent vos photos, comment les gens se connectent, comment les messages partent et où les médias sont stockés.",
+    "checkedAt": "Vérifié le {{date}}",
+    "checkNow": "Vérifier maintenant",
+    "checking": "Vérification…",
+    "open": "Ouvrir",
+    "setUp": "Configurer",
+    "checkSaved": "Vérifier la connexion",
+    "checkOk": "Connecté.",
+    "saveBeforeCheck": "Enregistrez d'abord vos modifications : la vérification utilise les réglages enregistrés.",
+    "groups": {
+      "photos": "Photos",
+      "signin": "Connexion",
+      "messages": "Messages",
+      "storage": "Stockage"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Dossiers locaux",
+      "sso": "Authentification unique",
+      "apple": "Connexion avec Apple",
+      "email": "E-mail",
+      "push": "Notifications push",
+      "storage": "Stockage des médias"
+    },
+    "state": {
+      "off": "Non configuré",
+      "ok": "Connecté",
+      "attention": "À vérifier",
+      "failing": "En échec"
+    },
+    "issues": {
+      "checkFailed": "La dernière vérification de la connexion a échoué.",
+      "jobFailed": "Une tâche d'arrière-plan qui l'utilise a échoué. Voir Activité.",
+      "mirrorFailures": "Certains envois n'ont pas pu être copiés. Voir Familles.",
+      "mirrorKeyMissing": "La copie est activée pour une famille, mais aucune clé d'envoi n'est enregistrée.",
+      "publicUrlMissing": "Aucune adresse publique n'est définie : les e-mails partent sans liens.",
+      "pushUnhealthy": "Beaucoup de notifications push n'ont pas pu être remises ces dernières 24 heures.",
+      "storageFallback": "Le stockage principal est indisponible ; les médias sont servis depuis l'emplacement de secours."
+    },
+    "usage": {
+      "notSetUp": "Pas encore configuré",
+      "mirroring_one": "Copie les envois de {{count}} famille",
+      "mirroring_other": "Copie les envois de {{count}} familles",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Fonctionne avec l'application officielle, sans configuration",
+      "appleExtra_one": "Application officielle et {{count}} version maison",
+      "appleExtra_other": "Application officielle et {{count}} versions maison",
+      "email": "Envoi via {{host}}",
+      "pushOff": "Désactivées",
+      "storageLocal": "Disque local",
+      "storageS3": "Bucket compatible S3",
+      "storageFallback": "Avec un emplacement de secours",
+      "families_one": "{{count}} famille",
+      "families_other": "{{count}} familles",
+      "albums_one": "{{count}} album lié",
+      "albums_other": "{{count}} albums liés",
+      "push_one": "{{count}} appareil · {{delivered}} remises, {{failed}} échecs en 7 jours",
+      "push_other": "{{count}} appareils · {{delivered}} remises, {{failed}} échecs en 7 jours"
+    },
+    "tabs": {
+      "connection": "Connexion",
+      "families": "Familles",
+      "people": "Personnes",
+      "activity": "Activité"
+    },
+    "immich": {
+      "server": "Serveur et clé de lecture",
+      "uploadKey": "Clé d'envoi",
+      "mirrorPerFamily": "L'album dans lequel chaque famille copie ses envois se choisit dans l'onglet Familles."
+    },
+    "sso": {
+      "access": "Qui peut créer un compte se règle dans",
+      "accessLink": "Réglages du serveur › Contrôle d'accès"
+    },
+    "apple": {
+      "desc": "Les membres peuvent se connecter avec leur identifiant Apple dans l'application iOS officielle, sans configuration. N'ajoutez des identifiants de bundle que si vous publiez votre propre version."
+    },
+    "email": {
+      "desc": "Famlin envoie les invitations, les notifications et les alertes d'administration via ce serveur de messagerie.",
+      "usedFor": "À quoi sert l'e-mail",
+      "alwaysUsed": "Les invitations et les alertes d'administration sont toujours envoyées tant que SMTP est configuré.",
+      "publicUrl": "Les liens des e-mails utilisent l'adresse publique du serveur, définie dans",
+      "publicUrlLink": "Réglages du serveur › Général"
+    },
+    "push": {
+      "desc": "Les notifications push arrivent dans l'application Famlin sur le téléphone des membres via le service push d'Expo.",
+      "devices": "Appareils enregistrés"
+    },
+    "families": {
+      "none": "Créez d'abord une famille.",
+      "family": "Famille",
+      "albums": "Albums liés",
+      "mirror": "Copie des envois",
+      "mirrorOff": "Désactivée",
+      "mirrorFailed_one": "{{count}} en échec",
+      "mirrorFailed_other": "{{count}} en échec"
+    },
+    "activity": {
+      "immich": "Détection des nouvelles photos dans les albums liés, et copie des envois.",
+      "local": "Détection des nouvelles photos dans les dossiers liés.",
+      "email": "La vérification horaire qui signale les problèmes aux administrateurs par e-mail."
+    },
+    "testing": "Test en cours…",
+    "testFailed": "Le test n'a pas pu être lancé."
   }
 }
