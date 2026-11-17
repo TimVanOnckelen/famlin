@@ -285,13 +285,16 @@ export function FeedScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         // Post cards are heavy (hero image, potentially a map WebView or a
-        // video player) — keep far fewer off-screen items mounted than the
-        // default windowSize of 21 screens. Same tuning family as
-        // PhotosScreen's grid.
+        // video player) — keep fewer off-screen items mounted than the
+        // default windowSize of 21 screens. 7 proved too tight: scroll
+        // diagnostics on a 120 Hz iPhone showed every image mounting about
+        // three times per scroll (315 memory-cache loads for 99 items) and
+        // UI-thread hitches from rebuilding cards that had just left the
+        // window, so keep 5 screens either side instead of 3.
         removeClippedSubviews
         initialNumToRender={5}
         maxToRenderPerBatch={4}
-        windowSize={7}
+        windowSize={11}
         updateCellsBatchingPeriod={50}
         ListHeaderComponent={
           <>

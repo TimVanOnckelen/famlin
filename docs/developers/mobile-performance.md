@@ -43,6 +43,7 @@ Images loaded while recording: 48 network, 20 disk, 3 memory
 - **Hitches (ms/s)** is the time frames ran late per second of scrolling, the same measure as Apple's hitch time ratio: below 5 is unnoticeable, 5 to 10 is noticeable, above 10 is a visible problem.
 - **UI thread high, JS thread low** points at native rendering: image decoding, layout or drawing.
 - **JS thread high** points at React work: re-renders, hooks mounting as cells scroll in.
+- The JS thread is judged against its **own** frame-loop rate. React Native's `requestAnimationFrame` ticks at 60 Hz even on a 120 Hz iPhone, so judging it against the display's 8.3 ms would count every tick as a dropped frame (early reports showed ~500 ms/s with a p95 of 17 ms). When the two rates differ the line reads `JS thread (60 Hz ticks)`. The flip side: a JS thread that is busy for a steady ~16 ms per frame is indistinguishable from that cap, so look at `worst` and the dropped count rather than at p95 alone.
 - **Posts, media and image loads** describe what was scrolled, so two reports can be compared fairly and a bad result can be tied to photo-heavy stretches or to images still arriving from the network.
 
 Only frames produced while the list is moving are counted. The report contains no server address, account or post content.
