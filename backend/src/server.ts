@@ -11,6 +11,7 @@ import { pruneDiagnosticReports } from './services/diagnosticReports.js'
 import { runScheduledBackupIfDue } from './services/backup/index.js'
 import { runSystemAlertsCheck } from './services/systemAlerts.js'
 import { runUpdateCheck } from './services/updateCheck.js'
+import { runMediaMirrorJob } from './services/mediaMirror.js'
 
 // Just under docker-compose.yml's stop_grace_period (30s).
 const SHUTDOWN_TIMEOUT_MS = 25_000
@@ -107,6 +108,17 @@ async function start() {
     ).catch((err) => fastify.log.error(err, 'prune-diagnostic-reports job failed'))
   })
 
+  // Every 10 minutes: the opt-in Famlin -> Immich upload mirror (issue #420,
+  // services/mediaMirror.ts). A run with nothing configured is a single
+  // query.
+  const mediaMirrorTask = cron.schedule('5-59/10 * * * *', () => {
+    recordJobRun(
+      'mediaMirror',
+      () => runMediaMirrorJob(),
+      (result) => ({ ...result })
+    ).catch((err) => fastify.log.warn({ err }, 'media mirror job failed'))
+  })
+
   // `docker stop` sends SIGTERM, then SIGKILLs after the compose file's
   // stop_grace_period (30s). Drain in-flight requests (an upload mid-write)
   // instead of dying with them: fastify.close() stops accepting connections,
@@ -130,6 +142,7 @@ async function start() {
       systemAlertsTask,
       updateCheckTask,
       pruneDiagnosticReportsTask,
+      mediaMirrorTask,
     ])
       task.stop()
     try {

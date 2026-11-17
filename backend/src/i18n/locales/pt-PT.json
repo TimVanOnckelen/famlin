@@ -140,7 +140,12 @@
     "wikiPageLocked": "Esta página está bloqueada. Só quem a criou ou um administrador a pode editar.",
     "wikiPageLockForbidden": "Só quem criou a página ou um administrador a pode bloquear ou desbloquear.",
     "wikiPageDeleteForbidden": "Só quem criou a página ou um administrador a pode eliminar.",
-    "wikiPageConflict": "Outra pessoa guardou esta página entretanto. Revê as alterações e tenta outra vez."
+    "wikiPageConflict": "Outra pessoa guardou esta página entretanto. Revê as alterações e tenta outra vez.",
+    "mediaMirrorNotConfigured": "Adicione primeiro uma chave de envio do Immich em Integrações de multimédia",
+    "mediaMirrorAlbumNotFound": "O álbum do Immich não foi encontrado, ou a chave de envio não tem acesso a ele",
+    "mediaMirrorUnauthorized": "O Immich recusou a chave de envio",
+    "mediaMirrorAlbumRequired": "Escolha um álbum para onde espelhar",
+    "mediaMirrorNotFound": "O espelhamento não está configurado para esta família"
   },
   "notifications": {
     "newPost": "{{author}} publicou em {{group}}: \"{{excerpt}}\"",

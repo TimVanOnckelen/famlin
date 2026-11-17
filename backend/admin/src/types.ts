@@ -59,7 +59,7 @@ export interface ServerSettings {
   oidcName: string
   oidcIssuer: string
   oidcClientId: string
-  // The three secrets are write-only: the server always returns '' plus a
+  // The secrets are write-only: the server always returns '' plus a
   // `…Set` flag. On save, '' keeps the stored value and null removes it.
   oidcClientSecret: string | null
   oidcClientSecretSet: boolean
@@ -76,6 +76,9 @@ export interface ServerSettings {
   immichServerUrl: string
   immichApiKey: string | null
   immichApiKeySet: boolean
+  // Optional write key used only by the upload mirror (issue #420).
+  immichMirrorApiKey: string | null
+  immichMirrorApiKeySet: boolean
   localMediaPath: string
   updateCheckEnabled: boolean
   backupIncludeMedia: boolean
@@ -105,7 +108,14 @@ export interface UpdateNotice {
 }
 
 export type JobId =
-  'onThisDay' | 'newAssets' | 'expireStories' | 'backup' | 'systemAlerts' | 'updateCheck' | 'pruneDiagnosticReports'
+  | 'onThisDay'
+  | 'newAssets'
+  | 'expireStories'
+  | 'backup'
+  | 'systemAlerts'
+  | 'updateCheck'
+  | 'pruneDiagnosticReports'
+  | 'mediaMirror'
 
 export interface JobStatus {
   job: JobId
@@ -226,6 +236,31 @@ export interface MediaAlbumLink {
   createdAt: string
   newAssetMode: NewAssetMode
 }
+
+// GET /api/admin/groups/:id/media-mirror (backend/src/routes/adminMediaMirror.ts).
+export interface MediaMirrorTarget {
+  id: string
+  groupId: string
+  provider: 'immich'
+  externalAlbumId: string
+  albumName: string
+  enabled: boolean
+  mirrorSince: string
+  createdAt: string
+  lastSyncedAt: string | null
+}
+
+export interface MediaMirrorOverview {
+  // Whether the Immich URL and upload key are saved.
+  configured: boolean
+  maxAttempts: number
+  target: MediaMirrorTarget | null
+  counts: { mirrored: number; pending: number; failed: number }
+  failures: { assetKey: string; attempts: number; lastError: string | null; updatedAt: string }[]
+}
+
+export type MediaMirrorAlbumChoice =
+  { mode: 'create' } | { mode: 'existing'; externalAlbumId: string; albumName: string }
 
 export interface MediaPerson {
   id: string

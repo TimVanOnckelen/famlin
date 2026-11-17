@@ -270,6 +270,32 @@ const mediaAlbumLinkRow = z.object({
   newAssetsCheckedAt: nullableDate,
 })
 
+const mediaMirrorTargetRow = z.object({
+  id,
+  groupId: id,
+  provider: z.string(),
+  externalAlbumId: z.string(),
+  albumName: z.string(),
+  enabled: z.boolean(),
+  mirrorSince: date,
+  createdAt: date,
+  lastSyncedAt: nullableDate,
+})
+
+const mediaMirrorRow = z.object({
+  id,
+  provider: z.string(),
+  externalAlbumId: z.string(),
+  assetKey: z.string().min(1),
+  externalAssetId: nullableString,
+  addedByFamlin: z.boolean(),
+  status: z.enum(['pending', 'mirrored', 'failed']),
+  attempts: z.number().int().min(0),
+  lastError: nullableString,
+  createdAt: date,
+  updatedAt: date,
+})
+
 const mediaPersonLinkRow = z.object({
   id,
   provider: z.string(),
@@ -408,6 +434,12 @@ const DATA_FILES = {
     required: false,
   },
   wikiPages: { file: 'data/wiki-pages.json', schema: z.array(wikiPageRow), required: false },
+  mediaMirrorTargets: {
+    file: 'data/media-mirror-targets.json',
+    schema: z.array(mediaMirrorTargetRow),
+    required: false,
+  },
+  mediaMirrors: { file: 'data/media-mirrors.json', schema: z.array(mediaMirrorRow), required: false },
 } as const
 
 type DataKey = keyof typeof DATA_FILES
@@ -707,6 +739,8 @@ async function insertAll(
   await tx.giftListItem.createMany({ data: data.giftListItems })
   await tx.giftDrawAssignment.createMany({ data: data.giftDrawAssignments })
   await tx.wikiPage.createMany({ data: data.wikiPages })
+  await tx.mediaMirrorTarget.createMany({ data: data.mediaMirrorTargets })
+  await tx.mediaMirror.createMany({ data: data.mediaMirrors })
   for (const row of [...data.branding, ...data.settings]) {
     await tx.setting.upsert({ where: { key: row.key }, update: { value: row.value }, create: row })
   }
@@ -879,6 +913,8 @@ export async function restoreArchive(opts: RestoreOptions): Promise<RestoreResul
     giftListItems: data.giftListItems.length,
     giftDrawAssignments: data.giftDrawAssignments.length,
     wikiPages: data.wikiPages.length,
+    mediaMirrorTargets: data.mediaMirrorTargets.length,
+    mediaMirrors: data.mediaMirrors.length,
     files: fileCount,
     mirroredFiles,
   }

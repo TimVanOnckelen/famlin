@@ -311,6 +311,30 @@
       "newAssetMode.manualHelp": "Leden krijgen een melding wanneer nieuwe foto's in dit album verschijnen.",
       "newAssetMode.autoHelp": "Een bericht wordt automatisch aangemaakt in de groepsfeed wanneer nieuwe foto's verschijnen.",
       "updateModeError": "Modus bijwerken mislukt: {{error}}"
+    },
+    "mediaMirror": {
+      "title": "Uploads naar Immich spiegelen",
+      "description": "Kopieert de originele foto's en video's van berichten voor de hele familie (ook album- en reisfoto's) naar een Immich-album. Media uit kringen, cadeaulijsten en verhalen worden nooit gespiegeld. Famlin verwijdert alleen wat het zelf heeft toegevoegd en verwijdert nooit iets uit Immich zelf.",
+      "notConfigured": "Voeg een Immich-uploadsleutel toe onder Serverinstellingen → Media-integraties om dit aan te zetten.",
+      "album": "Album",
+      "createAlbum": "Nieuw album \"{{name}}\" aanmaken",
+      "since": "Berichten spiegelen vanaf (leeg = vanaf nu)",
+      "enable": "Spiegelen aanzetten",
+      "enableConfirm": "Wie het Immich-album kan zien, regel je in Immich, niet via het lidmaatschap van de familie: wie uit deze familie wordt verwijderd, blijft zien wat al gespiegeld is. Spiegelen aanzetten?",
+      "on": "Aan",
+      "paused": "Gepauzeerd",
+      "counts": "{{mirrored}} gespiegeld · {{pending}} wachtend · {{failed}} mislukt",
+      "sinceValue": "sinds {{date}}",
+      "lastSynced": "Laatst gesynchroniseerd {{date}}",
+      "neverSynced": "Nog niet gesynchroniseerd — de spiegel draait elke 10 minuten.",
+      "attempts": "poging {{count}} van {{max}}",
+      "syncNow": "Nu synchroniseren",
+      "syncStarted": "Er is een synchronisatie gestart. Mislukte uploads krijgen opnieuw een reeks pogingen.",
+      "pause": "Pauzeren",
+      "resume": "Hervatten",
+      "stop": "Stoppen met spiegelen",
+      "stopConfirm": "Stoppen met spiegelen voor deze familie? Het Immich-album houdt wat het al heeft.",
+      "error": "Kan spiegelen niet bijwerken: {{error}}"
     }
   },
   "content": {
@@ -438,6 +462,12 @@
     "immichHint": "Configureer één Immich-server + API-sleutel. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server-URL",
     "immichApiKey": "API-sleutel",
+    "immichMirrorApiKey": "Uploadsleutel (optioneel)",
+    "immichMirrorApiKeyHint": "Alleen nodig om uploads naar Immich te spiegelen. Gebruik een aparte sleutel met asset.upload, asset.read, album.create, album.read, albumAsset.create en albumAsset.delete, zodat de sleutel hierboven alleen-lezen kan blijven.",
+    "immichMirrorTest": "Uploadsleutel testen",
+    "immichMirrorTestOk": "De uploadsleutel werkt en heeft alle rechten die de spiegel nodig heeft.",
+    "immichMirrorTestScopesUnknown": "De uploadsleutel werkt. Deze Immich-versie kan haar rechten niet tonen, controleer ze dus in Immich.",
+    "immichMirrorTestMissingScopes": "De uploadsleutel mist deze rechten: {{scopes}}",
     "secretSaved": "Opgeslagen. Typ om te vervangen",
     "secretRemove": "Opgeslagen waarde verwijderen",
     "secretWillBeRemoved": "Wordt verwijderd bij het opslaan.",
@@ -664,7 +694,8 @@
         "backup": "Back-up",
         "systemAlerts": "Waarschuwingscontrole",
         "updateCheck": "Updatecontrole",
-        "pruneDiagnosticReports": "Diagnoserapporten opruimen"
+        "pruneDiagnosticReports": "Diagnoserapporten opruimen",
+        "mediaMirror": "Immich-uploadspiegel"
       }
     },
     "migrations": {

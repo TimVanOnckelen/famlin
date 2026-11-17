@@ -3,6 +3,7 @@ import { getMediaProvider } from './registry.js'
 import { resolvePersonFilterForAlbum } from './personFilter.js'
 import type { MediaAssetSummary } from './types.js'
 import { visiblePostsWhereFor } from '../circles.js'
+import { mirroredAssetIds } from '../mediaMirror.js'
 
 // The merged, capture-date-ordered photo feed backing
 // GET /api/media/groups/:groupId/photos — see routes/media.ts.
@@ -218,9 +219,15 @@ export async function getGroupPhotoTimeline(
       }
 
       try {
-        const assets = await listAlbumAssetsCached(link.provider, link.externalAlbumId)
+        const [assets, mirrored] = await Promise.all([
+          listAlbumAssetsCached(link.provider, link.externalAlbumId),
+          // Famlin's own uploads mirrored into this album already appear
+          // below from their post — skip the album copy (issue #420).
+          mirroredAssetIds(link.provider, link.externalAlbumId),
+        ])
         for (const asset of assets) {
           if (personAssetIds && !personAssetIds.has(asset.id)) continue
+          if (mirrored.has(asset.id)) continue
           const takenAt = asset.takenAt ?? asset.addedAt ?? new Date(0).toISOString()
           const postRef = postByProxyAsset.get(`${link.id}:${asset.id}`)
           items.push({

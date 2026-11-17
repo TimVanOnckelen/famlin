@@ -101,6 +101,8 @@ export async function buildExportArchive(
     giftListGuests,
     giftDrawAssignments,
     wikiPages,
+    mediaMirrorTargets,
+    mediaMirrors,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -166,6 +168,11 @@ export async function buildExportArchive(
     // database (an admin-only download, never a member-facing response).
     prisma.giftDrawAssignment.findMany(),
     prisma.wikiPage.findMany(),
+    // The upload mirror's per-family config and per-upload state (issue
+    // #420): restoring the "Famlin added this" flags keeps a restored
+    // server from ever removing album assets it didn't put there.
+    prisma.mediaMirrorTarget.findMany(),
+    prisma.mediaMirror.findMany(),
   ])
   // Per-family branding is family identity, not server config: its Setting
   // rows travel with the archive (the logo files ride along in
@@ -217,6 +224,8 @@ export async function buildExportArchive(
       giftListGuests: giftListGuests.length,
       giftDrawAssignments: giftDrawAssignments.length,
       wikiPages: wikiPages.length,
+      mediaMirrorTargets: mediaMirrorTargets.length,
+      mediaMirrors: mediaMirrors.length,
       branding: branding.length,
       settings: settings.length,
     },
@@ -241,6 +250,8 @@ export async function buildExportArchive(
   archive.append(JSON.stringify(giftListItems, null, 2), { name: 'data/gift-list-items.json' })
   archive.append(JSON.stringify(giftDrawAssignments, null, 2), { name: 'data/gift-draw-assignments.json' })
   archive.append(JSON.stringify(wikiPages, null, 2), { name: 'data/wiki-pages.json' })
+  archive.append(JSON.stringify(mediaMirrorTargets, null, 2), { name: 'data/media-mirror-targets.json' })
+  archive.append(JSON.stringify(mediaMirrors, null, 2), { name: 'data/media-mirrors.json' })
 
   // A live story's photo shares the uploads/ directory with everything else,
   // so skip every rendition of it (served copy, thumbnail, original, derived)

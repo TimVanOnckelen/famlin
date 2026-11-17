@@ -124,6 +124,7 @@ model Group {
   circles          Circle[]
   stories          Story[]
   wikiPages        WikiPage[]
+  mediaMirrorTarget MediaMirrorTarget?
 }
 
 model GroupMember {
@@ -475,6 +476,57 @@ model MediaAlbumLink {
 
   @@unique([groupId, provider, externalAlbumId])
   @@index([groupId])
+}
+
+// Opt-in Famlin -> Immich mirror for one family (issue #420): the
+// family's whole-family photos/videos are uploaded into this external album
+// by services/mediaMirror.ts. A mirror, not a storage driver: Famlin keeps
+// serving and authorizing its own files. One target per group; several
+// groups may share one album.
+model MediaMirrorTarget {
+  id              String    @id @default(cuid())
+  groupId         String    @unique
+  group           Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  provider        String    @default("immich")
+  externalAlbumId String
+  // Cached label, like MediaAlbumLink.albumName.
+  albumName       String
+  // Off = syncing stops; the album keeps what it holds and the MediaMirror
+  // rows stay, so turning it back on picks up where it left off.
+  enabled         Boolean   @default(true)
+  // Only content created at or after this moment is mirrored. Defaults to
+  // when mirroring was turned on; an earlier date is a backfill.
+  mirrorSince     DateTime
+  createdAt       DateTime  @default(now())
+  lastSyncedAt    DateTime?
+}
+
+// One upload in one mirror album. Keyed by album rather than by target, so
+// a cross-post into two families sharing an album is uploaded once. The
+// upload is referenced by assetKey (no FK): a deleted upload leaves a stale
+// row the next sync removes from the album.
+model MediaMirror {
+  id              String   @id @default(cuid())
+  provider        String
+  externalAlbumId String
+  assetKey        String
+  // Set as soon as the provider accepted the file, before it's added to the
+  // album — the newAssets job and the photo timeline skip these ids, so a
+  // mirrored photo never comes back as a "new" album asset.
+  externalAssetId String?
+  // Whether Famlin put the asset into the album. Immich dedupes by checksum,
+  // so the album may already have held it (added by hand, phone backup);
+  // Famlin only ever removes assets it added itself.
+  addedByFamlin   Boolean  @default(false)
+  // 'pending' | 'mirrored' | 'failed'
+  status          String   @default("pending")
+  attempts        Int      @default(0)
+  lastError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, externalAlbumId, assetKey])
+  @@index([provider, externalAssetId])
 }
 
 enum NewAssetMode {

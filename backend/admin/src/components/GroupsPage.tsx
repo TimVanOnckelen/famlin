@@ -30,6 +30,7 @@ import i18n from '../i18n'
 import { Icon } from './Icon'
 import { AddMemberModal } from './AddMemberModal'
 import { CirclesSection } from './CirclesSection'
+import { MediaMirrorSection } from './MediaMirrorSection'
 
 export function GroupsPage() {
   const { t } = useTranslation()
@@ -539,6 +540,12 @@ export function GroupsPage() {
                     </ul>
                   </>
                 )}
+
+                <MediaMirrorSection
+                  key={`mirror-${selectedGroup.id}`}
+                  groupId={selectedGroup.id}
+                  groupName={selectedGroup.name}
+                />
               </>
             )}
           </Card>

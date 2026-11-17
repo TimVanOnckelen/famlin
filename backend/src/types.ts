@@ -465,7 +465,7 @@ export const updateServerSettingsBodySchema = z.object({
   oidcName: z.string().max(50).optional(),
   oidcIssuer: z.string().optional(),
   oidcClientId: z.string().optional(),
-  // The three credentials below are write-only: '' or omitted keeps the stored
+  // The credentials below are write-only: '' or omitted keeps the stored
   // value, null removes it (see applySecretWriteRules in services/settings.ts).
   oidcClientSecret: z.string().nullable().optional(),
   oidcScopes: z.string().optional(),
@@ -483,6 +483,7 @@ export const updateServerSettingsBodySchema = z.object({
   emailNotificationsEnabled: z.boolean().optional(),
   immichServerUrl: z.union([z.literal(''), z.string().url()]).optional(),
   immichApiKey: z.string().nullable().optional(),
+  immichMirrorApiKey: z.string().nullable().optional(),
   // Absolute container-side path for the local-folder media source; empty
   // string = not configured.
   localMediaPath: z.union([z.literal(''), z.string().regex(/^\//, 'Must be an absolute path').max(500)]).optional(),

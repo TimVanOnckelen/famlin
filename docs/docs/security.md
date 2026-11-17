@@ -47,7 +47,7 @@ If you set `JWT_SECRET` or `POSTGRES_PASSWORD` yourself, keep both long, random,
 
 ### Backups and restores
 
-A Famlin backup (the scheduled `.zip` files and the admin **Data export**) contains every account's **password hash** and the server settings, so a restore signs everyone in as before. Treat backup files like the database itself: whoever has one can try to crack the hashes offline and learns your configuration. Backups never contain the OIDC client secret, the SMTP password, the Immich API key, invite links or API tokens, so a leaked backup file doesn't hand out a working third-party credential, and a token revoked after a leak can't come back through a restore. A restore invalidates every session issued before it.
+A Famlin backup (the scheduled `.zip` files and the admin **Data export**) contains every account's **password hash** and the server settings, so a restore signs everyone in as before. Treat backup files like the database itself: whoever has one can try to crack the hashes offline and learns your configuration. Backups never contain the OIDC client secret, the SMTP password, the Immich API keys, invite links or API tokens, so a leaked backup file doesn't hand out a working third-party credential, and a token revoked after a leak can't come back through a restore. A restore invalidates every session issued before it.
 
 Restoring a backup brings back passwords as they were when it was taken. Anyone with a backup file who can restore it can therefore reset everyone's credentials to that point in time — which is why restore is limited to the setup screen of a server with zero accounts, and on a running server to a **signed-in admin** — never an API token, even one with admin access. A restore on a running server first takes a safety backup, requires typing the family's name, and ends every session. While it runs the API answers `503`, so nobody writes into a database that's being replaced. Saved credentials stay, except one whose destination (issuer, SMTP host, Immich URL) the restored settings change — the same rule as editing settings, so a backup can't redirect a saved secret to another server.
 
@@ -74,7 +74,7 @@ Treat every token like a password. See [Using the API](/developers/api).
 
 ### Secrets in server settings
 
-The OIDC client secret, the SMTP password and the Immich API key are write-only. The admin UI and the admin API report only whether each one is set, so an admin session or admin token that leaks cannot be used to read them. Changing the server a secret is sent to (issuer URL, SMTP host, Immich URL) without entering the secret again removes it, which stops a stolen session from redirecting a saved secret to another host. They are stored unencrypted in the database, so keep database backups as private as the database itself. See [Saved secrets](./admin-configuration.md#saved-secrets).
+The OIDC client secret, the SMTP password and the Immich API keys (the read key and the optional upload key) are write-only. The admin UI and the admin API report only whether each one is set, so an admin session or admin token that leaks cannot be used to read them. Changing the server a secret is sent to (issuer URL, SMTP host, Immich URL) without entering the secret again removes it, which stops a stolen session from redirecting a saved secret to another host. They are stored unencrypted in the database, so keep database backups as private as the database itself. See [Saved secrets](./admin-configuration.md#saved-secrets).
 
 ### SSO and Sign in with Apple
 
@@ -119,6 +119,8 @@ Uploaded media is not served as public files. Each request uses either the membe
 Access rules apply to files attached **after** the release that introduced each rule. Older files remain reachable by any signed-in user who has their URL until a future backfill changes that behavior.
 
 :::warning[Linked albums have a wider audience]
+The optional [Immich upload mirror](./admin-configuration.md#mirroring-uploads-to-immich) copies a family's whole-family photos into an Immich album. Who can see that album is managed in Immich, not by Famlin: someone removed from the family keeps seeing what was already mirrored until the album's sharing changes in Immich. Circle, gift-list and story media are never mirrored, and a photo used in any circle post stays out even if a family-wide post uses it too. The mirror uses its own Immich key with write permissions, so the key Famlin reads albums with can stay read-only.
+
 A photo uploaded to a circle post is circle-private, but a photo in a **linked Immich or local album** is already available to every member of that album's family through the album browser. Adding it to a circle post does not make it private. Upload the photo directly to the post when it must be circle-private.
 :::
 

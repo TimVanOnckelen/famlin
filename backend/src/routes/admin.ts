@@ -73,6 +73,7 @@ import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAle
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
 import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.js'
 import adminBackupRoutes from './adminBackups.js'
+import adminMediaMirrorRoutes from './adminMediaMirror.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -1175,6 +1176,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
   // List/download/delete/restore backups (the admin Backups page).
   await fastify.register(adminBackupRoutes)
+  await fastify.register(adminMediaMirrorRoutes)
 
   // Per-family branding (issue #164, services/branding/). One brand per
   // server; the palette is derived server-side so mobile and web can't drift.

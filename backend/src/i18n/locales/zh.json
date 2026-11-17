@@ -140,7 +140,12 @@
     "wikiPageLocked": "此页面已锁定，只有创建者或管理员可以编辑。",
     "wikiPageLockForbidden": "只有页面创建者或管理员可以锁定或解锁此页面。",
     "wikiPageDeleteForbidden": "只有页面创建者或管理员可以删除此页面。",
-    "wikiPageConflict": "其他人刚刚保存了此页面。请查看他们的更改后重试。"
+    "wikiPageConflict": "其他人刚刚保存了此页面。请查看他们的更改后重试。",
+    "mediaMirrorNotConfigured": "请先在“媒体集成”中添加 Immich 上传密钥",
+    "mediaMirrorAlbumNotFound": "未找到该 Immich 相册，或上传密钥无权访问它",
+    "mediaMirrorUnauthorized": "Immich 拒绝了上传密钥",
+    "mediaMirrorAlbumRequired": "请选择要同步到的相册",
+    "mediaMirrorNotFound": "此家庭尚未设置同步"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",
