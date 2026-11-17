@@ -56,7 +56,7 @@ export function usageLines(summary: IntegrationSummary, t: Translate): string[] 
       return summary.configured
         ? [
             t('integrations.usage.push', {
-              devices: u.devices,
+              count: Number(u.devices),
               delivered: u.deliveredLast7d,
               failed: u.failedLast7d,
             }),

@@ -81,6 +81,30 @@ function DiskRow({ label, disk }: { label: string; disk: DiskUsage | null }) {
   )
 }
 
+// Only what needs a look; the full picture is on the Integrations page.
+function IntegrationsNeedingLook({ overview }: { overview: IntegrationsOverview | null }) {
+  const { t } = useTranslation()
+  if (!overview) return <span className="muted">{t('common.loading')}</span>
+  const needsLook = overview.integrations.filter((i) => i.state === 'failing' || i.state === 'attention')
+  return (
+    <>
+      {needsLook.length === 0 ? (
+        <Badge variant="success">{t('systemStatus.integrations.allOk')}</Badge>
+      ) : (
+        needsLook.map((summary) => (
+          <div key={summary.id} className="status-row">
+            <span>{t(`integrations.names.${summary.id}`)}</span>
+            <StateChip state={summary.state} />
+          </div>
+        ))
+      )}
+      {overview.checkedAt && (
+        <span className="hint">{t('integrations.checkedAt', { date: formatDate(overview.checkedAt) })}</span>
+      )}
+    </>
+  )
+}
+
 export function JobsTable({ jobs }: { jobs: JobStatus[] }) {
   const { t } = useTranslation()
   return (
@@ -300,17 +324,7 @@ export function SystemStatusPage() {
 
         <Card className="p-6 gap-4">
           <h3>{t('systemStatus.integrations.title')}</h3>
-          {(() => {
-            const needsLook = integrations?.integrations.filter((i) => i.state === 'failing' || i.state === 'attention')
-            if (!needsLook) return <span className="muted">{t('common.loading')}</span>
-            if (needsLook.length === 0) return <Badge variant="success">{t('systemStatus.integrations.allOk')}</Badge>
-            return needsLook.map((summary) => (
-              <div key={summary.id} className="status-row">
-                <span>{t(`integrations.names.${summary.id}`)}</span>
-                <StateChip state={summary.state} />
-              </div>
-            ))
-          })()}
+          <IntegrationsNeedingLook overview={integrations} />
           <Link to="/integrations">{t('systemStatus.integrations.open')}</Link>
         </Card>
 

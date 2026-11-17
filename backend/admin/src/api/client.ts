@@ -15,6 +15,7 @@ import {
   MediaMirrorOverview,
   IntegrationsOverview,
   IntegrationSummary,
+  IntegrationFamily,
   IntegrationId,
   IntegrationState,
   MediaMirrorAlbumChoice,
@@ -30,7 +31,6 @@ import {
   AdminBranding,
   DerivedBrand,
   SystemStatus,
-  IntegrationsStatus,
   IntegrationStatus,
   ActiveAlert,
   UpdateNotice,
@@ -57,6 +57,7 @@ export type {
   MediaMirrorOverview,
   IntegrationsOverview,
   IntegrationSummary,
+  IntegrationFamily,
   IntegrationId,
   IntegrationState,
   MediaMirrorAlbumChoice,
@@ -72,7 +73,6 @@ export type {
   AdminBranding,
   DerivedBrand,
   SystemStatus,
-  IntegrationsStatus,
   IntegrationStatus,
   ActiveAlert,
   DiskUsage,
@@ -491,8 +491,6 @@ export const api = {
 
   getIntegrations: (check = false) =>
     request<IntegrationsOverview>(`/api/admin/integrations${check ? '?check=1' : ''}`),
-
-  getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
 
   getSystemAlerts: () => request<{ alerts: ActiveAlert[]; update: UpdateNotice | null }>('/api/admin/status/alerts'),
 

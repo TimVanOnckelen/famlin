@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { api, type IntegrationSummary } from '../../api/client'
 import { Icon } from '../Icon'
 import { SecretInput } from '../settings/SecretInput'
-import { SettingsCard, ToggleRow } from '../settings/SettingsCard'
+import { SettingToggle } from '@famlin/ui/common/setting-toggle'
+import { SettingsCard } from '../settings/SettingsCard'
 import type { SettingsForm } from '../settings/useSettingsForm'
 
 // The Connection tab of each integration. Every panel edits the server
@@ -40,13 +41,13 @@ function TestRow({
           try {
             setResult(await run())
           } catch {
-            setResult({ ok: false, message: t('serverSettings.immichTestUnreachable') })
+            setResult({ ok: false, message: t('integrations.testFailed') })
           } finally {
             setTesting(false)
           }
         }}
       >
-        {testing ? t('serverSettings.immichTesting') : label}
+        {testing ? t('integrations.testing') : label}
       </Button>
       {result &&
         (result.ok ? (
@@ -60,9 +61,18 @@ function TestRow({
   )
 }
 
+// The Immich key tests' failure, as a message.
+function immichError(error: 'unreachable' | 'unauthorized', t: (key: string) => string) {
+  return {
+    ok: false,
+    message:
+      error === 'unauthorized' ? t('serverSettings.immichTestUnauthorized') : t('serverSettings.immichTestUnreachable'),
+  }
+}
+
 // For integrations without a dedicated test endpoint: re-runs the server's
 // connection checks against the saved settings.
-function SavedCheckRow({ id, dirty }: { id: 'email' | 'sso'; dirty: boolean }) {
+function SavedCheckRow({ id, dirty, onChecked }: { id: 'email' | 'sso'; dirty: boolean; onChecked: () => void }) {
   const { t } = useTranslation()
   return (
     <>
@@ -71,6 +81,7 @@ function SavedCheckRow({ id, dirty }: { id: 'email' | 'sso'; dirty: boolean }) {
         disabled={dirty}
         run={async () => {
           const summary = (await api.getIntegrations(true)).integrations.find((i) => i.id === id)
+          onChecked()
           const check = summary?.check
           if (!check?.configured) return { ok: false, message: t('integrations.usage.notSetUp') }
           return check.ok
@@ -105,18 +116,12 @@ export function ImmichConnection({ settingsForm }: { settingsForm: SettingsForm 
           <SecretInput settingsForm={settingsForm} name="immichApiKey" destination="immichServerUrl" />
         </label>
         <TestRow
+          key={`${form.immichServerUrl}|${form.immichApiKey}`}
           label={t('serverSettings.immichTestConnection')}
           disabled={!form.immichServerUrl || !hasSecret('immichApiKey')}
           run={async () => {
             const result = await api.testImmichConnection(form.immichServerUrl, form.immichApiKey ?? '')
-            if (result.ok) return { ok: true, message: t('serverSettings.immichTestOk') }
-            return {
-              ok: false,
-              message:
-                result.error === 'unauthorized'
-                  ? t('serverSettings.immichTestUnauthorized')
-                  : t('serverSettings.immichTestUnreachable'),
-            }
+            return result.ok ? { ok: true, message: t('serverSettings.immichTestOk') } : immichError(result.error, t)
           }}
         />
       </SettingsCard>
@@ -130,19 +135,12 @@ export function ImmichConnection({ settingsForm }: { settingsForm: SettingsForm 
           <SecretInput settingsForm={settingsForm} name="immichMirrorApiKey" destination="immichServerUrl" />
         </label>
         <TestRow
+          key={`${form.immichServerUrl}|${form.immichMirrorApiKey}`}
           label={t('serverSettings.immichMirrorTest')}
           disabled={!form.immichServerUrl || !hasSecret('immichMirrorApiKey')}
           run={async () => {
             const result = await api.testImmichMirrorKey(form.immichServerUrl, form.immichMirrorApiKey ?? '')
-            if (!result.ok) {
-              return {
-                ok: false,
-                message:
-                  result.error === 'unauthorized'
-                    ? t('serverSettings.immichTestUnauthorized')
-                    : t('serverSettings.immichTestUnreachable'),
-              }
-            }
+            if (!result.ok) return immichError(result.error, t)
             if (result.missingScopes === null)
               return { ok: true, message: t('serverSettings.immichMirrorTestScopesUnknown') }
             if (result.missingScopes.length === 0) return { ok: true, message: t('serverSettings.immichMirrorTestOk') }
@@ -175,6 +173,7 @@ export function LocalConnection({ settingsForm }: { settingsForm: SettingsForm }
         />
       </label>
       <TestRow
+        key={form.localMediaPath}
         label={t('serverSettings.localMediaTest')}
         disabled={!form.localMediaPath}
         run={async () => {
@@ -193,7 +192,7 @@ export function LocalConnection({ settingsForm }: { settingsForm: SettingsForm }
   )
 }
 
-export function SsoConnection({ settingsForm }: { settingsForm: SettingsForm }) {
+export function SsoConnection({ settingsForm, onChecked }: { settingsForm: SettingsForm; onChecked: () => void }) {
   const { t } = useTranslation()
   const { form, updateField, dirty } = settingsForm
   if (!form) return null
@@ -243,9 +242,9 @@ export function SsoConnection({ settingsForm }: { settingsForm: SettingsForm }) 
           placeholder="openid email profile"
         />
       </label>
-      <SavedCheckRow id="sso" dirty={dirty} />
+      <SavedCheckRow key={String(dirty)} id="sso" dirty={dirty} onChecked={onChecked} />
       <p className="hint">
-        {t('integrations.sso.access')} <Link to="/settings">{t('integrations.sso.accessLink')}</Link>
+        {t('integrations.sso.access')} <Link to="/settings?section=access">{t('integrations.sso.accessLink')}</Link>
       </p>
     </SettingsCard>
   )
@@ -272,7 +271,7 @@ export function AppleConnection({ settingsForm }: { settingsForm: SettingsForm }
   )
 }
 
-export function EmailConnection({ settingsForm }: { settingsForm: SettingsForm }) {
+export function EmailConnection({ settingsForm, onChecked }: { settingsForm: SettingsForm; onChecked: () => void }) {
   const { t } = useTranslation()
   const { form, updateField, dirty } = settingsForm
   if (!form) return null
@@ -325,14 +324,14 @@ export function EmailConnection({ settingsForm }: { settingsForm: SettingsForm }
             placeholder="Famlin <noreply@example.com>"
           />
         </label>
-        <SavedCheckRow id="email" dirty={dirty} />
+        <SavedCheckRow key={String(dirty)} id="email" dirty={dirty} onChecked={onChecked} />
       </SettingsCard>
       <SettingsCard icon="bell" title={t('integrations.email.usedFor')}>
-        <ToggleRow
+        <SettingToggle
           title={t('serverSettings.emailEnabled')}
           hint={t('serverSettings.emailHint')}
           checked={form.emailNotificationsEnabled}
-          onChange={(checked) => updateField('emailNotificationsEnabled', checked)}
+          onCheckedChange={(checked) => updateField('emailNotificationsEnabled', checked)}
         />
         <p className="hint">{t('integrations.email.alwaysUsed')}</p>
         <div className="status-row">
@@ -351,21 +350,27 @@ export function EmailConnection({ settingsForm }: { settingsForm: SettingsForm }
   )
 }
 
-export function PushConnection({ settingsForm, summary }: { settingsForm: SettingsForm; summary: IntegrationSummary }) {
+export function PushConnection({
+  settingsForm,
+  summary,
+}: {
+  settingsForm: SettingsForm
+  summary: IntegrationSummary | null
+}) {
   const { t } = useTranslation()
   const { form, updateField } = settingsForm
   if (!form) return null
   return (
     <SettingsCard icon="bell" title={t('serverSettings.push')} desc={t('integrations.push.desc')}>
-      <ToggleRow
+      <SettingToggle
         title={t('serverSettings.pushEnabled')}
         hint={t('serverSettings.pushHint')}
         checked={form.pushNotificationsEnabled}
-        onChange={(checked) => updateField('pushNotificationsEnabled', checked)}
+        onCheckedChange={(checked) => updateField('pushNotificationsEnabled', checked)}
       />
       <div className="status-row">
         <span>{t('integrations.push.devices')}</span>
-        <span>{String(summary.usage.devices ?? 0)}</span>
+        <span>{summary ? String(summary.usage.devices ?? 0) : '—'}</span>
       </div>
     </SettingsCard>
   )

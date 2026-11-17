@@ -1,6 +1,7 @@
 import { PageHeader } from '@famlin/ui/common/page-header'
 import { StateMessage } from '@famlin/ui/common/state-message'
 import { Button } from '@famlin/ui/button'
+import { Card } from '@famlin/ui/card'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -65,32 +66,30 @@ export function IntegrationsPage() {
               {overview.integrations
                 .filter((summary) => INTEGRATIONS[summary.id].group === group)
                 .map((summary) => (
-                  <Link
-                    key={summary.id}
-                    to={`/integrations/${summary.id}`}
-                    className={`integration-card ${summary.state}`}
-                  >
-                    <span className="integration-card-top">
-                      <span className="integration-card-icon">
-                        <Icon name={INTEGRATIONS[summary.id].icon} size={18} />
+                  <Link key={summary.id} to={`/integrations/${summary.id}`} className="integration-card-link">
+                    <Card size="sm" className={`integration-card ${summary.state}`}>
+                      <span className="integration-card-top">
+                        <span className="integration-card-icon">
+                          <Icon name={INTEGRATIONS[summary.id].icon} size={18} />
+                        </span>
+                        <strong>{t(`integrations.names.${summary.id}`)}</strong>
+                        <StateChip state={summary.state} />
                       </span>
-                      <strong>{t(`integrations.names.${summary.id}`)}</strong>
-                      <StateChip state={summary.state} />
-                    </span>
-                    {usageLines(summary, t).map((line) => (
-                      <span key={line} className="integration-card-line">
-                        {line}
+                      {usageLines(summary, t).map((line) => (
+                        <span key={line} className="integration-card-line">
+                          {line}
+                        </span>
+                      ))}
+                      {summary.issues.map((issue) => (
+                        <span key={issue} className="integration-card-issue">
+                          {t(`integrations.issues.${issue}`)}
+                        </span>
+                      ))}
+                      <span className="integration-card-open">
+                        {summary.configured ? t('integrations.open') : t('integrations.setUp')}
+                        <Icon name="chevron-right" size={14} />
                       </span>
-                    ))}
-                    {summary.issues.map((issue) => (
-                      <span key={issue} className="integration-card-issue">
-                        {t(`integrations.issues.${issue}`)}
-                      </span>
-                    ))}
-                    <span className="integration-card-open">
-                      {summary.configured ? t('integrations.open') : t('integrations.setUp')}
-                      <Icon name="chevron-right" size={14} />
-                    </span>
+                    </Card>
                   </Link>
                 ))}
             </div>

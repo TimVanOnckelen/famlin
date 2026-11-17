@@ -1994,22 +1994,21 @@
     gap: 1rem;
   }
 
-  .integration-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 1rem 1.1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg, 14px);
-    background: var(--card);
-    color: var(--foreground);
+  .integration-card-link {
+    color: inherit;
     text-decoration: none;
+  }
+
+  .integration-card {
+    height: 100%;
+    gap: 0.35rem;
+    padding-inline: 1.1rem;
     transition:
       border-color 0.12s ease,
       box-shadow 0.12s ease;
   }
 
-  .integration-card:hover {
+  .integration-card-link:hover .integration-card {
     border-color: var(--fam-primary-light);
     box-shadow: 0 6px 18px -12px rgb(0 60 80 / 0.45);
   }
@@ -2068,45 +2067,6 @@
     color: var(--fam-primary);
   }
 
-  .integration-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.1rem 0.6rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
-  .integration-chip::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  .integration-chip.ok {
-    color: var(--fam-success);
-    background: color-mix(in srgb, var(--fam-success) 12%, transparent);
-  }
-
-  .integration-chip.attention {
-    color: var(--fam-warning);
-    background: color-mix(in srgb, var(--fam-milestone) 22%, transparent);
-  }
-
-  .integration-chip.failing {
-    color: var(--fam-destructive);
-    background: color-mix(in srgb, var(--fam-destructive) 12%, transparent);
-  }
-
-  .integration-chip.off {
-    color: var(--muted-foreground);
-    background: var(--muted);
-  }
-
   .integration-back {
     display: inline-flex;
     align-items: center;
@@ -2154,24 +2114,8 @@
   }
 
   .integration-tabs {
-    display: flex;
-    gap: 0.25rem;
     margin-bottom: 1.25rem;
     border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-  }
-
-  .integration-tabs a {
-    padding: 0.6rem 0.9rem;
-    font-weight: 700;
-    color: var(--muted-foreground);
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .integration-tabs a.active {
-    color: var(--fam-primary);
-    box-shadow: inset 0 -2px 0 var(--fam-primary);
   }
 
   .integration-tab-body {

@@ -4,12 +4,13 @@ import { Button } from '@famlin/ui/button'
 import { Input } from '@famlin/ui/input'
 import { SelectField } from '@famlin/ui/common/select-field'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { BrandingSection } from './BrandingSection'
-import { SettingsCard, ToggleRow } from './settings/SettingsCard'
+import { SettingToggle } from '@famlin/ui/common/setting-toggle'
+import { SettingsCard } from './settings/SettingsCard'
 import { SettingsSaveBar } from './settings/SettingsSaveBar'
 import { useSettingsForm } from './settings/useSettingsForm'
 
@@ -21,7 +22,12 @@ export function ServerSettingsPage() {
   const { t } = useTranslation()
   const settingsForm = useSettingsForm()
   const { form, loadError, updateField, save } = settingsForm
-  const [activeSection, setActiveSection] = useState<SectionId>('general')
+  // `?section=access` opens a section directly (links from Integrations).
+  const [searchParams] = useSearchParams()
+  const requested = searchParams.get('section')
+  const [activeSection, setActiveSection] = useState<SectionId>(
+    requested === 'branding' || requested === 'access' ? requested : 'general'
+  )
 
   if (loadError)
     return (
@@ -156,11 +162,11 @@ export function ServerSettingsPage() {
 
             {activeSection === 'general' && (
               <SettingsCard icon="bell" title={t('serverSettings.updates')}>
-                <ToggleRow
+                <SettingToggle
                   title={t('serverSettings.updateCheck')}
                   hint={t('serverSettings.updateCheckHint')}
                   checked={form.updateCheckEnabled}
-                  onChange={(checked) => updateField('updateCheckEnabled', checked)}
+                  onCheckedChange={(checked) => updateField('updateCheckEnabled', checked)}
                 />
               </SettingsCard>
             )}

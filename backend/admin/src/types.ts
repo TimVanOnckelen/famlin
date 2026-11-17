@@ -139,7 +139,6 @@ export type IntegrationIssue =
   | 'mirrorFailures'
   | 'mirrorKeyMissing'
   | 'publicUrlMissing'
-  | 'emailDisabled'
   | 'pushUnhealthy'
   | 'storageFallback'
 
@@ -148,9 +147,21 @@ export interface IntegrationSummary {
   state: IntegrationState
   configured: boolean
   issues: IntegrationIssue[]
-  check: (IntegrationStatus & { checkedAt: string }) | null
-  jobs: JobId[]
+  check: IntegrationStatus | null
+  // Status rows of the jobs that act on this integration.
+  jobs: JobStatus[]
   usage: Record<string, string | number | boolean | null>
+  // Photo sources: every family and what it uses.
+  families?: IntegrationFamily[]
+  // Push only.
+  push?: SystemStatus['push']
+}
+
+export interface IntegrationFamily {
+  groupId: string
+  name: string
+  albums: string[]
+  mirror: { albumName: string; enabled: boolean; mirrored: number; failed: number } | null
 }
 
 export interface IntegrationsOverview {
@@ -234,13 +245,6 @@ export interface IntegrationStatus {
   configured: boolean
   ok: boolean | null
   error?: IntegrationError
-}
-
-export interface IntegrationsStatus {
-  smtp: IntegrationStatus
-  oidc: IntegrationStatus
-  immich: IntegrationStatus
-  localMedia: IntegrationStatus
 }
 
 // A media source members can pick photos from — mirrors the backend's

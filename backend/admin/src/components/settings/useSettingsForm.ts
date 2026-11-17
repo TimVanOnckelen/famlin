@@ -7,7 +7,7 @@ export type SecretDestination = 'oidcIssuer' | 'smtpHost' | 'immichServerUrl'
 // The server settings as one editable form: Server settings and every
 // integration's Connection tab edit the same Setting rows through
 // PATCH /api/admin/settings, so they share this load/dirty/save cycle.
-export function useSettingsForm() {
+export function useSettingsForm(onSaved?: () => void) {
   const [settings, setSettings] = useState<ServerSettings | null>(null)
   const [form, setForm] = useState<ServerSettings | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -55,10 +55,20 @@ export function useSettingsForm() {
     setError(null)
     setSuccess(false)
     try {
-      const updated = await api.updateSettings(form)
+      // Only what changed: settings are split over several pages, and sending
+      // the whole form would put back whatever another browser tab saved
+      // since this one loaded (and an untouched secret next to a changed
+      // host would then be dropped).
+      const changes = Object.fromEntries(
+        Object.entries(form).filter(
+          ([key, value]) => JSON.stringify(value) !== JSON.stringify(settings?.[key as keyof ServerSettings])
+        )
+      ) as Partial<ServerSettings>
+      const updated = await api.updateSettings(changes)
       setSettings(updated)
       setForm(updated)
       setSuccess(true)
+      onSaved?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {

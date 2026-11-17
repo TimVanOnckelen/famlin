@@ -291,12 +291,7 @@
     },
     "mediaAlbums": {
       "title": "Linked albums",
-      "providerLabel": "Media source",
-      "providers": {
-        "immich": "Immich",
-        "local": "Local folders"
-      },
-      "notConfigured": "Configure this media source in Server settings to link albums.",
+      "notConfigured": "Set up this media source under Integrations to link albums.",
       "loadError": "Could not read this media source to list albums — linked albums still work.",
       "selectAlbum": "Select an album…",
       "linkAlbum": "Link album",
@@ -316,7 +311,7 @@
     "mediaMirror": {
       "title": "Mirror uploads to Immich",
       "description": "Copies the original photos and videos of this family's whole-family posts (including album and trip photos) into an Immich album. Circle, gift-list and story media are never mirrored. Famlin only removes what it added, and never deletes anything from Immich itself.",
-      "notConfigured": "Add an Immich upload key under Server settings → Media integrations to turn this on.",
+      "notConfigured": "Add an Immich upload key under Integrations → Immich → Connection to turn this on.",
       "album": "Album",
       "createAlbum": "Create a new album \"{{name}}\"",
       "since": "Mirror posts since (empty = from now on)",
@@ -413,12 +408,6 @@
     "title": "Server settings",
     "general": "General",
     "generalDesc": "Language, public address and app store links.",
-    "signInAccess": "Sign-in & access",
-    "notifications": "Notifications",
-    "media": "Media",
-    "statusConfigured": "Configured",
-    "statusNotConfigured": "Not set up",
-    "statusEnabled": "Enabled",
     "statusDisabled": "Disabled",
     "unsavedChanges": "You have unsaved changes",
     "discard": "Discard",
@@ -462,8 +451,6 @@
     "saveSettings": "Save settings",
     "saving": "Saving...",
     "saved": "Settings saved.",
-    "integrationsHint": "Each media source is configured once for the whole instance; which albums are visible to which group is linked from the Groups page. Members can then pick photos from a linked album when composing a post.",
-    "immich": "Immich",
     "immichHint": "Configure one Immich server + API key. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server URL",
     "immichApiKey": "API key",
@@ -479,7 +466,6 @@
     "secretKeep": "Keep it",
     "secretReenter": "Changing this address removes the saved secret. Enter it again before saving.",
     "immichTestConnection": "Test connection",
-    "immichTesting": "Testing...",
     "immichTestOk": "Connected successfully.",
     "immichTestUnauthorized": "Connected, but the API key was rejected.",
     "immichTestUnreachable": "Could not reach the Immich server.",
@@ -487,7 +473,6 @@
     "localMediaHint": "Serve photos straight from a directory on this server (e.g. a NAS share mounted into the container). Every subdirectory of the path becomes a linkable album; only image files are listed.",
     "localMediaPath": "Media folder path",
     "localMediaTest": "Check path",
-    "localMediaTesting": "Checking...",
     "localMediaTestOk": "Path exists and is readable.",
     "localMediaTestNotFound": "Path not found or not readable from the server.",
     "localMediaTestNotADirectory": "Path exists but is not a directory.",
@@ -520,7 +505,7 @@
     "peopleMapping": {
       "title": "People mapping",
       "hint": "Map people detected in your photos to family members so they appear with their names in the family feed. Only mapped people become visible to family members.",
-      "notConfigured": "Immich is not configured yet. Fill in the server URL and API key above and save to map people.",
+      "notConfigured": "Immich is not set up yet. Add the server URL and API key on the Connection tab and save to map people.",
       "mapped": "Mapped people",
       "unmapped": "Unmapped people",
       "searchPlaceholder": "Search people…",
@@ -669,11 +654,6 @@
     },
     "integrations": {
       "title": "Integrations",
-      "smtp": "Email (SMTP)",
-      "oidc": "Single sign-on (OIDC)",
-      "immich": "Immich",
-      "localMedia": "Local media folder",
-      "notConfigured": "Not configured",
       "errors": {
         "unreachable": "Unreachable",
         "unauthorized": "Rejected credentials",
@@ -915,7 +895,6 @@
       "mirrorFailures": "Some uploads could not be mirrored. See Families.",
       "mirrorKeyMissing": "Mirroring is on for a family, but no upload key is saved.",
       "publicUrlMissing": "No public address is set, so emails go out without links.",
-      "emailDisabled": "Email notifications are switched off. Invites and alerts are still sent.",
       "pushUnhealthy": "Many push notifications failed to deliver in the last 24 hours.",
       "storageFallback": "Primary storage is unavailable; media is served from the fallback."
     },
@@ -928,7 +907,6 @@
       "appleExtra_one": "Official app plus {{count}} own build",
       "appleExtra_other": "Official app plus {{count}} own builds",
       "email": "Sending through {{host}}",
-      "push": "{{devices}} devices · {{delivered}} delivered, {{failed}} failed in 7 days",
       "pushOff": "Switched off",
       "storageLocal": "Local disk",
       "storageS3": "S3-compatible bucket",
@@ -936,7 +914,9 @@
       "families_one": "{{count}} family",
       "families_other": "{{count}} families",
       "albums_one": "{{count}} linked album",
-      "albums_other": "{{count}} linked albums"
+      "albums_other": "{{count}} linked albums",
+      "push_one": "{{count}} device · {{delivered}} delivered, {{failed}} failed in 7 days",
+      "push_other": "{{count}} devices · {{delivered}} delivered, {{failed}} failed in 7 days"
     },
     "tabs": {
       "connection": "Connection",
@@ -974,14 +954,14 @@
       "mirror": "Upload mirror",
       "mirrorOff": "Off",
       "mirrorFailed_one": "{{count}} failed",
-      "mirrorFailed_other": "{{count}} failed",
-      "editTitle": "{{family}}"
+      "mirrorFailed_other": "{{count}} failed"
     },
     "activity": {
       "immich": "New-photo detection on linked albums, and the upload mirror.",
       "local": "New-photo detection on linked folders.",
-      "email": "The hourly check that emails admins about problems.",
-      "push": "Push notifications are sent as things happen; there is no scheduled job."
-    }
+      "email": "The hourly check that emails admins about problems."
+    },
+    "testing": "Testing…",
+    "testFailed": "The test could not be run."
   }
 }

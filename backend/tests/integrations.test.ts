@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { randomUUID } from 'crypto'
+import os from 'os'
 import { prisma } from '../src/db.js'
 import { updateSettings, __resetSettingsCacheForTests } from '../src/services/settings.js'
 import { __resetIntegrationChecksForTests } from '../src/services/integrations.js'
@@ -42,7 +43,11 @@ describe('GET /api/admin/integrations', () => {
     expect(byId.email).toMatchObject({ state: 'off' })
     expect(byId.apple).toMatchObject({ state: 'ok' })
     expect(byId.storage).toMatchObject({ state: 'ok', usage: { driver: 'local' } })
-    expect(byId.immich.jobs).toEqual(['newAssets', 'mediaMirror'])
+    expect(byId.immich.jobs.map((j: { job: string }) => j.job)).toEqual(['newAssets', 'mediaMirror'])
+    // Nothing to fix on an integration that isn't set up, e.g. the missing
+    // public address that only matters once email is.
+    expect(byId.email.issues).toEqual([])
+    expect(byId.immich.issues).toEqual([])
   })
 
   it('reports a failing local folder and per-family usage', async () => {
@@ -62,14 +67,70 @@ describe('GET /api/admin/integrations', () => {
     })
   })
 
-  it('flags mirror failures on Immich', async () => {
+  it('flags mirror failures on a connected Immich', async () => {
     const admin = await createUser({ isAdmin: true })
+    const group = await createGroupWithMember(admin)
+    const albumId = randomUUID()
+    await prisma.mediaMirrorTarget.create({
+      data: { groupId: group.id, externalAlbumId: albumId, albumName: 'Famlin', mirrorSince: new Date() },
+    })
     await prisma.mediaMirror.create({
-      data: { provider: 'immich', externalAlbumId: randomUUID(), assetKey: randomUUID(), status: 'failed' },
+      data: { provider: 'immich', externalAlbumId: albumId, assetKey: randomUUID(), status: 'failed' },
+    })
+    await updateSettings({ immichServerUrl: 'http://immich.test', immichApiKey: 'read', immichMirrorApiKey: 'write' })
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }))
+    try {
+      const immich = (await overview(admin, '?check=1'))
+        .json()
+        .integrations.find((i: { id: string }) => i.id === 'immich')
+      expect(immich).toMatchObject({ state: 'attention', issues: ['mirrorFailures'] })
+    } finally {
+      fetchMock.mockRestore()
+      await updateSettings({ immichServerUrl: '', immichApiKey: '', immichMirrorApiKey: '' })
+      await prisma.mediaMirror.deleteMany()
+      await prisma.mediaMirrorTarget.deleteMany()
+    }
+  })
+
+  it('forgets cached checks when settings are saved', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const missing = `/nonexistent-${randomUUID()}`
+    await updateSettings({ localMediaPath: missing })
+    const before = (await overview(admin)).json().integrations.find((i: { id: string }) => i.id === 'local')
+    expect(before.state).toBe('failing')
+
+    const saved = await app.inject({
+      method: 'PATCH',
+      url: '/api/admin/settings',
+      headers: authHeader(admin),
+      payload: { localMediaPath: os.tmpdir() },
+    })
+    expect(saved.statusCode).toBe(200)
+    const after = (await overview(admin)).json().integrations.find((i: { id: string }) => i.id === 'local')
+    expect(after).toMatchObject({ state: 'ok', check: { ok: true } })
+  })
+
+  it('lists each family with its albums and upload mirror', async () => {
+    const admin = await createUser({ isAdmin: true })
+    const group = await createGroupWithMember(admin, { name: 'Peeters' })
+    await prisma.mediaAlbumLink.create({
+      data: { groupId: group.id, provider: 'immich', externalAlbumId: randomUUID(), albumName: 'Summer' },
+    })
+    const albumId = randomUUID()
+    await prisma.mediaMirrorTarget.create({
+      data: { groupId: group.id, externalAlbumId: albumId, albumName: 'Famlin – Peeters', mirrorSince: new Date() },
+    })
+    await prisma.mediaMirror.create({
+      data: { provider: 'immich', externalAlbumId: albumId, assetKey: randomUUID(), status: 'mirrored' },
     })
     const immich = (await overview(admin)).json().integrations.find((i: { id: string }) => i.id === 'immich')
-    expect(immich.issues).toContain('mirrorFailures')
-    expect(immich.usage.mirrorFailures).toBe(1)
+    expect(immich.families.find((f: { groupId: string }) => f.groupId === group.id)).toEqual({
+      groupId: group.id,
+      name: 'Peeters',
+      albums: ['Summer'],
+      mirror: { albumName: 'Famlin – Peeters', enabled: true, mirrored: 1, failed: 0 },
+    })
     await prisma.mediaMirror.deleteMany()
+    await prisma.mediaMirrorTarget.deleteMany()
   })
 })

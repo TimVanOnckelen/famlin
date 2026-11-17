@@ -18,15 +18,7 @@ import { Icon } from '../Icon'
  * The albums one family can pick photos from, for one media source: link,
  * unlink, and how new photos in each album are surfaced.
  */
-export function GroupMediaAlbums({
-  groupId,
-  provider,
-  onChange,
-}: {
-  groupId: string
-  provider: MediaProviderId
-  onChange?: () => void
-}) {
+export function GroupMediaAlbums({ groupId, provider }: { groupId: string; provider: MediaProviderId }) {
   const { t } = useTranslation()
   const dialogs = useAdminDialogs()
   const [links, setLinks] = useState<MediaAlbumLink[] | null>(null)
@@ -66,7 +58,6 @@ export function GroupMediaAlbums({
     try {
       await work()
       await loadLinks()
-      onChange?.()
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t('common.error')
       await dialogs.showMessage(t(errorKey, { error: message }))

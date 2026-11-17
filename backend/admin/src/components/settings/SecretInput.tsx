@@ -11,14 +11,10 @@ export function SecretInput({
   settingsForm,
   name,
   destination,
-  onEdit,
-  id,
 }: {
   settingsForm: SettingsForm
   name: SecretKey
   destination: SecretDestination
-  onEdit?: () => void
-  id?: string
 }) {
   const { t } = useTranslation()
   const { form, settings, updateField } = settingsForm
@@ -29,15 +25,11 @@ export function SecretInput({
   return (
     <>
       <Input
-        id={id}
         type="password"
         autoComplete="new-password"
         value={form[name] ?? ''}
         placeholder={saved && !removing ? t('serverSettings.secretSaved') : undefined}
-        onChange={(e) => {
-          updateField(name, e.target.value)
-          onEdit?.()
-        }}
+        onChange={(e) => updateField(name, e.target.value)}
       />
       {saved && removing && (
         <span className="hint">
@@ -48,14 +40,7 @@ export function SecretInput({
         </span>
       )}
       {saved && !removing && !form[name] && (
-        <Button
-          variant="link"
-          type="button"
-          onClick={() => {
-            updateField(name, null)
-            onEdit?.()
-          }}
-        >
+        <Button variant="link" type="button" onClick={() => updateField(name, null)}>
           {t('serverSettings.secretRemove')}
         </Button>
       )}

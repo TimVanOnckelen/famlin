@@ -248,7 +248,7 @@ function withTimeout<T>(promise: Promise<T>, ms = PROBE_TIMEOUT_MS): Promise<T> 
   ]).finally(() => clearTimeout(timer))
 }
 
-export async function probeSmtp(): Promise<IntegrationStatus> {
+async function probeSmtp(): Promise<IntegrationStatus> {
   const transporter = await createTransporter()
   if (!transporter) return { configured: false, ok: null }
   try {
@@ -264,7 +264,7 @@ export async function probeSmtp(): Promise<IntegrationStatus> {
 
 // Fetches discovery fresh rather than through getDiscovery(), whose
 // in-process cache would keep reporting a provider that has since gone away.
-export async function probeOidc(): Promise<IntegrationStatus> {
+async function probeOidc(): Promise<IntegrationStatus> {
   const { issuer, clientId } = await getOidcSettings()
   if (!issuer || !clientId) return { configured: false, ok: null }
   try {
@@ -281,7 +281,7 @@ export async function probeOidc(): Promise<IntegrationStatus> {
   }
 }
 
-export async function probeImmich(): Promise<IntegrationStatus> {
+async function probeImmich(): Promise<IntegrationStatus> {
   const { serverUrl, apiKey, configured } = await getImmichSettings()
   if (!configured) return { configured: false, ok: null }
   try {
@@ -306,7 +306,7 @@ export async function testLocalMediaPath(
   }
 }
 
-export async function probeLocalMedia(): Promise<IntegrationStatus> {
+async function probeLocalMedia(): Promise<IntegrationStatus> {
   const { rootPath, configured } = await getLocalMediaSettings()
   if (!configured) return { configured: false, ok: null }
   const result = await testLocalMediaPath(rootPath)
