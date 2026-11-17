@@ -235,6 +235,25 @@ describe('POST /api/auth/setup/restore', () => {
     await prisma.mediaPersonLink.create({
       data: { provider: 'immich', externalPersonId: 'p1', label: 'Grandma', userId: member.id },
     })
+    const mirrorAlbumId = '11111111-2222-4333-8444-555555555555'
+    await prisma.mediaMirrorTarget.create({
+      data: {
+        groupId: group.id,
+        externalAlbumId: mirrorAlbumId,
+        albumName: 'Famlin – Family',
+        mirrorSince: new Date('2026-01-01T00:00:00Z'),
+      },
+    })
+    await prisma.mediaMirror.create({
+      data: {
+        provider: 'immich',
+        externalAlbumId: mirrorAlbumId,
+        assetKey: '99999999-2222-4333-8444-555555555555',
+        externalAssetId: 'immich-asset-1',
+        addedByFamlin: true,
+        status: 'mirrored',
+      },
+    })
 
     // A gift list: hidden circle, a wish, and a (two-person, test-only) draw.
     const giftCircle = await prisma.circle.create({
@@ -365,6 +384,8 @@ describe('POST /api/auth/setup/restore', () => {
       giftListItems: await prisma.giftListItem.findMany({ orderBy: { id: 'asc' } }),
       giftDrawAssignments: await prisma.giftDrawAssignment.findMany({ orderBy: { id: 'asc' } }),
       wikiPages: await prisma.wikiPage.findMany({ orderBy: { id: 'asc' } }),
+      mediaMirrorTargets: await prisma.mediaMirrorTarget.findMany({ orderBy: { id: 'asc' } }),
+      mediaMirrors: await prisma.mediaMirror.findMany({ orderBy: { id: 'asc' } }),
       branding: await prisma.setting.findMany({
         where: { key: { startsWith: 'brand' } },
         orderBy: { key: 'asc' },
@@ -417,6 +438,8 @@ describe('POST /api/auth/setup/restore', () => {
       giftListItems: 2,
       giftDrawAssignments: 2,
       wikiPages: 2,
+      mediaMirrorTargets: 1,
+      mediaMirrors: 1,
     })
 
     const after = await snapshot()

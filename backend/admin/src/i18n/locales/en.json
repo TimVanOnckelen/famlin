@@ -311,6 +311,30 @@
       "newAssetMode.manualHelp": "Members get a notification when new photos appear in this album.",
       "newAssetMode.autoHelp": "A post is automatically created in the group feed when new photos appear.",
       "updateModeError": "Could not update mode: {{error}}"
+    },
+    "mediaMirror": {
+      "title": "Mirror uploads to Immich",
+      "description": "Copies the original photos and videos of this family's whole-family posts (including album and trip photos) into an Immich album. Circle, gift-list and story media are never mirrored. Famlin only removes what it added, and never deletes anything from Immich itself.",
+      "notConfigured": "Add an Immich upload key under Server settings → Media integrations to turn this on.",
+      "album": "Album",
+      "createAlbum": "Create a new album \"{{name}}\"",
+      "since": "Mirror posts since (empty = from now on)",
+      "enable": "Turn on mirroring",
+      "enableConfirm": "Who can see the Immich album is managed in Immich, not by family membership: someone removed from this family keeps seeing what was already mirrored. Turn on mirroring?",
+      "on": "On",
+      "paused": "Paused",
+      "counts": "{{mirrored}} mirrored · {{pending}} pending · {{failed}} failed",
+      "sinceValue": "since {{date}}",
+      "lastSynced": "Last synced {{date}}",
+      "neverSynced": "Not synced yet — the mirror runs every 10 minutes.",
+      "attempts": "attempt {{count}} of {{max}}",
+      "syncNow": "Sync now",
+      "syncStarted": "A sync has started. Failed uploads get a fresh set of retries.",
+      "pause": "Pause",
+      "resume": "Resume",
+      "stop": "Stop mirroring",
+      "stopConfirm": "Stop mirroring this family? The Immich album keeps what it already has.",
+      "error": "Could not update mirroring: {{error}}"
     }
   },
   "content": {
@@ -438,6 +462,12 @@
     "immichHint": "Configure one Immich server + API key. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server URL",
     "immichApiKey": "API key",
+    "immichMirrorApiKey": "Upload key (optional)",
+    "immichMirrorApiKeyHint": "Only needed to mirror uploads into Immich. Use a separate key with asset.upload, asset.read, album.create, album.read, albumAsset.create and albumAsset.delete, so the key above can stay read-only.",
+    "immichMirrorTest": "Test upload key",
+    "immichMirrorTestOk": "Upload key works and has every permission the mirror needs.",
+    "immichMirrorTestScopesUnknown": "Upload key works. This Immich version can't report its permissions, so check them in Immich.",
+    "immichMirrorTestMissingScopes": "The upload key is missing these permissions: {{scopes}}",
     "secretSaved": "Saved. Type to replace it",
     "secretRemove": "Remove saved value",
     "secretWillBeRemoved": "Will be removed when you save.",
@@ -664,7 +694,8 @@
         "backup": "Backup",
         "systemAlerts": "Alert check",
         "updateCheck": "Update check",
-        "pruneDiagnosticReports": "Prune diagnostic reports"
+        "pruneDiagnosticReports": "Prune diagnostic reports",
+        "mediaMirror": "Immich upload mirror"
       }
     },
     "migrations": {

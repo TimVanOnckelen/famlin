@@ -94,18 +94,18 @@ Optionally restrict sign-ups with **Allowed email addresses** (`/admin` → Serv
 
 ## Saved secrets
 
-Three settings are credentials for other systems: the OIDC **Client secret**, the **SMTP password** and the Immich **API key**. Famlin stores them but never shows them again, not in the admin UI and not through the API. A stolen admin session therefore does not also hand over your mail account, your sign-in provider or your photo library.
+Four settings are credentials for other systems: the OIDC **Client secret**, the **SMTP password**, the Immich **API key** and the optional Immich **Upload key**. Famlin stores them but never shows them again, not in the admin UI and not through the API. A stolen admin session therefore does not also hand over your mail account, your sign-in provider or your photo library.
 
 ![A saved SMTP password shown as "Saved. Type to replace it" with a "Remove saved value" link](./img/admin-saved-secret.png)
 
 - A saved secret shows as **Saved. Type to replace it**. Leave the field empty to keep it.
 - **Remove saved value** deletes it when you save.
 - Changing the address a secret belongs to (the OIDC issuer URL, the SMTP host or the Immich server URL) removes the saved secret unless you enter it again in the same save. Otherwise someone with admin access could point Famlin at a server of their own and collect the secret there.
-- **Test connection** for Immich uses the saved key only against the saved server URL. To test a different address, type the key.
+- **Test connection** and **Test upload key** for Immich use the saved key only against the saved server URL. To test a different address, type the key.
 
 ## Media integrations
 
-Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. These sources are read-only: Famlin never writes to them, and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
+Famlin can let members pick photos from external sources when composing a post, without copying anything into Famlin's own storage. Famlin only reads these sources (the one exception is the opt-in [Immich upload mirror](#mirroring-uploads-to-immich)), and they're not where Famlin keeps the photos members upload (that's [Storage](./storage.md)). Each source is configured once for the whole server (`/admin` → Server settings → **Media**); which albums are visible to which group is then linked per group (`/admin` → Groups → **Linked albums**). A group can have multiple linked albums across different sources.
 
 ![Server settings, Media section](./img/admin-settings-media.png)
 
@@ -117,7 +117,7 @@ If your family already runs [Immich](https://immich.app) for photo storage:
 
 1. In Immich (as an admin), create a user account for Famlin (e.g. `famlin@home.local`).
 2. Have each family member share their albums with this Famlin user (in Immich, right-click an album → Share → add the Famlin user).
-3. Create an API key for the Famlin account (log in as the Famlin user, Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin never writes to Immich.
+3. Create an API key for the Famlin account (log in as the Famlin user, Account settings → API Keys). A key scoped to just `album.read`, `asset.read`, `asset.view`, and `asset.download` is enough — Famlin only reads with this key. (The optional [upload mirror](#mirroring-uploads-to-immich) uses a second key.)
 4. In `/admin` → Server settings → **Media** → **Immich**, enter your Immich server URL (e.g. `https://immich.example.com`) and the API key, then click **Test connection** to confirm Famlin can reach it.
 5. Save settings.
 6. Go to `/admin` → Groups, select a group, and under **Linked albums** → **Immich** the dropdown now shows both the Famlin account's own albums and any shared with it. Pick the ones you want this group to see.
@@ -125,6 +125,36 @@ If your family already runs [Immich](https://immich.app) for photo storage:
 Members never see an Immich login, token, or API key — the underlying image is streamed live from your Immich server through Famlin's own authenticated proxy.
 
 **Videos:** Famlin plays the browser-friendly version of a video that Immich has already made (H.264/AAC mp4), not the original file. A 4K HEVC clip from an iPhone therefore plays in every browser and on every phone, and uses far less data. Keep video transcoding enabled in Immich (Administration → Settings → Video Transcoding) and make sure the API key has the `asset.view` permission. If Immich has no converted version, or the key may not use it, Famlin streams the original file as before.
+
+### Mirroring uploads to Immich
+
+Photos and videos that members post directly in Famlin normally live only in Famlin. If your family uses Immich as its photo archive, you can have Famlin **copy** them into an Immich album, one album per family. This is off by default and changes nothing until you turn it on for a family.
+
+It is a mirror, not a storage location. Famlin keeps its own files and keeps deciding who may see them. Deleting something in Immich never affects Famlin.
+
+**What gets mirrored:** the original photos and videos (full quality, not the resized copy Famlin shows) of posts shared with the **whole family**, including photos added to shared albums and trip check-ins. A Live Photo is uploaded with its video. Immich reads the capture date from the file, so photos land at the right place on its timeline.
+
+**What is never mirrored:** media in [Family Circle](./managing-users-and-content.md) posts, gift lists and stories. A photo used in a circle post as well as a family-wide post stays out too. Also skipped: photos attached to ordinary comments, chat photos, wiki images, and photos that came from a linked album in the first place.
+
+**Setting it up:**
+
+1. In Immich, create a second API key for the Famlin user with these permissions: `asset.upload`, `asset.read`, `album.create`, `album.read`, `albumAsset.create` and `albumAsset.delete`. Keep the first key read-only.
+2. In `/admin` → Server settings → **Media** → **Immich**, paste it into **Upload key (optional)** and click **Test upload key**. The test lists any permission the key is missing. Save settings.
+3. Go to `/admin` → Groups, select a family and scroll to **Mirror uploads to Immich**. Choose **Create a new album "Famlin – &lt;family name&gt;"** or an existing album. Optionally pick a **Mirror posts since** date to also copy older posts (empty = from now on). Click **Turn on mirroring** and confirm.
+
+![The Mirror uploads to Immich section of a family in the admin Groups page](./img/admin-groups-media-mirror.png)
+
+A background job runs every 10 minutes. The section shows how many uploads are mirrored, waiting or failed, and the last error of each failed upload. **Sync now** starts a run straight away and retries failed uploads. A post is never held up by Immich: if Immich is down, the job fails, shows up as failing under System status → Background jobs, and catches up on its next run.
+
+**When a post is deleted or a photo is edited out**, Famlin removes it from the album. It never deletes the photo from Immich itself, and it only removes photos it added. If the album already held the same photo (because a phone backup put it there, say), Famlin leaves it alone.
+
+**Pause** stops syncing and leaves the album as it is. **Resume** picks up where it stopped. **Stop mirroring** forgets the album choice; the album keeps its photos.
+
+:::warning Who can see the album is decided in Immich
+Anyone the Immich album is shared with sees every mirrored photo, whether or not they are in the family in Famlin. Someone removed from the family keeps access to what was already mirrored until you change the album's sharing in Immich. Famlin does not manage Immich sharing.
+:::
+
+If you also link the mirror album to the same family under **Linked albums**, Famlin recognizes its own mirrored photos: they don't show up twice in the Photos tab, and [new asset detection](#new-asset-detection) doesn't turn them into new posts.
 
 ### Local folders
 

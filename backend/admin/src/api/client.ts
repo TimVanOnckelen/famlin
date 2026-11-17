@@ -12,6 +12,8 @@ import {
   Invite,
   MediaAlbumSummary,
   MediaAlbumLink,
+  MediaMirrorOverview,
+  MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
   MediaPerson,
@@ -48,6 +50,8 @@ export type {
   Invite,
   MediaAlbumSummary,
   MediaAlbumLink,
+  MediaMirrorOverview,
+  MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
   MediaPerson,
@@ -530,6 +534,25 @@ export const api = {
       method: 'POST',
       body: { serverUrl, apiKey },
     }),
+
+  testImmichMirrorKey: (serverUrl: string, apiKey: string) =>
+    request<{ ok: true; missingScopes: string[] | null } | { ok: false; error: 'unreachable' | 'unauthorized' }>(
+      '/api/admin/immich/mirror-test',
+      { method: 'POST', body: { serverUrl, apiKey } }
+    ),
+
+  getMediaMirror: (groupId: string) => request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`),
+
+  updateMediaMirror: (
+    groupId: string,
+    data: { enabled: boolean; album?: MediaMirrorAlbumChoice; mirrorSince?: string }
+  ) => request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'PUT', body: data }),
+
+  removeMediaMirror: (groupId: string) =>
+    request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'DELETE' }),
+
+  syncMediaMirror: (groupId: string) =>
+    request<{ started: true }>(`/api/admin/groups/${groupId}/media-mirror/sync`, { method: 'POST' }),
 
   testLocalMediaPath: (rootPath: string) =>
     request<{ ok: true } | { ok: false; error: 'not_found' | 'not_a_directory' }>('/api/admin/media/local/test', {

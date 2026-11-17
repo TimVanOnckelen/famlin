@@ -15,7 +15,7 @@ import { Icon, IconName } from './Icon'
 import { PeopleMappingSection } from './PeopleMappingSection'
 import { BrandingSection } from './BrandingSection'
 
-type SecretKey = 'oidcClientSecret' | 'smtpPass' | 'immichApiKey'
+type SecretKey = 'oidcClientSecret' | 'smtpPass' | 'immichApiKey' | 'immichMirrorApiKey'
 type SectionId = 'general' | 'branding' | 'signin' | 'notifications' | 'media'
 
 interface SettingsCardProps {
@@ -79,6 +79,8 @@ export function ServerSettingsPage() {
     immichServerUrl: '',
     immichApiKey: '',
     immichApiKeySet: false,
+    immichMirrorApiKey: '',
+    immichMirrorApiKeySet: false,
     localMediaPath: '',
     updateCheckEnabled: true,
     backupIncludeMedia: true,
@@ -90,6 +92,10 @@ export function ServerSettingsPage() {
 
   const [testingImmich, setTestingImmich] = useState(false)
   const [immichTestResult, setImmichTestResult] = useState<'ok' | 'unreachable' | 'unauthorized' | null>(null)
+  const [testingMirror, setTestingMirror] = useState(false)
+  const [mirrorTestResult, setMirrorTestResult] = useState<
+    { ok: true; missingScopes: string[] | null } | { ok: false; error: 'unreachable' | 'unauthorized' } | null
+  >(null)
   const [testingLocalMedia, setTestingLocalMedia] = useState(false)
   const [localMediaTestResult, setLocalMediaTestResult] = useState<'ok' | 'not_found' | 'not_a_directory' | null>(null)
 
@@ -134,6 +140,18 @@ export function ServerSettingsPage() {
       setImmichTestResult('unreachable')
     } finally {
       setTestingImmich(false)
+    }
+  }
+
+  const handleTestMirror = async () => {
+    setTestingMirror(true)
+    setMirrorTestResult(null)
+    try {
+      setMirrorTestResult(await api.testImmichMirrorKey(form.immichServerUrl, form.immichMirrorApiKey ?? ''))
+    } catch {
+      setMirrorTestResult({ ok: false, error: 'unreachable' })
+    } finally {
+      setTestingMirror(false)
     }
   }
 
@@ -582,6 +600,7 @@ export function ServerSettingsPage() {
                       onChange={(e) => {
                         updateField('immichServerUrl', e.target.value)
                         setImmichTestResult(null)
+                        setMirrorTestResult(null)
                       }}
                       placeholder="https://immich.example.com"
                     />
@@ -610,6 +629,46 @@ export function ServerSettingsPage() {
                     )}
                     {immichTestResult === 'unreachable' && (
                       <span className="test-err">{t('serverSettings.immichTestUnreachable')}</span>
+                    )}
+                  </div>
+                  <label>
+                    {t('serverSettings.immichMirrorApiKey')}
+                    {secretInput('immichMirrorApiKey', 'immichServerUrl', () => setMirrorTestResult(null))}
+                    <span className="hint">{t('serverSettings.immichMirrorApiKeyHint')}</span>
+                  </label>
+                  <div className="settings-test-row">
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      className="secondary"
+                      onClick={handleTestMirror}
+                      disabled={testingMirror || !form.immichServerUrl || !hasSecret('immichMirrorApiKey')}
+                    >
+                      {testingMirror ? t('serverSettings.immichTesting') : t('serverSettings.immichMirrorTest')}
+                    </Button>
+                    {mirrorTestResult?.ok && mirrorTestResult.missingScopes?.length === 0 && (
+                      <span className="test-ok">
+                        <Icon name="check" size={14} /> {t('serverSettings.immichMirrorTestOk')}
+                      </span>
+                    )}
+                    {mirrorTestResult?.ok && mirrorTestResult.missingScopes === null && (
+                      <span className="test-ok">
+                        <Icon name="check" size={14} /> {t('serverSettings.immichMirrorTestScopesUnknown')}
+                      </span>
+                    )}
+                    {mirrorTestResult?.ok && !!mirrorTestResult.missingScopes?.length && (
+                      <span className="test-err">
+                        {t('serverSettings.immichMirrorTestMissingScopes', {
+                          scopes: mirrorTestResult.missingScopes.join(', '),
+                        })}
+                      </span>
+                    )}
+                    {mirrorTestResult?.ok === false && (
+                      <span className="test-err">
+                        {mirrorTestResult.error === 'unauthorized'
+                          ? t('serverSettings.immichTestUnauthorized')
+                          : t('serverSettings.immichTestUnreachable')}
+                      </span>
                     )}
                   </div>
                   <div className="settings-subsection">

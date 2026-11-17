@@ -44,6 +44,10 @@ export interface ServerSettings {
   emailNotificationsEnabled: boolean
   immichServerUrl: string
   immichApiKey: string
+  // Optional second Immich key with write scopes, used only by the upload
+  // mirror (services/mediaMirror.ts). Kept apart so the read key above can
+  // stay read-only.
+  immichMirrorApiKey: string
   localMediaPath: string
   // Daily GitHub release check behind the admin "update available" notice
   // (services/updateCheck.ts). Nothing about the instance is sent.
@@ -87,6 +91,7 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'emailNotificationsEnabled',
   'immichServerUrl',
   'immichApiKey',
+  'immichMirrorApiKey',
   'localMediaPath',
   'updateCheckEnabled',
   'backupIncludeMedia',
@@ -192,6 +197,7 @@ async function loadAllSettings(): Promise<ServerSettings> {
     emailNotificationsEnabled: parseValue('emailNotificationsEnabled', map.get('emailNotificationsEnabled') ?? 'true'),
     immichServerUrl: parseValue('immichServerUrl', map.get('immichServerUrl') || ''),
     immichApiKey: parseValue('immichApiKey', map.get('immichApiKey') || ''),
+    immichMirrorApiKey: parseValue('immichMirrorApiKey', map.get('immichMirrorApiKey') || ''),
     localMediaPath: parseValue('localMediaPath', map.get('localMediaPath') || ''),
     updateCheckEnabled: parseValue('updateCheckEnabled', map.get('updateCheckEnabled') ?? 'true'),
     backupIncludeMedia: parseValue('backupIncludeMedia', map.get('backupIncludeMedia') ?? 'true'),
@@ -236,7 +242,7 @@ export async function updateSettings(partial: Partial<ServerSettings>) {
 // a stolen admin session or token would otherwise also hand over the SMTP
 // account, the OIDC client secret and the Immich API key. Responses carry an
 // empty string plus a `<key>Set` flag instead; see redactSettings().
-export const SECRET_SETTING_KEYS = ['oidcClientSecret', 'smtpPass', 'immichApiKey'] as const
+export const SECRET_SETTING_KEYS = ['oidcClientSecret', 'smtpPass', 'immichApiKey', 'immichMirrorApiKey'] as const
 export type SecretSettingKey = (typeof SECRET_SETTING_KEYS)[number]
 
 // Settings a Famlin backup carries (services/export.ts) and a restore writes
@@ -265,6 +271,7 @@ export const SECRET_DESTINATION_KEYS = {
   oidcClientSecret: 'oidcIssuer',
   smtpPass: 'smtpHost',
   immichApiKey: 'immichServerUrl',
+  immichMirrorApiKey: 'immichServerUrl',
 } as const satisfies Record<SecretSettingKey, keyof ServerSettings>
 
 export const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/, '') === b.trim().replace(/\/+$/, '')
@@ -275,9 +282,9 @@ export const sameDestination = (a: string, b: string) => a.trim().replace(/\/+$/
 export function applySecretWriteRules<
   T extends Partial<Record<SecretSettingKey, string | null>> & Partial<Omit<ServerSettings, SecretSettingKey>>,
 >(body: T, current: ServerSettings): Omit<T, SecretSettingKey> & Partial<Record<SecretSettingKey, string>> {
-  const { oidcClientSecret, smtpPass, immichApiKey, ...rest } = body
+  const { oidcClientSecret, smtpPass, immichApiKey, immichMirrorApiKey, ...rest } = body
   const secrets: Partial<Record<SecretSettingKey, string>> = {}
-  for (const [name, value] of Object.entries({ oidcClientSecret, smtpPass, immichApiKey })) {
+  for (const [name, value] of Object.entries({ oidcClientSecret, smtpPass, immichApiKey, immichMirrorApiKey })) {
     const key = name as SecretSettingKey
     const destination = SECRET_DESTINATION_KEYS[key]
     const next = body[destination]
@@ -360,6 +367,15 @@ export async function getImmichSettings(): Promise<ImmichSettings> {
   const settings = await getAllSettings()
   const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '')
   const apiKey = settings.immichApiKey.trim()
+  return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey }
+}
+
+// The write key the upload mirror uses, against the same server as the read
+// key. `configured` needs both the URL and this key.
+export async function getImmichMirrorSettings(): Promise<ImmichSettings> {
+  const settings = await getAllSettings()
+  const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '')
+  const apiKey = settings.immichMirrorApiKey.trim()
   return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey }
 }
 

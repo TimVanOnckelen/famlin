@@ -140,7 +140,12 @@
     "wikiPageLocked": "Cette page est verrouillée. Seuls son créateur ou un administrateur peuvent la modifier.",
     "wikiPageLockForbidden": "Seuls le créateur de la page ou un administrateur peuvent la verrouiller ou la déverrouiller.",
     "wikiPageDeleteForbidden": "Seuls le créateur de la page ou un administrateur peuvent la supprimer.",
-    "wikiPageConflict": "Quelqu'un d'autre a enregistré cette page entre-temps. Regarde ses modifications et réessaie."
+    "wikiPageConflict": "Quelqu'un d'autre a enregistré cette page entre-temps. Regarde ses modifications et réessaie.",
+    "mediaMirrorNotConfigured": "Ajoutez d'abord une clé d'envoi Immich dans Intégrations média",
+    "mediaMirrorAlbumNotFound": "L'album Immich est introuvable, ou la clé d'envoi n'y a pas accès",
+    "mediaMirrorUnauthorized": "Immich a refusé la clé d'envoi",
+    "mediaMirrorAlbumRequired": "Choisissez un album vers lequel copier",
+    "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille"
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",

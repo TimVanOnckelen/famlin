@@ -140,7 +140,12 @@
     "wikiPageLocked": "Deze pagina is vergrendeld. Alleen de maker of een beheerder kan ze bewerken.",
     "wikiPageLockForbidden": "Alleen de maker van de pagina of een beheerder kan ze vergrendelen of ontgrendelen.",
     "wikiPageDeleteForbidden": "Alleen de maker van de pagina of een beheerder kan ze verwijderen.",
-    "wikiPageConflict": "Iemand anders heeft deze pagina intussen opgeslagen. Bekijk hun wijzigingen en probeer opnieuw."
+    "wikiPageConflict": "Iemand anders heeft deze pagina intussen opgeslagen. Bekijk hun wijzigingen en probeer opnieuw.",
+    "mediaMirrorNotConfigured": "Voeg eerst een Immich-uploadsleutel toe bij Media-integraties",
+    "mediaMirrorAlbumNotFound": "Het Immich-album is niet gevonden, of de uploadsleutel heeft er geen toegang toe",
+    "mediaMirrorUnauthorized": "Immich heeft de uploadsleutel geweigerd",
+    "mediaMirrorAlbumRequired": "Kies een album om naartoe te spiegelen",
+    "mediaMirrorNotFound": "Spiegelen is niet ingesteld voor deze familie"
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

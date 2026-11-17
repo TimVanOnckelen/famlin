@@ -12,6 +12,7 @@ export const JOB_IDS = [
   'systemAlerts',
   'updateCheck',
   'pruneDiagnosticReports',
+  'mediaMirror',
 ] as const
 export type JobId = (typeof JOB_IDS)[number]
 

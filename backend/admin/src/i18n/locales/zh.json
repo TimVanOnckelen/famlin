@@ -311,6 +311,30 @@
       "newAssetMode.manualHelp": "该相册有新照片时，成员会收到通知。",
       "newAssetMode.autoHelp": "出现新照片时，自动在群组信息流中发布动态。",
       "updateModeError": "无法更新模式：{{error}}"
+    },
+    "mediaMirror": {
+      "title": "将上传内容同步到 Immich",
+      "description": "将此家庭面向全家的帖子（包括相册和旅行照片）中的原始照片和视频复制到一个 Immich 相册。圈子、礼物清单和快拍中的媒体永远不会被同步。Famlin 只移除自己添加的内容，绝不会删除 Immich 中的任何文件。",
+      "notConfigured": "请在“服务器设置 → 媒体集成”中添加 Immich 上传密钥以启用此功能。",
+      "album": "相册",
+      "createAlbum": "创建新相册“{{name}}”",
+      "since": "同步此日期之后的帖子（留空 = 从现在开始）",
+      "enable": "开启同步",
+      "enableConfirm": "谁能查看 Immich 相册由 Immich 管理，而不是由家庭成员身份决定：被移出此家庭的人仍能看到已同步的内容。确定开启同步？",
+      "on": "已开启",
+      "paused": "已暂停",
+      "counts": "已同步 {{mirrored}} · 等待中 {{pending}} · 失败 {{failed}}",
+      "sinceValue": "自 {{date}} 起",
+      "lastSynced": "上次同步：{{date}}",
+      "neverSynced": "尚未同步 —— 同步每 10 分钟运行一次。",
+      "attempts": "第 {{count}} 次尝试，共 {{max}} 次",
+      "syncNow": "立即同步",
+      "syncStarted": "已开始同步。失败的上传将重新获得重试机会。",
+      "pause": "暂停",
+      "resume": "继续",
+      "stop": "停止同步",
+      "stopConfirm": "停止此家庭的同步？Immich 相册会保留已有内容。",
+      "error": "无法更新同步设置：{{error}}"
     }
   },
   "content": {
@@ -438,6 +462,12 @@
     "immichHint": "配置一个 Immich 服务器及 API 密钥。建议权限：album.read、asset.read、asset.view、asset.download。",
     "immichServerUrl": "服务器地址",
     "immichApiKey": "API 密钥",
+    "immichMirrorApiKey": "上传密钥（可选）",
+    "immichMirrorApiKeyHint": "仅在将上传内容同步到 Immich 时需要。请使用单独的密钥，授予 asset.upload、asset.read、album.create、album.read、albumAsset.create 和 albumAsset.delete 权限，这样上面的密钥可以保持只读。",
+    "immichMirrorTest": "测试上传密钥",
+    "immichMirrorTestOk": "上传密钥可用，且具备同步所需的全部权限。",
+    "immichMirrorTestScopesUnknown": "上传密钥可用。此 Immich 版本无法报告其权限，请在 Immich 中检查。",
+    "immichMirrorTestMissingScopes": "上传密钥缺少以下权限：{{scopes}}",
     "secretSaved": "已保存。输入以替换",
     "secretRemove": "移除已保存的值",
     "secretWillBeRemoved": "保存时将被移除。",
@@ -664,7 +694,8 @@
         "backup": "备份",
         "systemAlerts": "告警检查",
         "updateCheck": "更新检查",
-        "pruneDiagnosticReports": "清理诊断报告"
+        "pruneDiagnosticReports": "清理诊断报告",
+        "mediaMirror": "Immich 上传同步"
       }
     },
     "migrations": {

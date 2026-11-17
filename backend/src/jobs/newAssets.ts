@@ -5,6 +5,7 @@ import { getAllSettings } from '../services/settings.js'
 import { emitDomainEvent } from '../events.js'
 import i18n from '../i18n/index.js'
 import type { MediaAssetSummary } from '../services/media/types.js'
+import { mirroredAssetIds } from '../services/mediaMirror.js'
 
 // A post created in AUTO mode embeds at most this many of the new assets —
 // mirrors the 20-asset cap createPostBodySchema enforces on a normal post,
@@ -55,7 +56,12 @@ export async function runNewAssetsJob(now = new Date()): Promise<void> {
 
       const since = link.newAssetsCheckedAt
       const assets = await provider.listAlbumAssets(link.externalAlbumId)
-      const newAssets = assets.filter((asset) => asset.addedAt && new Date(asset.addedAt) > since)
+      // Assets the upload mirror put there are Famlin's own posts coming
+      // back — never "new" (or AUTO mode would re-post every mirrored photo).
+      const mirrored = await mirroredAssetIds(link.provider, link.externalAlbumId)
+      const newAssets = assets.filter(
+        (asset) => asset.addedAt && new Date(asset.addedAt) > since && !mirrored.has(asset.id)
+      )
 
       if (newAssets.length === 0) {
         await prisma.mediaAlbumLink.update({ where: { id: link.id }, data: { newAssetsCheckedAt: now } })

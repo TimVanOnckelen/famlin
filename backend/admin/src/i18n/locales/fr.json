@@ -311,6 +311,30 @@
       "newAssetMode.manualHelp": "Les membres reçoivent une notification quand de nouvelles photos arrivent dans cet album.",
       "newAssetMode.autoHelp": "Une publication est créée automatiquement dans le fil du groupe quand de nouvelles photos arrivent.",
       "updateModeError": "Impossible de changer le mode : {{error}}"
+    },
+    "mediaMirror": {
+      "title": "Copier les envois vers Immich",
+      "description": "Copie les photos et vidéos originales des publications destinées à toute la famille (y compris les photos d'album et de voyage) dans un album Immich. Les médias des cercles, des listes de cadeaux et des stories ne sont jamais copiés. Famlin ne retire que ce qu'il a ajouté et ne supprime jamais rien dans Immich.",
+      "notConfigured": "Ajoutez une clé d'envoi Immich dans Réglages du serveur → Intégrations média pour activer cette option.",
+      "album": "Album",
+      "createAlbum": "Créer un nouvel album « {{name}} »",
+      "since": "Copier les publications depuis (vide = à partir de maintenant)",
+      "enable": "Activer la copie",
+      "enableConfirm": "Qui peut voir l'album Immich se gère dans Immich, pas par l'appartenance à la famille : une personne retirée de cette famille continue de voir ce qui a déjà été copié. Activer la copie ?",
+      "on": "Activée",
+      "paused": "En pause",
+      "counts": "{{mirrored}} copiés · {{pending}} en attente · {{failed}} en échec",
+      "sinceValue": "depuis le {{date}}",
+      "lastSynced": "Dernière synchronisation {{date}}",
+      "neverSynced": "Pas encore synchronisé — la copie s'exécute toutes les 10 minutes.",
+      "attempts": "tentative {{count}} sur {{max}}",
+      "syncNow": "Synchroniser maintenant",
+      "syncStarted": "Une synchronisation a démarré. Les envois en échec ont droit à de nouvelles tentatives.",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "stop": "Arrêter la copie",
+      "stopConfirm": "Arrêter la copie pour cette famille ? L'album Immich garde ce qu'il contient déjà.",
+      "error": "Impossible de mettre à jour la copie : {{error}}"
     }
   },
   "content": {
@@ -438,6 +462,12 @@
     "immichHint": "Configure un serveur Immich et une clé d'API. Droits recommandés pour la clé : album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "URL du serveur",
     "immichApiKey": "Clé d'API",
+    "immichMirrorApiKey": "Clé d'envoi (facultative)",
+    "immichMirrorApiKeyHint": "Nécessaire uniquement pour copier les envois vers Immich. Utilisez une clé distincte avec asset.upload, asset.read, album.create, album.read, albumAsset.create et albumAsset.delete, pour que la clé ci-dessus reste en lecture seule.",
+    "immichMirrorTest": "Tester la clé d'envoi",
+    "immichMirrorTestOk": "La clé d'envoi fonctionne et a toutes les permissions nécessaires.",
+    "immichMirrorTestScopesUnknown": "La clé d'envoi fonctionne. Cette version d'Immich ne peut pas indiquer ses permissions : vérifiez-les dans Immich.",
+    "immichMirrorTestMissingScopes": "Il manque ces permissions à la clé d'envoi : {{scopes}}",
     "secretSaved": "Enregistré. Saisis pour remplacer",
     "secretRemove": "Supprimer la valeur enregistrée",
     "secretWillBeRemoved": "Sera supprimé à l'enregistrement.",
@@ -664,7 +694,8 @@
         "backup": "Sauvegarde",
         "systemAlerts": "Vérification des alertes",
         "updateCheck": "Recherche de mises à jour",
-        "pruneDiagnosticReports": "Nettoyage des rapports de diagnostic"
+        "pruneDiagnosticReports": "Nettoyage des rapports de diagnostic",
+        "mediaMirror": "Copie des envois vers Immich"
       }
     },
     "migrations": {

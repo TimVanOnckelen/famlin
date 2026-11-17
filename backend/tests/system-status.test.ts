@@ -187,6 +187,7 @@ describe('admin status routes', () => {
       'systemAlerts',
       'updateCheck',
       'pruneDiagnosticReports',
+      'mediaMirror',
     ])
     expect(body.migrations.pending).toEqual([])
     expect(body.migrations.latestApplied).toMatch(/^\d{14}_/)

@@ -311,6 +311,30 @@
       "newAssetMode.manualHelp": "Os membros recebem uma notificação quando aparecem fotografias novas neste álbum.",
       "newAssetMode.autoHelp": "É criada automaticamente uma publicação no feed do grupo quando aparecem fotografias novas.",
       "updateModeError": "Não foi possível atualizar o modo: {{error}}"
+    },
+    "mediaMirror": {
+      "title": "Espelhar envios no Immich",
+      "description": "Copia as fotos e vídeos originais das publicações para toda a família (incluindo fotos de álbuns e viagens) para um álbum do Immich. Multimédia de círculos, listas de presentes e histórias nunca é espelhada. O Famlin só remove o que adicionou e nunca apaga nada do próprio Immich.",
+      "notConfigured": "Adicione uma chave de envio do Immich em Definições do servidor → Integrações de multimédia para ativar isto.",
+      "album": "Álbum",
+      "createAlbum": "Criar um novo álbum \"{{name}}\"",
+      "since": "Espelhar publicações desde (vazio = a partir de agora)",
+      "enable": "Ativar espelhamento",
+      "enableConfirm": "Quem pode ver o álbum do Immich é gerido no Immich, não pela pertença à família: alguém removido desta família continua a ver o que já foi espelhado. Ativar espelhamento?",
+      "on": "Ativo",
+      "paused": "Em pausa",
+      "counts": "{{mirrored}} espelhados · {{pending}} pendentes · {{failed}} falhados",
+      "sinceValue": "desde {{date}}",
+      "lastSynced": "Última sincronização {{date}}",
+      "neverSynced": "Ainda não sincronizado — o espelho corre a cada 10 minutos.",
+      "attempts": "tentativa {{count}} de {{max}}",
+      "syncNow": "Sincronizar agora",
+      "syncStarted": "Começou uma sincronização. Os envios falhados recebem novas tentativas.",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "stop": "Parar espelhamento",
+      "stopConfirm": "Parar o espelhamento desta família? O álbum do Immich mantém o que já tem.",
+      "error": "Não foi possível atualizar o espelhamento: {{error}}"
     }
   },
   "content": {
@@ -438,6 +462,12 @@
     "immichHint": "Configura um servidor Immich + chave de API. Permissões recomendadas para a chave de API: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "URL do servidor",
     "immichApiKey": "Chave de API",
+    "immichMirrorApiKey": "Chave de envio (opcional)",
+    "immichMirrorApiKeyHint": "Só é necessária para espelhar envios no Immich. Use uma chave separada com asset.upload, asset.read, album.create, album.read, albumAsset.create e albumAsset.delete, para que a chave acima continue só de leitura.",
+    "immichMirrorTest": "Testar chave de envio",
+    "immichMirrorTestOk": "A chave de envio funciona e tem todas as permissões de que o espelho precisa.",
+    "immichMirrorTestScopesUnknown": "A chave de envio funciona. Esta versão do Immich não indica as permissões, por isso verifique-as no Immich.",
+    "immichMirrorTestMissingScopes": "Faltam estas permissões à chave de envio: {{scopes}}",
     "secretSaved": "Guardado. Escreve para substituir",
     "secretRemove": "Remover o valor guardado",
     "secretWillBeRemoved": "Será removido ao guardar.",
@@ -664,7 +694,8 @@
         "backup": "Cópia de segurança",
         "systemAlerts": "Verificação de alertas",
         "updateCheck": "Verificação de atualizações",
-        "pruneDiagnosticReports": "Limpar relatórios de diagnóstico"
+        "pruneDiagnosticReports": "Limpar relatórios de diagnóstico",
+        "mediaMirror": "Espelho de envios para o Immich"
       }
     },
     "migrations": {
