@@ -252,7 +252,10 @@
     "cropPreview": "头像预览",
     "cropZoomIn": "放大",
     "cropZoomOut": "缩小",
-    "cropSave": "保存"
+    "cropSave": "保存",
+    "emailChangePasswordHint": "电子邮箱地址用于登录，因此更改它需要输入当前密码。",
+    "emailChangePasswordIncorrect": "当前密码不正确。",
+    "emailChangeRecentSignIn": "为了你的安全，请退出并重新登录，然后在 10 分钟内更改电子邮箱地址。"
   },
   "apiTokens": {
     "menuItem": "API 令牌",
@@ -700,5 +703,22 @@
     "saveFailed": "无法保存页面。",
     "save": "保存",
     "saving": "正在保存…"
+  },
+  "sessions": {
+    "title": "已登录的设备",
+    "description": "你已登录的所有设备和浏览器。退出你不认识的设备。",
+    "currentNotListed": "此设备在设备列表推出之前登录，因此未显示。退出并重新登录后即可在此看到。",
+    "thisDevice": "此设备",
+    "lastActive": "最近活动：{{when}}",
+    "signOut": "退出",
+    "signOutDeviceLabel": "退出 {{device}}",
+    "signOutOthers": "退出所有其他设备",
+    "signOutOthersConfirm": "要退出除此设备外的所有设备吗？",
+    "othersSignedOut_one": "已退出 {{count}} 台其他设备。",
+    "othersSignedOut_other": "已退出 {{count}} 台其他设备。",
+    "failed": "出了点问题，请重试。",
+    "mobileApp": "Famlin 应用 {{os}}",
+    "browserOn": "{{os}} 上的 {{browser}}",
+    "unknownDevice": "未知设备"
   }
 }

@@ -36,6 +36,7 @@ export const SERVER_FEATURES = [
   'diagnosticReports', // unreleased after 0.8.7 — POST /api/diagnostics/reports
   'giftListGuests', // unreleased after 0.8.7 — gift-list wishlists for people without an account
   'paginatedComments', // unreleased after 0.8.7 — GET /api/posts/:postId/comments?take=&cursor= (issue #130)
+  'sessions', // unreleased after 0.8.7 — server-side sessions: POST /api/auth/logout, /api/auth/sessions
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]

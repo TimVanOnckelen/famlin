@@ -142,7 +142,11 @@
     "restoreSelectedButton": "Restore selected backup",
     "restoreUploadTitle": "Or upload a backup file",
     "restoreAccountTitle": "Create your admin account",
-    "restoreSecretsHint": "Backups never contain the OIDC client secret, SMTP password or Immich API key. Re-enter them under Server settings after restoring."
+    "restoreSecretsHint": "Backups never contain the OIDC client secret, SMTP password or Immich API key. Re-enter them under Server settings after restoring.",
+    "codeLabel": "Setup code",
+    "codeHint": "For your security, Famlin prints a one-time setup code in the server log when it starts. To see it, run",
+    "codeDocsLink": "More help",
+    "codeNeededForBackups": "Enter the setup code above to see the backups on this server."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -217,7 +221,10 @@
     "passwordTooShort": "Password must be at least 8 characters long.",
     "passwordChanged": "Password for {{name}} has been changed.",
     "password": "Password",
-    "clickToChange": "Click to change"
+    "clickToChange": "Click to change",
+    "signOut": "Sign out everywhere",
+    "signOutConfirm": "Sign {{name}} ({{email}}) out on every device? They will need to sign in again.",
+    "signedOut": "{{name}} has been signed out on every device."
   },
   "groups": {
     "title": "Groups",

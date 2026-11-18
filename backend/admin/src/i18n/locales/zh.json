@@ -142,7 +142,11 @@
     "restoreSelectedButton": "恢复所选备份",
     "restoreUploadTitle": "或上传备份文件",
     "restoreAccountTitle": "创建管理员账户",
-    "restoreSecretsHint": "备份从不包含 OIDC 客户端密钥、SMTP 密码或 Immich API 密钥。恢复后请在“服务器设置”中重新填写。"
+    "restoreSecretsHint": "备份从不包含 OIDC 客户端密钥、SMTP 密码或 Immich API 密钥。恢复后请在“服务器设置”中重新填写。",
+    "codeLabel": "设置代码",
+    "codeHint": "为了安全，Famlin 启动时会在服务器日志中打印一次性设置代码。要查看它，请运行",
+    "codeDocsLink": "更多帮助",
+    "codeNeededForBackups": "在上方输入设置代码即可查看此服务器上的备份。"
   },
   "dashboard": {
     "title": "概览",
@@ -217,7 +221,10 @@
     "passwordTooShort": "密码至少需要 8 个字符。",
     "passwordChanged": "已修改 {{name}} 的密码。",
     "password": "密码",
-    "clickToChange": "点击修改"
+    "clickToChange": "点击修改",
+    "signOut": "在所有设备上退出",
+    "signOutConfirm": "要让 {{name}}（{{email}}）在所有设备上退出吗？对方需要重新登录。",
+    "signedOut": "{{name}} 已在所有设备上退出。"
   },
   "groups": {
     "title": "群组",

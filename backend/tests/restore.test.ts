@@ -17,6 +17,7 @@ import {
   createPost,
   createComment,
   authHeader,
+  setupCodeHeader,
 } from './helpers.js'
 
 // Inspect restored queue state before a worker can claim it.
@@ -93,7 +94,7 @@ describe('POST /api/auth/setup/restore', () => {
       method: 'POST',
       url: '/api/auth/setup/restore',
       payload,
-      headers,
+      headers: { ...headers, ...setupCodeHeader() },
       remoteAddress: `10.0.0.${calls}`,
     })
   }

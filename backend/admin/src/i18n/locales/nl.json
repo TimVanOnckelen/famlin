@@ -142,7 +142,11 @@
     "restoreSelectedButton": "Geselecteerde back-up terugzetten",
     "restoreUploadTitle": "Of upload een back-upbestand",
     "restoreAccountTitle": "Maak je beheerdersaccount aan",
-    "restoreSecretsHint": "Back-ups bevatten nooit het OIDC-clientgeheim, het SMTP-wachtwoord of de Immich-API-sleutel. Vul ze na het terugzetten opnieuw in onder Serverinstellingen."
+    "restoreSecretsHint": "Back-ups bevatten nooit het OIDC-clientgeheim, het SMTP-wachtwoord of de Immich-API-sleutel. Vul ze na het terugzetten opnieuw in onder Serverinstellingen.",
+    "codeLabel": "Installatiecode",
+    "codeHint": "Voor je veiligheid zet Famlin bij het opstarten een eenmalige installatiecode in het serverlogboek. Om hem te zien, voer je dit uit:",
+    "codeDocsLink": "Meer hulp",
+    "codeNeededForBackups": "Vul hierboven de installatiecode in om de back-ups op deze server te zien."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -217,7 +221,10 @@
     "passwordTooShort": "Wachtwoord moet minstens 8 tekens lang zijn.",
     "passwordChanged": "Wachtwoord voor {{name}} is gewijzigd.",
     "password": "Wachtwoord",
-    "clickToChange": "Klik om te wijzigen"
+    "clickToChange": "Klik om te wijzigen",
+    "signOut": "Overal afmelden",
+    "signOutConfirm": "{{name}} ({{email}}) op elk apparaat afmelden? Diegene moet daarna opnieuw aanmelden.",
+    "signedOut": "{{name}} is op elk apparaat afgemeld."
   },
   "groups": {
     "title": "Groepen",

@@ -142,7 +142,11 @@
     "restoreSelectedButton": "Restaurer la sauvegarde sélectionnée",
     "restoreUploadTitle": "Ou téléverse un fichier de sauvegarde",
     "restoreAccountTitle": "Crée ton compte administrateur",
-    "restoreSecretsHint": "Les sauvegardes ne contiennent jamais le secret client OIDC, le mot de passe SMTP ni la clé API Immich. Saisis-les à nouveau dans Paramètres du serveur après la restauration."
+    "restoreSecretsHint": "Les sauvegardes ne contiennent jamais le secret client OIDC, le mot de passe SMTP ni la clé API Immich. Saisis-les à nouveau dans Paramètres du serveur après la restauration.",
+    "codeLabel": "Code de configuration",
+    "codeHint": "Pour votre sécurité, Famlin écrit un code de configuration à usage unique dans le journal du serveur au démarrage. Pour le voir, exécutez",
+    "codeDocsLink": "Plus d'aide",
+    "codeNeededForBackups": "Saisissez le code de configuration ci-dessus pour voir les sauvegardes de ce serveur."
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -217,7 +221,10 @@
     "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
     "passwordChanged": "Le mot de passe de {{name}} a été changé.",
     "password": "Mot de passe",
-    "clickToChange": "Clique pour changer"
+    "clickToChange": "Clique pour changer",
+    "signOut": "Déconnecter partout",
+    "signOutConfirm": "Déconnecter {{name}} ({{email}}) sur tous ses appareils ? Cette personne devra se reconnecter.",
+    "signedOut": "{{name}} a été déconnecté(e) sur tous ses appareils."
   },
   "groups": {
     "title": "Groupes",

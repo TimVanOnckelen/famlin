@@ -188,6 +188,41 @@
   color: var(--fam-primary);
 }
 
+/* ── Signed-in devices ───────────────────────────────────────────────────── */
+
+.profile-sessions {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+
+.profile-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--fam-border);
+}
+
+.profile-session-row:first-child {
+  border-top: none;
+}
+
+.profile-session-text {
+  min-width: 0;
+}
+
+.profile-session-current {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--fam-primary-tint);
+  color: var(--fam-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* ── Server info ─────────────────────────────────────────────────────────── */
 
 .profile-server-row {

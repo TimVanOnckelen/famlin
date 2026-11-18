@@ -189,6 +189,22 @@ On Synology, use **Control Panel → Login Portal → Reverse Proxy** to forward
 
 Open `/admin`. A fresh database shows a one-time setup screen for your admin account, followed by a setup wizard for your first family, invitations, the mobile-app QR code, and backups. Skipped items remain on the dashboard's **Getting started** checklist until completed or dismissed.
 
+### First-run setup code
+
+The setup screen asks for a **setup code** before it creates the first admin account or restores a backup. This stops someone who finds your new server before you do from making themselves its administrator. Famlin prints the code in its log on every start until setup is done:
+
+```bash
+docker compose logs famlin-backend | grep -i "setup code"
+```
+
+It's also stored in the data volume. Read it from there if the log has rotated:
+
+```bash
+docker compose exec famlin-backend cat /app/data/secrets/setup_code
+```
+
+The code looks like `ABCD-EFGH-JKLM`; capitals, spaces and dashes don't matter. Famlin deletes it once setup succeeds. The [one-line installer](./install-vps.md) prints it for you at the end. On Home Assistant, Umbrel or CasaOS, open the Famlin app's log view and look for the line starting with *No accounts yet*.
+
 Then follow [Admin configuration](./admin-configuration.md) to choose a login method and control who can sign up. Family members can use the web app at your server's root URL or connect the mobile app.
 
 By default, photos and videos live on the `famlin-uploads` volume. For another disk, NAS share, or S3-compatible bucket, see [Storage](./storage.md). To run a read-only sample deployment instead, see [Demo instance](/developers/demo-instance).

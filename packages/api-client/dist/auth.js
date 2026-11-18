@@ -15,6 +15,10 @@ exports.deleteAccount = deleteAccount;
 exports.downloadMyExport = downloadMyExport;
 exports.getMyExportRequest = getMyExportRequest;
 exports.changePassword = changePassword;
+exports.logoutSession = logoutSession;
+exports.fetchSessions = fetchSessions;
+exports.revokeSession = revokeSession;
+exports.revokeOtherSessions = revokeOtherSessions;
 const client_1 = require("./client");
 const storage_1 = require("./storage");
 async function fetchOidcConfig() {
@@ -110,4 +114,32 @@ async function getMyExportRequest() {
 }
 async function changePassword(currentPassword, newPassword) {
     await client_1.api.post('/auth/change-password', { currentPassword, newPassword });
+}
+// --- Server-side sessions (server feature `sessions`) -----------------------
+// Ends this device's session on the server, so its token stops working even
+// if a copy survives. Call it before forgetting the token; it never throws,
+// so it can't block signing out (an older server without it just 404s).
+async function logoutSession() {
+    try {
+        // requires-feature: sessions
+        await client_1.api.post('/auth/logout');
+    }
+    catch {
+        // Signing out locally must always succeed.
+    }
+}
+async function fetchSessions() {
+    // requires-feature: sessions
+    const response = await client_1.api.get('/auth/sessions');
+    return response.data;
+}
+async function revokeSession(id) {
+    // requires-feature: sessions
+    await client_1.api.delete(`/auth/sessions/${encodeURIComponent(id)}`);
+}
+// Signs out every device except this one.
+async function revokeOtherSessions() {
+    // requires-feature: sessions
+    const response = await client_1.api.delete('/auth/sessions');
+    return response.data;
 }

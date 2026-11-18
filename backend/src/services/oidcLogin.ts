@@ -1,5 +1,6 @@
 import { prisma } from '../db.js'
-import { verifyOidcToken, createUserToken } from '../plugins/auth.js'
+import type { FastifyRequest } from 'fastify'
+import { verifyOidcToken, createSessionToken } from '../plugins/auth.js'
 import { isEmailAllowed } from './settings.js'
 import { getValidInvite, consumeInvite, inviteFailureResponse } from './invites.js'
 import { sanitizeUser } from './users.js'
@@ -32,7 +33,9 @@ type LoginOutcome = { error: FailureResponse } | { result: { token: string; user
 export async function completeFederatedLogin(
   verifyIdentity: (options: { allowUnlisted: boolean }) => Promise<FederatedIdentity>,
   inviteToken: string | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  // The sign-in request — its User-Agent labels the new session.
+  request: FastifyRequest
 ): Promise<LoginOutcome> {
   let invite: Awaited<ReturnType<typeof getValidInvite>>['invite'] = null
   if (inviteToken) {
@@ -79,13 +82,7 @@ export async function completeFederatedLogin(
     await consumeInvite(inviteToken, user.id)
   }
 
-  const token = createUserToken({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    isAdmin: user.isAdmin,
-    tokenVersion: user.tokenVersion,
-  })
+  const token = await createSessionToken(user, request)
 
   return { result: { token, user: sanitizeUser(user) } }
 }
@@ -99,7 +96,9 @@ export async function completeFederatedLogin(
 export async function completeOidcLogin(
   idToken: string,
   inviteToken: string | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  // The sign-in request — its User-Agent labels the new session.
+  request: FastifyRequest
 ): Promise<LoginOutcome> {
-  return completeFederatedLogin((options) => verifyOidcToken(idToken, options), inviteToken, t)
+  return completeFederatedLogin((options) => verifyOidcToken(idToken, options), inviteToken, t, request)
 }

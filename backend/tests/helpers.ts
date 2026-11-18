@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { buildApp } from '../src/app.js'
 import { prisma } from '../src/db.js'
 import { createUserToken } from '../src/plugins/auth.js'
+import { getSetupCode } from '../src/services/setupCode.js'
 
 export async function buildTestApp() {
   const app = await buildApp()
@@ -43,6 +44,11 @@ export function authHeader(user: { id: string; email: string; name: string; isAd
     tokenVersion: user.tokenVersion ?? 0,
   })
   return { authorization: `Bearer ${token}` }
+}
+
+// The one-time code every first-run route requires (services/setupCode.ts).
+export function setupCodeHeader() {
+  return { 'x-setup-code': getSetupCode() }
 }
 
 export async function createGroup(overrides: Partial<{ name: string; description: string }> = {}) {

@@ -55,7 +55,12 @@ test('the server is healthy and serves the web app and the admin UI', async ({ r
 })
 
 test('the first admin is created through the admin setup screen', async ({ page }) => {
+  // The one-time code the server prints on first boot (CI reads it from the
+  // container: see the e2e step in .github/workflows/ci.yml).
+  const setupCode = process.env.FAMLIN_SETUP_CODE
+  expect(setupCode, 'set FAMLIN_SETUP_CODE to the server log’s setup code').toBeTruthy()
   await page.goto('/admin/')
+  await page.locator('input[name="setupCode"]').fill(setupCode!)
   const form = page.locator('form')
   await form.locator('input[type="text"]').fill(ADMIN.name)
   await form.locator('input[type="email"]').fill(ADMIN.email)

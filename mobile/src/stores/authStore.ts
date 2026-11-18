@@ -11,7 +11,7 @@ import {
   getDeviceInstallId,
   deleteDeviceReport,
 } from '@/utils/storage'
-import { setApiBaseUrl, setMediaToken, unregisterDevice, unregisterPushToken } from '@famlin/api-client'
+import { logoutSession, setApiBaseUrl, setMediaToken, unregisterDevice, unregisterPushToken } from '@famlin/api-client'
 import { refreshMediaToken } from '@/api/uploads'
 import { usePendingShareStore } from '@/stores/pendingShareStore'
 import { checkServerFeature } from '@/utils/serverFeatures'
@@ -64,6 +64,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       await unregisterDevice(installId).catch(() => {})
     }
     await deleteDeviceReport()
+    // End the session on the server while the token still authenticates, so
+    // a copy of it (a device backup, say) is useless afterwards. Never throws;
+    // skipped on a server known to predate server-side sessions.
+    if ((await checkServerFeature('sessions')) !== 'unsupported') await logoutSession()
     await deleteToken()
     await deleteServerUrl()
     setMediaToken(null)

@@ -252,7 +252,10 @@
     "cropPreview": "Aperçu de la photo de profil",
     "cropZoomIn": "Zoomer",
     "cropZoomOut": "Dézoomer",
-    "cropSave": "Enregistrer"
+    "cropSave": "Enregistrer",
+    "emailChangePasswordHint": "Votre adresse e-mail sert à vous connecter : la modifier demande votre mot de passe actuel.",
+    "emailChangePasswordIncorrect": "Votre mot de passe actuel est incorrect.",
+    "emailChangeRecentSignIn": "Pour votre sécurité, déconnectez-vous puis reconnectez-vous, et modifiez votre adresse e-mail dans les 10 minutes."
   },
   "apiTokens": {
     "menuItem": "Jetons d'API",
@@ -700,5 +703,22 @@
     "saveFailed": "Impossible d'enregistrer la page.",
     "save": "Enregistrer",
     "saving": "Enregistrement…"
+  },
+  "sessions": {
+    "title": "Appareils connectés",
+    "description": "Chaque appareil et navigateur où vous êtes connecté. Déconnectez ceux que vous ne reconnaissez pas.",
+    "currentNotListed": "Cet appareil s'est connecté avant l'existence de la liste des appareils et n'y figure donc pas. Déconnectez-vous puis reconnectez-vous pour l'y voir.",
+    "thisDevice": "Cet appareil",
+    "lastActive": "Dernière activité {{when}}",
+    "signOut": "Déconnecter",
+    "signOutDeviceLabel": "Déconnecter {{device}}",
+    "signOutOthers": "Déconnecter tous les autres appareils",
+    "signOutOthersConfirm": "Déconnecter tous les appareils sauf celui-ci ?",
+    "othersSignedOut_one": "{{count}} autre appareil déconnecté.",
+    "othersSignedOut_other": "{{count}} autres appareils déconnectés.",
+    "failed": "Une erreur s'est produite. Réessayez.",
+    "mobileApp": "Application Famlin {{os}}",
+    "browserOn": "{{browser}} sur {{os}}",
+    "unknownDevice": "Appareil inconnu"
   }
 }

@@ -145,7 +145,10 @@
     "mediaMirrorAlbumNotFound": "O álbum do Immich não foi encontrado, ou a chave de envio não tem acesso a ele",
     "mediaMirrorUnauthorized": "O Immich recusou a chave de envio",
     "mediaMirrorAlbumRequired": "Escolha um álbum para onde espelhar",
-    "mediaMirrorNotFound": "O espelhamento não está configurado para esta família"
+    "mediaMirrorNotFound": "O espelhamento não está configurado para esta família",
+    "setupCodeInvalid": "O código de configuração está em falta ou incorreto. Encontra-o no registo do servidor.",
+    "currentPasswordRequired": "Introduza a sua palavra-passe atual para alterar o seu endereço de e-mail",
+    "recentSignInRequired": "Por segurança, termine sessão e inicie sessão novamente e altere o seu endereço de e-mail nos 10 minutos seguintes"
   },
   "notifications": {
     "newPost": "{{author}} publicou em {{group}}: \"{{excerpt}}\"",

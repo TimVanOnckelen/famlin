@@ -36,7 +36,9 @@ The maintainers will acknowledge receipt as soon as possible and work with you t
 
 ### First account and automatic secrets
 
-A fresh installation has **no default or seeded admin account**. Opening `/admin` shows a one-time setup screen for the first account, which becomes an administrator. Once any account exists, the setup endpoint refuses to run again. The seed script is a development and test fixture with hardcoded passwords—never use it for a real deployment.
+A fresh installation has **no default or seeded admin account**. Opening `/admin` shows a one-time setup screen for the first account, which becomes an administrator. Once any account exists, the setup endpoint refuses to run again.
+
+Reaching a fresh server isn't enough to claim it. The setup screen, and restoring a backup from it, need a **one-time setup code** that Famlin prints in its log and stores in the data volume. Only someone who can read the server's log or its files has it. Famlin deletes the code once setup succeeds. See [First-run setup code](./server-setup.md#first-run-setup-code). The seed script is a development and test fixture with hardcoded passwords—never use it for a real deployment.
 
 Without a `.env`, Famlin generates:
 
@@ -51,11 +53,23 @@ A Famlin backup (the scheduled `.zip` files and the admin **Data export**) conta
 
 Restoring a backup brings back passwords as they were when it was taken. Anyone with a backup file who can restore it can therefore reset everyone's credentials to that point in time — which is why restore is limited to the setup screen of a server with zero accounts, and on a running server to a **signed-in admin** — never an API token, even one with admin access. A restore on a running server first takes a safety backup, requires typing the family's name, and ends every session. While it runs the API answers `503`, so nobody writes into a database that's being replaced. Saved credentials stay, except one whose destination (issuer, SMTP host, Immich URL) the restored settings change — the same rule as editing settings, so a backup can't redirect a saved secret to another server.
 
-The first-run screen can restore a backup only while the server has zero accounts, under the same protection as initial setup. It accepts an uploaded `.zip` — never executed, only parsed: rows are validated against Famlin's schema, file paths are checked against path traversal, and credential settings in an archive are refused. A legacy database dump (`.dump`) is only read from the backup volume's `db/` folder; it deliberately can't be uploaded. Restoring a dump runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
+The first-run screen can restore a backup only while the server has zero accounts, under the same protection as initial setup, setup code included. It accepts an uploaded `.zip` — never executed, only parsed: rows are validated against Famlin's schema, file paths are checked against path traversal, and credential settings in an archive are refused. A legacy database dump (`.dump`) is only read from the backup volume's `db/` folder; it deliberately can't be uploaded. Restoring a dump runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
 
 ### Sessions and account removal
 
-Changing or resetting a password immediately invalidates the account's existing sessions. Deactivating an account does the same, so a stolen session token doesn't outlive either action.
+Every sign-in creates a **session** on the server, one per device or browser. A session ends, and its token stops working everywhere, when:
+
+- the member signs out of the app (the server ends that session, not just the device);
+- the member signs that device out under **Profile → Signed-in devices** in the web app, or uses **Sign out all other devices**;
+- an admin uses **Sign out everywhere** on the member in the admin **Users** page;
+- the password is changed or reset;
+- 30 days have passed since it signed in.
+
+A session stores only the browser's or app's User-Agent, to tell devices apart, plus when it signed in and was last used. It stores no IP address. Photo links made for a device stop working when its session ends. Personal access tokens aren't sessions: revoke those in **API tokens**.
+
+Sessions from before this feature existed don't appear in the device list. They still expire 30 days after sign-in. A password change, a reset or an admin's **Sign out everywhere** ends them right away.
+
+**Changing your email address needs your current password.** Your email is how Famlin matches you when you sign in with SSO or Apple. Without this check, someone with a stolen session could move the account to an address they control and keep access. An account without a password (SSO or Apple only) must instead have signed in within the last 10 minutes. API tokens can never change the email.
 
 Removing a user in the admin UI **deactivates** rather than deletes the account. Their existing posts, photos, and comments remain visible to the family, just as they do when someone leaves one group. An admin can reactivate the account later.
 

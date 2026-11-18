@@ -12,6 +12,7 @@ import {
   Image,
   KeyRound,
   Layers,
+  LogOut,
   Mail,
   MessageCircle,
   Palette,
@@ -52,6 +53,7 @@ const icons = {
   search: Search,
   palette: Palette,
   download: Download,
+  'log-out': LogOut,
 } as const
 
 export type IconName = keyof typeof icons

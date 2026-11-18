@@ -3,7 +3,14 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { downloadMyExport, fetchNotificationConfig, fetchServerInfo, updateMe, uploadFiles } from '@famlin/api-client'
+import {
+  downloadMyExport,
+  fetchNotificationConfig,
+  fetchServerInfo,
+  updateMe,
+  uploadFiles,
+  fetchSessions,
+} from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
@@ -12,6 +19,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   updateMe: vi.fn(),
   downloadMyExport: vi.fn(),
   uploadFiles: vi.fn(),
+  fetchSessions: vi.fn(),
 }))
 
 vi.mock('@/utils/avatar-image', async (original) => ({
@@ -24,6 +32,7 @@ beforeEach(() => {
   vi.mocked(fetchNotificationConfig).mockResolvedValue({ pushEnabled: true, emailEnabled: true })
   vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.2.3' })
   vi.mocked(updateMe).mockImplementation(async (data) => ({ ...makeUser(), ...data }))
+  vi.mocked(fetchSessions).mockResolvedValue({ items: [], currentListed: true })
 })
 
 describe('ProfilePage', () => {

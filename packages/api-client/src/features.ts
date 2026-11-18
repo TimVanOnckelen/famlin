@@ -18,6 +18,7 @@ export type ServerFeature =
   | 'diagnosticReports' // after 0.8.7
   | 'giftListGuests' // after 0.8.7
   | 'paginatedComments' // after 0.8.7
+  | 'sessions' // after 0.8.7
 
 // What a server that sends no `features` array is known to support.
 // Servers started advertising features after 0.8.7, so one without the

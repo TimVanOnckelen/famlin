@@ -75,7 +75,7 @@ There are two places to restore from:
 - **A server with no accounts** — a new server, another machine, or this one after its database was lost: the **first-run setup screen**, described below. It never merges into a server that's in use, and it's refused once anyone has signed up.
 
 1. Start the server as usual (see [Server setup](./server-setup.md)), running the **same or a newer** Famlin version than the one that made the backup. A backup from a newer version is refused before anything is changed.
-2. Open `/admin`. The setup screen appears; choose **Restore a backup**.
+2. Open `/admin`. The setup screen appears; enter the [setup code](./server-setup.md#first-run-setup-code) from the server log and choose **Restore a backup**.
 
    ![The setup screen's Restore a backup option: backups found on the server, or upload a file](./img/setup-restore-backup.png)
 

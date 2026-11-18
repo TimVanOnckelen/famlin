@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
-import { createUserToken } from '../plugins/auth.js'
+import { createSessionToken } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
 import { getValidInvite, consumeInvite, inviteFailureResponse } from '../services/invites.js'
 import { sanitizeUser, hashPassword } from '../services/users.js'
@@ -64,13 +64,7 @@ export default async function inviteRoutes(fastify: FastifyInstance) {
 
       await consumeInvite(token, user.id)
 
-      const authToken = createUserToken({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
-        tokenVersion: user.tokenVersion,
-      })
+      const authToken = await createSessionToken(user, request)
 
       return { token: authToken, user: sanitizeUser(user) }
     }

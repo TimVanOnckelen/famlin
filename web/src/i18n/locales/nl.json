@@ -252,7 +252,10 @@
     "cropPreview": "Voorbeeld van profielfoto",
     "cropZoomIn": "Inzoomen",
     "cropZoomOut": "Uitzoomen",
-    "cropSave": "Opslaan"
+    "cropSave": "Opslaan",
+    "emailChangePasswordHint": "Met je e-mailadres meld je je aan, dus voor een wijziging is je huidige wachtwoord nodig.",
+    "emailChangePasswordIncorrect": "Je huidige wachtwoord is onjuist.",
+    "emailChangeRecentSignIn": "Meld je voor je veiligheid af en opnieuw aan, en wijzig je e-mailadres binnen 10 minuten."
   },
   "apiTokens": {
     "menuItem": "API-tokens",
@@ -700,5 +703,22 @@
     "saveFailed": "De pagina kon niet worden opgeslagen.",
     "save": "Opslaan",
     "saving": "Opslaan…"
+  },
+  "sessions": {
+    "title": "Aangemelde apparaten",
+    "description": "Elk apparaat en elke browser waarop je bent aangemeld. Meld af wat je niet herkent.",
+    "currentNotListed": "Dit apparaat is aangemeld van vóór de apparatenlijst en staat er daarom niet bij. Meld je af en opnieuw aan om het hier te zien.",
+    "thisDevice": "Dit apparaat",
+    "lastActive": "Laatst actief {{when}}",
+    "signOut": "Afmelden",
+    "signOutDeviceLabel": "{{device}} afmelden",
+    "signOutOthers": "Alle andere apparaten afmelden",
+    "signOutOthersConfirm": "Alle apparaten behalve dit afmelden?",
+    "othersSignedOut_one": "{{count}} ander apparaat afgemeld.",
+    "othersSignedOut_other": "{{count}} andere apparaten afgemeld.",
+    "failed": "Er ging iets mis. Probeer het opnieuw.",
+    "mobileApp": "Famlin-app {{os}}",
+    "browserOn": "{{browser}} op {{os}}",
+    "unknownDevice": "Onbekend apparaat"
   }
 }

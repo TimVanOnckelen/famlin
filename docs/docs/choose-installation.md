@@ -42,7 +42,7 @@ The mobile app needs an HTTPS address, so don't skip this step if family lives e
 
 The ending is the same on every path:
 
-1. **Open your server's setup screen** in a browser (for example `https://famlin.yourdomain.com/admin`). A fresh install has no users, so you see a one-time setup wizard.
+1. **Open your server's setup screen** in a browser (for example `https://famlin.yourdomain.com/admin`). A fresh install has no users, so you see a one-time setup wizard. It asks for a [setup code](./server-setup.md#first-run-setup-code) that Famlin prints in its log.
 2. **Let the wizard create your family**: your admin account and your first family.
 3. **Invite people**, or connect phones with a QR code. See [Inviting family members](./inviting-family.md).
 

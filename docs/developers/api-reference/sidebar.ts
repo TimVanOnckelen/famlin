@@ -58,6 +58,30 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/logout",
+          label: "Sign this device out on the server",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/list-sessions",
+          label: "List your signed-in devices",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "api-reference/revoke-other-sessions",
+          label: "Sign out every other device",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "api-reference/revoke-session",
+          label: "Sign out one device",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
           id: "api-reference/get-server-info",
           label: "Get the server version and app update-gating info",
           className: "api-method get",
@@ -932,6 +956,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/session",
+          label: "Session",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/success",
           label: "Success",
           className: "schema",
@@ -1000,6 +1030,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/post",
           label: "Post",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/commentspage",
+          label: "CommentsPage",
           className: "schema",
         },
         {

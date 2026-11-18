@@ -252,7 +252,10 @@
     "cropPreview": "Profile photo preview",
     "cropZoomIn": "Zoom in",
     "cropZoomOut": "Zoom out",
-    "cropSave": "Save"
+    "cropSave": "Save",
+    "emailChangePasswordHint": "Your email address is how you sign in, so changing it needs your current password.",
+    "emailChangePasswordIncorrect": "Your current password is incorrect.",
+    "emailChangeRecentSignIn": "For your security, sign out and sign in again, then change your email address within 10 minutes."
   },
   "apiTokens": {
     "menuItem": "API tokens",
@@ -700,5 +703,22 @@
     "saveFailed": "Couldn't save the page.",
     "save": "Save",
     "saving": "Saving…"
+  },
+  "sessions": {
+    "title": "Signed-in devices",
+    "description": "Every device and browser where you are signed in. Sign out any you don’t recognise.",
+    "currentNotListed": "This device signed in before device lists existed, so it isn’t shown. Sign out and in again to see it here.",
+    "thisDevice": "This device",
+    "lastActive": "Last active {{when}}",
+    "signOut": "Sign out",
+    "signOutDeviceLabel": "Sign out {{device}}",
+    "signOutOthers": "Sign out all other devices",
+    "signOutOthersConfirm": "Sign out every device except this one?",
+    "othersSignedOut_one": "Signed out {{count}} other device.",
+    "othersSignedOut_other": "Signed out {{count}} other devices.",
+    "failed": "Something went wrong. Try again.",
+    "mobileApp": "Famlin app {{os}}",
+    "browserOn": "{{browser}} on {{os}}",
+    "unknownDevice": "Unknown device"
   }
 }

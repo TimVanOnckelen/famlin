@@ -21,8 +21,9 @@ jest.mock('@famlin/api-client', () => ({
   setMediaToken: jest.fn(),
   unregisterPushToken: jest.fn().mockResolvedValue(undefined),
   unregisterDevice: jest.fn().mockResolvedValue(undefined),
+  logoutSession: jest.fn().mockResolvedValue(undefined),
   getCurrentServerUrl: jest.fn(() => 'http://example.com'),
-  fetchServerInfo: jest.fn().mockResolvedValue({ version: '0.9.0', features: ['deviceDiagnostics'] }),
+  fetchServerInfo: jest.fn().mockResolvedValue({ version: '0.9.0', features: ['deviceDiagnostics', 'sessions'] }),
   serverFeatureSupport: jest.requireActual('@famlin/api-client').serverFeatureSupport,
 }))
 
@@ -83,6 +84,19 @@ describe('authStore', () => {
     expect(state.user).toBeNull()
     expect(state.token).toBeNull()
     expect(state.serverUrl).toBeNull()
+  })
+
+  it('logout ends the session on the server before forgetting the token', async () => {
+    const storage = require('@/utils/storage')
+    const client = require('@famlin/api-client')
+    const { useAuthStore } = require('@/stores/authStore')
+
+    await useAuthStore.getState().logout()
+
+    expect(client.logoutSession).toHaveBeenCalledTimes(1)
+    expect(client.logoutSession.mock.invocationCallOrder[0]).toBeLessThan(
+      storage.deleteToken.mock.invocationCallOrder[0]
+    )
   })
 
   it('logout also unregisters this device push token when one is stored', async () => {

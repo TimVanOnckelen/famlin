@@ -3,6 +3,7 @@ import { storageStatus, startStorageMigration, StorageMigrationError } from '../
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../db.js'
 import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js'
+import { revokeAllSessionsOfUser } from '../services/sessions.js'
 import {
   applySecretWriteRules,
   getAllSettings,
@@ -392,6 +393,26 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // on Post.author/Comment.author etc. in schema.prisma). Also invalidates
   // the session cache so any token already in flight for this user id stops
   // being treated as current right away rather than waiting out its TTL.
+  // Forced sign-out: ends every session the user has on every device — and
+  // every token issued before now, sessions or not (media tokens and tokens
+  // from before server-side sessions included) — by bumping tokenVersion.
+  // For a lost phone or a suspected stolen login. Personal access tokens are
+  // revoked separately (the owner deletes them), as on a password reset.
+  fastify.post('/users/:id/sign-out', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+
+    const { id } = request.params as { id: string }
+    try {
+      await prisma.user.update({ where: { id }, data: { tokenVersion: { increment: 1 } } })
+    } catch (err) {
+      if (isRecordNotFound(err)) return reply.status(404).send({ error: getT(request)('errors.userNotFound') })
+      throw err
+    }
+    invalidateSessionCache(id)
+    const revoked = await revokeAllSessionsOfUser(id)
+    return { success: true, revoked }
+  })
+
   fastify.delete('/users/:id', async (request, reply) => {
     if (requireAdmin(request, reply)) return
 

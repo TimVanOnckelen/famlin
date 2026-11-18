@@ -1,8 +1,8 @@
 export type { StorageAdapter } from './storage';
 export { setStorageAdapter, getStorageAdapter, TOKEN_KEY, SERVER_URL_KEY } from './storage';
 export { api, setApiBaseUrl, getCurrentServerUrl, setMediaToken, getCurrentMediaToken, initApiBaseUrl, setUnauthorizedHandler, setLanguageResolver, } from './client';
-export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, ServerInfo, Branding, BrandPalette, BrandSemantic, } from './auth';
-export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, getBrandingAssetUrl, changePassword, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
+export type { LoginResponse, OidcConfig, NotificationPrefs, UpdateMeBody, UserSession, UserSessionList, ServerInfo, Branding, BrandPalette, BrandSemantic, } from './auth';
+export { fetchOidcConfig, loginWithOidc, loginWithApple, exchangeOidcMobileHandoff, exchangeOidcCode, loginWithPassword, fetchMe, updateMe, fetchNotificationConfig, fetchServerInfo, getBrandingAssetUrl, changePassword, logoutSession, fetchSessions, revokeSession, revokeOtherSessions, deleteAccount, downloadMyExport, getMyExportRequest, } from './auth';
 export { compareVersions } from './version';
 export type { ServerFeature, FeatureSupport } from './features';
 export { serverSupports, serverFeatureSupport, isNotFoundError, IMPLICIT_BASELINE_FEATURES, PRE_FEATURE_LIST_FEATURES, } from './features';

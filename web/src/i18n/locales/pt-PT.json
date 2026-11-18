@@ -252,7 +252,10 @@
     "cropPreview": "Pré-visualização da fotografia de perfil",
     "cropZoomIn": "Aumentar zoom",
     "cropZoomOut": "Diminuir zoom",
-    "cropSave": "Guardar"
+    "cropSave": "Guardar",
+    "emailChangePasswordHint": "O seu endereço de e-mail serve para iniciar sessão, por isso alterá-lo requer a sua palavra-passe atual.",
+    "emailChangePasswordIncorrect": "A sua palavra-passe atual está incorreta.",
+    "emailChangeRecentSignIn": "Por segurança, termine sessão e inicie sessão novamente e altere o seu endereço de e-mail nos 10 minutos seguintes."
   },
   "apiTokens": {
     "menuItem": "Tokens de API",
@@ -700,5 +703,22 @@
     "saveFailed": "Não foi possível guardar a página.",
     "save": "Guardar",
     "saving": "A guardar…"
+  },
+  "sessions": {
+    "title": "Dispositivos com sessão iniciada",
+    "description": "Todos os dispositivos e navegadores onde tem sessão iniciada. Termine a sessão nos que não reconhecer.",
+    "currentNotListed": "Este dispositivo iniciou sessão antes de existir a lista de dispositivos, por isso não aparece. Termine sessão e inicie novamente para o ver aqui.",
+    "thisDevice": "Este dispositivo",
+    "lastActive": "Última atividade {{when}}",
+    "signOut": "Terminar sessão",
+    "signOutDeviceLabel": "Terminar sessão em {{device}}",
+    "signOutOthers": "Terminar sessão em todos os outros dispositivos",
+    "signOutOthersConfirm": "Terminar sessão em todos os dispositivos exceto este?",
+    "othersSignedOut_one": "Sessão terminada em {{count}} outro dispositivo.",
+    "othersSignedOut_other": "Sessão terminada em {{count}} outros dispositivos.",
+    "failed": "Algo correu mal. Tente novamente.",
+    "mobileApp": "App Famlin {{os}}",
+    "browserOn": "{{browser}} em {{os}}",
+    "unknownDevice": "Dispositivo desconhecido"
   }
 }

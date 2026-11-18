@@ -150,6 +150,16 @@ export function UsersPage() {
     }
   }
 
+  const handleSignOut = async (user: User) => {
+    if (!(await dialogs.confirmAction(t('users.signOutConfirm', { name: user.name, email: user.email })))) return
+    try {
+      await api.signOutUser(user.id)
+      await dialogs.showMessage(t('users.signedOut', { name: user.name }))
+    } catch (error) {
+      await dialogs.showMessage(error instanceof Error ? error.message : t('common.error'))
+    }
+  }
+
   const handleResetPassword = async (user: User) => {
     const saved = await dialogs.requestPassword(
       t('users.resetPasswordPrompt', { name: user.name, email: user.email }),
@@ -296,6 +306,16 @@ export function UsersPage() {
                       onClick={() => handleResetPassword(user)}
                     >
                       <Icon name="key" size={15} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="icon-button"
+                      title={t('users.signOut')}
+                      aria-label={t('users.signOut')}
+                      onClick={() => handleSignOut(user)}
+                    >
+                      <Icon name="log-out" size={15} />
                     </Button>
                     <Button
                       variant="destructive"

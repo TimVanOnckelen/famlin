@@ -101,6 +101,10 @@ export interface UpdateMeBody extends NotificationPrefs {
   name?: string
   email?: string
   avatarUrl?: string | null
+  // Needed to change `email` on an account with a password. Without one
+  // (OIDC/Apple only) the server instead needs a sign-in on this device in
+  // the last 10 minutes, and answers `code: 'recentSignInRequired'`.
+  currentPassword?: string
 }
 
 export async function updateMe(data: UpdateMeBody): Promise<User> {
@@ -225,4 +229,53 @@ export async function getMyExportRequest(): Promise<{ url: string; headers: Reco
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   await api.post('/auth/change-password', { currentPassword, newPassword })
+}
+
+// --- Server-side sessions (server feature `sessions`) -----------------------
+
+// Ends this device's session on the server, so its token stops working even
+// if a copy survives. Call it before forgetting the token; it never throws,
+// so it can't block signing out (an older server without it just 404s).
+export async function logoutSession(): Promise<void> {
+  try {
+    // requires-feature: sessions
+    await api.post('/auth/logout')
+  } catch {
+    // Signing out locally must always succeed.
+  }
+}
+
+export interface UserSession {
+  id: string
+  // The client's User-Agent at sign-in, or null.
+  userAgent: string | null
+  createdAt: string
+  lastUsedAt: string
+  // The session the request was made with.
+  current: boolean
+}
+
+export interface UserSessionList {
+  items: UserSession[]
+  // False when this device signed in before the server had sessions: it
+  // isn't in the list until it signs in again.
+  currentListed: boolean
+}
+
+export async function fetchSessions(): Promise<UserSessionList> {
+  // requires-feature: sessions
+  const response = await api.get<UserSessionList>('/auth/sessions')
+  return response.data
+}
+
+export async function revokeSession(id: string): Promise<void> {
+  // requires-feature: sessions
+  await api.delete(`/auth/sessions/${encodeURIComponent(id)}`)
+}
+
+// Signs out every device except this one.
+export async function revokeOtherSessions(): Promise<{ revoked: number }> {
+  // requires-feature: sessions
+  const response = await api.delete<{ revoked: number }>('/auth/sessions')
+  return response.data
 }

@@ -7,6 +7,13 @@ import { prisma } from '../db.js'
 import { getOidcSettings, isEmailAllowed } from '../services/settings.js'
 import { API_TOKEN_PREFIX, verifyApiToken } from '../services/apiTokens.js'
 import { isGroupMember } from '../services/groups.js'
+import {
+  clearSessionLivenessCache,
+  createSession,
+  isSessionAlive,
+  SESSION_TTL_MS,
+  touchSession,
+} from '../services/sessions.js'
 import { getT } from '../i18n/index.js'
 
 export interface AuthenticatedRequest extends FastifyRequest {
@@ -26,6 +33,10 @@ declare module 'fastify' {
     // (routes/api-tokens.ts) require 'session' so a leaked PAT can't be used
     // to create replacement PATs and outlive its own revocation.
     authMethod?: 'session' | 'api-token'
+    // The Session row this request's JWT belongs to (services/sessions.ts).
+    // Unset for personal access tokens, and for session JWTs issued before
+    // server-side sessions existed (no `sid` claim — see verifyToken).
+    sessionId?: string
   }
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
@@ -152,32 +163,63 @@ export async function verifyOidcToken(idToken: string, options?: { allowUnlisted
   }
 }
 
-export function createUserToken(user: {
+// Every JWT this server signs is HS256 with JWT_SECRET; verification accepts
+// nothing else, so a token can never pick its own algorithm.
+const JWT_ALGORITHM = 'HS256' as const
+
+type TokenUser = {
   id: string
   email: string
   name: string
   isAdmin: boolean
   tokenVersion: number
-}) {
+}
+
+// Signs a session JWT. Routes that sign someone in use createSessionToken
+// below, which also creates the server-side Session row the `sid` points at;
+// calling this directly without a sessionId yields a token that can't be
+// listed or revoked on its own (tests use it as a shortcut).
+export function createUserToken(user: TokenUser, sessionId?: string) {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, tokenVersion: user.tokenVersion },
+    {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      tokenVersion: user.tokenVersion,
+      ...(sessionId ? { sid: sessionId } : {}),
+    },
     config.JWT_SECRET,
-    { expiresIn: '30d' }
+    { algorithm: JWT_ALGORITHM, expiresIn: Math.floor(SESSION_TTL_MS / 1000) }
   )
+}
+
+// Signs someone in: a new Session row (one per device) plus its JWT. Every
+// login path — password, OIDC, Apple, invite registration, first-run setup
+// and restore — goes through here.
+export async function createSessionToken(user: TokenUser, request: FastifyRequest) {
+  const session = await createSession(user.id, request.headers['user-agent'])
+  return createUserToken(user, session.id)
 }
 
 // Session tokens carry no `scope` claim. Media tokens are signed with the same
 // secret, so without this check a 7-day media token lifted from any image URL
 // (copied link, proxy/access log) would pass as a full session credential.
 export function verifyToken(token: string) {
-  const decoded = jwt.verify(token, config.JWT_SECRET) as AuthenticatedRequest['user'] & {
+  const decoded = jwt.verify(token, config.JWT_SECRET, {
+    algorithms: [JWT_ALGORITHM],
+  }) as AuthenticatedRequest['user'] & {
     tokenVersion: number
     scope?: unknown
+    sid?: unknown
   }
   if (typeof decoded !== 'object' || decoded === null || decoded.scope !== undefined) {
     throw new jwt.JsonWebTokenError('not a session token')
   }
-  return decoded
+  if (decoded.sid !== undefined && typeof decoded.sid !== 'string') {
+    throw new jwt.JsonWebTokenError('malformed session id')
+  }
+  return decoded as typeof decoded & { sid?: string }
 }
 
 // A narrow-scope, longer-lived token used only to authorize reading files
@@ -186,15 +228,32 @@ export function verifyToken(token: string) {
 // session credential to proxy/CDN logs. Carries the user's tokenVersion so a
 // password reset / account deletion can invalidate it the same way it
 // invalidates a session token (see isSessionCurrent).
-export function createMediaToken(userId: string, tokenVersion: number) {
-  return jwt.sign({ id: userId, scope: 'media', tokenVersion }, config.JWT_SECRET, { expiresIn: '7d' })
+//
+// A media token minted from a session carries that session's `sid` too, so
+// signing out (or revoking the device) also stops its photo URLs working.
+export function createMediaToken(userId: string, tokenVersion: number, sessionId?: string) {
+  return jwt.sign(
+    { id: userId, scope: 'media', tokenVersion, ...(sessionId ? { sid: sessionId } : {}) },
+    config.JWT_SECRET,
+    { algorithm: JWT_ALGORITHM, expiresIn: '7d' }
+  )
 }
 
-export function verifyMediaToken(token: string): { id: string; tokenVersion?: number } | null {
+export function verifyMediaToken(token: string): { id: string; tokenVersion: number; sid?: string } | null {
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET) as { id?: string; scope?: string; tokenVersion?: number }
+    const decoded = jwt.verify(token, config.JWT_SECRET, { algorithms: [JWT_ALGORITHM] }) as {
+      id?: string
+      scope?: string
+      tokenVersion?: unknown
+      sid?: unknown
+    }
     if (decoded.scope !== 'media' || !decoded.id) return null
-    return { id: decoded.id, tokenVersion: decoded.tokenVersion }
+    // Every media token has carried tokenVersion for far longer than the
+    // 7-day lifetime, so one without it is refused rather than let through
+    // unchecked.
+    if (typeof decoded.tokenVersion !== 'number') return null
+    if (decoded.sid !== undefined && typeof decoded.sid !== 'string') return null
+    return { id: decoded.id, tokenVersion: decoded.tokenVersion, sid: decoded.sid as string | undefined }
   } catch {
     return null
   }
@@ -217,6 +276,7 @@ export function invalidateSessionCache(userId: string) {
 // After a restore on a running server every user's tokenVersion changed at once.
 export function clearSessionCache() {
   sessionCache.clear()
+  clearSessionLivenessCache()
 }
 
 // Confirms a decoded token still corresponds to an existing user at its
@@ -225,7 +285,7 @@ export function clearSessionCache() {
 // hook so a deleted user or a token from before a password reset loses media
 // access immediately, matching the guarantee the main `authenticate`
 // decorator makes.
-export async function isSessionCurrent(decoded: { id: string; tokenVersion?: number }): Promise<boolean> {
+export async function isSessionCurrent(decoded: { id: string; tokenVersion: number; sid?: string }): Promise<boolean> {
   const cached = sessionCache.get(decoded.id)
   const now = Date.now()
   let user: { tokenVersion: number }
@@ -245,7 +305,9 @@ export async function isSessionCurrent(decoded: { id: string; tokenVersion?: num
     sessionCache.set(decoded.id, { ...found, expiresAt: now + SESSION_CACHE_TTL_MS })
   }
 
-  if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) return false
+  if (user.tokenVersion !== decoded.tokenVersion) return false
+  // Signed out / revoked device: its session row is gone.
+  if (decoded.sid !== undefined && !(await isSessionAlive(decoded.sid, decoded.id))) return false
   return true
 }
 
@@ -339,6 +401,23 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
       if (!user) {
         return reply.status(401).send({ error: getT(request)('errors.userNotFound') })
+      }
+
+      // A token tied to a server-side session is only valid while that row
+      // exists: logout, "sign out other devices" and an admin's forced
+      // sign-out delete it. Tokens without `sid` predate sessions and stay
+      // valid until their own 30-day expiry (TODO: refuse them once every
+      // pre-session token has expired — 30 days after this release).
+      if (decoded.sid !== undefined) {
+        const session = await prisma.session.findUnique({
+          where: { id: decoded.sid },
+          select: { id: true, userId: true, expiresAt: true, lastUsedAt: true },
+        })
+        if (!session || session.userId !== user.id || session.expiresAt.getTime() <= Date.now()) {
+          return reply.status(401).send({ error: getT(request)('errors.sessionExpired') })
+        }
+        touchSession(session)
+        request.sessionId = session.id
       }
 
       // Lets a password change/reset or an admin-forced sign-out invalidate

@@ -1,0 +1,72 @@
+---
+id: revoke-session
+title: "Sign out one device"
+description: "Ends one of your sessions (your current one included, which is a"
+sidebar_label: "Sign out one device"
+hide_title: true
+hide_table_of_contents: true
+api: eJztV81u20YQfpXBXmobNOU2PhFFAQVR0RRuHVgOgsAywhF3JG68nGV2l7JVgUAfok/YJylmSf80atpLDm2Rk0TuzM7fN98Md8q15DEaxy+1KpSnjbuhOYVgHKtMRVwHVVypaVW5jqO6zpSmUHnTiooq1Ix1AMcEbgVb13kIg26Ag/RYdd4TxyRiuLKdJp3BbW2qGkwAXLB1a9fFwxym7GJNHnCw9VW4vwuMTrJQnp6cljmcubXhR0OO7TZf8Jz8hjysCGPnCcr78zJfSCQtemwokpd4doqxIVUoo1WmjATSYqxVpjx96IwnrYroO8pUqGpqUBU7FbetaIToDa9V31+LcGgdBwpy/s3Jifz8OT1jJoFYk5iqHEfiKILYttZUKfWT90Gkd/vW3PI9VVHc91KoaAZboasqCuGJ4NI5SyiB0h02raUhgL7PVDRRHtV8VOp7eXt68vW+uz+ZEAyvMzC8QWt0BnTXSjoycB4GcGioPGniaNB+vojIe+f30/wx3H7oGuRjT6hxaSmD6JGDxUgaNgYh1gTltKqojcdnyOsO11RCTajJw0FJXE5KtuVhrnrxXNM/WzxPf9BCg1VtmB6MQ3IZ5JYcyovZ9MW785/P3pbQoL8Z0fqshJXzgHDrTSRYWldJApdUYRcouRsG2PqOAxgGuf1YED3R1DhonCY4CERQysk5220JjqGcYGsm2MV6MlxwbHjlJLAnAFAPTimp+CO0r8Z0Xz+CY5Ze3EPj2T40pl2spehVSvatiTUgtORDSg4maEF0N8RgOERCLZSAYJ826xe8/D/xcrqPlwsKrvMVAbsIK9fxZ6S/L8X/txS/z1RDsXayO2iyFCmN2lirQj21Ooziyc7oXmVq8GIYxJ23qlB1jG0oJpMVNtZwPnqVV67Zy/FbWSvcLcP3SRY0tdZtG4GVzORAVedN3KbLl4SevFCXKq6unx7PBWoDmp4KPRRYHFLj+E/zNQntOTP9BAUelEMk71qM7/I8LzOZmgl6hlMpb2kJ2LaH4PyC8WHV+fHNJay8a6B8dT6/hMccJh4tc3juhHm9YIHjAApsCG5xWyy4lCicN7+kvirgefIavk1OfZc2ISmZlD/FOtZzzOT01UuVKanMENy4u+0FPduQ396nf4Qk3bUuUIBYmwAXs/ml3AYdSy8l/JXw+6+/Pforp7GmBbvVylRGWsYtjSVA1ve5CdAFyuHNMGuu/jLT1wcTTRuyQg9B7BwueOs6qJBh2Rmrh61U8GI40nrYdQPgGmVMDacrbIzdpoVTgskXvOCptTDSlSyfoXKtNOMWjo7W3nUtNNQsyYfatEdHBdzblG5MfTkEIp284Id7GJJugINk0lA4TJpLso7XEF2W1GQNJrHKTgoL6IU/IdYYF9ySH0LPYU4EV69lY0uJnb56uZ+OgVMeh7dxnCWPNvLCcRhM3jovZDM2XkhIyVTrQmwwcfO4MM/NmsF1w0KvaWMq+hgfu0ea/+98HoxtH+kuTlqLJoWfuGk38tmVwtaoTEkuE4cN+ipThdHCjrULUcR2uyUGeu1t38vrDx15YaPrTG3QG5kGiZu0CfJfq2KFNtDfJPHgYiTjQ/iUp+NL5K10MNpOnlSmbmg7fOX0132mhtmWrA8Hw/R7orI3lYUzHxj+xexsdjlTff8HaT33ng==
+sidebar_class_name: "delete api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Sign out one device"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"delete"}
+  path={"/api/auth/sessions/{id}"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Ends one of your sessions (your current one included, which is a
+logout). Another account's session id is a `404`. Login sessions only.
+Server feature `sessions`.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./revoke-session.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./revoke-session.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./revoke-session.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

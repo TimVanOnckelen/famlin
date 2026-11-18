@@ -3,6 +3,9 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
 import { authHeader, buildTestApp, createUser } from './helpers.js'
 
+// Changing the email needs the current password (see PATCH /api/auth/me).
+const PASSWORD = 'profile-password-123'
+
 describe('self-service profile details', () => {
   let app: FastifyInstance
   beforeAll(async () => {
@@ -19,7 +22,7 @@ describe('self-service profile details', () => {
       method: 'PATCH',
       url: '/api/auth/me',
       headers: authHeader(user),
-      payload: { name: '  Updated Name  ', email: `  ${email.toUpperCase()}  ` },
+      payload: { name: '  Updated Name  ', email: `  ${email.toUpperCase()}  `, currentPassword: PASSWORD },
     })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({ id: user.id, name: 'Updated Name', email })
@@ -50,13 +53,13 @@ describe('self-service profile details', () => {
   })
 
   it('rejects a case-insensitive conflict without applying either field', async () => {
-    const user = await createUser()
+    const user = await createUser({ password: PASSWORD })
     const other = await createUser({ email: 'Legacy.MixedCase@example.com' })
     const response = await app.inject({
       method: 'PATCH',
       url: '/api/auth/me',
       headers: authHeader(user),
-      payload: { name: 'Must not apply', email: other.email.toLowerCase() },
+      payload: { name: 'Must not apply', email: other.email.toLowerCase(), currentPassword: PASSWORD },
     })
     expect(response.statusCode).toBe(409)
     expect(response.json()).toEqual({ error: 'This email address is already in use' })
@@ -76,7 +79,7 @@ describe('self-service profile details', () => {
   )
 
   it('returns 409 if the database unique constraint catches a concurrent claim', async () => {
-    const user = await createUser()
+    const user = await createUser({ password: PASSWORD })
     const update = vi
       .spyOn(prisma.user, 'update')
       .mockRejectedValueOnce(Object.assign(new Error('unique constraint'), { code: 'P2002' }))
@@ -85,7 +88,7 @@ describe('self-service profile details', () => {
         method: 'PATCH',
         url: '/api/auth/me',
         headers: authHeader(user),
-        payload: { email: 'race@example.com' },
+        payload: { email: 'race@example.com', currentPassword: PASSWORD },
       })
       expect(response.statusCode).toBe(409)
     } finally {
@@ -94,11 +97,16 @@ describe('self-service profile details', () => {
   })
 
   it('allows only one of two users to claim the same address', async () => {
-    const users = await Promise.all([createUser(), createUser()])
+    const users = await Promise.all([createUser({ password: PASSWORD }), createUser({ password: PASSWORD })])
     const email = `claimed-${users[0].id}@example.com`
     const responses = await Promise.all(
       users.map((user) =>
-        app.inject({ method: 'PATCH', url: '/api/auth/me', headers: authHeader(user), payload: { email } })
+        app.inject({
+          method: 'PATCH',
+          url: '/api/auth/me',
+          headers: authHeader(user),
+          payload: { email, currentPassword: PASSWORD },
+        })
       )
     )
     expect(responses.map((response) => response.statusCode).sort()).toEqual([200, 409])

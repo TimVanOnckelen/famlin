@@ -1,3 +1,4 @@
+import type { FastifyRequest } from 'fastify'
 import { createHash } from 'crypto'
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
 import { getAppleSettings, isEmailAllowed } from './settings.js'
@@ -125,7 +126,8 @@ export async function completeAppleLogin(
   fullName: string | undefined,
   inviteToken: string | undefined,
   t: (key: string) => string,
-  binding: AppleNonceBinding
+  binding: AppleNonceBinding,
+  request: FastifyRequest
 ): Promise<
   | { error: { status: number; error: string; code: string } }
   | { result: { token: string; user: ReturnType<typeof sanitizeUser> } }
@@ -133,6 +135,7 @@ export async function completeAppleLogin(
   return completeFederatedLogin(
     (options) => verifyAppleIdentityToken(identityToken, fullName, binding, options),
     inviteToken,
-    t
+    t,
+    request
   )
 }

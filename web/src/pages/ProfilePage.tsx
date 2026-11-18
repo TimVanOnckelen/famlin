@@ -22,6 +22,7 @@ import { AppShell } from '@/components/AppShell'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { ApiTokensModal } from '@/components/ApiTokensModal'
 import { ConnectAppQr } from '@/components/ConnectAppQr'
+import { SessionsSection } from '@/components/SessionsSection'
 import { formatDayMonth } from '@/utils/time'
 import { useAuthStore } from '@/stores/authStore'
 import { SUPPORTED_LANGUAGES, SupportedLanguage, storeLanguage } from '@/i18n'
@@ -398,6 +399,8 @@ export function ProfilePage({
             </form>
           </section>
         )}
+
+        <SessionsSection />
 
         <section className="profile-section">
           <h2 className="profile-section-title">{t('connectApp.title')}</h2>

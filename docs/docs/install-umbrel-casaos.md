@@ -16,7 +16,7 @@ Famlin is not in the official Umbrel and CasaOS app stores yet. Until it is, add
 2. Click the three dots in the top right and choose **Community App Stores**.
 3. Paste `https://github.com/TimVanOnckelen/famlin-umbrel-app-store` and add it.
 4. Open the new store, choose **Famlin** and click **Install**.
-5. When it is ready, click **Open** and create the first (administrator) account on the setup screen.
+5. When it is ready, click **Open** and create the first (administrator) account on the setup screen. It asks for a **setup code**: open the Famlin app's logs and copy the code from the line starting with *No accounts yet* (see [First-run setup code](./server-setup.md#first-run-setup-code)).
 
 ## CasaOS and ZimaOS
 

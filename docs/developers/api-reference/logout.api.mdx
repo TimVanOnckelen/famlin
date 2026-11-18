@@ -1,0 +1,65 @@
+---
+id: logout
+title: "Sign this device out on the server"
+description: "Ends the session the request's token belongs to: the token, and every"
+sidebar_label: "Sign this device out on the server"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVsGO2zYQ/ZUBL9ldaOVtmpNRFHDaLZoi7QZxgiBYGREtjS1mqaHCIe1VDQP9iH5hv6QYSvY62QC99NBDT5bJ4cxw5s173CnXodfBOHpRq6mybu1iUJkKes1qeqtmVeUiBbXIVI1cedOJrZqqa6oZQoPAyGwcpW+PnyJyeMIQ3B0SLNE6Wsu/adpPqxloqgE36PuCWqyNHq1bQwFr2JrQgAkZcHAdbJ2/M7QG0ybTgLbP5DCBWYGGynV9QRz9xmyQYcyjxo2pMIcfrEEKDJW2FkyAJa6cR1g5v8YQxO0xq7ygdxJYQ4eeHWkLuqqQ+ZC086AfLpsSNswR69FrQYx+g/6STX2sCgPeGw5YZxLJIxgGciduAKlO9TABPkYOBXkM0RND+fTqqsxhnpzCCnWIHqE8OC7zglSmPHLniJHVdKeeXl3Jz+eNmps1YQ1DWytHASmIle46a6rU+slHFtOd4qrBVstX6DtUU+WWH7GSg50XoAQzBOKYSnNiuHTOopaM8F63nUU1DT7ifp+pYIL8VfPx0H4vq8+uvnmc66+G2dA6A0MbbU2dAd53xkv5nAePG3eHNVQea6RgtP33boTeO39ixsEbWqsvUf9zbDVdetS1XlrMIHhNbLXAdiM4bhDKWVVhFy5falpHvcYSGtQ1ejgrkcpJSbY8z9VeMq/xnyPepA9todVVYwiPwSGlDOIlh/L19ezHDze/vXxfQqv9HYOG8tnVt6VgHTRsvQkIS+uquwTYSkfGcXwTvnwkBkMg3i8d2X5SY+ugdTXCGSNCKTs3ZPtShqyc6M5MdAzNZES9oZWTi50AQB2TUtJxIQfppdDKUO7FAziu08J+wEaLoXFCR53j1CodGjVVDzGPNDUEF6baqeitmqomhI6nk8lKt9ZQPiaTV659VNr3LnpwW4Kfki3U2FnXt4Km/UJ8V9Gb0CfnS9Qe/SxKIreL0+25IGwA0anRsa+SkGSazGRSktGjZGZf5x04K4ebfOh0+JDneZkJ/hPizEB2W1yC7rpzcL6gB4r65d0bWHnXQvnqZv4GPiueoTKH507ozgsEKAxY0C3CVvfTgkq5hfPm9zROU3iesobvUlLfJ/KRTknX013HNo6VnL16oTIlnRkuV0XvpayPRERE4FD+EYl43zlG0RbD8Pp6/ka8QSQZoQS7Ev7648+HfGU3NFiQW61MZWRS3NJYTKw61oYhMuYwEvztVyu9OJvUuEErrMAS57yg3kWoNMEyGltDf8CL6NR6UE0GvdaGOAy7K90a2z/h8TJ5QQXNrIWRpYT+uXKdzGAPFxdr72IHLbZL9NyY7uJiCoeYMoRpHIeLyAAXdPRDkM4ynKWQBvk8nRwUF4IbVPZUdLa6B+1dTMs6FNShH7UP5ohw+5YPijh79eJxOQYqiaER7h1oNksZbWTBEQ8hRbCxhnHwOCElS5Pc6kTJpNMciC4NTR7UWhTqoN9D9b6Ey+6B7P9/fvw3nh8jxwW8D5POapN6nYh4N7L2rdKdUZkS4Kjs8MBcZKoRbp/eqt1uqRnfervfy/KniF4od5GpjfZGlC4xbqYGGU1sfIe9UGYSWiEabaOk8egBIDx9FBOhQbXf/w1EcOLF
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Sign this device out on the server"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/auth/logout"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Ends the session the request's token belongs to: the token, and every
+media token minted with it, stop working immediately, even if a copy
+survives on the device. Clients call it before forgetting the token.
+With a personal access token, or a session token issued before
+server-side sessions existed, there is no session to end and it just
+returns `200`. Server feature `sessions`.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./logout.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./logout.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

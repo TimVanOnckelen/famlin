@@ -204,11 +204,12 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
   // image/video URL (see the onRequest hook in app.ts).
   fastify.get('/media-token', { preHandler: [fastify.authenticate] }, async (request) => {
     // Embed the caller's current tokenVersion so the media token is revoked
-    // alongside their session on a password reset / deactivation.
+    // alongside their session on a password reset / deactivation, and their
+    // session id so signing this device out revokes its photo URLs too.
     const user = await prisma.user.findUnique({
       where: { id: request.user!.id },
       select: { tokenVersion: true },
     })
-    return { token: createMediaToken(request.user!.id, user!.tokenVersion) }
+    return { token: createMediaToken(request.user!.id, user!.tokenVersion, request.sessionId) }
   })
 }

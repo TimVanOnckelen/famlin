@@ -40,6 +40,7 @@ export interface UpdateMeBody extends NotificationPrefs {
     name?: string;
     email?: string;
     avatarUrl?: string | null;
+    currentPassword?: string;
 }
 export declare function updateMe(data: UpdateMeBody): Promise<User>;
 export declare function fetchNotificationConfig(): Promise<{
@@ -97,3 +98,20 @@ export declare function getMyExportRequest(): Promise<{
     headers: Record<string, string>;
 }>;
 export declare function changePassword(currentPassword: string, newPassword: string): Promise<void>;
+export declare function logoutSession(): Promise<void>;
+export interface UserSession {
+    id: string;
+    userAgent: string | null;
+    createdAt: string;
+    lastUsedAt: string;
+    current: boolean;
+}
+export interface UserSessionList {
+    items: UserSession[];
+    currentListed: boolean;
+}
+export declare function fetchSessions(): Promise<UserSessionList>;
+export declare function revokeSession(id: string): Promise<void>;
+export declare function revokeOtherSessions(): Promise<{
+    revoked: number;
+}>;

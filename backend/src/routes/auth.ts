@@ -9,7 +9,7 @@ import { pipeline } from 'stream/promises'
 import pkg from '../../package.json' with { type: 'json' }
 import { prisma } from '../db.js'
 import {
-  createUserToken,
+  createSessionToken,
   getDiscovery,
   exchangeOidcCode,
   OidcError,
@@ -34,6 +34,8 @@ import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/res
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
 import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
 import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
+import { revokeAllSessionsOfUser, revokeSessions } from '../services/sessions.js'
+import { clearSetupCode, isValidSetupCode, SETUP_CODE_HEADER } from '../services/setupCode.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
@@ -112,7 +114,52 @@ function oidcErrorToMobileCode(code: OidcError['code']): string {
   }
 }
 
+// How recent a sign-in must be to change the email on an account without a
+// password (see PATCH /me).
+const RECENT_SIGN_IN_MS = 10 * 60_000
+
+async function checkEmailChangeReauth(
+  request: FastifyRequest,
+  currentPassword: string | undefined
+): Promise<{ status: number; body: { error: string; code: string } } | null> {
+  const t = getT(request)
+  if (request.authMethod !== 'session') {
+    return { status: 403, body: { error: t('errors.sessionRequired'), code: 'sessionRequired' } }
+  }
+  const user = await prisma.user.findUnique({ where: { id: request.user!.id }, select: { passwordHash: true } })
+  if (user?.passwordHash) {
+    if (!currentPassword) {
+      return { status: 400, body: { error: t('errors.currentPasswordRequired'), code: 'currentPasswordRequired' } }
+    }
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      // 403, not 401: clients treat any 401 on an authenticated request as
+      // "session over" and sign out, which a typo must not cause.
+      return { status: 403, body: { error: t('errors.currentPasswordIncorrect'), code: 'currentPasswordIncorrect' } }
+    }
+    return null
+  }
+  const session = request.sessionId
+    ? await prisma.session.findUnique({ where: { id: request.sessionId }, select: { createdAt: true } })
+    : null
+  if (!session || Date.now() - session.createdAt.getTime() > RECENT_SIGN_IN_MS) {
+    return { status: 403, body: { error: t('errors.recentSignInRequired'), code: 'recentSignInRequired' } }
+  }
+  return null
+}
+
 export default async function authRoutes(fastify: FastifyInstance) {
+  // Every first-run route (setup, and restoring a backup onto an empty
+  // instance) needs the one-time setup code from the server log — see
+  // services/setupCode.ts. Runs as a preHandler, so a wrong code is refused
+  // before a multi-GB restore upload is read.
+  async function requireSetupCode(request: FastifyRequest, reply: FastifyReply) {
+    const header = request.headers[SETUP_CODE_HEADER]
+    const provided = Array.isArray(header) ? header[0] : header
+    if (!isValidSetupCode(provided)) {
+      return reply.status(403).send({ error: getT(request)('errors.setupCodeInvalid'), code: 'setupCodeInvalid' })
+    }
+  }
+
   // Public: lets clients discover whether OIDC login is enabled and, if so,
   // which endpoints/client/scopes to use to build their own auth request.
   // Resolving discovery server-side avoids relying on the provider allowing
@@ -178,63 +225,62 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // requests can't both pass the "no users yet" check and create two admins
   // — the lock is held for the transaction, so the second caller's count()
   // only runs after the first caller has committed its new user.
-  fastify.post('/setup', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
-    const t = getT(request)
-    const { email, name, password } = setupBodySchema.parse(request.body)
-    const normalizedEmail = email.toLowerCase().trim()
-    const passwordHash = await hashPassword(password)
+  fastify.post(
+    '/setup',
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request, reply) => {
+      const t = getT(request)
+      const { email, name, password } = setupBodySchema.parse(request.body)
+      const normalizedEmail = email.toLowerCase().trim()
+      const passwordHash = await hashPassword(password)
 
-    const user = await prisma.$transaction(async (tx) => {
-      // Try, don't wait: a restore can hold this key far longer than the
-      // transaction's timeout.
-      const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+      const user = await prisma.$transaction(async (tx) => {
+        // Try, don't wait: a restore can hold this key far longer than the
+        // transaction's timeout.
+        const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
         SELECT pg_try_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY}) AS locked
       `
-      if (!locked) return 'busy' as const
+        if (!locked) return 'busy' as const
 
-      const userCount = await tx.user.count()
-      if (userCount > 0) {
-        return null
+        const userCount = await tx.user.count()
+        if (userCount > 0) {
+          return null
+        }
+
+        return tx.user.create({
+          data: {
+            email: normalizedEmail,
+            name,
+            passwordHash,
+            isAdmin: true,
+          },
+        })
+      })
+
+      if (user === 'busy') {
+        return reply.status(409).send({ error: t('errors.setupInProgress') })
+      }
+      if (!user) {
+        return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
+      }
+      clearSetupCode()
+
+      // Scheduled backups are on by default for new installs only: the global
+      // default stays off so existing instances are untouched.
+      try {
+        await updateSettings({ backupEnabled: true })
+      } catch (err) {
+        request.log.warn({ err }, 'could not enable scheduled backups by default')
       }
 
-      return tx.user.create({
-        data: {
-          email: normalizedEmail,
-          name,
-          passwordHash,
-          isAdmin: true,
-        },
-      })
-    })
+      const token = await createSessionToken(user, request)
 
-    if (user === 'busy') {
-      return reply.status(409).send({ error: t('errors.setupInProgress') })
+      return {
+        token,
+        user: sanitizeUser(user),
+      }
     }
-    if (!user) {
-      return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
-    }
-
-    // Scheduled backups are on by default for new installs only: the global
-    // default stays off so existing instances are untouched.
-    try {
-      await updateSettings({ backupEnabled: true })
-    } catch (err) {
-      request.log.warn({ err }, 'could not enable scheduled backups by default')
-    }
-
-    const token = createUserToken({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      tokenVersion: user.tokenVersion,
-    })
-
-    return {
-      token,
-      user: sanitizeUser(user),
-    }
-  })
+  )
 
   // Public: progress of a restore onto this running server (admin Backups
   // page). Public because the restore ends the session of the admin who
@@ -316,6 +362,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       if (!(err instanceof RestoreError)) throw err
       return sendRestoreError(request, reply, err)
     }
+    clearSetupCode()
 
     // New install (restored or not): backups on by default, unless the
     // archive itself carried an explicit choice.
@@ -330,13 +377,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     if (!result.adminUserId) return { restored: true, counts: result.counts }
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: result.adminUserId } })
-    const token = createUserToken({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      tokenVersion: user.tokenVersion,
-    })
+    const token = await createSessionToken(user, request)
     return { restored: true, token, user: sanitizeUser(user), counts: result.counts }
   }
 
@@ -370,7 +411,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // account is created alongside the restored ones, and a session is issued.
   fastify.post(
     '/setup/restore',
-    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       if (!request.isMultipart()) {
@@ -423,7 +464,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // setup screen to offer.
   fastify.get(
     '/setup/backups',
-    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
@@ -439,7 +480,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // role), followed by copying the mirror's media back.
   fastify.post(
     '/setup/restore-backup',
-    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       const { file, admin } = restoreBackupBodySchema.parse(request.body)
@@ -467,6 +508,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         if (err.code === 'unknownDump') return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
         return sendDumpError(request, reply, err)
       }
+      clearSetupCode()
       return { restored: true, media: await restoreDumpMedia(request) }
     }
   )
@@ -475,7 +517,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // the scheduled-backup dumps in the backups volume's db/ folder.
   fastify.get(
     '/setup/dumps',
-    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
@@ -490,7 +532,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // the person signs in with their existing account afterwards.
   fastify.post(
     '/setup/restore-dump',
-    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       const { name } = restoreDumpBodySchema.parse(request.body)
@@ -504,6 +546,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         if (!(err instanceof RestoreDumpError)) throw err
         return sendDumpError(request, reply, err)
       }
+      clearSetupCode()
 
       return { restored: true, media: await restoreDumpMedia(request) }
     }
@@ -518,7 +561,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const t = getT(request)
 
     try {
-      const outcome = await completeOidcLogin(idToken, inviteToken, t)
+      const outcome = await completeOidcLogin(idToken, inviteToken, t, request)
       if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
       return outcome.result
     } catch (err) {
@@ -549,11 +592,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const serverHost = publicUrl ? new URL(publicUrl).host : (request.headers.host ?? '')
 
     try {
-      const outcome = await completeAppleLogin(identityToken, fullName, inviteToken, t, {
-        rawNonce,
-        nonceHost,
-        serverHost,
-      })
+      const outcome = await completeAppleLogin(
+        identityToken,
+        fullName,
+        inviteToken,
+        t,
+        {
+          rawNonce,
+          nonceHost,
+          serverHost,
+        },
+        request
+      )
       if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
       return outcome.result
     } catch (err) {
@@ -584,7 +634,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       try {
         const idToken = await exchangeOidcCode({ code, redirectUri, codeVerifier })
-        const outcome = await completeOidcLogin(idToken, inviteToken, t)
+        const outcome = await completeOidcLogin(idToken, inviteToken, t, request)
         if ('error' in outcome) return reply.status(outcome.error.status).send({ error: outcome.error.error })
         return outcome.result
       } catch (err) {
@@ -645,7 +695,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const redirectUri = `${request.protocol}://${request.host}/api/auth/oidc/mobile-callback`
       try {
         const idToken = await exchangeOidcCode({ code, redirectUri })
-        const outcome = await completeOidcLogin(idToken, inviteToken, t)
+        const outcome = await completeOidcLogin(idToken, inviteToken, t, request)
         if ('error' in outcome) {
           fastify.log.warn(
             {
@@ -720,13 +770,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const token = createUserToken({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      isAdmin: user.isAdmin,
-      tokenVersion: user.tokenVersion,
-    })
+    const token = await createSessionToken(user, request)
 
     return {
       token,
@@ -817,6 +861,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         data: { passwordHash, tokenVersion: { increment: 1 } },
       })
       invalidateSessionCache(user.id)
+      await revokeAllSessionsOfUser(user.id)
 
       return { success: true }
     }
@@ -848,6 +893,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           data: { passwordHash, tokenVersion: { increment: 1 } },
         })
         invalidateSessionCache(id)
+        await revokeAllSessionsOfUser(id)
 
         return { success: true, user: sanitizeUser(user) }
       } catch (err) {
@@ -859,6 +905,62 @@ export default async function authRoutes(fastify: FastifyInstance) {
       }
     }
   )
+
+  // Signs this device out on the server: deletes the caller's Session row, so
+  // the token stops working even if a copy of it survives somewhere (a
+  // backup, a shared computer's storage). Clients call it before forgetting
+  // the token, best effort. A personal access token has no session, so there
+  // is nothing to end — revoking one is DELETE /api/api-tokens/:id.
+  fastify.post('/logout', { preHandler: [fastify.authenticate] }, async (request) => {
+    if (request.sessionId) await revokeSessions({ id: request.sessionId, userId: request.user!.id })
+    return { success: true }
+  })
+
+  // The caller's signed-in devices, most recently used first. Session-only,
+  // like every route below: a leaked personal access token mustn't be able to
+  // see or end the owner's sessions.
+  fastify.get('/sessions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    const sessions = await prisma.session.findMany({
+      where: { userId: request.user!.id, expiresAt: { gt: new Date() } },
+      orderBy: { lastUsedAt: 'desc' },
+      select: { id: true, userAgent: true, createdAt: true, lastUsedAt: true },
+    })
+    return {
+      items: sessions.map((session) => ({ ...session, current: session.id === request.sessionId })),
+      // False for a token issued before sessions existed: that device can't
+      // appear in the list (or be told apart from others) until it signs in
+      // again.
+      currentListed: !!request.sessionId,
+    }
+  })
+
+  // Ends one of the caller's sessions (their own current one included —
+  // that's a logout). 404 for anyone else's, so ids can't be probed.
+  fastify.delete('/sessions/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const t = getT(request)
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: t('errors.sessionRequired') })
+    }
+    const { id } = request.params as { id: string }
+    const revoked = await revokeSessions({ id, userId: request.user!.id })
+    if (revoked === 0) return reply.status(404).send({ error: t('errors.notFound') })
+    return { success: true }
+  })
+
+  // "Sign out all other devices": every session but the caller's own.
+  fastify.delete('/sessions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    if (request.authMethod !== 'session') {
+      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    }
+    const revoked = await revokeSessions({
+      userId: request.user!.id,
+      ...(request.sessionId ? { NOT: { id: request.sessionId } } : {}),
+    })
+    return { revoked }
+  })
 
   fastify.get('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request)
@@ -882,8 +984,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
   })
 
   fastify.patch('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const body = updateUserBodySchema.parse(request.body)
+    const { currentPassword, ...body } = updateUserBodySchema.parse(request.body)
     const emailConflict = () => reply.status(409).send({ error: getT(request)('errors.emailAlreadyInUse') })
+
+    // The email is what OIDC and Apple sign-in match accounts on, so changing
+    // it is as sensitive as changing the password: a stolen session or token
+    // could otherwise move the account to an address the thief controls and
+    // keep signing in after it's been noticed. Same proof as the password
+    // change — the current password — or, for an account without one (OIDC
+    // and Apple only), a sign-in on this device within the last few minutes.
+    // Sending the unchanged address (some clients always send the whole form)
+    // needs neither.
+    if (body.email !== undefined && body.email !== request.user!.email.toLowerCase()) {
+      const failure = await checkEmailChangeReauth(request, currentPassword)
+      if (failure) return reply.status(failure.status).send(failure.body)
+    }
+
     if (body.email !== undefined) {
       const existing = await prisma.user.findFirst({
         where: { email: { equals: body.email, mode: 'insensitive' }, id: { not: request.user!.id } },

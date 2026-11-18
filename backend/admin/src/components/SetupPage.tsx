@@ -12,6 +12,11 @@ import { formatBytes } from './SystemStatusPage'
 import { api, User, ApiError, type RestoreResult, type SetupAdmin, type VolumeBackup } from '../api/client'
 
 const RESTORE_DOCS_URL = 'https://famlin.app/docs/maintenance#restoring-a-backup'
+const SETUP_CODE_DOCS_URL = 'https://famlin.app/docs/server-setup#first-run-setup-code'
+
+// The code is 12 letters/digits (backend services/setupCode.ts); dashes and
+// spaces don't count.
+const setupCodeComplete = (code: string) => code.replace(/[\s-]/g, '').length >= 12
 
 interface SetupPageProps {
   onSetupComplete: (user: User, restored: boolean) => void
@@ -41,17 +46,31 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   const [upload, setUpload] = useState<File | null>(null)
   const [needsAccount, setNeedsAccount] = useState<RestoreSource | null>(null)
   const [missingMedia, setMissingMedia] = useState<string[]>([])
+  // The one-time code from the server log: proves whoever sets up (or
+  // restores) this server can read its log, not merely reach it.
+  const [setupCode, setSetupCode] = useState('')
+  const codeReady = setupCodeComplete(setupCode)
 
   useEffect(() => {
-    if (mode !== 'restore') return
+    // Without a complete code the section shows a prompt instead of the list.
+    if (mode !== 'restore' || !codeReady) return
+    let cancelled = false
     api
-      .listSetupBackups()
+      .listSetupBackups(setupCode)
       .then((list) => {
+        if (cancelled) return
         setBackups(list)
         setSelected(list.find((b) => b.valid)?.name ?? '')
       })
-      .catch(() => setBackups([]))
-  }, [mode])
+      .catch((err) => {
+        if (cancelled) return
+        setBackups([])
+        if (err instanceof ApiError && err.code === 'setupCodeInvalid') setError(err.message)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [mode, codeReady, setupCode])
 
   const finish = (result: RestoreResult) => {
     if (result.token && result.user) {
@@ -69,8 +88,8 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
     try {
       finish(
         source.kind === 'volume'
-          ? await api.restoreVolumeBackup(source.file, admin)
-          : await api.restoreBackup(source.file, admin)
+          ? await api.restoreVolumeBackup(source.file, setupCode, admin)
+          : await api.restoreBackup(source.file, setupCode, admin)
       )
     } catch (err) {
       if (err instanceof ApiError && err.code === 'restoreAdminRequired' && !admin) {
@@ -97,7 +116,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
     }
     setIsLoading(true)
     try {
-      const result = await api.setup({ email, name, password })
+      const result = await api.setup({ email, name, password }, setupCode)
       localStorage.setItem('famlin_admin_token', result.token)
       onSetupComplete(result.user, false)
     } catch (err) {
@@ -145,7 +164,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
           required
         />
       </label>
-      <Button type="submit" disabled={isLoading}>
+      <Button type="submit" disabled={isLoading || !codeReady}>
         {isLoading
           ? t(needsAccount ? 'setup.restoring' : 'common.loading')
           : t(needsAccount ? 'setup.restoreButton' : 'setup.createAccountButton')}
@@ -156,6 +175,30 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   return (
     <AuthShell logo={<AppIcon size={80} />}>
       <h1>{t(needsAccount ? 'setup.restoreAccountTitle' : 'setup.title')}</h1>
+
+      <label className="setup-code-field">
+        {t('setup.codeLabel')}
+        <Input
+          type="text"
+          name="setupCode"
+          value={setupCode}
+          onChange={(e) => {
+            setSetupCode(e.target.value)
+            setError(null)
+          }}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="XXXX-XXXX-XXXX"
+          required
+          aria-describedby="setup-code-hint"
+        />
+      </label>
+      <p className="hint" id="setup-code-hint">
+        {t('setup.codeHint')} <code>docker compose logs famlin-backend | grep -i "setup code"</code>{' '}
+        <a href={SETUP_CODE_DOCS_URL} target="_blank" rel="noreferrer">
+          {t('setup.codeDocsLink')}
+        </a>
+      </p>
 
       {mode === 'create' && (
         <>
@@ -178,7 +221,9 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
 
           <section className="setup-restore-section" aria-labelledby="setup-volume-title">
             <h2 id="setup-volume-title">{t('setup.restoreVolumeTitle')}</h2>
-            {backups === null ? (
+            {!codeReady ? (
+              <p className="hint">{t('setup.codeNeededForBackups')}</p>
+            ) : backups === null ? (
               <p className="hint">{t('common.loading')}</p>
             ) : backups.length === 0 ? (
               <p className="hint">
@@ -258,7 +303,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                 />
               </label>
               <p className="hint">{t('setup.restoreSourceHint')}</p>
-              <Button type="submit" variant="outline" disabled={isLoading || !upload}>
+              <Button type="submit" variant="outline" disabled={isLoading || !upload || !codeReady}>
                 {isLoading ? t('setup.restoring') : t('setup.restoreButton')}
               </Button>
             </form>

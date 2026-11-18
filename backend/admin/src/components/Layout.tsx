@@ -43,7 +43,8 @@ export function Layout({ user, children }: LayoutProps) {
       .catch(() => {})
   }, [])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await api.logout()
     localStorage.removeItem('famlin_admin_token')
     window.location.href = '/admin/'
   }

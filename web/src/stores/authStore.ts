@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { User, getStorageAdapter, TOKEN_KEY, setMediaToken, refreshMediaToken } from '@famlin/api-client'
+import { User, getStorageAdapter, TOKEN_KEY, setMediaToken, refreshMediaToken, logoutSession } from '@famlin/api-client'
 
 // Web counterpart of mobile's authStore — smaller on purpose: no server URL
 // (the web app is same-origin with the backend) and no push-token
@@ -30,16 +30,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user })
   },
 
+  // Explicit sign-out: ends the session on the server first (best effort,
+  // never throws), so the token is useless even if a copy of it survives in
+  // this browser's storage.
   logout: async () => {
+    await logoutSession()
+    await get().clearSession()
+  },
+
+  // A 401 from the API (expired/revoked token): the server already considers
+  // the session over, so only the local copy is forgotten.
+  clearSession: async () => {
     await getStorageAdapter().removeItem(TOKEN_KEY)
     setMediaToken(null)
     set({ user: null, token: null, isLoading: false })
   },
-
-  // A 401 from the API (expired/revoked token) — same as logout on web
-  // (mobile's differs: it keeps the server URL and unregisters push), kept as
-  // a separate action only to mirror mobile's store shape.
-  clearSession: async () => get().logout(),
 
   loadToken: async () => {
     const token = await getStorageAdapter().getItem(TOKEN_KEY)

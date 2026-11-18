@@ -371,6 +371,9 @@ export const updateUserBodySchema = notificationPrefsSchema.extend({
   name: z.string().trim().min(1).max(100).optional(),
   email: z.string().trim().email().max(254).toLowerCase().optional(),
   avatarUrl: uploadPathSchema.optional().nullable(),
+  // Required to change `email` on an account with a password (see PATCH
+  // /api/auth/me); ignored otherwise and never stored.
+  currentPassword: z.string().min(1).max(200).optional(),
 })
 
 export const adminUpdateUserBodySchema = notificationPrefsSchema.extend({

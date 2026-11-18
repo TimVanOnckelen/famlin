@@ -145,7 +145,10 @@
     "mediaMirrorAlbumNotFound": "未找到该 Immich 相册，或上传密钥无权访问它",
     "mediaMirrorUnauthorized": "Immich 拒绝了上传密钥",
     "mediaMirrorAlbumRequired": "请选择要同步到的相册",
-    "mediaMirrorNotFound": "此家庭尚未设置同步"
+    "mediaMirrorNotFound": "此家庭尚未设置同步",
+    "setupCodeInvalid": "设置代码缺失或错误。你可以在服务器日志中找到它。",
+    "currentPasswordRequired": "请输入当前密码以更改电子邮箱地址",
+    "recentSignInRequired": "为了你的安全，请退出并重新登录，然后在 10 分钟内更改电子邮箱地址"
   },
   "notifications": {
     "newPost": "{{author}} 在 {{group}} 发布了动态：“{{excerpt}}”",

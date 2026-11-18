@@ -61,7 +61,9 @@ docker compose down
 docker build -f backend/Dockerfile -t ghcr.io/timvanonckelen/famlin:e2e .
 FAMLIN_VERSION=e2e docker compose -p famlin-e2e -f docker-compose.yml up -d
 
-# Run the tests (once curl -f http://localhost:3000/health succeeds).
+# Run the tests (once curl -f http://localhost:3000/health succeeds). The
+# first test enters the server's one-time setup code, so pass it along.
+export FAMLIN_SETUP_CODE=$(docker compose -p famlin-e2e exec -T famlin-backend cat /app/data/secrets/setup_code)
 cd e2e
 npm install
 npx playwright install chromium

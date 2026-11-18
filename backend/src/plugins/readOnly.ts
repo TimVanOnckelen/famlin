@@ -20,6 +20,8 @@ const ALLOWED_MUTATING_PREFIXES = [
   // the Apple option to actually work wherever the SSO one does.
   '/api/auth/apple',
   '/api/auth/setup',
+  // Signing out ends only the caller's own session.
+  '/api/auth/logout',
 ]
 
 function isAllowedMutatingRequest(url: string): boolean {

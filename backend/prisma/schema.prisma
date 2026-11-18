@@ -36,6 +36,7 @@ model User {
   createdInvites    Invite[]          @relation("InviteCreatedBy")
   usedInvites       Invite[]          @relation("InviteUsedBy")
   apiTokens         ApiToken[]
+  sessions          Session[]
   mediaPersonLinks  MediaPersonLink[]
   postInteractions  PostInteraction[]
   triggeredPushLogs PushDeliveryLog[]
@@ -71,6 +72,29 @@ model User {
 // authorization rule applies to it unchanged; revocation is deleting the row
 // (deleting the user cascades). Deliberately independent of User.tokenVersion:
 // a password reset signs out sessions but keeps integrations running.
+// One signed-in device (an interactive login — never a personal access
+// token). A session JWT carries the row's id as `sid`; `authenticate` refuses
+// it once the row is gone, which is what lets logout, "sign out other
+// devices" and an admin's forced sign-out end a session on the server
+// instead of only forgetting the token on the device. Deleted with the user,
+// on every tokenVersion bump (password change/reset), and by a restore.
+// Operational state, so neither exported nor restored.
+model Session {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The client's User-Agent at sign-in (truncated), so the owner can tell
+  // their devices apart. No IP address is stored.
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  // Throttled: written at most every few minutes (see services/sessions.ts).
+  lastUsedAt DateTime @default(now())
+  // Matches the JWT's own expiry; expired rows are pruned on sign-in.
+  expiresAt  DateTime
+
+  @@index([userId])
+}
+
 model ApiToken {
   id           String    @id @default(cuid())
   userId       String
