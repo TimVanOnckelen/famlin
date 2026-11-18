@@ -556,6 +556,9 @@
   "members": {
     "title": "Members",
     "description": "Your families and the circles you belong to.",
+    "searchPlaceholder": "Search members…",
+    "adminsOnly": "Admins only",
+    "noResults": "No members match your filters.",
     "yourCircles": "Your circles",
     "noCircles": "You are not in any circles in this family.",
     "noFamilies": "You are not part of any family yet. Ask your family’s admin to add you.",

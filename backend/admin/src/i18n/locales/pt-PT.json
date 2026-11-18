@@ -151,6 +151,8 @@
   },
   "dashboard": {
     "title": "Painel",
+    "refresh": "Atualizar",
+    "loadError": "Não foi possível carregar o painel.",
     "stats": {
       "users": "Utilizadores",
       "usersSub_one": "{{count}} administrador",
@@ -170,6 +172,11 @@
       "empty": "Ainda não há publicações.",
       "milestone": "Momento marcante",
       "update": "Update",
+      "poll": "Sondagem",
+      "trip": "Viagem",
+      "album": "Álbum",
+      "giftList": "Lista de presentes",
+      "event": "Evento",
       "postedIn": "em {{group}}"
     },
     "topGroups": {

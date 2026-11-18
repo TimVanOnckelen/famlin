@@ -151,6 +151,8 @@
   },
   "dashboard": {
     "title": "概览",
+    "refresh": "刷新",
+    "loadError": "无法加载概览。",
     "stats": {
       "users": "用户",
       "usersSub_one": "{{count}} 位管理员",
@@ -170,6 +172,11 @@
       "empty": "暂无动态。",
       "milestone": "成长时刻",
       "update": "日常动态",
+      "poll": "投票",
+      "trip": "旅行",
+      "album": "相册",
+      "giftList": "礼物清单",
+      "event": "活动",
       "postedIn": "在 {{group}} 中"
     },
     "topGroups": {

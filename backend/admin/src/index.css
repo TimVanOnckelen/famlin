@@ -826,59 +826,15 @@
   }
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
 
-  .stat-tile {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 0.85rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  .stat-tile-icon {
-    flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: var(--fam-primary-tint);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .stat-tile-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .stat-tile-value {
-    font-size: 1.6rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-
-  .stat-tile-label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--muted-foreground);
-  }
-
-  .stat-tile-sub {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--muted-foreground);
+  @media (max-width: 1100px) {
+    .stat-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   .bar-chart {
@@ -897,6 +853,12 @@
     align-items: flex-end;
     justify-content: center;
     position: relative;
+    border-radius: 4px;
+  }
+
+  .bar-col:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 
   .bar-fill {
@@ -907,7 +869,8 @@
     transition: background 0.15s ease;
   }
 
-  .bar-col:hover .bar-fill {
+  .bar-col:hover .bar-fill,
+  .bar-col:focus-visible .bar-fill {
     background: var(--fam-primary-dark);
   }
 
@@ -926,6 +889,8 @@
     color: var(--muted-foreground);
   }
 
+  /* CSS-only tooltip: shown on hover or keyboard focus, so pointing at a
+     bar never re-renders the dashboard. */
   .bar-tooltip {
     position: absolute;
     bottom: 100%;
@@ -941,6 +906,13 @@
     white-space: nowrap;
     z-index: 5;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  .bar-col:hover .bar-tooltip,
+  .bar-col:focus-visible .bar-tooltip {
+    opacity: 1;
   }
 
   .bar-tooltip::after {
@@ -1909,15 +1881,38 @@
     list-style: none;
     padding: 0;
     margin: 0.5rem 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .checklist li {
-    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 700;
   }
 
   .checklist li.done {
     color: var(--muted-foreground);
-    text-decoration: line-through;
+  }
+
+  .checklist-mark {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  .checklist-mark.done {
+    background: var(--success);
+    border-color: var(--success);
   }
 }
 

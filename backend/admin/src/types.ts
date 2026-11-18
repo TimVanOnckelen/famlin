@@ -403,7 +403,9 @@ export interface DashboardStats {
   postsByDay: { date: string; count: number }[]
   recentPosts: {
     id: string
-    type: 'UPDATE' | 'MILESTONE'
+    // Open discriminator, like Post.type itself — the dashboard labels every
+    // registered type, not just UPDATE/MILESTONE.
+    type: string
     createdAt: string
     authorName: string
     authorAvatarUrl: string | null

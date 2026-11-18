@@ -151,6 +151,8 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
+    "refresh": "Actualiser",
+    "loadError": "Impossible de charger le tableau de bord.",
     "stats": {
       "users": "Utilisateurs",
       "usersSub_one": "{{count}} admin",
@@ -170,6 +172,11 @@
       "empty": "Aucune publication pour l'instant.",
       "milestone": "Grand moment",
       "update": "Nouvelle",
+      "poll": "Sondage",
+      "trip": "Voyage",
+      "album": "Album",
+      "giftList": "Liste de cadeaux",
+      "event": "Événement",
       "postedIn": "dans {{group}}"
     },
     "topGroups": {

@@ -556,6 +556,9 @@
   "members": {
     "title": "Membres",
     "description": "Tes familles et les cercles dont tu fais partie.",
+    "searchPlaceholder": "Rechercher des membres…",
+    "adminsOnly": "Admins uniquement",
+    "noResults": "Aucun membre ne correspond à tes filtres.",
     "yourCircles": "Tes cercles",
     "noCircles": "Tu ne fais partie d'aucun cercle dans cette famille.",
     "noFamilies": "Tu ne fais encore partie d'aucune famille. Demande à l'administrateur de ta famille de t'ajouter.",

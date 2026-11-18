@@ -8,7 +8,7 @@ Day-to-day admin tasks all live under `/admin`, alongside the initial setup cove
 
 ## Dashboard
 
-`/admin` opens on the **Dashboard**: totals for users, groups, posts, comments and likes, recent activity, the most active groups, and a trend over time. When a newer Famlin version is available, a banner (shown on every admin page) links to its release notes. Quick links point to the API documentation.
+`/admin` opens on the **Dashboard**: totals for users, groups, posts, comments and likes, recent activity, the most active groups, and a 14-day trend. Use **Refresh** to reload it at any time; if loading fails, the page offers a retry instead of an endless spinner. Recent activity respects [Family Circles](./security.md#what-administrators-can-see): it only shows posts in circles you belong to, while the totals and the trend count everything. Each activity row is labeled with its post type (update, milestone, poll, trip, album, gift list or event). When a newer Famlin version is available, a banner (shown on every admin page) links to its release notes. Quick links point to the API documentation.
 
 ![The admin dashboard](./img/admin-dashboard.png)
 

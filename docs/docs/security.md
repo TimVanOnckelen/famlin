@@ -99,7 +99,7 @@ Family membership is the main access boundary. **Family Circles** narrow that au
 
 #### What administrators can see
 
-Circle privacy applies to admins too. An admin outside a circle cannot read its content, including in moderation screens. They can add themselves to the circle, but every member can see the member list and when each person joined—nobody can enter and read silently.
+Circle privacy applies to admins too. An admin outside a circle cannot read its content, including in moderation screens and the dashboard's recent activity (the dashboard's totals and trend are aggregate counts and include every post). They can add themselves to the circle, but every member can see the member list and when each person joined—nobody can enter and read silently.
 
 Consequently, content in a circle the admin hasn't joined cannot be moderated directly. Deleting the whole circle is the only available admin action; it permanently deletes its posts after showing the count and asking for confirmation.
 
