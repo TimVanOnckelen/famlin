@@ -80,7 +80,8 @@
     justify-content: flex-end;
     gap: 0.25rem;
   }
-  .backups-dumps-toggle {
+  .backups-dumps-toggle,
+  .backup-encryption-keys li {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -113,6 +114,17 @@
   }
   .backups-restore-actions .hint {
     margin: 0 auto 0 0;
+  }
+  /* Backup encryption (BackupEncryptionCard.tsx). */
+  .backup-encryption-keys summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .backup-encryption-keys ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
   }
   .backups-restoring {
     display: flex;

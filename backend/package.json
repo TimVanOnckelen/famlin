@@ -35,6 +35,7 @@
     "@fastify/static": "^10.1.11",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "age-encryption": "0.3.1",
     "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.9",

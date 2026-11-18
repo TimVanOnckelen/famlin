@@ -293,6 +293,17 @@ export function requireAdmin(request: FastifyRequest, reply: FastifyReply): bool
   return false
 }
 
+// requireAdmin, and only from a signed-in session — never an API token, even
+// one with admin access (key material, destructive restores). Same contract.
+export function requireAdminSession(request: FastifyRequest, reply: FastifyReply): boolean {
+  if (requireAdmin(request, reply)) return true
+  if (request.authMethod !== 'session') {
+    reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
+    return true
+  }
+  return false
+}
+
 // Returns true (and sends a 403) when the caller isn't a member of groupId.
 // Same contract as requireAdmin: callers MUST `return` when this returns true.
 export async function requireGroupMember(

@@ -417,9 +417,15 @@ export const restoreDumpBodySchema = z.object({
 // A backup in the backups volume — a Famlin backup zip or a legacy .dump; the
 // exact name patterns are checked by the route. `admin` is only needed for an
 // archive without credentials (an export from before issue #461).
+// An encrypted backup's key (issue #495): the emergency kit's text (or a
+// bare AGE-SECRET-KEY-1… line), or a passphrase-protected export's
+// passphrase. Not needed when this server already holds the key.
+export const backupKeyInputSchema = z.string().max(10_000)
+
 export const restoreBackupBodySchema = z.object({
   file: z.string().min(1).max(200),
   admin: setupBodySchema.optional(),
+  key: backupKeyInputSchema.optional(),
 })
 
 export const changePasswordBodySchema = z.object({

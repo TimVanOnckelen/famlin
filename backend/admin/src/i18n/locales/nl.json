@@ -646,7 +646,9 @@
       "notMounted": "De back-upmap is geen gekoppeld volume, dus back-ups gaan verloren als de container opnieuw wordt aangemaakt. Voeg het famlin-backups-volume toe aan je docker-compose.yml.",
       "dumps_one": "{{count}} databasedump",
       "dumps_other": "{{count}} databasedumps",
-      "runNow": "Nu back-up maken"
+      "runNow": "Nu back-up maken",
+      "encryption": "Versleuteling",
+      "encryptionRecommended": "Aanbevolen: versleuteling instellen"
     },
     "disk": {
       "title": "Schijfruimte",
@@ -798,7 +800,8 @@
       "off": "Geplande back-ups staan uit.",
       "settingsLink": "Back-upinstellingen wijzigen",
       "offsite": "Back-ups staan op dezelfde machine als Famlin, kopieer ze dus ook naar een andere plek.",
-      "learnMore": "Back-ups buiten de machine bewaren"
+      "learnMore": "Back-ups buiten de machine bewaren",
+      "encryption": "Tip: zet back-upversleuteling aan op de pagina Back-ups, zodat een kopie die deze server verlaat niet te lezen is zonder je noodkit."
     },
     "done": {
       "description": "Je Famlin-server is klaar. Familieleden kunnen nu meedoen met de uitnodigingslink.",
@@ -865,5 +868,47 @@
     "showDumps": "Databasedumps tonen ({{count}})",
     "hideDumps": "Databasedumps verbergen",
     "dumpsNote": "Tot Famlin 1.0.0 schrijft elke run ook een databasedump als vangnet. Zet de Famlin-back-up terug, tenzij je een reden hebt om dat niet te doen."
+  },
+  "backupEncryption": {
+    "title": "Versleuteling",
+    "desc": "Versleutel back-ups, zodat een kopie die deze server verlaat (externe synchronisatie, een gedownload bestand) niet te lezen is zonder je noodkit.",
+    "on": "Aan",
+    "off": "Uit",
+    "onBody": "Nieuwe back-ups worden versleuteld met sleutel {{key}}, aangemaakt op {{date}}.",
+    "offBody": "Back-ups worden onversleuteld opgeslagen. Iedereen met een kopie kan alles erin lezen, ook de wachtwoordhashes.",
+    "mirrorWarning": "Foto's in de mediaspiegel (de uploadsmap naast je back-ups) worden niet versleuteld. Alleen de back-upbestanden zelf.",
+    "rotatedNotice": "Nieuwe sleutel aangemaakt en de noodkit gedownload. Bewaar hem naast de oude: oudere back-ups hebben nog steeds de oude kit nodig.",
+    "downloadKit": "Noodkit downloaden",
+    "downloadKitAgain": "Opnieuw downloaden",
+    "rotate": "Nieuwe sleutel aanmaken",
+    "turnOff": "Uitzetten",
+    "turnOn": "Versleuteling aanzetten",
+    "setUp": "Versleuteling instellen",
+    "docsLink": "Hoe back-upversleuteling werkt",
+    "olderKeys": "Oudere sleutels ({{count}})",
+    "olderKeysHint": "Back-ups van vóór een sleutelwissel hebben nog de oudere sleutel nodig. Deze server bewaart ze, zodat hij die back-ups zelf kan terugzetten; elders heb je de bijbehorende kit nodig.",
+    "setupTitle": "Back-upversleuteling instellen",
+    "setupIntro": "Famlin maakt een sleutel aan en bewaart die op deze server, zodat geplande back-ups gewoon blijven lopen. Jij bewaart een kopie van die sleutel: de noodkit.",
+    "setupPointKit": "Bewaar de noodkit ergens anders dan op deze server: in een wachtwoordbeheerder, op papier, op een andere computer.",
+    "setupPointLost": "Zonder de kit kun je versleutelde back-ups niet op een andere server terugzetten. Niemand kan een verloren sleutel herstellen.",
+    "setupPointServer": "Versleuteling beschermt kopieën die deze server verlaten. Wie toegang heeft tot de server zelf, kan de back-ups nog steeds lezen.",
+    "kitSavedLabel": "Ik heb de noodkit ergens anders dan op deze server bewaard",
+    "downloadFirst": "Download eerst de noodkit.",
+    "rotateTitle": "Overschakelen op een nieuwe sleutel?",
+    "rotateBody": "Download de noodkit van de nieuwe sleutel en bewaar hem ergens anders dan op deze server. Nieuwe back-ups gebruiken de nieuwe sleutel zodra je bevestigt; tot dan blijven ze de huidige gebruiken. Oudere back-ups blijven de oude sleutel nodig hebben: deze server bewaart die, maar houd ook de oude kit bij als je elders terugzet.",
+    "rotateConfirm": "Overschakelen op de nieuwe sleutel",
+    "turnOffTitle": "Versleuteling uitzetten?",
+    "turnOffBody": "Nieuwe back-ups worden weer onversleuteld opgeslagen, met een databasedump ernaast. Bestaande versleutelde back-ups blijven versleuteld en de sleutels blijven bewaard.",
+    "encryptedBadge": "Versleuteld",
+    "needsKitBadge": "Noodkit nodig",
+    "keyLabel": "Noodkit",
+    "keyOrPassphraseLabel": "Noodkit of exportwachtwoord",
+    "uploadKit": "Kitbestand uploaden",
+    "keyHint": "Plak de tekst van de kit of upload het bestand.",
+    "restoreNeedsKit": "Deze back-up is versleuteld met een sleutel die deze server niet heeft. Voeg de noodkit toe waarmee hij gemaakt is.",
+    "setupNeedsKit": "Deze back-up is versleuteld. Voeg de noodkit toe om hem terug te zetten.",
+    "setupNeedsKitOrPassphrase": "Versleuteld bestand (.age): voeg de noodkit toe, of het wachtwoord waarmee de export gedownload is.",
+    "exportPassphrase": "Wachtwoord (optioneel)",
+    "exportPassphraseHint": "Met een wachtwoord van minstens 10 tekens wordt de export versleuteld (.zip.age). Je hebt het nodig om de export terug te zetten; het kan niet hersteld worden."
   }
 }

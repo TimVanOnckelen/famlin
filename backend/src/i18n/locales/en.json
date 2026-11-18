@@ -145,7 +145,11 @@
     "mediaMirrorAlbumNotFound": "The Immich album was not found, or the upload key cannot access it",
     "mediaMirrorUnauthorized": "Immich rejected the upload key",
     "mediaMirrorAlbumRequired": "Choose an album to mirror into",
-    "mediaMirrorNotFound": "Mirroring is not set up for this family"
+    "mediaMirrorNotFound": "Mirroring is not set up for this family",
+    "backupKeyRequired": "This backup is encrypted. Upload or paste its emergency kit to restore it",
+    "backupKeyMismatch": "That key doesn't open this backup. Use the emergency kit (or export passphrase) it was made with",
+    "backupKitNotSaved": "Confirm that you stored the emergency kit outside this server before turning on encryption",
+    "backupKeyMissing": "Generate a backup encryption key first"
   },
   "notifications": {
     "newPost": "{{author}} posted in {{group}}: \"{{excerpt}}\"",
@@ -226,5 +230,12 @@
     "backup_stale": "No successful backup in {{days}} days.",
     "disk_low_uploads": "The uploads volume is almost full ({{free}} GiB free).",
     "disk_low_backups": "The backups volume is almost full ({{free}} GiB free)."
+  },
+  "backupKit": {
+    "title": "Famlin backup emergency kit",
+    "instance": "Server",
+    "created": "Created",
+    "publicKey": "Public key",
+    "body": "Keep this file somewhere other than your Famlin server: a password manager, a printout, another computer.\nIt opens every backup this server encrypted with this key. Without it, those backups can't be restored on another server, and nobody can recover a lost key.\n\nTo restore on a new Famlin server: choose the backup on the setup screen and upload this file when asked.\nTo decrypt by hand with the age tool (https://age-encryption.org):"
   }
 }

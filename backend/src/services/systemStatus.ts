@@ -12,6 +12,7 @@ import {
   type ServerSettings,
 } from './settings.js'
 import { JOB_IDS } from './jobRuns.js'
+import { getBackupEncryptionStatus } from './backup/encryption.js'
 import { BACKUP_DB_DIR, backupIntervalMs, isBackupRunning } from './backup/index.js'
 import { createTransporter } from './notificationChannels/email.js'
 import { testImmichConnection } from './media/immich.js'
@@ -201,8 +202,15 @@ export async function getJobStatuses() {
 
 export async function getBackupOverview(now: Date) {
   const settings = await getAllSettings()
-  const [dumps, dirIsMount] = await Promise.all([listDumps(), isMountPoint(backupsDir)])
+  const [dumps, dirIsMount, encryption] = await Promise.all([
+    listDumps(),
+    isMountPoint(backupsDir),
+    getBackupEncryptionStatus(),
+  ])
   return {
+    // Whether new backups are encrypted (issue #495); the status panel
+    // recommends turning it on.
+    encrypted: encryption.enabled,
     enabled: settings.backupEnabled,
     schedule: settings.backupSchedule,
     hour: settings.backupHour,

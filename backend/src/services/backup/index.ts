@@ -5,17 +5,20 @@ import { uploadsDir } from '../../config.js'
 import { prisma } from '../../db.js'
 import { getAllSettings, type ServerSettings } from '../settings.js'
 import { recordJobRun } from '../jobRuns.js'
-import { dumpDatabase, pruneDbDumps } from './dbDump.js'
+import { deleteDbDumps, dumpDatabase, pruneDbDumps } from './dbDump.js'
 import { mirrorUploads, type MirrorResult } from './mirror.js'
 import { pruneBackupArchives, writeBackupArchive } from './archive.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR, BACKUP_UPLOADS_DIR } from './paths.js'
+import { backupEncryptionRecipient } from './encryption.js'
 
 // Scheduled backups (issues #228, #461), each run writing:
 //  1. a Famlin backup zip (the export.ts format, data only) into
 //     <backupsDir>/, rotated to `backupRetention`;
 //  2. one incremental mirror of uploads/ in <backupsDir>/uploads/ — the
 //     zips' media, so N backups don't store every photo N times;
-//  3. a `pg_dump -Fc` in <backupsDir>/db/, rotated to the same retention.
+//  3. a `pg_dump -Fc` in <backupsDir>/db/, rotated to the same retention —
+//     unless backups are encrypted (issue #495): a plaintext copy of the
+//     whole database next to the encrypted zip would defeat the point.
 //
 // TODO(v1.0.0): step 3 is a safety net for the switch to zips only. Remove
 // pg_dump production (and dump restore, services/backup/restoreDump.ts) in
@@ -34,7 +37,8 @@ export interface BackupResult {
   archiveFile: string
   archiveBytes: number
   prunedArchives: number
-  dumpFile: string
+  // null: no dump this run (encrypted backups).
+  dumpFile: string | null
   dumpBytes: number
   prunedDumps: number
   mirror: MirrorResult
@@ -111,13 +115,17 @@ export function runBackup(
     'backup',
     async () => {
       const settings = await getAllSettings()
+      // Throws when encryption is on without a key: the run fails rather
+      // than writing a plaintext backup.
+      const recipient = await backupEncryptionRecipient()
       // Without media mirroring (media on S3 with its own backups), the
       // restore expects them to still be in storage.
       const archive = await backupDeps.writeBackupArchive(
         BACKUP_ARCHIVE_DIR,
         now,
         settings.backupIncludeMedia ? 'mirror' : 'storage',
-        trigger
+        trigger,
+        recipient
       )
       const prunedArchives = prune ? await pruneBackupArchives(BACKUP_ARCHIVE_DIR, settings.backupRetention) : []
       const local = new LocalStorageBackend(uploadsDir)
@@ -145,15 +153,20 @@ export function runBackup(
       // Last, so a failing pg_dump (e.g. a client older than the server)
       // still leaves a complete zip + mirror — but fails the run, so the
       // admin is told.
-      const dump = await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
-      const pruned = prune ? await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention) : []
+      const dump = recipient ? null : await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
+      // Encrypted: no plaintext dump may outlive the switch.
+      const pruned = !prune
+        ? []
+        : recipient
+          ? await deleteDbDumps(BACKUP_DB_DIR)
+          : await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
       return {
         trigger,
         archiveFile: archive.file,
         archiveBytes: archive.bytes,
         prunedArchives: prunedArchives.length,
-        dumpFile: dump.file,
-        dumpBytes: dump.bytes,
+        dumpFile: dump?.file ?? null,
+        dumpBytes: dump?.bytes ?? 0,
         prunedDumps: pruned.length,
         mirror,
       }

@@ -129,6 +129,7 @@ The **Backups** page in the admin menu has everything backup-related in one plac
 - **Back up now** (top right) starts a backup straight away, whatever the schedule.
 - **Schedule**: turn scheduled backups on or off, choose daily or weekly, the hour, how many backups to keep, and whether photos are copied too. See [Scheduled backups](./maintenance.md#scheduled-backups).
 - **Data export**: download a backup on demand, optionally with every photo inside (see [Data export](#data-export) below).
+- **Encryption** turns on [backup encryption](./maintenance.md#encrypting-backups): Famlin generates a key, you download its **emergency kit** and confirm you stored it somewhere other than the server, and from then on backups are encrypted. Encrypted backups show an **Encrypted** badge in the list, or **Needs emergency kit** when this server doesn't have the key they were made with. From here you can download the kit again, **Generate new key** (again download its kit and confirm; older backups keep needing the older key, which the server keeps) or **Turn off** encryption. Only a signed-in admin can manage the key or download the kit, never an API token.
 
 ### Restoring a backup on a running server
 
@@ -137,10 +138,11 @@ The **Backups** page in the admin menu has everything backup-related in one plac
 ![Restoring a backup: what happens, and typing the family's name to confirm](./img/admin-backups-restore.png)
 
 1. Press **Restore** next to the backup. The dialog lists what will happen.
-2. Type your family's name (as set under [Branding](./admin-configuration.md#branding); **Famlin** if you never set one) and press **Restore and sign everyone out**.
-3. Famlin first makes a **safety backup** of the server as it is now. If that fails, nothing is restored.
-4. While it restores, Famlin is unavailable for everyone (the apps show an error for a few moments). This takes seconds for a small family and a few minutes for a large one.
-5. Afterwards **everyone is signed out**, you included, and signs in again with the password they had when the backup was made.
+2. If the backup is encrypted with a key this server doesn't have (it shows **Needs emergency kit**), the dialog asks for the emergency kit it was made with: upload the file or paste its text. The kit's key is kept afterwards, so the same backup can be restored again without it.
+3. Type your family's name (as set under [Branding](./admin-configuration.md#branding); **Famlin** if you never set one) and press **Restore and sign everyone out**.
+4. Famlin first makes a **safety backup** of the server as it is now (encrypted too, when encryption is on). If that fails, nothing is restored.
+5. While it restores, Famlin is unavailable for everyone (the apps show an error for a few moments). This takes seconds for a small family and a few minutes for a large one.
+6. Afterwards **everyone is signed out**, you included, and signs in again with the password they had when the backup was made.
 
 Saved credentials (OIDC client secret, SMTP password, Immich API key) are kept, because backups never contain them — unless the backup points that credential at a different server (another SMTP host, say); then enter it again. Changed your mind? Restore the **Before restore** backup the same way.
 
@@ -162,6 +164,8 @@ The **Backups** page has a **Data export** card with a **Download export** butto
 It also includes every account's password (as a hash, never readable) and your server settings, so everyone signs in as before after a restore. It deliberately does **not** include the OIDC client secret, the SMTP password, the Immich API key, invite links, push tokens, device diagnostics, or API tokens — enter those secrets again after restoring. Keep the zip as private as the database itself.
 
 It also includes circles and their members, poll votes, chat read positions, linked media albums and people mappings, and which photos belong to which circle — so it can be **restored onto a new, empty server** from that server's first-run setup screen. See [Restoring a backup](./maintenance.md#restoring-a-backup) for the steps and what you'll need to set up again afterwards.
+
+**Passphrase (optional)** encrypts the download: enter at least 10 characters and you get a `.zip.age` instead of a `.zip`. Restoring it on a new server's setup screen asks for the same passphrase. Famlin doesn't store it, so it can't be recovered. See [The data export download](./maintenance.md#the-data-export-download).
 
 The export itself is a manual, on-demand download, and can take a while to generate on a server with a lot of photos/videos. For automatic backups, turn on [scheduled backups](./maintenance.md#scheduled-backups) instead: they write the same zip without photos, plus one incremental copy of the uploads, rather than a full copy of every photo per backup.
 

@@ -644,6 +644,24 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/set-admin-backup-encryption",
+          label: "Turn backup encryption on or off",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "api-reference/generate-admin-backup-key",
+          label: "Generate a new backup encryption key",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "api-reference/download-admin-backup-emergency-kit",
+          label: "Download a backup key's emergency kit",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "api-reference/download-admin-backup",
           label: "Download a backup from the backups volume",
           className: "api-method get",
@@ -908,6 +926,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "api-reference/schemas/backupencryption",
+          label: "BackupEncryption",
+          className: "schema",
+        },
+        {
+          type: "doc",
           id: "api-reference/schemas/restorestatus",
           label: "RestoreStatus",
           className: "schema",
@@ -1000,6 +1024,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "api-reference/schemas/post",
           label: "Post",
+          className: "schema",
+        },
+        {
+          type: "doc",
+          id: "api-reference/schemas/commentspage",
+          label: "CommentsPage",
           className: "schema",
         },
         {

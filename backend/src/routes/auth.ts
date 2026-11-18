@@ -33,6 +33,7 @@ import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../service
 import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
 import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
+import { decryptForRestore, keepRestoreKey, resolveRestoreKey } from '../services/backup/encryption.js'
 import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
@@ -47,6 +48,7 @@ import {
   setupBodySchema,
   restoreDumpBodySchema,
   restoreBackupBodySchema,
+  backupKeyInputSchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -298,12 +300,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
     reply: FastifyReply,
     zipPath: string,
     workDir: string,
-    admin: { email: string; name: string; password: string } | undefined
+    admin: { email: string; name: string; password: string } | undefined,
+    keyText: string | undefined
   ) {
+    // An encrypted backup or export (issue #495): without a key that opens
+    // it, BackupEncryptionError 400s (app.ts) and the client asks for one.
+    const key = await resolveRestoreKey(zipPath, keyText)
     let result
     try {
+      const plainZipPath = await decryptForRestore(zipPath, key, workDir)
+      // An uploaded file lives in the work directory: don't keep both copies.
+      if (plainZipPath !== zipPath && path.dirname(zipPath) === workDir) await fsp.rm(zipPath, { force: true })
       result = await restoreArchive({
-        zipPath,
+        zipPath: plainZipPath,
         workDir,
         admin: admin && {
           email: admin.email.toLowerCase().trim(),
@@ -316,6 +325,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
       if (!(err instanceof RestoreError)) throw err
       return sendRestoreError(request, reply, err)
     }
+
+    // Restored from an encrypted backup: keep encrypting with the same key,
+    // so the emergency kit the admin already has keeps working.
+    await keepRestoreKey(key, true).catch((err) =>
+      request.log.error({ err }, 'could not keep the restored backup key; backup encryption is off')
+    )
 
     // New install (restored or not): backups on by default, unless the
     // archive itself carried an explicit choice.
@@ -411,7 +426,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
         const hasAdminFields = ['email', 'name', 'password'].some((k) => fields[k])
         const admin = hasAdminFields ? setupBodySchema.parse(fields) : undefined
-        return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
+        const key = fields.key ? backupKeyInputSchema.parse(fields.key) : undefined
+        return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin, key)
       } finally {
         await fsp.rm(workDir, { recursive: true, force: true })
       }
@@ -442,7 +458,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
-      const { file, admin } = restoreBackupBodySchema.parse(request.body)
+      const { file, admin, key } = restoreBackupBodySchema.parse(request.body)
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
       }
@@ -454,7 +470,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
         await fsp.mkdir(workDir, { recursive: true })
         try {
-          return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
+          return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin, key)
         } finally {
           await fsp.rm(workDir, { recursive: true, force: true })
         }

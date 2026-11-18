@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelector } from './LanguageSelector'
 import { formatBytes } from './SystemStatusPage'
+import { EmergencyKitInput } from './EmergencyKitInput'
 import { api, User, ApiError, type RestoreResult, type SetupAdmin, type VolumeBackup } from '../api/client'
 
 const RESTORE_DOCS_URL = 'https://famlin.app/docs/maintenance#restoring-a-backup'
@@ -41,6 +42,10 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   const [upload, setUpload] = useState<File | null>(null)
   const [needsAccount, setNeedsAccount] = useState<RestoreSource | null>(null)
   const [missingMedia, setMissingMedia] = useState<string[]>([])
+  // An encrypted backup (issue #495): its emergency kit, or an encrypted
+  // export's passphrase. `keyAskedFor`: the file the server asked a key for.
+  const [restoreKey, setRestoreKey] = useState('')
+  const [keyAskedFor, setKeyAskedFor] = useState<RestoreSource['file'] | null>(null)
 
   useEffect(() => {
     if (mode !== 'restore') return
@@ -66,15 +71,19 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
     setError(null)
     setMissingMedia([])
     setIsLoading(true)
+    const key = restoreKey.trim() || undefined
     try {
       finish(
         source.kind === 'volume'
-          ? await api.restoreVolumeBackup(source.file, admin)
-          : await api.restoreBackup(source.file, admin)
+          ? await api.restoreVolumeBackup(source.file, admin, key)
+          : await api.restoreBackup(source.file, admin, key)
       )
     } catch (err) {
       if (err instanceof ApiError && err.code === 'restoreAdminRequired' && !admin) {
         setNeedsAccount(source)
+      } else if (err instanceof ApiError && (err.code === 'backupKeyRequired' || err.code === 'backupKeyMismatch')) {
+        setKeyAskedFor(source.file)
+        setError(err.message)
       } else {
         setError(err instanceof Error ? err.message : t('setup.restoreFailed'))
         if (err instanceof ApiError) setMissingMedia(err.missingMedia ?? [])
@@ -110,9 +119,15 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   const switchMode = () => {
     setMode(mode === 'restore' ? 'create' : 'restore')
     setNeedsAccount(null)
+    setKeyAskedFor(null)
+    setRestoreKey('')
     setError(null)
     setMissingMedia([])
   }
+
+  const selectedBackup = backups?.find((b) => b.name === selected)
+  const volumeNeedsKey = keyAskedFor === selected || (!!selectedBackup?.encrypted && !selectedBackup.keyAvailable)
+  const uploadNeedsKey = (!!upload && keyAskedFor === upload) || !!upload?.name.endsWith('.age')
 
   const mediaLabel = (backup: VolumeBackup) => {
     if (backup.type === 'dump') return t('setup.restoreMediaMirror')
@@ -214,6 +229,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                           <Badge variant={backup.type === 'dump' ? 'outline' : 'secondary'}>
                             {t(backup.type === 'dump' ? 'setup.restoreTypeDump' : 'setup.restoreTypeArchive')}
                           </Badge>
+                          {backup.encrypted && <Badge variant="outline">{t('backupEncryption.encryptedBadge')}</Badge>}
                           {backup.valid ? (
                             <>
                               <span>{formatBytes(backup.size)}</span>
@@ -231,7 +247,13 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                   ))}
                 </div>
                 <p className="hint">{t('setup.restoreVolumeHint')}</p>
-                <Button type="submit" disabled={isLoading || !selected}>
+                {volumeNeedsKey && (
+                  <>
+                    <p className="hint">{t('backupEncryption.setupNeedsKit')}</p>
+                    <EmergencyKitInput value={restoreKey} onChange={setRestoreKey} />
+                  </>
+                )}
+                <Button type="submit" disabled={isLoading || !selected || (volumeNeedsKey && !restoreKey.trim())}>
                   {isLoading ? t('setup.restoring') : t('setup.restoreSelectedButton')}
                 </Button>
               </form>
@@ -252,13 +274,23 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                 {t('setup.restoreArchiveLabel')}
                 <Input
                   type="file"
-                  accept=".zip,application/zip"
+                  accept=".zip,.age,application/zip"
                   onChange={(e) => setUpload(e.target.files?.[0] ?? null)}
                   required
                 />
               </label>
               <p className="hint">{t('setup.restoreSourceHint')}</p>
-              <Button type="submit" variant="outline" disabled={isLoading || !upload}>
+              {uploadNeedsKey && (
+                <>
+                  <p className="hint">{t('backupEncryption.setupNeedsKitOrPassphrase')}</p>
+                  <EmergencyKitInput value={restoreKey} onChange={setRestoreKey} allowPassphrase />
+                </>
+              )}
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={isLoading || !upload || (uploadNeedsKey && !restoreKey.trim())}
+              >
                 {isLoading ? t('setup.restoring') : t('setup.restoreButton')}
               </Button>
             </form>

@@ -3839,6 +3839,18 @@ paths:
         browser can download the export by plain navigation (streaming it to
         disk) without an Authorization header. Valid for 60 seconds, single
         use, bound to the calling admin; login sessions only, not API tokens.
+
+        With `passphrase`, the export it downloads is age-encrypted with it
+        (scrypt) and named `famlin-export-<date>.zip.age`. The passphrase is
+        held in memory with the token only, never put in the URL or stored.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passphrase: { type: string, minLength: 10, maxLength: 1000, description: Encrypt the export with this passphrase }
       responses:
         '200':
           description: Download token
@@ -3849,6 +3861,11 @@ paths:
                 required: [token]
                 properties:
                   token: { type: string }
+        '400':
+          description: The passphrase is too short or too long
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '401': { description: Authentication required }
         '403': { description: Administrator required, or called with an API token }
   /api/admin/backups:
@@ -3886,11 +3903,107 @@ paths:
                         credentials: { type: boolean }
                         safety: { type: boolean, description: Taken automatically right before a restore }
                         valid: { type: boolean }
+                        encrypted: { type: boolean, description: 'Age-encrypted (`.zip.age`)' }
+                        keyId: { type: string, nullable: true, description: 'The age1… public key an encrypted backup needs' }
+                        keyAvailable: { type: boolean, description: "Whether this server holds that key; otherwise restoring it needs the emergency kit" }
                   backupRunning: { type: boolean }
                   restore: { $ref: '#/components/schemas/RestoreStatus' }
                   confirmName: { type: string }
+                  encryption: { $ref: '#/components/schemas/BackupEncryption' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { description: 'Administrator required (restore and delete: a signed-in admin, not an API token)' }
+  /api/admin/backups/encryption:
+    put:
+      operationId: setAdminBackupEncryption
+      tags: [Storage administration]
+      summary: Turn backup encryption on or off
+      description: |
+        Signed-in admin only (an API token gets `403`). Turning it on needs a
+        key (`POST /api/admin/backups/encryption/key`) and `kitSaved: true` —
+        the admin confirms the emergency kit is stored somewhere other than
+        this server — and makes a pending key the current one (also how a
+        key rotation is confirmed). While on, backups are written as age-encrypted
+        `famlin-backup-<timestamp>.zip.age` and no database dump is written.
+        Turning it off keeps the keys and leaves existing backups encrypted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+                kitSaved: { type: boolean, description: Required (true) to turn encryption on }
+      responses:
+        '200':
+          description: The new state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [encryption]
+                properties:
+                  encryption: { $ref: '#/components/schemas/BackupEncryption' }
+        '400':
+          description: No key yet, or the kit wasn't confirmed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required: a signed-in admin, not an API token' }
+  /api/admin/backups/encryption/key:
+    post:
+      operationId: generateAdminBackupKey
+      tags: [Storage administration]
+      summary: Generate a new backup encryption key
+      description: |
+        Signed-in admin only. Generates an age X25519 key as the **pending**
+        key: backups keep using the current key until the admin downloads the
+        new key's kit and confirms it with `PUT /api/admin/backups/encryption`
+        (`enabled: true, kitSaved: true`), which makes it current. Older keys
+        are kept, so this server can still restore the backups made with
+        them. The secret only leaves the server through
+        `GET /api/admin/backups/encryption/kit`.
+      responses:
+        '200':
+          description: The new state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [encryption]
+                properties:
+                  encryption: { $ref: '#/components/schemas/BackupEncryption' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required: a signed-in admin, not an API token' }
+  /api/admin/backups/encryption/kit:
+    get:
+      operationId: downloadAdminBackupEmergencyKit
+      tags: [Storage administration]
+      summary: Download a backup key's emergency kit
+      description: |
+        Signed-in admin only. An age identity file (`#` comment lines with
+        instructions, then the `AGE-SECRET-KEY-1…` line), so
+        `age -d -i famlin-emergency-kit.txt <backup>.zip.age` opens a backup.
+      parameters:
+        - name: key
+          in: query
+          required: false
+          schema: { type: string }
+          description: The key's public id (`age1…`); defaults to the pending key, else the current one
+      responses:
+        '200':
+          description: The emergency kit
+          content:
+            text/plain: { schema: { type: string } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: 'Administrator required: a signed-in admin, not an API token' }
+        '404':
+          description: No such key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
   /api/admin/backups/{file}/download:
     get:
       operationId: downloadAdminBackup
@@ -3980,6 +4093,10 @@ paths:
               required: [confirm]
               properties:
                 confirm: { type: string, description: '`confirmName` from GET /api/admin/backups, case-insensitive' }
+                key:
+                  type: string
+                  maxLength: 10000
+                  description: An encrypted backup's emergency kit (its text, or just the AGE-SECRET-KEY-1… line). Only needed when this server doesn't hold the key; it's kept afterwards.
       responses:
         '202':
           description: Started
@@ -3991,7 +4108,7 @@ paths:
                 properties:
                   started: { type: boolean, enum: [true] }
         '400':
-          description: The confirmation doesn't match
+          description: 'The confirmation doesn''t match, or the backup is encrypted and needs its emergency kit (`code: backupKeyRequired`) or the given one doesn''t open it (`code: backupKeyMismatch`)'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -4044,9 +4161,11 @@ paths:
           description: One-time token from `POST /api/admin/export/token`, used only when no Authorization header is sent. An unknown, used or expired token is a `401`.
       responses:
         '200':
-          description: ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes
+          description: ZIP archive; restore without media requires the listed objects to exist in configured storage before database writes. When the download token was minted with a `passphrase`, the same ZIP age-encrypted with it (`famlin-export-<date>.zip.age`, `application/octet-stream`).
           content:
             application/zip:
+              schema: { type: string, format: binary }
+            application/octet-stream:
               schema: { type: string, format: binary }
         '401': { description: Authentication required, or the download token is invalid }
         '403': { description: Administrator required }
@@ -4181,6 +4300,9 @@ paths:
                       description: Where a restore finds the photos — in the zip, in media storage, or in the backups volume's mirror
                     credentials: { type: boolean, description: Accounts come back with their passwords, so no admin account fields are needed }
                     valid: { type: boolean }
+                    encrypted: { type: boolean, description: 'Age-encrypted (`.zip.age`): restoring needs its emergency kit' }
+                    keyId: { type: string, nullable: true, description: 'The age1… public key it needs' }
+                    keyAvailable: { type: boolean }
         '409':
           description: The server already has accounts
           content:
@@ -4221,6 +4343,10 @@ paths:
               required: [file]
               properties:
                 file: { type: string, description: A backup file name from GET /api/auth/setup/backups }
+                key:
+                  type: string
+                  maxLength: 10000
+                  description: "An encrypted backup's emergency kit (its text, or just the AGE-SECRET-KEY-1… line). Without it an encrypted backup 400s with `code: backupKeyRequired`; a wrong one with `backupKeyMismatch`. After the restore the server keeps encrypting backups with that key."
                 admin:
                   type: object
                   description: The restoring admin's login. If the backup has an account with this email, it's made admin and given this password; otherwise a new admin account is created.
@@ -4636,6 +4762,36 @@ components:
                 network: { type: integer, minimum: 0 }
                 disk: { type: integer, minimum: 0 }
                 memory: { type: integer, minimum: 0 }
+    BackupEncryption:
+      type: object
+      description: Backup encryption state (issue #495). Only public key ids, never the secret keys.
+      required: [enabled, currentKey, pendingKey, keys]
+      properties:
+        enabled: { type: boolean }
+        currentKey:
+          type: object
+          nullable: true
+          required: [id, createdAt]
+          properties:
+            id: { type: string, description: 'Public key (age1…)' }
+            createdAt: { type: string, format: date-time }
+        pendingKey:
+          type: object
+          nullable: true
+          description: Generated, its kit not yet confirmed saved; not used for backups until confirmed
+          required: [id, createdAt]
+          properties:
+            id: { type: string }
+            createdAt: { type: string, format: date-time }
+        keys:
+          type: array
+          description: Every key this server can decrypt with, newest first
+          items:
+            type: object
+            required: [id, createdAt]
+            properties:
+              id: { type: string }
+              createdAt: { type: string, format: date-time }
     RestoreStatus:
       type: object
       required: [running, file, startedAt, finishedAt, ok, error, safetyBackup]

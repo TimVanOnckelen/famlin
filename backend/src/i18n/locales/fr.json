@@ -145,7 +145,11 @@
     "mediaMirrorAlbumNotFound": "L'album Immich est introuvable, ou la clé d'envoi n'y a pas accès",
     "mediaMirrorUnauthorized": "Immich a refusé la clé d'envoi",
     "mediaMirrorAlbumRequired": "Choisissez un album vers lequel copier",
-    "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille"
+    "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille",
+    "backupKeyRequired": "Cette sauvegarde est chiffrée. Importez ou collez son kit de secours pour la restaurer",
+    "backupKeyMismatch": "Cette clé n'ouvre pas cette sauvegarde. Utilisez le kit de secours (ou la phrase de passe de l'export) avec lequel elle a été créée",
+    "backupKitNotSaved": "Confirmez que vous avez conservé le kit de secours en dehors de ce serveur avant d'activer le chiffrement",
+    "backupKeyMissing": "Générez d'abord une clé de chiffrement des sauvegardes"
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",
@@ -226,5 +230,12 @@
     "backup_stale": "Aucune sauvegarde réussie depuis {{days}} jours.",
     "disk_low_uploads": "Le volume des envois est presque plein ({{free}} Gio libres).",
     "disk_low_backups": "Le volume des sauvegardes est presque plein ({{free}} Gio libres)."
+  },
+  "backupKit": {
+    "title": "Kit de secours des sauvegardes Famlin",
+    "instance": "Serveur",
+    "created": "Créé le",
+    "publicKey": "Clé publique",
+    "body": "Conservez ce fichier ailleurs que sur votre serveur Famlin : un gestionnaire de mots de passe, une version imprimée, un autre ordinateur.\nIl ouvre toutes les sauvegardes que ce serveur a chiffrées avec cette clé. Sans lui, ces sauvegardes ne peuvent pas être restaurées sur un autre serveur, et personne ne peut récupérer une clé perdue.\n\nPour restaurer sur un nouveau serveur Famlin : choisissez la sauvegarde sur l'écran de configuration et importez ce fichier quand il est demandé.\nPour déchiffrer à la main avec l'outil age (https://age-encryption.org) :"
   }
 }

@@ -277,6 +277,19 @@ export function SystemStatusPage() {
             </div>
           )}
           <div className="status-row">
+            <span>{t('systemStatus.backups.encryption')}</span>
+            <span>
+              {backups.encrypted ? (
+                <Badge variant="accent">{t('backupEncryption.on')}</Badge>
+              ) : (
+                <>
+                  <Badge variant="outline">{t('backupEncryption.off')}</Badge>{' '}
+                  <Link to="/backups">{t('systemStatus.backups.encryptionRecommended')}</Link>
+                </>
+              )}
+            </span>
+          </div>
+          <div className="status-row">
             <span>{t('systemStatus.backups.location')}</span>
             <span className="muted">{backups.dir}</span>
           </div>

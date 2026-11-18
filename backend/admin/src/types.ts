@@ -190,6 +190,8 @@ export interface SystemStatus {
     running: boolean
     dir: string
     dirIsMount: boolean | null
+    // New backups are encrypted.
+    encrypted?: boolean
     dumps: { file: string; bytes: number; createdAt: string }[]
   }
   disk: { uploadsDriver: 'local' | 's3'; uploads: DiskUsage | null; backups: DiskUsage | null; sameVolume: boolean }
