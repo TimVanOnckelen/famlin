@@ -59,6 +59,9 @@
     "uuid": "^11.1.1",
     "serialize-javascript": "^7.0.5",
     "tinypool": "^2.1.2",
-    "postcss-selector-parser": "^7.1.6"
+    "postcss-selector-parser": "^7.1.6",
+    "@redocly/openapi-core": {
+      "js-yaml": "^5.2.2"
+    }
   }
 }
