@@ -1,35 +1,83 @@
 import { InitialAvatar } from './common/InitialAvatar'
-import { Button } from '@famlin/ui/button'
 import { Alert } from '@famlin/ui/alert'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@famlin/ui/dropdown-menu'
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Logo } from './Logo'
 import { User } from '../types'
 import { api } from '../api/client'
-import { LanguageSelector } from './LanguageSelector'
 import { AlertBanner } from './AlertBanner'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
+import { useSystemAlerts } from '../lib/useSystemAlerts'
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, storeLanguage, type SupportedLanguage } from '../i18n'
 
 interface LayoutProps {
   user: User
   children: React.ReactNode
 }
 
-const OPERATIONS_ROUTES = ['/push-log', '/devices', '/diagnostics', '/status']
+interface NavItem {
+  to: string
+  icon: IconName
+  labelKey: string
+  end?: boolean
+  // Which alert conditions mark this entry with a dot (useSystemAlerts).
+  alertGroup?: 'backup' | 'disk'
+}
+
+// Every destination stays visible — labeled sections instead of the old
+// collapsible "Operations" group, so nothing hides behind a click.
+const NAV_SECTIONS: { labelKey: string; items: NavItem[] }[] = [
+  {
+    labelKey: 'layout.sectionFamily',
+    items: [
+      { to: '/users', icon: 'users', labelKey: 'layout.users' },
+      { to: '/groups', icon: 'home', labelKey: 'layout.groups' },
+      { to: '/content', icon: 'content', labelKey: 'layout.content' },
+    ],
+  },
+  {
+    labelKey: 'layout.sectionServer',
+    items: [
+      { to: '/integrations', icon: 'integrations', labelKey: 'layout.integrations' },
+      { to: '/backups', icon: 'backups', labelKey: 'layout.backups', alertGroup: 'backup' },
+      { to: '/settings', icon: 'settings', labelKey: 'layout.serverSettings' },
+    ],
+  },
+  {
+    labelKey: 'layout.sectionMonitoring',
+    items: [
+      { to: '/status', icon: 'status', labelKey: 'layout.systemStatus', alertGroup: 'disk' },
+      { to: '/push-log', icon: 'push-log', labelKey: 'layout.pushLog' },
+      { to: '/devices', icon: 'devices', labelKey: 'layout.devices' },
+      { to: '/diagnostics', icon: 'diagnostics', labelKey: 'layout.diagnostics' },
+    ],
+  },
+]
 
 export function Layout({ user, children }: LayoutProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { pathname } = useLocation()
-  const operationsActive = OPERATIONS_ROUTES.includes(pathname)
-  const [operationsOpen, setOperationsOpen] = useState(operationsActive)
+  const { alerts, update } = useSystemAlerts(pathname)
   const [version, setVersion] = useState<string | null>(null)
   const [readOnly, setReadOnly] = useState(false)
 
-  useEffect(() => {
-    if (OPERATIONS_ROUTES.includes(pathname)) setOperationsOpen(true)
-  }, [pathname])
+  const alertDots = {
+    backup: alerts.some((a) => a.condition === 'backup_failed' || a.condition === 'backup_stale'),
+    disk: alerts.some((a) => a.condition === 'disk_low_uploads' || a.condition === 'disk_low_backups'),
+  }
 
   // Fail-soft, one-shot — a failed fetch just means no version line, same as
   // DashboardPage's update-check.
@@ -48,6 +96,23 @@ export function Layout({ user, children }: LayoutProps) {
     window.location.href = '/admin/'
   }
 
+  const handleLanguage = (lang: string) => {
+    storeLanguage(lang as SupportedLanguage)
+    void i18n.changeLanguage(lang)
+  }
+
+  const renderItem = (item: NavItem) => (
+    <NavLink key={item.to} to={item.to} end={item.end} className="sidebar-nav-item">
+      <span className="sidebar-nav-icon">
+        <Icon name={item.icon} size={17} />
+      </span>
+      <span className="sidebar-nav-label">{t(item.labelKey)}</span>
+      {item.alertGroup && alertDots[item.alertGroup] && (
+        <span className="sidebar-nav-dot" role="img" aria-label={t('layout.alertIndicator')} />
+      )}
+    </NavLink>
+  )
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -56,50 +121,57 @@ export function Layout({ user, children }: LayoutProps) {
           <h1>{t('common.appName')}</h1>
         </div>
         <nav>
-          <NavLink to="/" end>
-            {t('layout.dashboard')}
-          </NavLink>
-          <NavLink to="/users">{t('layout.users')}</NavLink>
-          <NavLink to="/groups">{t('layout.groups')}</NavLink>
-          <NavLink to="/content">{t('layout.content')}</NavLink>
-          <NavLink to="/integrations">{t('layout.integrations')}</NavLink>
-          <Button
-            variant="ghost"
-            type="button"
-            className={`h-auto justify-start whitespace-normal rounded-sm px-3 py-3 sidebar-nav-group-trigger ${operationsOpen ? 'expanded' : ''}`}
-            aria-expanded={operationsOpen}
-            aria-controls="sidebar-operations-links"
-            onClick={() => setOperationsOpen((open) => !open)}
-          >
-            {t('layout.operations')}
-            <span className={operationsOpen ? 'sidebar-nav-chevron expanded' : 'sidebar-nav-chevron'}>
-              <Icon name="chevron-down" size={16} />
-            </span>
-          </Button>
-          <div id="sidebar-operations-links" className="sidebar-subnav" hidden={!operationsOpen}>
-            <NavLink to="/push-log">{t('layout.pushLog')}</NavLink>
-            <NavLink to="/devices">{t('layout.devices')}</NavLink>
-            <NavLink to="/diagnostics">{t('layout.diagnostics')}</NavLink>
-            <NavLink to="/status">{t('layout.systemStatus')}</NavLink>
-          </div>
-          <NavLink to="/backups">{t('layout.backups')}</NavLink>
-          <NavLink to="/settings">{t('layout.serverSettings')}</NavLink>
-        </nav>
-        <div className="user">
-          <div className="flex items-center gap-3">
-            <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
-            <div className="min-w-0">
-              <div className="truncate font-bold">{user.name}</div>
-              <div className="truncate text-xs">{user.email}</div>
+          {renderItem({ to: '/', icon: 'dashboard', labelKey: 'layout.dashboard', end: true })}
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.labelKey} className="sidebar-nav-section">
+              <div className="sidebar-nav-heading">{t(section.labelKey)}</div>
+              {section.items.map(renderItem)}
             </div>
-          </div>
-          <LanguageSelector className="sidebar-language" />
-          <Button variant="secondary" className="secondary" onClick={handleLogout}>
-            {t('layout.logout')}
-          </Button>
-          {version && (
-            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem' }}>{t('layout.version', { version })}</div>
-          )}
+          ))}
+        </nav>
+        <div className="sidebar-user">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="sidebar-user-trigger" aria-label={t('layout.accountMenu')}>
+              <InitialAvatar name={user.name} avatarUrl={user.avatarUrl} />
+              <span className="sidebar-user-name">{user.name}</span>
+              <span className="sidebar-user-chevron">
+                <Icon name="chevron-down" size={16} />
+              </span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="sidebar-user-menu">
+              <div className="sidebar-user-email">{user.email}</div>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Icon name="language" size={16} />
+                  {t('layout.language')}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={i18n.resolvedLanguage ?? i18n.language}
+                    onValueChange={(value) => handleLanguage(String(value))}
+                  >
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <DropdownMenuRadioItem key={lang} value={lang}>
+                        {LANGUAGE_NAMES[lang]}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {version && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="sidebar-user-version">{t('layout.version', { version })}</div>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <Icon name="logout" size={16} />
+                {t('layout.logout')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
       <main className="main">
@@ -108,7 +180,7 @@ export function Layout({ user, children }: LayoutProps) {
             {t('layout.demoBanner')}
           </Alert>
         )}
-        <AlertBanner />
+        <AlertBanner alerts={alerts} update={update} />
         {children}
       </main>
     </div>
