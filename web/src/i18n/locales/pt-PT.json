@@ -556,6 +556,9 @@
   "members": {
     "title": "Membros",
     "description": "As tuas famílias e os círculos a que pertences.",
+    "searchPlaceholder": "Pesquisar membros…",
+    "adminsOnly": "Apenas administradores",
+    "noResults": "Nenhum membro corresponde aos teus filtros.",
     "yourCircles": "Os teus círculos",
     "noCircles": "Não estás em nenhum círculo nesta família.",
     "noFamilies": "Ainda não fazes parte de nenhuma família. Pede ao administrador da tua família que te adicione.",

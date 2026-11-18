@@ -556,6 +556,9 @@
   "members": {
     "title": "成员",
     "description": "你加入的所有家庭及私密圈子。",
+    "searchPlaceholder": "搜索成员…",
+    "adminsOnly": "仅管理员",
+    "noResults": "没有符合筛选条件的成员。",
     "yourCircles": "你的圈子",
     "noCircles": "你尚未加入此家庭中的任何圈子。",
     "noFamilies": "你尚未加入任何家庭。请联系家庭管理员添加你。",

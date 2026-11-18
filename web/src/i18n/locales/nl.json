@@ -556,6 +556,9 @@
   "members": {
     "title": "Leden",
     "description": "Je families en de kringen waar je bij hoort.",
+    "searchPlaceholder": "Leden zoeken…",
+    "adminsOnly": "Alleen admins",
+    "noResults": "Geen leden komen overeen met je filters.",
     "yourCircles": "Jouw kringen",
     "noCircles": "Je zit niet in een kring binnen deze familie.",
     "noFamilies": "Je bent nog geen lid van een familie. Vraag de beheerder van je familie om je toe te voegen.",

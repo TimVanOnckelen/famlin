@@ -271,6 +271,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const now = new Date()
     const rangeStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13))
 
+    // Recent activity is a content-reading surface, so like /content/posts it
+    // excludes circles the calling admin isn't a member of. The totals and
+    // the trend below stay global — aggregate counts reveal no per-post info.
+    const adminCircleIds = await getUserCircleIds(request.user!.id)
+
     const [
       userCount,
       adminCount,
@@ -278,7 +283,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       postCount,
       commentCount,
       likeCount,
-      postsInRange,
+      postsByDayRows,
       recentPosts,
       topGroups,
     ] = await Promise.all([
@@ -288,13 +293,21 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       prisma.post.count(),
       prisma.comment.count(),
       prisma.like.count(),
-      prisma.post.findMany({
-        where: { createdAt: { gte: rangeStart } },
-        select: { createdAt: true },
-      }),
+      // One grouped count in SQL instead of fetching every post row in the
+      // range and bucketing in JS. `AT TIME ZONE 'UTC'` keeps the day keys
+      // aligned with the UTC skeleton below regardless of the DB session's
+      // timezone.
+      prisma.$queryRaw<{ day: string; count: number }[]>`
+        SELECT to_char(date_trunc('day', "createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+               COUNT(*)::int AS count
+        FROM "Post"
+        WHERE "createdAt" >= ${rangeStart}
+        GROUP BY 1
+      `,
       prisma.post.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
+        where: { OR: [{ circleId: null }, { circleId: { in: adminCircleIds } }] },
         select: {
           id: true,
           type: true,
@@ -317,9 +330,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return { date: d.toISOString().slice(0, 10), count: 0 }
     })
     const dayIndex = new Map(postsByDay.map((d, i) => [d.date, i]))
-    for (const post of postsInRange) {
-      const idx = dayIndex.get(post.createdAt.toISOString().slice(0, 10))
-      if (idx !== undefined) postsByDay[idx].count++
+    for (const row of postsByDayRows) {
+      const idx = dayIndex.get(row.day)
+      if (idx !== undefined) postsByDay[idx].count = row.count
     }
 
     return {

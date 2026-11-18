@@ -151,6 +151,8 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "refresh": "Refresh",
+    "loadError": "Could not load the dashboard.",
     "stats": {
       "users": "Users",
       "usersSub_one": "{{count}} admin",
@@ -170,6 +172,11 @@
       "empty": "No posts yet.",
       "milestone": "Milestone",
       "update": "Update",
+      "poll": "Poll",
+      "trip": "Trip",
+      "album": "Album",
+      "giftList": "Gift list",
+      "event": "Event",
       "postedIn": "in {{group}}"
     },
     "topGroups": {

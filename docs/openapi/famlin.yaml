@@ -5022,6 +5022,11 @@ components:
           type: string
           nullable: true
         joinedAt: { type: string, format: date-time }
+        isAdmin:
+          type: boolean
+          description: |
+            Whether this member is a server admin. Absent on servers older
+            than the members-page filters.
 
     PostPerson:
       type: object
