@@ -120,10 +120,6 @@ export interface BackupsOverview {
   confirmName: string
 }
 
-function setupCodeHeaders(setupCode: string): Record<string, string> {
-  return { 'X-Setup-Code': setupCode.trim() }
-}
-
 export class ApiError extends Error {
   // Machine-readable error code, when the backend sends one (e.g. a media
   // source's `not_configured`/`unreachable`/`unauthorized` — see
@@ -172,12 +168,9 @@ function getToken() {
   return localStorage.getItem('famlin_admin_token')
 }
 
-async function request<T>(
-  path: string,
-  options?: { method?: string; body?: unknown; headers?: Record<string, string> }
-): Promise<T> {
+async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
   const method = options?.method || 'GET'
-  const headers: Record<string, string> = { 'Accept-Language': currentLanguage(), ...options?.headers }
+  const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
 
   // Only set Content-Type when there's an actual body to send — Fastify's
   // default JSON body parser rejects an empty body when this header is
@@ -239,21 +232,17 @@ export const api = {
     request('/api/admin/storage/cleanup', { method: 'POST', body: { confirmSource } }),
   getSetupStatus: () => request<{ needsSetup: boolean }>('/api/auth/setup-status'),
 
-  // Every first-run call carries the one-time setup code from the server
-  // log (backend services/setupCode.ts); a wrong one is ApiError code
-  // 'setupCodeInvalid'.
-  setup: (data: { email: string; name: string; password: string }, setupCode: string) =>
+  setup: (data: { email: string; name: string; password: string }) =>
     request<{ token: string; user: User }>('/api/auth/setup', {
       method: 'POST',
       body: data,
-      headers: setupCodeHeaders(setupCode),
     }),
 
   // Multipart rather than JSON, so it can't go through request(): the
   // browser must set the multipart Content-Type (with its boundary) itself.
   // `admin` is only needed for an older export without accounts' passwords
   // (the server answers ApiError code 'restoreAdminRequired' without it).
-  restoreBackup: async (archive: File, setupCode: string, admin?: SetupAdmin) => {
+  restoreBackup: async (archive: File, admin?: SetupAdmin) => {
     const form = new FormData()
     if (admin) {
       form.append('email', admin.email)
@@ -266,7 +255,7 @@ export const api = {
     const res = await fetch('/api/auth/setup/restore', {
       method: 'POST',
       body: form,
-      headers: { 'Accept-Language': currentLanguage(), ...setupCodeHeaders(setupCode) },
+      headers: { 'Accept-Language': currentLanguage() },
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
@@ -284,14 +273,12 @@ export const api = {
 
   // Every backup already in the server's backups volume: Famlin backup zips
   // and legacy pg_dump files.
-  listSetupBackups: (setupCode: string) =>
-    request<VolumeBackup[]>('/api/auth/setup/backups', { headers: setupCodeHeaders(setupCode) }),
+  listSetupBackups: () => request<VolumeBackup[]>('/api/auth/setup/backups'),
 
-  restoreVolumeBackup: (file: string, setupCode: string, admin?: SetupAdmin) =>
+  restoreVolumeBackup: (file: string, admin?: SetupAdmin) =>
     request<RestoreResult>('/api/auth/setup/restore-backup', {
       method: 'POST',
       body: admin ? { file, admin } : { file },
-      headers: setupCodeHeaders(setupCode),
     }),
 
   // Ends this browser's session on the server (best effort — signing out

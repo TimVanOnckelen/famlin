@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../src/db.js'
 import { getAllSettings } from '../src/services/settings.js'
-import { buildTestApp, createUser, setupCodeHeader } from './helpers.js'
+import { buildTestApp, createUser } from './helpers.js'
 
 // A dedicated file (rather than folding these into auth.test.ts) so the
 // "no users yet" assertions can rely on this file's own fresh truncation
@@ -41,7 +41,6 @@ describe('first-run setup', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/setup',
-      headers: setupCodeHeader(),
       payload: { email: 'first-admin@example.com', name: 'First Admin', password: 'password1234' },
     })
 
@@ -59,7 +58,6 @@ describe('first-run setup', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/setup',
-      headers: setupCodeHeader(),
       payload: { email: 'first-admin@example.com', name: 'First Admin', password: 'password1234' },
     })
     expect(res.statusCode).toBe(200)
@@ -72,7 +70,6 @@ describe('first-run setup', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/setup',
-      headers: setupCodeHeader(),
       payload: { email: 'late@example.com', name: 'Late', password: 'password1234' },
     })
     expect(res.statusCode).toBe(409)
@@ -85,7 +82,6 @@ describe('first-run setup', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/setup',
-      headers: setupCodeHeader(),
       payload: { email: 'second-admin@example.com', name: 'Second Admin', password: 'password1234' },
     })
 

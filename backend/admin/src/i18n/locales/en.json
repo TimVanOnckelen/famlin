@@ -142,11 +142,7 @@
     "restoreSelectedButton": "Restore selected backup",
     "restoreUploadTitle": "Or upload a backup file",
     "restoreAccountTitle": "Create your admin account",
-    "restoreSecretsHint": "Backups never contain the OIDC client secret, SMTP password or Immich API key. Re-enter them under Server settings after restoring.",
-    "codeLabel": "Setup code",
-    "codeHint": "For your security, Famlin prints a one-time setup code in the server log when it starts. To see it, run",
-    "codeDocsLink": "More help",
-    "codeNeededForBackups": "Enter the setup code above to see the backups on this server."
+    "restoreSecretsHint": "Backups never contain the OIDC client secret, SMTP password or Immich API key. Re-enter them under Server settings after restoring."
   },
   "dashboard": {
     "title": "Dashboard",

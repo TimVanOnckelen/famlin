@@ -35,7 +35,6 @@ import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
 import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
 import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
 import { revokeAllSessionsOfUser, revokeSessions } from '../services/sessions.js'
-import { clearSetupCode, isValidSetupCode, SETUP_CODE_HEADER } from '../services/setupCode.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
 import { SERVER_FEATURES } from '../serverFeatures.js'
@@ -148,18 +147,6 @@ async function checkEmailChangeReauth(
 }
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  // Every first-run route (setup, and restoring a backup onto an empty
-  // instance) needs the one-time setup code from the server log — see
-  // services/setupCode.ts. Runs as a preHandler, so a wrong code is refused
-  // before a multi-GB restore upload is read.
-  async function requireSetupCode(request: FastifyRequest, reply: FastifyReply) {
-    const header = request.headers[SETUP_CODE_HEADER]
-    const provided = Array.isArray(header) ? header[0] : header
-    if (!isValidSetupCode(provided)) {
-      return reply.status(403).send({ error: getT(request)('errors.setupCodeInvalid'), code: 'setupCodeInvalid' })
-    }
-  }
-
   // Public: lets clients discover whether OIDC login is enabled and, if so,
   // which endpoints/client/scopes to use to build their own auth request.
   // Resolving discovery server-side avoids relying on the provider allowing
@@ -225,62 +212,57 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // requests can't both pass the "no users yet" check and create two admins
   // — the lock is held for the transaction, so the second caller's count()
   // only runs after the first caller has committed its new user.
-  fastify.post(
-    '/setup',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
-    async (request, reply) => {
-      const t = getT(request)
-      const { email, name, password } = setupBodySchema.parse(request.body)
-      const normalizedEmail = email.toLowerCase().trim()
-      const passwordHash = await hashPassword(password)
+  fastify.post('/setup', { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } }, async (request, reply) => {
+    const t = getT(request)
+    const { email, name, password } = setupBodySchema.parse(request.body)
+    const normalizedEmail = email.toLowerCase().trim()
+    const passwordHash = await hashPassword(password)
 
-      const user = await prisma.$transaction(async (tx) => {
-        // Try, don't wait: a restore can hold this key far longer than the
-        // transaction's timeout.
-        const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
+    const user = await prisma.$transaction(async (tx) => {
+      // Try, don't wait: a restore can hold this key far longer than the
+      // transaction's timeout.
+      const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
         SELECT pg_try_advisory_xact_lock(${SETUP_ADVISORY_LOCK_KEY}) AS locked
       `
-        if (!locked) return 'busy' as const
+      if (!locked) return 'busy' as const
 
-        const userCount = await tx.user.count()
-        if (userCount > 0) {
-          return null
-        }
+      const userCount = await tx.user.count()
+      if (userCount > 0) {
+        return null
+      }
 
-        return tx.user.create({
-          data: {
-            email: normalizedEmail,
-            name,
-            passwordHash,
-            isAdmin: true,
-          },
-        })
+      return tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name,
+          passwordHash,
+          isAdmin: true,
+        },
       })
+    })
 
-      if (user === 'busy') {
-        return reply.status(409).send({ error: t('errors.setupInProgress') })
-      }
-      if (!user) {
-        return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
-      }
-      clearSetupCode()
-
-      // Scheduled backups are on by default for new installs only: the global
-      // default stays off so existing instances are untouched.
-      try {
-        await updateSettings({ backupEnabled: true })
-      } catch (err) {
-        request.log.warn({ err }, 'could not enable scheduled backups by default')
-      }
-
-      const token = await createSessionToken(user, request)
-
-      return {
-        token,
-        user: sanitizeUser(user),
-      }
+    if (user === 'busy') {
+      return reply.status(409).send({ error: t('errors.setupInProgress') })
     }
-  )
+    if (!user) {
+      return reply.status(409).send({ error: t('errors.setupAlreadyComplete') })
+    }
+
+    // Scheduled backups are on by default for new installs only: the global
+    // default stays off so existing instances are untouched.
+    try {
+      await updateSettings({ backupEnabled: true })
+    } catch (err) {
+      request.log.warn({ err }, 'could not enable scheduled backups by default')
+    }
+
+    const token = await createSessionToken(user, request)
+
+    return {
+      token,
+      user: sanitizeUser(user),
+    }
+  })
 
   // Public: progress of a restore onto this running server (admin Backups
   // page). Public because the restore ends the session of the admin who
@@ -362,7 +344,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
       if (!(err instanceof RestoreError)) throw err
       return sendRestoreError(request, reply, err)
     }
-    clearSetupCode()
 
     // New install (restored or not): backups on by default, unless the
     // archive itself carried an explicit choice.
@@ -411,7 +392,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // account is created alongside the restored ones, and a session is issued.
   fastify.post(
     '/setup/restore',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       if (!request.isMultipart()) {
@@ -464,7 +445,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // setup screen to offer.
   fastify.get(
     '/setup/backups',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
@@ -480,7 +461,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // role), followed by copying the mirror's media back.
   fastify.post(
     '/setup/restore-backup',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       const { file, admin } = restoreBackupBodySchema.parse(request.body)
@@ -508,7 +489,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
         if (err.code === 'unknownDump') return reply.status(400).send({ error: t('errors.restoreDumpUnknown') })
         return sendDumpError(request, reply, err)
       }
-      clearSetupCode()
       return { restored: true, media: await restoreDumpMedia(request) }
     }
   )
@@ -517,7 +497,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // the scheduled-backup dumps in the backups volume's db/ folder.
   fastify.get(
     '/setup/dumps',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
+    { config: { rateLimit: { max: 30, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
@@ -532,7 +512,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // the person signs in with their existing account afterwards.
   fastify.post(
     '/setup/restore-dump',
-    { preHandler: requireSetupCode, config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
       const { name } = restoreDumpBodySchema.parse(request.body)
@@ -546,7 +526,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
         if (!(err instanceof RestoreDumpError)) throw err
         return sendDumpError(request, reply, err)
       }
-      clearSetupCode()
 
       return { restored: true, media: await restoreDumpMedia(request) }
     }

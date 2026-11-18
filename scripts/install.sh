@@ -284,8 +284,6 @@ if [ "$DRY_RUN" = 1 ]; then printf '[dry-run] (cd %s && docker compose up -d --r
     i=$((i + 1)); sleep 3
   done
   [ "$ok" = 1 ] || die "Famlin did not become ready in 3 minutes. Check: cd $DIR && docker compose logs famlin-backend"
-  # The one-time code the setup screen asks for (only on a fresh install).
-  SETUP_CODE=$( (cd "$DIR" && $SUDO docker compose exec -T famlin-backend cat /app/data/secrets/setup_code) 2>/dev/null) || SETUP_CODE=
 fi
 
 case $MODE in
@@ -294,7 +292,6 @@ case $MODE in
   *)      URL="http://$(hostname -I 2>/dev/null | awk '{print $1}'):3000" ;;
 esac
 printf '\nFamlin is running.\n\n  Open %s%s to create the first admin account.\n' "$URL" "$([ "$MODE" = tunnel ] || echo /admin)"
-[ -z "${SETUP_CODE:-}" ] || printf '  Setup code:  %s  (the setup screen asks for it; keep it private)\n' "$SETUP_CODE"
 [ "$MODE" != tunnel ] || printf '  (Cloudflare: point the tunnel at http://famlin-backend:3000, then open /admin there.)\n'
 [ "$MODE" != caddy ] || printf '  The certificate can take a minute on first visit; ports 80 and 443 must be open.\n'
 printf '\n  Manage it:  cd %s && docker compose ps | logs -f | pull && docker compose up -d\n  Guide:      https://famlin.app/docs/install-vps\n' "$DIR"

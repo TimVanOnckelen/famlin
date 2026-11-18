@@ -146,7 +146,6 @@
     "mediaMirrorUnauthorized": "Immich rejected the upload key",
     "mediaMirrorAlbumRequired": "Choose an album to mirror into",
     "mediaMirrorNotFound": "Mirroring is not set up for this family",
-    "setupCodeInvalid": "The setup code is missing or wrong. You can find it in the server log.",
     "currentPasswordRequired": "Enter your current password to change your email address",
     "recentSignInRequired": "For your security, sign out and sign in again, then change your email address within 10 minutes"
   },

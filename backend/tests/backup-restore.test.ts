@@ -12,7 +12,7 @@ import { pruneBackupArchives, backupArchiveFileName } from '../src/services/back
 import { restoreDumpDeps } from '../src/services/backup/restoreDump.js'
 import { readLocalMigrations } from '../src/services/migrationGuard.js'
 import { updateSettings } from '../src/services/settings.js'
-import { buildTestApp, createUser, createGroupWithMember, addMember, createPost, setupCodeHeader } from './helpers.js'
+import { buildTestApp, createUser, createGroupWithMember, addMember, createPost } from './helpers.js'
 
 // Issue #461: a scheduled backup (zip + media mirror + pg_dump) restored
 // from the setup screen of a wiped server, media included, without a shell.
@@ -66,21 +66,9 @@ describe('restoring a backup from the backups volume', () => {
     return `10.2.${Math.floor(calls / 250)}.${calls % 250}`
   }
 
-  const list = () =>
-    app.inject({
-      method: 'GET',
-      url: '/api/auth/setup/backups',
-      headers: setupCodeHeader(),
-      remoteAddress: nextAddress(),
-    })
+  const list = () => app.inject({ method: 'GET', url: '/api/auth/setup/backups', remoteAddress: nextAddress() })
   const restore = (payload: unknown) =>
-    app.inject({
-      method: 'POST',
-      url: '/api/auth/setup/restore-backup',
-      payload,
-      headers: setupCodeHeader(),
-      remoteAddress: nextAddress(),
-    })
+    app.inject({ method: 'POST', url: '/api/auth/setup/restore-backup', payload, remoteAddress: nextAddress() })
 
   it('writes a zip next to the mirror and dump, then restores it with its media on a wiped server', async () => {
     const admin = await createUser({ isAdmin: true, email: 'admin@example.com', password: 'admin-password-1' })

@@ -146,7 +146,6 @@
     "mediaMirrorUnauthorized": "Immich a refusé la clé d'envoi",
     "mediaMirrorAlbumRequired": "Choisissez un album vers lequel copier",
     "mediaMirrorNotFound": "La copie n'est pas configurée pour cette famille",
-    "setupCodeInvalid": "Le code de configuration est manquant ou incorrect. Vous le trouverez dans le journal du serveur.",
     "currentPasswordRequired": "Saisissez votre mot de passe actuel pour modifier votre adresse e-mail",
     "recentSignInRequired": "Pour votre sécurité, déconnectez-vous puis reconnectez-vous, et modifiez votre adresse e-mail dans les 10 minutes"
   },

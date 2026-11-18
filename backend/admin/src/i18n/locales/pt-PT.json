@@ -142,11 +142,7 @@
     "restoreSelectedButton": "Restaurar a cópia selecionada",
     "restoreUploadTitle": "Ou carrega um ficheiro de cópia de segurança",
     "restoreAccountTitle": "Cria a tua conta de administrador",
-    "restoreSecretsHint": "As cópias de segurança nunca contêm o segredo de cliente OIDC, a palavra-passe SMTP nem a chave API do Immich. Volta a introduzi-los em Definições do servidor depois de restaurar.",
-    "codeLabel": "Código de configuração",
-    "codeHint": "Por segurança, o Famlin escreve um código de configuração de utilização única no registo do servidor ao arrancar. Para o ver, execute",
-    "codeDocsLink": "Mais ajuda",
-    "codeNeededForBackups": "Introduza o código de configuração acima para ver as cópias de segurança neste servidor."
+    "restoreSecretsHint": "As cópias de segurança nunca contêm o segredo de cliente OIDC, a palavra-passe SMTP nem a chave API do Immich. Volta a introduzi-los em Definições do servidor depois de restaurar."
   },
   "dashboard": {
     "title": "Painel",

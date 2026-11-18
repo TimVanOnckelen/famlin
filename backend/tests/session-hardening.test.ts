@@ -1,20 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
-import fs from 'fs'
-import path from 'path'
 import { prisma } from '../src/db.js'
-import { dataDir } from '../src/config.js'
 import { generateApiToken } from '../src/services/apiTokens.js'
-import { clearSetupCode, getSetupCode, SETUP_CODE_FILE } from '../src/services/setupCode.js'
 import { authHeader, buildTestApp, createUser } from './helpers.js'
 
-// Security hardening: the one-time setup code on the first-run routes,
-// server-side sessions (logout, device list, revocation, forced sign-out),
-// and re-authentication before an email change.
+// Security hardening: server-side sessions (logout, device list, revocation,
+// forced sign-out) and re-authentication before an email change.
 
 let app: FastifyInstance
 let ip = 0
-// Login and setup are rate limited per IP; each call gets its own address.
+// Login is rate limited per IP; each call gets its own address.
 const nextAddress = () => `10.9.${Math.floor(++ip / 250)}.${ip % 250}`
 
 beforeAll(async () => {
@@ -38,67 +33,6 @@ async function login(email: string, password: string, userAgent = 'TestAgent/1.0
 }
 
 const bearer = (token: string) => ({ authorization: `Bearer ${token}` })
-
-describe('first-run setup code', () => {
-  beforeEach(async () => {
-    await prisma.user.deleteMany()
-    clearSetupCode()
-  })
-
-  const setup = (headers: Record<string, string>) =>
-    app.inject({
-      method: 'POST',
-      url: '/api/auth/setup',
-      remoteAddress: nextAddress(),
-      headers,
-      payload: { email: 'owner@example.com', name: 'Owner', password: 'password1234' },
-    })
-
-  it('refuses setup without the code, or with a wrong one, and creates no account', async () => {
-    const missing = await setup({})
-    expect(missing.statusCode).toBe(403)
-    expect(missing.json().code).toBe('setupCodeInvalid')
-
-    const wrong = await setup({ 'x-setup-code': 'AAAA-BBBB-CCCC' })
-    expect(wrong.statusCode).toBe(403)
-    expect(await prisma.user.count()).toBe(0)
-  })
-
-  it('accepts the code regardless of case, spaces and dashes, then deletes it', async () => {
-    const code = getSetupCode()
-    const file = path.join(dataDir, SETUP_CODE_FILE)
-    expect(fs.existsSync(file)).toBe(true)
-    expect(fs.statSync(file).mode & 0o777).toBe(0o600)
-
-    const res = await setup({ 'x-setup-code': ` ${code.replace(/-/g, ' ').toLowerCase()} ` })
-    expect(res.statusCode).toBe(200)
-    expect(res.json().user.isAdmin).toBe(true)
-    expect(fs.existsSync(file)).toBe(false)
-  })
-
-  it('keeps the same code until setup succeeds', () => {
-    expect(getSetupCode()).toBe(getSetupCode())
-  })
-
-  it('guards every restore route too, before reading the request', async () => {
-    for (const [method, url] of [
-      ['GET', '/api/auth/setup/backups'],
-      ['GET', '/api/auth/setup/dumps'],
-      ['POST', '/api/auth/setup/restore-backup'],
-      ['POST', '/api/auth/setup/restore-dump'],
-      ['POST', '/api/auth/setup/restore'],
-    ] as const) {
-      const res = await app.inject({
-        method,
-        url,
-        remoteAddress: nextAddress(),
-        payload: method === 'POST' ? {} : undefined,
-      })
-      expect(res.statusCode, url).toBe(403)
-      expect(res.json().code, url).toBe('setupCodeInvalid')
-    }
-  })
-})
 
 describe('server-side sessions', () => {
   const password = 'correct-horse-1'

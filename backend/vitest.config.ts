@@ -33,8 +33,6 @@ export default defineConfig({
       // Scheduled-backup tests write dumps and an uploads mirror here
       // (src/config.ts) — never into a real backups volume.
       BACKUPS_DIR: process.env.BACKUPS_DIR ?? path.join(os.tmpdir(), 'famlin-test-backups'),
-      // The first-run setup code (services/setupCode.ts) lives here.
-      DATA_DIR: process.env.DATA_DIR ?? path.join(os.tmpdir(), 'famlin-test-data'),
     },
   },
 })

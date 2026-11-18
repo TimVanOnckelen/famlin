@@ -146,7 +146,6 @@
     "mediaMirrorUnauthorized": "Immich heeft de uploadsleutel geweigerd",
     "mediaMirrorAlbumRequired": "Kies een album om naartoe te spiegelen",
     "mediaMirrorNotFound": "Spiegelen is niet ingesteld voor deze familie",
-    "setupCodeInvalid": "De installatiecode ontbreekt of is onjuist. Je vindt hem in het serverlogboek.",
     "currentPasswordRequired": "Vul je huidige wachtwoord in om je e-mailadres te wijzigen",
     "recentSignInRequired": "Meld je voor je veiligheid af en opnieuw aan, en wijzig je e-mailadres binnen 10 minuten"
   },

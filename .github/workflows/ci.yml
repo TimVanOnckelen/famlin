@@ -566,18 +566,7 @@ jobs:
           for i in $(seq 1 90); do
             if curl -sf http://localhost:3000/health > /dev/null; then
               echo "healthy after ${i}x2s"
-              # The first-run setup code the server wrote on boot, for the
-              # setup screen test (e2e/tests/smoke.spec.ts).
-              for j in $(seq 1 15); do
-                code=$(docker compose -p famlin-e2e exec -T famlin-backend cat /app/data/secrets/setup_code 2>/dev/null || true)
-                if [ -n "$code" ]; then
-                  echo "FAMLIN_SETUP_CODE=$code" >> "$GITHUB_ENV"
-                  exit 0
-                fi
-                sleep 1
-              done
-              echo "::error::Famlin wrote no setup code"
-              exit 1
+              exit 0
             fi
             sleep 2
           done

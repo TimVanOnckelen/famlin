@@ -10,7 +10,7 @@ import { PgToolNotInstalledError, runPgTool } from '../src/services/backup/dbDum
 import { parseDumpMigrations, restoreDumpDeps, RestoreDumpError } from '../src/services/backup/restoreDump.js'
 import { MigrateDeployError, readLocalMigrations } from '../src/services/migrationGuard.js'
 import { getAllSettings, updateSettings } from '../src/services/settings.js'
-import { authHeader, buildTestApp, createUser, setupCodeHeader } from './helpers.js'
+import { authHeader, buildTestApp, createUser } from './helpers.js'
 
 // pg_restore and `prisma migrate deploy` are stubbed through restoreDumpDeps:
 // a real restore would replace the shared test database.
@@ -95,19 +95,13 @@ describe('setup dump restore', () => {
   }
 
   function list() {
-    return app.inject({
-      method: 'GET',
-      url: '/api/auth/setup/dumps',
-      headers: setupCodeHeader(),
-      remoteAddress: nextAddress(),
-    })
+    return app.inject({ method: 'GET', url: '/api/auth/setup/dumps', remoteAddress: nextAddress() })
   }
 
   function restore(name: unknown) {
     return app.inject({
       method: 'POST',
       url: '/api/auth/setup/restore-dump',
-      headers: setupCodeHeader(),
       remoteAddress: nextAddress(),
       payload: { name },
     })
@@ -239,8 +233,6 @@ describe('setup dump restore', () => {
         const setup = await app.inject({
           method: 'POST',
           url: '/api/auth/setup',
-          headers: setupCodeHeader(),
-          headers: setupCodeHeader(),
           remoteAddress: nextAddress(),
           payload: { email: 'race@example.com', name: 'Race', password: 'password123' },
         })
@@ -345,8 +337,5 @@ function zipUpload(archive: Buffer) {
     archive,
     Buffer.from(`\r\n--${boundary}--\r\n`),
   ])
-  return {
-    payload,
-    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, ...setupCodeHeader() },
-  }
+  return { payload, headers: { 'content-type': `multipart/form-data; boundary=${boundary}` } }
 }

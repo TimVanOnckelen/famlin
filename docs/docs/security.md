@@ -36,9 +36,7 @@ The maintainers will acknowledge receipt as soon as possible and work with you t
 
 ### First account and automatic secrets
 
-A fresh installation has **no default or seeded admin account**. Opening `/admin` shows a one-time setup screen for the first account, which becomes an administrator. Once any account exists, the setup endpoint refuses to run again.
-
-Reaching a fresh server isn't enough to claim it. The setup screen, and restoring a backup from it, need a **one-time setup code** that Famlin prints in its log and stores in the data volume. Only someone who can read the server's log or its files has it. Famlin deletes the code once setup succeeds. See [First-run setup code](./server-setup.md#first-run-setup-code). The seed script is a development and test fixture with hardcoded passwords—never use it for a real deployment.
+A fresh installation has **no default or seeded admin account**. Opening `/admin` shows a one-time setup screen for the first account, which becomes an administrator. Once any account exists, the setup endpoint refuses to run again. The seed script is a development and test fixture with hardcoded passwords—never use it for a real deployment.
 
 Without a `.env`, Famlin generates:
 
@@ -53,7 +51,7 @@ A Famlin backup (the scheduled `.zip` files and the admin **Data export**) conta
 
 Restoring a backup brings back passwords as they were when it was taken. Anyone with a backup file who can restore it can therefore reset everyone's credentials to that point in time — which is why restore is limited to the setup screen of a server with zero accounts, and on a running server to a **signed-in admin** — never an API token, even one with admin access. A restore on a running server first takes a safety backup, requires typing the family's name, and ends every session. While it runs the API answers `503`, so nobody writes into a database that's being replaced. Saved credentials stay, except one whose destination (issuer, SMTP host, Immich URL) the restored settings change — the same rule as editing settings, so a backup can't redirect a saved secret to another server.
 
-The first-run screen can restore a backup only while the server has zero accounts, under the same protection as initial setup, setup code included. It accepts an uploaded `.zip` — never executed, only parsed: rows are validated against Famlin's schema, file paths are checked against path traversal, and credential settings in an archive are refused. A legacy database dump (`.dump`) is only read from the backup volume's `db/` folder; it deliberately can't be uploaded. Restoring a dump runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
+The first-run screen can restore a backup only while the server has zero accounts, under the same protection as initial setup. It accepts an uploaded `.zip` — never executed, only parsed: rows are validated against Famlin's schema, file paths are checked against path traversal, and credential settings in an archive are refused. A legacy database dump (`.dump`) is only read from the backup volume's `db/` folder; it deliberately can't be uploaded. Restoring a dump runs SQL with Famlin's database privileges, so requiring server access to place the file prevents someone who merely reaches an unconfigured server from running an arbitrary dump.
 
 ### Sessions and account removal
 

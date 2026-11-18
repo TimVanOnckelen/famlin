@@ -74,7 +74,7 @@ curl -fsSL https://famlin.app/install.sh | sh -s -- --yes \
 
 ## 4. Create your admin account
 
-Open `https://<your-domain>/admin`. A fresh server shows a one-time setup screen. Enter the **setup code** the installer printed at the end. If you've lost it, run `cd /opt/famlin && docker compose logs famlin-backend | grep -i "setup code"`. Then create the first admin account and follow [After the first start](./admin-configuration.md) to pick how people sign in, create your family and [invite everyone](./inviting-family.md).
+Open `https://<your-domain>/admin`. A fresh server shows a one-time setup screen: create the first admin account, then follow [After the first start](./admin-configuration.md) to pick how people sign in, create your family and [invite everyone](./inviting-family.md).
 
 ## What gets installed
 

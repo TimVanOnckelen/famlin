@@ -1,9 +1,7 @@
 import { resumeStorageMigration } from './services/storage/migration.js'
 import cron from 'node-cron'
 import { buildApp } from './app.js'
-import path from 'path'
-import { config, dataDir } from './config.js'
-import { getSetupCode, SETUP_CODE_FILE } from './services/setupCode.js'
+import { config } from './config.js'
 import { prisma } from './db.js'
 import { runOnThisDayJob } from './jobs/onThisDay.js'
 import { runNewAssetsJob } from './jobs/newAssets.js'
@@ -31,21 +29,6 @@ async function start() {
   }
 
   resumeStorageMigration().catch(() => fastify.log.error('Storage migration resume failed'))
-
-  // A fresh install: print the one-time setup code the first-run screen asks
-  // for (services/setupCode.ts), on every boot until setup is done, so it is
-  // in the latest logs whenever the owner gets to /admin.
-  try {
-    if ((await prisma.user.count()) === 0) {
-      const code = getSetupCode()
-      fastify.log.warn(
-        `No accounts yet. Open /admin to set up Famlin and enter this one-time setup code: ${code} ` +
-          `(also stored in ${path.join(dataDir, SETUP_CODE_FILE)})`
-      )
-    }
-  } catch (err) {
-    fastify.log.error({ err }, 'Could not prepare the first-run setup code')
-  }
 
   // Fixed daily time (server-local) rather than an admin-configurable
   // setting — kept simple for an MVP-scale feature.

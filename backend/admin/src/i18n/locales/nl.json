@@ -142,11 +142,7 @@
     "restoreSelectedButton": "Geselecteerde back-up terugzetten",
     "restoreUploadTitle": "Of upload een back-upbestand",
     "restoreAccountTitle": "Maak je beheerdersaccount aan",
-    "restoreSecretsHint": "Back-ups bevatten nooit het OIDC-clientgeheim, het SMTP-wachtwoord of de Immich-API-sleutel. Vul ze na het terugzetten opnieuw in onder Serverinstellingen.",
-    "codeLabel": "Installatiecode",
-    "codeHint": "Voor je veiligheid zet Famlin bij het opstarten een eenmalige installatiecode in het serverlogboek. Om hem te zien, voer je dit uit:",
-    "codeDocsLink": "Meer hulp",
-    "codeNeededForBackups": "Vul hierboven de installatiecode in om de back-ups op deze server te zien."
+    "restoreSecretsHint": "Back-ups bevatten nooit het OIDC-clientgeheim, het SMTP-wachtwoord of de Immich-API-sleutel. Vul ze na het terugzetten opnieuw in onder Serverinstellingen."
   },
   "dashboard": {
     "title": "Dashboard",
