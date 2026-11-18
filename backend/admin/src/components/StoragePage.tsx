@@ -79,7 +79,9 @@ function StorageLocation({
   )
 }
 
-export function StoragePage() {
+// `embedded`: shown as the Storage integration's Connection tab, under that
+// page's own header.
+export function StoragePage({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation()
   const states = t('storage.states', { returnObjects: true })
   const stateLabel = (state: string) => states[state as keyof typeof states] ?? state
@@ -131,7 +133,7 @@ export function StoragePage() {
     ['verified', 'cleanup_failed', 'cleaned'].includes(status.migration?.status ?? '')
   return (
     <>
-      <PageHeader title={t('storage.title')} />
+      {!embedded && <PageHeader title={t('storage.title')} />}
       {error && <StateMessage variant="error">{error}</StateMessage>}
       {status?.usingFallback && <StateMessage variant="error">{t('storage.usingFallback')}</StateMessage>}
       {!status ? (
@@ -185,9 +187,9 @@ export function StoragePage() {
                 <TableBody>
                   {status.progress.map((row) => (
                     <TableRow key={row.status}>
-                      <TableCell>{stateLabel(row.status)}</TableCell>
-                      <TableCell>{row.files.toLocaleString()}</TableCell>
-                      <TableCell>{formatBytes(row.bytes)}</TableCell>
+                      <TableCell data-label={t('storage.state')}>{stateLabel(row.status)}</TableCell>
+                      <TableCell data-label={t('storage.files')}>{row.files.toLocaleString()}</TableCell>
+                      <TableCell data-label={t('storage.size')}>{formatBytes(row.bytes)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

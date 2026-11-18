@@ -27,7 +27,7 @@ For every uploaded photo, Famlin keeps three copies inside its media storage:
 Videos are stored as uploaded, plus a poster image. Old HEIC photos get a browser-friendly copy under `derived/` the first time someone opens them. Plan for **media storage of about 1.5× the size of what your family uploads**.
 
 :::info[Not the same as "Media integrations"]
-**Immich** and **Local folders** under Server settings → Media are *sources* that members can pick photos from. Famlin only reads from them and never stores its own uploads there. See [Media integrations](./admin-configuration.md#media-integrations). This page is about where Famlin keeps the files that members upload *to Famlin*.
+**Immich** and **Local folders** under Integrations are *sources* that members can pick photos from. Famlin only reads from them and never stores its own uploads there. See [Media integrations](./admin-configuration.md#media-integrations). This page is about where Famlin keeps the files that members upload *to Famlin*.
 :::
 
 ## Choosing where media lives
@@ -276,7 +276,7 @@ Famlin can move all media from one storage to the other **while it keeps running
 - photos that aren't copied yet are read from the old storage, which is called the **fallback**;
 - members don't notice anything.
 
-![The Storage page in the admin UI during a migration](./img/admin-storage.png)
+![Integrations → Media storage in the admin UI](./img/admin-storage.png)
 
 ### Step by step: local → S3
 
@@ -331,7 +331,7 @@ Make sure the uploads volume has enough free space for the whole media library f
 - **Rotating credentials is fine** during a migration: the fingerprint identifies a location by driver, bucket, prefix, endpoint and region, not by key. If you change one of those, an interrupted migration doesn't resume, and you start it again from the Storage page.
 - **What's copied:** every media file, including old files from before Famlin tracked uploads. Branding, temporary files and Famlin's own internal files are skipped.
 - **How it's verified:** each copy is read back from the destination and compared by SHA-256 checksum. S3 ETags aren't trusted for this.
-- Errors and conflicts are kept in the Storage page's history. They're operational data, so they aren't part of data exports.
+- Errors and conflicts are kept in the history on Integrations → Media storage. They're operational data, so they aren't part of data exports.
 
 <details>
 <summary>How the migration works under the hood</summary>
@@ -347,7 +347,7 @@ An interrupted migration resumes after a restart only when both locations' finge
 ## Backups and exports with S3
 
 - **S3 is not a backup.** A bucket protects against a failing disk, not against deleting something by accident or a provider problem. Keep an independent copy.
-- **Scheduled backups** ([Maintenance](./maintenance.md#scheduled-backups)) copy media from wherever it lives, primary and fallback, into `/app/backups/uploads/`. With a large library in S3 that means a full local copy. Under **Server settings → Backups**, you can switch off **Include media in backups** if you back up the bucket in another way (for example with bucket versioning or replication). The backup zip, the database dump and the branding logo are always backed up; a restore then expects the photos to still be in the bucket.
+- **Scheduled backups** ([Maintenance](./maintenance.md#scheduled-backups)) copy media from wherever it lives, primary and fallback, into `/app/backups/uploads/`. With a large library in S3 that means a full local copy. On the admin **Backups** page, you can switch off **Include media in backups** if you back up the bucket in another way (for example with bucket versioning or replication). The backup zip, the database dump and the branding logo are always backed up; a restore then expects the photos to still be in the bucket.
 - **Data export** (on the admin **Backups** page) has the same **Include media** switch. An export without media is small, but it can only be restored onto a server that can already reach the same media, for example the same bucket, or whose backups volume holds a media mirror with them. When restoring, Famlin checks that every file the export refers to is present and the right size — in the media storage, or else in the mirror, from where it's copied back — before it writes anything. See [Restoring a backup](./maintenance.md#restoring-a-backup).
 
 ## Disk space

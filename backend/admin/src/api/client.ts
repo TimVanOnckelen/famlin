@@ -13,6 +13,11 @@ import {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaMirrorOverview,
+  IntegrationsOverview,
+  IntegrationSummary,
+  IntegrationFamily,
+  IntegrationId,
+  IntegrationState,
   MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
@@ -26,7 +31,6 @@ import {
   AdminBranding,
   DerivedBrand,
   SystemStatus,
-  IntegrationsStatus,
   IntegrationStatus,
   ActiveAlert,
   UpdateNotice,
@@ -51,6 +55,11 @@ export type {
   MediaAlbumSummary,
   MediaAlbumLink,
   MediaMirrorOverview,
+  IntegrationsOverview,
+  IntegrationSummary,
+  IntegrationFamily,
+  IntegrationId,
+  IntegrationState,
   MediaMirrorAlbumChoice,
   MediaProviderId,
   NewAssetMode,
@@ -64,7 +73,6 @@ export type {
   AdminBranding,
   DerivedBrand,
   SystemStatus,
-  IntegrationsStatus,
   IntegrationStatus,
   ActiveAlert,
   DiskUsage,
@@ -518,7 +526,8 @@ export const api = {
 
   getSystemStatus: () => request<SystemStatus>('/api/admin/status'),
 
-  getIntegrationsStatus: () => request<IntegrationsStatus>('/api/admin/status/integrations'),
+  getIntegrations: (check = false) =>
+    request<IntegrationsOverview>(`/api/admin/integrations${check ? '?check=1' : ''}`),
 
   getSystemAlerts: () => request<{ alerts: ActiveAlert[]; update: UpdateNotice | null }>('/api/admin/status/alerts'),
 
@@ -585,11 +594,8 @@ export const api = {
     data: { enabled: boolean; album?: MediaMirrorAlbumChoice; mirrorSince?: string }
   ) => request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'PUT', body: data }),
 
-  removeMediaMirror: (groupId: string) =>
-    request<MediaMirrorOverview>(`/api/admin/groups/${groupId}/media-mirror`, { method: 'DELETE' }),
-
   syncMediaMirror: (groupId: string) =>
-    request<{ started: true }>(`/api/admin/groups/${groupId}/media-mirror/sync`, { method: 'POST' }),
+    request<{ started: boolean }>(`/api/admin/groups/${groupId}/media-mirror/sync`, { method: 'POST' }),
 
   testLocalMediaPath: (rootPath: string) =>
     request<{ ok: true } | { ok: false; error: 'not_found' | 'not_a_directory' }>('/api/admin/media/local/test', {

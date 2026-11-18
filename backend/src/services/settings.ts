@@ -363,19 +363,12 @@ export interface ImmichSettings {
   configured: boolean
 }
 
-export async function getImmichSettings(): Promise<ImmichSettings> {
+// `key: 'mirror'` returns the upload mirror's write key (immichMirrorApiKey)
+// against the same server; `configured` then needs that key.
+export async function getImmichSettings(key: 'read' | 'mirror' = 'read'): Promise<ImmichSettings> {
   const settings = await getAllSettings()
   const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '')
-  const apiKey = settings.immichApiKey.trim()
-  return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey }
-}
-
-// The write key the upload mirror uses, against the same server as the read
-// key. `configured` needs both the URL and this key.
-export async function getImmichMirrorSettings(): Promise<ImmichSettings> {
-  const settings = await getAllSettings()
-  const serverUrl = settings.immichServerUrl.trim().replace(/\/$/, '')
-  const apiKey = settings.immichMirrorApiKey.trim()
+  const apiKey = (key === 'mirror' ? settings.immichMirrorApiKey : settings.immichApiKey).trim()
   return { serverUrl, apiKey, configured: !!serverUrl && !!apiKey }
 }
 

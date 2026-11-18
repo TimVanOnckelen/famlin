@@ -4,7 +4,6 @@ import { PageHeader } from '@famlin/ui/common/page-header'
 import { Button } from '@famlin/ui/button'
 import { Card } from '@famlin/ui/card'
 import { Badge } from '@famlin/ui/badge'
-import { SelectField } from '@famlin/ui/common/select-field'
 import { Input } from '@famlin/ui/input'
 import { AdminModal } from './AdminModal'
 import { AddMembersModal } from './AddMembersModal'
@@ -13,24 +12,12 @@ import { CheckboxField } from './CheckboxField'
 import { useAdminDialogs } from './AdminDialogs'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  api,
-  ApiError,
-  Group,
-  GroupMember,
-  MediaAlbumLink,
-  MediaAlbumSummary,
-  MediaProviderId,
-  Invite,
-  User,
-  NewAssetMode,
-  PostTypeInfo,
-} from '../api/client'
+import { api, ApiError, Group, GroupMember, Invite, User, PostTypeInfo } from '../api/client'
 import i18n from '../i18n'
 import { Icon } from './Icon'
 import { AddMemberModal } from './AddMemberModal'
 import { CirclesSection } from './CirclesSection'
-import { MediaMirrorSection } from './MediaMirrorSection'
+import { Link } from 'react-router-dom'
 
 export function GroupsPage() {
   const { t } = useTranslation()
@@ -46,37 +33,6 @@ export function GroupsPage() {
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null)
   const [showAddMember, setShowAddMember] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  const [mediaLinks, setMediaLinks] = useState<MediaAlbumLink[]>([])
-  const [mediaLinksLoading, setMediaLinksLoading] = useState(false)
-  // One album catalog per media provider. `error` is set when the provider IS
-  // configured but the catalog fetch still failed (server down, key revoked,
-  // unreadable folder, ...) — distinct from notConfigured so the admin isn't
-  // told to "configure it" when it already is. Already-linked albums still
-  // load fine either way since they come from Famlin's own DB.
-  const [catalogs, setCatalogs] = useState<
-    Record<MediaProviderId, { albums: MediaAlbumSummary[] | null; notConfigured: boolean; error: boolean }>
-  >({
-    immich: { albums: null, notConfigured: false, error: false },
-    local: { albums: null, notConfigured: false, error: false },
-  })
-  const [selectedProvider, setSelectedProvider] = useState<MediaProviderId>('immich')
-  const [selectedAlbumId, setSelectedAlbumId] = useState('')
-  const [linkingAlbum, setLinkingAlbum] = useState(false)
-
-  const loadCatalog = (provider: MediaProviderId) =>
-    api
-      .getMediaAlbums(provider)
-      .then((albums) =>
-        setCatalogs((prev) => ({ ...prev, [provider]: { albums, notConfigured: false, error: false } }))
-      )
-      .catch((err) => {
-        const notConfigured = err instanceof ApiError && err.code === 'not_configured'
-        setCatalogs((prev) => ({
-          ...prev,
-          [provider]: { albums: null, notConfigured, error: !notConfigured },
-        }))
-      })
 
   // Group create/edit modal. `formGroup === null` while closed; a Group with an
   // empty id means "create", otherwise "edit".
@@ -96,9 +52,7 @@ export function GroupsPage() {
   }
 
   useEffect(() => {
-    Promise.all([loadGroups(), api.getAllUsers().then(setUsers), loadCatalog('immich'), loadCatalog('local')]).finally(
-      () => setLoading(false)
-    )
+    Promise.all([loadGroups(), api.getAllUsers().then(setUsers)]).finally(() => setLoading(false))
   }, [])
 
   const loadMembers = (groupId: string) => {
@@ -117,25 +71,14 @@ export function GroupsPage() {
       .finally(() => setInvitesLoading(false))
   }
 
-  const loadMediaLinks = (groupId: string) => {
-    setMediaLinksLoading(true)
-    api
-      .getGroupMediaAlbums(groupId)
-      .then(setMediaLinks)
-      .finally(() => setMediaLinksLoading(false))
-  }
-
   useEffect(() => {
     setShowAddExisting(false)
-    setSelectedAlbumId('')
     if (selectedId) {
       loadMembers(selectedId)
       loadInvites(selectedId)
-      loadMediaLinks(selectedId)
     } else {
       setMembers([])
       setInvites([])
-      setMediaLinks([])
     }
   }, [selectedId])
 
@@ -215,56 +158,7 @@ export function GroupsPage() {
     }
   }
 
-  const handleLinkAlbum = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const albums = catalogs[selectedProvider].albums
-    if (!selectedGroup || !selectedAlbumId || !albums) return
-    const album = albums.find((a) => a.id === selectedAlbumId)
-    if (!album) return
-    setLinkingAlbum(true)
-    try {
-      await api.linkMediaAlbum(selectedGroup.id, {
-        provider: selectedProvider,
-        externalAlbumId: album.id,
-        albumName: album.name,
-      })
-      setSelectedAlbumId('')
-      loadMediaLinks(selectedGroup.id)
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error')
-      await dialogs.showMessage(t('groups.mediaAlbums.linkError', { error: message }))
-    } finally {
-      setLinkingAlbum(false)
-    }
-  }
-
-  const handleUnlinkAlbum = async (link: MediaAlbumLink) => {
-    if (!selectedGroup) return
-    if (!(await dialogs.confirmAction(t('groups.mediaAlbums.unlinkConfirm', { name: link.albumName })))) return
-    try {
-      await api.unlinkMediaAlbum(link.id)
-      loadMediaLinks(selectedGroup.id)
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error')
-      await dialogs.showMessage(t('groups.mediaAlbums.unlinkError', { error: message }))
-    }
-  }
-
-  const handleUpdateNewAssetMode = async (link: MediaAlbumLink, newMode: NewAssetMode) => {
-    try {
-      await api.updateMediaAlbumLink(link.id, { newAssetMode: newMode })
-      loadMediaLinks(selectedGroup!.id)
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : t('common.error')
-      await dialogs.showMessage(t('groups.mediaAlbums.updateModeError', { error: message }))
-    }
-  }
-
   const nonMembers = users.filter((u) => !members.some((m) => m.id === u.id))
-  const currentCatalog = catalogs[selectedProvider]
-  const linkableAlbums = (currentCatalog.albums ?? []).filter(
-    (a) => !mediaLinks.some((link) => link.provider === selectedProvider && link.externalAlbumId === a.id)
-  )
 
   if (loading)
     return (
@@ -442,110 +336,14 @@ export function GroupsPage() {
                 )}
 
                 <div className="md-section-header">
-                  <h4>{t('groups.mediaAlbums.title')}</h4>
-                  <form className="md-add-member" onSubmit={handleLinkAlbum}>
-                    <SelectField
-                      value={selectedProvider}
-                      onValueChange={(value) => {
-                        setSelectedProvider(value as MediaProviderId)
-                        setSelectedAlbumId('')
-                      }}
-                      aria-label={t('groups.mediaAlbums.providerLabel')}
-                      items={[
-                        { value: 'immich', label: <>{t('groups.mediaAlbums.providers.immich')}</> },
-                        { value: 'local', label: <>{t('groups.mediaAlbums.providers.local')}</> },
-                      ]}
-                    />
-                    {currentCatalog.notConfigured ? (
-                      <span className="hint">{t('groups.mediaAlbums.notConfigured')}</span>
-                    ) : currentCatalog.error ? (
-                      <span className="hint">{t('groups.mediaAlbums.loadError')}</span>
-                    ) : (
-                      <>
-                        <SelectField
-                          value={selectedAlbumId}
-                          onValueChange={(value) => setSelectedAlbumId(value)}
-                          disabled={linkableAlbums.length === 0}
-                          items={[
-                            { value: '', label: <>{t('groups.mediaAlbums.selectAlbum')}</> },
-                            ...linkableAlbums.map((album) => ({
-                              value: album.id,
-                              label: (
-                                <>
-                                  {album.name}({album.assetCount})
-                                </>
-                              ),
-                            })),
-                          ]}
-                        />
-                        <Button type="submit" disabled={!selectedAlbumId || linkingAlbum}>
-                          {t('groups.mediaAlbums.linkAlbum')}
-                        </Button>
-                      </>
-                    )}
-                  </form>
+                  <h4>{t('groups.photos.title')}</h4>
                 </div>
-
-                {mediaLinksLoading ? (
-                  <StateMessage variant="loading" className="loading">
-                    {t('common.loading')}
-                  </StateMessage>
-                ) : mediaLinks.length === 0 ? (
-                  <StateMessage variant="empty" className="empty">
-                    {t('groups.mediaAlbums.noAlbums')}
-                  </StateMessage>
-                ) : (
-                  <>
-                    <ul className="member-cards">
-                      {mediaLinks.map((link) => (
-                        <li key={link.id} className="member-card">
-                          <span className="member-card-info">
-                            <span className="member-card-name">
-                              {link.albumName}
-                              <Badge variant="secondary" className="badge">
-                                {t(`groups.mediaAlbums.providers.${link.provider}`)}
-                              </Badge>
-                            </span>
-                            <span className="member-card-sub">
-                              {t('groups.mediaAlbums.newAssetMode')}:
-                              <SelectField
-                                value={link.newAssetMode}
-                                onValueChange={(value) => handleUpdateNewAssetMode(link, value as NewAssetMode)}
-                                style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}
-                                items={[
-                                  { value: 'OFF', label: <>{t('groups.mediaAlbums.newAssetMode.off')}</> },
-                                  { value: 'MANUAL', label: <>{t('groups.mediaAlbums.newAssetMode.manual')}</> },
-                                  { value: 'AUTO', label: <>{t('groups.mediaAlbums.newAssetMode.auto')}</> },
-                                ]}
-                              />
-                            </span>
-                            {link.newAssetMode !== 'OFF' && (
-                              <span className="hint" style={{ marginTop: '0.25rem' }}>
-                                {t(`groups.mediaAlbums.newAssetMode.${link.newAssetMode.toLowerCase()}Help`)}
-                              </span>
-                            )}
-                          </span>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="icon-button danger"
-                            title={t('common.remove')}
-                            aria-label={t('common.remove')}
-                            onClick={() => handleUnlinkAlbum(link)}
-                          >
-                            <Icon name="x" size={14} />
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-
-                <MediaMirrorSection
-                  key={`mirror-${selectedGroup.id}`}
-                  groupId={selectedGroup.id}
-                  groupName={selectedGroup.name}
-                />
+                <p className="hint">
+                  {t('groups.photos.moved')}{' '}
+                  <Link to="/integrations/immich/families">{t('integrations.names.immich')}</Link>
+                  {' · '}
+                  <Link to="/integrations/local/families">{t('integrations.names.local')}</Link>
+                </p>
               </>
             )}
           </Card>

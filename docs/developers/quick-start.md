@@ -182,7 +182,7 @@ Things the variant does **not** separate, and what to know about them:
 - **Deep links share the `famlin://` scheme** on purpose (less to configure). With both apps installed, Android asks which app should open an invite link, a `/connect` link or the server-mediated (Google) SSO callback; on iOS it's undefined which app gets them, and the dev app's share extension may hand shared photos to the store app. Plain PKCE SSO login is unaffected, because its redirect URI comes from `makeRedirectUri()`. Uninstall one of the two when testing those flows.
 - **Push notifications on Android** need `be.xeweb.famlin.dev` registered as a second Android app in the same Firebase project, and the downloaded `mobile/google-services.json` (which then lists both packages) committed. Until then `app.config.js` builds the dev variant without Firebase and logs a warning: everything works except push. Expo's push service also needs the FCM V1 key assigned to the new package: `eas credentials` → Android → `be.xeweb.famlin.dev` → Push Notifications. This only configures credentials; it doesn't start an EAS build.
 - **Push notifications on iOS** need a physical device (the simulator has no APNs), an App ID for `be.xeweb.famlin.dev` with the Push Notifications capability in the Apple Developer account, and the APNs key assigned to that bundle id in `eas credentials`. Building on a device with Xcode's automatic signing registers the App IDs (`be.xeweb.famlin.dev`, `be.xeweb.famlin.dev.share-extension`) and the App Group `group.be.xeweb.famlin.dev` for you.
-- **Sign in with Apple** against your own server: the server only accepts `be.xeweb.famlin` as audience by default, so add `be.xeweb.famlin.dev` to **Extra Apple bundle IDs** (`/admin` → Server settings).
+- **Sign in with Apple** against your own server: the server only accepts `be.xeweb.famlin` as audience by default, so add `be.xeweb.famlin.dev` to **Extra Apple bundle IDs** (`/admin` → Integrations → Sign in with Apple).
 
 ### Running on your own iPhone
 
@@ -210,7 +210,7 @@ With a **paid** account you get the full app. With `FAMLIN_IOS_FREE_TEAM=1` ever
 
 Apple's limits for free accounts still apply: the installed app stops launching after 7 days (build it again), and a device takes at most 3 such apps.
 
-Sign in with Apple under your own bundle id (paid account) also needs that id in **Extra Apple bundle IDs** (`/admin` → Server settings) on the server you sign in to.
+Sign in with Apple under your own bundle id (paid account) also needs that id in **Extra Apple bundle IDs** (`/admin` → Integrations → Sign in with Apple) on the server you sign in to.
 
 These settings are for local builds only: `app.config.js` refuses to build when any `FAMLIN_IOS_*` variable is set on EAS, and Android ignores them. When you add an iOS capability to the app, check whether a free account can sign it; if not, add its entitlement to `FREE_TEAM_UNSIGNABLE_ENTITLEMENTS` in `app.config.js`, or this build breaks again.
 

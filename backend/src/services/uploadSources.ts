@@ -41,11 +41,20 @@ export async function withUploadSource<T>(
   sourceFilename: string,
   work: (source: string, directory: string) => Promise<T>
 ): Promise<T> {
+  return withStorageObject(uploadSourceKey(sourceFilename), work)
+}
+
+// Copies one stored object (local disk or S3) into a temp directory for
+// tools that need a real file, and removes it afterwards.
+export async function withStorageObject<T>(
+  key: string,
+  work: (source: string, directory: string) => Promise<T>
+): Promise<T> {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-process-'))
   try {
-    const object = await getStorage().get(uploadSourceKey(sourceFilename))
+    const object = await getStorage().get(key)
     if (!object) throw new Error('Missing upload source')
-    const source = path.join(directory, `source${path.extname(sourceFilename)}`)
+    const source = path.join(directory, `source${path.extname(key)}`)
     try {
       await pipeline(object.stream, createWriteStream(source))
     } finally {

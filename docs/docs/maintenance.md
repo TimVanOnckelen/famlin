@@ -44,10 +44,10 @@ Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the
 - `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database, kept as a safety net next to the zip until Famlin 1.0.0 (same retention). Famlin 1.0.0 will stop writing these. It's **not** written while backup encryption is on: an unencrypted copy of the database next to the encrypted backup would defeat the point. The first encrypted run also deletes the dumps already in `db/`.
 
 :::note[What a backup leaves out]
-A Famlin backup never contains the **OIDC client secret**, the **SMTP password** or the **Immich API key**: enter them again under Server settings after a restore. It also leaves out invite links, API tokens (a token revoked after a leak must not come back), push tokens, devices and notification history. Because it contains every account's password hash, **keep backup files as private as the database itself** — see [Security](./security.md#backups-and-restores).
+A Famlin backup never contains the **OIDC client secret**, the **SMTP password** or the **Immich API key**: enter them again under Integrations after a restore. It also leaves out invite links, API tokens (a token revoked after a leak must not come back), push tokens, devices and notification history. Because it contains every account's password hash, **keep backup files as private as the database itself** — see [Security](./security.md#backups-and-restores).
 :::
 
-**System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Server settings → Notifications; without it you only get the banner. See [System status](./managing-users-and-content.md#system-status).
+**System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Integrations → Email; without it you only get the banner. See [System status](./managing-users-and-content.md#system-status).
 
 ### Encrypting backups
 
@@ -123,7 +123,7 @@ There are two places to restore from:
 
 **After restoring:**
 
-- Enter the **OIDC client secret**, **SMTP password** and **Immich API key** again under Server settings, if you use them. Every other setting is restored.
+- Enter the **OIDC client secret**, **SMTP password** and **Immich API key** again under Integrations, if you use them. Every other setting is restored.
 - Create new invite links as needed; the apps re-register for push on next sign-in; members recreate their [API tokens](/developers/api).
 - The restore is point-in-time: if a password was changed since the backup because it leaked, reset it again.
 

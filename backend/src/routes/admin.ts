@@ -74,7 +74,8 @@ import { computeActiveAlerts, runSystemAlertsCheck } from '../services/systemAle
 import { BackupInProgressError, isBackupRunning, runBackup } from '../services/backup/index.js'
 import { DIAGNOSTIC_REPORT_RETENTION_DAYS } from '../services/diagnosticReports.js'
 import adminBackupRoutes from './adminBackups.js'
-import adminMediaMirrorRoutes from './adminMediaMirror.js'
+import adminMediaMirrorRoutes, { isMirroredElsewhere } from './adminMediaMirror.js'
+import { getIntegrationsOverview, invalidateIntegrationChecks } from '../services/integrations.js'
 
 // Builds the invite link's origin from the request that reached us, since
 // this app has no dedicated PUBLIC_URL env var — self-hosted deployments
@@ -1115,7 +1116,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return
 
     const body = updateServerSettingsBodySchema.parse(request.body)
-    return redactSettings(await updateSettings(applySecretWriteRules(body, await getAllSettings())))
+    const updated = await updateSettings(applySecretWriteRules(body, await getAllSettings()))
+    // The Integrations overview's cached connection checks describe the old
+    // settings.
+    invalidateIntegrationChecks()
+    return redactSettings(updated)
   })
 
   // System status panel (issue #228): backups + disk, jobs + migrations,
@@ -1156,6 +1161,14 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       return reply.status(202).send({ started: true })
     })
   }
+
+  // The admin Integrations overview (services/integrations.ts). `?check=1`
+  // runs the connection checks now instead of serving the cached result.
+  fastify.get('/integrations', async (request, reply) => {
+    if (requireAdmin(request, reply)) return
+    const { check } = request.query as { check?: string }
+    return getIntegrationsOverview({ check: check === '1' || check === 'true' })
+  })
 
   fastify.get('/status/integrations', async (request, reply) => {
     if (requireAdmin(request, reply)) return
@@ -1324,6 +1337,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const provider = getMediaProvider(body.provider)!
     if (!provider.isValidAlbumId(body.externalAlbumId)) {
       return reply.status(400).send({ error: t('errors.validationFailed') })
+    }
+    // Another family's upload mirror album: linking it here would show that
+    // family's photos to this one (issue #420).
+    if (body.provider === 'immich' && (await isMirroredElsewhere(id, body.externalAlbumId))) {
+      return reply.status(409).send({ error: t('errors.mediaAlbumMirroredElsewhere') })
     }
 
     try {

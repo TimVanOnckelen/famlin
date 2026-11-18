@@ -149,7 +149,9 @@
     "backupKeyRequired": "Deze back-up is versleuteld. Upload of plak de noodkit om hem terug te zetten",
     "backupKeyMismatch": "Die sleutel opent deze back-up niet. Gebruik de noodkit (of het exportwachtwoord) waarmee hij gemaakt is",
     "backupKitNotSaved": "Bevestig dat je de noodkit buiten deze server hebt bewaard voordat je versleuteling aanzet",
-    "backupKeyMissing": "Maak eerst een sleutel voor back-upversleuteling aan"
+    "backupKeyMissing": "Maak eerst een sleutel voor back-upversleuteling aan",
+    "mediaMirrorAlbumLinkedElsewhere": "Dit album is gekoppeld aan een andere familie. Ernaartoe spiegelen zou de foto's van deze familie daar tonen — kies of maak een ander album.",
+    "mediaAlbumMirroredElsewhere": "Een andere familie spiegelt haar uploads naar dit album. Het hier koppelen zou de foto's van die familie tonen — kies een ander album."
   },
   "notifications": {
     "newPost": "{{author}} heeft geplaatst in {{group}}: \"{{excerpt}}\"",

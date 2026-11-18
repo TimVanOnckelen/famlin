@@ -149,7 +149,9 @@
     "backupKeyRequired": "Esta cópia de segurança está encriptada. Carregue ou cole o kit de emergência para a restaurar",
     "backupKeyMismatch": "Essa chave não abre esta cópia de segurança. Use o kit de emergência (ou a frase-passe da exportação) com que foi criada",
     "backupKitNotSaved": "Confirme que guardou o kit de emergência fora deste servidor antes de ativar a encriptação",
-    "backupKeyMissing": "Gere primeiro uma chave de encriptação das cópias de segurança"
+    "backupKeyMissing": "Gere primeiro uma chave de encriptação das cópias de segurança",
+    "mediaMirrorAlbumLinkedElsewhere": "Este álbum está ligado a outra família. Espelhar para ele mostraria lá as fotos desta família — escolha ou crie outro álbum.",
+    "mediaAlbumMirroredElsewhere": "Outra família espelha os seus envios para este álbum. Ligá-lo aqui mostraria as fotos dessa família — escolha outro álbum."
   },
   "notifications": {
     "newPost": "{{author}} publicou em {{group}}: \"{{excerpt}}\"",

@@ -37,6 +37,7 @@
     "users": "Gebruikers",
     "groups": "Groepen",
     "content": "Inhoud",
+    "integrations": "Integraties",
     "operations": "Beheer",
     "pushLog": "Pushmeldingenlogboek",
     "devices": "Apparaten",
@@ -290,12 +291,7 @@
     },
     "mediaAlbums": {
       "title": "Gekoppelde albums",
-      "providerLabel": "Mediabron",
-      "providers": {
-        "immich": "Immich",
-        "local": "Lokale mappen"
-      },
-      "notConfigured": "Configureer deze mediabron bij Serverinstellingen om albums te koppelen.",
+      "notConfigured": "Stel deze mediabron in onder Integraties om albums te koppelen.",
       "loadError": "Kan deze mediabron niet lezen om albums op te halen — gekoppelde albums blijven werken.",
       "selectAlbum": "Selecteer een album…",
       "linkAlbum": "Album koppelen",
@@ -315,7 +311,7 @@
     "mediaMirror": {
       "title": "Uploads naar Immich spiegelen",
       "description": "Kopieert de originele foto's en video's van berichten voor de hele familie (ook album- en reisfoto's) naar een Immich-album. Media uit kringen, cadeaulijsten en verhalen worden nooit gespiegeld. Famlin verwijdert alleen wat het zelf heeft toegevoegd en verwijdert nooit iets uit Immich zelf.",
-      "notConfigured": "Voeg een Immich-uploadsleutel toe onder Serverinstellingen → Media-integraties om dit aan te zetten.",
+      "notConfigured": "Voeg een Immich-uploadsleutel toe onder Integraties → Immich → Verbinding om dit aan te zetten.",
       "album": "Album",
       "createAlbum": "Nieuw album \"{{name}}\" aanmaken",
       "since": "Berichten spiegelen vanaf (leeg = vanaf nu)",
@@ -323,7 +319,7 @@
       "enableConfirm": "Wie het Immich-album kan zien, regel je in Immich, niet via het lidmaatschap van de familie: wie uit deze familie wordt verwijderd, blijft zien wat al gespiegeld is. Spiegelen aanzetten?",
       "on": "Aan",
       "paused": "Gepauzeerd",
-      "counts": "{{mirrored}} gespiegeld · {{pending}} wachtend · {{failed}} mislukt",
+      "counts": "{{mirrored}} gespiegeld · {{failed}} mislukt",
       "sinceValue": "sinds {{date}}",
       "lastSynced": "Laatst gesynchroniseerd {{date}}",
       "neverSynced": "Nog niet gesynchroniseerd — de spiegel draait elke 10 minuten.",
@@ -332,9 +328,13 @@
       "syncStarted": "Er is een synchronisatie gestart. Mislukte uploads krijgen opnieuw een reeks pogingen.",
       "pause": "Pauzeren",
       "resume": "Hervatten",
-      "stop": "Stoppen met spiegelen",
-      "stopConfirm": "Stoppen met spiegelen voor deze familie? Het Immich-album houdt wat het al heeft.",
-      "error": "Kan spiegelen niet bijwerken: {{error}}"
+      "error": "Kan spiegelen niet bijwerken: {{error}}",
+      "syncAlreadyRunning": "Er loopt al een synchronisatie. Mislukte uploads worden bij de volgende ronde opnieuw geprobeerd.",
+      "pauseHint": "Pauzeren stopt het toevoegen van foto's; Famlin haalt verwijderde berichten nog wel uit het album."
+    },
+    "photos": {
+      "title": "Foto's",
+      "moved": "Gekoppelde albums en de Immich-uploadspiegel van deze familie beheer je onder Integraties:"
     }
   },
   "content": {
@@ -408,12 +408,6 @@
     "title": "Serverinstellingen",
     "general": "Algemeen",
     "generalDesc": "Taal, publiek adres en app store-links.",
-    "signInAccess": "Aanmelden & toegang",
-    "notifications": "Meldingen",
-    "media": "Media",
-    "statusConfigured": "Geconfigureerd",
-    "statusNotConfigured": "Niet ingesteld",
-    "statusEnabled": "Ingeschakeld",
     "statusDisabled": "Uitgeschakeld",
     "unsavedChanges": "Je hebt niet-opgeslagen wijzigingen",
     "discard": "Verwerpen",
@@ -457,8 +451,6 @@
     "saveSettings": "Instellingen opslaan",
     "saving": "Opslaan...",
     "saved": "Instellingen opgeslagen.",
-    "integrationsHint": "Elke mediabron configureer je één keer voor de hele instantie; welke albums zichtbaar zijn voor welke groep koppel je via de pagina Groepen. Leden kunnen dan foto's uit een gekoppeld album kiezen bij het maken van een bericht.",
-    "immich": "Immich",
     "immichHint": "Configureer één Immich-server + API-sleutel. Aanbevolen API-sleutelrechten: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server-URL",
     "immichApiKey": "API-sleutel",
@@ -474,7 +466,6 @@
     "secretKeep": "Behouden",
     "secretReenter": "Als je dit adres wijzigt, wordt het opgeslagen geheim verwijderd. Vul het opnieuw in voor je opslaat.",
     "immichTestConnection": "Verbinding testen",
-    "immichTesting": "Testen...",
     "immichTestOk": "Verbinding gelukt.",
     "immichTestUnauthorized": "Verbonden, maar de API-sleutel werd geweigerd.",
     "immichTestUnreachable": "Kan de Immich-server niet bereiken.",
@@ -482,7 +473,6 @@
     "localMediaHint": "Serveer foto's rechtstreeks uit een map op deze server (bijv. een NAS-share die in de container is gemount). Elke submap van het pad wordt een koppelbaar album; alleen afbeeldingsbestanden worden getoond.",
     "localMediaPath": "Pad naar mediamap",
     "localMediaTest": "Pad controleren",
-    "localMediaTesting": "Controleren...",
     "localMediaTestOk": "Pad bestaat en is leesbaar.",
     "localMediaTestNotFound": "Pad niet gevonden of niet leesbaar vanaf de server.",
     "localMediaTestNotADirectory": "Pad bestaat maar is geen map.",
@@ -505,13 +495,17 @@
     "exportIncludeMediaHint": "Indien uitgeschakeld moeten alle vermelde media bij herstel al in de geconfigureerde opslag staan. De huisstijl wordt altijd opgenomen.",
     "updateCheck": "Controleren op nieuwe versies",
     "updateCheckHint": "Controleert één keer per dag op GitHub of er een nieuwe release is; er wordt niets over je instantie verzonden.",
-    "updates": "Updates"
+    "updates": "Updates",
+    "accessRestricted_one": "{{count}} toegestaan adres",
+    "accessRestricted_other": "{{count}} toegestane adressen",
+    "accessOpen": "Iedereen met een account of uitnodiging",
+    "integrationsMoved": "Aanmeldproviders, e-mail, push, fotobronnen en opslag staan onder"
   },
   "media": {
     "peopleMapping": {
       "title": "Personen toewijzen",
       "hint": "Wijs personen uit je foto's toe aan familieleden zodat zij met hun naam verschijnen in het familieoverzicht. Alleen toegewezen personen zijn zichtbaar voor familieleden.",
-      "notConfigured": "Immich is nog niet geconfigureerd. Vul hierboven de server-URL en API-sleutel in en sla op om personen toe te wijzen.",
+      "notConfigured": "Immich is nog niet ingesteld. Vul op het tabblad Verbinding de server-URL en API-sleutel in en sla op om personen te koppelen.",
       "mapped": "Toegewezen personen",
       "unmapped": "Niet-toegewezen personen",
       "searchPlaceholder": "Zoek personen…",
@@ -637,7 +631,7 @@
         "weekly_one": "Zondag om {{time}}, {{count}} dump bewaren",
         "weekly_other": "Zondag om {{time}}, {{count}} dumps bewaren"
       },
-      "enableInSettings": "Inschakelen in Serverinstellingen",
+      "enableInSettings": "Inschakelen op de pagina Back-ups",
       "lastBackup": "Laatste back-up",
       "size": "Grootte",
       "sizeValue": "Dump {{dump}} · uploadspiegel {{mirror}}",
@@ -662,18 +656,15 @@
     },
     "integrations": {
       "title": "Integraties",
-      "smtp": "E-mail (SMTP)",
-      "oidc": "Single sign-on (OIDC)",
-      "immich": "Immich",
-      "localMedia": "Lokale mediamap",
-      "notConfigured": "Niet ingesteld",
       "errors": {
         "unreachable": "Onbereikbaar",
         "unauthorized": "Inloggegevens geweigerd",
         "not_found": "Map niet gevonden",
         "not_a_directory": "Geen map",
         "invalid_response": "Ongeldig antwoord"
-      }
+      },
+      "allOk": "Alle verbindingen werken",
+      "open": "Integraties openen"
     },
     "push": {
       "title": "Pushmeldingen",
@@ -910,5 +901,112 @@
     "setupNeedsKitOrPassphrase": "Versleuteld bestand (.age): voeg de noodkit toe, of het wachtwoord waarmee de export gedownload is.",
     "exportPassphrase": "Wachtwoord (optioneel)",
     "exportPassphraseHint": "Met een wachtwoord van minstens 10 tekens wordt de export versleuteld (.zip.age). Je hebt het nodig om de export terug te zetten; het kan niet hersteld worden."
+  },
+  "integrations": {
+    "title": "Integraties",
+    "description": "Elke dienst waarmee Famlin verbinding maakt: waar je foto's vandaan komen, hoe mensen zich aanmelden, hoe berichten verstuurd worden en waar media opgeslagen wordt.",
+    "checkedAt": "Gecontroleerd op {{date}}",
+    "checkNow": "Nu controleren",
+    "checking": "Bezig met controleren…",
+    "open": "Openen",
+    "setUp": "Instellen",
+    "checkSaved": "Verbinding controleren",
+    "checkOk": "Verbonden.",
+    "saveBeforeCheck": "Sla je wijzigingen eerst op: de controle gebruikt de opgeslagen instellingen.",
+    "groups": {
+      "photos": "Foto's",
+      "signin": "Aanmelden",
+      "messages": "Berichten",
+      "storage": "Opslag"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Lokale mappen",
+      "sso": "Single sign-on",
+      "apple": "Inloggen met Apple",
+      "email": "E-mail",
+      "push": "Pushmeldingen",
+      "storage": "Mediaopslag"
+    },
+    "state": {
+      "off": "Niet ingesteld",
+      "ok": "Verbonden",
+      "attention": "Vraagt aandacht",
+      "failing": "Werkt niet"
+    },
+    "issues": {
+      "checkFailed": "De laatste verbindingscontrole is mislukt.",
+      "jobFailed": "Een achtergrondtaak die deze integratie gebruikt, is mislukt. Zie Activiteit.",
+      "mirrorFailures": "Sommige uploads konden niet gespiegeld worden. Zie Families.",
+      "mirrorKeyMissing": "Spiegelen staat aan voor een familie, maar er is geen uploadsleutel opgeslagen.",
+      "publicUrlMissing": "Er is geen openbaar adres ingesteld, dus e-mails gaan zonder links de deur uit.",
+      "pushUnhealthy": "Veel pushmeldingen konden de afgelopen 24 uur niet bezorgd worden.",
+      "storageFallback": "De primaire opslag is niet beschikbaar; media komen uit de reservelocatie."
+    },
+    "usage": {
+      "notSetUp": "Nog niet ingesteld",
+      "mirroring_one": "Spiegelt uploads voor {{count}} familie",
+      "mirroring_other": "Spiegelt uploads voor {{count}} families",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Werkt met de officiële app, zonder instellingen",
+      "appleExtra_one": "Officiële app plus {{count}} eigen build",
+      "appleExtra_other": "Officiële app plus {{count}} eigen builds",
+      "email": "Verstuurt via {{host}}",
+      "pushOff": "Uitgeschakeld",
+      "storageLocal": "Lokale schijf",
+      "storageS3": "S3-compatibele bucket",
+      "storageFallback": "Met een reservelocatie",
+      "families_one": "{{count}} familie",
+      "families_other": "{{count}} families",
+      "albums_one": "{{count}} gekoppeld album",
+      "albums_other": "{{count}} gekoppelde albums",
+      "push_one": "{{count}} toestel · {{delivered}} bezorgd, {{failed}} mislukt in 7 dagen",
+      "push_other": "{{count}} toestellen · {{delivered}} bezorgd, {{failed}} mislukt in 7 dagen"
+    },
+    "tabs": {
+      "connection": "Verbinding",
+      "families": "Families",
+      "people": "Personen",
+      "activity": "Activiteit"
+    },
+    "immich": {
+      "server": "Server en leessleutel",
+      "uploadKey": "Uploadsleutel",
+      "mirrorPerFamily": "Naar welk album elke familie spiegelt, stel je in op het tabblad Families."
+    },
+    "sso": {
+      "access": "Wie een account mag aanmaken, stel je in onder",
+      "accessLink": "Serverinstellingen › Toegangsbeheer"
+    },
+    "apple": {
+      "desc": "Leden kunnen zonder instellingen inloggen met hun Apple ID in de officiële iOS-app. Voeg alleen bundle-id's toe als je een eigen build uitbrengt."
+    },
+    "email": {
+      "desc": "Famlin verstuurt uitnodigingen, meldingen en waarschuwingen voor beheerders via deze mailserver.",
+      "usedFor": "Waarvoor e-mail gebruikt wordt",
+      "alwaysUsed": "Uitnodigingen en waarschuwingen voor beheerders worden altijd verstuurd zolang SMTP is ingesteld.",
+      "publicUrl": "Links in e-mails gebruiken het openbare adres van de server, ingesteld onder",
+      "publicUrlLink": "Serverinstellingen › Algemeen"
+    },
+    "push": {
+      "desc": "Pushmeldingen bereiken de Famlin-app op de telefoons van leden via de pushdienst van Expo.",
+      "devices": "Geregistreerde toestellen"
+    },
+    "families": {
+      "none": "Maak eerst een familie aan.",
+      "family": "Familie",
+      "albums": "Gekoppelde albums",
+      "mirror": "Uploadspiegel",
+      "mirrorOff": "Uit",
+      "mirrorFailed_one": "{{count}} mislukt",
+      "mirrorFailed_other": "{{count}} mislukt"
+    },
+    "activity": {
+      "immich": "Detectie van nieuwe foto's in gekoppelde albums, en de uploadspiegel.",
+      "local": "Detectie van nieuwe foto's in gekoppelde mappen.",
+      "email": "De controle die beheerders elk uur mailt over problemen."
+    },
+    "testing": "Bezig met testen…",
+    "testFailed": "De test kon niet uitgevoerd worden."
   }
 }

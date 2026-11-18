@@ -74,11 +74,6 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
     )
   }
 
-  const handleStop = async () => {
-    if (!(await dialogs.confirmAction(t('groups.mediaMirror.stopConfirm')))) return
-    await run(() => api.removeMediaMirror(groupId))
-  }
-
   if (loadError) return <span className="hint">{loadError}</span>
   if (!overview) {
     return (
@@ -105,7 +100,7 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
       {!target && !overview.configured && <p className="hint">{t('groups.mediaMirror.notConfigured')}</p>}
 
       {!target && overview.configured && (
-        <div className="md-add-member">
+        <div className="mirror-setup">
           <SelectField
             value={albumChoice}
             onValueChange={(value) => setAlbumChoice(value)}
@@ -152,6 +147,7 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
               ))}
             </ul>
           )}
+          <p className="hint">{t('groups.mediaMirror.pauseHint')}</p>
           <div className="settings-test-row">
             <Button
               variant="secondary"
@@ -159,8 +155,10 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
               disabled={busy || !target.enabled}
               onClick={() =>
                 run(async () => {
-                  await api.syncMediaMirror(groupId)
-                  await dialogs.showMessage(t('groups.mediaMirror.syncStarted'))
+                  const { started } = await api.syncMediaMirror(groupId)
+                  await dialogs.showMessage(
+                    t(started ? 'groups.mediaMirror.syncStarted' : 'groups.mediaMirror.syncAlreadyRunning')
+                  )
                 })
               }
             >
@@ -173,9 +171,6 @@ export function MediaMirrorSection({ groupId, groupName }: { groupId: string; gr
               onClick={() => run(() => api.updateMediaMirror(groupId, { enabled: !target.enabled }))}
             >
               {target.enabled ? t('groups.mediaMirror.pause') : t('groups.mediaMirror.resume')}
-            </Button>
-            <Button variant="destructive" type="button" disabled={busy} onClick={handleStop}>
-              {t('groups.mediaMirror.stop')}
             </Button>
           </div>
         </>

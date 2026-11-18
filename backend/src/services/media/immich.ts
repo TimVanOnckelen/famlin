@@ -3,25 +3,22 @@ import { Readable } from 'stream'
 import { getImmichSettings } from '../settings.js'
 import { MediaProviderError, type MediaProvider, type MediaAssetVariant, type MediaPersonSummary } from './types.js'
 
-interface ImmichCreds {
+export interface ImmichCreds {
   serverUrl: string
   apiKey: string
 }
 
-async function requireImmichSettings(): Promise<ImmichCreds> {
-  const { serverUrl, apiKey, configured } = await getImmichSettings()
+// `key: 'mirror'` = the upload mirror's write key (services/media/immichMirror.ts).
+export async function requireImmichSettings(key: 'read' | 'mirror' = 'read'): Promise<ImmichCreds> {
+  const { serverUrl, apiKey, configured } = await getImmichSettings(key)
   if (!configured) throw new MediaProviderError('immich', 'not_configured')
   return { serverUrl, apiKey }
 }
 
-// `allow404` lets a caller (getAlbumInfo) distinguish "album was deleted on
-// the Immich side" from a real failure instead of it collapsing into the
-// generic `unreachable` error below.
-async function immichFetch(
-  path: string,
-  creds: ImmichCreds,
-  init?: RequestInit & { allow404?: boolean }
-): Promise<Response> {
+// The one place an Immich request is made: auth header, a network failure
+// as `unreachable`, a rejected key as `unauthorized`. Any other status is
+// left to the caller.
+export async function immichRequest(path: string, creds: ImmichCreds, init?: RequestInit): Promise<Response> {
   let res: Response
   try {
     res = await fetch(`${creds.serverUrl}/api${path}`, {
@@ -36,6 +33,20 @@ async function immichFetch(
     throw new MediaProviderError('immich', 'unreachable')
   }
   if (res.status === 401 || res.status === 403) throw new MediaProviderError('immich', 'unauthorized')
+  return res
+}
+
+export const normalizeImmichUrl = (serverUrl: string) => serverUrl.trim().replace(/\/$/, '')
+
+// `allow404` lets a caller (getAlbumInfo) distinguish "album was deleted on
+// the Immich side" from a real failure instead of it collapsing into the
+// generic `unreachable` error below.
+async function immichFetch(
+  path: string,
+  creds: ImmichCreds,
+  init?: RequestInit & { allow404?: boolean }
+): Promise<Response> {
+  const res = await immichRequest(path, creds, init)
   if (init?.allow404 && res.status === 404) return res
   if (!res.ok) {
     // The client only ever sees the generic translated message, so keep the
@@ -54,7 +65,7 @@ export async function testImmichConnection(
   serverUrl: string,
   apiKey: string
 ): Promise<{ ok: true } | { ok: false; error: 'unreachable' | 'unauthorized' }> {
-  const creds = { serverUrl: serverUrl.trim().replace(/\/$/, ''), apiKey: apiKey.trim() }
+  const creds = { serverUrl: normalizeImmichUrl(serverUrl), apiKey: apiKey.trim() }
   try {
     await immichFetch('/server/about', creds)
     return { ok: true }

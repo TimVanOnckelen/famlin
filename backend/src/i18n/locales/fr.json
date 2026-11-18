@@ -149,7 +149,9 @@
     "backupKeyRequired": "Cette sauvegarde est chiffrée. Importez ou collez son kit de secours pour la restaurer",
     "backupKeyMismatch": "Cette clé n'ouvre pas cette sauvegarde. Utilisez le kit de secours (ou la phrase de passe de l'export) avec lequel elle a été créée",
     "backupKitNotSaved": "Confirmez que vous avez conservé le kit de secours en dehors de ce serveur avant d'activer le chiffrement",
-    "backupKeyMissing": "Générez d'abord une clé de chiffrement des sauvegardes"
+    "backupKeyMissing": "Générez d'abord une clé de chiffrement des sauvegardes",
+    "mediaMirrorAlbumLinkedElsewhere": "Cet album est lié à une autre famille. Y copier les envois y montrerait les photos de cette famille — choisissez ou créez un autre album.",
+    "mediaAlbumMirroredElsewhere": "Une autre famille copie ses envois dans cet album. Le lier ici montrerait les photos de cette famille — choisissez un autre album."
   },
   "notifications": {
     "newPost": "{{author}} a publié dans {{group}} : « {{excerpt}} »",

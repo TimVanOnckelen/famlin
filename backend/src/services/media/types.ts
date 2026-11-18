@@ -7,7 +7,11 @@ import type { FastifyReply } from 'fastify'
 export class MediaProviderError extends Error {
   constructor(
     public provider: string,
-    public code: 'not_configured' | 'unreachable' | 'unauthorized'
+    // 'album_not_found' and 'request_failed' (Immich answered with an error
+    // for one request) are only raised by the upload mirror
+    // (services/media/immichMirror.ts); every read-side caller maps anything
+    // but not_configured to "unreachable".
+    public code: 'not_configured' | 'unreachable' | 'unauthorized' | 'album_not_found' | 'request_failed'
   ) {
     super(`${provider}: ${code}`)
     this.name = 'MediaProviderError'

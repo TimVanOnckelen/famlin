@@ -37,6 +37,7 @@
     "users": "Users",
     "groups": "Groups",
     "content": "Content",
+    "integrations": "Integrations",
     "operations": "Operations",
     "pushLog": "Push notification log",
     "devices": "Devices",
@@ -290,12 +291,7 @@
     },
     "mediaAlbums": {
       "title": "Linked albums",
-      "providerLabel": "Media source",
-      "providers": {
-        "immich": "Immich",
-        "local": "Local folders"
-      },
-      "notConfigured": "Configure this media source in Server settings to link albums.",
+      "notConfigured": "Set up this media source under Integrations to link albums.",
       "loadError": "Could not read this media source to list albums — linked albums still work.",
       "selectAlbum": "Select an album…",
       "linkAlbum": "Link album",
@@ -315,7 +311,7 @@
     "mediaMirror": {
       "title": "Mirror uploads to Immich",
       "description": "Copies the original photos and videos of this family's whole-family posts (including album and trip photos) into an Immich album. Circle, gift-list and story media are never mirrored. Famlin only removes what it added, and never deletes anything from Immich itself.",
-      "notConfigured": "Add an Immich upload key under Server settings → Media integrations to turn this on.",
+      "notConfigured": "Add an Immich upload key under Integrations → Immich → Connection to turn this on.",
       "album": "Album",
       "createAlbum": "Create a new album \"{{name}}\"",
       "since": "Mirror posts since (empty = from now on)",
@@ -323,7 +319,7 @@
       "enableConfirm": "Who can see the Immich album is managed in Immich, not by family membership: someone removed from this family keeps seeing what was already mirrored. Turn on mirroring?",
       "on": "On",
       "paused": "Paused",
-      "counts": "{{mirrored}} mirrored · {{pending}} pending · {{failed}} failed",
+      "counts": "{{mirrored}} mirrored · {{failed}} failed",
       "sinceValue": "since {{date}}",
       "lastSynced": "Last synced {{date}}",
       "neverSynced": "Not synced yet — the mirror runs every 10 minutes.",
@@ -332,9 +328,13 @@
       "syncStarted": "A sync has started. Failed uploads get a fresh set of retries.",
       "pause": "Pause",
       "resume": "Resume",
-      "stop": "Stop mirroring",
-      "stopConfirm": "Stop mirroring this family? The Immich album keeps what it already has.",
-      "error": "Could not update mirroring: {{error}}"
+      "error": "Could not update mirroring: {{error}}",
+      "syncAlreadyRunning": "A sync is already running. Failed uploads will be retried on its next pass.",
+      "pauseHint": "Pause stops adding photos; Famlin still takes deleted posts back out of the album."
+    },
+    "photos": {
+      "title": "Photos",
+      "moved": "Linked albums and the Immich upload mirror for this family are managed under Integrations:"
     }
   },
   "content": {
@@ -408,12 +408,6 @@
     "title": "Server settings",
     "general": "General",
     "generalDesc": "Language, public address and app store links.",
-    "signInAccess": "Sign-in & access",
-    "notifications": "Notifications",
-    "media": "Media",
-    "statusConfigured": "Configured",
-    "statusNotConfigured": "Not set up",
-    "statusEnabled": "Enabled",
     "statusDisabled": "Disabled",
     "unsavedChanges": "You have unsaved changes",
     "discard": "Discard",
@@ -457,8 +451,6 @@
     "saveSettings": "Save settings",
     "saving": "Saving...",
     "saved": "Settings saved.",
-    "integrationsHint": "Each media source is configured once for the whole instance; which albums are visible to which group is linked from the Groups page. Members can then pick photos from a linked album when composing a post.",
-    "immich": "Immich",
     "immichHint": "Configure one Immich server + API key. Recommended API key permissions: album.read, asset.read, asset.view, asset.download.",
     "immichServerUrl": "Server URL",
     "immichApiKey": "API key",
@@ -474,7 +466,6 @@
     "secretKeep": "Keep it",
     "secretReenter": "Changing this address removes the saved secret. Enter it again before saving.",
     "immichTestConnection": "Test connection",
-    "immichTesting": "Testing...",
     "immichTestOk": "Connected successfully.",
     "immichTestUnauthorized": "Connected, but the API key was rejected.",
     "immichTestUnreachable": "Could not reach the Immich server.",
@@ -482,7 +473,6 @@
     "localMediaHint": "Serve photos straight from a directory on this server (e.g. a NAS share mounted into the container). Every subdirectory of the path becomes a linkable album; only image files are listed.",
     "localMediaPath": "Media folder path",
     "localMediaTest": "Check path",
-    "localMediaTesting": "Checking...",
     "localMediaTestOk": "Path exists and is readable.",
     "localMediaTestNotFound": "Path not found or not readable from the server.",
     "localMediaTestNotADirectory": "Path exists but is not a directory.",
@@ -505,13 +495,17 @@
     "exportIncludeMediaHint": "When disabled, restore requires all listed media to be present in configured storage. Branding is always included.",
     "updateCheck": "Check for new versions",
     "updateCheckHint": "Checks GitHub once a day for a new release; nothing about your instance is sent.",
-    "updates": "Updates"
+    "updates": "Updates",
+    "accessRestricted_one": "{{count}} allowed address",
+    "accessRestricted_other": "{{count}} allowed addresses",
+    "accessOpen": "Anyone with an account or invite",
+    "integrationsMoved": "Sign-in providers, email, push, photo sources and storage are under"
   },
   "media": {
     "peopleMapping": {
       "title": "People mapping",
       "hint": "Map people detected in your photos to family members so they appear with their names in the family feed. Only mapped people become visible to family members.",
-      "notConfigured": "Immich is not configured yet. Fill in the server URL and API key above and save to map people.",
+      "notConfigured": "Immich is not set up yet. Add the server URL and API key on the Connection tab and save to map people.",
       "mapped": "Mapped people",
       "unmapped": "Unmapped people",
       "searchPlaceholder": "Search people…",
@@ -637,7 +631,7 @@
         "weekly_one": "Sundays at {{time}}, keeping {{count}} dump",
         "weekly_other": "Sundays at {{time}}, keeping {{count}} dumps"
       },
-      "enableInSettings": "Enable in Server settings",
+      "enableInSettings": "Enable on the Backups page",
       "lastBackup": "Last backup",
       "size": "Size",
       "sizeValue": "Dump {{dump}} · uploads mirror {{mirror}}",
@@ -662,18 +656,15 @@
     },
     "integrations": {
       "title": "Integrations",
-      "smtp": "Email (SMTP)",
-      "oidc": "Single sign-on (OIDC)",
-      "immich": "Immich",
-      "localMedia": "Local media folder",
-      "notConfigured": "Not configured",
       "errors": {
         "unreachable": "Unreachable",
         "unauthorized": "Rejected credentials",
         "not_found": "Folder not found",
         "not_a_directory": "Not a folder",
         "invalid_response": "Invalid response"
-      }
+      },
+      "allOk": "Everything connected works",
+      "open": "Open Integrations"
     },
     "push": {
       "title": "Push notifications",
@@ -910,5 +901,112 @@
     "setupNeedsKitOrPassphrase": "Encrypted file (.age): add the emergency kit, or the passphrase the export was downloaded with.",
     "exportPassphrase": "Passphrase (optional)",
     "exportPassphraseHint": "With a passphrase of at least 10 characters the export is encrypted (.zip.age). You need it to restore the export; it can't be recovered."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Every service Famlin connects to: where your photos come from, how people sign in, how messages go out and where media is stored.",
+    "checkedAt": "Checked {{date}}",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "open": "Open",
+    "setUp": "Set up",
+    "checkSaved": "Check connection",
+    "checkOk": "Connected.",
+    "saveBeforeCheck": "Save your changes first: the check uses the saved settings.",
+    "groups": {
+      "photos": "Photos",
+      "signin": "Sign-in",
+      "messages": "Messages",
+      "storage": "Storage"
+    },
+    "names": {
+      "immich": "Immich",
+      "local": "Local folders",
+      "sso": "Single sign-on",
+      "apple": "Sign in with Apple",
+      "email": "Email",
+      "push": "Push notifications",
+      "storage": "Media storage"
+    },
+    "state": {
+      "off": "Not set up",
+      "ok": "Connected",
+      "attention": "Needs attention",
+      "failing": "Failing"
+    },
+    "issues": {
+      "checkFailed": "The last connection check failed.",
+      "jobFailed": "A background job that uses it failed. See Activity.",
+      "mirrorFailures": "Some uploads could not be mirrored. See Families.",
+      "mirrorKeyMissing": "Mirroring is on for a family, but no upload key is saved.",
+      "publicUrlMissing": "No public address is set, so emails go out without links.",
+      "pushUnhealthy": "Many push notifications failed to deliver in the last 24 hours.",
+      "storageFallback": "Primary storage is unavailable; media is served from the fallback."
+    },
+    "usage": {
+      "notSetUp": "Not set up yet",
+      "mirroring_one": "Mirroring uploads for {{count}} family",
+      "mirroring_other": "Mirroring uploads for {{count}} families",
+      "sso": "{{name}} · {{host}}",
+      "appleOfficial": "Works with the official app, no setup needed",
+      "appleExtra_one": "Official app plus {{count}} own build",
+      "appleExtra_other": "Official app plus {{count}} own builds",
+      "email": "Sending through {{host}}",
+      "pushOff": "Switched off",
+      "storageLocal": "Local disk",
+      "storageS3": "S3-compatible bucket",
+      "storageFallback": "With a fallback location",
+      "families_one": "{{count}} family",
+      "families_other": "{{count}} families",
+      "albums_one": "{{count}} linked album",
+      "albums_other": "{{count}} linked albums",
+      "push_one": "{{count}} device · {{delivered}} delivered, {{failed}} failed in 7 days",
+      "push_other": "{{count}} devices · {{delivered}} delivered, {{failed}} failed in 7 days"
+    },
+    "tabs": {
+      "connection": "Connection",
+      "families": "Families",
+      "people": "People",
+      "activity": "Activity"
+    },
+    "immich": {
+      "server": "Server and read key",
+      "uploadKey": "Upload key",
+      "mirrorPerFamily": "Which album each family mirrors into is set on the Families tab."
+    },
+    "sso": {
+      "access": "Who may create an account is set under",
+      "accessLink": "Server settings › Access control"
+    },
+    "apple": {
+      "desc": "Members can sign in with their Apple ID in the official iOS app without any setup. Add bundle ids only if you ship your own build."
+    },
+    "email": {
+      "desc": "Famlin sends invites, notifications and admin alerts through this mail server.",
+      "usedFor": "What email is used for",
+      "alwaysUsed": "Invites and admin alerts are always sent while SMTP is set up.",
+      "publicUrl": "Links in emails use the server's public address, set under",
+      "publicUrlLink": "Server settings › General"
+    },
+    "push": {
+      "desc": "Push notifications reach the Famlin app on members' phones through Expo's push service.",
+      "devices": "Registered devices"
+    },
+    "families": {
+      "none": "Create a family first.",
+      "family": "Family",
+      "albums": "Linked albums",
+      "mirror": "Upload mirror",
+      "mirrorOff": "Off",
+      "mirrorFailed_one": "{{count}} failed",
+      "mirrorFailed_other": "{{count}} failed"
+    },
+    "activity": {
+      "immich": "New-photo detection on linked albums, and the upload mirror.",
+      "local": "New-photo detection on linked folders.",
+      "email": "The hourly check that emails admins about problems."
+    },
+    "testing": "Testing…",
+    "testFailed": "The test could not be run."
   }
 }

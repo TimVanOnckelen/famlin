@@ -130,6 +130,45 @@ export interface JobStatus {
   running: boolean
 }
 
+// GET /api/admin/integrations (backend/src/services/integrations.ts).
+export type IntegrationId = 'immich' | 'local' | 'sso' | 'apple' | 'email' | 'push' | 'storage'
+export type IntegrationState = 'off' | 'ok' | 'attention' | 'failing'
+export type IntegrationIssue =
+  | 'checkFailed'
+  | 'jobFailed'
+  | 'mirrorFailures'
+  | 'mirrorKeyMissing'
+  | 'publicUrlMissing'
+  | 'pushUnhealthy'
+  | 'storageFallback'
+
+export interface IntegrationSummary {
+  id: IntegrationId
+  state: IntegrationState
+  configured: boolean
+  issues: IntegrationIssue[]
+  check: IntegrationStatus | null
+  // Status rows of the jobs that act on this integration.
+  jobs: JobStatus[]
+  usage: Record<string, string | number | boolean | null>
+  // Photo sources: every family and what it uses.
+  families?: IntegrationFamily[]
+  // Push only.
+  push?: SystemStatus['push']
+}
+
+export interface IntegrationFamily {
+  groupId: string
+  name: string
+  albums: string[]
+  mirror: { albumName: string; enabled: boolean; mirrored: number; failed: number } | null
+}
+
+export interface IntegrationsOverview {
+  checkedAt: string | null
+  integrations: IntegrationSummary[]
+}
+
 export interface AdminDevice {
   id: string
   installId: string
@@ -210,13 +249,6 @@ export interface IntegrationStatus {
   error?: IntegrationError
 }
 
-export interface IntegrationsStatus {
-  smtp: IntegrationStatus
-  oidc: IntegrationStatus
-  immich: IntegrationStatus
-  localMedia: IntegrationStatus
-}
-
 // A media source members can pick photos from — mirrors the backend's
 // provider registry (backend/src/services/media/registry.ts).
 export type MediaProviderId = 'immich' | 'local'
@@ -257,7 +289,7 @@ export interface MediaMirrorOverview {
   configured: boolean
   maxAttempts: number
   target: MediaMirrorTarget | null
-  counts: { mirrored: number; pending: number; failed: number }
+  counts: { mirrored: number; failed: number }
   failures: { assetKey: string; attempts: number; lastError: string | null; updatedAt: string }[]
 }
 

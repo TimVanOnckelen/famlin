@@ -3,23 +3,22 @@ import { z } from 'zod'
 import { prisma } from '../db.js'
 import { requireAdmin } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
-import { getImmichMirrorSettings } from '../services/settings.js'
-import { recordJobRun } from '../services/jobRuns.js'
+import { getImmichSettings, sameDestination } from '../services/settings.js'
+import { MediaProviderError } from '../services/media/registry.js'
+import { createImmichAlbum, immichAlbumExists, testImmichMirrorKey } from '../services/media/immichMirror.js'
 import {
-  createImmichAlbum,
-  ImmichMirrorError,
-  listImmichAlbumAssetIds,
-  testImmichMirrorKey,
-} from '../services/media/immichMirror.js'
-import {
+  isMirrorRunning,
   MAX_MIRROR_ATTEMPTS,
   MIRROR_PROVIDER,
   resetMirrorFailures,
-  runMediaMirrorJob,
+  startMediaMirrorRun,
 } from '../services/mediaMirror.js'
 
 // Admin side of the Famlin -> Immich upload mirror (issue #420). Registered
 // from inside routes/admin.ts, so its authentication hook applies here too.
+// There is no delete: pausing (enabled: false) is the off switch, and
+// choosing another album makes the job take Famlin's photos out of the old
+// one.
 
 const IMMICH_ALBUM_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -46,33 +45,30 @@ const testMirrorBodySchema = z.object({
   apiKey: z.string().optional(),
 })
 
+const ERROR_KEYS: Partial<Record<MediaProviderError['code'], string>> = {
+  not_configured: 'errors.mediaMirrorNotConfigured',
+  album_not_found: 'errors.mediaMirrorAlbumNotFound',
+  unauthorized: 'errors.mediaMirrorUnauthorized',
+}
+
 function sendMirrorError(err: unknown, request: FastifyRequest, reply: FastifyReply) {
-  if (!(err instanceof ImmichMirrorError)) throw err
-  const t = getT(request)
-  const key =
-    err.code === 'not_configured'
-      ? 'errors.mediaMirrorNotConfigured'
-      : err.code === 'album_not_found'
-        ? 'errors.mediaMirrorAlbumNotFound'
-        : err.code === 'unauthorized'
-          ? 'errors.mediaMirrorUnauthorized'
-          : 'errors.immichUnreachable'
-  return reply.status(err.code === 'unreachable' || err.code === 'request_failed' ? 502 : 400).send({
-    error: t(key),
-    code: err.code,
-  })
+  if (!(err instanceof MediaProviderError)) throw err
+  return reply
+    .status(ERROR_KEYS[err.code] ? 400 : 502)
+    .send({ error: getT(request)(ERROR_KEYS[err.code] ?? 'errors.immichUnreachable'), code: err.code })
 }
 
 async function mirrorOverview(groupId: string) {
   const [target, settings] = await Promise.all([
     prisma.mediaMirrorTarget.findUnique({ where: { groupId } }),
-    getImmichMirrorSettings(),
+    getImmichSettings('mirror'),
   ])
   const base = { configured: settings.configured, maxAttempts: MAX_MIRROR_ATTEMPTS }
-  if (!target) return { ...base, target: null, counts: { mirrored: 0, pending: 0, failed: 0 }, failures: [] }
+  if (!target) return { ...base, target: null, counts: { mirrored: 0, failed: 0 }, failures: [] }
   const where = { provider: target.provider, externalAlbumId: target.externalAlbumId }
-  const [grouped, failures] = await Promise.all([
-    prisma.mediaMirror.groupBy({ by: ['status'], where, _count: { _all: true } }),
+  const [mirrored, failed, failures] = await Promise.all([
+    prisma.mediaMirror.count({ where: { ...where, status: 'mirrored' } }),
+    prisma.mediaMirror.count({ where: { ...where, status: 'failed' } }),
     prisma.mediaMirror.findMany({
       where: { ...where, status: 'failed' },
       orderBy: { updatedAt: 'desc' },
@@ -80,13 +76,7 @@ async function mirrorOverview(groupId: string) {
       select: { assetKey: true, attempts: true, lastError: true, updatedAt: true },
     }),
   ])
-  const count = (status: string) => grouped.find((g) => g.status === status)?._count._all ?? 0
-  return {
-    ...base,
-    target,
-    counts: { mirrored: count('mirrored'), pending: count('pending'), failed: count('failed') },
-    failures,
-  }
+  return { ...base, target, counts: { mirrored, failed }, failures }
 }
 
 export default async function adminMediaMirrorRoutes(fastify: FastifyInstance) {
@@ -110,18 +100,19 @@ export default async function adminMediaMirrorRoutes(fastify: FastifyInstance) {
 
     let album: { externalAlbumId: string; albumName: string } | undefined
     try {
+      if (!(await getImmichSettings('mirror')).configured) throw new MediaProviderError('immich', 'not_configured')
       if (body.album?.mode === 'create') {
         const created = await createImmichAlbum(`Famlin – ${group.name}`)
         album = { externalAlbumId: created.id, albumName: created.albumName }
       } else if (body.album?.mode === 'existing') {
-        // Proves the write key can see (and so add to) the album before
-        // anything is saved.
-        await listImmichAlbumAssetIds(body.album.externalAlbumId)
+        if (await isLinkedElsewhere(id, body.album.externalAlbumId)) {
+          return reply.status(409).send({ error: t('errors.mediaMirrorAlbumLinkedElsewhere') })
+        }
+        // The write key must be able to see the album before it's saved.
+        if (!(await immichAlbumExists(body.album.externalAlbumId))) {
+          throw new MediaProviderError('immich', 'album_not_found')
+        }
         album = { externalAlbumId: body.album.externalAlbumId, albumName: body.album.albumName }
-      } else if (body.enabled) {
-        // Re-enabling needs a working key, or the first run just fails.
-        const { configured } = await getImmichMirrorSettings()
-        if (!configured) throw new ImmichMirrorError('not_configured')
       }
     } catch (err) {
       return sendMirrorError(err, request, reply)
@@ -146,30 +137,17 @@ export default async function adminMediaMirrorRoutes(fastify: FastifyInstance) {
     return mirrorOverview(id)
   })
 
-  // Stops mirroring and forgets the family's album choice. The album keeps
-  // what it holds, and the per-upload rows stay, so choosing the same album
-  // again later picks up where it left off.
-  fastify.delete('/groups/:id/media-mirror', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
-    const { id } = request.params as { id: string }
-    await prisma.mediaMirrorTarget.deleteMany({ where: { groupId: id } })
-    return mirrorOverview(id)
-  })
-
   // "Sync now": gives failed uploads a fresh set of attempts and starts a
-  // run in the background (the job is single-flight, so a run already in
-  // progress just finishes on its own).
+  // run in the background — unless one is running, which then picks the
+  // reset attempts up on its next pass.
   fastify.post('/groups/:id/media-mirror/sync', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     const { id } = request.params as { id: string }
     const target = await prisma.mediaMirrorTarget.findUnique({ where: { groupId: id } })
     if (!target) return reply.status(404).send({ error: getT(request)('errors.mediaMirrorNotFound') })
-    await resetMirrorFailures(target.provider, target.externalAlbumId)
-    recordJobRun(
-      'mediaMirror',
-      () => runMediaMirrorJob(),
-      (result) => ({ ...result })
-    ).catch((err) => request.log.warn({ err }, 'media mirror sync failed'))
+    await resetMirrorFailures(target.externalAlbumId)
+    if (isMirrorRunning()) return reply.status(202).send({ started: false })
+    startMediaMirrorRun().catch((err) => request.log.warn({ err }, 'media mirror sync failed'))
     return reply.status(202).send({ started: true })
   })
 
@@ -178,10 +156,31 @@ export default async function adminMediaMirrorRoutes(fastify: FastifyInstance) {
   fastify.post('/immich/mirror-test', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     const body = testMirrorBodySchema.parse(request.body)
-    const saved = await getImmichMirrorSettings()
-    const sameServer = body.serverUrl.trim().replace(/\/+$/, '') === saved.serverUrl
-    const apiKey = body.apiKey || (sameServer ? saved.apiKey : '')
+    const saved = await getImmichSettings('mirror')
+    const apiKey = body.apiKey || (sameDestination(body.serverUrl, saved.serverUrl) ? saved.apiKey : '')
     if (!apiKey) return { ok: false, error: 'unauthorized' }
     return testImmichMirrorKey(body.serverUrl, apiKey)
   })
+}
+
+// A mirror album must not be linked as a read album to another family: its
+// members would browse this family's photos through it. Checked from both
+// sides — here when choosing the mirror album, isMirroredElsewhere when
+// linking an album (routes/admin.ts).
+export async function isLinkedElsewhere(groupId: string, externalAlbumId: string): Promise<boolean> {
+  const link = await prisma.mediaAlbumLink.findFirst({
+    where: { provider: MIRROR_PROVIDER, externalAlbumId, groupId: { not: groupId } },
+    select: { id: true },
+  })
+  return !!link
+}
+
+// True when another family mirrors into this album — linking it to `groupId`
+// would let that family's photos be browsed here.
+export async function isMirroredElsewhere(groupId: string, externalAlbumId: string): Promise<boolean> {
+  const target = await prisma.mediaMirrorTarget.findFirst({
+    where: { provider: MIRROR_PROVIDER, externalAlbumId, groupId: { not: groupId } },
+    select: { id: true },
+  })
+  return !!target
 }

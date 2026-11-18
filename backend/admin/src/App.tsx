@@ -1,4 +1,5 @@
-import { StoragePage } from './components/StoragePage'
+import { IntegrationsPage } from './components/integrations/IntegrationsPage'
+import { IntegrationPage } from './components/integrations/IntegrationPage'
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -110,7 +111,11 @@ function App() {
         <Route path="/devices" element={<DevicesPage />} />
         <Route path="/diagnostics" element={<DiagnosticsPage />} />
         <Route path="/settings" element={<ServerSettingsPage />} />
-        <Route path="/storage" element={<StoragePage />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
+        <Route path="/integrations/:id" element={<IntegrationPage />} />
+        <Route path="/integrations/:id/:tab" element={<IntegrationPage />} />
+        {/* Storage moved to Integrations; keep old links working. */}
+        <Route path="/storage" element={<Navigate to="/integrations/storage" replace />} />
         <Route path="/status" element={<SystemStatusPage />} />
         <Route path="/backups" element={<BackupsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
