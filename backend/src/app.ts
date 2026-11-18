@@ -10,6 +10,7 @@ import staticPlugin from '@fastify/static'
 import path from 'path'
 import fs from 'fs/promises'
 import { createReadStream } from 'fs'
+import { BackupEncryptionError } from './services/backup/encryption.js'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
@@ -117,6 +118,12 @@ export async function buildApp() {
 
     if (error instanceof ZodError) {
       return reply.status(400).send({ error: t('errors.validationFailed'), details: error.flatten() })
+    }
+
+    // Backup encryption (issue #495): the code is the i18n key and what
+    // clients branch on (e.g. ask for the emergency kit on backupKeyRequired).
+    if (error instanceof BackupEncryptionError) {
+      return reply.status(error.httpStatus).send({ error: t(`errors.${error.code}`), code: error.code })
     }
 
     // Client errors raised by Fastify itself or plugins (bad JSON, payload too

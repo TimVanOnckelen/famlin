@@ -5,7 +5,7 @@ import { finished, pipeline } from 'stream/promises'
 import { buildExportArchive, type MediaLocation } from '../export.js'
 import { readArchiveManifest } from '../import.js'
 import { listDumps } from './restoreDump.js'
-import { encryptStream } from './encryption.js'
+import { encryptStream, heldKeyIds } from './encryption.js'
 import pkg from '../../../package.json' with { type: 'json' }
 
 // Famlin backups (issue #461) in the backups volume: the same zip the admin
@@ -31,32 +31,22 @@ export function backupArchiveFileName(now: Date, encrypted = false): string {
 // ever resolve inside the backups directory.
 const ARCHIVE_NAME_PATTERN = /^famlin-backup-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z\.zip(\.age)?$/
 
-export function isEncryptedBackupFileName(name: string): boolean {
-  return !!parseBackupArchiveFileName(name) && name.endsWith(ENCRYPTED_SUFFIX)
-}
-
-// `famlin-backup-<ts>.meta.json` next to each backup: what the Backups page
-// lists, readable without decrypting. Holds no family data — only what the
-// file name and the manifest's header already say, plus the key it needs.
+// `famlin-backup-<ts>.meta.json` next to an ENCRYPTED backup: what the
+// Backups page lists without decrypting it. No family data.
 export function backupSidecarFileName(archiveName: string): string {
   return archiveName.replace(/\.zip(\.age)?$/, SIDECAR_SUFFIX)
 }
 
-export interface BackupSidecar {
-  format: 1
-  encrypted: boolean
-  // The age1… public key an encrypted backup was encrypted to.
-  keyId: string | null
+interface BackupSidecar {
+  keyId: string // the age1… public key it was encrypted to
   serverVersion: string
   mediaLocation: MediaLocation
-  credentials: boolean
   trigger: string | null
 }
 
 async function readSidecar(dir: string, archiveName: string): Promise<BackupSidecar | null> {
   try {
-    const parsed = JSON.parse(await fsp.readFile(path.join(dir, backupSidecarFileName(archiveName)), 'utf8'))
-    return parsed && parsed.format === 1 ? (parsed as BackupSidecar) : null
+    return JSON.parse(await fsp.readFile(path.join(dir, backupSidecarFileName(archiveName)), 'utf8'))
   } catch {
     return null
   }
@@ -86,10 +76,9 @@ export async function writeBackupArchive(
   mediaLocation: Exclude<MediaLocation, 'archive'>,
   trigger?: string,
   recipient?: string | null
-): Promise<{ file: string; bytes: number; encrypted: boolean }> {
+): Promise<{ file: string; bytes: number }> {
   await fsp.mkdir(dir, { recursive: true })
-  const encrypted = !!recipient
-  const finalPath = path.join(dir, backupArchiveFileName(now, encrypted))
+  const finalPath = path.join(dir, backupArchiveFileName(now, !!recipient))
   const partialPath = finalPath + PARTIAL_SUFFIX
   let failure: Error | null = null
   let archive: Awaited<ReturnType<typeof buildExportArchive>> | null = null
@@ -111,19 +100,15 @@ export async function writeBackupArchive(
       await finished(out)
     }
     if (failure) throw failure
-    const sidecar: BackupSidecar = {
-      format: 1,
-      encrypted,
-      keyId: recipient ?? null,
-      serverVersion: pkg.version,
-      mediaLocation,
-      credentials: true,
-      trigger: trigger ?? null,
+    if (recipient) {
+      const sidecar: BackupSidecar = {
+        keyId: recipient,
+        serverVersion: pkg.version,
+        mediaLocation,
+        trigger: trigger ?? null,
+      }
+      await fsp.writeFile(path.join(dir, backupSidecarFileName(path.basename(finalPath))), JSON.stringify(sidecar))
     }
-    await fsp.writeFile(
-      path.join(dir, backupSidecarFileName(path.basename(finalPath))),
-      JSON.stringify(sidecar, null, 2)
-    )
     await fsp.rename(partialPath, finalPath)
   } catch (err) {
     // Stop a half-built archive (e.g. encryption failed before reading it).
@@ -133,7 +118,7 @@ export async function writeBackupArchive(
     throw err
   }
   const { size } = await fsp.stat(finalPath)
-  return { file: path.basename(finalPath), bytes: size, encrypted }
+  return { file: path.basename(finalPath), bytes: size }
 }
 
 // Keeps the `keep` newest backup archives in `dir` and deletes the rest, plus
@@ -177,72 +162,67 @@ export interface BackupListing {
   // Taken automatically right before a restore on a running server.
   safety: boolean
   valid: boolean
-  // Age-encrypted (issue #495): `keyId` is the age1… public key it needs,
-  // `keyAvailable` whether this server still holds that key (otherwise the
-  // restore needs the admin's emergency kit). Null when unknown.
+  // Age-encrypted (issue #495): `keyId` is the age1… public key it needs (from
+  // its sidecar), `keyAvailable` whether this server holds it — otherwise
+  // the restore needs the emergency kit.
   encrypted: boolean
   keyId: string | null
   keyAvailable: boolean
 }
 
-/**
- * Every backup in the volume — zips in `archiveDir`, dumps in `dumpDir` —
- * newest first. `heldKeyIds`: the public keys this server can decrypt with.
- */
-export async function listBackups(
-  archiveDir: string,
-  dumpDir: string,
-  heldKeyIds: readonly string[] = []
-): Promise<BackupListing[]> {
-  const out: BackupListing[] = []
-  const names = await fsp.readdir(archiveDir).catch(() => [] as string[])
-  for (const name of names) {
-    const createdAt = parseBackupArchiveFileName(name)
-    if (!createdAt) continue
-    const file = path.join(archiveDir, name)
-    const stat = await fsp.lstat(file).catch(() => null)
-    if (!stat?.isFile()) continue
-    const encrypted = name.endsWith(ENCRYPTED_SUFFIX)
-    // A plaintext zip's own manifest is authoritative (reading it also
-    // tells a truncated file apart); the sidecar is for encrypted ones.
-    const sidecar = encrypted ? await readSidecar(archiveDir, name) : null
-    if (sidecar) {
-      const keyId = encrypted ? sidecar.keyId : null
-      out.push({
+// What the listing knows about one archive: an encrypted one from its
+// sidecar, a plaintext one from its own manifest (which also tells a
+// truncated file apart).
+async function archiveInfo(dir: string, name: string) {
+  if (name.endsWith(ENCRYPTED_SUFFIX)) {
+    const sidecar = await readSidecar(dir, name)
+    return {
+      serverVersion: sidecar?.serverVersion ?? null,
+      mediaLocation: sidecar?.mediaLocation ?? null,
+      credentials: true,
+      safety: sidecar?.trigger === 'safety',
+      valid: true,
+      encrypted: true,
+      keyId: sidecar?.keyId ?? null,
+    }
+  }
+  const manifest = await readArchiveManifest(path.join(dir, name)).catch(() => null)
+  return {
+    serverVersion: manifest?.serverVersion ?? null,
+    mediaLocation: manifest ? (manifest.mediaLocation ?? (manifest.includeMedia ? 'archive' : 'storage')) : null,
+    credentials: !!manifest && manifest.format >= 2 && manifest.credentials,
+    safety: manifest?.trigger === 'safety',
+    valid: !!manifest,
+    encrypted: false,
+    keyId: null,
+  }
+}
+
+/** Every backup in the volume — zips in `archiveDir`, dumps in `dumpDir` — newest first. */
+export async function listBackups(archiveDir: string, dumpDir: string): Promise<BackupListing[]> {
+  const [names, heldKeys, dumps] = await Promise.all([
+    fsp.readdir(archiveDir).catch(() => [] as string[]),
+    heldKeyIds(),
+    listDumps(dumpDir),
+  ])
+  const archives = await Promise.all(
+    names.map(async (name): Promise<BackupListing | null> => {
+      const createdAt = parseBackupArchiveFileName(name)
+      const stat = createdAt ? await fsp.lstat(path.join(archiveDir, name)).catch(() => null) : null
+      if (!createdAt || !stat?.isFile()) return null
+      const info = await archiveInfo(archiveDir, name)
+      return {
         name,
         type: 'archive',
         size: stat.size,
         createdAt: createdAt.toISOString(),
-        serverVersion: sidecar.serverVersion,
-        mediaLocation: sidecar.mediaLocation,
-        credentials: sidecar.credentials,
-        safety: sidecar.trigger === 'safety',
-        valid: true,
-        encrypted,
-        keyId,
-        keyAvailable: !encrypted || (!!keyId && heldKeyIds.includes(keyId)),
-      })
-      continue
-    }
-    // A plaintext zip, or an encrypted one without a sidecar (copied in by
-    // hand): listed with what its name tells.
-    const manifest = encrypted ? null : await readArchiveManifest(file).catch(() => null)
-    out.push({
-      name,
-      type: 'archive',
-      size: stat.size,
-      createdAt: createdAt.toISOString(),
-      serverVersion: manifest?.serverVersion ?? null,
-      mediaLocation: manifest ? (manifest.mediaLocation ?? (manifest.includeMedia ? 'archive' : 'storage')) : null,
-      credentials: !!manifest && manifest.format >= 2 && manifest.credentials,
-      safety: manifest?.trigger === 'safety',
-      valid: encrypted || !!manifest,
-      encrypted,
-      keyId: null,
-      keyAvailable: !encrypted,
+        ...info,
+        keyAvailable: !info.encrypted || (!!info.keyId && heldKeys.includes(info.keyId)),
+      }
     })
-  }
-  for (const dump of await listDumps(dumpDir)) {
+  )
+  const out = archives.filter((b): b is BackupListing => b !== null)
+  for (const dump of dumps) {
     out.push({
       ...dump,
       type: 'dump',

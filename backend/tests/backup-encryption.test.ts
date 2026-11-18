@@ -177,7 +177,6 @@ describe('encrypted backups', () => {
 
     const result = await runBackup('manual')
     expect(result.archiveFile).toMatch(/\.zip\.age$/)
-    expect(result.archiveEncrypted).toBe(true)
     expect(result.dumpFile).toBeNull()
     expect(backupDeps.dumpDatabase).not.toHaveBeenCalled()
     expect(await fsp.readdir(BACKUP_DB_DIR)).toEqual([])
@@ -195,7 +194,7 @@ describe('encrypted backups', () => {
       await fsp.readFile(path.join(BACKUP_ARCHIVE_DIR, backupSidecarFileName(result.archiveFile)), 'utf8')
     )
     const { currentKey } = await getBackupEncryptionStatus()
-    expect(sidecar).toMatchObject({ encrypted: true, keyId: currentKey!.id, trigger: 'manual' })
+    expect(sidecar).toMatchObject({ keyId: currentKey!.id, trigger: 'manual' })
 
     const list = await app.inject({ method: 'GET', url: '/api/admin/backups', headers: authHeader(admin) })
     expect(list.json().backups.find((b: { name: string }) => b.name === result.archiveFile)).toMatchObject({
@@ -208,7 +207,6 @@ describe('encrypted backups', () => {
     // Deleting removes the sidecar too (the earlier plaintext backup stays).
     await app.inject({ method: 'DELETE', url: `/api/admin/backups/${result.archiveFile}`, headers: authHeader(admin) })
     expect((await fsp.readdir(BACKUP_ARCHIVE_DIR)).filter((n) => n.startsWith('famlin-backup-')).sort()).toEqual([
-      'famlin-backup-2026-11-01T03-00-00-000Z.meta.json',
       'famlin-backup-2026-11-01T03-00-00-000Z.zip',
     ])
   })

@@ -43,9 +43,9 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   const [needsAccount, setNeedsAccount] = useState<RestoreSource | null>(null)
   const [missingMedia, setMissingMedia] = useState<string[]>([])
   // An encrypted backup (issue #495): its emergency kit, or an encrypted
-  // export's passphrase. `needsKey`: the server asked for it.
+  // export's passphrase. `keyAskedFor`: the file the server asked a key for.
   const [restoreKey, setRestoreKey] = useState('')
-  const [needsKey, setNeedsKey] = useState<RestoreSource['kind'] | null>(null)
+  const [keyAskedFor, setKeyAskedFor] = useState<RestoreSource['file'] | null>(null)
 
   useEffect(() => {
     if (mode !== 'restore') return
@@ -82,7 +82,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
       if (err instanceof ApiError && err.code === 'restoreAdminRequired' && !admin) {
         setNeedsAccount(source)
       } else if (err instanceof ApiError && (err.code === 'backupKeyRequired' || err.code === 'backupKeyMismatch')) {
-        setNeedsKey(source.kind)
+        setKeyAskedFor(source.file)
         setError(err.message)
       } else {
         setError(err instanceof Error ? err.message : t('setup.restoreFailed'))
@@ -119,15 +119,15 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
   const switchMode = () => {
     setMode(mode === 'restore' ? 'create' : 'restore')
     setNeedsAccount(null)
-    setNeedsKey(null)
+    setKeyAskedFor(null)
     setRestoreKey('')
     setError(null)
     setMissingMedia([])
   }
 
   const selectedBackup = backups?.find((b) => b.name === selected)
-  const volumeNeedsKey = needsKey === 'volume' || (!!selectedBackup?.encrypted && !selectedBackup.keyAvailable)
-  const uploadNeedsKey = needsKey === 'upload' || !!upload?.name.endsWith('.age')
+  const volumeNeedsKey = keyAskedFor === selected || (!!selectedBackup?.encrypted && !selectedBackup.keyAvailable)
+  const uploadNeedsKey = (!!upload && keyAskedFor === upload) || !!upload?.name.endsWith('.age')
 
   const mediaLabel = (backup: VolumeBackup) => {
     if (backup.type === 'dump') return t('setup.restoreMediaMirror')
@@ -221,10 +221,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                         value={backup.name}
                         checked={selected === backup.name}
                         disabled={!backup.valid || isLoading}
-                        onChange={() => {
-                          setSelected(backup.name)
-                          if (needsKey === 'volume') setNeedsKey(null)
-                        }}
+                        onChange={() => setSelected(backup.name)}
                       />
                       <span className="setup-backup-body">
                         <span className="setup-backup-date">{new Date(backup.createdAt).toLocaleString()}</span>
@@ -278,10 +275,7 @@ export function SetupPage({ onSetupComplete, onRestoredWithAccounts }: SetupPage
                 <Input
                   type="file"
                   accept=".zip,.age,application/zip"
-                  onChange={(e) => {
-                    setUpload(e.target.files?.[0] ?? null)
-                    if (needsKey === 'upload') setNeedsKey(null)
-                  }}
+                  onChange={(e) => setUpload(e.target.files?.[0] ?? null)}
                   required
                 />
               </label>

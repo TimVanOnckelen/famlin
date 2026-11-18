@@ -1,11 +1,14 @@
 import fs from 'fs'
 import fsp from 'fs/promises'
+import path from 'path'
 import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import type { ReadableStream as NodeWebReadableStream } from 'stream/web'
 import { Decrypter, Encrypter, generateX25519Identity, identityToRecipient } from 'age-encryption'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../../db.js'
+import { BACKUP_KEYS_ADVISORY_LOCK_KEY } from '../setupLock.js'
+import { RestoreError } from '../import.js'
 
 // Encrypted backups (issue #495), modelled on Home Assistant's: the server
 // generates an age X25519 identity and keeps it, so scheduled backups run
@@ -25,10 +28,6 @@ const KEYS_KEY = 'backupEncryptionKeys'
 // with the kit confirmed) — first setup and rotation alike — so no backup is
 // ever encrypted to a key that exists only on this server.
 const PENDING_KEY = 'backupEncryptionPendingKey'
-
-// Serializes every read-modify-write of the key rows (two tabs rotating, a
-// rotation during a restore adopting its key), so no key is ever lost.
-const KEYS_ADVISORY_LOCK_KEY = 4_951_206n
 
 // Every age file starts with this line.
 const AGE_MAGIC = Buffer.from('age-encryption.org/v1\n')
@@ -54,8 +53,14 @@ export interface BackupEncryptionStatus {
   keys: BackupKey[]
 }
 
+// The code is also the i18n key (`errors.<code>`) and the `code` clients
+// branch on: backupKeyRequired asks for the emergency kit, backupKeyMismatch
+// says the given one doesn't open the backup. app.ts's error handler sends it.
 export class BackupEncryptionError extends Error {
-  constructor(readonly code: 'noKey' | 'unknownKey') {
+  constructor(
+    readonly code: 'backupKeyMissing' | 'backupKeyRequired' | 'backupKeyMismatch',
+    readonly httpStatus = 400
+  ) {
     super(code)
     this.name = 'BackupEncryptionError'
   }
@@ -98,7 +103,7 @@ async function writeSetting(db: Db, key: string, value: string): Promise<void> {
 
 function withKeysLock<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${KEYS_ADVISORY_LOCK_KEY})`
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BACKUP_KEYS_ADVISORY_LOCK_KEY})`
     return fn(tx)
   })
 }
@@ -126,13 +131,13 @@ export async function backupEncryptionRecipient(): Promise<string | null> {
   const enabledRow = await prisma.setting.findUnique({ where: { key: ENABLED_KEY } })
   if (enabledRow?.value !== 'true') return null
   const [current] = await readKeys()
-  if (!current) throw new BackupEncryptionError('noKey')
+  if (!current) throw new BackupEncryptionError('backupKeyMissing')
   return current.id
 }
 
-/** Every identity this server holds (confirmed keys, newest first), for decrypting. */
-export async function storedBackupIdentities(): Promise<string[]> {
-  return (await readKeys()).map((k) => k.identity)
+/** The public ids of every key this server can decrypt with. */
+export async function heldKeyIds(): Promise<string[]> {
+  return (await readKeys()).map((k) => k.id)
 }
 
 /**
@@ -160,7 +165,7 @@ export async function setBackupEncryptionEnabled(enabled: boolean): Promise<void
         await writeSetting(tx, KEYS_KEY, JSON.stringify([pending, ...keys.filter((k) => k.id !== pending.id)]))
         await tx.setting.deleteMany({ where: { key: PENDING_KEY } })
       } else if (keys.length === 0) {
-        throw new BackupEncryptionError('noKey')
+        throw new BackupEncryptionError('backupKeyMissing')
       }
     }
     await writeSetting(tx, ENABLED_KEY, String(enabled))
@@ -173,7 +178,7 @@ export async function setBackupEncryptionEnabled(enabled: boolean): Promise<void
  * backups use and turns encryption on, so the restored server keeps
  * producing backups the same emergency kit opens — the admin already has it.
  */
-export async function adoptBackupIdentity(
+async function adoptBackupIdentity(
   identity: string,
   options: { makeCurrent: boolean },
   now = new Date()
@@ -200,14 +205,13 @@ export async function adoptBackupIdentity(
 export async function backupKeyForKit(id?: string): Promise<StoredKey> {
   const [keys, pending] = await Promise.all([readKeys(), readPending()])
   const key = id ? [pending, ...keys].find((k) => k?.id === id) : (pending ?? keys[0])
-  if (!key) throw new BackupEncryptionError('unknownKey')
+  if (!key) throw new BackupEncryptionError('backupKeyMissing', 404)
   return key
 }
 
 // What an admin pasted or uploaded to unlock a backup: an emergency kit (or
-// a bare AGE-SECRET-KEY-1… line), or — for a passphrase-protected export —
-// the passphrase itself.
-export interface KeyInput {
+// a bare AGE-SECRET-KEY-1… line), or an encrypted export's passphrase.
+interface KeyInput {
   identities: string[]
   passphrase: string | null
 }
@@ -218,8 +222,7 @@ export function parseKeyInput(text: string | undefined | null): KeyInput {
   return { identities, passphrase: identities.length === 0 && trimmed ? trimmed : null }
 }
 
-/** Whether `file` is an age-encrypted file, from its first bytes. */
-export async function isAgeEncrypted(file: string): Promise<boolean> {
+async function isAgeEncrypted(file: string): Promise<boolean> {
   const handle = await fsp.open(file, 'r')
   try {
     const buf = Buffer.alloc(AGE_MAGIC.length)
@@ -230,7 +233,7 @@ export async function isAgeEncrypted(file: string): Promise<boolean> {
   }
 }
 
-export type DecryptionKey = { identity: string } | { passphrase: string }
+type DecryptionKey = { identity: string } | { passphrase: string }
 
 function toWeb(stream: Readable): ReadableStream<Uint8Array> {
   return Readable.toWeb(stream) as unknown as ReadableStream<Uint8Array>
@@ -247,9 +250,8 @@ function decrypterFor(key: DecryptionKey): Decrypter {
   return decrypter
 }
 
-// age processes (and authenticates) the whole header before decrypt()
-// resolves, so this checks a key against a multi-GB file without reading
-// past the header.
+// age authenticates the whole header before decrypt() resolves, so this
+// checks a key without reading past the header.
 async function opensHeader(file: string, key: DecryptionKey): Promise<boolean> {
   const source = fs.createReadStream(file)
   try {
@@ -264,14 +266,14 @@ async function opensHeader(file: string, key: DecryptionKey): Promise<boolean> {
 }
 
 /**
- * The first candidate that opens `file` — the admin's own input first, then
- * every key this server holds — or null when none does.
+ * The key for a backup about to be restored, checked against its header:
+ * null for a plaintext zip, else the admin's input (kit or passphrase) or a
+ * stored key that opens it. Throws backupKeyRequired/backupKeyMismatch.
  */
-export async function findDecryptionKey(
-  file: string,
-  input: KeyInput,
-  stored: string[]
-): Promise<DecryptionKey | null> {
+export async function resolveRestoreKey(file: string, keyText?: string): Promise<DecryptionKey | null> {
+  if (!(await isAgeEncrypted(file))) return null
+  const input = parseKeyInput(keyText)
+  const stored = (await readKeys()).map((k) => k.identity)
   const candidates: DecryptionKey[] = [
     ...input.identities.map((identity) => ({ identity })),
     ...(input.passphrase ? [{ passphrase: input.passphrase }] : []),
@@ -280,18 +282,32 @@ export async function findDecryptionKey(
   for (const key of candidates) {
     if (await opensHeader(file, key)) return key
   }
-  return null
+  throw new BackupEncryptionError(
+    input.identities.length > 0 || input.passphrase ? 'backupKeyMismatch' : 'backupKeyRequired'
+  )
 }
 
-/** Decrypts `src` into `dest` (authenticated: a tampered file fails, and `dest` is removed). */
-export async function decryptFile(src: string, dest: string, key: DecryptionKey): Promise<void> {
+/**
+ * The plain zip to restore: `file` itself, or — with a key — `file`
+ * decrypted into `workDir` (authenticated: a tampered file fails as an
+ * invalid archive).
+ */
+export async function decryptForRestore(file: string, key: DecryptionKey | null, workDir: string): Promise<string> {
+  if (!key) return file
+  const dest = path.join(workDir, 'decrypted.zip')
   try {
-    const plaintext = await decrypterFor(key).decrypt(toWeb(fs.createReadStream(src)))
+    const plaintext = await decrypterFor(key).decrypt(toWeb(fs.createReadStream(file)))
     await pipeline(fromWeb(plaintext), fs.createWriteStream(dest))
-  } catch (err) {
+  } catch {
     await fsp.rm(dest, { force: true })
-    throw err
+    throw new RestoreError('invalidArchive', 'Decrypting the backup failed')
   }
+  return dest
+}
+
+/** After a restore: keep the identity of an emergency kit that opened the backup. */
+export async function keepRestoreKey(key: DecryptionKey | null, makeCurrent: boolean): Promise<void> {
+  if (key && 'identity' in key) await adoptBackupIdentity(key.identity, { makeCurrent })
 }
 
 /** Encrypts a plaintext stream to a backup key (`age1…`) or a passphrase. */
@@ -306,48 +322,24 @@ export async function encryptStream(
 }
 
 /**
- * The emergency kit: an age identity file (comment lines start with `#`, so
+ * The emergency kit: an age identity file (`#` lines are comments, so
  * `age -d -i kit.txt backup.zip.age` reads it as is) with instructions.
  */
-export function emergencyKitText(
-  key: { id: string; createdAt: string; identity: string },
-  instanceName: string,
-  lines: { title: string; instance: string; created: string; publicKey: string; body: string[] }
-): string {
+export function emergencyKitText(key: StoredKey, instanceName: string, t: (key: string) => string): string {
   return [
-    `# ${lines.title}`,
+    `# ${t('backupKit.title')}`,
     '#',
-    `# ${lines.instance}: ${instanceName}`,
-    `# ${lines.created}: ${key.createdAt}`,
-    `# ${lines.publicKey}: ${key.id}`,
+    `# ${t('backupKit.instance')}: ${instanceName}`,
+    `# ${t('backupKit.created')}: ${key.createdAt}`,
+    `# ${t('backupKit.publicKey')}: ${key.id}`,
     '#',
-    ...lines.body.map((l) => (l ? `# ${l}` : '#')),
+    ...t('backupKit.body')
+      .split('\n')
+      .map((l) => (l ? `# ${l}` : '#')),
     '#',
     '#   age -d -i famlin-emergency-kit.txt famlin-backup-<date>.zip.age > famlin-backup.zip',
     '',
     key.identity,
     '',
   ].join('\n')
-}
-
-export class BackupKeyError extends Error {
-  // keyRequired: encrypted, and no key this server holds opens it — ask the
-  // admin for the emergency kit. keyMismatch: the key they gave doesn't
-  // either.
-  constructor(readonly code: 'keyRequired' | 'keyMismatch') {
-    super(code)
-    this.name = 'BackupKeyError'
-  }
-}
-
-/**
- * Finds the key for a backup about to be restored, without decrypting it
- * yet: null for a plaintext zip, the key for an encrypted one, or
- * BackupKeyError when neither the admin's input nor a stored key opens it.
- */
-export async function resolveRestoreKey(file: string, input: KeyInput): Promise<DecryptionKey | null> {
-  if (!(await isAgeEncrypted(file))) return null
-  const key = await findDecryptionKey(file, input, await storedBackupIdentities())
-  if (key) return key
-  throw new BackupKeyError(input.identities.length > 0 || input.passphrase ? 'keyMismatch' : 'keyRequired')
 }

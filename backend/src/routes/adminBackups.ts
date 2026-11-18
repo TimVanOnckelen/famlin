@@ -2,13 +2,12 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { requireAdmin } from '../plugins/auth.js'
+import { requireAdmin, requireAdminSession } from '../plugins/auth.js'
 import { getT } from '../i18n/index.js'
 import { getAllSettings } from '../services/settings.js'
 import { backupKeyInputSchema } from '../types.js'
-import { listBackups, removeBackupArchive, parseBackupArchiveFileName } from '../services/backup/archive.js'
+import { listBackups, removeBackupArchive } from '../services/backup/archive.js'
 import {
-  BackupEncryptionError,
   backupKeyForKit,
   emergencyKitText,
   generateBackupKey,
@@ -40,87 +39,49 @@ export async function restoreConfirmName(): Promise<string> {
   return brandName.trim() || 'Famlin'
 }
 
-const encryptionBody = z.object({
-  enabled: z.boolean(),
-  // Turning encryption on: the admin confirms the emergency kit is stored
-  // somewhere other than this server (issue #495).
-  kitSaved: z.boolean().optional(),
-})
+// kitSaved: turning on, the admin confirms the emergency kit is stored elsewhere.
+const encryptionBody = z.object({ enabled: z.boolean(), kitSaved: z.boolean().optional() })
 const kitQuery = z.object({ key: z.string().max(200).optional() })
 
 export default async function adminBackupRoutes(fastify: FastifyInstance) {
   fastify.get('/backups', async (request, reply) => {
     if (requireAdmin(request, reply)) return
-    const encryption = await getBackupEncryptionStatus()
-    return {
-      backups: await listBackups(
-        BACKUP_ARCHIVE_DIR,
-        BACKUP_DB_DIR,
-        encryption.keys.map((k) => k.id)
-      ),
-      backupRunning: isBackupRunning(),
-      restore: getRestoreStatus(),
-      confirmName: await restoreConfirmName(),
-      encryption,
-    }
+    const [backups, confirmName, encryption] = await Promise.all([
+      listBackups(BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR),
+      restoreConfirmName(),
+      getBackupEncryptionStatus(),
+    ])
+    return { backups, backupRunning: isBackupRunning(), restore: getRestoreStatus(), confirmName, encryption }
   })
 
-  // Backup encryption (issue #495). Key management is a signed-in admin
-  // only, never an API token: the emergency kit is the one way a backup key
-  // leaves this server.
+  // Backup encryption (issue #495): signed-in admins only, since the
+  // emergency kit is the one way a backup key leaves this server.
 
-  // Generates a new PENDING key: new backups keep using the current key until
-  // the admin downloads the new kit and confirms it's saved (PUT below, with
-  // kitSaved). Older keys stay, so this server can still restore the
-  // backups made with them.
+  // A new PENDING key: backups keep using the current one until the admin
+  // confirms its kit is saved (PUT below). Older keys are kept.
   fastify.post('/backups/encryption/key', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
-    if (request.authMethod !== 'session') {
-      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
-    }
+    if (requireAdminSession(request, reply)) return
     await generateBackupKey()
     request.log.warn({ adminId: request.user!.id }, 'generated a new backup encryption key')
     return { encryption: await getBackupEncryptionStatus() }
   })
 
   fastify.put('/backups/encryption', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
-    const t = getT(request)
-    if (request.authMethod !== 'session') return reply.status(403).send({ error: t('errors.sessionRequired') })
+    if (requireAdminSession(request, reply)) return
     const { enabled, kitSaved } = encryptionBody.parse(request.body)
-    if (enabled && kitSaved !== true) return reply.status(400).send({ error: t('errors.backupKitNotSaved') })
-    try {
-      await setBackupEncryptionEnabled(enabled)
-    } catch (err) {
-      if (!(err instanceof BackupEncryptionError)) throw err
-      return reply.status(400).send({ error: t('errors.backupKeyMissing') })
+    if (enabled && kitSaved !== true) {
+      return reply.status(400).send({ error: getT(request)('errors.backupKitNotSaved') })
     }
+    await setBackupEncryptionEnabled(enabled)
     request.log.warn({ adminId: request.user!.id, enabled }, 'changed backup encryption')
     return { encryption: await getBackupEncryptionStatus() }
   })
 
-  // The emergency kit of the pending key (else the current one), or of
-  // another one by its public key (`?key=age1…`): an age identity file with
-  // instructions.
+  // The kit of the pending key (else the current one), or of `?key=age1…`.
   fastify.get('/backups/encryption/kit', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
-    const t = getT(request)
-    if (request.authMethod !== 'session') return reply.status(403).send({ error: t('errors.sessionRequired') })
-    const { key: keyId } = kitQuery.parse(request.query)
-    let key
-    try {
-      key = await backupKeyForKit(keyId)
-    } catch (err) {
-      if (!(err instanceof BackupEncryptionError)) throw err
-      return reply.status(404).send({ error: t('errors.backupKeyMissing') })
-    }
-    const text = emergencyKitText(key, await restoreConfirmName(), {
-      title: t('backupKit.title'),
-      instance: t('backupKit.instance'),
-      created: t('backupKit.created'),
-      publicKey: t('backupKit.publicKey'),
-      body: t('backupKit.body').split('\n'),
-    })
+    if (requireAdminSession(request, reply)) return
+    const key = await backupKeyForKit(kitQuery.parse(request.query).key)
+    const text = emergencyKitText(key, await restoreConfirmName(), getT(request))
     request.log.warn({ adminId: request.user!.id, key: key.id }, 'downloaded a backup emergency kit')
     reply.header('content-type', 'text/plain; charset=utf-8')
     reply.header('content-disposition', 'attachment; filename="famlin-emergency-kit.txt"')
@@ -141,9 +102,8 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
       if (!filePath || !stat?.isFile()) {
         return reply.status(404).send({ error: getT(request)('errors.restoreDumpUnknown') })
       }
-      // An encrypted backup downloads as stored (still encrypted).
-      const zip = backupFileKind(file) === 'archive' && file.endsWith('.zip')
-      reply.header('content-type', zip ? 'application/zip' : 'application/octet-stream')
+      // Served as stored: an encrypted `.zip.age` is opaque bytes.
+      reply.header('content-type', file.endsWith('.zip') ? 'application/zip' : 'application/octet-stream')
       reply.header('content-length', String(stat.size))
       reply.header('content-disposition', `attachment; filename="${file}"`)
       reply.header('cache-control', 'no-store')
@@ -153,15 +113,14 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
 
   // Destructive, so a signed-in admin only — never an API token.
   fastify.delete('/backups/:file', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
+    if (requireAdminSession(request, reply)) return
     const t = getT(request)
-    if (request.authMethod !== 'session') return reply.status(403).send({ error: t('errors.sessionRequired') })
     const { file } = fileParams.parse(request.params)
     if (isBackupRunning() || isRestoreRunning()) return reply.status(409).send({ error: t('errors.backupInProgress') })
     const filePath = backupFilePath(file)
     const stat = filePath ? await fsp.lstat(filePath).catch(() => null) : null
     if (!filePath || !stat?.isFile()) return reply.status(404).send({ error: t('errors.restoreDumpUnknown') })
-    if (parseBackupArchiveFileName(file)) await removeBackupArchive(BACKUP_ARCHIVE_DIR, file)
+    if (backupFileKind(file) === 'archive') await removeBackupArchive(BACKUP_ARCHIVE_DIR, file)
     else await fsp.rm(filePath)
     return reply.status(204).send()
   })
@@ -172,14 +131,15 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
   // account's password to the backup's, which no token should be able to
   // do. The admin confirms by typing the family's name. Runs in the
   // background — 202, then GET /api/auth/restore-status; every session,
-  // the admin's own included, ends when it completes.
+  // the admin's own included, ends when it completes. An encrypted backup
+  // whose key this server lacks 400s backupKeyRequired until `key` (the
+  // emergency kit) is sent.
   fastify.post(
     '/backups/:file/restore',
     { config: { rateLimit: { max: 3, timeWindow: '1 hour' } } },
     async (request, reply) => {
-      if (requireAdmin(request, reply)) return
+      if (requireAdminSession(request, reply)) return
       const t = getT(request)
-      if (request.authMethod !== 'session') return reply.status(403).send({ error: t('errors.sessionRequired') })
       const { file } = fileParams.parse(request.params)
       const { confirm, key } = restoreBody.parse(request.body)
       const expected = await restoreConfirmName()
@@ -193,11 +153,6 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
       } catch (err) {
         if (!(err instanceof RunningRestoreError)) throw err
         if (err.code === 'unknownBackup') return reply.status(404).send({ error: t('errors.restoreDumpUnknown') })
-        // The client asks for the emergency kit and retries.
-        if (err.code === 'keyRequired')
-          return reply.status(400).send({ error: t('errors.backupKeyRequired'), code: 'backupKeyRequired' })
-        if (err.code === 'keyMismatch')
-          return reply.status(400).send({ error: t('errors.backupKeyMismatch'), code: 'backupKeyMismatch' })
         return reply.status(409).send({ error: t('errors.backupInProgress') })
       }
       return reply.status(202).send({ started: true })

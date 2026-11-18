@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { storageStatus, startStorageMigration, StorageMigrationError } from '../services/storage/migration.js'
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../db.js'
-import { invalidateSessionCache, requireAdmin } from '../plugins/auth.js'
+import { invalidateSessionCache, requireAdmin, requireAdminSession } from '../plugins/auth.js'
 import {
   applySecretWriteRules,
   getAllSettings,
@@ -53,18 +53,6 @@ import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/
 import { buildExportArchive } from '../services/export.js'
 import { createExportDownloadToken, redeemExportDownloadToken } from '../services/exportDownloadTokens.js'
 import { encryptStream } from '../services/backup/encryption.js'
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    // Set by a one-time export download token minted with a passphrase.
-    exportPassphrase?: string
-  }
-}
-
-// age's scrypt passphrase is the export's only protection once it leaves the
-// server, so a minimum length rather than none.
-// Trimmed, as every restore form trims what's typed in.
-const exportTokenBodySchema = z.object({ passphrase: z.string().trim().min(10).max(1000).optional() })
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
@@ -153,6 +141,17 @@ async function isLastAdmin(userId: string): Promise<boolean> {
   const adminCount = await prisma.user.count({ where: { isAdmin: true } })
   return adminCount <= 1
 }
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    // Set by a one-time export download token minted with a passphrase.
+    exportPassphrase?: string
+  }
+}
+
+// The export's only protection once it leaves the server, so a minimum
+// length; trimmed, as the restore forms trim what's typed.
+const exportTokenBodySchema = z.object({ passphrase: z.string().trim().min(10).max(1000).optional() })
 
 export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', async (request, reply) => {
@@ -1507,10 +1506,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // Optional `passphrase` (issue #495): the export it downloads is
   // age-encrypted with it (`.zip.age`).
   fastify.post('/export/token', async (request, reply) => {
-    if (requireAdmin(request, reply)) return
-    if (request.authMethod !== 'session') {
-      return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
-    }
+    if (requireAdminSession(request, reply)) return
     const { passphrase } = exportTokenBodySchema.parse(request.body ?? {})
     return { token: await createExportDownloadToken(request.user!.id, { passphrase }) }
   })

@@ -5,7 +5,7 @@ import { uploadsDir } from '../../config.js'
 import { prisma } from '../../db.js'
 import { getAllSettings, type ServerSettings } from '../settings.js'
 import { recordJobRun } from '../jobRuns.js'
-import { dumpDatabase, pruneDbDumps } from './dbDump.js'
+import { deleteDbDumps, dumpDatabase, pruneDbDumps } from './dbDump.js'
 import { mirrorUploads, type MirrorResult } from './mirror.js'
 import { pruneBackupArchives, writeBackupArchive } from './archive.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR, BACKUP_UPLOADS_DIR } from './paths.js'
@@ -36,7 +36,6 @@ export interface BackupResult {
   trigger: BackupTrigger
   archiveFile: string
   archiveBytes: number
-  archiveEncrypted: boolean
   prunedArchives: number
   // null: no dump this run (encrypted backups).
   dumpFile: string | null
@@ -155,14 +154,16 @@ export function runBackup(
       // still leaves a complete zip + mirror — but fails the run, so the
       // admin is told.
       const dump = recipient ? null : await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
-      // Encrypted: remove every remaining plaintext dump, which would
-      // otherwise sit next to the encrypted backups forever.
-      const pruned = prune ? await pruneDbDumps(BACKUP_DB_DIR, recipient ? 0 : settings.backupRetention) : []
+      // Encrypted: no plaintext dump may outlive the switch.
+      const pruned = !prune
+        ? []
+        : recipient
+          ? await deleteDbDumps(BACKUP_DB_DIR)
+          : await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention)
       return {
         trigger,
         archiveFile: archive.file,
         archiveBytes: archive.bytes,
-        archiveEncrypted: archive.encrypted,
         prunedArchives: prunedArchives.length,
         dumpFile: dump?.file ?? null,
         dumpBytes: dump?.bytes ?? 0,

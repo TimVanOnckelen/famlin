@@ -13,7 +13,7 @@ import { restoreAllMediaFromMirror } from './mediaRestore.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from './paths.js'
 import { SETUP_ADVISORY_LOCK_KEY } from '../setupLock.js'
 import { beginRestore, endRestore, runBackup } from './index.js'
-import { adoptBackupIdentity, BackupKeyError, decryptFile, parseKeyInput, resolveRestoreKey } from './encryption.js'
+import { decryptForRestore, keepRestoreKey, resolveRestoreKey } from './encryption.js'
 
 // Restoring a backup onto a RUNNING server, from the admin Backups page
 // (issue #461). Replaces everything: the database rows (in one transaction
@@ -39,10 +39,6 @@ export type RunningRestoreErrorCode =
   | 'missingMedia'
   | 'adminRequired'
   | 'restoreFailed'
-  // Encrypted (issue #495) and no key this server holds opens it / the
-  // emergency kit the admin gave doesn't either.
-  | 'keyRequired'
-  | 'keyMismatch'
 
 export class RunningRestoreError extends Error {
   constructor(readonly code: RunningRestoreErrorCode) {
@@ -114,8 +110,8 @@ export const restoreRunningDeps = { runBackup }
  * Validates `file` (and, for an encrypted backup, finds its key — this
  * server's own, or the emergency kit in `keyText`) and claims the restore
  * slot, then runs the restore in the background. Throws
- * RunningRestoreError('unknownBackup' | 'keyRequired' | 'keyMismatch' |
- * 'busy') before anything starts; the returned promise settles when it ends.
+ * RunningRestoreError('unknownBackup' | 'busy') or BackupEncryptionError before
+ * anything starts; the returned promise settles when it ends.
  */
 export async function startRunningRestore(
   file: string,
@@ -125,13 +121,7 @@ export async function startRunningRestore(
   const filePath = backupFilePath(file)
   const stat = filePath ? await fsp.lstat(filePath).catch(() => null) : null
   if (!filePath || !stat?.isFile()) throw new RunningRestoreError('unknownBackup')
-  let key
-  try {
-    key = backupFileKind(file) === 'archive' ? await resolveRestoreKey(filePath, parseKeyInput(keyText)) : null
-  } catch (err) {
-    if (err instanceof BackupKeyError) throw new RunningRestoreError(err.code)
-    throw err
-  }
+  const key = backupFileKind(file) === 'archive' ? await resolveRestoreKey(filePath, keyText) : null
   if (!beginRestore()) throw new RunningRestoreError('busy')
 
   status = {
@@ -162,18 +152,8 @@ export async function startRunningRestore(
         const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
         await fsp.mkdir(workDir, { recursive: true })
         try {
-          let zipPath = filePath
-          if (key) {
-            zipPath = path.join(workDir, 'decrypted.zip')
-            try {
-              await decryptFile(filePath, zipPath, key)
-            } catch (err) {
-              log.error(err, 'decrypting the backup failed')
-              throw new RunningRestoreError('invalidArchive')
-            }
-          }
           await restoreArchive({
-            zipPath,
+            zipPath: await decryptForRestore(filePath, key, workDir),
             workDir,
             lockKey: SETUP_ADVISORY_LOCK_KEY,
             replaceExisting: true,
@@ -182,13 +162,8 @@ export async function startRunningRestore(
         } finally {
           await fsp.rm(workDir, { recursive: true, force: true })
         }
-        // A key from the admin's emergency kit: keep it, so this backup
-        // (and others encrypted with it) can be restored again without it.
-        if (key && 'identity' in key) {
-          await adoptBackupIdentity(key.identity, { makeCurrent: false }).catch((err) =>
-            log.error(err, 'restored, but could not keep the backup key')
-          )
-        }
+        // An emergency kit's key is kept, so this backup restores again without it.
+        await keepRestoreKey(key, false).catch((err) => log.error(err, 'restored, but could not keep the backup key'))
       } else {
         await restoreDump(BACKUP_DB_DIR, file, SETUP_ADVISORY_LOCK_KEY, { replaceExisting: true, minTokenVersion })
         try {

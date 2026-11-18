@@ -1,6 +1,7 @@
 import { SectionCard } from '@famlin/ui/common/section-card'
 import { ConfirmDialog } from '@famlin/ui/common/confirm-dialog'
 import { StateMessage } from '@famlin/ui/common/state-message'
+import { Alert, AlertDescription } from '@famlin/ui/alert'
 import { Badge } from '@famlin/ui/badge'
 import { Button } from '@famlin/ui/button'
 import { useState } from 'react'
@@ -32,7 +33,6 @@ export function BackupEncryptionCard({
   const { t } = useTranslation()
   // 'setup': turn encryption on; 'rotate': switch to a new key.
   const [dialog, setDialog] = useState<'setup' | 'rotate' | null>(null)
-  const setupOpen = dialog !== null
   const [kitDownloaded, setKitDownloaded] = useState(false)
   const [kitSaved, setKitSaved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -93,14 +93,14 @@ export function BackupEncryptionCard({
       icon={<Icon name="shield" size={20} />}
       description={t('backupEncryption.desc')}
     >
-      {error && !setupOpen && (
+      {error && !dialog && (
         <StateMessage variant="error" className="error" role="alert">
           {error}
         </StateMessage>
       )}
       {encryption.enabled && encryption.currentKey ? (
         <>
-          <div className="backup-encryption-status">
+          <div className="backups-dumps-toggle">
             <Badge variant="accent">{t('backupEncryption.on')}</Badge>
             <span>
               {t('backupEncryption.onBody', {
@@ -109,7 +109,9 @@ export function BackupEncryptionCard({
               })}
             </span>
           </div>
-          <p className="backup-encryption-warning">{t('backupEncryption.mirrorWarning')}</p>
+          <Alert role="note">
+            <AlertDescription>{t('backupEncryption.mirrorWarning')}</AlertDescription>
+          </Alert>
           {rotated && <p className="hint">{t('backupEncryption.rotatedNotice')}</p>}
           <div className="backups-save-row">
             <Button variant="secondary" disabled={busy} onClick={() => run(() => api.downloadEmergencyKit())}>
@@ -125,7 +127,7 @@ export function BackupEncryptionCard({
         </>
       ) : (
         <>
-          <div className="backup-encryption-status">
+          <div className="backups-dumps-toggle">
             <Badge variant="outline">{t('backupEncryption.off')}</Badge>
             <span>{t('backupEncryption.offBody')}</span>
           </div>
@@ -163,7 +165,7 @@ export function BackupEncryptionCard({
         </details>
       )}
 
-      {setupOpen && (
+      {dialog && (
         <AdminModal
           title={t(dialog === 'rotate' ? 'backupEncryption.rotateTitle' : 'backupEncryption.setupTitle')}
           onClose={() => setDialog(null)}
@@ -197,7 +199,7 @@ export function BackupEncryptionCard({
               <Button type="button" variant="ghost" onClick={() => setDialog(null)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="button" disabled={!kitDownloaded || !kitSaved || busy} onClick={confirmDialog}>
+              <Button type="button" disabled={!kitSaved || busy} onClick={confirmDialog}>
                 {t(dialog === 'rotate' ? 'backupEncryption.rotateConfirm' : 'backupEncryption.turnOn')}
               </Button>
             </div>

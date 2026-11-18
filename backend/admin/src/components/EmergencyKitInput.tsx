@@ -1,11 +1,12 @@
+import { FormField } from '@famlin/ui/common/form-field'
 import { Button } from '@famlin/ui/button'
 import { Textarea } from '@famlin/ui/textarea'
 import { useId, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // Where an admin hands over the key of an encrypted backup (issue #495): the
-// emergency kit file, its pasted text, or — for an encrypted export — the
-// passphrase. The server tells them apart.
+// emergency kit file, its pasted text, or an encrypted export's passphrase.
+// The server tells them apart.
 export function EmergencyKitInput({
   value,
   onChange,
@@ -19,18 +20,12 @@ export function EmergencyKitInput({
   const id = useId()
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const readFile = async (file: File | undefined) => {
-    if (!file) return
-    // A kit is a few hundred bytes; anything big isn't one.
-    if (file.size > 10_000) return
-    onChange((await file.text()).trim())
-  }
-
   return (
-    <div className="emergency-kit-input">
-      <label htmlFor={id}>
-        {allowPassphrase ? t('backupEncryption.keyOrPassphraseLabel') : t('backupEncryption.keyLabel')}
-      </label>
+    <FormField
+      label={allowPassphrase ? t('backupEncryption.keyOrPassphraseLabel') : t('backupEncryption.keyLabel')}
+      htmlFor={id}
+      hint={t('backupEncryption.keyHint')}
+    >
       <Textarea
         id={id}
         value={value}
@@ -39,23 +34,23 @@ export function EmergencyKitInput({
         spellCheck={false}
         autoComplete="off"
         placeholder="AGE-SECRET-KEY-1…"
+        className="font-mono text-xs"
       />
-      <div className="emergency-kit-input-row">
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".txt,text/plain"
-          hidden
-          onChange={(e) => {
-            void readFile(e.target.files?.[0])
-            e.target.value = ''
-          }}
-        />
-        <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-          {t('backupEncryption.uploadKit')}
-        </Button>
-        <span className="hint">{t('backupEncryption.keyHint')}</span>
-      </div>
-    </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".txt,text/plain"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          // A kit is a few hundred bytes; anything big isn't one.
+          if (file && file.size <= 10_000) onChange((await file.text()).trim())
+        }}
+      />
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => fileRef.current?.click()}>
+        {t('backupEncryption.uploadKit')}
+      </Button>
+    </FormField>
   )
 }

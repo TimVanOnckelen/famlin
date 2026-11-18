@@ -1,3 +1,4 @@
+import { FormField } from '@famlin/ui/common/form-field'
 import { PageHeader } from '@famlin/ui/common/page-header'
 import { SectionCard } from '@famlin/ui/common/section-card'
 import { SettingToggle } from '@famlin/ui/common/setting-toggle'
@@ -464,9 +465,13 @@ export function BackupsPage() {
               {t('serverSettings.dataExportDownload')}
             </Button>
           </div>
-          <label className="backup-export-passphrase">
-            {t('backupEncryption.exportPassphrase')}
+          <FormField
+            label={t('backupEncryption.exportPassphrase')}
+            htmlFor="export-passphrase"
+            hint={t('backupEncryption.exportPassphraseHint')}
+          >
             <Input
+              id="export-passphrase"
               type="password"
               value={exportPassphrase}
               onChange={(e) => setExportPassphrase(e.target.value)}
@@ -474,8 +479,7 @@ export function BackupsPage() {
               minLength={10}
               maxLength={1000}
             />
-          </label>
-          <p className="hint">{t('backupEncryption.exportPassphraseHint')}</p>
+          </FormField>
           {exportStarted && <p className="hint">{t('serverSettings.dataExportStarted')}</p>}
         </SectionCard>
       </div>
