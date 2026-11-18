@@ -90,6 +90,12 @@
     "typescript": "~6.0.3"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "@expo/fingerprint": {
+      "minimatch": "^11.0.1"
+    },
+    "babel-plugin-module-resolver": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
