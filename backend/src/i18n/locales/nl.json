@@ -146,6 +146,10 @@
     "mediaMirrorUnauthorized": "Immich heeft de uploadsleutel geweigerd",
     "mediaMirrorAlbumRequired": "Kies een album om naartoe te spiegelen",
     "mediaMirrorNotFound": "Spiegelen is niet ingesteld voor deze familie",
+    "backupKeyRequired": "Deze back-up is versleuteld. Upload of plak de noodkit om hem terug te zetten",
+    "backupKeyMismatch": "Die sleutel opent deze back-up niet. Gebruik de noodkit (of het exportwachtwoord) waarmee hij gemaakt is",
+    "backupKitNotSaved": "Bevestig dat je de noodkit buiten deze server hebt bewaard voordat je versleuteling aanzet",
+    "backupKeyMissing": "Maak eerst een sleutel voor back-upversleuteling aan",
     "mediaMirrorAlbumLinkedElsewhere": "Dit album is gekoppeld aan een andere familie. Ernaartoe spiegelen zou de foto's van deze familie daar tonen — kies of maak een ander album.",
     "mediaAlbumMirroredElsewhere": "Een andere familie spiegelt haar uploads naar dit album. Het hier koppelen zou de foto's van die familie tonen — kies een ander album."
   },
@@ -228,5 +232,12 @@
     "backup_stale": "Al {{days}} dagen geen geslaagde back-up.",
     "disk_low_uploads": "Het uploadvolume is bijna vol ({{free}} GiB vrij).",
     "disk_low_backups": "Het back-upvolume is bijna vol ({{free}} GiB vrij)."
+  },
+  "backupKit": {
+    "title": "Famlin-noodkit voor back-ups",
+    "instance": "Server",
+    "created": "Aangemaakt",
+    "publicKey": "Publieke sleutel",
+    "body": "Bewaar dit bestand ergens anders dan op je Famlin-server: in een wachtwoordbeheerder, op papier, op een andere computer.\nHet opent elke back-up die deze server met deze sleutel versleuteld heeft. Zonder dit bestand kun je die back-ups niet op een andere server terugzetten, en niemand kan een verloren sleutel herstellen.\n\nTerugzetten op een nieuwe Famlin-server: kies de back-up op het installatiescherm en upload dit bestand als daarom gevraagd wordt.\nZelf ontsleutelen met de age-tool (https://age-encryption.org):"
   }
 }

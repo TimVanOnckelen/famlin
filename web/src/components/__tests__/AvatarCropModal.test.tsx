@@ -102,7 +102,7 @@ it('bounds zoom and keeps zoom-button pointer events out of the drag handler', a
   expect(capture).not.toHaveBeenCalled()
   for (let i = 0; i < 8; i++) await user.click(zoomOut)
   expect(zoomOut).toBeDisabled()
-  expect(image.style.width).toBe('133.33333333333331%')
+  expect(parseFloat(image.style.width)).toBeCloseTo(400 / 3, 2)
 })
 
 it('converts an undecodable HEIC through the API before enabling cropping', async () => {

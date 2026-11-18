@@ -146,6 +146,10 @@
     "mediaMirrorUnauthorized": "Immich 拒绝了上传密钥",
     "mediaMirrorAlbumRequired": "请选择要同步到的相册",
     "mediaMirrorNotFound": "此家庭尚未设置同步",
+    "backupKeyRequired": "此备份已加密。请上传或粘贴其应急工具包以恢复",
+    "backupKeyMismatch": "该密钥无法打开此备份。请使用创建该备份时的应急工具包（或导出密码）",
+    "backupKitNotSaved": "开启加密前，请确认已将应急工具包保存在此服务器之外",
+    "backupKeyMissing": "请先生成备份加密密钥",
     "mediaMirrorAlbumLinkedElsewhere": "此相册已关联到另一个家庭。同步到此相册会让对方看到此家庭的照片——请选择或创建其他相册。",
     "mediaAlbumMirroredElsewhere": "另一个家庭正将上传内容同步到此相册。在此关联会显示该家庭的照片——请选择其他相册。"
   },
@@ -228,5 +232,12 @@
     "backup_stale": "已有 {{days}} 天没有成功的备份。",
     "disk_low_uploads": "上传卷空间即将用尽（剩余 {{free}} GiB）。",
     "disk_low_backups": "备份卷空间即将用尽（剩余 {{free}} GiB）。"
+  },
+  "backupKit": {
+    "title": "Famlin 备份应急工具包",
+    "instance": "服务器",
+    "created": "创建时间",
+    "publicKey": "公钥",
+    "body": "请将此文件保存在 Famlin 服务器以外的地方：密码管理器、打印件或另一台电脑。\n它可以打开此服务器用该密钥加密的所有备份。没有它，这些备份无法在其他服务器上恢复，丢失的密钥也无人能找回。\n\n在新的 Famlin 服务器上恢复：在设置界面选择备份，并在提示时上传此文件。\n使用 age 工具（https://age-encryption.org）手动解密："
   }
 }

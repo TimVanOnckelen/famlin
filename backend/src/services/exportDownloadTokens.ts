@@ -14,6 +14,10 @@ interface DownloadTokenEntry {
   userId: string
   tokenVersion: number
   expiresAt: number
+  // Encrypt the export with this passphrase (issue #495). Kept here, in
+  // memory, rather than in the download URL, which ends up in access logs
+  // and browser history.
+  passphrase?: string
 }
 
 const downloadTokens = new Map<string, DownloadTokenEntry>()
@@ -25,17 +29,25 @@ function sweepExpired() {
   }
 }
 
-export async function createExportDownloadToken(userId: string): Promise<string> {
+export async function createExportDownloadToken(
+  userId: string,
+  options: { passphrase?: string } = {}
+): Promise<string> {
   sweepExpired()
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { tokenVersion: true } })
   const token = crypto.randomBytes(32).toString('base64url')
-  downloadTokens.set(token, { userId, tokenVersion: user.tokenVersion, expiresAt: Date.now() + DOWNLOAD_TOKEN_TTL_MS })
+  downloadTokens.set(token, {
+    userId,
+    tokenVersion: user.tokenVersion,
+    expiresAt: Date.now() + DOWNLOAD_TOKEN_TTL_MS,
+    ...(options.passphrase ? { passphrase: options.passphrase } : {}),
+  })
   return token
 }
 
 // Returns the token's user as it is *now* (so a demotion or sign-out since
-// the token was issued counts), or null for an unknown, used or expired
-// token. The caller still checks isAdmin.
+// the token was issued counts) and the export passphrase it carries, or null
+// for an unknown, used or expired token. The caller still checks isAdmin.
 export async function redeemExportDownloadToken(token: string) {
   const entry = downloadTokens.get(token)
   downloadTokens.delete(token) // single-use regardless of outcome
@@ -46,5 +58,5 @@ export async function redeemExportDownloadToken(token: string) {
   })
   if (!user || user.tokenVersion !== entry.tokenVersion) return null
   const { tokenVersion: _tokenVersion, ...publicUser } = user
-  return publicUser
+  return { user: publicUser, passphrase: entry.passphrase }
 }

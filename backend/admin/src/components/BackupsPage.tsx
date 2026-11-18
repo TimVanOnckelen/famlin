@@ -1,3 +1,4 @@
+import { FormField } from '@famlin/ui/common/form-field'
 import { PageHeader } from '@famlin/ui/common/page-header'
 import { SectionCard } from '@famlin/ui/common/section-card'
 import { SettingToggle } from '@famlin/ui/common/setting-toggle'
@@ -11,8 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { api, type BackupsOverview, type ServerSettings, type VolumeBackup } from '../api/client'
+import { api, type ApiError, type BackupsOverview, type ServerSettings, type VolumeBackup } from '../api/client'
 import { AdminModal } from './AdminModal'
+import { BackupEncryptionCard, shortKeyId } from './BackupEncryptionCard'
+import { EmergencyKitInput } from './EmergencyKitInput'
 import { Icon } from './Icon'
 import { formatBytes } from './SystemStatusPage'
 
@@ -55,6 +58,8 @@ export function BackupsPage() {
 
   const [exportIncludeMedia, setExportIncludeMedia] = useState(true)
   const [exportStarted, setExportStarted] = useState(false)
+  // Optional: encrypts the export (.zip.age). Empty = a plain zip, as before.
+  const [exportPassphrase, setExportPassphrase] = useState('')
 
   // Until v1.0.0 every run also writes a pg_dump with the same timestamp as
   // its zip; those are hidden behind a toggle so each run reads as one row.
@@ -65,6 +70,9 @@ export function BackupsPage() {
   const [confirmText, setConfirmText] = useState('')
   const [restoreError, setRestoreError] = useState<string | null>(null)
   const [restoring, setRestoring] = useState(false)
+  // An encrypted backup this server has no key for: the emergency kit.
+  const [restoreKey, setRestoreKey] = useState('')
+  const [restoreNeedsKey, setRestoreNeedsKey] = useState(false)
 
   const load = useCallback(() => {
     return api
@@ -157,10 +165,12 @@ export function BackupsPage() {
     if (!toRestore) return
     setRestoreError(null)
     try {
-      await api.restoreBackupOnServer(toRestore.name, confirmText)
+      await api.restoreBackupOnServer(toRestore.name, confirmText, restoreKey.trim() || undefined)
       setToRestore(null)
       setRestoring(true)
     } catch (err) {
+      const code = (err as ApiError).code
+      if (code === 'backupKeyRequired' || code === 'backupKeyMismatch') setRestoreNeedsKey(true)
       setRestoreError((err as Error).message)
     }
   }
@@ -195,7 +205,7 @@ export function BackupsPage() {
     setActionError(null)
     setExportStarted(false)
     try {
-      await api.downloadExport(exportIncludeMedia)
+      await api.downloadExport(exportIncludeMedia, exportPassphrase || undefined)
       setExportStarted(true)
     } catch (err) {
       setActionError((err as Error).message)
@@ -288,6 +298,16 @@ export function BackupsPage() {
                         <div className="backups-date">
                           <strong>{new Date(backup.createdAt).toLocaleString()}</strong>
                           {backup.safety && <Badge variant="accent">{t('backups.safetyBadge')}</Badge>}
+                          {backup.encrypted && (
+                            <Badge
+                              variant={backup.keyAvailable ? 'secondary' : 'outline'}
+                              title={backup.keyId ? shortKeyId(backup.keyId) : undefined}
+                            >
+                              {backup.keyAvailable
+                                ? t('backupEncryption.encryptedBadge')
+                                : t('backupEncryption.needsKitBadge')}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -311,6 +331,8 @@ export function BackupsPage() {
                             onClick={() => {
                               setConfirmText('')
                               setRestoreError(null)
+                              setRestoreKey('')
+                              setRestoreNeedsKey(!!backup.encrypted && !backup.keyAvailable)
                               setToRestore(backup)
                             }}
                           >
@@ -348,6 +370,11 @@ export function BackupsPage() {
             </a>
           </p>
         </SectionCard>
+
+        <BackupEncryptionCard
+          encryption={overview.encryption}
+          onChange={(encryption) => setOverview((current) => current && { ...current, encryption })}
+        />
 
         <SectionCard
           title={t('backups.scheduleTitle')}
@@ -428,10 +455,31 @@ export function BackupsPage() {
               checked={exportIncludeMedia}
               onCheckedChange={setExportIncludeMedia}
             />
-            <Button variant="secondary" type="button" className="secondary" onClick={downloadExport}>
+            <Button
+              variant="secondary"
+              type="button"
+              className="secondary"
+              onClick={downloadExport}
+              disabled={exportPassphrase.length > 0 && exportPassphrase.length < 10}
+            >
               {t('serverSettings.dataExportDownload')}
             </Button>
           </div>
+          <FormField
+            label={t('backupEncryption.exportPassphrase')}
+            htmlFor="export-passphrase"
+            hint={t('backupEncryption.exportPassphraseHint')}
+          >
+            <Input
+              id="export-passphrase"
+              type="password"
+              value={exportPassphrase}
+              onChange={(e) => setExportPassphrase(e.target.value)}
+              autoComplete="new-password"
+              minLength={10}
+              maxLength={1000}
+            />
+          </FormField>
           {exportStarted && <p className="hint">{t('serverSettings.dataExportStarted')}</p>}
         </SectionCard>
       </div>
@@ -459,6 +507,12 @@ export function BackupsPage() {
               <li>{t('backups.restorePointSignOut')}</li>
               <li>{t('backups.restorePointSecrets')}</li>
             </ul>
+            {restoreNeedsKey && (
+              <>
+                <p>{t('backupEncryption.restoreNeedsKit')}</p>
+                <EmergencyKitInput value={restoreKey} onChange={setRestoreKey} />
+              </>
+            )}
             <label>
               {t('backups.restoreConfirmLabel', { name: overview.confirmName })}
               <Input
@@ -479,7 +533,10 @@ export function BackupsPage() {
               <Button
                 type="submit"
                 variant="destructive"
-                disabled={confirmText.trim().toLowerCase() !== overview.confirmName.toLowerCase()}
+                disabled={
+                  confirmText.trim().toLowerCase() !== overview.confirmName.toLowerCase() ||
+                  (restoreNeedsKey && !restoreKey.trim())
+                }
               >
                 {t('backups.restoreButton')}
               </Button>

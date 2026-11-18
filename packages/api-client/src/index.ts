@@ -205,8 +205,20 @@ export {
   wikiPostLinkMarkdown,
 } from './wikiMarkdown'
 
-export type { CreateCommentBody, UpdateCommentBody } from './comments'
-export { fetchComments, createComment, updateComment, deleteComment, reactToComment } from './comments'
+export type { CreateCommentBody, UpdateCommentBody, CommentsPage } from './comments'
+export {
+  fetchComments,
+  fetchCommentsPage,
+  flattenCommentPages,
+  patchCommentInCaches,
+  addCommentToCaches,
+  pagedCommentsQueryKey,
+  COMMENTS_PAGE_SIZE,
+  createComment,
+  updateComment,
+  deleteComment,
+  reactToComment,
+} from './comments'
 
 export type { CommentGroup } from './commentGroups'
 export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups'

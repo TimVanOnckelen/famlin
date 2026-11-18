@@ -35,6 +35,7 @@ export const SERVER_FEATURES = [
   'wiki', // unreleased after 0.8.7 — Family Wiki (/api/wiki)
   'diagnosticReports', // unreleased after 0.8.7 — POST /api/diagnostics/reports
   'giftListGuests', // unreleased after 0.8.7 — gift-list wishlists for people without an account
+  'paginatedComments', // unreleased after 0.8.7 — GET /api/posts/:postId/comments?take=&cursor= (issue #130)
 ] as const
 
 export type ServerFeature = (typeof SERVER_FEATURES)[number]

@@ -108,6 +108,25 @@ export interface VolumeBackup {
   // Taken automatically right before a restore.
   safety?: boolean
   valid: boolean
+  // Age-encrypted: `keyId` is the public key (age1…) it needs,
+  // `keyAvailable` whether this server holds it (else the restore needs the
+  // emergency kit).
+  encrypted?: boolean
+  keyId?: string | null
+  keyAvailable?: boolean
+}
+
+export interface BackupKey {
+  id: string
+  createdAt: string
+}
+
+export interface BackupEncryption {
+  enabled: boolean
+  currentKey: BackupKey | null
+  // Generated, but its kit not yet confirmed saved: not used for backups yet.
+  pendingKey: BackupKey | null
+  keys: BackupKey[]
 }
 
 export interface RestoreStatus {
@@ -126,6 +145,7 @@ export interface BackupsOverview {
   restore: RestoreStatus
   // What to type to confirm a restore: the family's name.
   confirmName: string
+  encryption: BackupEncryption
 }
 
 export class ApiError extends Error {
@@ -176,8 +196,9 @@ function getToken() {
   return localStorage.getItem('famlin_admin_token')
 }
 
-async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
-  const method = options?.method || 'GET'
+// A fetch with the admin's language and token that throws ApiError on a
+// non-2xx response; request() parses the JSON body on top of it.
+async function send(path: string, options?: { method?: string; body?: unknown }): Promise<Response> {
   const headers: Record<string, string> = { 'Accept-Language': currentLanguage() }
 
   // Only set Content-Type when there's an actual body to send — Fastify's
@@ -193,7 +214,7 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
   }
 
   const res = await fetch(path, {
-    method,
+    method: options?.method || 'GET',
     headers,
     body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
@@ -207,8 +228,21 @@ async function request<T>(path: string, options?: { method?: string; body?: unkn
       Array.isArray(data.missingMedia) ? data.missingMedia.filter((key: unknown) => typeof key === 'string') : undefined
     )
   }
+  return res
+}
 
-  return res.json()
+async function request<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
+  return (await send(path, options)).json()
+}
+
+// Hands a URL to the browser's own download handling.
+function triggerDownload(href: string, filename = '') {
+  const link = document.createElement('a')
+  link.href = href
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 
 export interface StorageLocationStatus {
@@ -250,8 +284,11 @@ export const api = {
   // browser must set the multipart Content-Type (with its boundary) itself.
   // `admin` is only needed for an older export without accounts' passwords
   // (the server answers ApiError code 'restoreAdminRequired' without it).
-  restoreBackup: async (archive: File, admin?: SetupAdmin) => {
+  // `key`: an encrypted backup's emergency kit, or an encrypted export's
+  // passphrase (the server answers code 'backupKeyRequired' without it).
+  restoreBackup: async (archive: File, admin?: SetupAdmin, key?: string) => {
     const form = new FormData()
+    if (key) form.append('key', key)
     if (admin) {
       form.append('email', admin.email)
       form.append('name', admin.name)
@@ -283,10 +320,10 @@ export const api = {
   // and legacy pg_dump files.
   listSetupBackups: () => request<VolumeBackup[]>('/api/auth/setup/backups'),
 
-  restoreVolumeBackup: (file: string, admin?: SetupAdmin) =>
+  restoreVolumeBackup: (file: string, admin?: SetupAdmin, key?: string) =>
     request<RestoreResult>('/api/auth/setup/restore-backup', {
       method: 'POST',
-      body: admin ? { file, admin } : { file },
+      body: { file, admin, key },
     }),
 
   getOidcConfig: () => request<OidcConfig>('/api/auth/oidc-config'),
@@ -602,43 +639,53 @@ export const api = {
   // A plain navigation with a one-time token, like downloadExport.
   downloadBackup: async (file: string): Promise<void> => {
     const { token } = await request<{ token: string }>('/api/admin/export/token', { method: 'POST' })
-    const link = document.createElement('a')
-    link.href = `/api/admin/backups/${encodeURIComponent(file)}/download?downloadToken=${encodeURIComponent(token)}`
-    link.download = ''
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    triggerDownload(
+      `/api/admin/backups/${encodeURIComponent(file)}/download?downloadToken=${encodeURIComponent(token)}`
+    )
   },
 
   deleteBackup: async (file: string): Promise<void> => {
-    const token = getToken()
-    const res = await fetch(`/api/admin/backups/${encodeURIComponent(file)}`, {
-      method: 'DELETE',
-      headers: { 'Accept-Language': currentLanguage(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: i18n.t('common.error') }))
-      throw new ApiError(res.status, body.error || `HTTP ${res.status}`, body.code)
-    }
+    await send(`/api/admin/backups/${encodeURIComponent(file)}`, { method: 'DELETE' })
   },
 
-  restoreBackupOnServer: (file: string, confirm: string) =>
+  restoreBackupOnServer: (file: string, confirm: string, key?: string) =>
     request<{ started: true }>(`/api/admin/backups/${encodeURIComponent(file)}/restore`, {
       method: 'POST',
-      body: { confirm },
+      body: { confirm, key },
     }),
+
+  // Backup encryption: generate a (new, pending) key; turning encryption on
+  // with the kit confirmed makes the pending key the one backups use.
+  generateBackupKey: () =>
+    request<{ encryption: BackupEncryption }>('/api/admin/backups/encryption/key', { method: 'POST' }),
+
+  setBackupEncryption: (enabled: boolean, kitSaved = false) =>
+    request<{ encryption: BackupEncryption }>('/api/admin/backups/encryption', {
+      method: 'PUT',
+      body: { enabled, kitSaved },
+    }),
+
+  // A small text file, so fetch + blob (with the Authorization header) rather
+  // than a navigation with a download token: the kit never sits in a URL.
+  downloadEmergencyKit: async (keyId?: string): Promise<void> => {
+    const res = await send(`/api/admin/backups/encryption/kit${keyId ? `?key=${encodeURIComponent(keyId)}` : ''}`)
+    const url = URL.createObjectURL(await res.blob())
+    triggerDownload(url, 'famlin-emergency-kit.txt')
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  },
 
   // Public: the restore signs everyone out, the admin who started it too.
   getRestoreStatus: () => request<RestoreStatus>('/api/auth/restore-status'),
 
-  downloadExport: async (includeMedia = true): Promise<void> => {
-    const { token } = await request<{ token: string }>('/api/admin/export/token', { method: 'POST' })
-    const params = new URLSearchParams({ includeMedia: String(includeMedia), downloadToken: token })
-    const link = document.createElement('a')
-    link.href = `/api/admin/export?${params}`
-    link.download = ''
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+  // `passphrase`: encrypt the export with it (.zip.age). Sent with the token
+  // request, never in the download URL.
+  downloadExport: async (includeMedia = true, passphrase?: string): Promise<void> => {
+    const { token } = await request<{ token: string }>('/api/admin/export/token', {
+      method: 'POST',
+      body: passphrase ? { passphrase } : undefined,
+    })
+    triggerDownload(
+      `/api/admin/export?${new URLSearchParams({ includeMedia: String(includeMedia), downloadToken: token })}`
+    )
   },
 }

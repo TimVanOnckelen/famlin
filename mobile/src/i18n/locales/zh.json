@@ -311,6 +311,7 @@
     "postedInGroup": "在 {{group}} · {{time}}",
     "milestoneBadge": "成长时刻",
     "commentsHeader": "评论 · {{count}}",
+    "loadOlderComments": "加载更早的评论",
     "commentPlaceholder": "写条评论…",
     "replyPlaceholder": "写条回复…",
     "comments_one": "{{count}} 条评论",

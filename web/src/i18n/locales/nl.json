@@ -99,6 +99,7 @@
   },
   "comments": {
     "placeholder": "Schrijf een reactie…",
+    "loadOlder": "Oudere reacties laden",
     "send": "Versturen",
     "sendFailed": "Je reactie kon niet geplaatst worden. Probeer opnieuw.",
     "like": "Vind ik leuk",

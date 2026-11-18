@@ -146,6 +146,10 @@
     "mediaMirrorUnauthorized": "O Immich recusou a chave de envio",
     "mediaMirrorAlbumRequired": "Escolha um álbum para onde espelhar",
     "mediaMirrorNotFound": "O espelhamento não está configurado para esta família",
+    "backupKeyRequired": "Esta cópia de segurança está encriptada. Carregue ou cole o kit de emergência para a restaurar",
+    "backupKeyMismatch": "Essa chave não abre esta cópia de segurança. Use o kit de emergência (ou a frase-passe da exportação) com que foi criada",
+    "backupKitNotSaved": "Confirme que guardou o kit de emergência fora deste servidor antes de ativar a encriptação",
+    "backupKeyMissing": "Gere primeiro uma chave de encriptação das cópias de segurança",
     "mediaMirrorAlbumLinkedElsewhere": "Este álbum está ligado a outra família. Espelhar para ele mostraria lá as fotos desta família — escolha ou crie outro álbum.",
     "mediaAlbumMirroredElsewhere": "Outra família espelha os seus envios para este álbum. Ligá-lo aqui mostraria as fotos dessa família — escolha outro álbum."
   },
@@ -228,5 +232,12 @@
     "backup_stale": "Nenhuma cópia de segurança bem-sucedida há {{days}} dias.",
     "disk_low_uploads": "O volume de carregamentos está quase cheio ({{free}} GiB livres).",
     "disk_low_backups": "O volume de cópias de segurança está quase cheio ({{free}} GiB livres)."
+  },
+  "backupKit": {
+    "title": "Kit de emergência das cópias de segurança do Famlin",
+    "instance": "Servidor",
+    "created": "Criado em",
+    "publicKey": "Chave pública",
+    "body": "Guarde este ficheiro num local diferente do seu servidor Famlin: um gestor de palavras-passe, uma cópia impressa, outro computador.\nAbre todas as cópias de segurança que este servidor encriptou com esta chave. Sem ele, essas cópias não podem ser restauradas noutro servidor, e ninguém consegue recuperar uma chave perdida.\n\nPara restaurar num novo servidor Famlin: escolha a cópia de segurança no ecrã de configuração e carregue este ficheiro quando for pedido.\nPara desencriptar manualmente com a ferramenta age (https://age-encryption.org):"
   }
 }

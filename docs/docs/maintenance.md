@@ -38,14 +38,45 @@ Famlin can back itself up on a schedule. It's **on by default for new installs**
 Each run writes to the `famlin-backups` volume, mounted at `/app/backups` in the container:
 
 - `famlin-backup-<timestamp>.zip`: a **Famlin backup** — the same format as the [Data export](#the-data-export-download) download, without the photos. It holds every account (with its password), family, post, comment, chat message and server setting. Only the newest *N* are kept.
+  With [backup encryption](#encrypting-backups) on, it's `famlin-backup-<timestamp>.zip.age` instead: the same zip, encrypted.
+- `famlin-backup-<timestamp>.meta.json`, next to each **encrypted** backup: a small summary (Famlin version, which public key it needs) so the Backups page can list it without decrypting it. It holds no family data.
 - `uploads/`: **one** mirror of the uploads volume, updated incrementally. These are the backups' photos and videos: uploaded files never change once written, so each run only copies new files, and seven backups don't cost seven copies of your media library. A file that disappears from Famlin (a deleted post, an expired story) is moved to `uploads/.deleted/<date>/` and kept there for **30 days** before it's removed for good. That covers accidental deletes without the mirror growing forever. With **Include media** turned off (media in S3 with its own backups), the mirror isn't updated and a restore expects the photos to still be in your media storage.
-- `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database, kept as a safety net next to the zip until Famlin 1.0.0 (same retention). Famlin 1.0.0 will stop writing these.
+- `db/famlin-<timestamp>.dump`: a `pg_dump` of the whole database, kept as a safety net next to the zip until Famlin 1.0.0 (same retention). Famlin 1.0.0 will stop writing these. It's **not** written while backup encryption is on: an unencrypted copy of the database next to the encrypted backup would defeat the point. The first encrypted run also deletes the dumps already in `db/`.
 
 :::note[What a backup leaves out]
 A Famlin backup never contains the **OIDC client secret**, the **SMTP password** or the **Immich API key**: enter them again under Integrations after a restore. It also leaves out invite links, API tokens (a token revoked after a leak must not come back), push tokens, devices and notification history. Because it contains every account's password hash, **keep backup files as private as the database itself** — see [Security](./security.md#backups-and-restores).
 :::
 
 **System status** in `/admin` shows the last backup's result and size, the next scheduled run, and a **Run backup now** button. If a backup fails, or no backup has succeeded for more than twice the schedule interval (two days for daily, two weeks for weekly), every admin page shows a banner and admins get an email, at most one per problem per day. Emails need SMTP to be set up under Integrations → Email; without it you only get the banner. See [System status](./managing-users-and-content.md#system-status).
+
+### Encrypting backups
+
+Backups hold every account's password hash and all family content. If you copy them off the machine (which you should, see below), anyone who gets hold of that copy can read them. **Backup encryption** prevents that. It's off until you turn it on, on the **Backups** page in `/admin`:
+
+![Setting up backup encryption: download the emergency kit, confirm it's stored elsewhere, turn it on](./img/admin-backups-encryption.png)
+
+1. Press **Set up encryption**, then **Download emergency kit**. Famlin generates a key and you download a copy of it: `famlin-emergency-kit.txt`.
+2. Store the kit **somewhere other than the Famlin server**: a password manager, a printout, another computer.
+3. Tick **I stored the emergency kit somewhere other than this server** and press **Turn on encryption**.
+
+From then on every backup (scheduled, **Back up now**, and the safety backup taken before a restore) is written as `famlin-backup-<timestamp>.zip.age`, encrypted with [age](https://age-encryption.org). If encrypting fails, the backup fails and you're alerted; Famlin never falls back to an unencrypted file.
+
+How it works, and what it does and doesn't protect against:
+
+- **The server keeps the key**, so scheduled backups run without you. Encryption therefore protects **copies that leave the server**: the `famlin-backups` folder synced to a NAS or the cloud, a backup you downloaded. Someone with access to the server itself can read the backups, just as they can read the database. Keep the server itself secure.
+- **The emergency kit is the only other copy of the key.** You need it to restore an encrypted backup on another server, for example after the machine died. **If you lose it and the server, the backups can't be opened.** Nobody, including the Famlin developers, can recover a lost key. You can download the kit again from the Backups page as long as the server is running.
+- **Photos aren't encrypted.** Only the backup files themselves are. The media mirror (`uploads/` in the backups folder) stays a plain copy of your photos and videos, because it's updated incrementally and restored file by file. If that's a concern, encrypt the folder you sync it to (for example with your NAS's encrypted shared folders or an encrypting sync tool).
+- **Existing backups aren't encrypted afterwards.** Backups made before you turned encryption on stay unencrypted until they're rotated away by **Backups to keep**; delete them on the Backups page if you don't want them around. Downloads are served as stored: an encrypted backup downloads encrypted.
+
+**Generate new key** works like the first setup: download the new key's emergency kit, confirm you stored it, and press **Switch to the new key**. Until you confirm, backups keep using the current key, so no backup is ever encrypted with a key you don't have a copy of. Backups made earlier still need the **old** key. The server keeps old keys (listed under **Older keys**, each with its own kit download), so it can still restore those backups itself; to restore them anywhere else you need the old kit, so keep it next to the new one.
+
+**Turn off** stores new backups unencrypted again (and the database dump is written again). Existing encrypted backups stay encrypted and the keys are kept.
+
+**Decrypting by hand.** The emergency kit is an ordinary age identity file, so you can open an encrypted backup without Famlin:
+
+```bash
+age -d -i famlin-emergency-kit.txt famlin-backup-2026-11-18T03-00-00-000Z.zip.age > famlin-backup.zip
+```
 
 #### Keep backups off the machine
 
@@ -81,7 +112,9 @@ There are two places to restore from:
 
 3. Pick a backup:
    - **Backups on this server** lists every backup in the `famlin-backups` volume, newest first: Famlin backups (`.zip`) and, until Famlin 1.0.0, database dumps (`.dump`, marked *legacy*). Choose one and press **Restore selected backup**. If the volume survived (same machine, or you mounted the old backups folder), there's nothing to copy.
-   - **Or upload a backup file**: a `.zip` downloaded from **Data export** on the old server. Database dumps can't be uploaded, because restoring one runs the SQL inside it with full database rights.
+   - **Or upload a backup file**: a `.zip` downloaded from **Data export** on the old server (or a `.zip.age`, see below). Database dumps can't be uploaded, because restoring one runs the SQL inside it with full database rights.
+
+   An **encrypted** backup asks for its key: upload or paste the **emergency kit** it was made with. For an encrypted data export, enter the **passphrase** it was downloaded with instead. After restoring from an encrypted backup, the new server keeps encrypting its backups with that same key, so the kit you already have keeps working.
 4. Sign in with your existing account. Accounts come back with their passwords, so everyone signs in as before; every session from before the restore is signed out.
 
 **Photos come back automatically.** A backup without photos inside the zip (every scheduled backup) gets them from the media mirror in the same `famlin-backups` volume, including photos deleted from Famlin in the 30 days after the backup was taken. Famlin checks that every photo the backup needs is either still in your media storage or in the mirror before it changes anything; if some are missing, the restore is refused and lists them. A legacy `.dump` restore copies back everything in the mirror that the media storage lacks.
@@ -131,6 +164,8 @@ There are two places to restore from:
 ### The data export download
 
 **Backups → Data export** in `/admin` downloads a Famlin backup zip on demand — the same format the scheduled backups write. Leave **Include media in export** on to put every photo and video in the zip, so it can be restored on another machine without shell access (step 3 above). Without media it's small, but restoring it needs the photos in the media storage or the backups mirror.
+
+To encrypt the download, enter a **passphrase** (at least 10 characters) before pressing **Download export**. You get a `famlin-export-<date>.zip.age` instead, which the setup screen restores when you enter the same passphrase, and which `age -d famlin-export-<date>.zip.age > famlin-export.zip` opens by hand. The passphrase is never stored, so it can't be recovered: without it the export can't be opened. It's independent of the [backup encryption](#encrypting-backups) key; leave it empty for a plain zip.
 
 **Large exports behind a proxy or CDN.** The download streams straight to disk in your browser, but an export with media can be many gigabytes, and a proxy or CDN in front of Famlin (Cloudflare in particular) may cut a response that large or that long off partway — the download then fails. Download it over your local network instead, straight from the server's own address and port (for example `http://192.168.1.10:3000/admin`), bypassing the CDN, or copy the `famlin-backups` folder as described above.
 

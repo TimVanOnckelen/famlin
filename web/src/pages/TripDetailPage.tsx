@@ -190,7 +190,11 @@ export function TripDetailPage({
           <Icon name="message-square" size={16} />
           {t('trip.detail.tripCommentsSectionTitle', { count: tripComments.length })}
         </h2>
-        <CommentsSection post={post} filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')} />
+        <CommentsSection
+          post={post}
+          fullThread
+          filterComments={(all) => all.filter((c) => c.metadata?.kind !== 'trip_checkin')}
+        />
       </section>
 
       {sortedCheckins.length > 0 && (

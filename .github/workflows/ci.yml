@@ -423,9 +423,12 @@ jobs:
           mkdir -p /tmp/specs
           mv /tmp/base-spec.yaml /tmp/specs/base.yaml
           cp "$SPEC" /tmp/specs/head.yaml
+          # Reviewed false positives (see the file's header for the rules).
+          cp .github/oasdiff-ignore.txt /tmp/specs/err-ignore.txt
           set +e
           OUTPUT=$(docker run --rm -v /tmp/specs:/specs:ro tufin/oasdiff \
-            breaking /specs/base.yaml /specs/head.yaml --fail-on ERR 2>&1)
+            breaking /specs/base.yaml /specs/head.yaml --fail-on ERR \
+            --err-ignore /specs/err-ignore.txt 2>&1)
           STATUS=$?
           set -e
           if [ "$STATUS" -eq 0 ]; then
