@@ -372,7 +372,7 @@ export function BackupsPage() {
 
         <BackupEncryptionCard
           encryption={overview.encryption}
-          onChange={(encryption) => setOverview({ ...overview, encryption })}
+          onChange={(encryption) => setOverview((current) => current && { ...current, encryption })}
         />
 
         <SectionCard

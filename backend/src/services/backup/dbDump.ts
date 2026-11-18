@@ -112,6 +112,8 @@ export async function dumpDatabase(dir: string, now: Date): Promise<{ file: stri
 
 // Keeps the `keep` newest dumps in `dir` and deletes the rest, plus any
 // leftover `.partial` file from an interrupted run. Returns the deleted names.
+// `keep` 0 deletes every dump: backups are encrypted, and older plaintext
+// dumps would otherwise never rotate away (none are written any more).
 export async function pruneDbDumps(dir: string, keep: number): Promise<string[]> {
   let names: string[]
   try {
@@ -122,7 +124,7 @@ export async function pruneDbDumps(dir: string, keep: number): Promise<string[]>
   }
 
   const dumps = names.filter(isDumpFile).sort().reverse()
-  const toDelete = [...dumps.slice(Math.max(keep, 1)), ...names.filter((n) => n.endsWith(DUMP_SUFFIX + PARTIAL_SUFFIX))]
+  const toDelete = [...dumps.slice(Math.max(keep, 0)), ...names.filter((n) => n.endsWith(DUMP_SUFFIX + PARTIAL_SUFFIX))]
   for (const name of toDelete) {
     await fsp.rm(path.join(dir, name), { force: true })
   }

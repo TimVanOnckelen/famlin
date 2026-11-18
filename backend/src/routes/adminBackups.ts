@@ -9,7 +9,7 @@ import { backupKeyInputSchema } from '../types.js'
 import { listBackups, removeBackupArchive, parseBackupArchiveFileName } from '../services/backup/archive.js'
 import {
   BackupEncryptionError,
-  backupIdentityFor,
+  backupKeyForKit,
   emergencyKitText,
   generateBackupKey,
   getBackupEncryptionStatus,
@@ -69,8 +69,10 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
   // only, never an API token: the emergency kit is the one way a backup key
   // leaves this server.
 
-  // Generates a new key and makes it the one new backups use. Older keys
-  // stay, so this server can still restore the backups made with them.
+  // Generates a new PENDING key: new backups keep using the current key until
+  // the admin downloads the new kit and confirms it's saved (PUT below, with
+  // kitSaved). Older keys stay, so this server can still restore the
+  // backups made with them.
   fastify.post('/backups/encryption/key', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     if (request.authMethod !== 'session') {
@@ -97,26 +99,29 @@ export default async function adminBackupRoutes(fastify: FastifyInstance) {
     return { encryption: await getBackupEncryptionStatus() }
   })
 
-  // The emergency kit of the current key, or of an older one by its public
-  // key (`?key=age1…`): an age identity file with instructions.
+  // The emergency kit of the pending key (else the current one), or of
+  // another one by its public key (`?key=age1…`): an age identity file with
+  // instructions.
   fastify.get('/backups/encryption/kit', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     const t = getT(request)
     if (request.authMethod !== 'session') return reply.status(403).send({ error: t('errors.sessionRequired') })
-    const { key } = kitQuery.parse(request.query)
-    const status = await getBackupEncryptionStatus()
-    const id = key ?? status.currentKey?.id
-    const meta = status.keys.find((k) => k.id === id)
-    if (!id || !meta) return reply.status(404).send({ error: t('errors.backupKeyMissing') })
-    const identity = await backupIdentityFor(id)
-    const text = emergencyKitText({ ...meta, identity }, await restoreConfirmName(), {
+    const { key: keyId } = kitQuery.parse(request.query)
+    let key
+    try {
+      key = await backupKeyForKit(keyId)
+    } catch (err) {
+      if (!(err instanceof BackupEncryptionError)) throw err
+      return reply.status(404).send({ error: t('errors.backupKeyMissing') })
+    }
+    const text = emergencyKitText(key, await restoreConfirmName(), {
       title: t('backupKit.title'),
       instance: t('backupKit.instance'),
       created: t('backupKit.created'),
       publicKey: t('backupKit.publicKey'),
       body: t('backupKit.body').split('\n'),
     })
-    request.log.warn({ adminId: request.user!.id, key: id }, 'downloaded a backup emergency kit')
+    request.log.warn({ adminId: request.user!.id, key: key.id }, 'downloaded a backup emergency kit')
     reply.header('content-type', 'text/plain; charset=utf-8')
     reply.header('content-disposition', 'attachment; filename="famlin-emergency-kit.txt"')
     reply.header('cache-control', 'no-store')

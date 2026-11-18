@@ -155,7 +155,9 @@ export function runBackup(
       // still leaves a complete zip + mirror — but fails the run, so the
       // admin is told.
       const dump = recipient ? null : await backupDeps.dumpDatabase(BACKUP_DB_DIR, now)
-      const pruned = prune ? await pruneDbDumps(BACKUP_DB_DIR, settings.backupRetention) : []
+      // Encrypted: remove every remaining plaintext dump, which would
+      // otherwise sit next to the encrypted backups forever.
+      const pruned = prune ? await pruneDbDumps(BACKUP_DB_DIR, recipient ? 0 : settings.backupRetention) : []
       return {
         trigger,
         archiveFile: archive.file,

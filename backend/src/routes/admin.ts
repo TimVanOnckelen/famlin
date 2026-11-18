@@ -63,7 +63,8 @@ declare module 'fastify' {
 
 // age's scrypt passphrase is the export's only protection once it leaves the
 // server, so a minimum length rather than none.
-const exportTokenBodySchema = z.object({ passphrase: z.string().min(10).max(1000).optional() })
+// Trimmed, as every restore form trims what's typed in.
+const exportTokenBodySchema = z.object({ passphrase: z.string().trim().min(10).max(1000).optional() })
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'

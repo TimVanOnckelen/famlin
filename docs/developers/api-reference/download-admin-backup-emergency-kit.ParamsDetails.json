@@ -1,1 +1,1 @@
-{"parameters":[{"name":"key","in":"query","required":false,"schema":{"type":"string"},"description":"The key's public id (`age1…`); defaults to the current key"}]}
+{"parameters":[{"name":"key","in":"query","required":false,"schema":{"type":"string"},"description":"The key's public id (`age1…`); defaults to the pending key, else the current one"}]}

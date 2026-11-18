@@ -7,6 +7,7 @@ import { Decrypter } from 'age-encryption'
 import { prisma } from '../src/db.js'
 import {
   BACKUP_ARCHIVE_DIR,
+  BACKUP_DB_DIR,
   backupDeps,
   endRestore,
   isRestoreRunning,
@@ -167,6 +168,11 @@ describe('encrypted backups', () => {
     const admin = await createUser({ isAdmin: true })
     const group = await createGroupWithMember(admin)
     await createPost({ groupId: group.id, authorId: admin.id, content: 'a secret family moment' })
+    // An unencrypted run first: its plaintext dump must not outlive encryption.
+    await fsp.rm(BACKUP_DB_DIR, { recursive: true, force: true })
+    await runBackup('manual', new Date('2026-11-01T03:00:00Z'))
+    expect(await fsp.readdir(BACKUP_DB_DIR)).toHaveLength(1)
+    vi.mocked(backupDeps.dumpDatabase).mockClear()
     const kit = await enableEncryption(admin)
 
     const result = await runBackup('manual')
@@ -174,6 +180,7 @@ describe('encrypted backups', () => {
     expect(result.archiveEncrypted).toBe(true)
     expect(result.dumpFile).toBeNull()
     expect(backupDeps.dumpDatabase).not.toHaveBeenCalled()
+    expect(await fsp.readdir(BACKUP_DB_DIR)).toEqual([])
 
     const bytes = await fsp.readFile(path.join(BACKUP_ARCHIVE_DIR, result.archiveFile))
     expect(bytes.subarray(0, 21).toString()).toBe('age-encryption.org/v1')
@@ -198,9 +205,24 @@ describe('encrypted backups', () => {
       valid: true,
     })
 
-    // Deleting removes the sidecar too.
+    // Deleting removes the sidecar too (the earlier plaintext backup stays).
     await app.inject({ method: 'DELETE', url: `/api/admin/backups/${result.archiveFile}`, headers: authHeader(admin) })
-    expect((await fsp.readdir(BACKUP_ARCHIVE_DIR)).filter((n) => n.startsWith('famlin-backup-'))).toEqual([])
+    expect((await fsp.readdir(BACKUP_ARCHIVE_DIR)).filter((n) => n.startsWith('famlin-backup-')).sort()).toEqual([
+      'famlin-backup-2026-11-01T03-00-00-000Z.meta.json',
+      'famlin-backup-2026-11-01T03-00-00-000Z.zip',
+    ])
+  })
+
+  it('keeps using the current key while a new one is pending', async () => {
+    const admin = await createUser({ isAdmin: true })
+    await enableEncryption(admin)
+    const current = (await getBackupEncryptionStatus()).currentKey!
+    await generateBackupKey()
+    const result = await runBackup('manual')
+    const sidecar = JSON.parse(
+      await fsp.readFile(path.join(BACKUP_ARCHIVE_DIR, backupSidecarFileName(result.archiveFile)), 'utf8')
+    )
+    expect(sidecar.keyId).toBe(current.id)
   })
 
   it('fails the backup instead of writing plaintext when encryption is on without a key', async () => {
@@ -221,8 +243,20 @@ describe('encrypted backups', () => {
 
     const before = (await getBackupEncryptionStatus()).currentKey!
     await app.inject({ method: 'POST', url: '/api/admin/backups/encryption/key', headers: authHeader(admin) })
+    // The new key stays pending — backups keep using the old one — until its kit is confirmed.
+    const pending = await getBackupEncryptionStatus()
+    expect(pending.currentKey).toEqual(before)
+    expect(pending.pendingKey!.id).not.toBe(before.id)
+    expect(await kitFor(admin)).toContain(pending.pendingKey!.id)
+    await app.inject({
+      method: 'PUT',
+      url: '/api/admin/backups/encryption',
+      headers: authHeader(admin),
+      payload: { enabled: true, kitSaved: true },
+    })
     const after = await getBackupEncryptionStatus()
-    expect(after.currentKey!.id).not.toBe(before.id)
+    expect(after.currentKey!.id).toBe(pending.pendingKey!.id)
+    expect(after.pendingKey).toBeNull()
     expect(after.keys.map((k) => k.id)).toEqual([after.currentKey!.id, before.id])
 
     const res = await app.inject({
@@ -250,6 +284,7 @@ describe('encrypted backups', () => {
     // As if the key were lost on this server (the kit is all that's left).
     await prisma.setting.deleteMany({ where: { key: 'backupEncryptionKeys' } })
     await generateBackupKey()
+    await setBackupEncryptionEnabled(true)
 
     const restore = (key?: string) =>
       app.inject({
@@ -323,12 +358,13 @@ describe('encrypted backups', () => {
     })
     expect(short.statusCode).toBe(400)
     const passphrase = 'correct horse battery staple'
+    // Surrounding spaces are trimmed, as the restore forms trim them.
     const { token } = (
       await app.inject({
         method: 'POST',
         url: '/api/admin/export/token',
         headers: authHeader(admin),
-        payload: { passphrase },
+        payload: { passphrase: ` ${passphrase} ` },
       })
     ).json()
     const download = await app.inject({ method: 'GET', url: `/api/admin/export?downloadToken=${token}` })

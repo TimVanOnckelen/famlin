@@ -116,6 +116,8 @@ export interface BackupKey {
 export interface BackupEncryption {
   enabled: boolean
   currentKey: BackupKey | null
+  // Generated, but its kit not yet confirmed saved: not used for backups yet.
+  pendingKey: BackupKey | null
   keys: BackupKey[]
 }
 
@@ -643,7 +645,8 @@ export const api = {
       body: key ? { confirm, key } : { confirm },
     }),
 
-  // Backup encryption: generate a (new) key, turn encryption on/off.
+  // Backup encryption: generate a (new, pending) key; turning encryption on
+  // with the kit confirmed makes the pending key the one backups use.
   generateBackupKey: () =>
     request<{ encryption: BackupEncryption }>('/api/admin/backups/encryption/key', { method: 'POST' }),
 

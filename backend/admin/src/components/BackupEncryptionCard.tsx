@@ -18,8 +18,10 @@ export function shortKeyId(id: string): string {
 }
 
 // Backup encryption (issue #495), modelled on Home Assistant's: the server
-// generates the key; turning encryption on requires downloading the
-// emergency kit and confirming it's stored somewhere other than this server.
+// generates the key; turning encryption on — and switching to a new key —
+// requires downloading the emergency kit and confirming it's stored
+// somewhere other than this server. Until then a new key stays pending and
+// backups keep using the current one.
 export function BackupEncryptionCard({
   encryption,
   onChange,
@@ -28,12 +30,13 @@ export function BackupEncryptionCard({
   onChange: (encryption: BackupEncryption) => void
 }) {
   const { t } = useTranslation()
-  const [setupOpen, setSetupOpen] = useState(false)
+  // 'setup': turn encryption on; 'rotate': switch to a new key.
+  const [dialog, setDialog] = useState<'setup' | 'rotate' | null>(null)
+  const setupOpen = dialog !== null
   const [kitDownloaded, setKitDownloaded] = useState(false)
   const [kitSaved, setKitSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmRotate, setConfirmRotate] = useState(false)
   const [confirmOff, setConfirmOff] = useState(false)
   const [rotated, setRotated] = useState(false)
 
@@ -49,33 +52,31 @@ export function BackupEncryptionCard({
     }
   }
 
-  const openSetup = () => {
+  const openDialog = (kind: 'setup' | 'rotate') => {
     setKitDownloaded(false)
     setKitSaved(false)
     setError(null)
-    setSetupOpen(true)
+    setRotated(false)
+    setDialog(kind)
   }
 
-  // First use generates the key; the kit is then the current key's.
-  const downloadSetupKit = () =>
+  // A new key is generated as pending (rotation, or first setup), unless one
+  // is already pending; turning encryption back on reuses the current key.
+  // The kit download is the pending key's, else the current one's.
+  const downloadDialogKit = () =>
     run(async () => {
-      if (!encryption.currentKey) onChange((await api.generateBackupKey()).encryption)
+      if (!encryption.pendingKey && (dialog === 'rotate' || !encryption.currentKey)) {
+        onChange((await api.generateBackupKey()).encryption)
+      }
       await api.downloadEmergencyKit()
       setKitDownloaded(true)
     })
 
-  const turnOn = () =>
+  const confirmDialog = () =>
     run(async () => {
       onChange((await api.setBackupEncryption(true, true)).encryption)
-      setSetupOpen(false)
-    })
-
-  const rotate = () =>
-    run(async () => {
-      onChange((await api.generateBackupKey()).encryption)
-      setConfirmRotate(false)
-      setRotated(true)
-      await api.downloadEmergencyKit()
+      if (dialog === 'rotate') setRotated(true)
+      setDialog(null)
     })
 
   const turnOff = () =>
@@ -114,7 +115,7 @@ export function BackupEncryptionCard({
             <Button variant="secondary" disabled={busy} onClick={() => run(() => api.downloadEmergencyKit())}>
               {t('backupEncryption.downloadKit')}
             </Button>
-            <Button variant="outline" disabled={busy} onClick={() => setConfirmRotate(true)}>
+            <Button variant="outline" disabled={busy} onClick={() => openDialog('rotate')}>
               {t('backupEncryption.rotate')}
             </Button>
             <Button variant="ghost" className="text-destructive" disabled={busy} onClick={() => setConfirmOff(true)}>
@@ -129,7 +130,7 @@ export function BackupEncryptionCard({
             <span>{t('backupEncryption.offBody')}</span>
           </div>
           <div className="backups-save-row">
-            <Button disabled={busy} onClick={openSetup}>
+            <Button disabled={busy} onClick={() => openDialog('setup')}>
               {t('backupEncryption.setUp')}
             </Button>
             <a href={ENCRYPTION_DOCS_URL} target="_blank" rel="noreferrer" className="hint">
@@ -164,20 +165,24 @@ export function BackupEncryptionCard({
 
       {setupOpen && (
         <AdminModal
-          title={t('backupEncryption.setupTitle')}
-          onClose={() => setSetupOpen(false)}
+          title={t(dialog === 'rotate' ? 'backupEncryption.rotateTitle' : 'backupEncryption.setupTitle')}
+          onClose={() => setDialog(null)}
           descriptionId="backup-encryption-setup-desc"
         >
           <div className="backups-restore-form">
-            <p id="backup-encryption-setup-desc">{t('backupEncryption.setupIntro')}</p>
-            <ul className="backups-restore-list">
-              <li>{t('backupEncryption.setupPointKit')}</li>
-              <li>{t('backupEncryption.setupPointLost')}</li>
-              <li>{t('backupEncryption.setupPointServer')}</li>
-              <li>{t('backupEncryption.mirrorWarning')}</li>
-            </ul>
+            <p id="backup-encryption-setup-desc">
+              {t(dialog === 'rotate' ? 'backupEncryption.rotateBody' : 'backupEncryption.setupIntro')}
+            </p>
+            {dialog === 'setup' && (
+              <ul className="backups-restore-list">
+                <li>{t('backupEncryption.setupPointKit')}</li>
+                <li>{t('backupEncryption.setupPointLost')}</li>
+                <li>{t('backupEncryption.setupPointServer')}</li>
+                <li>{t('backupEncryption.mirrorWarning')}</li>
+              </ul>
+            )}
             <div>
-              <Button type="button" variant="secondary" disabled={busy} onClick={downloadSetupKit}>
+              <Button type="button" variant="secondary" disabled={busy} onClick={downloadDialogKit}>
                 {kitDownloaded ? t('backupEncryption.downloadKitAgain') : t('backupEncryption.downloadKit')}
               </Button>
             </div>
@@ -189,27 +194,17 @@ export function BackupEncryptionCard({
             {!kitDownloaded && <p className="hint">{t('backupEncryption.downloadFirst')}</p>}
             {error && <p className="test-err">{error}</p>}
             <div className="backups-restore-actions">
-              <Button type="button" variant="ghost" onClick={() => setSetupOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => setDialog(null)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="button" disabled={!kitDownloaded || !kitSaved || busy} onClick={turnOn}>
-                {t('backupEncryption.turnOn')}
+              <Button type="button" disabled={!kitDownloaded || !kitSaved || busy} onClick={confirmDialog}>
+                {t(dialog === 'rotate' ? 'backupEncryption.rotateConfirm' : 'backupEncryption.turnOn')}
               </Button>
             </div>
           </div>
         </AdminModal>
       )}
 
-      <ConfirmDialog
-        open={confirmRotate}
-        onOpenChange={(open) => !open && setConfirmRotate(false)}
-        title={t('backupEncryption.rotateTitle')}
-        description={t('backupEncryption.rotateBody')}
-        confirmLabel={t('backupEncryption.rotateConfirm')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={rotate}
-        busy={busy}
-      />
       <ConfirmDialog
         open={confirmOff}
         onOpenChange={(open) => !open && setConfirmOff(false)}

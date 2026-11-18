@@ -3921,7 +3921,8 @@ paths:
         Signed-in admin only (an API token gets `403`). Turning it on needs a
         key (`POST /api/admin/backups/encryption/key`) and `kitSaved: true` —
         the admin confirms the emergency kit is stored somewhere other than
-        this server. While on, backups are written as age-encrypted
+        this server — and makes a pending key the current one (also how a
+        key rotation is confirmed). While on, backups are written as age-encrypted
         `famlin-backup-<timestamp>.zip.age` and no database dump is written.
         Turning it off keeps the keys and leaves existing backups encrypted.
       requestBody:
@@ -3957,10 +3958,13 @@ paths:
       tags: [Storage administration]
       summary: Generate a new backup encryption key
       description: |
-        Signed-in admin only. Generates an age X25519 key and makes it the one
-        new backups are encrypted with. Older keys are kept, so this server can
-        still restore the backups made with them. The secret only leaves the
-        server through `GET /api/admin/backups/encryption/kit`.
+        Signed-in admin only. Generates an age X25519 key as the **pending**
+        key: backups keep using the current key until the admin downloads the
+        new key's kit and confirms it with `PUT /api/admin/backups/encryption`
+        (`enabled: true, kitSaved: true`), which makes it current. Older keys
+        are kept, so this server can still restore the backups made with
+        them. The secret only leaves the server through
+        `GET /api/admin/backups/encryption/kit`.
       responses:
         '200':
           description: The new state
@@ -3987,7 +3991,7 @@ paths:
           in: query
           required: false
           schema: { type: string }
-          description: The key's public id (`age1…`); defaults to the current key
+          description: The key's public id (`age1…`); defaults to the pending key, else the current one
       responses:
         '200':
           description: The emergency kit
@@ -4761,7 +4765,7 @@ components:
     BackupEncryption:
       type: object
       description: Backup encryption state (issue #495). Only public key ids, never the secret keys.
-      required: [enabled, currentKey, keys]
+      required: [enabled, currentKey, pendingKey, keys]
       properties:
         enabled: { type: boolean }
         currentKey:
@@ -4770,6 +4774,14 @@ components:
           required: [id, createdAt]
           properties:
             id: { type: string, description: 'Public key (age1…)' }
+            createdAt: { type: string, format: date-time }
+        pendingKey:
+          type: object
+          nullable: true
+          description: Generated, its kit not yet confirmed saved; not used for backups until confirmed
+          required: [id, createdAt]
+          properties:
+            id: { type: string }
             createdAt: { type: string, format: date-time }
         keys:
           type: array

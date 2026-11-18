@@ -92,8 +92,9 @@ export async function writeBackupArchive(
   const finalPath = path.join(dir, backupArchiveFileName(now, encrypted))
   const partialPath = finalPath + PARTIAL_SUFFIX
   let failure: Error | null = null
+  let archive: Awaited<ReturnType<typeof buildExportArchive>> | null = null
   try {
-    const archive = await buildExportArchive(
+    archive = await buildExportArchive(
       false,
       (err) => {
         failure = err
@@ -125,6 +126,8 @@ export async function writeBackupArchive(
     )
     await fsp.rename(partialPath, finalPath)
   } catch (err) {
+    // Stop a half-built archive (e.g. encryption failed before reading it).
+    archive?.abort()
     await fsp.rm(partialPath, { force: true })
     await fsp.rm(path.join(dir, backupSidecarFileName(path.basename(finalPath))), { force: true })
     throw err
@@ -200,7 +203,9 @@ export async function listBackups(
     const stat = await fsp.lstat(file).catch(() => null)
     if (!stat?.isFile()) continue
     const encrypted = name.endsWith(ENCRYPTED_SUFFIX)
-    const sidecar = await readSidecar(archiveDir, name)
+    // A plaintext zip's own manifest is authoritative (reading it also
+    // tells a truncated file apart); the sidecar is for encrypted ones.
+    const sidecar = encrypted ? await readSidecar(archiveDir, name) : null
     if (sidecar) {
       const keyId = encrypted ? sidecar.keyId : null
       out.push({
@@ -219,9 +224,8 @@ export async function listBackups(
       })
       continue
     }
-    // No sidecar: a backup from before #495 (or one copied in by hand).
-    // A plaintext zip's manifest says the same; an encrypted one is listed
-    // with what its name tells.
+    // A plaintext zip, or an encrypted one without a sidecar (copied in by
+    // hand): listed with what its name tells.
     const manifest = encrypted ? null : await readArchiveManifest(file).catch(() => null)
     out.push({
       name,

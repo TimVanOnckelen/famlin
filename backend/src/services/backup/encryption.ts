@@ -4,6 +4,7 @@ import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import type { ReadableStream as NodeWebReadableStream } from 'stream/web'
 import { Decrypter, Encrypter, generateX25519Identity, identityToRecipient } from 'age-encryption'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '../../db.js'
 
 // Encrypted backups (issue #495), modelled on Home Assistant's: the server
@@ -12,13 +13,22 @@ import { prisma } from '../../db.js'
 // The threat model is copies that LEAVE the server (off-site sync, a
 // downloaded file) — whoever controls the server can read its key.
 //
-// Both rows are deliberately outside ServerSettings/SETTING_KEYS (like
+// These rows are deliberately outside ServerSettings/SETTING_KEYS (like
 // `updateCheckResult`): the generic settings GET/PATCH never see them, the
 // export never carries them, and a restore onto a running server
 // (wipeForRestore) leaves them alone. The identities only ever leave the
 // server through the emergency-kit download.
 const ENABLED_KEY = 'backupEncryptionEnabled'
 const KEYS_KEY = 'backupEncryptionKeys'
+// A generated key the admin hasn't confirmed saving the kit of yet. It only
+// becomes the key new backups use once they have (setBackupEncryptionEnabled
+// with the kit confirmed) — first setup and rotation alike — so no backup is
+// ever encrypted to a key that exists only on this server.
+const PENDING_KEY = 'backupEncryptionPendingKey'
+
+// Serializes every read-modify-write of the key rows (two tabs rotating, a
+// rotation during a restore adopting its key), so no key is ever lost.
+const KEYS_ADVISORY_LOCK_KEY = 4_951_206n
 
 // Every age file starts with this line.
 const AGE_MAGIC = Buffer.from('age-encryption.org/v1\n')
@@ -36,8 +46,10 @@ interface StoredKey extends BackupKey {
 
 export interface BackupEncryptionStatus {
   enabled: boolean
-  // The key new backups are encrypted with; null until one is generated.
+  // The key new backups are encrypted with; null until one is confirmed.
   currentKey: BackupKey | null
+  // Generated, its kit not yet confirmed saved: not used for backups yet.
+  pendingKey: BackupKey | null
   // Every key this server can still decrypt with, newest first.
   keys: BackupKey[]
 }
@@ -49,40 +61,58 @@ export class BackupEncryptionError extends Error {
   }
 }
 
+type Db = Prisma.TransactionClient | typeof prisma
+
 function publicKey({ id, createdAt }: StoredKey): BackupKey {
   return { id, createdAt }
 }
 
-async function readKeys(): Promise<StoredKey[]> {
-  const row = await prisma.setting.findUnique({ where: { key: KEYS_KEY } })
-  if (!row) return []
+function isStoredKey(k: unknown): k is StoredKey {
+  const key = k as StoredKey | null
+  return !!key && typeof key.identity === 'string' && typeof key.id === 'string' && typeof key.createdAt === 'string'
+}
+
+async function readJson(db: Db, key: string): Promise<unknown> {
+  const row = await db.setting.findUnique({ where: { key } })
+  if (!row) return null
   try {
-    const parsed = JSON.parse(row.value) as unknown
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (k): k is StoredKey =>
-        !!k && typeof k.identity === 'string' && typeof k.id === 'string' && typeof k.createdAt === 'string'
-    )
+    return JSON.parse(row.value) as unknown
   } catch {
-    return []
+    return null
   }
 }
 
-async function writeKeys(keys: StoredKey[]): Promise<void> {
-  const value = JSON.stringify(keys)
-  await prisma.setting.upsert({ where: { key: KEYS_KEY }, create: { key: KEYS_KEY, value }, update: { value } })
+async function readKeys(db: Db = prisma): Promise<StoredKey[]> {
+  const parsed = await readJson(db, KEYS_KEY)
+  return Array.isArray(parsed) ? parsed.filter(isStoredKey) : []
 }
 
-async function writeEnabled(enabled: boolean): Promise<void> {
-  const value = String(enabled)
-  await prisma.setting.upsert({ where: { key: ENABLED_KEY }, create: { key: ENABLED_KEY, value }, update: { value } })
+async function readPending(db: Db = prisma): Promise<StoredKey | null> {
+  const parsed = await readJson(db, PENDING_KEY)
+  return isStoredKey(parsed) ? parsed : null
+}
+
+async function writeSetting(db: Db, key: string, value: string): Promise<void> {
+  await db.setting.upsert({ where: { key }, create: { key, value }, update: { value } })
+}
+
+function withKeysLock<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${KEYS_ADVISORY_LOCK_KEY})`
+    return fn(tx)
+  })
 }
 
 export async function getBackupEncryptionStatus(): Promise<BackupEncryptionStatus> {
-  const [enabledRow, keys] = await Promise.all([prisma.setting.findUnique({ where: { key: ENABLED_KEY } }), readKeys()])
+  const [enabledRow, keys, pending] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: ENABLED_KEY } }),
+    readKeys(),
+    readPending(),
+  ])
   return {
     enabled: enabledRow?.value === 'true' && keys.length > 0,
     currentKey: keys[0] ? publicKey(keys[0]) : null,
+    pendingKey: pending ? publicKey(pending) : null,
     keys: keys.map(publicKey),
   }
 }
@@ -100,48 +130,78 @@ export async function backupEncryptionRecipient(): Promise<string | null> {
   return current.id
 }
 
-/** Every identity this server holds, newest first. */
+/** Every identity this server holds (confirmed keys, newest first), for decrypting. */
 export async function storedBackupIdentities(): Promise<string[]> {
   return (await readKeys()).map((k) => k.identity)
 }
 
-/** Generates a new key and makes it the current one; older keys are kept. */
+/**
+ * Generates a new key as the PENDING one (replacing an earlier pending key):
+ * new backups keep using the current key until the admin confirms saving
+ * the new key's kit (setBackupEncryptionEnabled(true)).
+ */
 export async function generateBackupKey(now = new Date()): Promise<BackupKey> {
   const identity = await generateX25519Identity()
   const key: StoredKey = { identity, id: await identityToRecipient(identity), createdAt: now.toISOString() }
-  await writeKeys([key, ...(await readKeys())])
+  await withKeysLock((tx) => writeSetting(tx, PENDING_KEY, JSON.stringify(key)))
   return publicKey(key)
 }
 
+/**
+ * Turning on (the admin confirmed the kit is saved) promotes a pending key
+ * to the current one — older keys are kept — and enables encryption.
+ * Turning off keeps every key.
+ */
 export async function setBackupEncryptionEnabled(enabled: boolean): Promise<void> {
-  if (enabled && (await readKeys()).length === 0) throw new BackupEncryptionError('noKey')
-  await writeEnabled(enabled)
+  await withKeysLock(async (tx) => {
+    if (enabled) {
+      const [keys, pending] = await Promise.all([readKeys(tx), readPending(tx)])
+      if (pending) {
+        await writeSetting(tx, KEYS_KEY, JSON.stringify([pending, ...keys.filter((k) => k.id !== pending.id)]))
+        await tx.setting.deleteMany({ where: { key: PENDING_KEY } })
+      } else if (keys.length === 0) {
+        throw new BackupEncryptionError('noKey')
+      }
+    }
+    await writeSetting(tx, ENABLED_KEY, String(enabled))
+  })
 }
 
 /**
  * Remembers an identity that decrypted a backup. `makeCurrent` (a fresh
  * install restored from an encrypted backup) also makes it the key new
  * backups use and turns encryption on, so the restored server keeps
- * producing backups the same emergency kit opens.
+ * producing backups the same emergency kit opens — the admin already has it.
  */
 export async function adoptBackupIdentity(
   identity: string,
   options: { makeCurrent: boolean },
   now = new Date()
 ): Promise<void> {
-  const keys = await readKeys()
-  const existing = keys.find((k) => k.identity === identity)
-  const key = existing ?? { identity, id: await identityToRecipient(identity), createdAt: now.toISOString() }
-  const others = keys.filter((k) => k.identity !== identity)
-  await writeKeys(options.makeCurrent ? [key, ...others] : existing ? keys : [...keys, key])
-  if (options.makeCurrent) await writeEnabled(true)
+  const id = await identityToRecipient(identity)
+  await withKeysLock(async (tx) => {
+    const keys = await readKeys(tx)
+    const existing = keys.find((k) => k.identity === identity)
+    const key = existing ?? { identity, id, createdAt: now.toISOString() }
+    const others = keys.filter((k) => k.identity !== identity)
+    if (options.makeCurrent) {
+      await writeSetting(tx, KEYS_KEY, JSON.stringify([key, ...others]))
+      await writeSetting(tx, ENABLED_KEY, 'true')
+    } else if (!existing) {
+      await writeSetting(tx, KEYS_KEY, JSON.stringify([...keys, key]))
+    }
+  })
 }
 
-/** The secret identity of one stored key (by its public id), for the emergency kit. */
-export async function backupIdentityFor(id: string): Promise<string> {
-  const key = (await readKeys()).find((k) => k.id === id)
+/**
+ * One stored or pending key (by its public id) with its secret identity, for
+ * the emergency kit. Without `id`: the pending key, else the current one.
+ */
+export async function backupKeyForKit(id?: string): Promise<StoredKey> {
+  const [keys, pending] = await Promise.all([readKeys(), readPending()])
+  const key = id ? [pending, ...keys].find((k) => k?.id === id) : (pending ?? keys[0])
   if (!key) throw new BackupEncryptionError('unknownKey')
-  return key.identity
+  return key
 }
 
 // What an admin pasted or uploaded to unlock a backup: an emergency kit (or
