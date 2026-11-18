@@ -1,8 +1,9 @@
 version: 2
 
-# Famlin installs in five independent trees, so each needs its own entry:
-# the root npm workspace (web/ + packages/api-client), backend/,
-# backend/admin/, mobile/, and docs/. See AGENTS.md > Commands.
+# Famlin installs in several independent trees, so each needs its own entry:
+# the root npm workspace (web/, backend/admin/ and packages/*), backend/,
+# mobile/, docs/ and e2e/. backend/admin/ has no lockfile of its own — the
+# root entry covers it. See AGENTS.md > Commands.
 #
 # Updates are grouped so one PR carries a whole ecosystem's patch/minor bumps
 # instead of one PR per package — the lockfiles are large and CI runs a full
@@ -11,8 +12,8 @@ version: 2
 
 updates:
   # ---------------------------------------------------------------- root
-  # npm workspace: web/ (member-facing app) + packages/api-client (shared
-  # data layer consumed by web, admin and mobile).
+  # npm workspace: web/ (member-facing app), backend/admin/ (admin UI) and
+  # packages/* (api-client, design-tokens, ui).
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -52,18 +53,6 @@ updates:
         exclude-patterns: ['fastify', '@fastify/*', 'fastify-plugin', 'prisma', '@prisma/*']
         update-types: [minor, patch]
 
-  # --------------------------------------------------------- backend/admin
-  - package-ecosystem: npm
-    directory: /backend/admin
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    labels: [dependencies, admin]
-    groups:
-      admin-minor-patch:
-        patterns: ['*']
-        update-types: [minor, patch]
-
   # -------------------------------------------------------------- mobile
   # Expo pins its native modules to the exact versions in
   # expo/bundledNativeModules.json. Bumping one off that set builds it from
@@ -100,6 +89,13 @@ updates:
       # Must match the root workspace's version and moves with the root's
       # tanstack-query PR instead (see the root entry above).
       - dependency-name: '@tanstack/*'
+      # Majors gated by the Expo SDK: babel-preset-expo expects @babel/core 7
+      # (`expo install --check` fails on 8), and eslint-config-expo's bundled
+      # eslint-plugin-react crashes on ESLint 10. Move with the next SDK.
+      - dependency-name: '@babel/core'
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
     groups:
       mobile-minor-patch:
         patterns: ['*']
