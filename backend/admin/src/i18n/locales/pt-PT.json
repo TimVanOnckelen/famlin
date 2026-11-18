@@ -631,7 +631,7 @@
         "weekly_one": "Aos domingos às {{time}}, mantendo {{count}} dump",
         "weekly_other": "Aos domingos às {{time}}, mantendo {{count}} dumps"
       },
-      "enableInSettings": "Ativar em Definições do servidor",
+      "enableInSettings": "Ativar na página Cópias de segurança",
       "lastBackup": "Última cópia de segurança",
       "size": "Tamanho",
       "sizeValue": "Dump {{dump}} · espelho dos carregamentos {{mirror}}",

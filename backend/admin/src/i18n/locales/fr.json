@@ -631,7 +631,7 @@
         "weekly_one": "Le dimanche à {{time}}, {{count}} dump conservé",
         "weekly_other": "Le dimanche à {{time}}, {{count}} dumps conservés"
       },
-      "enableInSettings": "Activer dans Réglages du serveur",
+      "enableInSettings": "Activer sur la page Sauvegardes",
       "lastBackup": "Dernière sauvegarde",
       "size": "Taille",
       "sizeValue": "Dump {{dump}} · copie des envois {{mirror}}",

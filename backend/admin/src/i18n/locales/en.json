@@ -631,7 +631,7 @@
         "weekly_one": "Sundays at {{time}}, keeping {{count}} dump",
         "weekly_other": "Sundays at {{time}}, keeping {{count}} dumps"
       },
-      "enableInSettings": "Enable in Server settings",
+      "enableInSettings": "Enable on the Backups page",
       "lastBackup": "Last backup",
       "size": "Size",
       "sizeValue": "Dump {{dump}} · uploads mirror {{mirror}}",

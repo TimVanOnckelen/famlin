@@ -631,7 +631,7 @@
         "weekly_one": "Zondag om {{time}}, {{count}} dump bewaren",
         "weekly_other": "Zondag om {{time}}, {{count}} dumps bewaren"
       },
-      "enableInSettings": "Inschakelen in Serverinstellingen",
+      "enableInSettings": "Inschakelen op de pagina Back-ups",
       "lastBackup": "Laatste back-up",
       "size": "Grootte",
       "sizeValue": "Dump {{dump}} · uploadspiegel {{mirror}}",

@@ -631,7 +631,7 @@
         "weekly_one": "每周日 {{time}}，保留 {{count}} 份转储",
         "weekly_other": "每周日 {{time}}，保留 {{count}} 份转储"
       },
-      "enableInSettings": "在服务器设置中启用",
+      "enableInSettings": "在备份页面中启用",
       "lastBackup": "上次备份",
       "size": "大小",
       "sizeValue": "转储 {{dump}} · 上传镜像 {{mirror}}",
