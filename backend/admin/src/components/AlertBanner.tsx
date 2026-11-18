@@ -1,9 +1,9 @@
 import { Alert } from '@famlin/ui/alert'
 import { Button } from '@famlin/ui/button'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { api, ActiveAlert } from '../api/client'
+import { ActiveAlert } from '../api/client'
 import type { UpdateNotice } from '../types'
 import { Icon } from './Icon'
 
@@ -20,24 +20,13 @@ function readDismissed(): string | null {
 
 // Shown above every admin page while a system alert is active (failed or
 // stale backup, low disk space — backend/src/services/systemAlerts.ts) or a
-// newer Famlin release exists (backend/src/services/updateCheck.ts). Re-checked
-// on every navigation; fail-soft: any error renders nothing.
-export function AlertBanner() {
+// newer Famlin release exists (backend/src/services/updateCheck.ts). The
+// alerts/update data comes from Layout's useSystemAlerts() so the sidebar
+// dots and this banner share one fetch.
+export function AlertBanner({ alerts, update }: { alerts: ActiveAlert[]; update: UpdateNotice | null }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const [alerts, setAlerts] = useState<ActiveAlert[]>([])
-  const [update, setUpdate] = useState<UpdateNotice | null>(null)
   const [dismissed, setDismissed] = useState<string | null>(readDismissed)
-
-  useEffect(() => {
-    api
-      .getSystemAlerts()
-      .then((res) => {
-        setAlerts(res.alerts)
-        setUpdate(res.update ?? null)
-      })
-      .catch(() => {})
-  }, [pathname])
 
   const dismissUpdate = () => {
     if (!update) return

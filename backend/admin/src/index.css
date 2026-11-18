@@ -240,12 +240,17 @@
   .sidebar nav {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .sidebar nav a {
-    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 1rem;
     border-radius: var(--radius-sm);
     color: var(--foreground);
     text-decoration: none;
@@ -260,82 +265,100 @@
     color: var(--fam-primary-dark);
   }
 
-  .sidebar-nav-group-trigger {
+  .sidebar-nav-icon {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+  }
+
+  .sidebar nav a:hover .sidebar-nav-icon,
+  .sidebar nav a.active .sidebar-nav-icon {
+    color: inherit;
+  }
+
+  .sidebar-nav-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar-nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--destructive);
+    flex-shrink: 0;
+  }
+
+  .sidebar-nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.9rem;
+  }
+
+  .sidebar-nav-heading {
+    padding: 0 1rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+  }
+
+  .sidebar-user {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .sidebar-user-trigger {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.65rem;
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.65rem;
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--foreground);
     font: inherit;
-    font-size: 0.95rem;
-    font-weight: 700;
     text-align: left;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
 
-  .sidebar-nav-group-trigger:hover,
-  .sidebar-nav-group-trigger.expanded {
+  .sidebar-user-trigger:hover,
+  .sidebar-user-trigger[data-popup-open] {
     background: var(--fam-primary-tint);
-    color: var(--fam-primary-dark);
   }
 
-  .sidebar-nav-chevron {
-    display: flex;
-    transition: transform 0.15s ease;
-  }
-
-  .sidebar-nav-chevron.expanded {
-    transform: rotate(180deg);
-  }
-
-  .sidebar-subnav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-left: 0.75rem;
-    padding-left: 0.5rem;
-    border-left: 1px solid var(--border);
-  }
-
-  .sidebar-subnav[hidden] {
-    display: none;
-  }
-
-  .sidebar-subnav a {
-    padding: 0.6rem 0.75rem;
+  .sidebar-user-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
     font-size: 0.9rem;
   }
 
-  .sidebar .user {
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.875rem;
+  .sidebar-user-chevron {
+    display: flex;
     color: var(--muted-foreground);
   }
 
-  .sidebar-language {
-    margin-top: 0.75rem;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
+  .sidebar-user-menu {
+    width: 232px;
+  }
+
+  .sidebar-user-email,
+  .sidebar-user-version {
+    padding: 0.4rem 0.75rem;
     font-size: 0.75rem;
-    font-weight: 600;
     color: var(--muted-foreground);
-  }
-
-  .sidebar-language select {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .sidebar .user button {
-    margin-top: 0.75rem;
-    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .main {
@@ -1818,7 +1841,6 @@
 }
 
 @layer components {
-  .sidebar-nav-group-trigger,
   .md-list-item,
   .settings-nav-item,
   .seg-tab,
@@ -1826,9 +1848,6 @@
     height: auto;
     white-space: normal;
     justify-content: flex-start;
-  }
-  .sidebar-nav-group-trigger {
-    justify-content: space-between;
   }
 
   .main > [data-slot='card'],
@@ -1903,11 +1922,16 @@
   .sidebar nav {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-y: visible;
   }
-  .sidebar-subnav {
+  .sidebar-nav-section {
+    display: contents;
+  }
+  .sidebar-nav-heading {
     grid-column: 1 / -1;
+    margin-top: 0.5rem;
   }
-  .sidebar .user {
+  .sidebar-user {
     margin-top: 1rem;
   }
   .main {

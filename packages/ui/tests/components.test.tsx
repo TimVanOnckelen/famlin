@@ -6,6 +6,17 @@ import { UserAvatar } from '../src/common/user-avatar'
 import { AuthShell } from '../src/common/auth-shell'
 import { SelectField } from '../src/common/select-field'
 import { Dialog, DialogContent, DialogTitle } from '../src/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '../src/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../src/tabs'
 
 describe('shared presentation', () => {
@@ -98,5 +109,77 @@ describe('shared presentation', () => {
       'motion-reduce:transition-none'
     )
     expect(screen.getByRole('tabpanel').className).toContain('motion-reduce:transition-none')
+  })
+})
+
+describe('dropdown menu', () => {
+  it('opens from the trigger, runs the item action and closes', async () => {
+    const user = userEvent.setup()
+    let clicked = 0
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Account</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => clicked++}>Log out</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+    await user.click(screen.getByRole('button', { name: 'Account' }))
+    const item = await screen.findByRole('menuitem', { name: 'Log out' })
+    await user.click(item)
+    expect(clicked).toBe(1)
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+  })
+
+  it('selects radio items by keyboard and keeps the checked state', async () => {
+    function Example() {
+      const [lang, setLang] = useState('en')
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger>Settings</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuRadioGroup value={lang} onValueChange={(value) => setLang(String(value))}>
+              <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="nl">Nederlands</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
+    const user = userEvent.setup()
+    render(<Example />)
+    const trigger = screen.getByRole('button', { name: 'Settings' })
+    trigger.focus()
+    await user.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('menu')).toBeTruthy()
+    // Opening highlights the first item; move to the second and select it.
+    // Radio items keep the menu open (Base UI's closeOnClick default).
+    await user.keyboard('{ArrowDown}{Enter}')
+    const dutch = await screen.findByRole('menuitemradio', { name: 'Nederlands' })
+    await waitFor(() => expect(dutch.getAttribute('aria-checked')).toBe('true'))
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    await user.click(trigger)
+    expect((await screen.findByRole('menuitemradio', { name: 'Nederlands' })).getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('opens a submenu from its trigger', async () => {
+    const user = userEvent.setup()
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Account</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Language</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem>English</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+    await user.click(screen.getByRole('button', { name: 'Account' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Language' }))
+    expect(await screen.findByRole('menuitem', { name: 'English' })).toBeTruthy()
   })
 })

@@ -37,7 +37,7 @@ This is current state only. There are no timestamps, last-seen values or activit
 
 ## Diagnostic reports
 
-Members can measure how smoothly the feed scrolls on their phone and send the result to you (**Profile → Advanced → Report scrolling performance** in the mobile app; see [Report a slow feed](./notifications-and-profile.mdx#report-a-slow-feed-mobile)). The **Diagnostics** page (under **Operations**) lists those reports, newest first: who sent it and when, the phone and app version, a rating for the screen (UI) and app (JS) threads, and the full report text.
+Members can measure how smoothly the feed scrolls on their phone and send the result to you (**Profile → Advanced → Report scrolling performance** in the mobile app; see [Report a slow feed](./notifications-and-profile.mdx#report-a-slow-feed-mobile)). The **Diagnostics** page (under **Monitoring** in the admin menu) lists those reports, newest first: who sent it and when, the phone and app version, a rating for the screen (UI) and app (JS) threads, and the full report text.
 
 ![The admin diagnostics page](./img/admin-diagnostics.png)
 

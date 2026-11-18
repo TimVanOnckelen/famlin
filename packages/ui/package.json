@@ -12,6 +12,7 @@
     "./card": "./src/card.tsx",
     "./checkbox": "./src/checkbox.tsx",
     "./dialog": "./src/dialog.tsx",
+    "./dropdown-menu": "./src/dropdown-menu.tsx",
     "./input": "./src/input.tsx",
     "./label": "./src/label.tsx",
     "./progress": "./src/progress.tsx",
