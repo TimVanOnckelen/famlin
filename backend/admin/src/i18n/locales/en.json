@@ -254,7 +254,21 @@
     "memberCount_other": "{{count}} members",
     "membersOf": "Members of {{name}}",
     "addMember": "Add member",
-    "addExistingUser": "+ Add an existing user",
+    "addExistingUser": "Add an existing user",
+    "tabs": {
+      "members": "Members",
+      "circles": "Circles",
+      "invites": "Invites"
+    },
+    "features": {
+      "chatOn": "Chat on",
+      "chatOff": "Chat off",
+      "storiesOn": "Stories on",
+      "storiesOff": "Stories off",
+      "allPostTypes": "All post types",
+      "limitedPostTypes_one": "{{count}} post type",
+      "limitedPostTypes_other": "{{count}} post types"
+    },
     "selectUser": "Select a user…",
     "noMembers": "No members in this group yet.",
     "joinedOn": "joined {{date}}",
@@ -268,7 +282,6 @@
       "actions": "Actions"
     },
     "invites": {
-      "title": "Invite a family member",
       "hint": "Share the link or send it by email — they only create an account once they accept. No need to add them as a user first.",
       "emailLabel": "Email (optional)",
       "emailPlaceholder": "someone@example.com",
@@ -337,7 +350,6 @@
       "pauseHint": "Pause stops adding photos; Famlin still takes deleted posts back out of the album."
     },
     "photos": {
-      "title": "Photos",
       "moved": "Linked albums and the Immich upload mirror for this family are managed under Integrations:"
     }
   },
@@ -554,8 +566,6 @@
   "circles": {
     "edit": "Edit circle",
     "removeMemberConfirm": "Remove {{name}} from the circle \"{{circle}}\"?",
-    "heading_one": "{{count}} circle",
-    "heading_other": "{{count}} circles",
     "hint": "Circles let part of a family share privately. Members outside a circle never see its posts, photos or comments — and never learn it exists.",
     "create": "New circle",
     "namePlaceholder": "Circle name (e.g. Grandparents)",

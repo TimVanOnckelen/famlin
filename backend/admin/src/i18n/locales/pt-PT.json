@@ -254,7 +254,21 @@
     "memberCount_other": "{{count}} membros",
     "membersOf": "Membros de {{name}}",
     "addMember": "Adicionar membro",
-    "addExistingUser": "+ Adicionar um utilizador existente",
+    "addExistingUser": "Adicionar um utilizador existente",
+    "tabs": {
+      "members": "Membros",
+      "circles": "Círculos",
+      "invites": "Convites"
+    },
+    "features": {
+      "chatOn": "Conversa ativa",
+      "chatOff": "Conversa desativada",
+      "storiesOn": "Histórias ativas",
+      "storiesOff": "Histórias desativadas",
+      "allPostTypes": "Todos os tipos de publicação",
+      "limitedPostTypes_one": "{{count}} tipo de publicação",
+      "limitedPostTypes_other": "{{count}} tipos de publicação"
+    },
     "selectUser": "Seleciona um utilizador…",
     "noMembers": "Este grupo ainda não tem membros.",
     "joinedOn": "entrou a {{date}}",
@@ -268,7 +282,6 @@
       "actions": "Ações"
     },
     "invites": {
-      "title": "Convidar um membro da família",
       "hint": "Partilha o link ou envia-o por email — a pessoa só cria conta quando aceitar. Não é preciso adicioná-la primeiro como utilizador.",
       "emailLabel": "Email (opcional)",
       "emailPlaceholder": "alguem@example.com",
@@ -337,7 +350,6 @@
       "pauseHint": "Pausar deixa de adicionar fotos; o Famlin continua a retirar do álbum as publicações apagadas."
     },
     "photos": {
-      "title": "Fotos",
       "moved": "Os álbuns associados e o espelhamento de envios para o Immich desta família são geridos em Integrações:"
     }
   },
@@ -554,8 +566,6 @@
   "circles": {
     "edit": "Editar círculo",
     "removeMemberConfirm": "Remover {{name}} do círculo \"{{circle}}\"?",
-    "heading_one": "{{count}} círculo",
-    "heading_other": "{{count}} círculos",
     "hint": "Os círculos permitem que parte de uma família partilhe em privado. Os membros fora de um círculo nunca veem as publicações, fotografias ou comentários dele — nem sabem que existe.",
     "create": "Novo círculo",
     "namePlaceholder": "Nome do círculo (ex.: Avós)",

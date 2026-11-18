@@ -7,6 +7,8 @@ export interface GroupMember {
   email: string
   avatarUrl?: string | null
   joinedAt: string
+  // Optional: servers older than the members-page filters don't send it.
+  isAdmin?: boolean
 }
 
 export async function fetchGroups(): Promise<Group[]> {

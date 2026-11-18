@@ -35,7 +35,7 @@ export function MemberCards({
             variant="destructive"
             size="icon"
             type="button"
-            className="icon-button danger"
+            className="icon-button danger member-card-remove"
             aria-label={t('members.removeNamed', { name: member.name })}
             title={t('common.remove')}
             disabled={disabled}
