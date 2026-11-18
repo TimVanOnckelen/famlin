@@ -28,11 +28,11 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1158.0",
     "@aws-sdk/lib-storage": "^3.1158.0",
-    "@fastify/cors": "^11.4.1",
+    "@fastify/cors": "^11.4.3",
     "@fastify/helmet": "^13.2.0",
     "@fastify/multipart": "^10.1.7",
     "@fastify/rate-limit": "^11.2.2",
-    "@fastify/static": "^10.1.10",
+    "@fastify/static": "^10.1.11",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "archiver": "^8.0.0",
