@@ -734,6 +734,87 @@
     white-space: nowrap;
   }
 
+  /* Groups detail: at-a-glance feature chips under the group header. */
+  .feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: -0.25rem;
+  }
+
+  .feature-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--background);
+    color: var(--foreground);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+
+  .feature-chip:hover {
+    background: var(--fam-primary-tint);
+  }
+
+  .feature-chip.off {
+    color: var(--muted-foreground);
+    border-style: dashed;
+  }
+
+  /* Groups detail tabs — same line style as the Integrations page. */
+  .group-tabs {
+    max-width: 100%;
+    margin-top: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab-count {
+    padding: 0.05rem 0.45rem;
+    border-radius: 9999px;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .md-panel-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin: 1rem 0 0.75rem;
+  }
+
+  .md-photos-hint {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Destructive row actions stay quiet until the row is hovered or focused;
+     touch devices (no hover) always show them. */
+  .member-card-remove {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  .member-card:hover .member-card-remove,
+  .member-card:focus-within .member-card-remove,
+  .member-card-remove:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .member-card-remove {
+      opacity: 1;
+    }
+  }
+
   @media (max-width: 900px) {
     .master-detail {
       flex-direction: column;

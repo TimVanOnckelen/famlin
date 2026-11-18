@@ -28,7 +28,16 @@ import { Icon } from './Icon'
  *    showing what's inside: the number is all an admin outside the circle is
  *    entitled to, and it's enough to make the destruction informed.
  */
-export function CirclesSection({ groupId, members }: { groupId: string; members: GroupMember[] }) {
+export function CirclesSection({
+  groupId,
+  members,
+  onCountChange,
+}: {
+  groupId: string
+  members: GroupMember[]
+  // Reports the circle count up to the Groups page's tab badge.
+  onCountChange?: (count: number) => void
+}) {
   const { t } = useTranslation()
   const dialogs = useAdminDialogs()
   const [circles, setCircles] = useState<Circle[]>([])
@@ -60,6 +69,10 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
   useEffect(() => {
     void load()
   }, [load, members])
+
+  useEffect(() => {
+    onCountChange?.(circles.length)
+  }, [circles.length, onCountChange])
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault()
@@ -152,12 +165,13 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
   const addingTo = circles.find((circle) => circle.id === addingToId)
   return (
     <>
-      <div className="md-section-header">
-        <h4>{t('circles.heading', { count: circles.length })}</h4>
+      {/* The Groups page's "Circles" tab carries the heading; this toolbar
+          only holds the create action. */}
+      <div className="md-panel-toolbar">
         <Button
-          variant="link"
+          variant="secondary"
+          size="sm"
           type="button"
-          className="link-button"
           disabled={busy}
           onClick={() => {
             setEditingId(null)
@@ -167,6 +181,7 @@ export function CirclesSection({ groupId, members }: { groupId: string; members:
             setCreating(true)
           }}
         >
+          <Icon name="plus" size={14} />
           {t('circles.create')}
         </Button>
       </div>

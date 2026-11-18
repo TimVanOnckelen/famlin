@@ -254,7 +254,21 @@
     "memberCount_other": "{{count}} 位成员",
     "membersOf": "{{name}} 的成员",
     "addMember": "添加成员",
-    "addExistingUser": "+ 添加已有用户",
+    "addExistingUser": "添加已有用户",
+    "tabs": {
+      "members": "成员",
+      "circles": "圈子",
+      "invites": "邀请"
+    },
+    "features": {
+      "chatOn": "群聊已开启",
+      "chatOff": "群聊已关闭",
+      "storiesOn": "限时动态已开启",
+      "storiesOff": "限时动态已关闭",
+      "allPostTypes": "全部动态类型",
+      "limitedPostTypes_one": "{{count}} 种动态类型",
+      "limitedPostTypes_other": "{{count}} 种动态类型"
+    },
     "selectUser": "选择用户…",
     "noMembers": "该群组暂无成员。",
     "joinedOn": "加入于 {{date}}",
@@ -268,7 +282,6 @@
       "actions": "操作"
     },
     "invites": {
-      "title": "邀请家人",
       "hint": "分享邀请链接或通过邮件发送；家人接受邀请时再创建账号，无需提前添加用户。",
       "emailLabel": "邮箱（可选）",
       "emailPlaceholder": "someone@example.com",
@@ -337,7 +350,6 @@
       "pauseHint": "暂停后不再添加照片；已删除帖子的照片仍会被 Famlin 从相册中移除。"
     },
     "photos": {
-      "title": "照片",
       "moved": "此家庭的关联相册和 Immich 上传同步在“集成”中管理："
     }
   },
@@ -554,8 +566,6 @@
   "circles": {
     "edit": "编辑圈子",
     "removeMemberConfirm": "将 {{name}} 从圈子“{{circle}}”中移除？",
-    "heading_one": "{{count}} 个圈子",
-    "heading_other": "{{count}} 个圈子",
     "hint": "圈子供部分家人私密分享，圈外成员无法查看其中的动态、照片或评论，也不会获知圈子的存在。",
     "create": "新建圈子",
     "namePlaceholder": "圈子名称（例如祖父母）",

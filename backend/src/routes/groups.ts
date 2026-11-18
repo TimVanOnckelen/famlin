@@ -55,7 +55,7 @@ export default async function groupRoutes(fastify: FastifyInstance) {
 
     const members = await prisma.groupMember.findMany({
       where: { groupId: id },
-      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true, isAdmin: true } } },
       orderBy: { joinedAt: 'asc' },
     })
 

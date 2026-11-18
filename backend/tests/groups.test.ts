@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import type { FastifyInstance } from 'fastify'
-import { buildTestApp, createUser, createGroupWithMember, authHeader } from './helpers.js'
+import { buildTestApp, createUser, createGroupWithMember, addMember, authHeader } from './helpers.js'
 
 describe('groups routes', () => {
   let app: FastifyInstance
@@ -59,9 +59,11 @@ describe('groups routes', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('lets a member read the member list', async () => {
+  it('lets a member read the member list, including who is an admin', async () => {
     const member = await createUser()
+    const admin = await createUser({ isAdmin: true })
     const group = await createGroupWithMember(member)
+    await addMember(group.id, admin.id)
 
     const res = await app.inject({
       method: 'GET',
@@ -70,7 +72,10 @@ describe('groups routes', () => {
     })
 
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toHaveLength(1)
+    const members = res.json()
+    expect(members).toHaveLength(2)
+    expect(members.find((user: { id: string }) => user.id === admin.id).isAdmin).toBe(true)
+    expect(members.find((user: { id: string }) => user.id === member.id).isAdmin).toBe(false)
   })
 
   it('rejects unauthenticated requests', async () => {

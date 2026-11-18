@@ -5,6 +5,7 @@ import { Button } from '@famlin/ui/button'
 import { Card } from '@famlin/ui/card'
 import { Badge } from '@famlin/ui/badge'
 import { Input } from '@famlin/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@famlin/ui/tabs'
 import { AdminModal } from './AdminModal'
 import { AddMembersModal } from './AddMembersModal'
 import { MemberCards } from './MemberCards'
@@ -33,6 +34,10 @@ export function GroupsPage() {
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null)
   const [showAddMember, setShowAddMember] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Detail tabs: members first — who is in this family is the most-asked
+  // question; circles and invites are one click away, with live counts.
+  const [tab, setTab] = useState('members')
+  const [circleCount, setCircleCount] = useState(0)
 
   // Group create/edit modal. `formGroup === null` while closed; a Group with an
   // empty id means "create", otherwise "edit".
@@ -73,6 +78,7 @@ export function GroupsPage() {
 
   useEffect(() => {
     setShowAddExisting(false)
+    setCircleCount(0)
     if (selectedId) {
       loadMembers(selectedId)
       loadInvites(selectedId)
@@ -229,116 +235,183 @@ export function GroupsPage() {
                   </div>
                 </div>
 
-                <div className="md-section-header">
-                  <h4>{t('groups.invites.title')}</h4>
-                  <Button variant="link" type="button" className="link-button" onClick={() => setShowAddMember(true)}>
-                    {t('members.addMember')}
-                  </Button>
+                {/* At-a-glance feature state; clicking a chip opens the same
+                    edit modal as the Edit button. */}
+                <div className="feature-chips">
+                  <button
+                    type="button"
+                    className={`feature-chip${selectedGroup.chitchatEnabled ? '' : ' off'}`}
+                    onClick={() => setFormGroup(selectedGroup)}
+                    title={t('groups.editGroup')}
+                  >
+                    <Icon name="message-circle" size={14} />
+                    {t(selectedGroup.chitchatEnabled ? 'groups.features.chatOn' : 'groups.features.chatOff')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`feature-chip${selectedGroup.storiesEnabled === false ? ' off' : ''}`}
+                    onClick={() => setFormGroup(selectedGroup)}
+                    title={t('groups.editGroup')}
+                  >
+                    <Icon name="image" size={14} />
+                    {t(
+                      selectedGroup.storiesEnabled === false
+                        ? 'groups.features.storiesOff'
+                        : 'groups.features.storiesOn'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="feature-chip"
+                    onClick={() => setFormGroup(selectedGroup)}
+                    title={t('groups.editGroup')}
+                  >
+                    <Icon name="layers" size={14} />
+                    {selectedGroup.allowedPostTypes?.length
+                      ? t('groups.features.limitedPostTypes', { count: selectedGroup.allowedPostTypes.length })
+                      : t('groups.features.allPostTypes')}
+                  </button>
                 </div>
-                <p className="hint">{t('groups.invites.hint')}</p>
 
-                {invitesLoading ? (
-                  <StateMessage variant="loading" className="loading">
-                    {t('common.loading')}
-                  </StateMessage>
-                ) : invites.length === 0 ? (
-                  <StateMessage variant="empty" className="empty">
-                    {t('groups.invites.noInvites')}
-                  </StateMessage>
-                ) : (
-                  <ul className="member-cards">
-                    {invites.map((invite) => {
-                      const usedBy = invite.usedBy
-                        ? (users.find((user) => user.id === invite.usedBy?.id) ?? invite.usedBy)
-                        : null
-                      const expired = !invite.usedAt && !!invite.expiresAt && new Date(invite.expiresAt) < new Date()
-                      const status = invite.usedAt
-                        ? t('groups.invites.statusUsedBy', { name: usedBy?.name ?? t('common.unknown') })
-                        : expired
-                          ? t('groups.invites.statusExpired')
-                          : t('groups.invites.statusActive')
-                      const revocable = !invite.usedAt && !expired
+                <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
+                  <TabsList variant="line" className="group-tabs" aria-label={selectedGroup.name}>
+                    <TabsTrigger value="members">
+                      {t('groups.tabs.members')}
+                      <span className="tab-count">{members.length}</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="circles">
+                      {t('groups.tabs.circles')}
+                      <span className="tab-count">{circleCount}</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="invites">
+                      {t('groups.tabs.invites')}
+                      <span className="tab-count">{invites.length}</span>
+                    </TabsTrigger>
+                  </TabsList>
 
-                      return (
-                        <li key={invite.id} className="member-card">
-                          <span className="member-card-info">
-                            <span className="member-card-name">
-                              {invite.email || t('groups.invites.anyEmail')}
-                              <span className="inline-flex items-center gap-2">
-                                {usedBy && (
-                                  <InitialAvatar name={usedBy.name} avatarUrl={usedBy.avatarUrl} className="size-6" />
-                                )}
-                                <Badge variant={revocable ? 'secondary' : 'default'}>{status}</Badge>
+                  {/* keepMounted: every panel loads up front (as the old
+                      single-scroll page did), so the Circles tab's count is
+                      right before it is ever opened. */}
+                  <TabsContent value="members" keepMounted>
+                    <div className="md-panel-toolbar">
+                      <Button variant="secondary" size="sm" onClick={() => setShowAddExisting(true)}>
+                        <Icon name="user-plus" size={14} />
+                        {t('groups.addExistingUser')}
+                      </Button>
+                    </div>
+                    {membersLoading ? (
+                      <StateMessage variant="loading" className="loading">
+                        {t('common.loading')}
+                      </StateMessage>
+                    ) : members.length === 0 ? (
+                      <StateMessage variant="empty" className="empty">
+                        {t('groups.noMembers')}
+                      </StateMessage>
+                    ) : (
+                      <MemberCards members={members} onRemove={handleRemoveMember} />
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="circles" keepMounted>
+                    <CirclesSection
+                      key={selectedGroup.id}
+                      groupId={selectedGroup.id}
+                      members={members}
+                      onCountChange={setCircleCount}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="invites" keepMounted>
+                    <div className="md-panel-toolbar">
+                      <Button variant="secondary" size="sm" onClick={() => setShowAddMember(true)}>
+                        <Icon name="user-plus" size={14} />
+                        {t('members.addMember')}
+                      </Button>
+                    </div>
+                    <p className="hint">{t('groups.invites.hint')}</p>
+
+                    {invitesLoading ? (
+                      <StateMessage variant="loading" className="loading">
+                        {t('common.loading')}
+                      </StateMessage>
+                    ) : invites.length === 0 ? (
+                      <StateMessage variant="empty" className="empty">
+                        {t('groups.invites.noInvites')}
+                      </StateMessage>
+                    ) : (
+                      <ul className="member-cards">
+                        {invites.map((invite) => {
+                          const usedBy = invite.usedBy
+                            ? (users.find((user) => user.id === invite.usedBy?.id) ?? invite.usedBy)
+                            : null
+                          const expired =
+                            !invite.usedAt && !!invite.expiresAt && new Date(invite.expiresAt) < new Date()
+                          const status = invite.usedAt
+                            ? t('groups.invites.statusUsedBy', { name: usedBy?.name ?? t('common.unknown') })
+                            : expired
+                              ? t('groups.invites.statusExpired')
+                              : t('groups.invites.statusActive')
+                          const revocable = !invite.usedAt && !expired
+
+                          return (
+                            <li key={invite.id} className="member-card">
+                              <span className="member-card-info">
+                                <span className="member-card-name">
+                                  {invite.email || t('groups.invites.anyEmail')}
+                                  <span className="inline-flex items-center gap-2">
+                                    {usedBy && (
+                                      <InitialAvatar
+                                        name={usedBy.name}
+                                        avatarUrl={usedBy.avatarUrl}
+                                        className="size-6"
+                                      />
+                                    )}
+                                    <Badge variant={revocable ? 'secondary' : 'default'}>{status}</Badge>
+                                  </span>
+                                </span>
+                                <span className="member-card-sub">
+                                  {invite.expiresAt
+                                    ? t('groups.invites.expiresOn', {
+                                        date: new Date(invite.expiresAt).toLocaleDateString(i18n.language),
+                                      })
+                                    : t('groups.invites.neverExpires')}
+                                  {' · '}
+                                  {t('groups.invites.createdOn', {
+                                    date: new Date(invite.createdAt).toLocaleDateString(i18n.language),
+                                  })}
+                                </span>
                               </span>
-                            </span>
-                            <span className="member-card-sub">
-                              {invite.expiresAt
-                                ? t('groups.invites.expiresOn', {
-                                    date: new Date(invite.expiresAt).toLocaleDateString(i18n.language),
-                                  })
-                                : t('groups.invites.neverExpires')}
-                              {' · '}
-                              {t('groups.invites.createdOn', {
-                                date: new Date(invite.createdAt).toLocaleDateString(i18n.language),
-                              })}
-                            </span>
-                          </span>
-                          <Button
-                            variant="secondary"
-                            type="button"
-                            className="secondary"
-                            onClick={() => handleCopyInviteLink(invite)}
-                          >
-                            {copiedInviteId === invite.id
-                              ? t('groups.invites.linkCopied')
-                              : t('groups.invites.copyLink')}
-                          </Button>
-                          {revocable && (
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className="icon-button danger"
-                              title={t('groups.invites.revoke')}
-                              aria-label={t('groups.invites.revoke')}
-                              onClick={() => handleRevokeInvite(invite)}
-                            >
-                              <Icon name="x" size={14} />
-                            </Button>
-                          )}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
+                              <Button
+                                variant="secondary"
+                                type="button"
+                                className="secondary"
+                                onClick={() => handleCopyInviteLink(invite)}
+                              >
+                                {copiedInviteId === invite.id
+                                  ? t('groups.invites.linkCopied')
+                                  : t('groups.invites.copyLink')}
+                              </Button>
+                              {revocable && (
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  className="icon-button danger"
+                                  title={t('groups.invites.revoke')}
+                                  aria-label={t('groups.invites.revoke')}
+                                  onClick={() => handleRevokeInvite(invite)}
+                                >
+                                  <Icon name="x" size={14} />
+                                </Button>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </TabsContent>
+                </Tabs>
 
-                {/* Circles sit directly under the member list: they're a
-                    narrowing of exactly those people, so managing them next
-                    to membership is where an admin will look. */}
-                <CirclesSection key={selectedGroup.id} groupId={selectedGroup.id} members={members} />
-
-                <div className="md-section-header">
-                  <h4>{t('groups.memberCount', { count: members.length })}</h4>
-                  <Button variant="link" type="button" className="link-button" onClick={() => setShowAddExisting(true)}>
-                    {t('groups.addExistingUser')}
-                  </Button>
-                </div>
-
-                {membersLoading ? (
-                  <StateMessage variant="loading" className="loading">
-                    {t('common.loading')}
-                  </StateMessage>
-                ) : members.length === 0 ? (
-                  <StateMessage variant="empty" className="empty">
-                    {t('groups.noMembers')}
-                  </StateMessage>
-                ) : (
-                  <MemberCards members={members} onRemove={handleRemoveMember} />
-                )}
-
-                <div className="md-section-header">
-                  <h4>{t('groups.photos.title')}</h4>
-                </div>
-                <p className="hint">
+                <p className="hint md-photos-hint">
                   {t('groups.photos.moved')}{' '}
                   <Link to="/integrations/immich/families">{t('integrations.names.immich')}</Link>
                   {' · '}

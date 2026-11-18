@@ -254,7 +254,21 @@
     "memberCount_other": "{{count}} leden",
     "membersOf": "Leden van {{name}}",
     "addMember": "Lid toevoegen",
-    "addExistingUser": "+ Bestaande gebruiker toevoegen",
+    "addExistingUser": "Bestaande gebruiker toevoegen",
+    "tabs": {
+      "members": "Leden",
+      "circles": "Kringen",
+      "invites": "Uitnodigingen"
+    },
+    "features": {
+      "chatOn": "Chat aan",
+      "chatOff": "Chat uit",
+      "storiesOn": "Verhalen aan",
+      "storiesOff": "Verhalen uit",
+      "allPostTypes": "Alle berichttypes",
+      "limitedPostTypes_one": "{{count}} berichttype",
+      "limitedPostTypes_other": "{{count}} berichttypen"
+    },
     "selectUser": "Selecteer een gebruiker…",
     "noMembers": "Nog geen leden in deze groep.",
     "joinedOn": "lid sinds {{date}}",
@@ -268,7 +282,6 @@
       "actions": "Acties"
     },
     "invites": {
-      "title": "Nodig een familielid uit",
       "hint": "Deel de link of verstuur ze per e-mail — ze maken pas een account aan zodra ze de uitnodiging accepteren. Je hoeft ze niet eerst als gebruiker aan te maken.",
       "emailLabel": "E-mail (optioneel)",
       "emailPlaceholder": "iemand@example.com",
@@ -337,7 +350,6 @@
       "pauseHint": "Pauzeren stopt het toevoegen van foto's; Famlin haalt verwijderde berichten nog wel uit het album."
     },
     "photos": {
-      "title": "Foto's",
       "moved": "Gekoppelde albums en de Immich-uploadspiegel van deze familie beheer je onder Integraties:"
     }
   },
@@ -554,8 +566,6 @@
   "circles": {
     "edit": "Kring bewerken",
     "removeMemberConfirm": "{{name}} uit de kring \"{{circle}}\" verwijderen?",
-    "heading_one": "{{count}} kring",
-    "heading_other": "{{count}} kringen",
     "hint": "Met kringen deelt een deel van de familie privé. Leden buiten een kring zien de berichten, foto's en reacties nooit — en weten niet eens dat de kring bestaat.",
     "create": "Nieuwe kring",
     "namePlaceholder": "Naam van de kring (bv. Grootouders)",

@@ -254,7 +254,21 @@
     "memberCount_other": "{{count}} membres",
     "membersOf": "Membres de {{name}}",
     "addMember": "Ajouter un membre",
-    "addExistingUser": "+ Ajouter un utilisateur existant",
+    "addExistingUser": "Ajouter un utilisateur existant",
+    "tabs": {
+      "members": "Membres",
+      "circles": "Cercles",
+      "invites": "Invitations"
+    },
+    "features": {
+      "chatOn": "Discussion activée",
+      "chatOff": "Discussion désactivée",
+      "storiesOn": "Stories activées",
+      "storiesOff": "Stories désactivées",
+      "allPostTypes": "Tous les types de publication",
+      "limitedPostTypes_one": "{{count}} type de publication",
+      "limitedPostTypes_other": "{{count}} types de publication"
+    },
     "selectUser": "Choisir un utilisateur…",
     "noMembers": "Aucun membre dans ce groupe pour l'instant.",
     "joinedOn": "arrivé le {{date}}",
@@ -268,7 +282,6 @@
       "actions": "Actions"
     },
     "invites": {
-      "title": "Inviter un membre de la famille",
       "hint": "Partage le lien ou envoie-le par e-mail : le compte n'est créé qu'à l'acceptation. Inutile d'ajouter la personne comme utilisateur avant.",
       "emailLabel": "E-mail (facultatif)",
       "emailPlaceholder": "quelquun@exemple.com",
@@ -337,7 +350,6 @@
       "pauseHint": "La pause arrête l'ajout de photos ; Famlin retire toujours de l'album les publications supprimées."
     },
     "photos": {
-      "title": "Photos",
       "moved": "Les albums liés et la copie des envois vers Immich de cette famille se gèrent dans Intégrations :"
     }
   },
@@ -554,8 +566,6 @@
   "circles": {
     "edit": "Modifier le cercle",
     "removeMemberConfirm": "Retirer {{name}} du cercle « {{circle}} » ?",
-    "heading_one": "{{count}} cercle",
-    "heading_other": "{{count}} cercles",
     "hint": "Les cercles permettent à une partie de la famille de partager en privé. Les membres hors du cercle ne voient jamais ses publications, photos ou commentaires, et ignorent même qu'il existe.",
     "create": "Nouveau cercle",
     "namePlaceholder": "Nom du cercle (ex. : Grands-parents)",
