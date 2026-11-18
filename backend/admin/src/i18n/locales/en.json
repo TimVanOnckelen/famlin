@@ -646,7 +646,9 @@
       "notMounted": "The backups folder isn't a mounted volume, so backups are lost when the container is recreated. Add the famlin-backups volume to your docker-compose.yml.",
       "dumps_one": "{{count}} database dump",
       "dumps_other": "{{count}} database dumps",
-      "runNow": "Run backup now"
+      "runNow": "Run backup now",
+      "encryption": "Encryption",
+      "encryptionRecommended": "Recommended: set up encryption"
     },
     "disk": {
       "title": "Disk space",
@@ -798,7 +800,8 @@
       "off": "Scheduled backups are off.",
       "settingsLink": "Change backup settings",
       "offsite": "Backups live on the same machine as Famlin, so also copy them somewhere else.",
-      "learnMore": "How to keep backups off the machine"
+      "learnMore": "How to keep backups off the machine",
+      "encryption": "Tip: turn on backup encryption on the Backups page, so a copy that leaves this server can't be read without your emergency kit."
     },
     "done": {
       "description": "Your Famlin server is ready. Family members can now join with the invite link.",
@@ -865,5 +868,47 @@
     "showDumps": "Show database dumps ({{count}})",
     "hideDumps": "Hide database dumps",
     "dumpsNote": "Until Famlin 1.0.0 each run also writes a database dump as a safety net. Restore the Famlin backup unless you have a reason not to."
+  },
+  "backupEncryption": {
+    "title": "Encryption",
+    "desc": "Encrypt backups so a copy that leaves this server (off-site sync, a downloaded file) can't be read without your emergency kit.",
+    "on": "On",
+    "off": "Off",
+    "onBody": "New backups are encrypted with key {{key}}, created {{date}}.",
+    "offBody": "Backups are stored unencrypted. Anyone with a copy can read everything in them, including password hashes.",
+    "mirrorWarning": "Photos in the media mirror (the uploads folder next to your backups) are not encrypted. Only the backup files themselves are.",
+    "rotatedNotice": "New key generated and its emergency kit downloaded. Store it next to the old one: older backups still need the old kit.",
+    "downloadKit": "Download emergency kit",
+    "downloadKitAgain": "Download again",
+    "rotate": "Generate new key",
+    "turnOff": "Turn off",
+    "turnOn": "Turn on encryption",
+    "setUp": "Set up encryption",
+    "docsLink": "How backup encryption works",
+    "olderKeys": "Older keys ({{count}})",
+    "olderKeysHint": "Backups made before a key change still need the older key. This server keeps them, so it can restore those backups itself; elsewhere you need the matching kit.",
+    "setupTitle": "Set up backup encryption",
+    "setupIntro": "Famlin generates a key and keeps it on this server, so scheduled backups keep running on their own. You keep a copy of that key: the emergency kit.",
+    "setupPointKit": "Store the emergency kit somewhere other than this server: a password manager, a printout, another computer.",
+    "setupPointLost": "Without the kit, encrypted backups can't be restored on another server. Nobody can recover a lost key.",
+    "setupPointServer": "Encryption protects copies that leave this server. Someone with access to the server itself can still read the backups.",
+    "kitSavedLabel": "I stored the emergency kit somewhere other than this server",
+    "downloadFirst": "Download the emergency kit first.",
+    "rotateTitle": "Generate a new key?",
+    "rotateBody": "New backups will use the new key and you'll download its emergency kit. Older backups keep needing the old key: this server keeps it, but keep the old kit too if you restore elsewhere.",
+    "rotateConfirm": "Generate and download",
+    "turnOffTitle": "Turn off encryption?",
+    "turnOffBody": "New backups will be stored unencrypted again, and a database dump is written next to them. Existing encrypted backups stay encrypted, and the keys are kept.",
+    "encryptedBadge": "Encrypted",
+    "needsKitBadge": "Needs emergency kit",
+    "keyLabel": "Emergency kit",
+    "keyOrPassphraseLabel": "Emergency kit or export passphrase",
+    "uploadKit": "Upload kit file",
+    "keyHint": "Paste the kit's text or upload the file.",
+    "restoreNeedsKit": "This backup is encrypted with a key this server doesn't have. Add the emergency kit it was made with.",
+    "setupNeedsKit": "This backup is encrypted. Add its emergency kit to restore it.",
+    "setupNeedsKitOrPassphrase": "Encrypted file (.age): add the emergency kit, or the passphrase the export was downloaded with.",
+    "exportPassphrase": "Passphrase (optional)",
+    "exportPassphraseHint": "With a passphrase of at least 10 characters the export is encrypted (.zip.age). You need it to restore the export; it can't be recovered."
   }
 }

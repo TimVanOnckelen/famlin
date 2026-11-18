@@ -1,0 +1,72 @@
+---
+id: download-admin-backup-emergency-kit
+title: "Download a backup key's emergency kit"
+description: "Signed-in admin only. An age identity file (`#` comment lines with"
+sidebar_label: "Download a backup key's emergency kit"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVs1uGzcQfpUBe6hsrFZOk5MaBFAaNXXzYyN2EASWkaV2R1pG3CFDcmVvBAF5iD5DHyxPUgy5sp0oQQ+9Bb1Y3l1yZr6Zb76ZjTAWnQzK0HElxqIyV6SNrCZVo+ixLFetnTbolkhl90wFkYkgl16ML8RZME4uESSfVD4kI+IyExX60ikbH8fiTC0Jq6GidBIM6S6HCQFfVhVSUKGDhdIIg+KnAkrTNEgBtCL0cKVCPSNFPri2ZIs+g1Aj8R8oJk+nw7Ppb6+m58Nn07fDe58//V3EiwcZeDOjgn0MKxgqWMhGKxriDsxwpUIergM8nEeUj/KPyuZyiQUYi+RBQvqQz0hkwkonGwzoGPtGkGxQjMUKO5EJxTA/tOj4weGHVjmsxHghtcdM+LLGRorxRoTO8iUfnKKl2H6dqPMaYYXdzx5sO9eqBFXBgBFEWAe/QoUL2ergIZgIv2yd40xxFNtLdu2tIY+enf1ydMQ/+y5uMgCrWM/SUEAKMUC8DiOrJQPafD/w7XabiQdH9/btv1DeK1pmoGgttaoywGvL2cjAOHC4NiusoHQYyy71l+6ltVqVkUaj9958Owgzf48lx20dMzeoBBedM24/1q9z/EfbSBo6lJWca8wgOEley4AVrJXsSVWWaMPwuaRlG/lQo6zQwaBAKkYF6eIg5+qVpsJ/93gS/5EaGlnWivDGOcSQga3kULyaTp68O3n5/G0BjXQrpl/x4Oh+AQvjQMKVUwFhrk3JCZxjKVuPMVyPbo0OXEseFAFbH3KLjSpsDDSmQhh4RCj4ywnprgBDUIykVSPZhnqUDAwVLQwDywRey8ZqhnQTlOCK3zL7ok/3ZSaCCvHoNL7YUeP+PjUmtzIRqZBsjUGC/1IgMiATQBJMTo8hmBWSiDYf7Nt8acC3ZQ2pDf9n0g/GpG0mGgy14bm0xFgpGWoxFsklk2WUNNqPkErXxQSNkqylYJJat06LsahDsH48GqVJkPfB5aVp9lL91rQOzBXB7/EsVGi16XgsRaH1WLZOhS4an6N06CYtR3ZxeffzGTMukeruoZs6c0CiHxD8nA7tBTMBi87HysuyRO9TV8CgSEjeWRne5XleZKyskYEqzccrnIO09gCMm5EEj94rQ/Dnm3NYONNAcXpydg63BdRmqajI4bEJNUjHlKCQuCEbhCvZjWdUMArj1MfYXmN4HKOGhzGoRwWPS64csyBi7cvaZ3JyeiwywZVJ4PoZtgd6ukbX7dLfMxOvrfHoIdTKw6vp2XmUiJa4pSINC/j86a/beKOA1Dgjs1ioUnHnmDnvGZKqXW48tB5zeKMYMVx8M9OXg1GFa9SsEp79HMyoMy2UkmDeKl1Bt+OLooDLtAl5kEvJi0v6upCN0jzcE5h8RjOaaA29aoHy4EtjuSc7ODxcOtNaaLCZo/O1soeHY9j55KaM7ZmAcEPP6MYOQbzrYRBdKvQH8eYctaElBJPFa6FGh+yVDBcWpDNtfC3DjCy6BD2HM0S4eM1TPSZ2cnq8n44kLS3vZaGX3SxGtOYXcWeLkRrHmtM3no9MyYQ1PjQySnS/VT3pd9CbFaxfi77eXL5gzOZW/3+QlbNXiTtL2TZLUrbphfBCSKtEJiJKkYleDFl5b+RQZIKzdZmJ2vjAdzabufT42untll+nxZWVrFKex8nt6vrdBP+nVfU7yPjTbqNeS93yiai2a+kUxxXlNRNphsaA05U0Ze/cumv38s4MeTo9F9vtP7DdhrM=
+sidebar_class_name: "get api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Download a backup key's emergency kit"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"get"}
+  path={"/api/admin/backups/encryption/kit"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Signed-in admin only. An age identity file (`#` comment lines with
+instructions, then the `AGE-SECRET-KEY-1…` line), so
+`age -d -i famlin-emergency-kit.txt <backup>.zip.age` opens a backup.
+
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+>
+  <Translate id="theme.openapi.request.title">Request</Translate>
+</Heading>
+
+<ParamsDetails
+  {...require("./download-admin-backup-emergency-kit.ParamsDetails.json")}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./download-admin-backup-emergency-kit.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./download-admin-backup-emergency-kit.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

@@ -52,6 +52,18 @@ import {
 import { getPostTypeHandler, listPostTypeHandlers } from '../services/postTypes/registry.js'
 import { buildExportArchive } from '../services/export.js'
 import { createExportDownloadToken, redeemExportDownloadToken } from '../services/exportDownloadTokens.js'
+import { encryptStream } from '../services/backup/encryption.js'
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    // Set by a one-time export download token minted with a passphrase.
+    exportPassphrase?: string
+  }
+}
+
+// age's scrypt passphrase is the export's only protection once it leaves the
+// server, so a minimum length rather than none.
+const exportTokenBodySchema = z.object({ passphrase: z.string().min(10).max(1000).optional() })
 import { getT } from '../i18n/index.js'
 import { canViewPostCircle, getUserCircleIds } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
@@ -152,10 +164,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       !request.headers.authorization &&
       typeof downloadToken === 'string'
     ) {
-      const user = await redeemExportDownloadToken(downloadToken)
-      if (!user) return reply.status(401).send({ error: getT(request)('errors.exportDownloadTokenInvalid') })
-      request.user = user
+      const redeemed = await redeemExportDownloadToken(downloadToken)
+      if (!redeemed) return reply.status(401).send({ error: getT(request)('errors.exportDownloadTokenInvalid') })
+      request.user = redeemed.user
       request.authMethod = 'session'
+      request.exportPassphrase = redeemed.passphrase
       return
     }
     return fastify.authenticate(request, reply)
@@ -1490,12 +1503,15 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   // Mints the one-time ?downloadToken= the admin UI puts in the export's
   // download URL — see services/exportDownloadTokens.ts. Login sessions
   // only, like minting an API token: a PAT can call GET /export directly.
+  // Optional `passphrase` (issue #495): the export it downloads is
+  // age-encrypted with it (`.zip.age`).
   fastify.post('/export/token', async (request, reply) => {
     if (requireAdmin(request, reply)) return
     if (request.authMethod !== 'session') {
       return reply.status(403).send({ error: getT(request)('errors.sessionRequired') })
     }
-    return { token: await createExportDownloadToken(request.user!.id) }
+    const { passphrase } = exportTokenBodySchema.parse(request.body ?? {})
+    return { token: await createExportDownloadToken(request.user!.id, { passphrase }) }
   })
 
   // No HEAD route: a HEAD would redeem the download token and build the
@@ -1509,9 +1525,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     const archive = await buildExportArchive(query.includeMedia !== 'false', (err) => {
       request.log.error(err, 'export archive stream error')
     })
+    const passphrase = request.exportPassphrase
+    const body = passphrase ? await encryptStream(archive, { passphrase }) : archive
 
-    const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip`
-    reply.header('content-type', 'application/zip')
+    const filename = `famlin-export-${new Date().toISOString().slice(0, 10)}.zip${passphrase ? '.age' : ''}`
+    reply.header('content-type', passphrase ? 'application/octet-stream' : 'application/zip')
     reply.header('content-disposition', `attachment; filename="${filename}"`)
     reply.header('cache-control', 'no-store')
 
@@ -1522,6 +1540,6 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     archive.finalize().catch((err) => {
       request.log.error(err, 'export archive finalize error')
     })
-    return reply.send(archive)
+    return reply.send(body)
   })
 }

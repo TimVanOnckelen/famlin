@@ -1,0 +1,63 @@
+---
+id: generate-admin-backup-key
+title: "Generate a new backup encryption key"
+description: "Signed-in admin only. Generates an age X25519 key and makes it the one"
+sidebar_label: "Generate a new backup encryption key"
+hide_title: true
+hide_table_of_contents: true
+api: eJztVttu20YQ/ZXBvtQ2aMq5PZQoCiiom7o3G7GDNLCEcESOxI2Wu8zuUjYrCMhH9Bv6YfmSYoa0ZUcuDKSvfbLM3Z05M3PmzKyVa8hj1M6elCpTC7L8L43LWtuXWCzb5hfqVKIiLoLKLtV5dB4XBMgXdIj9WzVNVEmh8LqRfzN1rheWykNt+5vgrOlSeDWYD4AW2MwfT1+8ePItLKkDtCXUuKQAOkKsCJylibV0BTPBEQA9AdnCd02kEq50rFI4NSV5ft8fL6mJCQQHsdIBAvkVeSjQTmyI2hjwFKLzJPZvzNZYkljjr3UKFxVBoMJTFNRgCFcU+HBiB4ux8q5dVJC/Or6AETZ6JFGOBpOjAaV2drTUMU8nViXKU2icDRRUtlZPj474z/2ksWcOOESMpBJVOBvJRr6ITWN0IckefQh8e61CUVGN/Ct2DalMudkHKqK4+thqTyVXbIuFq9R4LnjUPYo7Zw9YuQ+uZwNsn/QwYU+H0NKOU5wZKjmG1nuysWcR1+khFP3lLYSZc4bQqs299w9AtK0x/Fhl0bd0H4MW954wUjmOu271XY8hem0XO0GftTOjC+HnHi7oyedPf+8LqluzD5iYO19jVJkqMdJh1DWpzWYzRL+9j95jt+PxeEW+E4dfUBhKkswLVRPmCYUIc+0DJ0JHqsNjVPiajHxdsBxu1JELMxDneEu1zXDh+dGT3R74TYeg7SIBbVdodJkAXTccQALOg6eVW1IJhaeSbNRo/kubfEFD751/nBI/tTXaQ09YMvESiB5tMJwgWGkUZcnHRUFNPPwV7aLFBeVQEbJO7eVk81FuTb6fSmZdSY97PJUfaKDGotKWbp2DQAa2kkL++nj8w/vT3399l0ONfhkAIX9+9CyHufOAcOV1JJgZV3ACZ1RgG3ohHDjmWxtAW2Drh6x8o5JqB7UrCfYCEeR8cmpNl4OzkPe618Zq1Bs41HbuOLBE0TXWjRT/FpTiit+TCEn3dMuTY/lwQ41nu9QYb2eOUKG3lQFCuD9tErAu8ogZn51AdEuy4r2mWDmeco2TnmkwVipTj+i3CFcfIU/AtWq9UZmqYmxCNhrNsTbapkPEaeHqnfq9c60Hd2XhR7kLJTXGdTVTdjNl20XrdezE+IzQkx+3jOxyevf4nGncM/XupVvyMCBGKtdYQ+XSDpgxNOSD0AmLgkLoEwR7eR/J+wbj+zRN8wSGvmdOME2uaAbYNPvg/MQiBAqBp8DPby9g7l0N+dnp+c00ZFYYt9A2T+Gli5UM50C2n+wBa4Ir7LKJzTkK5/Wf0rMZvBTU8J2A+l4mJ5eOqSWxDlwZMjk+O1GJ4sr0wQ3D4l9EdXg00J2uGxdkrusAr4/PL4QtreU+FW7n8PnTX1u8wiXeAdx8rgvN7ehm2pAsLkNuArSBUnjLywTC5YOZnu6NSlqRYekJ7Gd/YjvXisTPWm1K6G74om2kRb9hBcAFahtifzrHWpvum5v5kE7sxI6NgUEKgSdH4Rpu9A4ODhbetQ3UVM/Ih0o3BwcZ3PiUHYc7uw+EVWJib+1YkLcB9sSlprAvL2dknF1AdIk8ixV5Yq/WcWEBvWvlM8aJbXhj4tBTOCeCyzcs8JLY8dnJbjp6vWpjxQLfa3kiiFb8wdnQu7xynoVsaLwgTEmktWsU3bcofXCzcwLCdpm8u8b0HX6PMOvtTPl/k93dZAfFiXQdR41BLZkXWVwPonqpsNEqUWJMJWowx6NhuwfIRsQToGI9zi7Vej3DQG+82Wz488eWPKviNFEr9Lrf8y6nm0T141QEk01kqh+4rAVoWlmuvlwEWEpvBwArldps/gEIsZKE
+sidebar_class_name: "post api-method"
+info_path: developers/api-reference/famlin-api
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+import Translate from "@docusaurus/Translate";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Generate a new backup encryption key"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"post"}
+  path={"/api/admin/backups/encryption/key"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Signed-in admin only. Generates an age X25519 key and makes it the one
+new backups are encrypted with. Older keys are kept, so this server can
+still restore the backups made with them. The secret only leaves the
+server through `GET /api/admin/backups/encryption/kit`.
+
+
+<ParamsDetails>
+  
+</ParamsDetails>
+
+<RequestSchema
+  {...require("./generate-admin-backup-key.RequestSchema.json")}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  {...require("./generate-admin-backup-key.StatusCodes.json")}
+>
+  
+</StatusCodes>
+
+
+      

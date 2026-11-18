@@ -646,7 +646,9 @@
       "notMounted": "备份目录不是挂载的卷，重新创建容器时备份会丢失。请在 docker-compose.yml 中添加 famlin-backups 卷。",
       "dumps_one": "{{count}} 份数据库转储",
       "dumps_other": "{{count}} 份数据库转储",
-      "runNow": "立即备份"
+      "runNow": "立即备份",
+      "encryption": "加密",
+      "encryptionRecommended": "建议：设置加密"
     },
     "disk": {
       "title": "磁盘空间",
@@ -798,7 +800,8 @@
       "off": "定时备份已关闭。",
       "settingsLink": "更改备份设置",
       "offsite": "备份与 Famlin 存放在同一台机器上,请同时复制到其他地方。",
-      "learnMore": "如何将备份保存在机器之外"
+      "learnMore": "如何将备份保存在机器之外",
+      "encryption": "提示：在“备份”页面开启备份加密，使离开此服务器的副本在没有应急工具包的情况下无法读取。"
     },
     "done": {
       "description": "你的 Famlin 服务器已就绪。家人现在可以通过邀请链接加入。",
@@ -865,5 +868,47 @@
     "showDumps": "显示数据库转储（{{count}}）",
     "hideDumps": "隐藏数据库转储",
     "dumpsNote": "在 Famlin 1.0.0 之前，每次运行还会额外写入一份数据库转储作为保险。除非有特殊原因，请恢复 Famlin 备份。"
+  },
+  "backupEncryption": {
+    "title": "加密",
+    "desc": "加密备份，使离开此服务器的副本（异地同步、下载的文件）在没有应急工具包的情况下无法读取。",
+    "on": "已开启",
+    "off": "已关闭",
+    "onBody": "新备份使用密钥 {{key}}（创建于 {{date}}）加密。",
+    "offBody": "备份以未加密方式存储。任何拥有副本的人都能读取其中的全部内容，包括密码哈希。",
+    "mirrorWarning": "媒体镜像（备份旁的 uploads 文件夹）中的照片不会加密，只有备份文件本身会加密。",
+    "rotatedNotice": "已生成新密钥并下载其应急工具包。请与旧工具包放在一起：较早的备份仍需要旧工具包。",
+    "downloadKit": "下载应急工具包",
+    "downloadKitAgain": "重新下载",
+    "rotate": "生成新密钥",
+    "turnOff": "关闭",
+    "turnOn": "开启加密",
+    "setUp": "设置加密",
+    "docsLink": "备份加密的工作原理",
+    "olderKeys": "旧密钥（{{count}}）",
+    "olderKeysHint": "更换密钥之前的备份仍需要旧密钥。此服务器会保留旧密钥，因此可以自行恢复这些备份；在其他地方恢复则需要对应的工具包。",
+    "setupTitle": "设置备份加密",
+    "setupIntro": "Famlin 会生成一个密钥并保存在此服务器上，因此计划备份可以自动运行。你需要保存该密钥的副本：应急工具包。",
+    "setupPointKit": "请将应急工具包保存在此服务器以外的地方：密码管理器、打印件或另一台电脑。",
+    "setupPointLost": "没有工具包，加密备份就无法在其他服务器上恢复。丢失的密钥无人能找回。",
+    "setupPointServer": "加密保护的是离开此服务器的副本。能够访问服务器本身的人仍然可以读取备份。",
+    "kitSavedLabel": "我已将应急工具包保存在此服务器以外的地方",
+    "downloadFirst": "请先下载应急工具包。",
+    "rotateTitle": "生成新密钥？",
+    "rotateBody": "新备份将使用新密钥，你将下载其应急工具包。较早的备份仍需要旧密钥：此服务器会保留它，但如果要在其他地方恢复，也请保留旧工具包。",
+    "rotateConfirm": "生成并下载",
+    "turnOffTitle": "关闭加密？",
+    "turnOffBody": "新备份将重新以未加密方式存储，并在旁边写入数据库转储。现有的加密备份仍保持加密，密钥也会保留。",
+    "encryptedBadge": "已加密",
+    "needsKitBadge": "需要应急工具包",
+    "keyLabel": "应急工具包",
+    "keyOrPassphraseLabel": "应急工具包或导出密码",
+    "uploadKit": "上传工具包文件",
+    "keyHint": "粘贴工具包文本或上传文件。",
+    "restoreNeedsKit": "此备份使用了此服务器没有的密钥加密。请添加创建该备份时的应急工具包。",
+    "setupNeedsKit": "此备份已加密。请添加其应急工具包以恢复。",
+    "setupNeedsKitOrPassphrase": "加密文件（.age）：请添加应急工具包，或下载导出时使用的密码。",
+    "exportPassphrase": "密码（可选）",
+    "exportPassphraseHint": "设置至少 10 个字符的密码后，导出文件将被加密（.zip.age）。恢复导出时需要该密码，且无法找回。"
   }
 }

@@ -364,6 +364,7 @@ function BackupsStep({ onNext }: { onNext: () => void }) {
         {enabled === null ? t('common.loading') : enabled ? t('wizard.backups.on') : t('wizard.backups.off')}{' '}
         <Link to="/backups">{t('wizard.backups.settingsLink')}</Link>
       </p>
+      <p className="hint">{t('wizard.backups.encryption')}</p>
       <p className="hint">
         {t('wizard.backups.offsite')}{' '}
         <a href="https://famlin.app/docs/maintenance#keep-backups-off-the-machine" target="_blank" rel="noreferrer">

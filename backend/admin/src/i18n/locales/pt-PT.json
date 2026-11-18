@@ -646,7 +646,9 @@
       "notMounted": "A pasta das cópias de segurança não é um volume montado, por isso as cópias perdem-se quando o contentor é recriado. Adiciona o volume famlin-backups ao teu docker-compose.yml.",
       "dumps_one": "{{count}} dump da base de dados",
       "dumps_other": "{{count}} dumps da base de dados",
-      "runNow": "Fazer cópia de segurança agora"
+      "runNow": "Fazer cópia de segurança agora",
+      "encryption": "Encriptação",
+      "encryptionRecommended": "Recomendado: configurar a encriptação"
     },
     "disk": {
       "title": "Espaço em disco",
@@ -798,7 +800,8 @@
       "off": "As cópias de segurança agendadas estão desativadas.",
       "settingsLink": "Mudar definições das cópias de segurança",
       "offsite": "As cópias de segurança ficam na mesma máquina que o Famlin, por isso copia-as também para outro sítio.",
-      "learnMore": "Como manter as cópias de segurança fora da máquina"
+      "learnMore": "Como manter as cópias de segurança fora da máquina",
+      "encryption": "Dica: ative a encriptação das cópias de segurança na página Cópias de segurança, para que uma cópia que saia deste servidor não possa ser lida sem o kit de emergência."
     },
     "done": {
       "description": "O teu servidor Famlin está pronto. Os membros da família já se podem juntar com o link de convite.",
@@ -865,5 +868,47 @@
     "showDumps": "Mostrar dumps da base de dados ({{count}})",
     "hideDumps": "Ocultar dumps da base de dados",
     "dumpsNote": "Até ao Famlin 1.0.0, cada execução também escreve um dump da base de dados como rede de segurança. Restaura a cópia do Famlin, a menos que tenhas um motivo para não o fazer."
+  },
+  "backupEncryption": {
+    "title": "Encriptação",
+    "desc": "Encripte as cópias de segurança para que uma cópia que saia deste servidor (sincronização externa, um ficheiro transferido) não possa ser lida sem o seu kit de emergência.",
+    "on": "Ativada",
+    "off": "Desativada",
+    "onBody": "As novas cópias de segurança são encriptadas com a chave {{key}}, criada em {{date}}.",
+    "offBody": "As cópias de segurança são guardadas sem encriptação. Qualquer pessoa com uma cópia consegue ler tudo, incluindo os hashes das palavras-passe.",
+    "mirrorWarning": "As fotos no espelho de multimédia (a pasta uploads junto às cópias de segurança) não são encriptadas. Só os ficheiros de cópia de segurança o são.",
+    "rotatedNotice": "Nova chave gerada e kit de emergência transferido. Guarde-o junto ao antigo: as cópias de segurança mais antigas continuam a precisar do kit antigo.",
+    "downloadKit": "Transferir kit de emergência",
+    "downloadKitAgain": "Transferir novamente",
+    "rotate": "Gerar nova chave",
+    "turnOff": "Desativar",
+    "turnOn": "Ativar encriptação",
+    "setUp": "Configurar encriptação",
+    "docsLink": "Como funciona a encriptação das cópias de segurança",
+    "olderKeys": "Chaves antigas ({{count}})",
+    "olderKeysHint": "As cópias de segurança anteriores a uma troca de chave continuam a precisar da chave antiga. Este servidor guarda-as, por isso consegue restaurar essas cópias sozinho; noutro local precisa do kit correspondente.",
+    "setupTitle": "Configurar a encriptação das cópias de segurança",
+    "setupIntro": "O Famlin gera uma chave e guarda-a neste servidor, para que as cópias de segurança agendadas continuem a correr sozinhas. Guarde uma cópia dessa chave: o kit de emergência.",
+    "setupPointKit": "Guarde o kit de emergência num local diferente deste servidor: um gestor de palavras-passe, uma cópia impressa, outro computador.",
+    "setupPointLost": "Sem o kit, as cópias de segurança encriptadas não podem ser restauradas noutro servidor. Ninguém consegue recuperar uma chave perdida.",
+    "setupPointServer": "A encriptação protege as cópias que saem deste servidor. Quem tiver acesso ao próprio servidor continua a conseguir ler as cópias de segurança.",
+    "kitSavedLabel": "Guardei o kit de emergência num local diferente deste servidor",
+    "downloadFirst": "Transfira primeiro o kit de emergência.",
+    "rotateTitle": "Gerar uma nova chave?",
+    "rotateBody": "As novas cópias de segurança vão usar a nova chave e vai transferir o respetivo kit de emergência. As cópias mais antigas continuam a precisar da chave antiga: este servidor guarda-a, mas mantenha também o kit antigo se restaurar noutro local.",
+    "rotateConfirm": "Gerar e transferir",
+    "turnOffTitle": "Desativar a encriptação?",
+    "turnOffBody": "As novas cópias de segurança voltam a ser guardadas sem encriptação, com um dump da base de dados ao lado. As cópias encriptadas existentes continuam encriptadas e as chaves são mantidas.",
+    "encryptedBadge": "Encriptada",
+    "needsKitBadge": "Precisa do kit de emergência",
+    "keyLabel": "Kit de emergência",
+    "keyOrPassphraseLabel": "Kit de emergência ou frase-passe da exportação",
+    "uploadKit": "Carregar ficheiro do kit",
+    "keyHint": "Cole o texto do kit ou carregue o ficheiro.",
+    "restoreNeedsKit": "Esta cópia de segurança está encriptada com uma chave que este servidor não tem. Adicione o kit de emergência com que foi criada.",
+    "setupNeedsKit": "Esta cópia de segurança está encriptada. Adicione o kit de emergência para a restaurar.",
+    "setupNeedsKitOrPassphrase": "Ficheiro encriptado (.age): adicione o kit de emergência, ou a frase-passe com que a exportação foi transferida.",
+    "exportPassphrase": "Frase-passe (opcional)",
+    "exportPassphraseHint": "Com uma frase-passe de pelo menos 10 caracteres, a exportação é encriptada (.zip.age). Precisa dela para restaurar a exportação; não pode ser recuperada."
   }
 }

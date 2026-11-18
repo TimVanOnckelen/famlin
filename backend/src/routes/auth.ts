@@ -33,6 +33,15 @@ import { restoreArchive, RestoreError, RESTORE_WORKDIR_PREFIX } from '../service
 import { listDumps, restoreDump, RestoreDumpError } from '../services/backup/restoreDump.js'
 import { BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR } from '../services/backup/paths.js'
 import { listBackups, parseBackupArchiveFileName } from '../services/backup/archive.js'
+import {
+  adoptBackupIdentity,
+  BackupKeyError,
+  decryptFile,
+  getBackupEncryptionStatus,
+  parseKeyInput,
+  resolveRestoreKey,
+  type DecryptionKey,
+} from '../services/backup/encryption.js'
 import { SETUP_ADVISORY_LOCK_KEY } from '../services/setupLock.js'
 import { getRestoreStatus } from '../services/backup/restoreRunning.js'
 import { restoreAllMediaFromMirror } from '../services/backup/mediaRestore.js'
@@ -47,6 +56,7 @@ import {
   setupBodySchema,
   restoreDumpBodySchema,
   restoreBackupBodySchema,
+  backupKeyInputSchema,
   changePasswordBodySchema,
   resetPasswordBodySchema,
   updateUserBodySchema,
@@ -262,6 +272,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   }
 
+  function sendBackupKeyError(request: FastifyRequest, reply: FastifyReply, err: BackupKeyError) {
+    const t = getT(request)
+    // The client asks for the emergency kit (or the export's passphrase) and retries.
+    if (err.code === 'keyMismatch') {
+      return reply.status(400).send({ error: t('errors.backupKeyMismatch'), code: 'backupKeyMismatch' })
+    }
+    return reply.status(400).send({ error: t('errors.backupKeyRequired'), code: 'backupKeyRequired' })
+  }
+
   function sendDumpError(request: FastifyRequest, reply: FastifyReply, err: RestoreDumpError) {
     const t = getT(request)
     // pg_restore's stderr stays in the server log, never the response.
@@ -298,12 +317,36 @@ export default async function authRoutes(fastify: FastifyInstance) {
     reply: FastifyReply,
     zipPath: string,
     workDir: string,
-    admin: { email: string; name: string; password: string } | undefined
+    admin: { email: string; name: string; password: string } | undefined,
+    keyText: string | undefined
   ) {
+    const t = getT(request)
+    // An encrypted backup or export (issue #495) is decrypted into the work
+    // directory first; restoreArchive() reads a plain zip.
+    let key: DecryptionKey | null
+    try {
+      key = await resolveRestoreKey(zipPath, parseKeyInput(keyText))
+    } catch (err) {
+      if (!(err instanceof BackupKeyError)) throw err
+      return sendBackupKeyError(request, reply, err)
+    }
+    let plainZipPath = zipPath
+    if (key) {
+      plainZipPath = path.join(workDir, 'decrypted.zip')
+      try {
+        await decryptFile(zipPath, plainZipPath, key)
+      } catch (err) {
+        request.log.warn({ err }, 'decrypting the backup failed')
+        return reply.status(400).send({ error: t('errors.restoreArchiveInvalid') })
+      }
+      // An uploaded file lives in the work directory: don't keep both copies.
+      if (path.dirname(zipPath) === workDir) await fsp.rm(zipPath, { force: true })
+    }
+
     let result
     try {
       result = await restoreArchive({
-        zipPath,
+        zipPath: plainZipPath,
         workDir,
         admin: admin && {
           email: admin.email.toLowerCase().trim(),
@@ -315,6 +358,16 @@ export default async function authRoutes(fastify: FastifyInstance) {
     } catch (err) {
       if (!(err instanceof RestoreError)) throw err
       return sendRestoreError(request, reply, err)
+    }
+
+    // Restored from an encrypted backup: keep encrypting with the same key,
+    // so the emergency kit the admin already has keeps working.
+    if (key && 'identity' in key) {
+      try {
+        await adoptBackupIdentity(key.identity, { makeCurrent: true })
+      } catch (err) {
+        request.log.error({ err }, 'could not keep the restored backup key; backup encryption is off')
+      }
     }
 
     // New install (restored or not): backups on by default, unless the
@@ -411,7 +464,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
         const hasAdminFields = ['email', 'name', 'password'].some((k) => fields[k])
         const admin = hasAdminFields ? setupBodySchema.parse(fields) : undefined
-        return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
+        const key = fields.key ? backupKeyInputSchema.parse(fields.key) : undefined
+        return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin, key)
       } finally {
         await fsp.rm(workDir, { recursive: true, force: true })
       }
@@ -428,7 +482,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: getT(request)('errors.restoreRequiresEmptyInstance') })
       }
-      return listBackups(BACKUP_ARCHIVE_DIR, BACKUP_DB_DIR)
+      const { keys } = await getBackupEncryptionStatus()
+      return listBackups(
+        BACKUP_ARCHIVE_DIR,
+        BACKUP_DB_DIR,
+        keys.map((k) => k.id)
+      )
     }
   )
 
@@ -442,7 +501,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
     async (request, reply) => {
       const t = getT(request)
-      const { file, admin } = restoreBackupBodySchema.parse(request.body)
+      const { file, admin, key } = restoreBackupBodySchema.parse(request.body)
       if ((await prisma.user.count()) > 0) {
         return reply.status(409).send({ error: t('errors.restoreRequiresEmptyInstance') })
       }
@@ -454,7 +513,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         const workDir = path.join(uploadsDir, `${RESTORE_WORKDIR_PREFIX}${crypto.randomUUID()}`)
         await fsp.mkdir(workDir, { recursive: true })
         try {
-          return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin)
+          return await restoreArchiveAndRespond(request, reply, zipPath, workDir, admin, key)
         } finally {
           await fsp.rm(workDir, { recursive: true, force: true })
         }
