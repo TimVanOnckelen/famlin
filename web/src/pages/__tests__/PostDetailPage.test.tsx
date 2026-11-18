@@ -2,12 +2,13 @@ import { screen } from '@testing-library/react'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { PostDetailPage } from '@/pages/PostDetailPage'
 import { makeComment, makePost, makeTrip, makeUser, renderWithQueryClient } from '@/test/fixtures'
-import { fetchComments, fetchPost } from '@famlin/api-client'
+import { fetchCommentsPage, fetchPost, type Comment } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchPost: vi.fn(),
   fetchComments: vi.fn(),
+  fetchCommentsPage: vi.fn(),
   getUploadUrl: vi.fn((url: string) => `http://localhost:3000${url}`),
 }))
 
@@ -21,6 +22,11 @@ function httpError(status: number) {
   })
 }
 
+// The paged thread (issue #130) as a single, final page.
+function mockThread(comments: Comment[]) {
+  vi.mocked(fetchCommentsPage).mockResolvedValue({ items: comments, nextCursor: null })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -28,7 +34,7 @@ beforeEach(() => {
 describe('PostDetailPage', () => {
   it('shows the post with its comment thread already open', async () => {
     vi.mocked(fetchPost).mockResolvedValue(makePost({ id: 'post-7', commentCount: 1 }))
-    vi.mocked(fetchComments).mockResolvedValue([makeComment({ postId: 'post-7', content: 'Gorgeous!' })])
+    mockThread([makeComment({ postId: 'post-7', content: 'Gorgeous!' })])
 
     renderWithQueryClient(<PostDetailPage user={makeUser()} postId="post-7" onBack={() => {}} onLogout={() => {}} />)
 

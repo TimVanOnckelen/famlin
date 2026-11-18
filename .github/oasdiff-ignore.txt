@@ -1,0 +1,12 @@
+# oasdiff --err-ignore list for ci.yml's api-breaking-changes job.
+# Every entry must be a change oasdiff reports as breaking that provably
+# isn't for any existing client — say why above it. A real breaking change
+# is marked `feat!`/`BREAKING CHANGE:` instead, never listed here.
+# Format: "<METHOD> <path> <oasdiff message>", one per line ('#' lines and
+# lines matching nothing are inert).
+
+# Issue #130: the paged `CommentsPage` shape is only returned when the client
+# sends the new opt-in `take`/`cursor` query parameters; every request an
+# existing client makes still gets the bare array.
+GET /api/posts/{postId}/comments added `#/components/schemas/CommentsPage, subschema #1` to the response body `oneOf` list for the response status `200`
+GET /api/posts/{postId}/comments the response's body `type` changed from `array<object>` to `any` for status `200`

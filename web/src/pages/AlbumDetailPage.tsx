@@ -211,7 +211,7 @@ export function AlbumDetailPage({
           <Icon name="message-square" size={16} />
           {t('album.detail.commentsSectionTitle')}
         </h2>
-        <CommentsSection post={post} filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
+        <CommentsSection post={post} fullThread filterComments={(all) => all.filter(isAlbumDiscussionComment)} />
       </section>
 
       {contributeOpen && <AddAlbumPhotosModal postId={postId} onClose={() => setContributeOpen(false)} />}

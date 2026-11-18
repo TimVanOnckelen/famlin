@@ -311,6 +311,7 @@
     "postedInGroup": "in {{group}} · {{time}}",
     "milestoneBadge": "MIJLPAAL",
     "commentsHeader": "Reacties · {{count}}",
+    "loadOlderComments": "Oudere reacties laden",
     "commentPlaceholder": "Schrijf een reactie...",
     "replyPlaceholder": "Schrijf een antwoord...",
     "comments_one": "{{count}} reactie",

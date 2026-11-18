@@ -98,3 +98,103 @@ export async function mergeCrossPostCommentCounts<
     return { ...post, _count: { ...post._count, comments: thread.length } }
   })
 }
+
+// --- Paginated thread (issue #130) -------------------------------------------
+// GET /api/posts/:postId/comments?take=&cursor= pages a thread newest-first,
+// by *top-level* comment: each page holds the `take` newest top-level comments
+// that are older than the cursor, plus every reply (at any depth) under them,
+// so a thread never splits across pages. Clients reverse for display and put
+// a "load older" control at the top (chat's precedent).
+//
+// Paging happens in memory over a lightweight id-only scan of the merged
+// thread rather than with a Prisma row cursor, because a cross-post's thread
+// is merged and deduped across sibling posts (mergedPostComments) — a page of
+// raw rows wouldn't be a page of the thread the viewer sees. Only the page's
+// own rows are then loaded with the caller's (heavier) include.
+//
+// The cursor is an opaque base64url `(createdAt, id)` keyset of the last
+// top-level comment of the previous page, so deleting that comment doesn't
+// strand the next page. An unparseable cursor restarts from the newest page
+// (same rule as the photo timeline).
+
+function encodeCommentCursor(createdAt: Date, id: string): string {
+  return Buffer.from(`${createdAt.toISOString()}|${id}`, 'utf8').toString('base64url')
+}
+
+function decodeCommentCursor(cursor: string): { createdAt: string; id: string } | null {
+  const decoded = Buffer.from(cursor, 'base64url').toString('utf8')
+  const sep = decoded.lastIndexOf('|')
+  if (sep === -1) return null
+  const createdAt = decoded.slice(0, sep)
+  if (Number.isNaN(Date.parse(createdAt))) return null
+  return { createdAt: new Date(createdAt).toISOString(), id: decoded.slice(sep + 1) }
+}
+
+// Newest first, id as the tiebreaker — the order a page's items come back in.
+function newestFirst(a: { createdAt: Date; id: string }, b: { createdAt: Date; id: string }) {
+  const diff = b.createdAt.getTime() - a.createdAt.getTime()
+  if (diff !== 0) return diff
+  return a.id < b.id ? 1 : a.id > b.id ? -1 : 0
+}
+
+export async function paginatedPostComments<I extends Prisma.CommentInclude>(
+  postId: string,
+  siblingPostIds: string[],
+  where: Prisma.CommentWhereInput,
+  include: I,
+  page: { cursor?: string; take: number }
+) {
+  const scanned = await prisma.comment.findMany({
+    where: { ...where, postId: { in: siblingPostIds } },
+    select: { id: true, postId: true, parentId: true, metadata: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  const thread = siblingPostIds.length > 1 ? dedupeHandlerCommentCopies(scanned, postId) : scanned
+
+  // Each comment's top-level ancestor. A parent outside the scanned set (it
+  // can't be filtered out by assetUrl, since replies inherit it, but be safe)
+  // makes the comment its own thread root.
+  const byId = new Map(thread.map((c) => [c.id, c]))
+  const rootCache = new Map<string, string>()
+  const rootOf = (id: string): string => {
+    const cached = rootCache.get(id)
+    if (cached) return cached
+    const seen = new Set<string>()
+    let current = byId.get(id)!
+    while (current.parentId && byId.has(current.parentId) && !seen.has(current.parentId)) {
+      seen.add(current.id)
+      current = byId.get(current.parentId)!
+    }
+    rootCache.set(id, current.id)
+    return current.id
+  }
+
+  const roots = thread.filter((c) => rootOf(c.id) === c.id).sort(newestFirst)
+
+  let start = 0
+  const decoded = page.cursor ? decodeCommentCursor(page.cursor) : null
+  if (decoded) {
+    start = roots.findIndex((r) => {
+      const at = r.createdAt.toISOString()
+      return at < decoded.createdAt || (at === decoded.createdAt && r.id < decoded.id)
+    })
+    if (start === -1) start = roots.length
+  }
+  const pageRoots = roots.slice(start, start + page.take)
+  const hasMore = start + page.take < roots.length
+  const last = pageRoots[pageRoots.length - 1]
+  const nextCursor = hasMore && last ? encodeCommentCursor(last.createdAt, last.id) : null
+
+  const pageRootIds = new Set(pageRoots.map((r) => r.id))
+  const pageIds = thread.filter((c) => pageRootIds.has(rootOf(c.id))).map((c) => c.id)
+  if (pageIds.length === 0) return { items: [], nextCursor }
+
+  const rows = await prisma.comment.findMany({ where: { id: { in: pageIds } }, include })
+  // Carry over the dedupe's re-parenting (a reply to a dropped sibling copy
+  // now hangs off the kept one) and report every comment under this postId.
+  const merged = siblingPostIds.length > 1
+  const items = rows
+    .map((row) => (merged ? { ...row, postId, parentId: byId.get(row.id)?.parentId ?? row.parentId } : row))
+    .sort(newestFirst)
+  return { items, nextCursor }
+}

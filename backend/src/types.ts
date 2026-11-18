@@ -558,6 +558,16 @@ export const paginationQuerySchema = z.object({
   take: z.coerce.number().int().min(1).max(100).default(30),
 })
 
+// GET /api/posts/:postId/comments (issue #130). Pagination is opt-in: a
+// request carrying `take` or `cursor` gets `{ items, nextCursor }` (see
+// services/comments.ts's paginatedPostComments), one without either the
+// legacy bare array every pre-pagination client parses.
+export const listCommentsQuerySchema = z.object({
+  assetUrl: z.string().optional(),
+  cursor: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(100).optional(),
+})
+
 // A story is one PHOTO (video is out of scope for v1) — the same /uploads/
 // path shape as UPLOAD_PATH_REGEX, restricted to image extensions. Overlays
 // and stickers are flattened into the image on the device before upload.

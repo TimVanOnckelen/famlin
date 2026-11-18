@@ -99,6 +99,7 @@
   },
   "comments": {
     "placeholder": "Écrire un commentaire…",
+    "loadOlder": "Charger les commentaires précédents",
     "send": "Envoyer",
     "sendFailed": "Ton commentaire n'a pas pu être publié. Réessaie.",
     "like": "J'aime",

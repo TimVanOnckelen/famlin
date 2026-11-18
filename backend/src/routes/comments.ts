@@ -1,9 +1,14 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../db.js'
-import { createCommentBodySchema, normalizeCommentAttachments, updateCommentBodySchema } from '../types.js'
+import {
+  createCommentBodySchema,
+  listCommentsQuerySchema,
+  normalizeCommentAttachments,
+  updateCommentBodySchema,
+} from '../types.js'
 import { emitDomainEvent } from '../events.js'
 import { requireGroupMember } from '../plugins/auth.js'
-import { mergedPostComments, shapeComment } from '../services/comments.js'
+import { mergedPostComments, paginatedPostComments, shapeComment } from '../services/comments.js'
 import { visibleSiblingPostIds } from '../services/crossPosts.js'
 import { getT } from '../i18n/index.js'
 import { handlerCommentSiblingKey } from '../services/postTypes/registry.js'
@@ -14,7 +19,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request)
     const { postId } = request.params as { postId: string }
-    const { assetUrl } = request.query as { assetUrl?: string }
+    const { assetUrl, cursor, take } = listCommentsQuerySchema.parse(request.query)
 
     const post = await prisma.post.findUnique({ where: { id: postId } })
 
@@ -33,17 +38,26 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     // A cross-post's thread is merged across the siblings the caller can see
     // (see services/crossPosts.ts) — each comment still lives on its own
     // family's copy, but is reported under this postId.
-    const comments = await mergedPostComments(
-      postId,
-      await visibleSiblingPostIds(post, request.user!.id),
-      assetUrl !== undefined ? { assetUrl } : {},
-      {
-        author: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true } },
-        likes: { select: { type: true, userId: true } },
-      }
-    )
+    const siblingPostIds = await visibleSiblingPostIds(post, request.user!.id)
+    const where = assetUrl !== undefined ? { assetUrl } : {}
+    const include = {
+      author: { select: { id: true, name: true, avatarUrl: true } },
+      _count: { select: { likes: true } },
+      likes: { select: { type: true, userId: true } },
+    }
 
+    // Paginated (issue #130, server feature `paginatedComments`): newest
+    // top-level comments first, each with its whole reply thread. Opt-in, so
+    // already-installed clients that send neither param keep the bare array.
+    if (cursor !== undefined || take !== undefined) {
+      const page = await paginatedPostComments(postId, siblingPostIds, where, include, { cursor, take: take ?? 30 })
+      return {
+        items: page.items.map((comment) => shapeComment(comment, request.user!.id)),
+        nextCursor: page.nextCursor,
+      }
+    }
+
+    const comments = await mergedPostComments(postId, siblingPostIds, where, include)
     return comments.map((comment) => shapeComment(comment, request.user!.id))
   })
 

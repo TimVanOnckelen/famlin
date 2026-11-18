@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import * as ImagePicker from 'expo-image-picker'
 
@@ -33,7 +33,9 @@ import { postTypeRenderers } from '@/components/postTypes'
 import { Comment, ReactionType } from '@/types'
 import {
   fetchPost,
-  fetchComments,
+  fetchCommentsPage,
+  flattenCommentPages,
+  pagedCommentsQueryKey,
   fetchGroupMembers,
   GroupMember,
   CommentGroup,
@@ -122,10 +124,22 @@ export function PostDetailScreen() {
     }
   }, [post?.type, postId])
 
-  const { data: comments, refetch } = useQuery({
-    queryKey: ['comments', postId],
-    queryFn: () => fetchComments(postId),
+  // Paged newest-first (issue #130) — a long thread loads its most recent
+  // comments first, with "Load older comments" above them for the rest. An
+  // older server ignores the paging and sends everything as one page.
+  const {
+    data: commentPages,
+    refetch,
+    hasNextPage: hasOlderComments,
+    fetchNextPage: fetchOlderComments,
+    isFetchingNextPage: isFetchingOlderComments,
+  } = useInfiniteQuery({
+    queryKey: pagedCommentsQueryKey(postId),
+    queryFn: ({ pageParam }) => fetchCommentsPage(postId, { cursor: pageParam }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
+  const comments = useMemo(() => (commentPages ? flattenCommentPages(commentPages.pages) : undefined), [commentPages])
 
   const { data: groupMembers } = useQuery<GroupMember[]>({
     queryKey: ['groupMembers', post?.groupId],
@@ -691,8 +705,20 @@ export function PostDetailScreen() {
                 </View>
 
                 <Text style={styles.commentsHeader}>
-                  {t('postDetail.commentsHeader', { count: comments?.length || 0 })}
+                  {t('postDetail.commentsHeader', { count: Math.max(post.commentCount, comments?.length || 0) })}
                 </Text>
+                {hasOlderComments && (
+                  <TouchableOpacity
+                    style={styles.loadOlderComments}
+                    onPress={() => void fetchOlderComments()}
+                    disabled={isFetchingOlderComments}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.loadOlderCommentsText}>
+                      {isFetchingOlderComments ? t('common.loading') : t('postDetail.loadOlderComments')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           }
@@ -1398,6 +1424,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginTop: 20,
     marginBottom: 14,
+  },
+  loadOlderComments: {
+    alignSelf: 'flex-start',
+    marginTop: -4,
+    marginBottom: 14,
+  },
+  loadOlderCommentsText: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    color: colors.primary,
   },
   commentsList: {
     padding: 14,

@@ -745,6 +745,26 @@ a.post-time:focus-visible {
   color: var(--fam-text-muted);
 }
 
+.comments-load-older {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fam-primary);
+  cursor: pointer;
+}
+
+.comments-load-older:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.comments-load-older:disabled {
+  color: var(--fam-text-muted);
+  cursor: default;
+}
+
 .comment {
   display: flex;
   gap: 8px;

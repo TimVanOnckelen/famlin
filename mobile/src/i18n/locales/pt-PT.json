@@ -311,6 +311,7 @@
     "postedInGroup": "em {{group}} · {{time}}",
     "milestoneBadge": "MOMENTO MARCANTE",
     "commentsHeader": "Comentários · {{count}}",
+    "loadOlderComments": "Carregar comentários anteriores",
     "commentPlaceholder": "Escreve um comentário...",
     "replyPlaceholder": "Escreve uma resposta...",
     "comments_one": "{{count}} comentário",
