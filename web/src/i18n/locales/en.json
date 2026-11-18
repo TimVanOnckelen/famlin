@@ -99,6 +99,7 @@
   },
   "comments": {
     "placeholder": "Write a comment…",
+    "loadOlder": "Load older comments",
     "send": "Send",
     "sendFailed": "Your comment couldn't be posted. Try again.",
     "like": "Like",

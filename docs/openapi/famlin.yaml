@@ -1360,11 +1360,21 @@ paths:
       tags: [Comments]
       summary: List a post's comments
       description: |
-        Oldest first. For a cross-posted post, the thread is merged across
-        every copy in a group the caller belongs to, with each comment
-        reported under the requested `postId` (see `POST /api/posts`). A
-        reply (`parentId`) to a comment from another copy is stored with that
-        copy's thread.
+        For a cross-posted post, the thread is merged across every copy in a
+        group the caller belongs to, with each comment reported under the
+        requested `postId` (see `POST /api/posts`). A reply (`parentId`) to a
+        comment from another copy is stored with that copy's thread.
+
+        **Pagination is opt-in** (server feature `paginatedComments`). Send
+        `take` and/or `cursor` and the response is a `CommentsPage`: the
+        `take` newest *top-level* comments older than the cursor, each with
+        every reply under it (at any depth), so a thread never splits across
+        pages. Items come newest first; reverse them for display and offer
+        "load older" at the top. Without either parameter the response is the
+        legacy bare array of the whole thread, oldest first — kept for
+        already-installed clients. A server without the feature ignores both
+        parameters and returns that array, so a client can treat a bare array
+        as one final page.
       parameters:
         - name: postId
           in: path
@@ -1373,16 +1383,29 @@ paths:
         - name: assetUrl
           in: query
           schema: { type: string }
-          description: Only comments pinned to this photo/video of the post.
+          description: Only comments pinned to this photo/video of the post. Works with or without paging.
+        - name: take
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+          description: Top-level comments per page (default 30 once paging is on). Switches the response to a `CommentsPage`.
+        - name: cursor
+          in: query
+          schema: { type: string }
+          description: |
+            Opaque `nextCursor` from the previous page. Switches the response
+            to a `CommentsPage`. An unparseable cursor restarts from the newest
+            page; deleting the comment it points at doesn't break it.
       responses:
         '200':
-          description: Comments, oldest first
+          description: The whole thread oldest first, or one newest-first page when `take`/`cursor` is sent
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Comment'
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  - $ref: '#/components/schemas/CommentsPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5072,6 +5095,19 @@ components:
             `group`. Other members never see this field or otherwise learn a
             post was cross-posted — each group's copy looks like an ordinary,
             single-group post to them.
+
+    CommentsPage:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Newest first — whole threads (a top-level comment and all its replies).
+          items:
+            $ref: '#/components/schemas/Comment'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass back as `?cursor=` for older comments; `null` once the oldest thread is in.
 
     PostsPage:
       type: object

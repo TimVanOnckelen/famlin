@@ -99,6 +99,7 @@
   },
   "comments": {
     "placeholder": "写下评论…",
+    "loadOlder": "加载更早的评论",
     "send": "发送",
     "sendFailed": "评论发布失败，请重试。",
     "like": "赞",

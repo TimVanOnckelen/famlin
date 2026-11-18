@@ -1,12 +1,17 @@
 import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Post,
   Comment,
   CommentGroup,
   MAX_COMMENT_ATTACHMENTS,
   fetchComments,
+  fetchCommentsPage,
+  flattenCommentPages,
+  pagedCommentsQueryKey,
+  patchCommentInCaches,
+  addCommentToCaches,
   createComment,
   reactToComment,
   groupCommentAttachments,
@@ -41,18 +46,12 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
     mutationFn: () => reactToComment(group.reactionTargetId, group.myReaction ?? 'LIKE'),
     onMutate: () => {
       const reacted = !!group.myReaction
-      queryClient.setQueryData<Comment[]>(['comments', lead.postId], (old) =>
-        old?.map((c) =>
-          c.id === group.reactionTargetId
-            ? {
-                ...c,
-                myReaction: reacted ? null : 'LIKE',
-                likedByMe: !reacted,
-                likeCount: Math.max(0, c.likeCount + (reacted ? -1 : 1)),
-              }
-            : c
-        )
-      )
+      patchCommentInCaches(queryClient, lead.postId, group.reactionTargetId, (c) => ({
+        ...c,
+        myReaction: reacted ? null : 'LIKE',
+        likedByMe: !reacted,
+        likeCount: Math.max(0, c.likeCount + (reacted ? -1 : 1)),
+      }))
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', lead.postId] })
@@ -136,8 +135,15 @@ function CommentGroupItem({ group, isReply }: { group: CommentGroup; isReply: bo
 export function CommentsSection({
   post,
   filterComments,
+  fullThread = false,
 }: {
   post: Post
+  // Read the whole thread from the flat ['comments', postId] cache instead of
+  // paging it. For the trip and album pages, which load every comment anyway
+  // (the timeline and the photo grid are built from them) — paging there
+  // would only add a second request, and a first page full of check-ins or
+  // album photos that filterComments then hides entirely.
+  fullThread?: boolean
   // Applied to the fetched list before splitting it into top-level/replies —
   // used by TripDetailPage's "Reacties op de reis" section to hide check-in
   // comments (metadata.kind === 'trip_checkin') from that section: their
@@ -154,10 +160,23 @@ export function CommentsSection({
   const uploads = useComposerUploads(MAX_COMMENT_ATTACHMENTS)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const commentsQuery = useQuery({
+  // Paged newest-first (issue #130): the first page holds the most recent
+  // threads, and "Load older comments" at the top pulls in the rest, so a
+  // busy thread no longer loads all at once.
+  const pagedQuery = useInfiniteQuery({
+    queryKey: pagedCommentsQueryKey(post.id),
+    queryFn: ({ pageParam }) => fetchCommentsPage(post.id, { cursor: pageParam }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: !fullThread,
+  })
+  const fullQuery = useQuery({
     queryKey: ['comments', post.id],
     queryFn: () => fetchComments(post.id),
+    enabled: fullThread,
   })
+  const commentsQuery = fullThread ? fullQuery : pagedQuery
+  const hasOlder = !fullThread && pagedQuery.hasNextPage
 
   const createMutation = useMutation({
     mutationFn: async ({ content, attachmentUrls }: { content: string; attachmentUrls?: string[] }) => {
@@ -166,7 +185,7 @@ export function CommentsSection({
     onSuccess: (created) => {
       setDraft('')
       clearAttachments()
-      queryClient.setQueryData<Comment[]>(['comments', post.id], (old) => (old ? [...old, created] : [created]))
+      addCommentToCaches(queryClient, post.id, created)
       patchPostInCaches(queryClient, post.id, (p) => ({ ...p, commentCount: p.commentCount + 1 }))
     },
   })
@@ -199,7 +218,11 @@ export function CommentsSection({
   // replies. Grouping collapses runs of photo-only comments by the same author
   // into one card (see groupCommentAttachments) — replies are grouped the same
   // way within their own thread.
-  const rawComments = commentsQuery.data ?? []
+  const rawComments = fullThread
+    ? (fullQuery.data ?? [])
+    : pagedQuery.data
+      ? flattenCommentPages(pagedQuery.data.pages)
+      : []
   const comments = filterComments ? filterComments(rawComments) : rawComments
   const topLevelGroups = groupCommentAttachments(comments.filter((c) => !c.parentId))
   const replyGroupsFor = (group: CommentGroup) =>
@@ -209,7 +232,20 @@ export function CommentsSection({
     <div className="comments-section">
       {commentsQuery.isLoading && <div className="comments-hint">{t('common.loading')}</div>}
       {commentsQuery.isError && <div className="comments-hint">{t('comments.loadFailed')}</div>}
-      {commentsQuery.isSuccess && comments.length === 0 && <div className="comments-hint">{t('comments.empty')}</div>}
+      {commentsQuery.isSuccess && comments.length === 0 && !hasOlder && (
+        <div className="comments-hint">{t('comments.empty')}</div>
+      )}
+
+      {hasOlder && (
+        <button
+          type="button"
+          className="comments-load-older"
+          onClick={() => void pagedQuery.fetchNextPage()}
+          disabled={pagedQuery.isFetchingNextPage}
+        >
+          {pagedQuery.isFetchingNextPage ? t('common.loading') : t('comments.loadOlder')}
+        </button>
+      )}
 
       {topLevelGroups.map((group) => (
         <div key={group.key}>

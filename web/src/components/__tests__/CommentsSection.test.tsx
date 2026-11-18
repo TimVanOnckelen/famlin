@@ -2,14 +2,20 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CommentsSection } from '@/components/CommentsSection'
 import { makeComment, makePost, renderWithQueryClient } from '@/test/fixtures'
-import { api, createComment, fetchComments } from '@famlin/api-client'
+import { api, createComment, fetchComments, fetchCommentsPage, type Comment } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   fetchComments: vi.fn(),
+  fetchCommentsPage: vi.fn(),
   createComment: vi.fn(),
   reactToComment: vi.fn().mockResolvedValue({ myReaction: 'LIKE', counts: { LIKE: 1 } }),
 }))
+
+// The paged thread (issue #130) as a single, final page.
+function mockThread(comments: Comment[]) {
+  vi.mocked(fetchCommentsPage).mockResolvedValue({ items: comments, nextCursor: null })
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -17,7 +23,7 @@ beforeEach(() => {
 
 describe('CommentsSection', () => {
   it('lists comments with replies indented under their parent', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([
+    mockThread([
       makeComment({ id: 'c1', content: 'First!' }),
       makeComment({
         id: 'c2',
@@ -33,14 +39,14 @@ describe('CommentsSection', () => {
   })
 
   it('shows an empty hint when there are no comments', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([])
+    mockThread([])
     renderWithQueryClient(<CommentsSection post={makePost()} />)
     expect(await screen.findByText(/No comments yet/)).toBeInTheDocument()
   })
 
   it('submits a new comment and appends it', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchComments).mockResolvedValue([])
+    mockThread([])
     vi.mocked(createComment).mockResolvedValue(makeComment({ id: 'new', content: 'Hello family' }))
 
     renderWithQueryClient(<CommentsSection post={makePost()} />)
@@ -53,15 +59,13 @@ describe('CommentsSection', () => {
   })
 
   it('disables send for an empty draft', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([])
+    mockThread([])
     renderWithQueryClient(<CommentsSection post={makePost()} />)
     expect(await screen.findByRole('button', { name: 'Send' })).toBeDisabled()
   })
 
   it('renders a photo attachment on a comment', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([
-      makeComment({ id: 'c1', content: '', attachmentUrl: '/uploads/photo.jpg' }),
-    ])
+    mockThread([makeComment({ id: 'c1', content: '', attachmentUrl: '/uploads/photo.jpg' })])
     renderWithQueryClient(<CommentsSection post={makePost()} />)
 
     expect(await screen.findByRole('button', { name: 'View attachment' })).toBeInTheDocument()
@@ -72,7 +76,7 @@ describe('CommentsSection', () => {
     URL.revokeObjectURL = vi.fn()
     const uploadSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { urls: ['/uploads/new-photo.jpg'] } })
     const user = userEvent.setup()
-    vi.mocked(fetchComments).mockResolvedValue([])
+    mockThread([])
     vi.mocked(createComment).mockResolvedValue(makeComment({ id: 'new', attachmentUrls: ['/uploads/new-photo.jpg'] }))
 
     const { container } = renderWithQueryClient(<CommentsSection post={makePost()} />)
@@ -96,7 +100,7 @@ describe('CommentsSection', () => {
     URL.revokeObjectURL = vi.fn()
     const uploadSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { urls: ['/uploads/a.jpg', '/uploads/b.jpg'] } })
     const user = userEvent.setup()
-    vi.mocked(fetchComments).mockResolvedValue([])
+    mockThread([])
     vi.mocked(createComment).mockResolvedValue(
       makeComment({ id: 'new', content: '', attachmentUrls: ['/uploads/a.jpg', '/uploads/b.jpg'] })
     )
@@ -121,7 +125,7 @@ describe('CommentsSection', () => {
   })
 
   it('bundles consecutive photo-only comments from the same author into one card', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([
+    mockThread([
       makeComment({ id: 'c1', content: '', attachmentUrls: ['/uploads/a.jpg'], createdAt: '2026-07-08T11:00:00Z' }),
       makeComment({ id: 'c2', content: '', attachmentUrls: ['/uploads/b.jpg'], createdAt: '2026-07-08T11:01:00Z' }),
       makeComment({ id: 'c3', content: '', attachmentUrls: ['/uploads/c.jpg'], createdAt: '2026-07-08T11:02:00Z' }),
@@ -134,7 +138,7 @@ describe('CommentsSection', () => {
   })
 
   it('keeps a photo comment that has text on its own card', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([
+    mockThread([
       makeComment({ id: 'c1', content: '', attachmentUrls: ['/uploads/a.jpg'], createdAt: '2026-07-08T11:00:00Z' }),
       makeComment({
         id: 'c2',
@@ -153,7 +157,7 @@ describe('CommentsSection', () => {
   // which must never surface check-in comments (metadata.kind ===
   // 'trip_checkin') or their replies — see web's TripDetailPage.tsx.
   it('excludes comments (and their replies) that filterComments removes', async () => {
-    vi.mocked(fetchComments).mockResolvedValue([
+    mockThread([
       makeComment({
         id: 'checkin-1',
         content: 'Arrived in Bologna!',
@@ -172,5 +176,39 @@ describe('CommentsSection', () => {
     expect(await screen.findByText('Have a great trip!')).toBeInTheDocument()
     expect(screen.queryByText('Arrived in Bologna!')).not.toBeInTheDocument()
     expect(screen.queryByText('Nice!')).not.toBeInTheDocument()
+  })
+
+  it('pages newest-first and loads older comments on request', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCommentsPage)
+      .mockResolvedValueOnce({
+        items: [makeComment({ id: 'c2', content: 'Newer', createdAt: '2026-07-25T11:00:00.000Z' })],
+        nextCursor: 'cursor-1',
+      })
+      .mockResolvedValueOnce({
+        items: [makeComment({ id: 'c1', content: 'Older', createdAt: '2026-07-25T10:00:00.000Z' })],
+        nextCursor: null,
+      })
+    renderWithQueryClient(<CommentsSection post={makePost()} />)
+
+    expect(await screen.findByText('Newer')).toBeInTheDocument()
+    expect(screen.queryByText('Older')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Load older comments' }))
+
+    const older = await screen.findByText('Older')
+    expect(fetchCommentsPage).toHaveBeenLastCalledWith('post-1', { cursor: 'cursor-1' })
+    // Display order stays oldest-first, and the button goes once it's all in.
+    expect(older.compareDocumentPosition(screen.getByText('Newer')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Load older comments' })).not.toBeInTheDocument()
+  })
+
+  it('reads the whole thread from the flat cache with fullThread', async () => {
+    vi.mocked(fetchComments).mockResolvedValue([makeComment({ id: 'c1', content: 'Whole thread' })])
+    renderWithQueryClient(<CommentsSection post={makePost()} fullThread />)
+
+    expect(await screen.findByText('Whole thread')).toBeInTheDocument()
+    expect(fetchComments).toHaveBeenCalledWith('post-1')
+    expect(fetchCommentsPage).not.toHaveBeenCalled()
   })
 })

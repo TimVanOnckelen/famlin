@@ -311,6 +311,7 @@
     "postedInGroup": "in {{group}} · {{time}}",
     "milestoneBadge": "MILESTONE",
     "commentsHeader": "Comments · {{count}}",
+    "loadOlderComments": "Load older comments",
     "commentPlaceholder": "Write a comment...",
     "replyPlaceholder": "Write a reply...",
     "comments_one": "{{count}} comment",
