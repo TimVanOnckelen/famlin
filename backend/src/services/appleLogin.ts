@@ -82,7 +82,7 @@ export async function verifyAppleIdentityToken(
 
   let payload: AppleIdentityTokenPayload
   try {
-    ;({ payload } = await jwtVerify(identityToken, appleDeps.jwks, {
+    ;({ payload } = await jwtVerify<AppleIdentityTokenPayload>(identityToken, appleDeps.jwks, {
       issuer: APPLE_ISSUER,
       audience: bundleIds,
     }))
