@@ -14,7 +14,7 @@
     "edit": "Editar",
     "remove": "Quitar",
     "close": "Cerrar",
-    "done": "Hecho",
+    "done": "Listo",
     "error": "Error",
     "unknown": "Desconocido",
     "appName": "Famlin",
@@ -75,7 +75,7 @@
     "permissions": {
       "granted": "Permitido",
       "denied": "Denegado",
-      "undetermined": "Sin decidir"
+      "undetermined": "Indeterminado"
     }
   },
   "diagnostics": {
@@ -171,7 +171,7 @@
       "title": "Actividad reciente",
       "empty": "Aún no hay publicaciones.",
       "milestone": "Hito",
-      "update": "Novedad",
+      "update": "Publicación",
       "poll": "Encuesta",
       "trip": "Viaje",
       "album": "Álbum",
