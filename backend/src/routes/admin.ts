@@ -373,10 +373,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         ...(isAdmin === 'true' ? { isAdmin: true } : {}),
         ...(q
           ? {
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-              ],
+              OR: [{ name: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }],
             }
           : {}),
       },
