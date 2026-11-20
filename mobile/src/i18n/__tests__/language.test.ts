@@ -43,6 +43,13 @@ test('other Portuguese variants fall back to pt-PT', async () => {
   expect(i18n.language).toBe('pt-PT')
 })
 
+test('Spanish devices start in Spanish with Spanish plurals', async () => {
+  deviceLocales('es-MX')
+  await initI18nLanguage()
+  expect(i18n.language).toBe('es')
+  expect(i18n.t('relativeTime.minutesAgo', { count: 2 })).toContain('2')
+})
+
 test('French devices start in French with French plurals', async () => {
   deviceLocales('fr-CH')
   await initI18nLanguage()
