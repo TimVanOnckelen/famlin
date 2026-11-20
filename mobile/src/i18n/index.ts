@@ -45,7 +45,7 @@ export async function initI18nLanguage() {
 // Exact tag first, then primary subtag — so pt-PT, pt and pt-BR all resolve to
 // pt-PT, and en-GB to en.
 function matchLanguage(tag: string): SupportedLanguage | undefined {
-  const lower = tag.toLowerCase()
+  const lower = tag.replace(/_/g, '-').toLowerCase()
   const primary = lower.split('-')[0]
   return (
     SUPPORTED_LANGUAGES.find((lang) => lang.toLowerCase() === lower) ??
