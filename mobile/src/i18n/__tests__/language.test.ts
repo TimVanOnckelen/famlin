@@ -44,9 +44,11 @@ test('other Portuguese variants fall back to pt-PT', async () => {
 })
 
 test('Spanish devices start in Spanish with Spanish plurals', async () => {
-  deviceLocales('es-MX')
-  await initI18nLanguage()
-  expect(i18n.language).toBe('es')
+  for (const tag of ['es-MX', 'es-AR', 'es-419', 'es_AR', 'es']) {
+    deviceLocales(tag)
+    await initI18nLanguage()
+    expect(i18n.language).toBe('es')
+  }
   expect(i18n.t('relativeTime.minutesAgo', { count: 2 })).toContain('2')
 })
 

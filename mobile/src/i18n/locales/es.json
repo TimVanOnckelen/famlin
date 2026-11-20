@@ -1,9 +1,9 @@
 {
   "media": {
-    "livePhoto": "Live Photo",
+    "livePhoto": "Foto en vivo",
     "video": "Vídeo",
-    "pauseLivePhoto": "Pausar Live Photo",
-    "playLivePhoto": "Reproducir Live Photo",
+    "pauseLivePhoto": "Pausar foto en vivo",
+    "playLivePhoto": "Reproducir foto en vivo",
     "processing": "Procesando el contenido…",
     "processingFailed": "No se pudo procesar el contenido"
   },
