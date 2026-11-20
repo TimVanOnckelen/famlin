@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 import dotenv from 'dotenv'
 import os from 'os'
 import path from 'path'
@@ -12,6 +12,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    // admin/tests holds node:test suites (`npm test --workspace=famlin-admin`),
+    // not vitest ones — the default include would pick them up and fail with
+    // "No test suite found".
+    exclude: [...configDefaults.exclude, 'admin/tests/**'],
     globalSetup: ['./tests/setup/global-setup.ts'],
     setupFiles: ['./tests/setup/test-setup.ts'],
     testTimeout: 15000,
