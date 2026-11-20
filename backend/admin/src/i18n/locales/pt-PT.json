@@ -220,6 +220,12 @@
       "sso": "SSO"
     },
     "noUsers": "Não foram encontrados utilizadores.",
+    "searchPlaceholder": "Pesquisar por nome ou e-mail…",
+    "allGroups": "Todos os grupos",
+    "allRoles": "Todos",
+    "adminsOnly": "Apenas administradores",
+    "noResults": "Nenhum utilizador corresponde aos teus filtros.",
+    "clearFilters": "Limpar filtros",
     "noGroups": "Sem grupos",
     "manageGroups": "Grupos",
     "manageGroupsFor": "Grupos de {{name}}",

@@ -372,9 +372,12 @@ export const api = {
   // update-available notice.
   getServerInfo: () => request<ServerInfo>('/api/auth/server-info'),
 
-  getUsers: (params: { cursor?: string } = {}) => {
+  getUsers: (params: { cursor?: string; q?: string; groupId?: string; isAdmin?: boolean } = {}) => {
     const query = new URLSearchParams()
     if (params.cursor) query.set('cursor', params.cursor)
+    if (params.q) query.set('q', params.q)
+    if (params.groupId) query.set('groupId', params.groupId)
+    if (params.isAdmin) query.set('isAdmin', 'true')
     const qs = query.toString()
     return request<Page<User>>(`/api/admin/users${qs ? `?${qs}` : ''}`)
   },

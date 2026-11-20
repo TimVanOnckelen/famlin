@@ -3,11 +3,13 @@ import { StateMessage } from '@famlin/ui/common/state-message'
 import { PageHeader } from '@famlin/ui/common/page-header'
 import { Button } from '@famlin/ui/button'
 import { Card } from '@famlin/ui/card'
+import { Input } from '@famlin/ui/input'
+import { SelectField } from '@famlin/ui/common/select-field'
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@famlin/ui/table'
 import { Badge } from '@famlin/ui/badge'
 import { AdminModal } from './AdminModal'
 import { useAdminDialogs } from './AdminDialogs'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, User, Group } from '../api/client'
 import { ApiError } from '../api/client'
@@ -29,8 +31,29 @@ export function UsersPage() {
   const requestVersion = useRef(0)
   const [showAddMember, setShowAddMember] = useState(false)
   const [managingUser, setManagingUser] = useState<User | null>(null)
+  // Server-side filters (the roster is paginated, so filtering client-side
+  // would only search the pages already loaded). Same toolbar pattern as
+  // the Content page: debounced search + selects, clear-filters link.
+  const [search, setSearch] = useState('')
+  const [q, setQ] = useState('')
+  const [groupId, setGroupId] = useState('')
+  const [role, setRole] = useState('')
 
   const nextRequestVersion = useCallback(() => ++requestVersion.current, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setQ(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const filterParams = useMemo(
+    () => ({
+      q: q || undefined,
+      groupId: groupId || undefined,
+      isAdmin: role === 'admins' ? true : undefined,
+    }),
+    [q, groupId, role]
+  )
 
   // Background refreshes must keep open dialogs mounted, including the newly
   // generated invitation link, so updates flow through setState (not a page
@@ -46,7 +69,7 @@ export function UsersPage() {
           const items: User[] = []
           let cursor: string | undefined
           for (let pageIndex = 0; pageIndex < loadedPages.current; pageIndex++) {
-            const page = await api.getUsers(cursor ? { cursor } : {})
+            const page = await api.getUsers({ ...filterParams, ...(cursor ? { cursor } : {}) })
             items.push(...page.items)
             cursor = page.nextCursor ?? undefined
             if (!cursor) break
@@ -68,7 +91,7 @@ export function UsersPage() {
         setRefreshing(false)
       }
     }
-  }, [t, nextRequestVersion])
+  }, [t, nextRequestVersion, filterParams])
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore || refreshing) return
@@ -78,7 +101,7 @@ export function UsersPage() {
     setLoadingMore(true)
     setError('')
     try {
-      const page = await api.getUsers({ cursor: nextCursor })
+      const page = await api.getUsers({ ...filterParams, cursor: nextCursor })
       if (version !== requestVersion.current) return
       setUsers((current) => [...new Map([...current, ...page.items].map((user) => [user.id, user])).values()])
       setNextCursor(page.nextCursor)
@@ -93,11 +116,23 @@ export function UsersPage() {
   }
 
   useEffect(() => {
+    // A filter change starts a fresh result set — previously loaded pages
+    // belong to the old filter.
+    loadedPages.current = 1
     void load()
     return () => {
       nextRequestVersion()
     }
   }, [load, nextRequestVersion])
+
+  const hasFilters = Boolean(search || groupId || role)
+
+  const clearFilters = () => {
+    setSearch('')
+    setQ('')
+    setGroupId('')
+    setRole('')
+  }
 
   const toggleAdmin = async (user: User) => {
     const confirmed = await dialogs.confirmAction(
@@ -187,10 +222,49 @@ export function UsersPage() {
         </StateMessage>
       )}
       <Card className="p-6 gap-4" aria-busy={refreshing || loadingMore}>
+        <div className="content-toolbar">
+          <div className="search-field">
+            <span className="search-icon">
+              <Icon name="search" size={15} />
+            </span>
+            <Input
+              className="pl-9"
+              type="search"
+              placeholder={t('users.searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <SelectField
+            aria-label={t('users.allGroups')}
+            className="w-full sm:w-auto sm:min-w-40"
+            value={groupId}
+            onValueChange={(value) => setGroupId(value)}
+            items={[
+              { value: '', label: <>{t('users.allGroups')}</> },
+              ...groups.map((g) => ({ value: g.id, label: <>{g.name}</> })),
+            ]}
+          />
+          <SelectField
+            aria-label={t('users.allRoles')}
+            className="w-full sm:w-auto sm:min-w-40"
+            value={role}
+            onValueChange={(value) => setRole(value)}
+            items={[
+              { value: '', label: <>{t('users.allRoles')}</> },
+              { value: 'admins', label: <>{t('users.adminsOnly')}</> },
+            ]}
+          />
+          {hasFilters && (
+            <Button variant="link" className="link-button" onClick={clearFilters}>
+              {t('users.clearFilters')}
+            </Button>
+          )}
+        </div>
         {users.length === 0 ? (
           !error && (
             <StateMessage variant="empty" className="empty">
-              {t('users.noUsers')}
+              {hasFilters ? t('users.noResults') : t('users.noUsers')}
             </StateMessage>
           )
         ) : (

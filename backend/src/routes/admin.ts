@@ -365,8 +365,21 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     if (requireAdmin(request, reply)) return
 
     const { cursor, take } = paginationQuerySchema.parse(request.query)
+    const { groupId, q, isAdmin } = request.query as { groupId?: string; q?: string; isAdmin?: string }
 
     const users = await prisma.user.findMany({
+      where: {
+        ...(groupId ? { groupMemberships: { some: { groupId } } } : {}),
+        ...(isAdmin === 'true' ? { isAdmin: true } : {}),
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: 'insensitive' } },
+                { email: { contains: q, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
       orderBy: { id: 'asc' },
       ...paginationArgs({ cursor, take }),
       select: {

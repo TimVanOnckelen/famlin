@@ -890,7 +890,10 @@
   }
 
   /* CSS-only tooltip: shown on hover or keyboard focus, so pointing at a
-     bar never re-renders the dashboard. */
+     bar never re-renders the dashboard. display:none while idle keeps the
+     hidden tooltip out of the layout (an opacity-only hide would still
+     widen the page at narrow viewports); the first/last bars anchor their
+     tooltip to the chart edge so showing it can't overflow either. */
   .bar-tooltip {
     position: absolute;
     bottom: 100%;
@@ -906,13 +909,44 @@
     white-space: nowrap;
     z-index: 5;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.12s ease;
+    display: none;
   }
 
   .bar-col:hover .bar-tooltip,
   .bar-col:focus-visible .bar-tooltip {
-    opacity: 1;
+    display: block;
+    animation: bar-tooltip-in 0.12s ease;
+  }
+
+  @keyframes bar-tooltip-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .bar-col:first-child .bar-tooltip {
+    left: 0;
+    transform: none;
+  }
+
+  .bar-col:last-child .bar-tooltip {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .bar-col:first-child .bar-tooltip::after {
+    left: 12px;
+    transform: none;
+  }
+
+  .bar-col:last-child .bar-tooltip::after {
+    left: auto;
+    right: 8px;
+    transform: none;
   }
 
   .bar-tooltip::after {
@@ -1010,6 +1044,9 @@
   @media (max-width: 900px) {
     .dashboard-columns {
       flex-direction: column;
+      /* flex-start (the row layout's cross-axis alignment) would size the
+         stacked cards to their content and overflow narrow viewports. */
+      align-items: stretch;
     }
   }
   .settings-layout {

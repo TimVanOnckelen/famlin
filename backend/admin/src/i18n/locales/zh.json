@@ -220,6 +220,12 @@
       "sso": "单点登录"
     },
     "noUsers": "未找到用户。",
+    "searchPlaceholder": "按姓名或邮箱搜索…",
+    "allGroups": "全部群组",
+    "allRoles": "所有人",
+    "adminsOnly": "仅管理员",
+    "noResults": "没有符合筛选条件的用户。",
+    "clearFilters": "清除筛选",
     "noGroups": "无群组",
     "manageGroups": "群组",
     "manageGroupsFor": "{{name}} 所在群组",
