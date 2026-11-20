@@ -335,6 +335,59 @@ describe('admin routes', () => {
     })
   })
 
+  describe('user list filters', () => {
+    it('filters by name/email, family and admin role, and keeps pagination filter-aware', async () => {
+      const admin = await createUser({ isAdmin: true, name: 'Filtertest Root' })
+      const anna = await createUser({ name: 'Filtertest Anna', email: 'filtertest-anna@example.com' })
+      const bob = await createUser({ name: 'Filtertest Bob', email: 'filtertest-bob@example.com' })
+      const family = await createGroupWithMember(anna)
+      await addMember(family.id, bob.id)
+      await addMember(family.id, admin.id)
+
+      async function listIds(query: string) {
+        const res = await app.inject({
+          method: 'GET',
+          url: `/api/admin/users?${query}`,
+          headers: authHeader(admin),
+        })
+        expect(res.statusCode).toBe(200)
+        return res.json().items.map((user: { id: string }) => user.id)
+      }
+
+      // q matches name or email, case-insensitively.
+      expect(await listIds('q=FILTERTEST%20ANNA')).toEqual([anna.id])
+      expect(await listIds('q=filtertest-bob%40')).toEqual([bob.id])
+      // Family filter returns exactly that group's members, in ID order.
+      expect(await listIds(`groupId=${family.id}`)).toEqual([admin.id, anna.id, bob.id].sort())
+      // Admins-only combines with the family filter.
+      expect(await listIds(`groupId=${family.id}&isAdmin=true`)).toEqual([admin.id])
+      expect(await listIds(`groupId=${family.id}&q=filtertest%20bob`)).toEqual([bob.id])
+      expect(await listIds(`groupId=${family.id}&q=filtertest&isAdmin=true`)).toEqual([admin.id])
+
+      // Pagination stays within the filtered set.
+      const first = await app.inject({
+        method: 'GET',
+        url: `/api/admin/users?groupId=${family.id}&take=2`,
+        headers: authHeader(admin),
+      })
+      expect(first.statusCode).toBe(200)
+      const firstPage = first.json()
+      expect(firstPage.items).toHaveLength(2)
+      expect(firstPage.nextCursor).toBeTruthy()
+      const second = await app.inject({
+        method: 'GET',
+        url: `/api/admin/users?groupId=${family.id}&take=2&cursor=${firstPage.nextCursor}`,
+        headers: authHeader(admin),
+      })
+      const secondPage = second.json()
+      expect(secondPage.items).toHaveLength(1)
+      expect(secondPage.nextCursor).toBeNull()
+      expect([...firstPage.items, ...secondPage.items].map((user: { id: string }) => user.id)).toEqual(
+        [admin.id, anna.id, bob.id].sort()
+      )
+    })
+  })
+
   describe('user management', () => {
     it('lets an admin promote a user to admin', async () => {
       const admin = await createUser({ isAdmin: true })

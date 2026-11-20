@@ -220,6 +220,12 @@
       "sso": "SSO"
     },
     "noUsers": "Geen gebruikers gevonden.",
+    "searchPlaceholder": "Zoek op naam of e-mail…",
+    "allGroups": "Alle groepen",
+    "allRoles": "Iedereen",
+    "adminsOnly": "Alleen admins",
+    "noResults": "Geen gebruikers komen overeen met je filters.",
+    "clearFilters": "Filters wissen",
     "noGroups": "Geen groepen",
     "manageGroups": "Groepen",
     "manageGroupsFor": "Groepen van {{name}}",

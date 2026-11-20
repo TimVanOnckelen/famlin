@@ -16,6 +16,8 @@ Day-to-day admin tasks all live under `/admin`, alongside the initial setup cove
 
 The **Users** page lists every account, their group memberships, and whether they're an admin. Accounts are always ordered by ID (ascending), including when loading more rows or refreshing after an edit. Background refreshes keep the table and open management modals visible and preserve previously loaded pages.
 
+The toolbar above the table filters the list on the server: a **search** over name and email (case-insensitive), a **group** dropdown, and a **role** dropdown (**Everyone** or **Admins only**). Combine them freely; **Clear filters** resets everything, and **Load more** pages through the filtered result. Changing a filter starts a fresh result set from the first page.
+
 Confirmations and messages throughout the admin panel use in-app modals. All modals close with **Esc** or a click outside the window, except while a save is in progress. Destructive confirmations focus **Cancel** by default; press **Confirm** to proceed.
 
 - **Add a member** — click **Add member** to open the same modal used from the Groups page (see below). It defaults to **Invite** mode (pick a group, optional email, expiry); switch to **Create with password** to set up an account directly — name, email, password (8+ characters), an admin checkbox, and which groups to add them to — for family members without email/OIDC. Useful for an account that won't sign up itself via OIDC or an invite link.
