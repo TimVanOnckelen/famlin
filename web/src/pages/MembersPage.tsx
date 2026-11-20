@@ -78,9 +78,7 @@ function CircleSection({
           {t('common.loading')}
         </p>
       )}
-      {query.isError && (
-        <LoadError message={t('members.circleMembersFailed')} onRetry={() => void query.refetch()} />
-      )}
+      {query.isError && <LoadError message={t('members.circleMembersFailed')} onRetry={() => void query.refetch()} />}
       {query.isSuccess && (
         <MemberList members={query.data.filter((member) => memberMatches(member, nameQuery, false))} />
       )}

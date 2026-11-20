@@ -124,7 +124,9 @@ export function DashboardPage() {
             ))}
           </ul>
           <div className="wizard-actions">
-            <Button render={<Link to="/getting-started" />}>{t('checklist.continue')}</Button>
+            <Button nativeButton={false} render={<Link to="/getting-started" />}>
+              {t('checklist.continue')}
+            </Button>
             <Button
               variant="secondary"
               type="button"
