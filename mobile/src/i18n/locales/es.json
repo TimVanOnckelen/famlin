@@ -178,7 +178,7 @@
     "attachLabel": "Añadir",
     "changeTypeHint": "Toca para cambiar el tipo: cada tipo tiene sus propios campos más abajo",
     "postType": {
-      "update": "Novedad",
+      "update": "Publicación",
       "milestone": "Hito",
       "poll": "Encuesta",
       "event": "Evento",
