@@ -7,9 +7,10 @@ import nl from './locales/nl.json'
 import zh from './locales/zh.json'
 import ptPT from './locales/pt-PT.json'
 import fr from './locales/fr.json'
+import es from './locales/es.json'
 import { getLanguage } from '@/utils/storage'
 
-export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh', 'pt-PT', 'fr'] as const
+export const SUPPORTED_LANGUAGES = ['en', 'nl', 'zh', 'pt-PT', 'fr', 'es'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'en'
 
@@ -19,6 +20,7 @@ const resources = {
   zh: { translation: zh },
   'pt-PT': { translation: ptPT },
   fr: { translation: fr },
+  es: { translation: es },
 }
 
 i18n.use(initReactI18next).init({
@@ -43,7 +45,7 @@ export async function initI18nLanguage() {
 // Exact tag first, then primary subtag — so pt-PT, pt and pt-BR all resolve to
 // pt-PT, and en-GB to en.
 function matchLanguage(tag: string): SupportedLanguage | undefined {
-  const lower = tag.toLowerCase()
+  const lower = tag.replace(/_/g, '-').toLowerCase()
   const primary = lower.split('-')[0]
   return (
     SUPPORTED_LANGUAGES.find((lang) => lang.toLowerCase() === lower) ??
