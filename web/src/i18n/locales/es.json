@@ -55,7 +55,7 @@
     "comments_one": "{{count}} comentario",
     "comments_other": "{{count}} comentarios",
     "peopleInPost": "Personas en esta publicación",
-    "empty": "Aún no hay publicaciones: ¡comparte la primera novedad con tu familia!",
+    "empty": "Aún no hay publicaciones: ¡comparte la primera con tu familia!",
     "noGroups": "Todavía no formas parte de ninguna familia, así que no hay publicaciones que ver y no puedes crear ninguna. Pide al administrador de tu familia que te añada.",
     "loadMore": "Mostrar más",
     "loadFailed": "No se pudo cargar el feed.",
@@ -127,7 +127,7 @@
       "ALBUM": "Reúne fotos entre todos en un álbum compartido.",
       "GIFT_LIST": "Comparte listas de deseos y, si quieres, sortea el amigo invisible."
     },
-    "typeUpdate": "Novedad",
+    "typeUpdate": "Publicación",
     "typeMilestone": "Hito",
     "typePoll": "Encuesta",
     "typeEvent": "Evento",
