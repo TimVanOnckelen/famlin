@@ -316,6 +316,8 @@ ChatMessage
 - content         nullable, trimmed, max 2000
 - attachmentUrls  String[] default []
 - legacy attachmentUrl? retained during compatibility/migration
+- encryption      String @default("none")
+- encryptedPayload Json? containing a versioned structured envelope
 - refPostId?
 - replyToMessageId?
 - createdAt
@@ -335,10 +337,50 @@ Validation:
 - every path passes `uploadPathSchema`;
 - every new attachment is owned by the sender and bindable;
 - no arbitrary external URL.
+- `encryption = "none"` uses the normal plaintext/attachment fields;
+- future encrypted generations may use `encryptedPayload` while plaintext
+  fields remain null;
+- clients treat every unrecognized encryption marker as unsupported, not empty.
 
 Existing family chats should gain multi-attachment support through the evolved
 schema. Preserve a response-level singular `attachmentUrl` mirroring the first
 entry for installed clients that expect it.
+
+### Encryption forward compatibility
+
+Every message response includes:
+
+```text
+encryption: string
+encryptedPayload: object | null
+```
+
+The server serializes unknown markers unchanged. Current clients support only
+`"none"`:
+
+```text
+if encryption === "none":
+  render content/attachments normally
+else:
+  render "This message can't be shown in this version of Famlin"
+```
+
+Apply that branch to inbox previews, notifications, member exports, and every
+message renderer. Unknown encrypted messages must never become an empty bubble
+or a misleading attachment indicator. Push notifications remain generic and do
+not contain plaintext or encrypted payload.
+
+No client writes `encryptedPayload` or a non-`none` marker in this release. The
+payload is stored as JSON because the encryption format will have an explicitly
+structured envelope. The `encryption` marker remains authoritative for deciding
+which envelope schema a client supports.
+
+Ship this defensive rendering in the first conversation-capable web/mobile
+release, before any server/client can create encrypted messages. The first
+encryption implementation must therefore arrive after those clients are the
+minimum supported app behavior; pre-DM installed clients never enter the private
+conversation flow, while every DM-capable client already knows how to render the
+unsupported-version placeholder.
 
 ### Family conversation migration
 
@@ -362,15 +404,26 @@ Extend `Upload` with:
 
 ```text
 chatConversationId?: String
+participantUserIds?: String[]
 ```
 
 Rules:
 
 - nullable and indexed;
+- add a new `UploadScope` variant for conversations; never call
+  `bindAssetsToScope` with the participants' family `groupIds`;
 - `canReadUpload` resolves conversation kind and audience:
   - `FAMILY`: current `GroupMember`, plus `chitchatEnabled` policy;
-  - `PRIVATE`: current participant plus live shared-family eligibility;
+  - `PRIVATE`: an explicit participant-only scope plus live conversation/shared
+    family eligibility;
+- `chatConversationId` is the authoritative live scope and
+  `participantUserIds` is an optional explicit fail-closed participant snapshot;
+  neither may fall back to group membership;
 - private attachments are never scoped to every member of a shared family;
+- a fellow family member who guesses a `/uploads/` path receives 404;
+- `isUploadRowReadable` receives a conversation visibility callback just like
+  its existing circle/group callbacks; member export uses the same central rule
+  rather than reimplementing participant checks;
 - inaccessible conversations yield 404 for conversation media;
 - the same conversation scope can support future 3+ private participants;
 - conversation deletion must explicitly clean up upload rows/files rather than broadening scope.
@@ -380,6 +433,11 @@ identical and an on-disk backfill is not necessary. New family/private chat
 messages bind through conversation scope. If a migration script can safely
 convert an existing upload that is referenced only by family chat, it may do so,
 but the scope must never be removed from other content references.
+
+`bindAssetsToScope` and the upload readability helper must persist conversation
+scope unambiguously and refuse widening a private attachment through later group
+rebinding. New private attachments are claimed/bound exclusively for their
+conversation rather than silently reused by another scope.
 
 ### User preference
 
@@ -700,12 +758,12 @@ No new database mutation is required to hide DMs because shared-family membershi
 
 #### Account deletion
 
-For this 1:1 release, deleting either private participant must remove the
-private conversation and its dependent messages/reads. Use explicit cleanup
-plus participant/message cascades rather than a single `User -> Conversation`
-FK, so the conversation model remains extensible to 3+ participants later.
+Deleting either private participant permanently deletes the entire 1:1 private
+conversation for both people. This includes all messages, read state, and
+conversation-scoped uploads. It matches Famlin’s existing hard-delete posture
+and avoids a synthetic/deleted-user identity.
 
-When a user is deleted:
+The delete flow must:
 
 - identify private conversations where they participate;
 - collect conversation-scoped upload files;
@@ -717,6 +775,27 @@ When a user is deleted:
 Do not let a generic reference scan treat a private conversation upload path as
 group/server-visible media if it is still used elsewhere. Private attachment
 binding is exclusive to that conversation and the cleanup rule must be tested.
+
+For a future 3+ conversation, account deletion semantics must be revisited:
+removing one participant may be preferable to deleting the whole conversation.
+That later behavior is outside the initial 1:1 policy.
+
+### Immich upload mirror privacy
+
+Add every private conversation attachment to `privateUploadKeys()` in
+`backend/src/services/mediaMirror.ts`.
+
+- query plaintext `ChatMessage.attachmentUrl`/`attachmentUrls`;
+- reserve a way to extract attachment references from encrypted payload
+  envelopes once an encryption format exists;
+- one private reference keeps an upload excluded from every family mirror even
+  if another row also references it;
+- if a mirror run previously copied an upload that later becomes private, the
+  next sync must remove it from Immich albums managed by Famlin;
+- test that a fellow family member’s shared Immich album can never receive a
+  private conversation upload.
+
+This is part of the initial feature, not later hardening.
 
 ### Read-only and rate limits
 
@@ -732,7 +811,7 @@ Add data entries for:
 
 - chat conversations, including migrated family conversations;
 - private conversation participants and read state;
-- evolved chat messages;
+- evolved chat messages, including encryption marker and payload;
 - conversation-scoped fields in upload/notification representations where relevant.
 
 Include the referenced upload originals/display copies/thumbnails/posters. Keep media collection aligned with the existing admin export behavior.
@@ -756,6 +835,8 @@ Update:
 Restore into an empty instance must preserve family conversation identity,
 canonical 1:1 pair uniqueness, participant relationships, and migrated IDs.
 Read state and message timestamps must be retained exactly.
+The round-trip restore test must cover private conversations, read state,
+encryption fields, conversation upload scope, and associated media.
 
 ### Member export
 
@@ -769,6 +850,8 @@ Read state and message timestamps must be retained exactly.
 - never include a conversation or media from a pair that no longer shares a family;
 - omit private-chat data for other users;
 - carry conversation participant information needed to interpret the export.
+- preserve `encryption`/`encryptedPayload` faithfully; encrypted records must
+  not be flattened into plaintext or represented as empty.
 
 Add explicit exclusions in tests rather than relying only on positive cases.
 
@@ -785,6 +868,10 @@ Generalize `packages/api-client/src/chat.ts` with:
 - `ChatUnreadCounts`
 - `CreateChatConversationBody`
 - API functions for all conversation-oriented `/api/chat` routes.
+
+The shared `ChatMessage` type includes `encryption` and
+`encryptedPayload`. Add a central client predicate/helper so web and mobile
+apply the same supported-marker decision instead of duplicating string checks.
 
 Retain the existing group-scoped API-client wrappers and `groupId` response
 fields while old clients remain supported. New responses can add
@@ -954,6 +1041,8 @@ Add focused Testing Library/Vitest coverage:
 - inaccessible DM displays unavailable state;
 - push/inbox URL selection;
 - shell Chat badge combines unread totals;
+- unsupported encryption marker renders the localized unavailable placeholder instead of an empty bubble;
+- encrypted inbox preview does not expose or invent plaintext/attachment text;
 - modal focus/keyboard behavior;
 - locale strings are keys rather than hardcoded copy.
 
@@ -1062,6 +1151,8 @@ Add Jest tests for:
 - own-message delete behavior;
 - warm/cold-start DM notification navigation;
 - hidden conversation/unavailable state;
+- unsupported encryption marker renders the localized unavailable placeholder instead of an empty bubble;
+- encrypted inbox preview stays privacy-safe;
 - profile preference update;
 - feature-gated behavior against an older server.
 
@@ -1120,6 +1211,9 @@ Document:
 - `pushOnDirectMessage`;
 - `relatedChatConversationId`;
 - upload scope/authorization implications.
+- `ChatMessage.encryption` (`"none"` today, open-string discriminator) and
+  nullable structured `encryptedPayload`;
+- unsupported-version placeholder behavior in member clients.
 
 Treat API additions as non-breaking. If an existing response is changed, run the breaking-change gate and mark the PR/commit appropriately.
 
@@ -1151,6 +1245,7 @@ Expected categories:
 - attachment limits/errors;
 - profile preference label and description;
 - generic push title/body.
+- unsupported encrypted-message placeholder.
 
 Run:
 
@@ -1227,6 +1322,7 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 - deleted message cannot be accessed;
 - member removal revokes conversation and upload access immediately;
 - account deletion cascades conversation/read state and cleans up files.
+- deleting either private participant removes the conversation for the other participant as well;
 
 ### Backend message behavior
 
@@ -1245,6 +1341,9 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 - delete of other participant’s message fails;
 - admin cannot delete a participant’s DM;
 - latest inbox preview updates after delete.
+- `encryption = "none"` requires the normal payload rules;
+- an unrecognized encryption marker is serialized unchanged, with its JSON envelope intact;
+- clients never derive an empty bubble from a null plaintext field when encryption is unknown.
 
 ### Upload privacy
 
@@ -1253,7 +1352,11 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 - inaccessible to admins outside conversation;
 - inaccessible after last shared-family removal;
 - accessible again after a shared-family relationship is restored;
-- deleted message/upload no longer served.
+- deleted message/upload no longer served;
+- attempting to widen conversation-bound media through `groupIds` does not change its conversation-only scope;
+- live participant authorization is used even when a `participantUserIds` snapshot is stale or incomplete;
+- private conversation uploads are always returned by `privateUploadKeys()`;
+- a mirror sync never copies a private conversation upload and removes an already-mirrored one if it becomes private.
 
 ### Notifications
 
@@ -1275,6 +1378,8 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 - member export excludes other users’ DMs;
 - account deletion does not leave archived/orphaned physical media in normal storage;
 - restore round trip preserves canonical pair and latest-read state.
+- restore round trip preserves encryption marker/payload, conversation participant scope, and upload files;
+- importing an archive created before conversation encryption defaults missing marker values to `none`.
 
 ### Web/mobile
 
