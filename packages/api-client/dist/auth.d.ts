@@ -54,7 +54,15 @@ export interface ServerInfo {
     readOnly?: boolean;
     branding?: Branding | null;
     features?: string[];
+    limits?: ServerLimits;
 }
+export interface ServerLimits {
+    maxAttachments: number;
+    maxVideoDurationSeconds: number;
+    maxUploadSizeMb: number;
+}
+export declare const DEFAULT_LIMITS: ServerLimits;
+export declare function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits;
 export interface BrandPalette {
     primary: string;
     primaryDark: string;

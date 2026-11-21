@@ -60,6 +60,13 @@ export interface ServerSettings {
   backupHour: number
   // How many backups (zips, and dumps until v1.0.0) to keep.
   backupRetention: number
+  // Upload limits (issue #436), exposed to clients on /api/auth/server-info.
+  // maxAttachments caps every photo/video list (post, comment, album
+  // contribution, trip check-in); maxVideoDurationSeconds is enforced by the
+  // clients only; maxUploadSizeMb caps each file in POST /api/uploads.
+  maxAttachments: number
+  maxVideoDurationSeconds: number
+  maxUploadSizeMb: number
   // Per-family branding (services/branding/). Deliberately not writable via
   // PATCH /api/admin/settings — only the validated /api/admin/branding routes
   // set these.
@@ -69,6 +76,15 @@ export interface ServerSettings {
   // Content hash of the current logo renditions (uploadsDir/branding/), or ''.
   brandLogo: string
 }
+
+// Allowed range and default of each upload limit. maxAttachments never goes
+// below 10, the cap installed apps were built with, so they never hit a 400.
+// The admin PATCH schema (types.ts) mirrors these ranges.
+const LIMIT_RANGES = {
+  maxAttachments: { min: 10, max: 50, fallback: 10 },
+  maxVideoDurationSeconds: { min: 10, max: 1800, fallback: 120 },
+  maxUploadSizeMb: { min: 10, max: 2048, fallback: 200 },
+} as const
 
 const SETTING_KEYS: (keyof ServerSettings)[] = [
   'defaultLanguage',
@@ -99,6 +115,9 @@ const SETTING_KEYS: (keyof ServerSettings)[] = [
   'backupSchedule',
   'backupHour',
   'backupRetention',
+  'maxAttachments',
+  'maxVideoDurationSeconds',
+  'maxUploadSizeMb',
   'brandPreset',
   'brandColor',
   'brandName',
@@ -151,6 +170,11 @@ function parseValue(key: keyof ServerSettings, value: string): ServerSettings[ke
   if (key === 'backupRetention') {
     const n = parseInt(value, 10)
     return isNaN(n) || n < 1 ? 7 : n
+  }
+  if (key === 'maxAttachments' || key === 'maxVideoDurationSeconds' || key === 'maxUploadSizeMb') {
+    const { min, max, fallback } = LIMIT_RANGES[key]
+    const n = parseInt(value, 10)
+    return isNaN(n) || n < min || n > max ? fallback : n
   }
   if (key === 'defaultLanguage') {
     return SUPPORTED_LANGUAGES.includes(value as SupportedLanguage) ? value : DEFAULT_LANGUAGE
@@ -205,6 +229,9 @@ async function loadAllSettings(): Promise<ServerSettings> {
     backupSchedule: parseValue('backupSchedule', map.get('backupSchedule') || 'daily'),
     backupHour: parseValue('backupHour', map.get('backupHour') || '3'),
     backupRetention: parseValue('backupRetention', map.get('backupRetention') || '7'),
+    maxAttachments: parseValue('maxAttachments', map.get('maxAttachments') || ''),
+    maxVideoDurationSeconds: parseValue('maxVideoDurationSeconds', map.get('maxVideoDurationSeconds') || ''),
+    maxUploadSizeMb: parseValue('maxUploadSizeMb', map.get('maxUploadSizeMb') || ''),
     brandPreset: parseValue('brandPreset', map.get('brandPreset') || ''),
     brandColor: parseValue('brandColor', map.get('brandColor') || ''),
     brandName: parseValue('brandName', map.get('brandName') || ''),
@@ -220,6 +247,19 @@ export async function getAllSettings(): Promise<ServerSettings> {
   const value = await loadAllSettings()
   settingsCache = { value, expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS }
   return value
+}
+
+// Thrown when a request carries more photos/videos than maxAttachments
+// allows; app.ts's error handler turns it into a translated 400.
+export class TooManyAttachmentsError extends Error {
+  constructor(public max: number) {
+    super('tooManyAttachments')
+  }
+}
+
+export async function assertAttachmentLimit(count: number): Promise<void> {
+  const { maxAttachments } = await getAllSettings()
+  if (count > maxAttachments) throw new TooManyAttachmentsError(maxAttachments)
 }
 
 export async function updateSettings(partial: Partial<ServerSettings>) {

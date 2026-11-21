@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../../db.js'
 import { bindAssetsToScope } from '../uploads.js'
 import { emitDomainEvent } from '../../events.js'
-import { uploadPathSchema } from '../../types.js'
+import { MAX_ATTACHMENTS_CEILING, uploadPathSchema } from '../../types.js'
+import { assertAttachmentLimit } from '../settings.js'
 import { PostTypeError } from './types.js'
 import type { PostTypeHandler } from './types.js'
 
@@ -50,7 +51,7 @@ interface AlbumPhotoMetadata {
 }
 
 const addPhotosValueSchema = z.object({
-  photoUrls: z.array(uploadPathSchema).min(1).max(10),
+  photoUrls: z.array(uploadPathSchema).min(1).max(MAX_ATTACHMENTS_CEILING),
   caption: z.string().trim().max(2000).optional(),
 })
 
@@ -153,6 +154,7 @@ export const albumHandler: PostTypeHandler = {
         throw new PostTypeError('invalidInteraction')
       }
       const { photoUrls, caption } = parsed.data
+      await assertAttachmentLimit(photoUrls.length)
 
       // Locks the sibling row(s) FOR UPDATE and re-checks isAlbumClosed
       // against the freshly-read typeData, then creates the Comment

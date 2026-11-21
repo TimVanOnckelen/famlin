@@ -1041,6 +1041,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
       // Named capabilities (issue #380) — see serverFeatures.ts. Additive:
       // clients treat a missing array as their implicit baseline.
       features: [...SERVER_FEATURES],
+      // Admin-configured upload limits (issue #436). Additive: clients fall
+      // back to their built-in defaults when it's missing.
+      limits: {
+        maxAttachments: settings.maxAttachments,
+        maxVideoDurationSeconds: settings.maxVideoDurationSeconds,
+        maxUploadSizeMb: settings.maxUploadSizeMb,
+      },
     }
   })
 }

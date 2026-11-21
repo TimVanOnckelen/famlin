@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_COMMENT_ATTACHMENTS = void 0;
 exports.commentAttachments = commentAttachments;
 exports.groupCommentAttachments = groupCommentAttachments;
-/** Mirrors MAX_COMMENT_ATTACHMENTS in the backend's types.ts. */
+/** Comment attachment cap of servers without `limits`; prefer resolveServerLimits(info).maxAttachments. */
 exports.MAX_COMMENT_ATTACHMENTS = 10;
 /**
  * The photos/videos a comment carries, as an array — regardless of whether

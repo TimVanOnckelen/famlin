@@ -14,6 +14,7 @@ import { getT } from '../i18n/index.js'
 import { handlerCommentSiblingKey } from '../services/postTypes/registry.js'
 import { canViewPostCircle } from '../services/circles.js'
 import { bindAssetsToScope } from '../services/uploads.js'
+import { assertAttachmentLimit } from '../services/settings.js'
 
 export default async function commentRoutes(fastify: FastifyInstance) {
   fastify.get('/posts/:postId/comments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
@@ -65,6 +66,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { postId } = request.params as { postId: string }
     const body = createCommentBodySchema.parse(request.body)
+    await assertAttachmentLimit(normalizeCommentAttachments(body).length)
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -173,6 +175,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { id } = request.params as { id: string }
     const body = updateCommentBodySchema.parse(request.body)
+    await assertAttachmentLimit(normalizeCommentAttachments(body).length)
 
     const comment = await prisma.comment.findUnique({
       where: { id },

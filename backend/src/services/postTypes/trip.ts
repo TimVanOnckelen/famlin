@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../../db.js'
 import { bindAssetsToScope } from '../uploads.js'
 import { emitDomainEvent } from '../../events.js'
-import { uploadPathSchema } from '../../types.js'
+import { MAX_ATTACHMENTS_CEILING, uploadPathSchema } from '../../types.js'
+import { assertAttachmentLimit } from '../settings.js'
 import { PostTypeError } from './types.js'
 import type { PostTypeHandler } from './types.js'
 
@@ -68,7 +69,7 @@ interface TripCheckinMetadata {
 const checkinValueSchema = z.object({
   place: z.string().trim().min(1).max(80),
   text: z.string().trim().max(2000).optional(),
-  photoUrls: z.array(uploadPathSchema).max(10).optional(),
+  photoUrls: z.array(uploadPathSchema).max(MAX_ATTACHMENTS_CEILING).optional(),
 })
 
 const setTravelersValueSchema = z.object({
@@ -308,6 +309,7 @@ export const tripHandler: PostTypeHandler = {
           throw new PostTypeError('invalidInteraction')
         }
         const { place, text, photoUrls } = parsed.data
+        await assertAttachmentLimit(photoUrls?.length ?? 0)
         // One shared checkinId across every copy (single-group trips get it
         // too, for uniformity) — see TripCheckinMetadata and the author
         // delete fan-out in routes/comments.ts.

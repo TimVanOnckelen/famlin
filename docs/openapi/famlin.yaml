@@ -569,8 +569,36 @@ paths:
                       `deviceDiagnostics` (`/api/devices`), `wiki`
                       (`/api/wiki`), `diagnosticReports` (`POST
                       /api/diagnostics/reports`), `giftListGuests` (guest
-                      wishlists on gift lists).
-                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests]
+                      wishlists on gift lists), `paginatedComments`,
+                      `configurableLimits` (`limits` below).
+                    example: [accountDeletion, circles, stories, memberExport, giftLists, uploadProcessing, livePhotos, deviceDiagnostics, wiki, diagnosticReports, giftListGuests, paginatedComments, configurableLimits]
+                  limits:
+                    type: object
+                    description: >-
+                      Upload limits the admin configured (server feature
+                      `configurableLimits`). Absent on older servers; clients
+                      then assume the defaults shown here.
+                    properties:
+                      maxAttachments:
+                        type: integer
+                        minimum: 10
+                        maximum: 50
+                        description: >-
+                          Most photos/videos in one post, comment, album
+                          contribution or trip check-in.
+                        example: 10
+                      maxVideoDurationSeconds:
+                        type: integer
+                        minimum: 10
+                        maximum: 1800
+                        description: Longest video clients accept; enforced by the clients only.
+                        example: 120
+                      maxUploadSizeMb:
+                        type: integer
+                        minimum: 10
+                        maximum: 2048
+                        description: Largest single file `POST /api/uploads` accepts.
+                        example: 200
 
   /branding/{file}:
     get:
@@ -1003,7 +1031,8 @@ paths:
                   example: First steps!
                 uploadedAssetUrls:
                   type: array
-                  maxItems: 20
+                  maxItems: 50
+                  description: At most the server's `maxAttachments` (default 10, see `limits` on `/api/auth/server-info`); more is a 400 with `code` `tooManyAttachments`.
                   items: { type: string }
                   example: ['/uploads/8d0f3c9a-1b2e-4f5a-9c8d-7e6f5a4b3c2d.jpg']
                 latitude:
@@ -1179,7 +1208,7 @@ paths:
                   nullable: true
                 uploadedAssetUrls:
                   type: array
-                  maxItems: 20
+                  maxItems: 50
                   items: { type: string }
                   description: |
                     The post's complete photo/video list after the edit — it
@@ -1187,6 +1216,7 @@ paths:
                     both adds and removes photos. Same path shapes as create
                     (`/uploads/...` from `POST /api/uploads`, or a linked
                     album's media path). Omit it to leave the photos alone.
+                    Capped at the server's `maxAttachments` like create.
       responses:
         '200':
           description: The updated post
@@ -1457,12 +1487,14 @@ paths:
                     existing asset already on the post. Ignored when `attachmentUrls` is sent.
                 attachmentUrls:
                   type: array
-                  maxItems: 10
+                  maxItems: 50
                   items: { type: string }
                   description: >-
                     Photo/video paths returned by `POST /api/uploads`, uploaded by the
                     commenter as part of this comment itself. Takes precedence over
-                    `attachmentUrl`.
+                    `attachmentUrl`. At most the server's `maxAttachments` (default
+                    10, see `limits` on `/api/auth/server-info`); more is a 400 with
+                    `code` `tooManyAttachments`.
                 mentionedUserIds:
                   type: array
                   maxItems: 20
@@ -2537,6 +2569,8 @@ paths:
       description: |
         Allowed: jpg, jpeg, png, gif, webp, heic, heif, mp4, mov, m4v, webm.
         Max 200 MB per file, 10 files per request, 60 uploads per 10 minutes.
+        Each file may be at most the server's `maxUploadSizeMb` (default 200,
+        see `limits` on `/api/auth/server-info`).
         Pass the returned paths into `uploadedAssetUrls` when creating a post,
         or into `avatarUrl` when updating your profile.
         Photos and videos return stable future JPEG/MP4 paths plus small previews.
@@ -2608,7 +2642,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '413':
-          description: File too large
+          description: A file is larger than the server's `maxUploadSizeMb`
           content:
             application/json:
               schema:

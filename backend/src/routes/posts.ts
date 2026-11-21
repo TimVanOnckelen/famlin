@@ -36,6 +36,7 @@ import { paginationArgs, paginate } from '../services/pagination.js'
 import { copyMediaAssetsToUploads, CrossPostAssetCopyError } from '../services/media/copyAsset.js'
 import { getPostTypeHandler, resolveAllowedPostTypes, PostTypeError } from '../services/postTypes/registry.js'
 import { getT } from '../i18n/index.js'
+import { assertAttachmentLimit } from '../services/settings.js'
 import {
   GIFT_LIST_POST_TYPE,
   deleteOrphanedGiftListCircles,
@@ -250,6 +251,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const t = getT(request)
     const body = createPostBodySchema.parse(request.body)
+    await assertAttachmentLimit(body.uploadedAssetUrls?.length ?? 0)
 
     // Cross-posting: `groupIds` (1–20) fans one write out into one Post row
     // per target group, all sharing a crossPostId — the legacy single
@@ -481,6 +483,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { id } = request.params as { id: string }
     const body = updatePostBodySchema.parse(request.body)
+    await assertAttachmentLimit(body.uploadedAssetUrls?.length ?? 0)
 
     const post = await prisma.post.findUnique({ where: { id } })
 

@@ -14,6 +14,10 @@ export const EMBEDDED_UPLOAD_PATH_REGEX = new RegExp(UPLOAD_PATH_SOURCE, 'g')
 // reuse the exact same "must be a /uploads/ path" check without re-deriving
 // the regex.
 export const uploadPathSchema = z.string().regex(UPLOAD_PATH_REGEX, 'Must be an uploaded asset path')
+// Static upper bound for every photo/video list (post, comment, album, trip
+// check-in) — the top of the maxAttachments setting's range. The configured
+// value is enforced per request by assertAttachmentLimit (services/settings.ts).
+export const MAX_ATTACHMENTS_CEILING = 50
 
 // Matches exactly what routes/immich.ts's legacy proxy route serves:
 // /api/immich/assets/<MediaAlbumLink cuid>/<Immich asset uuid>/<variant>.<ext>.
@@ -151,7 +155,7 @@ export const createPostBodySchema = z
     // routes/posts.ts, not here (this schema can't know which shape a given
     // type expects).
     typeData: z.unknown().optional(),
-    uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
+    uploadedAssetUrls: z.array(assetPathSchema).max(MAX_ATTACHMENTS_CEILING).optional(),
     // Narrows the audience from the whole group to one Circle within it
     // (see services/circles.ts). Omitted or null = everyone in the target
     // group, which is what every client built before Circles sends.
@@ -172,10 +176,6 @@ export const createPostBodySchema = z
     path: ['circleId'],
   })
 
-// Upper bound on photos/videos in one comment. Deliberately lower than a
-// post's 20 — a comment is a reply, not an album.
-export const MAX_COMMENT_ATTACHMENTS = 10
-
 export const createCommentBodySchema = z
   .object({
     // Optional so a comment can be photo/video-only — the refine below still
@@ -189,7 +189,7 @@ export const createCommentBodySchema = z
     // attachmentUrl is the legacy single-attachment field older clients still
     // send; attachmentUrls wins when both are present (see routes/comments.ts).
     attachmentUrl: uploadPathSchema.optional(),
-    attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
+    attachmentUrls: z.array(uploadPathSchema).max(MAX_ATTACHMENTS_CEILING).optional(),
     // IDs the client resolved from the group member list while typing "@name" —
     // the server only trusts these as a set of candidate ids and still
     // re-validates each one is a current member of the post's group.
@@ -251,7 +251,7 @@ export const updatePostBodySchema = z
     // replaces the stored one wholesale (that's how a client both adds and
     // removes). Omitted leaves the post's existing assets untouched, so a
     // text-only edit never has to resend them.
-    uploadedAssetUrls: z.array(assetPathSchema).max(20).optional(),
+    uploadedAssetUrls: z.array(assetPathSchema).max(MAX_ATTACHMENTS_CEILING).optional(),
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
     message: 'latitude and longitude must be provided together',
@@ -270,7 +270,7 @@ export const updateCommentBodySchema = z.object({
   // attachmentUrl is the legacy single-attachment field, same precedence as
   // createCommentBodySchema — see normalizeCommentAttachments.
   attachmentUrl: uploadPathSchema.optional(),
-  attachmentUrls: z.array(uploadPathSchema).max(MAX_COMMENT_ATTACHMENTS).optional(),
+  attachmentUrls: z.array(uploadPathSchema).max(MAX_ATTACHMENTS_CEILING).optional(),
 })
 
 export const pushTokenBodySchema = z.object({
@@ -499,6 +499,10 @@ export const updateServerSettingsBodySchema = z.object({
   backupHour: z.number().int().min(0).max(23).optional(),
   backupIncludeMedia: z.boolean().optional(),
   backupRetention: z.number().int().min(1).max(365).optional(),
+  // Same ranges as LIMIT_RANGES in services/settings.ts.
+  maxAttachments: z.number().int().min(10).max(MAX_ATTACHMENTS_CEILING).optional(),
+  maxVideoDurationSeconds: z.number().int().min(10).max(1800).optional(),
+  maxUploadSizeMb: z.number().int().min(10).max(2048).optional(),
 })
 
 // Per-family branding (issue #164, services/branding/). `color` is only
