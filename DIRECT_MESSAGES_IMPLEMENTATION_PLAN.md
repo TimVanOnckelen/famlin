@@ -104,7 +104,8 @@ Important current behavior:
 - `ChatRead` stores one `lastReadAt` per `(groupId, userId)`.
 - Group unread counts are computed for memberships and polled by shell/navigation.
 - Group chat is push-only and uses `User.pushOnChitchat`.
-- Existing group-chat semantics must remain intact. DMs should be adjacent behavior, not a reinterpretation of the `groupId` model.
+- Existing group-chat semantics and installed-client API behavior must remain intact.
+- This feature should generalize the chat storage/runtime model around conversations while preserving `/api/chat/groups/:groupId/*` as compatibility adapters.
 
 ### Web patterns
 
@@ -148,8 +149,8 @@ Important current behavior:
 - `bindAssetsToScope` only binds unbound uploads owned by the uploader, or extends eligible group scope by the uploader.
 - `Upload` currently supports circle, group-list, and server-wide scopes.
 - Existing group chat binds attachments to the whole group.
-- A DM attachment must not be bound to every member of a shared family.
-- A DM-specific upload scope/reference is required, and `canReadUpload` must live-check the DM conversation’s current shared-family eligibility.
+- A private-chat attachment must not be bound to every member of a shared family.
+- A conversation upload scope/reference is required. For family conversations it continues to resolve to group membership; for private conversations it resolves against the participant rows and live shared-family eligibility.
 - All attachment paths must continue to pass `uploadPathSchema`.
 - Message creation and upload binding must happen in one transaction so an accepted message never contains silently unbound media.
 
@@ -159,8 +160,8 @@ Important current behavior:
 - `backend/src/subscribers/notifications.ts` owns recipient/notification policy.
 - Push delivery is centralized in `services/notificationChannels/push.ts`.
 - Existing notification types live in `services/notificationChannels/types.ts`.
-- `Notification` currently relates to posts/stories, not DM conversations.
-- DMs should emit a DM-specific event and notify exactly the other participant.
+- `Notification` currently relates to posts/stories, not chat conversations.
+- Private conversations should emit a chat conversation event and notify the other participants. The first release has exactly two private participants; the model can later support more without a schema redesign.
 - The subscriber, not the route, should own notification policy.
 - If a DM is created while participants no longer share a family, the subscriber must not notify.
 - DM pushes are push-only. They must not use group-chat content text or email.
@@ -182,7 +183,8 @@ Important current behavior:
 
 ### Shared API client and compatibility
 
-- Add a dedicated `packages/api-client/src/dms.ts`; do not overload group-chat types if their identity and read/participant semantics differ.
+- Evolve `packages/api-client/src/chat.ts` into a conversation-oriented client module while retaining legacy group wrappers and response compatibility.
+- Keep DM-specific helpers/types in that module or an explicit adjacent `conversations.ts`; do not create a detached API/client model that cannot later represent multi-person private chat.
 - The barrel in `packages/api-client/src/index.ts` uses named exports, never `export *`.
 - The committed `dist/` package is consumed by mobile and production builds; run `npm run build:api-client` and include required generated output.
 - Add a server feature ID in:
@@ -193,115 +195,191 @@ Important current behavior:
 - OpenAPI is hand-maintained in `docs/openapi/famlin.yaml`; generated API-reference output is not hand-edited.
 - `feat` work requires a docs change unless an exceptional `Docs-not-needed` justification is supplied.
 
+## Architecture decision: one generalized chat model
+
+Do not create `DirectConversation`, `DirectMessage`, or `DirectRead` tables
+alongside existing chat. Extend chat around a generalized
+`ChatConversation` entity instead.
+
+The rationale is extensibility without premature scope:
+
+- family chat and private chat share the same message, pagination, read, upload,
+  delete, and inbox mechanics;
+- private conversations explicitly model participants, so the initial 1:1
+  policy can later expand to 3+ without replacing storage;
+- family chat keeps live `GroupMember`-derived membership instead of duplicating
+  member rows;
+- installed group-chat clients can retain their existing routes and response
+  shape through compatibility adapters;
+- a private chat is not represented as a synthetic `Group`, which would
+  incorrectly inherit posts, stories, media albums, circles, wiki, and admin
+  semantics.
+
+The initial user-facing restriction remains one-to-one. The generalized schema
+is a preparedness decision, not permission to ship ad-hoc groups in this release.
+
 ## Proposed backend data model
 
-### `DirectConversation`
+The existing `ChatMessage`/`ChatRead` tables should be evolved into a reusable
+conversation model rather than adding a parallel direct-message subsystem.
 
-Canonical two-participant model:
+### `ChatConversation`
 
 ```text
-DirectConversation
+ChatConversation
 - id
-- participantAId
-- participantBId
+- kind             String: FAMILY or PRIVATE
+- groupId?         nullable, FAMILY only
+- participantKey? canonical key, PRIVATE 1:1 only
+- title?
+- createdById?
 - createdAt
 - updatedAt
 
 relations
-- participantA -> User
-- participantB -> User
-- messages -> DirectMessage[]
-- reads -> DirectRead[]
+- group -> Group?
+- participants -> ChatConversationParticipant[]
+- messages -> ChatMessage[]
 ```
 
 Constraints:
 
-- `participantAId < participantBId` according to one deterministic server-side canonicalization rule.
-- unique index on `[participantAId, participantBId]`.
-- `participantAId != participantBId` is validated in application service code.
-- indexes for each participant to support inbox lookup.
-- `participantA` and `participantB` use Prisma relation aliases.
-- participant foreign keys cascade conversation deletion when an account is hard-deleted.
+- every existing family gets one backfilled `FAMILY` conversation;
+- unique `groupId` for family conversations;
+- private conversation creation currently requires exactly two participants;
+- `participantKey` contains the sorted pair and is unique only as a 1:1 idempotency key;
+- the application or database check must prevent both `kind=FAMILY` without `groupId` and `kind=PRIVATE` with a `groupId`;
+- future ad-hoc 3+ participant conversations do not set `participantKey`;
+- no private conversation is represented by a synthetic `Group`.
+- creating a `Group` creates its `FAMILY` conversation; deleting a `Group`
+  cascades that conversation and its messages/read rows.
 
-Why canonical columns rather than a join table:
-
-- the feature is strictly 1:1;
-- a unique unordered pair can be enforced at the database level;
-- participant lookup is simple and bounded;
-- the schema does not imply support for future group-DM semantics that are intentionally out of scope.
-
-If the canonical ordering cannot be expressed safely for every persisted user ID type, use a separate composite `participantPairKey` with the same canonicalization and unique constraint, but the pair still must be explicit in relational columns for authorization/querying.
-
-### `DirectMessage`
+### `ChatConversationParticipant`
 
 ```text
-DirectMessage
+ChatConversationParticipant
 - id
 - conversationId
-- authorId
-- content          nullable string, trimmed, max 2000
-- attachmentUrls   String[] default []
-- createdAt
+- userId
+- joinedAt
 
 relations
-- conversation -> DirectConversation, cascade on conversation delete
-- author -> User
+- conversation -> ChatConversation, cascade
+- user -> User, cascade
 
+unique
+- [conversationId, userId]
 indexes
-- [conversationId, id] for cursor paging
-- [authorId]
+- [userId]
 ```
 
-Validation:
+Private conversations use explicit participant rows. Family conversations do not
+duplicate family members: their audience remains the live `GroupMember` relation.
+This preserves immediate membership-based access changes for family chat.
 
-- `attachmentUrls.length <= 10`.
-- At least one of `content` or attachments must be present.
-- Remove duplicate attachment URLs while preserving order.
-- Every path passes `uploadPathSchema`.
-- Every attachment is owned by the sender and currently unbound before binding.
-- No client-provided metadata or arbitrary URLs are accepted.
+The current product policy is still exactly two private participants. Future
+creation of larger ad-hoc conversations is a later product/API capability, not
+implied by this migration. At that point, participant admission/removal and the
+required family trust boundary must be specified separately; the storage layer
+will not require replacement.
 
-No legacy singular `attachmentUrl` is needed because DMs are new and no installed client depends on the shape.
+### Evolved `ChatRead`
 
-### `DirectRead`
+Migrate the existing table to:
 
 ```text
-DirectRead
+ChatRead
+- id
 - conversationId
 - userId
 - lastReadAt
-
-relations
-- conversation -> DirectConversation, cascade
-- user -> User, cascade
 
 unique
 - [conversationId, userId]
 ```
 
-Mark-read must verify:
+This is one read model for both family and private conversations. Family
+membership remains live-derived; private readers must be conversation
+participants. Do not duplicate private read state in the participant table and
+do not keep a group-specific read table beside it.
 
-- caller is a participant;
-- caller currently shares a family with the other participant.
+### Evolved `ChatMessage`
 
-### `Upload` DM scope
-
-Extend `Upload` with a DM-specific scope:
+Migrate the existing table rather than creating `DirectMessage`:
 
 ```text
-directConversationId?: String
+ChatMessage
+- id
+- conversationId  replaces groupId
+- authorId
+- kind
+- content         nullable, trimmed, max 2000
+- attachmentUrls  String[] default []
+- legacy attachmentUrl? retained during compatibility/migration
+- refPostId?
+- replyToMessageId?
+- createdAt
+- editedAt?
+
+indexes
+- [conversationId, createdAt, id]
+- [replyToMessageId]
+- [authorId]
+```
+
+Validation:
+
+- `attachmentUrls.length <= 10` for all conversation kinds, not just DMs;
+- at least one of `content` or attachments;
+- deduplicate attachment paths while preserving order;
+- every path passes `uploadPathSchema`;
+- every new attachment is owned by the sender and bindable;
+- no arbitrary external URL.
+
+Existing family chats should gain multi-attachment support through the evolved
+schema. Preserve a response-level singular `attachmentUrl` mirroring the first
+entry for installed clients that expect it.
+
+### Family conversation migration
+
+The migration must:
+
+1. create `ChatConversation`;
+2. insert one `FAMILY` row for each `Group`;
+3. add `conversationId` to `ChatMessage`;
+4. backfill every existing message to the corresponding family conversation;
+5. move or backfill `ChatRead` by that conversation;
+6. make `conversationId` required and remove the now-redundant `groupId` column;
+7. add `ChatConversationParticipant`;
+8. preserve existing IDs/timestamps/references for export compatibility.
+
+This is a data migration, but not an API break: old family endpoints resolve
+`groupId` to the corresponding conversation.
+
+### `Upload` conversation scope
+
+Extend `Upload` with:
+
+```text
+chatConversationId?: String
 ```
 
 Rules:
 
-- nullable, indexed;
-- not a general “any participant” array;
-- `canReadUpload` resolves the conversation and verifies that the requesting user is one of the two participants and that the pair currently shares a family;
-- an inaccessible conversation yields 404 for the upload;
-- DM attachments are never scoped to `groupIds` or `circleId`;
-- DM scope remains separate from group chat and post scopes.
+- nullable and indexed;
+- `canReadUpload` resolves conversation kind and audience:
+  - `FAMILY`: current `GroupMember`, plus `chitchatEnabled` policy;
+  - `PRIVATE`: current participant plus live shared-family eligibility;
+- private attachments are never scoped to every member of a shared family;
+- inaccessible conversations yield 404 for conversation media;
+- the same conversation scope can support future 3+ private participants;
+- conversation deletion must explicitly clean up upload rows/files rather than broadening scope.
 
-Keeping the scalar scope on `Upload` matches the existing reverse-index upload model. A relational FK is optional, but do not accidentally make conversation deletion silently grant wider access. If the conversation is deleted, the upload rows/files must be explicitly cleaned up.
+Existing family-chat uploads may remain group-scoped: the current audience is
+identical and an on-disk backfill is not necessary. New family/private chat
+messages bind through conversation scope. If a migration script can safely
+convert an existing upload that is referenced only by family chat, it may do so,
+but the scope must never be removed from other content references.
 
 ### User preference
 
@@ -322,7 +400,7 @@ Expose it through:
 
 ### Notification relation
 
-Add a nullable `relatedDirectConversationId` to `Notification`, with `SetNull` if conversation rows can be removed.
+Add a nullable `relatedChatConversationId` to `Notification`, with `SetNull` if conversation rows can be removed.
 
 Either participant’s DM notification:
 
@@ -336,8 +414,8 @@ Either participant’s DM notification:
 
 The migration must:
 
-1. create the three DM tables/indexes/constraints;
-2. add the upload DM scope;
+1. create generalized chat conversation/participant storage and migrate existing family chat rows;
+2. add the upload conversation scope;
 3. add `User.pushOnDirectMessage`;
 4. add notification relation/foreign key if nullable conversation deep-link storage is selected;
 5. avoid renaming or deleting shipped migrations.
@@ -346,17 +424,21 @@ Generate Prisma Client after the schema change.
 
 ## Backend authorization and services
 
-### Shared-family service
+### Shared-family service and conversation authorization
 
-Add a small service used everywhere, conceptually:
+Add shared conversation helpers, conceptually:
 
 ```ts
 shareAnyGroup(userAId, userBId): Promise<boolean>
-findEligibleConversationForUser(conversationId, userId): Promise<... | null>
-canonicalParticipantPair(userAId, userBId)
+findVisibleChatConversationForUser(conversationId, userId): Promise<... | null>
+canonicalPrivateParticipantKey(userIds: string[]): string
+canParticipateInPrivateConversation(conversation, userId): Promise<boolean>
 ```
 
-Use a single query to find overlapping `GroupMember` rows. Do not cache eligibility; revocation after member removal must be immediate.
+Family conversations authorize against current `GroupMember` rows and
+`chitchatEnabled`. Private conversations authorize against explicit participant
+rows plus live `shareAnyGroup` checks. Do not cache eligibility; revocation after
+member removal must be immediate.
 
 Every DM operation must compose both conditions:
 
@@ -380,14 +462,38 @@ For create-by-recipient:
 - self-recipient: 400 validation error;
 - recipient does not exist: 404;
 - no shared group: 403 or 404 according to a single, tested policy; prefer 404 if account enumeration is a concern;
-- existing pair: return the existing conversation instead of 409;
-- two simultaneous creates: database unique constraint/upsert resolves to one canonical row.
+- existing pair: return the existing private conversation instead of 409;
+- two simultaneous creates: canonical `participantKey` plus a unique constraint/upsert resolves to one row.
 
 ### Route contract
 
-Register a dedicated DM route module under `/api/dms`. Do not overload `/api/chat` with ambiguous group/participant semantics.
+Generalize `/api/chat` around conversations:
 
-#### `GET /api/dms/people`
+```text
+GET    /api/chat/conversations
+POST   /api/chat/conversations
+GET    /api/chat/conversations/:conversationId/messages
+POST   /api/chat/conversations/:conversationId/messages
+POST   /api/chat/conversations/:conversationId/read
+GET    /api/chat/conversations/unread
+DELETE /api/chat/messages/:messageId
+GET    /api/chat/people
+```
+
+Keep the installed family routes:
+
+```text
+GET/POST /api/chat/groups/:groupId/messages
+POST     /api/chat/groups/:groupId/read
+GET      /api/chat/unread-counts
+```
+
+They are compatibility adapters that resolve `groupId` to the one `FAMILY`
+conversation, apply exactly the same service logic, and preserve the current
+response shape. This release may add `/api/chat/conversations` to clients while
+retaining group-scoped helpers until a later compatibility cleanup.
+
+#### `GET /api/chat/people`
 
 Returns eligible recipients for the new-message picker:
 
@@ -411,17 +517,21 @@ Rules:
 
 An alternative is returning family member IDs from existing group-member queries and deduplicating client-side. A backend endpoint is preferable because it is the authoritative eligibility set, supports mobile/web parity, and prevents each client from implementing slightly different privacy rules.
 
-#### `POST /api/dms`
+#### `POST /api/chat/conversations`
 
 Body:
 
 ```ts
-{ participantId: string }
+{ kind: 'PRIVATE', participantIds: [string] }
 ```
 
-Returns the conversation summary. Idempotent for an existing pair.
+The public creation API accepts a participant collection even though this
+release validates exactly one other participant. The shared schema leaves the
+transport ready for future n-person private conversations. It is idempotent for
+an existing 1:1 pair. A family conversation is never created by a member API;
+it is created by group lifecycle logic.
 
-#### `GET /api/dms`
+#### `GET /api/chat/conversations`
 
 Returns inbox items for currently eligible conversations:
 
@@ -429,7 +539,9 @@ Returns inbox items for currently eligible conversations:
 {
   items: Array<{
     id: string
-    participant: { id: string; name: string; avatarUrl: string | null }
+    kind: 'FAMILY' | 'PRIVATE'
+    group?: { id: string; name: string }
+    participants: Array<{ id: string; name: string; avatarUrl: string | null }>
     lastMessage: {
       id: string
       authorId: string
@@ -445,13 +557,14 @@ Returns inbox items for currently eligible conversations:
 
 Requirements:
 
-- only eligible conversations;
+- includes eligible private conversations and enabled current family chats;
 - newest activity first;
 - never return hidden conversations;
-- inbox message content is okay internally in an authenticated participant response;
+- for private conversations, expose the participants needed by the current UI
+  without leaking any non-participant conversation;
 - no participant data beyond the existing member-safe fields.
 
-#### `GET /api/dms/unread`
+#### `GET /api/chat/conversations/unread`
 
 Returns:
 
@@ -462,25 +575,29 @@ Returns:
 }
 ```
 
-Only currently eligible conversations contribute.
+Only visible conversations contribute. The legacy
+`GET /api/chat/unread-counts` continues returning its existing
+group-ID-to-count object for installed clients.
 
-#### `GET /api/dms/:conversationId/messages?cursor=&take=`
+#### `GET /api/chat/conversations/:conversationId/messages?cursor=&take=`
 
 Returns:
 
 ```ts
 {
-  items: DirectMessage[]
+  items: ChatMessage[]
   nextCursor: string | null
 }
 ```
 
 - cursor pagination newest-first at the transport layer;
 - fetch one extra row per shared pagination helper;
-- whole reply threading is not relevant because replies are out of scope;
+- family replies remain supported; private conversations do not expose replies
+  in the first release even though the shared message model retains the field for
+  later capability work;
 - 404 if hidden/ineligible.
 
-#### `POST /api/dms/:conversationId/messages`
+#### `POST /api/chat/conversations/:conversationId/messages`
 
 Body:
 
@@ -496,31 +613,30 @@ Response is the created message.
 Flow:
 
 1. validate Zod body;
-2. resolve an eligible conversation in one authorization step;
+2. resolve a visible conversation in one kind-aware authorization step;
 3. validate attachments belong to uploader and remain bindable;
-4. create the message and bind all attachment upload rows to the DM conversation in one database transaction;
+4. create the message and bind all attachment upload rows to the chat conversation in one database transaction;
 5. update `conversation.updatedAt`;
 6. commit;
-7. emit `direct_message.created`;
+7. emit the generalized `chat.created` event with `conversationId`, `kind`, and audience data;
 8. return shaped message.
 
 No broad catches. Expected eligibility/validation errors use translated, non-sensitive responses. Unexpected errors propagate to the global handler.
 
-#### `POST /api/dms/:conversationId/read`
+#### `POST /api/chat/conversations/:conversationId/read`
 
 Upsert caller read state to the server time (or an accepted latest-message timestamp if the API design requires it).
 
 Invalidate client DM unread caches. Do not create per-message receipt history.
 
-#### `DELETE /api/dms/messages/:messageId`
+#### `DELETE /api/chat/messages/:messageId`
 
-- route shape may instead be `/api/dms/:conversationId/messages/:messageId`; use one consistent convention in OpenAPI/client.
 - resolve message/conversation;
-- require currently eligible participant and `authorId === caller.id`;
-- no admin bypass;
+- for private conversations require a currently eligible participant and `authorId === caller.id`, with no admin bypass;
+- family chat retains the established author-or-admin policy unless deliberately changed as a separate compatibility decision;
 - transactionally delete the message;
 - determine media no longer referenced by any content source;
-- delete orphaned DM upload rows/files after commit;
+- delete orphaned conversation upload rows/files after commit;
 - invalidate conversation/inbox caches.
 
 Hard delete means the other participant sees the message disappear on the next query/poll. Do not add deletion tombstones.
@@ -531,40 +647,43 @@ Implement batching, not N+1 per conversation:
 
 - query eligible conversation IDs via participants and shared-group condition;
 - fetch latest messages in a grouped/latest-per-conversation query;
-- count unread messages after `DirectRead.lastReadAt`;
+- count unread messages after each participant/conversation read marker;
 - sort in SQL by latest activity where practical.
 
 For a first implementation, a bounded list of conversations is acceptable only if the existing user count is small and the endpoint uses an explicit cap. Prefer cursor pagination from the start if query complexity is similar.
 
 ### Notification event
 
-Add a typed event, for example:
+Evolve the typed `chat.created` event:
 
 ```text
-direct_message.created
+chat.created
 {
+  conversationId
+  conversationKind
   message
-  conversation
-  recipientId
+  groupId?
+  recipientIds?
 }
 ```
 
 Subscriber responsibilities:
 
-1. recheck the recipient is the other participant;
-2. recheck current shared-family eligibility;
-3. skip if sender == recipient;
-4. honor `pushOnDirectMessage`;
-5. create `Notification` row and send push through the existing channel;
-6. use localized generic copy with sender name only;
-7. never include `content` or attachment metadata in push/email text.
+1. for `FAMILY`, preserve whole-group notification behavior;
+2. for `PRIVATE`, derive current eligible participants and notify every other participant (two in this release);
+3. skip the sender;
+4. recheck current shared-family eligibility for private recipients;
+5. create `Notification` rows and send push through the existing channel;
+6. honor `pushOnDirectMessage` for private conversations and `pushOnChitchat` for family conversations;
+7. use localized generic copy with sender name only for private conversations;
+8. never include private `content` or attachment metadata in push/email text.
 
 No DM email channel implementation is included.
 
 Push payload/deep-link data should carry:
 
 ```text
-relatedDirectConversationId
+relatedChatConversationId
 ```
 
 The clients open `/chat?...` or the corresponding mobile route only after validating/handling current eligibility.
@@ -581,15 +700,23 @@ No new database mutation is required to hide DMs because shared-family membershi
 
 #### Account deletion
 
-Deleting either participant cascades:
+For this 1:1 release, deleting either private participant must remove the
+private conversation and its dependent messages/reads. Use explicit cleanup
+plus participant/message cascades rather than a single `User -> Conversation`
+FK, so the conversation model remains extensible to 3+ participants later.
 
-- their conversations;
-- DM messages via conversation cascade;
-- DM read rows.
+When a user is deleted:
 
-Before user deletion, collect DM-upload UUIDs/files that are exclusively associated with the deleting user’s conversations and clean them after the database deletion. Reuse/extend the existing upload deletion helper so no physical files remain orphaned.
+- identify private conversations where they participate;
+- collect conversation-scoped upload files;
+- remove those private conversations;
+- cascade their messages and read state;
+- remove no-longer-referenced physical files;
+- preserve family chat according to the existing user-delete/cascade policy.
 
-Do not let a generic reference scan treat a DM upload path as group/server-visible media if it is still used elsewhere. DM attachment binding should be exclusive and the cleanup rule should be tested.
+Do not let a generic reference scan treat a private conversation upload path as
+group/server-visible media if it is still used elsewhere. Private attachment
+binding is exclusive to that conversation and the cleanup rule must be tested.
 
 ### Read-only and rate limits
 
@@ -603,14 +730,17 @@ Do not let a generic reference scan treat a DM upload path as group/server-visib
 
 Add data entries for:
 
-- direct conversations;
-- direct messages;
-- direct-read rows;
-- any DM fields in user/upload/notification representations when relevant.
+- chat conversations, including migrated family conversations;
+- private conversation participants and read state;
+- evolved chat messages;
+- conversation-scoped fields in upload/notification representations where relevant.
 
 Include the referenced upload originals/display copies/thumbnails/posters. Keep media collection aligned with the existing admin export behavior.
 
-Update archive manifest counts and formats. Increment archive format only if backward compatibility requires it. Older archives must restore with DM fields absent because the feature did not exist.
+Update archive manifest counts and formats. Increment archive format only if
+backward compatibility requires it. Older archives must restore without
+conversation fields. The importer must backfill family conversation rows from
+legacy groups, then insert legacy chat messages and read rows against them.
 
 ### Restore
 
@@ -623,7 +753,9 @@ Update:
 - new optional data file handling;
 - upload-scope restore.
 
-Restore into an empty instance should preserve canonical pair uniqueness and relationships. Restored read state and message timestamps must be retained exactly.
+Restore into an empty instance must preserve family conversation identity,
+canonical 1:1 pair uniqueness, participant relationships, and migrated IDs.
+Read state and message timestamps must be retained exactly.
 
 ### Member export
 
@@ -632,38 +764,40 @@ Restore into an empty instance should preserve canonical pair uniqueness and rel
 - include conversations involving the caller;
 - include them only while currently visible under shared-family membership;
 - include all visible messages in those conversations, not only caller-authored messages;
-- include only files referenced by eligible DM rows;
+- include only files referenced by eligible private-chat messages;
 - re-check `canReadUpload` semantics before including each file;
 - never include a conversation or media from a pair that no longer shares a family;
-- omit private DM data for other users;
+- omit private-chat data for other users;
 - carry conversation participant information needed to interpret the export.
 
 Add explicit exclusions in tests rather than relying only on positive cases.
 
 ## Shared API client
 
-Create `packages/api-client/src/dms.ts` with:
+Generalize `packages/api-client/src/chat.ts` with:
 
-- `DirectConversation`
-- `DirectConversationParticipant`
-- `DirectMessage`
-- `DirectMessagesPage`
-- `DirectInboxItem`
-- `DirectInbox`
-- `DirectUnreadCounts`
-- `CreateDirectConversationBody`
-- `CreateDirectMessageBody`
-- API functions for all `/api/dms` routes.
+- `ChatConversation`
+- `ChatConversationParticipant`
+- `ChatMessage` (conversation-aware while retaining group compatibility fields during migration)
+- `ChatMessagesPage`
+- `ChatInboxItem`
+- `ChatConversationList`
+- `ChatUnreadCounts`
+- `CreateChatConversationBody`
+- API functions for all conversation-oriented `/api/chat` routes.
 
-Do not reuse `ChatMessage` if that shape implies group-only fields such as replies, `readBy`, milestone references, or a one-file attachment.
+Retain the existing group-scoped API-client wrappers and `groupId` response
+fields while old clients remain supported. New responses can add
+`conversationId`, `kind`, `participants`, and `attachmentUrls`; legacy fields
+must continue to derive consistently from the generalized records.
 
 Recommended query keys, kept consistent between web/mobile:
 
 ```text
-['dm-conversations']
-['dm-people']
-['dm-messages', conversationId]
-['dm-unread']
+['chat-conversations']
+['chat-people']
+['chat-messages', conversationId]
+['chat-unread-conversations']
 ```
 
 Mutation behaviors:
@@ -672,7 +806,7 @@ Mutation behaviors:
 - send: patch newest page plus inbox preview/order;
 - delete: remove from cached pages and update preview (or invalidate if latest changed);
 - mark read: update `byConversation` and `total`, then invalidate if needed;
-- shell push/unread polling uses the DM unread query in addition to family-chat unread.
+- shell push/unread polling can use the generalized query once the feature is available, while the legacy family unread query remains for old clients/servers.
 
 Export functions explicitly through `packages/api-client/src/index.ts`.
 
@@ -682,6 +816,7 @@ Add API-client tests for:
 - optional content/multi-attachment body;
 - pagination query parameters;
 - response typing/normalization where relevant.
+- legacy group wrappers and the generalized conversation helpers resolve to compatible payloads.
 
 Run `npm run build:api-client` and commit generated `dist/` files if that matches the repository’s tracked output policy.
 
@@ -694,7 +829,7 @@ Keep `/chat`.
 Prefer URL state for deep links and reload stability:
 
 ```text
-/chat?dm=<conversationId>
+/chat?conversation=<conversationId>
 /chat?group=<groupId>
 ```
 
@@ -710,7 +845,7 @@ AppShell and BottomNav:
 
 - continue to share the existing query cache;
 - combine family-chat and DM unread totals into one Chat badge;
-- keep existing `['chat-unread']` for compatibility and add `['dm-unread']`;
+- keep existing `['chat-unread']` for compatibility and add `['chat-unread-conversations']`;
 - invalidate both after opening/sending/reading as relevant.
 
 ### Unified Chat page
@@ -754,11 +889,11 @@ Keep identity-specific policy separate:
 Create a focus-managed modal:
 
 - search by member name;
-- fetch authoritative `/api/dms/people`;
+- fetch authoritative `/api/chat/people`;
 - list deduplicated members;
 - exclude current user;
 - show loading/empty/error states;
-- selection calls `POST /api/dms`;
+- selection calls `POST /api/chat/conversations`;
 - closes and navigates/selects the returned conversation;
 - if a conversation already exists, backend returns that conversation.
 
@@ -843,10 +978,10 @@ Register new screens only through `AuthenticatedScreens.tsx`; do not statically 
 
 ### Mobile query and polling behavior
 
-- `['dm-conversations']`: inbox list;
-- `['dm-people']`: recipient picker;
-- `['dm-messages', conversationId]`: infinite query;
-- `['dm-unread']`: badge counts.
+- `['chat-conversations']`: inbox list;
+- `['chat-people']`: recipient picker;
+- `['chat-messages', conversationId]`: infinite query;
+- `['chat-unread-conversations']`: badge counts.
 
 Conversation screen:
 
@@ -901,7 +1036,7 @@ Add a DM message grid that:
 
 Extend `usePushNotifications.ts`:
 
-- cold and warm start parse `relatedDirectConversationId`;
+- cold and warm start parse `relatedChatConversationId`;
 - navigate only after session/authenticated navigation is ready;
 - open DM conversation route;
 - if no longer eligible, let server 404 lead to an inline unavailable state;
@@ -932,13 +1067,15 @@ Add Jest tests for:
 
 ## Unified unread and notification behavior
 
-Family chat and DM unread are separate data domains but one visible Chat badge:
+Family and private conversation unread are audience-specific calculations over
+the same generalized conversation model, but there is one visible Chat badge:
 
 ```text
-total Chat badge = familyChatUnread.total + directMessageUnread.total
+total Chat badge = sum of unread counts across visible chat conversations
 ```
 
-Opening any family chat or DM marks only that conversation read. It must not clear the other domain.
+Opening any conversation marks only that conversation read. It must not clear
+other family or private conversations.
 
 Global notification dropdown/history:
 
@@ -956,7 +1093,7 @@ Rules:
 
 - backend `/api/auth/server-info` includes it only when implemented;
 - clients hide New message/DM UI if unsupported;
-- existing family chat remains usable on old servers;
+- existing family chat and legacy group routes remain usable on old servers and on upgraded servers with old clients;
 - API-client DM methods include compatibility annotations needed by the old-server check;
 - mobile `MIN_SERVER_VERSION` does not need to change unless the baseline server requirement is intentionally raised. Prefer capability gating instead of a breaking baseline bump.
 - no existing installed-client behavior should fail because the new model exists.
@@ -965,7 +1102,10 @@ Rules:
 
 Document:
 
-- `/api/dms` list/create;
+- generalized `/api/chat/conversations` list/create;
+- generalized conversation unread endpoint;
+- legacy `/api/chat/groups/:groupId/*` and `/api/chat/unread-counts` compatibility contract;
+- `/api/chat/people`;
 - eligible people endpoint;
 - conversation messages list/send;
 - message delete;
@@ -978,7 +1118,7 @@ Document:
 - cursor/page limits;
 - push-only behavior and generic content;
 - `pushOnDirectMessage`;
-- `relatedDirectConversationId`;
+- `relatedChatConversationId`;
 - upload scope/authorization implications.
 
 Treat API additions as non-breaking. If an existing response is changed, run the breaking-change gate and mark the PR/commit appropriately.
@@ -1051,11 +1191,11 @@ Document the upload scope addition and the live shared-family rule explicitly be
 
 This sequence is the internal dependency order, not separate PR boundaries.
 
-1. Add Prisma models, upload scope, preference, notification relation, and migration.
-2. Implement canonical-pair/shared-family service with focused authorization tests.
-3. Implement DM services and routes for people, create/reuse, inbox, history, send, mark-read, unread, and own-message delete.
-4. Implement DM upload binding/serving authorization and media cleanup.
-5. Implement direct-message event and push-only notifications plus preference selection.
+1. Add the generalized chat conversation/participant model, conversation upload scope, preference, notification relation, and lossless family-chat migration.
+2. Implement conversation resolution, canonical private-pair creation, and shared-family authorization with focused tests.
+3. Implement generalized conversation services/routes for people, create/reuse, inbox, history, send, mark-read, unread, and deletion, plus compatibility adapters for legacy family endpoints.
+4. Implement kind-aware conversation upload binding/serving authorization and media cleanup.
+5. Evolve the existing `chat.created` event and notifications while preserving family-chat delivery and adding privacy-safe private-chat delivery.
 6. Extend full export, member export, import, and restore.
 7. Add OpenAPI/schema and shared API-client implementation.
 8. Build web unified Chat UI, member picker, composer, media display, deletion, unread, profile preference, and push handling as applicable.
@@ -1069,6 +1209,11 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 
 ### Backend authorization/privacy
 
+- migration backfills one family conversation per group without losing messages,
+  reads, replies, milestone references, or attachment fields;
+- old and new family-chat routes return the same existing conversation;
+- family chat remains group-member/chitchat-enabled protected;
+- private participants are explicit and never synthetic group members;
 - recipient with shared group is eligible;
 - no shared group cannot start;
 - one of several shared families can be removed without hiding;
@@ -1122,7 +1267,7 @@ Do not merge an intermediate commit from this sequence unless the final PR remai
 
 ### Export/import/restore
 
-- full export contains DM rows and media;
+- full export contains generalized chat conversations, messages, participants, read state, and media;
 - full import restores DMs/read state IDs and upload scope;
 - older archive without DM files restores;
 - member export includes participant-visible full conversation;
@@ -1210,11 +1355,13 @@ The feature is complete when all are true:
 8. Only the sender can delete a message; deletion is hard, affects both views, and cleans orphaned files.
 9. Push is opt-out via a dedicated preference, not email, and reveals no message/attachment preview.
 10. Admin moderation screens do not expose DMs; normal admin privileges do not bypass participant authorization.
-11. Participant export and full backup/restore include the correct DM data and files.
+11. Participant export and full backup/restore include the correct family/private chat data and files without exposing hidden conversations.
 12. Older servers hide the feature cleanly; existing group chat remains unchanged.
 13. All locales are complete and no new hardcoded UI text exists.
 14. OpenAPI/generated docs, user docs, and developer architecture docs are updated.
 15. Backend, shared client, web, mobile, upload/privacy, notifications, export, restore, and compatibility validations pass.
+16. The private conversation creation restriction is 1:1, but storage already supports an explicit participant collection so 3+ conversations do not require a second data model later.
+17. Existing family-chat messages, reads, replies, routes, and response fields survive the conversation migration unchanged.
 
 ## Key implementation guardrails
 
@@ -1222,12 +1369,15 @@ The feature is complete when all are true:
 - Do not bind DM uploads to a shared family’s `groupIds`.
 - Do not allow admin status to bypass DM participant privacy.
 - Do not put DM notification body text on lock screens.
-- Do not overload group `ChatMessage` fields if DM semantics differ.
+- Do not create parallel `DirectConversation`/`DirectMessage` storage for this feature.
+- Do not use synthetic `Group` rows for private conversations.
+- Do not let installed group-chat clients lose reply, read-receipt, milestone-link, or singular attachment fields during migration.
+- Do not duplicate family membership into private participant rows for `FAMILY` conversations.
 - Do not use `export *` in the shared API-client barrel.
 - Do not hard-delete physical media without checking for remaining references.
 - Do not bypass domain events by putting recipient policy directly in the DM route.
 - Do not import mobile authenticated screens eagerly.
 - Do not hand-edit generated OpenAPI reference files.
 - Do not change `MIN_SERVER_VERSION` unless this release intentionally requires a breaking compatibility baseline.
-- Do not omit DM data from either full restore or member export.
+- Do not omit generalized chat data from either full restore or member export.
 
