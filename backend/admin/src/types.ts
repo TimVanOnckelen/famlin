@@ -81,6 +81,10 @@ export interface ServerSettings {
   immichMirrorApiKeySet: boolean
   localMediaPath: string
   updateCheckEnabled: boolean
+  // Upload limits (issue #436), sent to the apps via /server-info.
+  maxAttachments: number
+  maxVideoDurationSeconds: number
+  maxUploadSizeMb: number
   backupIncludeMedia: boolean
   backupEnabled: boolean
   backupSchedule: BackupSchedule

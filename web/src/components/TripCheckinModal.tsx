@@ -5,11 +5,11 @@ import { isAxiosError } from 'axios'
 import { checkInTrip, patchPostInCaches, uploadFiles } from '@famlin/api-client'
 import { Icon } from './Icon'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { useMediaLimits } from '@/hooks/useMediaLimits'
 import { fileFormatLabel, isBrowserDecodableImage } from '@/utils/media'
 import './NewPostModal.css'
 import './TripCheckinModal.css'
 
-const MAX_MEDIA = 10
 interface Attachment {
   file: File
   url?: string
@@ -37,6 +37,7 @@ export function TripCheckinModal({
   const [place, setPlace] = useState('')
   const [text, setText] = useState('')
   const [attachments, setAttachments] = useState<Attachment[]>([])
+  const limits = useMediaLimits()
   const close = () => {
     if (!busy.current) onClose()
   }
@@ -131,15 +132,12 @@ export function TripCheckinModal({
             multiple
             hidden
             aria-label={t('trip.checkin.addPhotoLabel')}
-            onChange={(event) => {
-              const selected = Array.from(event.target.files ?? [])
-              setAttachments((current) => [
-                ...current,
-                ...selected.slice(0, MAX_MEDIA - current.length).map((file) => ({ file, id: nextId.current++ })),
-              ])
+            onChange={async (event) => {
+              const selected = await limits.screen(Array.from(event.target.files ?? []), attachments.length)
+              setAttachments((current) => [...current, ...selected.map((file) => ({ file, id: nextId.current++ }))])
             }}
           />
-          {attachments.length < MAX_MEDIA && (
+          {attachments.length < limits.maxAttachments && (
             <div className="attach-actions">
               <button
                 type="button"
@@ -154,7 +152,12 @@ export function TripCheckinModal({
               </button>
             </div>
           )}
-          <span className="field-hint">{t('trip.checkin.mediaLimit', { max: MAX_MEDIA })}</span>
+          <span className="field-hint">{t('trip.checkin.mediaLimit', { max: limits.maxAttachments })}</span>
+          {limits.error && (
+            <div className="modal-error" role="alert">
+              {limits.error}
+            </div>
+          )}
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={close}>
               {t('common.cancel')}

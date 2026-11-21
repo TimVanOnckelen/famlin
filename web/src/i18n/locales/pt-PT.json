@@ -13,7 +13,12 @@
     "playLivePhoto": "Reproduzir Live Photo",
     "playVideo": "Reproduzir vídeo",
     "processing": "A processar o ficheiro…",
-    "processingFailed": "Não foi possível processar o ficheiro"
+    "processingFailed": "Não foi possível processar o ficheiro",
+    "limits": {
+      "tooMany": "Pode adicionar até {{max}} fotos ou vídeos; os restantes foram ignorados.",
+      "fileTooLarge": "\"{{name}}\" foi ignorado: os ficheiros podem ter no máximo {{max}} MB.",
+      "videoTooLong": "\"{{name}}\" foi ignorado: os vídeos podem durar no máximo {{max}}."
+    }
   },
   "common": {
     "appName": "Famlin",

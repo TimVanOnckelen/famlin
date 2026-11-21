@@ -13,7 +13,12 @@
     "playLivePhoto": "Lire la Live Photo",
     "playVideo": "Lire la vidéo",
     "processing": "Média en cours de traitement…",
-    "processingFailed": "Le traitement du média a échoué"
+    "processingFailed": "Le traitement du média a échoué",
+    "limits": {
+      "tooMany": "Vous pouvez ajouter jusqu'à {{max}} photos ou vidéos ; les autres ont été ignorées.",
+      "fileTooLarge": "« {{name}} » a été ignoré : les fichiers ne peuvent pas dépasser {{max}} Mo.",
+      "videoTooLong": "« {{name}} » a été ignoré : les vidéos ne peuvent pas dépasser {{max}}."
+    }
   },
   "common": {
     "appName": "Famlin",

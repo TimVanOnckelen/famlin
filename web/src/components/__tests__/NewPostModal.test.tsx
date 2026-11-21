@@ -9,6 +9,7 @@ import {
   getGroupMediaAlbums,
   getMediaAlbumAssets,
   getUploadUrl,
+  fetchServerInfo,
 } from '@famlin/api-client'
 
 vi.mock('@famlin/api-client', async (importOriginal) => ({
@@ -18,6 +19,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   uploadFilesInSession: vi.fn(),
   createPost: vi.fn(),
   addAlbumPhotos: vi.fn(),
+  fetchServerInfo: vi.fn(),
 }))
 
 const groups = [{ id: 'group-1', name: 'Familie de Vries', createdAt: '2026-01-01T00:00:00Z', chitchatEnabled: false }]
@@ -58,9 +60,38 @@ beforeEach(() => {
     })
   )
   vi.mocked(createPost).mockResolvedValue({} as never)
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0' })
 })
 
 describe('NewPostModal', () => {
+  it('skips files over the upload size and beyond the attachment limit', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getGroupMediaAlbums).mockResolvedValue([])
+    vi.mocked(fetchServerInfo).mockResolvedValue({
+      version: '1.0.0',
+      limits: { maxAttachments: 2, maxVideoDurationSeconds: 120, maxUploadSizeMb: 1 },
+    })
+    vi.mocked(uploadFilesInSession).mockImplementation(async ([file]) => ({
+      urls: [`/uploads/${file.name === 'a.jpg' ? '1' : '2'}1111111-1111-4111-8111-111111111111.jpg`],
+      sessionMedia: [],
+    }))
+    const { container } = renderWithQueryClient(
+      <NewPostModal groups={groups} defaultGroupId="group-1" onClose={() => {}} />
+    )
+    await waitFor(() => expect(fetchServerInfo).toHaveBeenCalled())
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!
+    const big = new File([new Uint8Array(1024 * 1024 + 1)], 'big.jpg', { type: 'image/jpeg' })
+    await user.upload(input, big)
+    expect(await screen.findByRole('alert')).toHaveTextContent('"big.jpg" was skipped: files can be at most 1 MB.')
+    const files = ['a.jpg', 'b.jpg', 'c.jpg'].map((name) => new File(['x'], name, { type: 'image/jpeg' }))
+    await user.upload(input, files)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'You can add up to 2 photos or videos; the rest were skipped.'
+    )
+    expect(vi.mocked(uploadFilesInSession).mock.calls.map(([[file]]) => file.name)).toEqual(['a.jpg', 'b.jpg'])
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add photos' })).toBeDisabled())
+  })
+
   it('merges photo and MOV selected separately in one session and posts only the photo', async () => {
     const user = userEvent.setup()
     vi.mocked(getGroupMediaAlbums).mockResolvedValue([])

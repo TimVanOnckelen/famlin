@@ -13,7 +13,12 @@
     "playLivePhoto": "Live Photo afspelen",
     "playVideo": "Video afspelen",
     "processing": "Media wordt verwerkt…",
-    "processingFailed": "Verwerken van media mislukt"
+    "processingFailed": "Verwerken van media mislukt",
+    "limits": {
+      "tooMany": "Je kunt maximaal {{max}} foto's of video's toevoegen; de rest is overgeslagen.",
+      "fileTooLarge": "\"{{name}}\" is overgeslagen: bestanden mogen maximaal {{max}} MB zijn.",
+      "videoTooLong": "\"{{name}}\" is overgeslagen: video's mogen maximaal {{max}} lang zijn."
+    }
   },
   "common": {
     "appName": "Famlin",

@@ -528,7 +528,15 @@
     "accessRestricted_one": "{{count}} toegestaan adres",
     "accessRestricted_other": "{{count}} toegestane adressen",
     "accessOpen": "Iedereen met een account of uitnodiging",
-    "integrationsMoved": "Aanmeldproviders, e-mail, push, fotobronnen en opslag staan onder"
+    "integrationsMoved": "Aanmeldproviders, e-mail, push, fotobronnen en opslag staan onder",
+    "limits": "Uploads",
+    "limitsDesc": "Hoeveel foto's en video's mensen in één keer kunnen toevoegen, en hoe lang of groot ze mogen zijn.",
+    "maxAttachments": "Foto's en video's per bericht",
+    "maxAttachmentsHint": "Geldt voor berichten, reacties, bijdragen aan albums en check-ins op reizen ({{min}}–{{max}}). Kan niet lager dan {{min}}, omdat oudere app-versies er tot {{min}} tegelijk versturen.",
+    "maxVideoDurationSeconds": "Langste video (seconden)",
+    "maxVideoDurationSecondsHint": "{{min}}–{{max}} seconden. De apps controleren dit vóór het uploaden; oudere app-versies houden hun limiet van 2 minuten.",
+    "maxUploadSizeMb": "Grootste upload (MB)",
+    "maxUploadSizeMbHint": "Per bestand, {{min}}–{{max}} MB. Een reverse proxy vóór Famlin kan minder toestaan: het gratis abonnement van Cloudflare stopt uploads bijvoorbeeld bij 100 MB."
   },
   "media": {
     "peopleMapping": {

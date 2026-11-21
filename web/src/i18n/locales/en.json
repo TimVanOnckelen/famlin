@@ -13,7 +13,12 @@
     "playLivePhoto": "Play Live Photo",
     "playVideo": "Play video",
     "processing": "Media is processing…",
-    "processingFailed": "Media processing failed"
+    "processingFailed": "Media processing failed",
+    "limits": {
+      "tooMany": "You can add up to {{max}} photos or videos; the rest were skipped.",
+      "fileTooLarge": "\"{{name}}\" was skipped: files can be at most {{max}} MB.",
+      "videoTooLong": "\"{{name}}\" was skipped: videos can be at most {{max}} long."
+    }
   },
   "common": {
     "appName": "Famlin",

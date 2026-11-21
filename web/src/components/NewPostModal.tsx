@@ -7,6 +7,7 @@ import { TripComposerFields, validTripDate } from './TripComposerFields'
 import { EventComposerFields, validEventDraft } from './EventComposerFields'
 import { localInputToIso } from '@/utils/event'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
+import { useMediaLimits } from '@/hooks/useMediaLimits'
 import { CustomSelect } from './CustomSelect'
 import { Switch } from './Switch'
 import { FormEvent, useEffect, useRef, useState } from 'react'
@@ -165,6 +166,8 @@ export function NewPostModal({
     }
     return [item]
   })
+  const attachmentCount = displayFiles.length + mediaAssets.length
+  const limits = useMediaLimits()
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -405,7 +408,8 @@ export function NewPostModal({
 
   async function addFiles(list: FileList | null) {
     if (!list || publishing) return
-    const batch = Array.from(list).map((file) => {
+    const accepted = await limits.screen(Array.from(list), attachmentCount)
+    const batch = accepted.map((file) => {
       const previewUrl = URL.createObjectURL(file)
       return { id: draftController.allocateAttachmentId(), file, previewUrl }
     })
@@ -796,7 +800,7 @@ export function NewPostModal({
             <button
               type="button"
               className="btn btn-secondary"
-              disabled={publishing}
+              disabled={publishing || attachmentCount >= limits.maxAttachments}
               onClick={() => {
                 // Clear before opening the picker, so the same file can be
                 // re-picked after removal. Clearing in the change handler
@@ -818,6 +822,12 @@ export function NewPostModal({
                 {t('newPost.addFromAlbums')}
               </button>
             )}
+          </div>
+        )}
+
+        {limits.error && (
+          <div className="modal-error" role="alert">
+            {limits.error}
           </div>
         )}
 
@@ -844,7 +854,10 @@ export function NewPostModal({
           groupId={primaryGroupId}
           onConfirm={(assets) => {
             // Merge without duplicating an asset that was already picked.
-            setMediaAssets((prev) => [...prev, ...assets.filter((a) => !prev.some((p) => p.assetId === a.assetId))])
+            const added = assets.filter((a) => !mediaAssets.some((p) => p.assetId === a.assetId))
+            const room = Math.max(0, limits.maxAttachments - attachmentCount)
+            limits.setError(added.length > room ? limits.tooMany() : null)
+            setMediaAssets([...mediaAssets, ...added.slice(0, room)])
             setMediaPickerOpen(false)
           }}
           onClose={() => setMediaPickerOpen(false)}
