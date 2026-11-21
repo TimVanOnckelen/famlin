@@ -133,11 +133,11 @@
     "typeEvent": "Evento",
     "typeTrip": "Viaje",
     "trip": {
-      "helper": "Añade registros de llegada desde la página del viaje para mantener a tu familia al día.",
+      "helper": "Añade paradas desde la página del viaje para mantener a tu familia al día.",
       "titleLabel": "Título",
-      "titlePlaceholder": "P. ej. Viaje por Italia",
+      "titlePlaceholder": "p. ej. Viaje por Italia",
       "destinationLabel": "Destino",
-      "destinationPlaceholder": "P. ej. Toscana y Emilia-Romaña, Italia",
+      "destinationPlaceholder": "p. ej. Toscana y Emilia-Romaña, Italia",
       "startDateLabel": "Fecha de inicio",
       "endDateLabel": "Fecha de fin",
       "endDateOptional": "opcional",
@@ -146,7 +146,7 @@
       "coverPhotoTitle": "Añadir foto de portada",
       "coverPhotoSubtitle": "Opcional: también puedes hacerlo más tarde",
       "travelersLabel": "Compañeros de viaje",
-      "travelersSubtitle": "Opcional: ellos también podrán hacer registros de llegada",
+      "travelersSubtitle": "Opcional: ellos también podrán registrar paradas",
       "travelersSelected_one": "{{count}} compañero de viaje",
       "travelersSelected_other": "{{count}} compañeros de viaje",
       "membersFailed": "No se pudieron cargar los compañeros de viaje.",
@@ -156,14 +156,14 @@
     "typeAlbum": "Álbum",
     "noAllowedTypes": "Las familias seleccionadas no comparten ningún tipo de publicación: cambia la selección para publicar.",
     "placeholder": "Comparte una novedad con tu familia…",
-    "milestonePlaceholder": "¿Cuál es el hito? (p. ej. ¡Emma cumple 5 años! 🎉)",
+    "milestonePlaceholder": "¿Cuál es el hito? (p. ej. \"¡Emma cumple 5 años! 🎉\")",
     "pollPlaceholder": "Haz una pregunta…",
     "eventPlaceholder": "¿Cuál es la ocasión?",
     "event": {
       "startsAtLabel": "Empieza",
       "endsAtLabel": "Termina",
       "locationLabel": "Lugar",
-      "locationPlaceholder": "P. ej. El jardín de la abuela",
+      "locationPlaceholder": "p. ej. El jardín de la abuela",
       "rsvpDeadlineLabel": "Responder antes del",
       "rsvpDeadlineHint": "Opcional. Si lo dejas vacío, las respuestas se cierran cuando empieza el evento."
     },
@@ -366,7 +366,7 @@
   },
   "trip": {
     "detail": {
-      "addCheckinButton": "Registro de llegada",
+      "addCheckinButton": "Registrar una parada",
       "headerTitle": "Viaje",
       "activeBadge": "ACTIVO · DÍA {{day}}",
       "closedBadge": "CERRADO",
@@ -389,18 +389,18 @@
       "commentsCountButton_other": "{{count}} respuestas",
       "closingLine": "Viaje cerrado por {{author}} · {{date}}",
       "emptyTitle": "El viaje ha comenzado…",
-      "emptyDescription": "Aún no hay registros de llegada. Cuando {{name}} esté de camino, las primeras paradas aparecerán aquí."
+      "emptyDescription": "Aún no hay registros de paradas. Cuando {{name}} esté de camino, las primeras paradas aparecerán aquí."
     },
     "checkin": {
-      "headerTitle": "Registro de llegada",
-      "submitButton": "Registrar llegada",
+      "headerTitle": "Registrar parada",
+      "submitButton": "Registrar parada",
       "contextLine": "{{title}} · Día {{day}}",
       "placeLabel": "¿Dónde estás? *",
-      "placePlaceholder": "P. ej. Bolonia",
+      "placePlaceholder": "p. ej. Bolonia",
       "textPlaceholder": "Cuenta algo sobre esta parada (opcional)...",
       "addPhotoLabel": "Foto / vídeo",
       "alerts": {
-        "failed": "No se pudo registrar la llegada"
+        "failed": "No se pudo registrar la parada"
       },
       "mediaLimit": "Hasta {{max}} fotos o vídeos."
     }
@@ -495,9 +495,9 @@
   "shortcuts": {
     "title": "Atajos de teclado",
     "goFeed": "Ir al feed",
-    "goPhotos": "Ir a Fotos",
+    "goPhotos": "Ir a fotos",
     "goChat": "Ir al chat",
-    "goFavorites": "Ir a Favoritos",
+    "goFavorites": "Ir a favoritos",
     "goProfile": "Ir al perfil",
     "newPost": "Nueva publicación",
     "openHelp": "Mostrar atajos de teclado",
@@ -578,7 +578,7 @@
     "participantCount_one": "{{count}} participante",
     "participantCount_other": "{{count}} participantes",
     "budgetValue": "Presupuesto: {{budget}}",
-    "buyingFor": "Tú compras para {{name}}",
+    "buyingFor": "Tú le regalas a {{name}}",
     "drawPending": "Aún no se han sorteado los nombres",
     "notAvailable": "Esta lista de regalos no está disponible.",
     "actionFailed": "No ha funcionado. Inténtalo de nuevo.",
@@ -617,7 +617,7 @@
     "budgetPlaceholder": "p. ej. 25 €",
     "drawEnabled": "Sorteo de amigo invisible",
     "exclusions": "Exclusiones",
-    "exclusionsHint": "Parejas que no se sortearán entre sí, como las parejas sentimentales.",
+    "exclusionsHint": "Parejas que no se sortearán entre sí (p. ej. parejas sentimentales).",
     "removeExclusion": "Quitar exclusión",
     "exclusionPerson": "Persona {{number}}",
     "addExclusion": "Añadir exclusión",

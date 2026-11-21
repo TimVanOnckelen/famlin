@@ -191,7 +191,7 @@
       "milestone": "Cumpleaños, nacimiento, aniversario",
       "poll": "Haz una pregunta a la familia",
       "event": "Organiza una reunión y mira quién viene",
-      "trip": "Sigue un viaje con registros de llegada",
+      "trip": "Sigue un viaje con registros de paradas",
       "album": "Un álbum de fotos al que contribuye toda la familia",
       "gift_list": "Listas de deseos, con sorteo de amigo invisible opcional"
     },
@@ -203,7 +203,7 @@
     "chooserTitle": "¿Qué quieres compartir?",
     "noPostTypesForSelection": "Estas familias no comparten ningún tipo de publicación: cambia las familias seleccionadas para publicar.",
     "milestoneTitle": "Esto es un hito",
-    "milestoneSubtitle": "P. ej. cumpleaños, nacimiento, aniversario",
+    "milestoneSubtitle": "p. ej. cumpleaños, nacimiento, aniversario",
     "alerts": {
       "noGroupSelected": "Ningún grupo seleccionado",
       "postFailed": "No se pudo publicar el mensaje",
@@ -224,15 +224,15 @@
       "addSubtitle": "Indica dónde ocurrió",
       "pickerTitle": "Elegir ubicación",
       "nameLabel": "Nombre de la ubicación",
-      "namePlaceholder": "P. ej. Casa de la abuela",
+      "namePlaceholder": "p. ej. Casa de la abuela",
       "tapHint": "Toca el mapa para colocar el marcador"
     },
     "trip": {
-      "helper": "Después seguirás el viaje mediante registros de llegada en la página de detalles del viaje",
+      "helper": "Después seguirás el viaje mediante registros de paradas en la página de detalles del viaje",
       "titleLabel": "Título",
-      "titlePlaceholder": "P. ej. Viaje por Italia",
+      "titlePlaceholder": "p. ej. Viaje por Italia",
       "destinationLabel": "Destino",
-      "destinationPlaceholder": "P. ej. Toscana y Emilia-Romaña, Italia",
+      "destinationPlaceholder": "p. ej. Toscana y Emilia-Romaña, Italia",
       "startDateLabel": "Fecha de inicio",
       "endDateLabel": "Fecha de fin",
       "endDateOptional": "opcional",
@@ -242,7 +242,7 @@
       "coverPhotoTitle": "Añadir foto de portada",
       "coverPhotoSubtitle": "Opcional: también puedes hacerlo más tarde",
       "travelersLabel": "Compañeros de viaje",
-      "travelersSubtitle": "Opcional: ellos también pueden registrar llegadas",
+      "travelersSubtitle": "Opcional: ellos también pueden registrar paradas",
       "travelersSelected_one": "{{count}} compañero de viaje",
       "travelersSelected_other": "{{count}} compañeros de viaje"
     },
@@ -251,7 +251,7 @@
       "startsAtLabel": "Comienza",
       "endsAtLabel": "Termina",
       "locationLabel": "Ubicación",
-      "locationPlaceholder": "P. ej. El jardín de la abuela",
+      "locationPlaceholder": "p. ej. El jardín de la abuela",
       "rsvpDeadlineLabel": "Responder antes del",
       "rsvpDeadlineHint": "Opcional. Si lo dejas vacío, las respuestas se cierran cuando empieza el evento.",
       "datePlaceholder": "Elige fecha y hora",
@@ -478,7 +478,7 @@
       "statsDays": "días",
       "tripCommentsSectionTitle_one": "Comentarios del viaje · {{count}}",
       "tripCommentsSectionTitle_other": "Comentarios del viaje · {{count}}",
-      "addCheckinButton": "+ Registrar llegada",
+      "addCheckinButton": "+ Registrar parada",
       "timelineLabelActive": "Cronología · lo más reciente primero",
       "timelineLabelClosed": "Diario · lo más antiguo primero",
       "dayTimeLabel": "Día {{day}} · {{time}}",
@@ -497,15 +497,15 @@
       "travelersRowLabel": "Compañeros de viaje"
     },
     "checkin": {
-      "headerTitle": "Registro de llegada",
+      "headerTitle": "Registrar parada",
       "submitButton": "Registrar",
       "contextLine": "{{title}} · Día {{day}}",
       "placeLabel": "¿Dónde estás? *",
-      "placePlaceholder": "P. ej. Bolonia",
+      "placePlaceholder": "p. ej. Bolonia",
       "textPlaceholder": "Cuenta algo sobre esta parada (opcional)...",
       "addPhotoLabel": "Foto / vídeo",
       "alerts": {
-        "failed": "Error al registrar la llegada"
+        "failed": "Error al registrar la parada"
       }
     },
     "close": {
@@ -520,7 +520,7 @@
     },
     "travelers": {
       "pickerTitle": "Compañeros de viaje",
-      "pickerHint": "También pueden registrar llegadas en este viaje",
+      "pickerHint": "También pueden registrar paradas en este viaje",
       "save": "Guardar",
       "noMembers": "No hay más miembros en esta familia",
       "loadError": "No se pudo cargar la lista de miembros",
@@ -673,7 +673,7 @@
     "titleLabel": "Título",
     "occasionDate": "Fecha de la ocasión",
     "budget": "Presupuesto",
-    "budgetPlaceholder": "p. ej. 25 €",
+    "budgetPlaceholder": "p. ej. $ 25",
     "drawEnabled": "Sorteo de amigo invisible",
     "exclusions": "Exclusiones",
     "removeExclusion": "Quitar exclusión",
