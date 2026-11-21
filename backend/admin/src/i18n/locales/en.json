@@ -528,7 +528,15 @@
     "accessRestricted_one": "{{count}} allowed address",
     "accessRestricted_other": "{{count}} allowed addresses",
     "accessOpen": "Anyone with an account or invite",
-    "integrationsMoved": "Sign-in providers, email, push, photo sources and storage are under"
+    "integrationsMoved": "Sign-in providers, email, push, photo sources and storage are under",
+    "limits": "Uploads",
+    "limitsDesc": "How many photos and videos people can add at once, and how long or large they can be.",
+    "maxAttachments": "Photos and videos per post",
+    "maxAttachmentsHint": "Applies to posts, comments, album contributions and trip check-ins ({{min}}–{{max}}). It can't go below {{min}}, because older app versions send up to {{min}} at a time.",
+    "maxVideoDurationSeconds": "Longest video (seconds)",
+    "maxVideoDurationSecondsHint": "{{min}}–{{max}} seconds. The apps check this before uploading; older app versions keep their 2-minute limit.",
+    "maxUploadSizeMb": "Largest upload (MB)",
+    "maxUploadSizeMbHint": "Per file, {{min}}–{{max}} MB. A reverse proxy in front of Famlin may allow less: Cloudflare's free plan, for example, stops uploads at 100 MB."
   },
   "media": {
     "peopleMapping": {

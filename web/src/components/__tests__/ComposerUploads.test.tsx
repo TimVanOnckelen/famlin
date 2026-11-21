@@ -1,11 +1,14 @@
+import type { ReactNode } from 'react'
 import { act, renderHook, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { addAlbumPhotos, createComment, fetchComments, uploadFilesInSession } from '@famlin/api-client'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { addAlbumPhotos, createComment, fetchComments, fetchServerInfo, uploadFilesInSession } from '@famlin/api-client'
 import { ComposerUploadPreview } from '../ComposerUploadPreview'
 import { AddAlbumPhotosModal } from '../AddAlbumPhotosModal'
 import { CommentsSection } from '../CommentsSection'
 import { useComposerUploads } from '@/hooks/useComposerUploads'
-import { makeComment, makePost, renderWithQueryClient } from '@/test/fixtures'
+import { videoDuration } from '@/utils/videoDuration'
+import { createTestQueryClient, makeComment, makePost, renderWithQueryClient } from '@/test/fixtures'
 
 vi.mock('@famlin/api-client', async (original) => ({
   ...(await original<typeof import('@famlin/api-client')>()),
@@ -13,7 +16,14 @@ vi.mock('@famlin/api-client', async (original) => ({
   addAlbumPhotos: vi.fn(),
   createComment: vi.fn(),
   fetchComments: vi.fn(),
+  fetchServerInfo: vi.fn(),
 }))
+const limits = { maxAttachments: 2, maxVideoDurationSeconds: 90, maxUploadSizeMb: 1 }
+const client = createTestQueryClient()
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={client}>{children}</QueryClientProvider>
+)
+const renderUploads = () => renderHook(() => useComposerUploads(), { wrapper })
 const photoUrl = '/uploads/11111111-1111-4111-8111-111111111111.jpg'
 const videoUrl = '/uploads/22222222-2222-4222-8222-222222222222.mp4'
 const response = {
@@ -33,6 +43,8 @@ beforeEach(() => {
   vi.spyOn(URL, 'createObjectURL').mockImplementation((file) => `blob:${(file as File).name}`)
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
   vi.mocked(fetchComments).mockResolvedValue([])
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0' })
+  client.clear()
 })
 afterEach(() => vi.restoreAllMocks())
 
@@ -78,7 +90,7 @@ for (const kind of ['album', 'comment'] as const) {
 
 it('retries failed uploads while retaining the selected attachment', async () => {
   vi.mocked(uploadFilesInSession).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(response)
-  const { result } = renderHook(() => useComposerUploads(10))
+  const { result } = renderUploads()
   const file = photo()
   await act(async () => {
     await result.current.add([file])
@@ -96,9 +108,9 @@ it('retries failed uploads while retaining the selected attachment', async () =>
 it('does not restore a removed Live Photo when its upload completes late', async () => {
   const request = deferred<{ urls: string[]; sessionMedia: never[] }>()
   vi.mocked(uploadFilesInSession).mockReturnValueOnce(request.promise).mockResolvedValue({ urls: [], sessionMedia: [] })
-  const { result } = renderHook(() => useComposerUploads(10))
+  const { result } = renderUploads()
   let pending!: Promise<void>
-  act(() => {
+  await act(async () => {
     pending = result.current.add([photo(), new File(['v'], 'IMG_1.mov', { type: 'video/quicktime' })])
   })
   expect(result.current.items).toHaveLength(1)
@@ -124,7 +136,7 @@ it('keeps a confirmed Live Photo as one attachment and excludes both parts on re
       sessionMedia: [{ url: photoUrl, videoUrl, kind: 'livePhoto', status: 'queued', thumbnailUrl: null }],
     })
     .mockResolvedValue({ urls: [], sessionMedia: [] })
-  const { result, unmount } = renderHook(() => useComposerUploads(10))
+  const { result, unmount } = renderUploads()
   await act(async () => {
     await result.current.add([photo(), new File(['v'], 'IMG_1.mov', { type: 'video/quicktime' })])
   })
@@ -144,7 +156,7 @@ it('keeps a confirmed Live Photo as one attachment and excludes both parts on re
 
 it('keeps same-name photo and video separate when the server does not confirm a Live Photo', async () => {
   vi.mocked(uploadFilesInSession).mockResolvedValue({ urls: [photoUrl, videoUrl], sessionMedia: [] })
-  const { result } = renderHook(() => useComposerUploads(10))
+  const { result } = renderUploads()
   await act(async () => {
     await result.current.add([photo(), new File(['v'], 'IMG_1.mov', { type: 'video/quicktime' })])
   })
@@ -154,7 +166,7 @@ it('keeps same-name photo and video separate when the server does not confirm a 
 
 it('retains retry for an earlier failed attachment after another successful selection', async () => {
   vi.mocked(uploadFilesInSession).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(response)
-  const { result } = renderHook(() => useComposerUploads(10))
+  const { result } = renderUploads()
   await act(async () => {
     await result.current.add([photo()])
   })
@@ -183,3 +195,33 @@ for (const kind of ['image', 'video', 'livePhoto'] as const) {
     expect(container.querySelector('button')).toBeNull()
   })
 }
+
+it('applies the server limits before uploading', async () => {
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0', limits })
+  vi.mocked(videoDuration).mockImplementation(async (file) => (file.name === 'long.mp4' ? 91 : 30))
+  vi.mocked(uploadFilesInSession).mockImplementation(async (files) => ({
+    urls: files.map((_, index) => `/uploads/3333333${index}-3333-4333-8333-333333333333.jpg`),
+    sessionMedia: [],
+  }))
+  const { result } = renderUploads()
+  await waitFor(() => expect(result.current.maxAttachments).toBe(2))
+  const big = new File([new Uint8Array(1024 * 1024 + 1)], 'big.jpg', { type: 'image/jpeg' })
+  const long = new File(['x'], 'long.mp4', { type: 'video/mp4' })
+  const short = new File(['x'], 'short.mp4', { type: 'video/mp4' })
+  await act(async () => {
+    await result.current.add([big, long, short])
+  })
+  expect(uploadFilesInSession).toHaveBeenLastCalledWith([short], expect.any(String), [])
+  expect(result.current.limitError).toBe('"long.mp4" was skipped: videos can be at most 1:30 long.')
+  await act(async () => {
+    await result.current.add([big])
+  })
+  expect(result.current.limitError).toBe('"big.jpg" was skipped: files can be at most 1 MB.')
+  await act(async () => {
+    await result.current.add([photo(), new File(['x'], 'IMG_2.jpg', { type: 'image/jpeg' })])
+  })
+  expect(uploadFilesInSession).toHaveBeenCalledTimes(2)
+  expect(vi.mocked(uploadFilesInSession).mock.calls[1][0]).toHaveLength(1)
+  expect(result.current.limitError).toBe('You can add up to 2 photos or videos; the rest were skipped.')
+  expect(result.current.full).toBe(true)
+})

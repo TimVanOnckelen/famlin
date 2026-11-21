@@ -528,7 +528,15 @@
     "accessRestricted_one": "{{count}} adresse autorisée",
     "accessRestricted_other": "{{count}} adresses autorisées",
     "accessOpen": "Toute personne avec un compte ou une invitation",
-    "integrationsMoved": "La connexion, l'e-mail, les notifications push, les sources de photos et le stockage se trouvent dans"
+    "integrationsMoved": "La connexion, l'e-mail, les notifications push, les sources de photos et le stockage se trouvent dans",
+    "limits": "Envois",
+    "limitsDesc": "Combien de photos et vidéos chacun peut ajouter à la fois, et leur durée ou taille maximale.",
+    "maxAttachments": "Photos et vidéos par publication",
+    "maxAttachmentsHint": "S'applique aux publications, commentaires, contributions aux albums et étapes de voyage ({{min}}–{{max}}). Ne peut pas descendre sous {{min}}, car les anciennes versions de l'application en envoient jusqu'à {{min}} à la fois.",
+    "maxVideoDurationSeconds": "Vidéo la plus longue (secondes)",
+    "maxVideoDurationSecondsHint": "{{min}}–{{max}} secondes. Les applications le vérifient avant l'envoi ; les anciennes versions gardent leur limite de 2 minutes.",
+    "maxUploadSizeMb": "Envoi le plus lourd (Mo)",
+    "maxUploadSizeMbHint": "Par fichier, {{min}}–{{max}} Mo. Un proxy inverse devant Famlin peut autoriser moins : l'offre gratuite de Cloudflare, par exemple, bloque les envois au-delà de 100 Mo."
   },
   "media": {
     "peopleMapping": {

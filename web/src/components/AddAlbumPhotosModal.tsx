@@ -13,12 +13,11 @@ import './NewPostModal.css'
 // so linked-album proxy URLs can't be contributed here, mirroring mobile's
 // check-in composer. Uploads first, then POSTs the resulting paths via the
 // interactions endpoint.
-const MAX_PHOTOS = 10
 
 export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClose: () => void }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const uploads = useComposerUploads(MAX_PHOTOS)
+  const uploads = useComposerUploads()
   const [caption, setCaption] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -98,12 +97,12 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
             type="button"
             className="btn btn-secondary"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploads.count >= MAX_PHOTOS || submitMutation.isPending}
+            disabled={uploads.full || submitMutation.isPending}
           >
             <Icon name="image" size={18} />
             {t('newPost.addPhotos')}
           </button>
-          <span className="field-hint">{t('album.addPhotosHint', { max: MAX_PHOTOS })}</span>
+          <span className="field-hint">{t('album.addPhotosHint', { max: uploads.maxAttachments })}</span>
         </div>
 
         <textarea
@@ -114,6 +113,12 @@ export function AddAlbumPhotosModal({ postId, onClose }: { postId: string; onClo
           rows={2}
           maxLength={2000}
         />
+
+        {uploads.limitError && (
+          <div className="modal-error" role="alert">
+            {uploads.limitError}
+          </div>
+        )}
 
         {uploads.error && (
           <div className="modal-error">

@@ -528,7 +528,15 @@
     "accessRestricted_one": "{{count}} 个允许的地址",
     "accessRestricted_other": "{{count}} 个允许的地址",
     "accessOpen": "任何有账号或邀请的人",
-    "integrationsMoved": "登录方式、电子邮件、推送、照片来源和存储都在"
+    "integrationsMoved": "登录方式、电子邮件、推送、照片来源和存储都在",
+    "limits": "上传",
+    "limitsDesc": "用户一次可以添加多少照片和视频，以及它们的时长和大小上限。",
+    "maxAttachments": "每条动态的照片和视频数",
+    "maxAttachmentsHint": "适用于动态、评论、相册投稿和旅行打卡（{{min}}–{{max}}）。不能低于 {{min}}，因为旧版应用一次最多发送 {{min}} 个。",
+    "maxVideoDurationSeconds": "最长视频（秒）",
+    "maxVideoDurationSecondsHint": "{{min}}–{{max}} 秒。应用会在上传前检查；旧版应用仍使用 2 分钟的限制。",
+    "maxUploadSizeMb": "最大上传（MB）",
+    "maxUploadSizeMbHint": "每个文件 {{min}}–{{max}} MB。Famlin 前面的反向代理可能允许的更少：例如 Cloudflare 免费套餐会在 100 MB 时中止上传。"
   },
   "media": {
     "peopleMapping": {

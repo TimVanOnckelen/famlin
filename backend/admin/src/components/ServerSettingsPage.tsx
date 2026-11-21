@@ -3,7 +3,7 @@ import { StateMessage } from '@famlin/ui/common/state-message'
 import { Button } from '@famlin/ui/button'
 import { Input } from '@famlin/ui/input'
 import { SelectField } from '@famlin/ui/common/select-field'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n'
@@ -15,6 +15,13 @@ import { SettingsSaveBar } from './settings/SettingsSaveBar'
 import { useSettingsForm } from './settings/useSettingsForm'
 
 type SectionId = 'general' | 'branding' | 'access'
+
+// Ranges match the server's validation (backend/src/services/settings.ts).
+const LIMIT_FIELDS = [
+  { key: 'maxAttachments', min: 10, max: 50 },
+  { key: 'maxVideoDurationSeconds', min: 10, max: 1800 },
+  { key: 'maxUploadSizeMb', min: 10, max: 2048 },
+] as const
 
 // Server-wide settings that aren't a connection to another service. Sign-in
 // providers, email, push, photo sources and storage live under Integrations.
@@ -157,6 +164,28 @@ export function ServerSettingsPage() {
                   </label>
                 </div>
                 <p className="hint">{t('serverSettings.storeUrlsHint')}</p>
+              </SettingsCard>
+            )}
+
+            {activeSection === 'general' && (
+              <SettingsCard icon="image" title={t('serverSettings.limits')} desc={t('serverSettings.limitsDesc')}>
+                {LIMIT_FIELDS.map(({ key, min, max }) => (
+                  <Fragment key={key}>
+                    <label>
+                      {t(`serverSettings.${key}`)}
+                      <Input
+                        type="number"
+                        required
+                        min={min}
+                        max={max}
+                        step={1}
+                        value={form[key]}
+                        onChange={(e) => updateField(key, Number(e.target.value))}
+                      />
+                    </label>
+                    <p className="hint">{t(`serverSettings.${key}Hint`, { min, max })}</p>
+                  </Fragment>
+                ))}
               </SettingsCard>
             )}
 

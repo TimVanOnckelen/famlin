@@ -5,7 +5,6 @@ import {
   Post,
   Comment,
   CommentGroup,
-  MAX_COMMENT_ATTACHMENTS,
   fetchComments,
   fetchCommentsPage,
   flattenCommentPages,
@@ -157,7 +156,7 @@ export function CommentsSection({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
-  const uploads = useComposerUploads(MAX_COMMENT_ATTACHMENTS)
+  const uploads = useComposerUploads()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Paged newest-first (issue #130): the first page holds the most recent
@@ -298,7 +297,7 @@ export function CommentsSection({
               if (fileInputRef.current) fileInputRef.current.value = ''
               fileInputRef.current?.click()
             }}
-            disabled={uploads.count >= MAX_COMMENT_ATTACHMENTS || createMutation.isPending}
+            disabled={uploads.full || createMutation.isPending}
             aria-label={t('comments.addAttachment')}
           >
             <Icon name="image" size={18} />
@@ -325,6 +324,11 @@ export function CommentsSection({
           </button>
         </div>
       </form>
+      {uploads.limitError && (
+        <div className="comments-hint" role="alert">
+          {uploads.limitError}
+        </div>
+      )}
       {uploads.error && (
         <div className="comments-hint">
           {t('comments.uploadFailed')}{' '}

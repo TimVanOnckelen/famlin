@@ -5,3 +5,7 @@ import i18n from '@/i18n'
 beforeAll(async () => {
   await i18n.changeLanguage('en')
 })
+
+// jsdom never loads media metadata, so reading a video's length would hang;
+// tests that care override this with vi.mocked(videoDuration).
+vi.mock('@/utils/videoDuration', () => ({ videoDuration: vi.fn(async () => 0) }))

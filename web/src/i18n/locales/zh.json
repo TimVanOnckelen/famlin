@@ -13,7 +13,12 @@
     "playLivePhoto": "播放实况照片",
     "playVideo": "播放视频",
     "processing": "媒体正在处理中…",
-    "processingFailed": "媒体处理失败"
+    "processingFailed": "媒体处理失败",
+    "limits": {
+      "tooMany": "最多可添加 {{max}} 张照片或视频，其余已跳过。",
+      "fileTooLarge": "已跳过“{{name}}”：文件不能超过 {{max}} MB。",
+      "videoTooLong": "已跳过“{{name}}”：视频时长不能超过 {{max}}。"
+    }
   },
   "common": {
     "appName": "Famlin",

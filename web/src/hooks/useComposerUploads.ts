@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { uploadFilesInSession, uploadKey, type UploadSessionMedia } from '@famlin/api-client'
 import { randomUUID } from '@/utils/uuid'
 import { groupLivePhotoFiles } from '@/utils/livePhotos'
+import { useMediaLimits } from './useMediaLimits'
 
 export interface ComposerUpload {
   id: number
@@ -15,7 +16,8 @@ export interface ComposerUpload {
 
 // Shared by album contributions and comments: upload on selection, then
 // submit stable server URLs without re-uploading on a failed publish.
-export function useComposerUploads(limit: number) {
+export function useComposerUploads() {
+  const limits = useMediaLimits()
   const [snapshot, setSnapshot] = useState(() => ({
     session: randomUUID(),
     items: [] as ComposerUpload[],
@@ -98,7 +100,8 @@ export function useComposerUploads(limit: number) {
   }
   async function add(files: File[]) {
     const current = state.current
-    const batch = files.slice(0, Math.max(0, limit - current.items.length)).map((file) => ({
+    const accepted = await limits.screen(files, groupLivePhotoFiles(current.items.map((item) => item.file)).length)
+    const batch = accepted.map((file) => ({
       id: current.nextId++,
       file,
       previewUrl: URL.createObjectURL(file),
@@ -192,6 +195,9 @@ export function useComposerUploads(limit: number) {
       pending: item.motionId !== undefined && current.items.some((entry) => entry.id === item.motionId && !entry.url),
     })),
     count: current.items.length,
+    full: displayed.length >= limits.maxAttachments,
+    maxAttachments: limits.maxAttachments,
+    limitError: limits.error,
     uploading: current.requests > 0,
     incomplete: current.items.some((item) => !item.url),
     error: current.error,

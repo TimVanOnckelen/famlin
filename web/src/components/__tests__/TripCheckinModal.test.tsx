@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { checkInTrip, uploadFiles } from '@famlin/api-client'
+import { checkInTrip, fetchServerInfo, uploadFiles } from '@famlin/api-client'
+import { videoDuration } from '@/utils/videoDuration'
 import { TripCheckinModal } from '../TripCheckinModal'
 import { makePost, makeTrip, renderWithQueryClient } from '@/test/fixtures'
 
@@ -8,6 +9,7 @@ vi.mock('@famlin/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@famlin/api-client')>()),
   checkInTrip: vi.fn(),
   uploadFiles: vi.fn(),
+  fetchServerInfo: vi.fn(),
 }))
 const url = '/uploads/11111111-1111-4111-8111-111111111111.jpg'
 const open = (onClose = vi.fn()) =>
@@ -16,6 +18,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(checkInTrip).mockResolvedValue(makePost({ id: 'trip-1', trip: makeTrip({ stopCount: 3 }) }))
   vi.mocked(uploadFiles).mockImplementation(async (files) => files.map(() => url))
+  vi.mocked(fetchServerInfo).mockResolvedValue({ version: '1.0.0' })
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:checkin')
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
 })
@@ -112,4 +115,20 @@ it('blocks dismissal and duplicate submission during upload', async () => {
   resolve([url])
   await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   expect(checkInTrip).toHaveBeenCalledOnce()
+})
+
+it('skips videos longer than the server allows', async () => {
+  vi.mocked(fetchServerInfo).mockResolvedValue({
+    version: '1.0.0',
+    limits: { maxAttachments: 12, maxVideoDurationSeconds: 60, maxUploadSizeMb: 200 },
+  })
+  vi.mocked(videoDuration).mockResolvedValue(61)
+  open()
+  expect(await screen.findByText('Up to 12 photos or videos.')).toBeInTheDocument()
+  const user = userEvent.setup()
+  await user.upload(screen.getByLabelText('Photo / video'), new File(['v'], 'clip.mp4', { type: 'video/mp4' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('"clip.mp4" was skipped: videos can be at most 1:00 long.')
+  await user.type(screen.getByPlaceholderText('E.g. Bologna'), 'Bologna')
+  await user.click(screen.getByRole('button', { name: 'Check in' }))
+  await waitFor(() => expect(checkInTrip).toHaveBeenCalledWith('trip-1', { place: 'Bologna', photoUrls: [] }))
 })
