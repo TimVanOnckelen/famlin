@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_LIMITS = void 0;
 exports.fetchOidcConfig = fetchOidcConfig;
 exports.loginWithOidc = loginWithOidc;
 exports.loginWithApple = loginWithApple;
@@ -73,9 +72,9 @@ async function fetchNotificationConfig() {
 // The server's defaults — and what a server without `limits` enforces in
 // practice for attachments (10 on comments/albums/check-ins; posts allowed
 // 20 there, but 10 is the safe cap) and uploads (200 MB).
-exports.DEFAULT_LIMITS = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 };
+const DEFAULT_LIMITS = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 };
 function resolveServerLimits(serverInfo) {
-    return { ...exports.DEFAULT_LIMITS, ...serverInfo?.limits };
+    return { ...DEFAULT_LIMITS, ...serverInfo?.limits };
 }
 // Absolute URL for a branding asset path, for clients (mobile) that don't
 // share the server's origin. Branding assets are public — no media token.

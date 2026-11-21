@@ -148,7 +148,7 @@ export interface ServerLimits {
 // The server's defaults — and what a server without `limits` enforces in
 // practice for attachments (10 on comments/albums/check-ins; posts allowed
 // 20 there, but 10 is the safe cap) and uploads (200 MB).
-export const DEFAULT_LIMITS: ServerLimits = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 }
+const DEFAULT_LIMITS: ServerLimits = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 }
 
 export function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits {
   return { ...DEFAULT_LIMITS, ...serverInfo?.limits }

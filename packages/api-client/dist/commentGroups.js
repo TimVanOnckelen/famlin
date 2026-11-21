@@ -1,10 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MAX_COMMENT_ATTACHMENTS = void 0;
 exports.commentAttachments = commentAttachments;
 exports.groupCommentAttachments = groupCommentAttachments;
-/** Comment attachment cap of servers without `limits`; prefer resolveServerLimits(info).maxAttachments. */
-exports.MAX_COMMENT_ATTACHMENTS = 10;
 /**
  * The photos/videos a comment carries, as an array — regardless of whether
  * the server that produced it knows about `attachmentUrls` (multi) or only
