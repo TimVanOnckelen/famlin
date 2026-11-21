@@ -20,11 +20,7 @@ import { Icon } from '@/components/Icon'
 import { getUploadUrl } from '@/api/uploads'
 import { isVideoUrl } from '@/utils/media'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-
-// Matches the server's cap on a check-in's photoUrls array (routes/posts.ts
-// interaction schema) — enforced here too so uploads never succeed only to
-// have the interaction request rejected afterwards.
-const MAX_CHECKIN_PHOTOS = 10
+import { useServerLimits } from '@/hooks/useServerInfo'
 
 interface CheckInComposerModalProps {
   visible: boolean
@@ -60,7 +56,10 @@ export function CheckInComposerModal({
     }
   }, [visible])
 
-  const remainingPhotoSlots = MAX_CHECKIN_PHOTOS - photoUrls.length
+  // The server's attachment cap (issue #436), enforced here too so uploads
+  // never succeed only to have the interaction request rejected.
+  const { maxAttachments } = useServerLimits()
+  const remainingPhotoSlots = maxAttachments - photoUrls.length
 
   const { pick, uploading, progress } = usePickAndUploadMedia({
     pickerOptions: {
@@ -68,7 +67,6 @@ export function CheckInComposerModal({
       allowsMultipleSelection: true,
       selectionLimit: Math.max(1, Math.min(6, remainingPhotoSlots)),
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     includeIndexInName: true,
     onPicked: (assets) => setPendingCount(assets.length),
@@ -80,7 +78,7 @@ export function CheckInComposerModal({
     setPendingCount(0)
     // Defensive slice: selectionLimit already caps a single pick at the
     // remaining slot count, but this guards against picks racing each other.
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_CHECKIN_PHOTOS))
+    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, maxAttachments))
   }
 
   function removePhoto(url: string) {
@@ -180,7 +178,7 @@ export function CheckInComposerModal({
                 )}
               </View>
             ))}
-            {photoUrls.length < MAX_CHECKIN_PHOTOS && (
+            {photoUrls.length < maxAttachments && (
               <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
                 <Icon name="plus" size={20} color={colors.trip} />
                 <Text style={styles.addPhotoLabel}>{t('trip.checkin.addPhotoLabel')}</Text>

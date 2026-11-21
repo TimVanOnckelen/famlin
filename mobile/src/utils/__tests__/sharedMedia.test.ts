@@ -1,6 +1,6 @@
 import {
   IncomingSharedFile,
-  MAX_POST_ATTACHMENTS,
+  SharedMediaItem,
   extensionForMimeType,
   fitSharedItems,
   isSupportedSharedMimeType,
@@ -11,29 +11,56 @@ function file(mimeType: string | null, extra: Partial<IncomingSharedFile> = {}):
   return { path: 'file:///tmp/x', mimeType, fileName: 'x', width: null, height: null, duration: null, ...extra }
 }
 
-const range = (n: number) => Array.from({ length: n }, (_, i) => i)
+function item(name: string, extra: Partial<SharedMediaItem> = {}): SharedMediaItem {
+  return {
+    uri: name,
+    mimeType: 'image/jpeg',
+    fileName: name,
+    isVideo: false,
+    width: null,
+    height: null,
+    duration: null,
+    ...extra,
+  }
+}
+
+const items = (n: number) => Array.from({ length: n }, (_, i) => item(`${i}.jpg`))
+const limits = { maxAttachments: 10, maxVideoDurationSeconds: 120 }
 
 describe('fitSharedItems', () => {
-  it('caps at the composer limit: 0 existing + 12 shared → 10 attached, 2 skipped', () => {
-    const { toAttach, skipped } = fitSharedItems(0, range(12))
-    expect(MAX_POST_ATTACHMENTS).toBe(10)
-    expect(toAttach).toEqual(range(10))
+  it('caps at the server limit: 0 existing + 12 shared → 10 attached, 2 skipped', () => {
+    const shared = items(12)
+    const { toAttach, skipped } = fitSharedItems(0, shared, limits)
+    expect(toAttach).toEqual(shared.slice(0, 10))
     expect(skipped).toBe(2)
+  })
+
+  it('follows a raised server limit', () => {
+    expect(fitSharedItems(0, items(12), { ...limits, maxAttachments: 30 }).skipped).toBe(0)
   })
 
   it('appends to an open draft within the cap: 7 existing + 5 shared → 3 attached, 2 skipped', () => {
-    const { toAttach, skipped } = fitSharedItems(7, ['a', 'b', 'c', 'd', 'e'])
-    expect(toAttach).toEqual(['a', 'b', 'c'])
+    const shared = items(5)
+    const { toAttach, skipped } = fitSharedItems(7, shared, limits)
+    expect(toAttach).toEqual(shared.slice(0, 3))
     expect(skipped).toBe(2)
   })
 
-  it('attaches everything when it fits', () => {
-    expect(fitSharedItems(2, ['a', 'b'])).toEqual({ toAttach: ['a', 'b'], skipped: 0 })
+  it('skips everything when the draft is already full (or over)', () => {
+    expect(fitSharedItems(10, items(1), limits).skipped).toBe(1)
+    expect(fitSharedItems(11, items(2), limits)).toEqual({ toAttach: [], skipped: 2, tooLong: 0 })
   })
 
-  it('skips everything when the draft is already full (or over)', () => {
-    expect(fitSharedItems(10, ['a'])).toEqual({ toAttach: [], skipped: 1 })
-    expect(fitSharedItems(11, ['a', 'b'])).toEqual({ toAttach: [], skipped: 2 })
+  it('drops a video over the duration limit, but keeps one exactly at it or of unknown length', () => {
+    const tooLong = item('a.mp4', { isVideo: true, duration: 120_001 })
+    const atLimit = item('b.mp4', { isVideo: true, duration: 120_000 })
+    const unknown = item('c.mp4', { isVideo: true })
+    expect(fitSharedItems(0, [tooLong, atLimit, unknown], limits)).toEqual({
+      toAttach: [atLimit, unknown],
+      skipped: 0,
+      tooLong: 1,
+    })
+    expect(fitSharedItems(0, [tooLong], { ...limits, maxVideoDurationSeconds: 300 }).tooLong).toBe(0)
   })
 })
 
@@ -45,7 +72,7 @@ describe('screenSharedFiles', () => {
       file('image/heic'),
       file('video/quicktime'),
     ]
-    expect(screenSharedFiles(files)).toEqual({ accepted: files, unsupported: 0, tooLong: 0 })
+    expect(screenSharedFiles(files)).toEqual({ accepted: files, unsupported: 0 })
   })
 
   it('rejects an unsupported mime type', () => {
@@ -57,15 +84,6 @@ describe('screenSharedFiles', () => {
 
   it('rejects a file without a path', () => {
     expect(screenSharedFiles([file('image/jpeg', { path: '' })]).unsupported).toBe(1)
-  })
-
-  it('rejects a video over the picker duration limit, but keeps one exactly at it or of unknown length', () => {
-    const tooLong = file('video/mp4', { duration: 120_001 })
-    const atLimit = file('video/mp4', { duration: 120_000 })
-    const unknown = file('video/mp4')
-    const result = screenSharedFiles([tooLong, atLimit, unknown])
-    expect(result.accepted).toEqual([atLimit, unknown])
-    expect(result.tooLong).toBe(1)
   })
 })
 

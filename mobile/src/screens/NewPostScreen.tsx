@@ -43,10 +43,10 @@ import {
 } from '@/utils/newPost'
 import { EMPTY_EVENT_DRAFT, EventDraft, buildEventTypeData, validEventDraft, withEventStart } from '@/utils/event'
 import { useGroupMembersIntersection } from '@/hooks/useGroupMembersIntersection'
-import { useServerFeatureSupport } from '@/hooks/useServerInfo'
+import { useServerFeatureSupport, useServerInfo, useServerLimits } from '@/hooks/useServerInfo'
 import { rememberNotFound, retryUnlessNotFound } from '@/utils/serverFeatures'
 import { usePendingShareStore, PendingShare } from '@/stores/pendingShareStore'
-import { MAX_POST_ATTACHMENTS, MAX_VIDEO_DURATION_SECONDS, fitSharedItems } from '@/utils/sharedMedia'
+import { fitSharedItems } from '@/utils/sharedMedia'
 
 const MILESTONE_TAG_KEYS = ['birthday', 'birth', 'anniversary', 'graduation'] as const
 // Feather names, not emoji — same reasoning as POST_TYPE_ICON below. The chip
@@ -186,6 +186,7 @@ export function NewPostScreen() {
   // narrowed to a circle.
   const canChooseCircle = selectedGroupIds.length === 1
   const circlesSupport = useServerFeatureSupport('circles')
+  const limits = useServerLimits()
   const { data: circlesData } = useQuery({
     queryKey: ['circles', primaryGroupId],
     queryFn: rememberNotFound('circles', () => fetchMyCircles(primaryGroupId!)),
@@ -391,9 +392,8 @@ export function NewPostScreen() {
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
-      selectionLimit: MAX_POST_ATTACHMENTS,
+      selectionLimit: Math.max(1, limits.maxAttachments - uploadedAssetUrls.length),
       quality: 0.8,
-      videoMaxDuration: MAX_VIDEO_DURATION_SECONDS,
     },
     includeIndexInName: true,
     // Show the picked assets (with an uploading overlay) while the upload
@@ -405,6 +405,7 @@ export function NewPostScreen() {
   })
 
   async function pickImagesFromDevice() {
+    if (uploadedAssetUrls.length >= limits.maxAttachments) return
     await pickDeviceMedia()
     setPendingAssets([])
   }
@@ -412,13 +413,15 @@ export function NewPostScreen() {
   // Photos/videos shared in from the OS share sheet (issue #199) land in the
   // pending-share store; App opens this composer for them, or — when it's
   // already open — this effect simply appends them to the current draft.
-  // Waits for an in-flight upload so the cap counts what it adds.
+  // Waits for an in-flight upload so the cap counts what it adds, and for the
+  // server's limits on a cold start from a share.
   const pendingShare = usePendingShareStore((state) => state.share)
+  const serverInfoLoading = useServerInfo().isLoading
   React.useEffect(() => {
-    if (!pendingShare || uploading) return
+    if (!pendingShare || uploading || serverInfoLoading) return
     const share = usePendingShareStore.getState().takeShare()
     if (share) attachSharedMedia(share)
-  }, [pendingShare, uploading])
+  }, [pendingShare, uploading, serverInfoLoading])
 
   async function attachSharedMedia(share: PendingShare) {
     if (share.items.length > 0) {
@@ -430,12 +433,11 @@ export function NewPostScreen() {
       setComposerStep('compose')
     }
 
-    const { toAttach, skipped } = fitSharedItems(uploadedAssetUrls.length, share.items)
+    const { toAttach, skipped, tooLong } = fitSharedItems(uploadedAssetUrls.length, share.items, limits)
     const notices = [
-      skipped > 0 && t('newPost.share.skippedOverLimit', { count: skipped, max: MAX_POST_ATTACHMENTS }),
+      skipped > 0 && t('newPost.share.skippedOverLimit', { count: skipped, max: limits.maxAttachments }),
       share.unsupported > 0 && t('newPost.share.unsupported', { count: share.unsupported }),
-      share.tooLong > 0 &&
-        t('newPost.share.videoTooLong', { count: share.tooLong, seconds: MAX_VIDEO_DURATION_SECONDS }),
+      tooLong > 0 && t('newPost.share.videoTooLong', { count: tooLong, seconds: limits.maxVideoDurationSeconds }),
     ].filter(Boolean)
     if (notices.length > 0) Alert.alert(t('newPost.share.title'), notices.join('\n'))
 
@@ -1048,7 +1050,11 @@ export function NewPostScreen() {
             )}
 
             <View style={styles.attachPillRow}>
-              <TouchableOpacity style={styles.attachPill} onPress={pickImagesFromDevice} disabled={uploading}>
+              <TouchableOpacity
+                style={styles.attachPill}
+                onPress={pickImagesFromDevice}
+                disabled={uploading || uploadedAssetUrls.length >= limits.maxAttachments}
+              >
                 <View style={styles.attachPillIcon}>
                   <Icon name="smartphone" size={13} color={colors.white} />
                 </View>

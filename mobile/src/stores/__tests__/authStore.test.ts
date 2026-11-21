@@ -168,10 +168,10 @@ describe('authStore', () => {
           isVideo: false,
           width: 1,
           height: 1,
+          duration: null,
         },
       ],
       unsupported: 0,
-      tooLong: 0,
     }
 
     it('logout clears a pending share so it never reaches the next account', async () => {

@@ -7,8 +7,6 @@ export interface PendingShare {
   items: SharedMediaItem[]
   /** Files dropped on arrival: an unsupported format, or unreadable. */
   unsupported: number
-  /** Videos dropped on arrival for exceeding the picker's duration limit. */
-  tooLong: number
 }
 
 interface PendingShareState {
@@ -33,7 +31,6 @@ export const usePendingShareStore = create<PendingShareState>((set, get) => ({
         ? {
             items: [...current.items, ...share.items],
             unsupported: current.unsupported + share.unsupported,
-            tooLong: current.tooLong + share.tooLong,
           }
         : share,
     })

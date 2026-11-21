@@ -11,6 +11,9 @@ jest.mock('expo-image-picker', () => ({
 }))
 jest.mock('expo-image-manipulator', () => ({ manipulateAsync: jest.fn() }))
 jest.mock('@/api/uploads', () => ({ uploadMedia: jest.fn() }))
+jest.mock('@/hooks/useServerInfo', () => ({
+  useServerLimits: () => ({ maxAttachments: 10, maxVideoDurationSeconds: 300, maxUploadSizeMb: 1 }),
+}))
 
 function deferred() {
   let resolve!: (urls: string[]) => void
@@ -121,5 +124,27 @@ it('uploads shared files through the same completion callbacks without opening t
   expect(onUploaded).toHaveBeenCalledWith('/uploads/shared.mp4', 0)
   expect(onSettled).toHaveBeenCalledWith(0)
   expect(hook.result.current.uploading).toBe(false)
+  await hook.unmount()
+})
+
+it("applies the server's video duration and skips a video over its upload size limit", async () => {
+  jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValue({
+    canceled: false,
+    assets: [
+      { uri: 'file:///small.mp4', type: 'video', fileSize: 1024 * 1024 },
+      { uri: 'file:///big.mp4', type: 'video', fileSize: 1024 * 1024 + 1 },
+    ],
+  } as Awaited<ReturnType<typeof ImagePicker.launchImageLibraryAsync>>)
+  jest.mocked(uploadMedia).mockResolvedValue(['/uploads/small.mp4'])
+  const hook = await renderHook(() => usePickAndUploadMedia({ pickerOptions: { quality: 0.8 } }))
+  let result!: Awaited<ReturnType<typeof hook.result.current.pick>>
+  await act(async () => {
+    result = await hook.result.current.pick()
+  })
+  expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith({ videoMaxDuration: 300, quality: 0.8 })
+  expect(Alert.alert).toHaveBeenCalledWith('newPost.alerts.uploadFailed', 'newPost.alerts.videoTooLarge')
+  expect(uploadMedia).toHaveBeenCalledTimes(1)
+  expect(jest.mocked(uploadMedia).mock.calls[0][0][0].uri).toBe('file:///small.mp4')
+  expect(result?.urls).toEqual(['/uploads/small.mp4'])
   await hook.unmount()
 })

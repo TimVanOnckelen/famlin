@@ -132,7 +132,6 @@ export function ChatScreen() {
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     onPicked: ([asset]) => setAttachment({ uri: asset.uri, isVideo: asset.isVideo }),
     onError: () => setAttachment(null),

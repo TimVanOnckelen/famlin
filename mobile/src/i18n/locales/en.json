@@ -209,7 +209,9 @@
       "postFailed": "The message could not be posted",
       "permissionRequiredTitle": "Permission required",
       "permissionRequiredMessage": "We need access to your photo and video library.",
-      "uploadFailed": "Upload failed"
+      "uploadFailed": "Upload failed",
+      "videoTooLarge_one": "{{count}} video is larger than {{max}} MB and wasn't added.",
+      "videoTooLarge_other": "{{count}} videos are larger than {{max}} MB and weren't added."
     },
     "milestoneTags": {
       "birthday": "Birthday",
