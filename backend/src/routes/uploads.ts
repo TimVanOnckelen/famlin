@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto'
 import { createMediaToken } from '../plugins/auth.js'
 import { prisma } from '../db.js'
 import { getT } from '../i18n/index.js'
+import { getAllSettings } from '../services/settings.js'
 import os from 'node:os'
 import { getStorage } from '../services/storage/registry.js'
 import { uploadSourceKey } from '../services/uploadSources.js'
@@ -73,7 +74,10 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         })
         .pipe(z.array(z.string().uuid()).max(1000))
         .parse(String(request.headers['x-upload-session-exclude'] ?? '[]'))
-      const parts = request.parts()
+      // Per-request limit from the maxUploadSizeMb setting; it overrides the
+      // global multipart fileSize registered in app.ts.
+      const { maxUploadSizeMb } = await getAllSettings()
+      const parts = request.parts({ limits: { fileSize: maxUploadSizeMb * 1024 * 1024 } })
       const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-upload-'))
       const storedKeys: string[] = []
       const storage = getStorage()
@@ -115,7 +119,7 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
               await pipeline(part.file, (await fs.open(sourcePath, 'w')).createWriteStream())
               if (part.file.truncated) {
                 await cleanup()
-                return reply.status(413).send({ error: t('errors.fileTooLarge') })
+                return reply.status(413).send({ error: t('errors.fileTooLarge', { max: maxUploadSizeMb }) })
               }
               const url = `/uploads/${uuid}${processMedia ? (video ? '.mp4' : '.jpg') : ext}`
               let thumbnailUrl: string | null = null

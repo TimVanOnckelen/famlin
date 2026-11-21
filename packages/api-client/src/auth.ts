@@ -131,6 +131,27 @@ export interface ServerInfo {
   // with serverFeatureSupport()/serverSupports() (./features) rather than
   // reading it directly.
   features?: string[]
+  // Admin-configured upload limits (issue #436, feature `configurableLimits`),
+  // absent on older servers. Read via resolveServerLimits().
+  limits?: ServerLimits
+}
+
+export interface ServerLimits {
+  // Max photos/videos in one post, comment, album contribution or check-in.
+  maxAttachments: number
+  // Longest video clients should accept (enforced client-side only).
+  maxVideoDurationSeconds: number
+  // Largest single file POST /api/uploads accepts.
+  maxUploadSizeMb: number
+}
+
+// The server's defaults — and what a server without `limits` enforces in
+// practice for attachments (10 on comments/albums/check-ins; posts allowed
+// 20 there, but 10 is the safe cap) and uploads (200 MB).
+export const DEFAULT_LIMITS: ServerLimits = { maxAttachments: 10, maxVideoDurationSeconds: 120, maxUploadSizeMb: 200 }
+
+export function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits {
+  return { ...DEFAULT_LIMITS, ...serverInfo?.limits }
 }
 
 // The family's derived palette — computed server-side (one implementation

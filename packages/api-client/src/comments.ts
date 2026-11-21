@@ -97,7 +97,7 @@ export interface CreateCommentBody {
   // Photos/videos the commenter uploaded as part of this comment itself
   // (from POST /api/uploads) — distinct from assetUrl above. attachmentUrl is
   // the legacy single-attachment field; send attachmentUrls (max
-  // MAX_COMMENT_ATTACHMENTS), which wins when the server understands it.
+  // resolveServerLimits().maxAttachments), which wins when the server understands it.
   attachmentUrl?: string
   attachmentUrls?: string[]
 }

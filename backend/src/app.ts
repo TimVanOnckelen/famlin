@@ -11,6 +11,7 @@ import path from 'path'
 import fs from 'fs/promises'
 import { createReadStream } from 'fs'
 import { BackupEncryptionError } from './services/backup/encryption.js'
+import { TooManyAttachmentsError } from './services/settings.js'
 import { ZodError } from 'zod'
 import { DERIVED_DIR_NAME, resolveStoredHeicRendition } from './services/uploadVariants.js'
 import { canReadUpload } from './services/uploads.js'
@@ -124,6 +125,12 @@ export async function buildApp() {
     // clients branch on (e.g. ask for the emergency kit on backupKeyRequired).
     if (error instanceof BackupEncryptionError) {
       return reply.status(error.httpStatus).send({ error: t(`errors.${error.code}`), code: error.code })
+    }
+
+    if (error instanceof TooManyAttachmentsError) {
+      return reply
+        .status(400)
+        .send({ error: t('errors.tooManyAttachments', { max: error.max }), code: 'tooManyAttachments' })
     }
 
     // Client errors raised by Fastify itself or plugins (bad JSON, payload too

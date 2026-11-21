@@ -1,6 +1,6 @@
 import type { Comment, ReactionType } from './types'
 
-/** Mirrors MAX_COMMENT_ATTACHMENTS in the backend's types.ts. */
+/** Comment attachment cap of servers without `limits`; prefer resolveServerLimits(info).maxAttachments. */
 export const MAX_COMMENT_ATTACHMENTS = 10
 
 /**
