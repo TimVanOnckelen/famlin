@@ -197,9 +197,7 @@ Important current behavior:
 
 ## Architecture decision: one generalized chat model
 
-Do not create `DirectConversation`, `DirectMessage`, or `DirectRead` tables
-alongside existing chat. Extend chat around a generalized
-`ChatConversation` entity instead.
+Extend existing chat features around a generalized `ChatConversation` entity.
 
 The rationale is extensibility without premature scope:
 
@@ -1474,7 +1472,6 @@ The feature is complete when all are true:
 - Do not bind DM uploads to a shared family’s `groupIds`.
 - Do not allow admin status to bypass DM participant privacy.
 - Do not put DM notification body text on lock screens.
-- Do not create parallel `DirectConversation`/`DirectMessage` storage for this feature.
 - Do not use synthetic `Group` rows for private conversations.
 - Do not let installed group-chat clients lose reply, read-receipt, milestone-link, or singular attachment fields during migration.
 - Do not duplicate family membership into private participant rows for `FAMILY` conversations.
