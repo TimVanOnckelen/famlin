@@ -39,7 +39,7 @@ mobile app, once the trip has started and until it is closed.
 1. Open the trip and click **Check-in**. Before the first check-in, this button
    appears in the empty timeline; afterwards it appears above the timeline.
 2. Enter the place (required, up to 80 characters). Optionally add a note
-   (up to 2,000 characters) and up to 10 photos or videos.
+   (up to 2,000 characters) and photos or videos (up to 10 by default; your admin can raise this).
 3. Remove any unwanted attachment with its × button, then click **Check in**.
 
 Attachments upload before the check-in is saved. While saving, the form cannot
