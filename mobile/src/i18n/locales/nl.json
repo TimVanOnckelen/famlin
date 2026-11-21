@@ -209,7 +209,9 @@
       "postFailed": "Bericht kon niet worden geplaatst",
       "permissionRequiredTitle": "Toegang nodig",
       "permissionRequiredMessage": "We hebben toegang nodig tot je foto- en videobibliotheek.",
-      "uploadFailed": "Upload mislukt"
+      "uploadFailed": "Upload mislukt",
+      "videoTooLarge_one": "{{count}} video is groter dan {{max}} MB en werd niet toegevoegd.",
+      "videoTooLarge_other": "{{count}} video's zijn groter dan {{max}} MB en werden niet toegevoegd."
     },
     "milestoneTags": {
       "birthday": "Verjaardag",

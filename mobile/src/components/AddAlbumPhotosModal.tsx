@@ -20,11 +20,7 @@ import { Icon } from '@/components/Icon'
 import { getUploadUrl } from '@/api/uploads'
 import { isVideoUrl } from '@/utils/media'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
-
-// Matches the server's cap on an album contribution's photoUrls array
-// (services/postTypes/album.ts addPhotos schema) — enforced here too so
-// uploads never succeed only to have the interaction request rejected.
-const MAX_ALBUM_PHOTOS = 10
+import { useServerLimits } from '@/hooks/useServerInfo'
 
 interface AddAlbumPhotosModalProps {
   visible: boolean
@@ -51,15 +47,17 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
     }
   }, [visible])
 
-  const remainingPhotoSlots = MAX_ALBUM_PHOTOS - photoUrls.length
+  // The server's attachment cap (issue #436), enforced here too so uploads
+  // never succeed only to have the interaction request rejected.
+  const { maxAttachments } = useServerLimits()
+  const remainingPhotoSlots = maxAttachments - photoUrls.length
 
   const { pick, uploading, progress } = usePickAndUploadMedia({
     pickerOptions: {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
-      selectionLimit: Math.max(1, Math.min(10, remainingPhotoSlots)),
+      selectionLimit: Math.max(1, remainingPhotoSlots),
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     includeIndexInName: true,
     onPicked: (assets) => setPendingCount(assets.length),
@@ -69,7 +67,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
   async function pickPhotos() {
     const result = await pick()
     setPendingCount(0)
-    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, MAX_ALBUM_PHOTOS))
+    if (result) setPhotoUrls((prev) => [...prev, ...result.urls].slice(0, maxAttachments))
   }
 
   function removePhoto(url: string) {
@@ -143,7 +141,7 @@ export function AddAlbumPhotosModal({ visible, albumTitle, submitting, onCancel,
                 )}
               </View>
             ))}
-            {photoUrls.length < MAX_ALBUM_PHOTOS && (
+            {photoUrls.length < maxAttachments && (
               <TouchableOpacity style={styles.addPhotoTile} onPress={pickPhotos} disabled={uploading}>
                 <Icon name="plus" size={20} color={colors.primary} />
                 <Text style={styles.addPhotoLabel}>{t('album.addPhotos.addPhotoLabel')}</Text>

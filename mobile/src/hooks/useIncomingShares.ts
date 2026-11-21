@@ -32,7 +32,7 @@ export function useReceiveShareIntents() {
     let cancelled = false
     receiveSharedFiles(files)
       .then((share) => {
-        if (!cancelled && (share.items.length > 0 || share.unsupported > 0 || share.tooLong > 0)) addShare(share)
+        if (!cancelled && (share.items.length > 0 || share.unsupported > 0)) addShare(share)
       })
       .catch((err) => console.warn('Could not receive shared files:', err))
       .finally(() => resetShareIntent())

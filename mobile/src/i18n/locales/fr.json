@@ -209,7 +209,9 @@
       "postFailed": "Le message n'a pas pu être publié",
       "permissionRequiredTitle": "Autorisation nécessaire",
       "permissionRequiredMessage": "Nous avons besoin d'accéder à ta bibliothèque de photos et de vidéos.",
-      "uploadFailed": "L'envoi a échoué"
+      "uploadFailed": "L'envoi a échoué",
+      "videoTooLarge_one": "{{count}} vidéo dépasse {{max}} Mo et n'a pas été ajoutée.",
+      "videoTooLarge_other": "{{count}} vidéos dépassent {{max}} Mo et n'ont pas été ajoutées."
     },
     "milestoneTags": {
       "birthday": "Anniversaire",

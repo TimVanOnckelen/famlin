@@ -39,7 +39,6 @@ import {
   fetchGroupMembers,
   GroupMember,
   CommentGroup,
-  MAX_COMMENT_ATTACHMENTS,
   createComment,
   reactToComment,
   updatePost,
@@ -57,6 +56,7 @@ import { formatRelativeDate } from '@/i18n/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useReactToPost, useToggleFavorite } from '@/hooks/usePostMutations'
 import { usePickAndUploadMedia } from '@/hooks/usePickAndUploadMedia'
+import { useServerLimits } from '@/hooks/useServerInfo'
 
 // Matches a trailing "@partial-name" at the end of the text being typed —
 // deliberately only the end, not anywhere in the string, since that's the
@@ -71,9 +71,6 @@ const COMMENT_GRID_MAX_TILES = 4
 // Same rule for the post's own photos: up to four (hero included) lay out as
 // the wrapping grid, more than that scrolls sideways.
 const POST_GRID_MAX_PHOTOS = 4
-
-/** Mirrors uploadedAssetUrls' max in the backend's updatePostBodySchema. */
-const MAX_POST_ASSETS = 20
 
 export function PostDetailScreen() {
   const { t } = useTranslation()
@@ -284,7 +281,9 @@ export function PostDetailScreen() {
     })
   }
 
-  const attachmentRoom = MAX_COMMENT_ATTACHMENTS - commentAttachments.length
+  // One server-wide cap for posts and comments alike (issue #436).
+  const { maxAttachments } = useServerLimits()
+  const attachmentRoom = maxAttachments - commentAttachments.length
   // How many placeholders the batch in flight appended, so a failed upload
   // removes exactly those and leaves earlier picks alone.
   const attachmentBatchSize = useRef(0)
@@ -299,7 +298,6 @@ export function PostDetailScreen() {
       allowsMultipleSelection: true,
       selectionLimit: Math.max(1, attachmentRoom),
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     includeIndexInName: true,
     // Show the local previews (with the uploading overlay) while the upload
@@ -335,7 +333,7 @@ export function PostDetailScreen() {
   // Same pick-then-upload flow as the composer's, for photos added while
   // editing the post. Removing one is local until save — nothing is deleted
   // from the server, the saved list just stops referring to it.
-  const editPostAssetRoom = MAX_POST_ASSETS - editPostAssets.length
+  const editPostAssetRoom = maxAttachments - editPostAssets.length
 
   const {
     pick: pickEditPostMedia,
@@ -347,7 +345,6 @@ export function PostDetailScreen() {
       allowsMultipleSelection: true,
       selectionLimit: Math.max(1, editPostAssetRoom),
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     includeIndexInName: true,
     onPicked: setEditPostPendingAssets,
@@ -937,7 +934,8 @@ function CommentBody({
   const [editPendingAttachments, setEditPendingAttachments] = useState<{ uri: string; isVideo: boolean }[]>([])
   const [saving, setSaving] = useState(false)
 
-  const editAttachmentRoom = MAX_COMMENT_ATTACHMENTS - editAttachments.length
+  const { maxAttachments } = useServerLimits()
+  const editAttachmentRoom = maxAttachments - editAttachments.length
 
   const {
     pick: pickEditMedia,
@@ -949,7 +947,6 @@ function CommentBody({
       allowsMultipleSelection: true,
       selectionLimit: Math.max(1, editAttachmentRoom),
       quality: 0.8,
-      videoMaxDuration: 120,
     },
     includeIndexInName: true,
     onPicked: setEditPendingAttachments,

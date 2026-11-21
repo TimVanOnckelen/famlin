@@ -5,6 +5,7 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import { useTranslation } from 'react-i18next'
 
 import { uploadMedia } from '@/api/uploads'
+import { useServerLimits } from '@/hooks/useServerInfo'
 
 // The backend re-encodes every upload down to a 1920px display copy anyway
 // (see backend/src/services/uploadVariants.ts) — a modern phone photo is
@@ -95,8 +96,8 @@ export interface PickAndUploadResult {
 
 interface UsePickAndUploadMediaOptions {
   /** Forwarded to ImagePicker.launchImageLibraryAsync — this is where
-   * single- vs multi-select, allowsEditing/aspect, mediaTypes, and
-   * videoMaxDuration differ between call sites. */
+   * single- vs multi-select, allowsEditing/aspect and mediaTypes differ
+   * between call sites. videoMaxDuration defaults to the server's limit. */
   pickerOptions: ImagePicker.ImagePickerOptions
   /** Filename prefix used when an asset has no fileName of its own.
    * Defaults to 'photo' (a video always falls back to 'video' regardless of
@@ -144,6 +145,7 @@ export function usePickAndUploadMedia({
   onSettled,
 }: UsePickAndUploadMediaOptions) {
   const { t } = useTranslation()
+  const { maxVideoDurationSeconds, maxUploadSizeMb } = useServerLimits()
   const [uploading, setUploading] = useState(false)
   // Existing single-indicator callers use the average; the post composer
   // displays each file's own progress instead.
@@ -250,18 +252,34 @@ export function usePickAndUploadMedia({
       return null
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync(pickerOptions)
+    const result = await ImagePicker.launchImageLibraryAsync({
+      videoMaxDuration: maxVideoDurationSeconds,
+      ...pickerOptions,
+    })
     if (result.canceled) return null
 
+    // Videos are uploaded as-is, so one over the server's size limit would
+    // only be refused after the whole upload (photos are downscaled first).
+    const maxBytes = maxUploadSizeMb * 1024 * 1024
+    const tooLarge = result.assets.filter((asset) => asset.type === 'video' && (asset.fileSize ?? 0) > maxBytes)
+    if (tooLarge.length > 0) {
+      Alert.alert(
+        t('newPost.alerts.uploadFailed'),
+        t('newPost.alerts.videoTooLarge', { count: tooLarge.length, max: maxUploadSizeMb })
+      )
+    }
+
     return upload(
-      result.assets.map((asset) => ({
-        uri: asset.uri,
-        isVideo: asset.type === 'video',
-        width: asset.width,
-        height: asset.height,
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
-      }))
+      result.assets
+        .filter((asset) => !tooLarge.includes(asset))
+        .map((asset) => ({
+          uri: asset.uri,
+          isVideo: asset.type === 'video',
+          width: asset.width,
+          height: asset.height,
+          fileName: asset.fileName,
+          mimeType: asset.mimeType,
+        }))
     )
   }
 

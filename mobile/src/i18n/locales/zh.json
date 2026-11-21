@@ -209,7 +209,9 @@
       "postFailed": "动态发布失败",
       "permissionRequiredTitle": "需要权限",
       "permissionRequiredMessage": "我们需要访问你的照片和视频图库。",
-      "uploadFailed": "上传失败"
+      "uploadFailed": "上传失败",
+      "videoTooLarge_one": "{{count}} 个视频超过 {{max}} MB，未添加。",
+      "videoTooLarge_other": "{{count}} 个视频超过 {{max}} MB，未添加。"
     },
     "milestoneTags": {
       "birthday": "生日",

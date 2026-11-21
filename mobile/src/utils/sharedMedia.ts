@@ -1,14 +1,6 @@
 // Pure logic behind sharing photos/videos into Famlin from the OS share sheet
 // (issue #199) — kept free of native modules so it can be unit-tested.
 
-/** The new-post composer's attachment cap — the in-app picker's
- * `selectionLimit`. A share never pushes a post past it. */
-export const MAX_POST_ATTACHMENTS = 10
-
-/** The in-app picker's `videoMaxDuration` (seconds). The OS picker enforces it
- * in its own UI; a shared file skips that UI, so it's checked in code. */
-export const MAX_VIDEO_DURATION_SECONDS = 120
-
 // The upload route's ALLOWED_EXTENSIONS (backend/src/routes/uploads.ts),
 // expressed as mime types. Anything else is rejected before it's copied.
 const SUPPORTED_MIME_TYPES = new Set([
@@ -60,14 +52,14 @@ export interface SharedMediaItem {
   isVideo: boolean
   width: number | null
   height: number | null
+  /** Milliseconds, for videos; null when the OS didn't report it. */
+  duration: number | null
 }
 
 export interface ScreenedSharedFiles {
   accepted: IncomingSharedFile[]
   /** Not a photo/video format the composer accepts. */
   unsupported: number
-  /** A video longer than the picker's duration limit. */
-  tooLong: number
 }
 
 export function normalizeMimeType(mimeType: string | null | undefined): string {
@@ -82,31 +74,31 @@ export function extensionForMimeType(mimeType: string): string {
   return EXTENSION_FOR_MIME[normalizeMimeType(mimeType)] ?? 'bin'
 }
 
-/** Drops whatever the in-app picker would have refused: unsupported formats
- * and over-long videos. A video whose duration the OS didn't report is let
- * through — there's nothing to check it against. */
+/** Drops formats the in-app picker would have refused. */
 export function screenSharedFiles(files: IncomingSharedFile[]): ScreenedSharedFiles {
-  const result: ScreenedSharedFiles = { accepted: [], unsupported: 0, tooLong: 0 }
+  const result: ScreenedSharedFiles = { accepted: [], unsupported: 0 }
   for (const file of files) {
-    if (!file.path || !isSupportedSharedMimeType(file.mimeType)) {
-      result.unsupported++
-    } else if (
-      normalizeMimeType(file.mimeType).startsWith('video/') &&
-      file.duration != null &&
-      file.duration > MAX_VIDEO_DURATION_SECONDS * 1000
-    ) {
-      result.tooLong++
-    } else {
-      result.accepted.push(file)
-    }
+    if (!file.path || !isSupportedSharedMimeType(file.mimeType)) result.unsupported++
+    else result.accepted.push(file)
   }
   return result
 }
 
-/** Splits shared items into what still fits next to the composer's existing
- * attachments (`existingCount`) and how many are skipped over the cap. */
-export function fitSharedItems<T>(existingCount: number, items: T[]): { toAttach: T[]; skipped: number } {
-  const room = Math.max(0, MAX_POST_ATTACHMENTS - existingCount)
-  const toAttach = items.slice(0, room)
-  return { toAttach, skipped: items.length - toAttach.length }
+/** Applies the server's limits (issue #436) to shared items once the composer
+ * takes them — a share can arrive before the server's limits are known. Drops
+ * videos over the duration limit, which the in-app picker enforces in its own
+ * UI (one whose duration the OS didn't report is let through), then splits the
+ * rest into what still fits next to the composer's existing attachments
+ * (`existingCount`) and how many are skipped over the attachment cap. */
+export function fitSharedItems(
+  existingCount: number,
+  items: SharedMediaItem[],
+  limits: { maxAttachments: number; maxVideoDurationSeconds: number }
+): { toAttach: SharedMediaItem[]; skipped: number; tooLong: number } {
+  const allowed = items.filter(
+    (item) => !item.isVideo || item.duration == null || item.duration <= limits.maxVideoDurationSeconds * 1000
+  )
+  const room = Math.max(0, limits.maxAttachments - existingCount)
+  const toAttach = allowed.slice(0, room)
+  return { toAttach, skipped: allowed.length - toAttach.length, tooLong: items.length - allowed.length }
 }

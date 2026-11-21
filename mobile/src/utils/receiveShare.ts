@@ -16,8 +16,8 @@ import {
  * gone, and the share may have to wait out a login first.
  */
 export async function receiveSharedFiles(files: IncomingSharedFile[]): Promise<PendingShare> {
-  const { accepted, unsupported, tooLong } = screenSharedFiles(files)
-  const share: PendingShare = { items: [], unsupported, tooLong }
+  const { accepted, unsupported } = screenSharedFiles(files)
+  const share: PendingShare = { items: [], unsupported }
   if (accepted.length === 0) return share
 
   const directory = new Directory(Paths.cache, 'shared')
@@ -37,6 +37,7 @@ export async function receiveSharedFiles(files: IncomingSharedFile[]): Promise<P
         isVideo: mimeType.startsWith('video/'),
         width: file.width,
         height: file.height,
+        duration: file.duration,
       }
       share.items.push(item)
     } catch (err) {

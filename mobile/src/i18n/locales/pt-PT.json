@@ -209,7 +209,9 @@
       "postFailed": "Não foi possível publicar a mensagem",
       "permissionRequiredTitle": "Permissão necessária",
       "permissionRequiredMessage": "Precisamos de acesso à tua galeria de fotografias e vídeos.",
-      "uploadFailed": "O carregamento falhou"
+      "uploadFailed": "O carregamento falhou",
+      "videoTooLarge_one": "{{count}} vídeo tem mais de {{max}} MB e não foi adicionado.",
+      "videoTooLarge_other": "{{count}} vídeos têm mais de {{max}} MB e não foram adicionados."
     },
     "milestoneTags": {
       "birthday": "Aniversário",

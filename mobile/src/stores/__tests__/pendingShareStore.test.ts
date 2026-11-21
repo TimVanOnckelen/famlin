@@ -9,6 +9,7 @@ function item(name: string, isVideo = false): SharedMediaItem {
     isVideo,
     width: null,
     height: null,
+    duration: null,
   }
 }
 
@@ -20,7 +21,7 @@ describe('pendingShareStore', () => {
   })
 
   it('queues a share and hands it out exactly once', () => {
-    const share = { items: [item('a.jpg'), item('b.mp4', true)], unsupported: 1, tooLong: 0 }
+    const share = { items: [item('a.jpg'), item('b.mp4', true)], unsupported: 1 }
     usePendingShareStore.getState().addShare(share)
 
     expect(usePendingShareStore.getState().takeShare()).toEqual(share)
@@ -29,18 +30,17 @@ describe('pendingShareStore', () => {
   })
 
   it('appends a second share that arrives before the first is consumed', () => {
-    usePendingShareStore.getState().addShare({ items: [item('a.jpg')], unsupported: 1, tooLong: 0 })
-    usePendingShareStore.getState().addShare({ items: [item('b.mp4', true)], unsupported: 0, tooLong: 2 })
+    usePendingShareStore.getState().addShare({ items: [item('a.jpg')], unsupported: 1 })
+    usePendingShareStore.getState().addShare({ items: [item('b.mp4', true)], unsupported: 0 })
 
     expect(usePendingShareStore.getState().takeShare()).toEqual({
       items: [item('a.jpg'), item('b.mp4', true)],
       unsupported: 1,
-      tooLong: 2,
     })
   })
 
   it('clear drops a pending share', () => {
-    usePendingShareStore.getState().addShare({ items: [item('a.jpg')], unsupported: 0, tooLong: 0 })
+    usePendingShareStore.getState().addShare({ items: [item('a.jpg')], unsupported: 0 })
     usePendingShareStore.getState().clear()
     expect(usePendingShareStore.getState().share).toBeNull()
   })

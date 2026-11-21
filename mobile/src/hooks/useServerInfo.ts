@@ -2,9 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   fetchServerInfo,
   getCurrentServerUrl,
+  resolveServerLimits,
   serverFeatureSupport,
   type FeatureSupport,
   type ServerFeature,
+  type ServerLimits,
 } from '@famlin/api-client'
 import { withMissingMark } from '@/utils/serverFeatures'
 
@@ -17,6 +19,12 @@ export function useServerInfo() {
     queryFn: fetchServerInfo,
     staleTime: 10 * 60 * 1000,
   })
+}
+
+// The server's attachment/video/upload limits (issue #436), with the old
+// built-in values while server-info loads or on a server that predates them.
+export function useServerLimits(): ServerLimits {
+  return resolveServerLimits(useServerInfo().data)
 }
 
 // Whether the connected server has a named capability (issue #380):
