@@ -61,7 +61,6 @@ export interface ServerLimits {
     maxVideoDurationSeconds: number;
     maxUploadSizeMb: number;
 }
-export declare const DEFAULT_LIMITS: ServerLimits;
 export declare function resolveServerLimits(serverInfo: ServerInfo | null | undefined): ServerLimits;
 export interface BrandPalette {
     primary: string;

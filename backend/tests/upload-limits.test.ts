@@ -24,7 +24,9 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
-  await prisma.setting.deleteMany({ where: { key: { in: ['maxAttachments', 'maxUploadSizeMb'] } } })
+  await prisma.setting.deleteMany({
+    where: { key: { in: ['maxAttachments', 'maxVideoDurationSeconds', 'maxUploadSizeMb'] } },
+  })
   await updateSettings({})
 })
 
@@ -45,7 +47,6 @@ describe('limit settings', () => {
     expect(res.statusCode).toBe(200)
     const info = await app.inject({ method: 'GET', url: '/api/auth/server-info' })
     expect(info.json().limits).toEqual(payload)
-    await prisma.setting.deleteMany({ where: { key: 'maxVideoDurationSeconds' } })
   })
 
   it.each([

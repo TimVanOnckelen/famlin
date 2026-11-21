@@ -41,7 +41,6 @@ export {
   fetchNotificationConfig,
   fetchServerInfo,
   resolveServerLimits,
-  DEFAULT_LIMITS,
   getBrandingAssetUrl,
   changePassword,
   deleteAccount,
@@ -224,7 +223,7 @@ export {
 } from './comments'
 
 export type { CommentGroup } from './commentGroups'
-export { MAX_COMMENT_ATTACHMENTS, commentAttachments, groupCommentAttachments } from './commentGroups'
+export { commentAttachments, groupCommentAttachments } from './commentGroups'
 
 export type { ChatMessage, ChatMessagesPage, CreateChatMessageBody, ChatMessageKind } from './chat'
 export { fetchChatMessages, sendChatMessage, deleteChatMessage, markChatRead, fetchChatUnreadCounts } from './chat'

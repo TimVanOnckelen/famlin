@@ -405,7 +405,6 @@ export function NewPostScreen() {
   })
 
   async function pickImagesFromDevice() {
-    if (uploadedAssetUrls.length >= limits.maxAttachments) return
     await pickDeviceMedia()
     setPendingAssets([])
   }

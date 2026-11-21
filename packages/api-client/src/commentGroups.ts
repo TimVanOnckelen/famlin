@@ -1,8 +1,5 @@
 import type { Comment, ReactionType } from './types'
 
-/** Comment attachment cap of servers without `limits`; prefer resolveServerLimits(info).maxAttachments. */
-export const MAX_COMMENT_ATTACHMENTS = 10
-
 /**
  * The photos/videos a comment carries, as an array — regardless of whether
  * the server that produced it knows about `attachmentUrls` (multi) or only
