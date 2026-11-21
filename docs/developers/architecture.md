@@ -87,6 +87,7 @@ Member-facing list endpoints use cursor pagination. Posts, comments, and users a
 - **Circles only narrow access.** They cannot grant access to someone outside the family. Member-facing queries must use the shared visibility helpers so private content is not exposed accidentally.
 - **Uploads are authorized per request.** An unguessable media URL is not treated as permission to read it.
 - **Configuration is split by lifetime.** Startup environment variables configure the process and storage; most runtime settings live in the database and are managed in `/admin`.
+- **Upload limits are runtime settings.** `maxAttachments` (default 10, 10–50), `maxVideoDurationSeconds` (120, 10–1800) and `maxUploadSizeMb` (200, 10–2048) live in the `Setting` table and reach clients as `limits` on `GET /api/auth/server-info`, advertised by the `configurableLimits` feature. Clients read them through api-client's `resolveServerLimits()`, which falls back to 10/120/200 on older servers. The server enforces the attachment count (posts, comments, album photos, trip check-ins) and the per-file size; video length is checked only by the clients before upload. The attachment minimum is 10 because installed app versions that predate the setting hardcode 10.
 - **Public origins come from the request.** Behind a reverse proxy, forwarded headers are trusted only when `TRUST_PROXY=true`.
 - **Interface text is translated.** Apps and server-rendered messages use locale keys rather than hardcoded user-facing strings.
 
