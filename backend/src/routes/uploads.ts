@@ -74,10 +74,14 @@ export default async function uploadRoutes(fastify: FastifyInstance) {
         })
         .pipe(z.array(z.string().uuid()).max(1000))
         .parse(String(request.headers['x-upload-session-exclude'] ?? '[]'))
-      // Per-request limit from the maxUploadSizeMb setting; it overrides the
-      // global multipart fileSize registered in app.ts.
-      const { maxUploadSizeMb } = await getAllSettings()
-      const parts = request.parts({ limits: { fileSize: maxUploadSizeMb * 1024 * 1024 } })
+      // Per-request limits from the settings; they override the global
+      // multipart limits registered in app.ts. Web composers upload a whole
+      // selection in one request, and a Live Photo is two files (still +
+      // motion clip), so a full selection can carry twice maxAttachments.
+      const { maxUploadSizeMb, maxAttachments } = await getAllSettings()
+      const parts = request.parts({
+        limits: { fileSize: maxUploadSizeMb * 1024 * 1024, files: maxAttachments * 2 },
+      })
       const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'famlin-upload-'))
       const storedKeys: string[] = []
       const storage = getStorage()

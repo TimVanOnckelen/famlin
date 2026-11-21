@@ -103,6 +103,27 @@ describe('maxAttachments', () => {
     expect(edit.json().code).toBe('tooManyAttachments')
   })
 
+  it('lets an edit keep a post that already holds more than the limit', async () => {
+    const post = await createPost({ groupId, authorId: member.id })
+    const legacy = paths(20)
+    await prisma.post.update({ where: { id: post.id }, data: { uploadedAssetUrls: legacy } })
+    const keep = await app.inject({
+      method: 'PATCH',
+      url: `/api/posts/${post.id}`,
+      headers: authHeader(member),
+      payload: { content: 'edited', uploadedAssetUrls: legacy.slice(0, 19) },
+    })
+    expect(keep.statusCode).toBe(200)
+    const grow = await app.inject({
+      method: 'PATCH',
+      url: `/api/posts/${post.id}`,
+      headers: authHeader(member),
+      payload: { uploadedAssetUrls: paths(20) },
+    })
+    expect(grow.statusCode).toBe(400)
+    expect(grow.json().code).toBe('tooManyAttachments')
+  })
+
   it('caps comment attachments', async () => {
     const post = await createPost({ groupId, authorId: member.id })
     const res = await app.inject({
@@ -113,6 +134,23 @@ describe('maxAttachments', () => {
     })
     expect(res.statusCode).toBe(400)
     expect(res.json().code).toBe('tooManyAttachments')
+  })
+})
+
+describe('POST /api/uploads', () => {
+  it('accepts a full selection of Live Photos (two files each) in one request', async () => {
+    const boundary = '----FamlinFilesBoundary'
+    const part = (i: number) =>
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="f${i}.gif"\r\nContent-Type: image/gif\r\n\r\nGIF89a\r\n`
+    const payload = Array.from({ length: 20 }, (_, i) => part(i)).join('') + `--${boundary}--\r\n`
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/uploads',
+      headers: { ...authHeader(member), 'content-type': `multipart/form-data; boundary=${boundary}` },
+      payload,
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().urls).toHaveLength(20)
   })
 })
 

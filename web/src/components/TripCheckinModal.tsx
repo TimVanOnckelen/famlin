@@ -133,7 +133,11 @@ export function TripCheckinModal({
             hidden
             aria-label={t('trip.checkin.addPhotoLabel')}
             onChange={async (event) => {
-              const selected = await limits.screen(Array.from(event.target.files ?? []), attachments.length)
+              // Check-ins upload without a session, so a Live Photo's still
+              // and motion clip are two URLs and count as two.
+              const selected = await limits.screen(Array.from(event.target.files ?? []), attachments.length, {
+                pairLivePhotos: false,
+              })
               setAttachments((current) => [...current, ...selected.map((file) => ({ file, id: nextId.current++ }))])
             }}
           />

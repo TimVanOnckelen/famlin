@@ -16,7 +16,7 @@ If you're installing Famlin for the first time, the defaults from [Server setup]
 | **Media**: photos, videos and avatars members upload | `famlin-uploads` volume at `/app/uploads` | `STORAGE_DRIVER` (default `local`), `UPLOADS_DIR` | Usually the largest by far. Can live in S3 instead, see [below](#option-c-s3-or-an-s3-compatible-service). |
 | **Branding logo** | `/app/uploads/branding/` | (always local) | Always stays on the local uploads volume, even with S3. |
 | **Scheduled backups** | `famlin-backups` volume at `/app/backups` | `BACKUPS_DIR` | Database dumps plus a mirror of the media. See [Maintenance](./maintenance.md#scheduled-backups). |
-| **Temporary files** while processing an upload | container's temp dir (`/tmp`) | (none) | Up to the **Maximum file size** admin setting (200 MB by default) per uploaded file, removed right after processing. |
+| **Temporary files** while processing an upload | container's temp dir (`/tmp`) | (none) | Up to the **Largest upload (MB)** admin setting (200 MB by default) per uploaded file, removed right after processing. |
 
 For every uploaded photo, Famlin keeps three copies inside its media storage:
 
@@ -262,7 +262,7 @@ docker compose -f docker-compose.yml up -d
 
 ### Keep the uploads volume
 
-Keep the `famlin-uploads` volume mounted, even with S3. Your branding logo always stays there, and `/app/uploads` is the fallback source when you migrate. Also make sure the container has some free temporary space (the container's `/tmp`): each upload, up to the maximum file size (200 MB by default), is processed there before it goes to the bucket.
+Keep the `famlin-uploads` volume mounted, even with S3. Your branding logo always stays there, and `/app/uploads` is the fallback source when you migrate. Also make sure the container has some free temporary space (the container's `/tmp`): each upload, up to the **Largest upload (MB)** admin setting (200 MB by default), is processed there before it goes to the bucket.
 
 :::note[Tested providers]
 Famlin's S3 driver is tested against MinIO. Other services that implement the S3 API, such as AWS S3, Hetzner Object Storage, Garage, Backblaze B2, Cloudflare R2 and Wasabi, are expected to work, but aren't tested automatically. If you run into a provider-specific issue, please [open an issue](https://github.com/TimVanOnckelen/famlin/issues).

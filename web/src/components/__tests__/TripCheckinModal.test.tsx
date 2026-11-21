@@ -132,3 +132,18 @@ it('skips videos longer than the server allows', async () => {
   await user.click(screen.getByRole('button', { name: 'Check in' }))
   await waitFor(() => expect(checkInTrip).toHaveBeenCalledWith('trip-1', { place: 'Bologna', photoUrls: [] }))
 })
+
+it('counts each file of a Live Photo, since check-ins send both URLs', async () => {
+  open()
+  const user = userEvent.setup()
+  const files = Array.from({ length: 6 }, (_, i) => [
+    new File(['p'], `IMG_${i}.HEIC`, { type: 'image/heic' }),
+    new File(['v'], `IMG_${i}.MOV`, { type: 'video/quicktime' }),
+  ]).flat()
+  await user.upload(screen.getByLabelText('Photo / video'), files)
+  expect(await screen.findByRole('alert')).toBeInTheDocument()
+  await user.type(screen.getByPlaceholderText('E.g. Bologna'), 'Bologna')
+  await user.click(screen.getByRole('button', { name: 'Check in' }))
+  await waitFor(() => expect(checkInTrip).toHaveBeenCalledOnce())
+  expect(vi.mocked(checkInTrip).mock.calls[0][1].photoUrls).toHaveLength(10)
+})

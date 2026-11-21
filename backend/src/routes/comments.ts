@@ -175,7 +175,6 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { id } = request.params as { id: string }
     const body = updateCommentBodySchema.parse(request.body)
-    await assertAttachmentLimit(normalizeCommentAttachments(body).length)
 
     const comment = await prisma.comment.findUnique({
       where: { id },
@@ -198,6 +197,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
     if (!(await canViewPostCircle(comment.post.circleId, request.user!.id))) {
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
+    await assertAttachmentLimit(normalizeCommentAttachments(body).length, comment.attachmentUrls.length)
 
     const editedAt = new Date()
 

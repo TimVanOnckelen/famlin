@@ -6,11 +6,9 @@ import { Icon } from '@/components/Icon'
 import { ShimmerImage } from '@/components/ShimmerImage'
 import { useEditPost } from '@/hooks/usePostMutations'
 import { useModalFocus } from '@/hooks/useModalFocus'
+import { useMediaLimits } from '@/hooks/useMediaLimits'
 import { fileFormatLabel, isBrowserDecodableImage, isVideoUrl } from '@/utils/media'
 import './NewPostModal.css'
-
-/** Mirrors uploadedAssetUrls' max in the backend's updatePostBodySchema. */
-const MAX_POST_ASSETS = 20
 
 // Edits an existing post's text and photos — the web counterpart of mobile
 // PostDetailScreen's inline post editor. Reuses NewPostModal's look (same
@@ -34,8 +32,9 @@ export function EditPostModal({ post, onClose }: { post: Post; onClose: () => vo
   useModalFocus(formRef, onClose)
 
   const editMutation = useEditPost(post)
+  const limits = useMediaLimits()
 
-  const room = MAX_POST_ASSETS - assetUrls.length - files.length
+  const room = limits.maxAttachments - assetUrls.length - files.length
   // A post can be photos-only or text-only, but not neither (same rule as
   // mobile's editor and the composer).
   const canSave = !editMutation.isPending && (content.trim().length > 0 || assetUrls.length > 0 || files.length > 0)
@@ -46,9 +45,11 @@ export function EditPostModal({ post, onClose }: { post: Post; onClose: () => vo
     editMutation.mutate({ content: content.trim(), uploadedAssetUrls: assetUrls, files }, { onSuccess: onClose })
   }
 
-  function addFiles(list: FileList | null) {
+  async function addFiles(list: FileList | null) {
     if (!list) return
-    setFiles((prev) => [...prev, ...Array.from(list)].slice(0, MAX_POST_ASSETS - assetUrls.length))
+    // Uploaded without a session on save, so each file is its own URL.
+    const accepted = await limits.screen(Array.from(list), assetUrls.length + files.length, { pairLivePhotos: false })
+    setFiles((prev) => [...prev, ...accepted])
   }
 
   // Portaled to <body>: it's opened from a PostCard that, in the detail view,
@@ -137,6 +138,11 @@ export function EditPostModal({ post, onClose }: { post: Post; onClose: () => vo
           </button>
         </div>
 
+        {limits.error && (
+          <div className="modal-error" role="alert">
+            {limits.error}
+          </div>
+        )}
         {editMutation.isError && <div className="modal-error">{t('editPost.failed')}</div>}
 
         <div className="modal-actions">

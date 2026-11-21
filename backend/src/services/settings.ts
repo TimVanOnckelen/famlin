@@ -257,9 +257,12 @@ export class TooManyAttachmentsError extends Error {
   }
 }
 
-export async function assertAttachmentLimit(count: number): Promise<void> {
+// `existing` is what an edited post/comment already holds: an edit that
+// doesn't grow the list passes even over the cap, so lowering the setting
+// (or the old 20-per-post cap) never makes an existing post uneditable.
+export async function assertAttachmentLimit(count: number, existing = 0): Promise<void> {
   const { maxAttachments } = await getAllSettings()
-  if (count > maxAttachments) throw new TooManyAttachmentsError(maxAttachments)
+  if (count > maxAttachments && count > existing) throw new TooManyAttachmentsError(maxAttachments)
 }
 
 export async function updateSettings(partial: Partial<ServerSettings>) {

@@ -129,7 +129,7 @@ Point your reverse proxy at the container's port `3000` and let it handle HTTPS.
 - Forward the whole path space (`/`, `/api`, `/admin`, `/uploads`) to the backend.
 - Don't cache `/uploads/` responses across users or sessions; uploaded media requires a valid session or media token.
 - Pass requests through without proxy-level authentication or special CORS handling.
-- **Raise the request body limit and upload timeout.** Famlin accepts files up to 200 MB by default (the **Maximum file size** [admin setting](./admin-configuration.md)), while Nginx defaults to only 1 MB. Set at least the largest file you want to allow (`client_max_body_size` on Nginx, `maxRequestBodyBytes` on Traefik; Caddy has no default limit) and allow enough time for slow mobile uploads.
+- **Raise the request body limit and upload timeout.** Famlin accepts files up to 200 MB by default (the **Largest upload (MB)** [admin setting](./admin-configuration.md)), while Nginx defaults to only 1 MB. Set at least the largest file you want to allow (`client_max_body_size` on Nginx, `maxRequestBodyBytes` on Traefik; Caddy has no default limit) and allow enough time for slow mobile uploads.
 - **Set `TRUST_PROXY=true`** in `.env`. The proxy must set, not append to, `X-Forwarded-Proto` and `X-Forwarded-Host`; Famlin uses these for correct invite and login URLs. Don't enable `TRUST_PROXY` on a directly exposed server.
 
 <details>
