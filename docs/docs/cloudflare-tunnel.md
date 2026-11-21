@@ -10,7 +10,7 @@ A Cloudflare Tunnel lets family members reach your Famlin server over HTTPS **wi
 
 - **Cloudflare terminates TLS.** Traffic is decrypted at Cloudflare and re-sent to your server through the tunnel, so Cloudflare can technically see it (see [Security](./security.md)). If that is not acceptable, use Caddy or your own reverse proxy.
 - **Your domain must be on Cloudflare** (its DNS managed there). A domain bought elsewhere can be added by switching its nameservers to Cloudflare, which is free.
-- **The free plan limits request bodies to 100 MB.** Famlin accepts up to 200 MB per file by default (the **Maximum file size** [admin setting](./admin-configuration.md)), so a very large video upload through the tunnel fails on the free plan. Photos and normal phone videos are fine. Paid Cloudflare plans raise the limit.
+- **The free plan limits request bodies to 100 MB.** Famlin accepts up to 200 MB per file by default (the **Largest upload (MB)** [admin setting](./admin-configuration.md)), so a very large video upload through the tunnel fails on the free plan. Photos and normal phone videos are fine. Paid Cloudflare plans raise the limit.
 - Cloudflare's account is a dependency: if it is down or your account is suspended, your family cannot reach the server from outside (your home network keeps working).
 
 ## Set up

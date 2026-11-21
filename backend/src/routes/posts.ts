@@ -483,7 +483,6 @@ export default async function postRoutes(fastify: FastifyInstance) {
     const t = getT(request)
     const { id } = request.params as { id: string }
     const body = updatePostBodySchema.parse(request.body)
-    await assertAttachmentLimit(body.uploadedAssetUrls?.length ?? 0)
 
     const post = await prisma.post.findUnique({ where: { id } })
 
@@ -506,6 +505,7 @@ export default async function postRoutes(fastify: FastifyInstance) {
       // the circle's existence can't be probed).
       return reply.status(404).send({ error: t('errors.postNotFound') })
     }
+    await assertAttachmentLimit(body.uploadedAssetUrls?.length ?? 0, post.uploadedAssetUrls.length)
 
     // Only the author's own edit fans out to cross-posted siblings. An admin
     // moderating stays single-row and group-scoped, exactly like admin delete

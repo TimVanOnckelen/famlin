@@ -1216,7 +1216,8 @@ paths:
                     both adds and removes photos. Same path shapes as create
                     (`/uploads/...` from `POST /api/uploads`, or a linked
                     album's media path). Omit it to leave the photos alone.
-                    Capped at the server's `maxAttachments` like create.
+                    Capped at the server's `maxAttachments` like create,
+                    unless the list is no longer than the post's current one.
       responses:
         '200':
           description: The updated post

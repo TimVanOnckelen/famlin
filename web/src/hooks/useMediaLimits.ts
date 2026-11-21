@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { fetchServerInfo, resolveServerLimits } from '@famlin/api-client'
-import { groupLivePhotoFiles } from '@/utils/livePhotos'
+import { groupLivePhotoFiles, type PickedAttachment } from '@/utils/livePhotos'
 import { videoDuration } from '@/utils/videoDuration'
 
 const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
@@ -18,8 +18,10 @@ export function useMediaLimits() {
   const tooMany = () => t('media.limits.tooMany', { max: limits.maxAttachments })
 
   // Drops files over the size or video-length limit and whatever doesn't fit
-  // next to `used` attachments, reporting the last reason in `error`.
-  async function screen(files: File[], used: number): Promise<File[]> {
+  // next to `used` attachments, reporting the last reason in `error`. Pass
+  // `pairLivePhotos: false` where uploads skip the server's Live Photo pairing
+  // (no upload session), so each file is its own URL and counts separately.
+  async function screen(files: File[], used: number, { pairLivePhotos = true } = {}): Promise<File[]> {
     let problem: string | null = null
     const accepted: File[] = []
     for (const file of files) {
@@ -33,7 +35,9 @@ export function useMediaLimits() {
       } else accepted.push(file)
     }
     const room = Math.max(0, limits.maxAttachments - used)
-    const groups = groupLivePhotoFiles(accepted)
+    const groups: PickedAttachment[] = pairLivePhotos
+      ? groupLivePhotoFiles(accepted)
+      : accepted.map((file) => ({ file }))
     if (groups.length > room) problem = tooMany()
     setError(problem)
     const kept = new Set(groups.slice(0, room).flatMap((group) => [group.file, group.motionFile]))
