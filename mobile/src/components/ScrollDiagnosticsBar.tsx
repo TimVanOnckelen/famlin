@@ -32,6 +32,17 @@ const RATING_COLORS: Record<ScrollRating, string> = {
 type SendState = 'idle' | 'sending' | 'sent' | 'failed'
 
 /**
+ * The build number from the embedded app config. `Constants.nativeBuildVersion`
+ * no longer exists in expo-constants, so it always read `?`; eas.json's
+ * `appVersionSource: "local"` makes the config the source of truth anyway.
+ */
+function buildNumber(): string | undefined {
+  const config = Constants.expoConfig
+  const value = Platform.OS === 'ios' ? config?.ios?.buildNumber : config?.android?.versionCode
+  return value === undefined || value === null ? undefined : String(value)
+}
+
+/**
  * The feed scroll diagnostics (issue #357): record a scroll, get the
  * dropped-frame numbers for the UI and JS threads, then send the report to
  * this server's admin or share it as text. Nothing leaves the phone unless
@@ -89,7 +100,7 @@ export function ScrollDiagnosticsBar({ posts }: { posts: Post[] }) {
     setReport({
       device: Device.modelName ?? t('common.unknown'),
       os: `${Device.osName ?? Platform.OS} ${Device.osVersion ?? Platform.Version}`,
-      app: `${Constants.expoConfig?.version ?? '?'} (${Constants.nativeBuildVersion ?? '?'})`,
+      app: `${Constants.expoConfig?.version ?? '?'} (${buildNumber() ?? '?'})`,
       server: serverInfo?.version ?? '?',
       refreshHz: Math.round(1000 / frameIntervalMs),
       jsRefreshHz: Math.round(1000 / jsFrameIntervalMs),

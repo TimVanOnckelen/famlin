@@ -33,7 +33,7 @@ Famlin scroll diagnostics
 Device: iPhone 13 · iOS 26.1
 App: 1.2.3 (45) · Server: 0.9.0
 Scrolled: 21.4 s at 60 Hz
-UI thread: 12.3 ms/s hitches (critical), 31 dropped of 1284 frames, worst 84 ms, p95 17.1 ms
+UI thread: 12.3 ms/s hitches (critical), 31 dropped of 1284 frames, worst 84 ms, p95 17.1 ms; late frames missing 1/2-3/4+ refreshes: 14/4/2
 JS thread: 3.1 ms/s hitches (good), 9 dropped of 1284 frames, worst 51 ms, p95 16.9 ms
 Posts seen: 34 (MILESTONE 3, UPDATE 31)
 Media: 71 items in 26 posts, 12 multi-photo posts, 4 videos
@@ -44,9 +44,10 @@ Images loaded while recording: 48 network, 20 disk, 3 memory
 - **UI thread high, JS thread low** points at native rendering: image decoding, layout or drawing.
 - **JS thread high** points at React work: re-renders, hooks mounting as cells scroll in.
 - The JS thread is judged against its **own** frame-loop rate. React Native's `requestAnimationFrame` ticks at 60 Hz even on a 120 Hz iPhone, so judging it against the display's 8.3 ms would count every tick as a dropped frame (early reports showed ~500 ms/s with a p95 of 17 ms). When the two rates differ the line reads `JS thread (60 Hz ticks)`. The flip side: a JS thread that is busy for a steady ~16 ms per frame is indistinguishable from that cap, so look at `worst` and the dropped count rather than at p95 alone.
+- **Late frames missing 1/2-3/4+ refreshes** sorts the late frames by size. On a 120 Hz iPhone, a report that is all one-refresh misses with nothing longer looks like the display stepping its rate down (ProMotion does that as a scroll slows) or isolated short UI-thread work; real stalls such as mounting a card or decoding a photo show up in the 2-3 and 4+ columns. The breakdown is only in the text, not in the structured `data`.
 - **Posts, media and image loads** describe what was scrolled, so two reports can be compared fairly and a bad result can be tied to photo-heavy stretches or to images still arriving from the network.
 
-Only frames produced while the list is moving are counted. The report contains no server address, account or post content.
+Only frames produced while the list is moving are counted: counting pauses the moment a finger lifts and resumes if momentum takes over. (Earlier builds waited 150 ms after a lift to see whether momentum followed, which counted a still list's frames; a 120 Hz iPhone lowers its rate for a still list, so those inflated the UI hitches.) The report contains no server address, account or post content.
 
 ## On the server
 
