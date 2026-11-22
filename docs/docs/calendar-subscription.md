@@ -16,11 +16,15 @@ The link is personal: it shows the events **you** can see, across every family y
 2. In the **Calendar subscription** section, click **Create subscription link**.
 3. Click **Copy**, or **Open in calendar app** to subscribe in your computer's default calendar app.
 
+<img src={require('./img/calendar-subscription-web.png').default} alt="The Calendar subscription section on the web Profile page, right after creating a link: the link with a Copy button, a warning that it is only shown once, an Open in calendar app button, and Regenerate link and Turn off buttons" width="560" />
+
 ### On your phone
 
 1. Open the **Profile** tab.
 2. In the **Calendar subscription** section, tap **Create subscription link**.
 3. Tap **Add to calendar** to subscribe in your phone's calendar app, or **Copy or share link** to add it somewhere else.
+
+<img src={require('./img/calendar-subscription-mobile.png').default} alt="The Calendar subscription section on the mobile Profile screen, right after creating a link: the link, Add to calendar and Copy or share link buttons, setup tips, and Regenerate link and Turn off" width="320" />
 
 :::caution Copy the link now
 Famlin shows the link **only once**. The server keeps just a scrambled fingerprint of it, so nobody — not even an admin — can look it up later. If you lose it, regenerate it (see [Make a new link or turn it off](#make-a-new-link-or-turn-it-off)).
