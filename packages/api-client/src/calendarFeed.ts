@@ -21,16 +21,19 @@ export interface CreatedCalendarFeed {
 }
 
 export async function fetchCalendarFeed(): Promise<CalendarFeedStatus> {
+  // requires-feature: calendarFeed
   const res = await api.get<CalendarFeedStatus>('/auth/me/calendar-feed')
   return res.data
 }
 
 // Creates the feed, or regenerates it: the previous URL stops working.
 export async function createCalendarFeed(): Promise<CreatedCalendarFeed> {
+  // requires-feature: calendarFeed
   const res = await api.post<CreatedCalendarFeed>('/auth/me/calendar-feed')
   return res.data
 }
 
 export async function revokeCalendarFeed(): Promise<void> {
+  // requires-feature: calendarFeed
   await api.delete('/auth/me/calendar-feed')
 }
